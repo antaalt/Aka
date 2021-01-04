@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="CustomApp.cpp" />
     <ClCompile Include="GLFramebuffer.cpp" />
+    <ClCompile Include="GLShader.cpp" />
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
@@ -159,10 +160,13 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="CustomApp.h" />
+    <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GLFramebuffer.h" />
+    <ClInclude Include="GLShader.h" />
     <ClInclude Include="GLTexture.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Geometry.h" />

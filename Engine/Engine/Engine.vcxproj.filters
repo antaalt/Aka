@@ -63,6 +63,9 @@
     <ClCompile Include="Input.cpp">
       <Filter>Fichiers sources\Window</Filter>
     </ClCompile>
+    <ClCompile Include="GLShader.cpp">
+      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -100,6 +103,15 @@
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="GLShader.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="Framebuffer.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

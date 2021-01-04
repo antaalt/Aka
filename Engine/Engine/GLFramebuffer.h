@@ -5,15 +5,16 @@
 namespace app {
 namespace gl {
 
-class Framebuffer
+class Framebuffer : app::Framebuffer
 {
 public:
 	Framebuffer();
-	Framebuffer(uint32_t width, uint32_t height);
 	~Framebuffer();
 
-	void use();
+	void create(uint32_t width, uint32_t height) override;
+	void destroy() override;
 
+	void use() override;
 	void doNotUse();
 
 	bool isValid();
@@ -21,8 +22,6 @@ public:
 	GLuint getID();
 
 private:
-	uint32_t m_width;
-	uint32_t m_height;
 	GLuint m_renderBuffer;		// RenderBuffer linked to the FBO
 	GLuint m_id;				// ID of the FBO
 	GLenum m_status;			// status of the FBO

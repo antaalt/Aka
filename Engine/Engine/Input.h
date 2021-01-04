@@ -75,20 +75,24 @@ struct Keyboard {
 	uint64_t timestamp[g_keyboardKeyCount];
 };
 
+struct Position {
+	float x, y;
+};
+
 struct Cursor {
 	bool pressed[g_mouseButtonCount];
 	uint64_t timestamp[g_keyboardKeyCount];
-	struct {
-		float x, y;
-	} position;
-	struct {
-		float x, y;
-	} scroll;
+	Position position; // raw position
+	Position delta; // relative movement
+	Position scroll;
 };
 
 // Actions
 bool pressed(Key key);
 bool pressed(Button button);
+Position &mouse();
+Position &delta();
+Position &scroll();
 
 };
 };

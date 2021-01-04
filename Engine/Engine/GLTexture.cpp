@@ -3,6 +3,18 @@
 namespace app {
 namespace gl {
 
+Texture::Texture() :
+	m_width(0),
+	m_height(0),
+	m_textureID(0)
+{
+}
+
+Texture::~Texture()
+{
+	if (m_textureID != 0)
+		destroy();
+}
 
 void Texture::create(uint32_t width, uint32_t height, const void* data)
 {
@@ -15,10 +27,17 @@ void Texture::create(uint32_t width, uint32_t height, const void* data)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
+
 void Texture::destroy()
 {
 	glDeleteTextures(1, &m_textureID);
+	m_textureID = 0;
 }
 
+Texture::ID Texture::getID()
+{
+	return m_textureID;
 }
-}
+
+};
+};

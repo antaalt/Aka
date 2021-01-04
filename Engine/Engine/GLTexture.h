@@ -9,8 +9,12 @@ namespace gl {
 class Texture : public app::Texture
 {
 public:
+	Texture();
+	~Texture();
 	void create(uint32_t width, uint32_t height, const void* data) override;
 	void destroy() override;
+
+	ID getID() override;
 private:
 	uint32_t m_width;
 	uint32_t m_height;

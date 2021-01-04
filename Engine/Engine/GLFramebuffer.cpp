@@ -6,16 +6,21 @@
 namespace app {
 namespace gl {
 
-Framebuffer::Framebuffer() : Framebuffer(1280, 720)
+Framebuffer::Framebuffer() : 
+	m_status(GL_FRAMEBUFFER_UNDEFINED),
+	m_id(0),
+	m_renderBuffer(0)
 {
 }
 
-Framebuffer::Framebuffer(uint32_t width, uint32_t height) : 
-	m_width(width),
-	m_height(height),
-	m_status(GL_FRAMEBUFFER_UNDEFINED), 
-	m_id(0), 
-	m_renderBuffer(0)
+
+Framebuffer::~Framebuffer()
+{
+	if (m_id != 0)
+		destroy();
+}
+
+void Framebuffer::create(uint32_t width, uint32_t height)
 {
 	// CHECK EXTENSION WITH GLEW 
 	if (!glewIsExtensionSupported("GL_ARB_framebuffer_object"))
@@ -34,17 +39,15 @@ Framebuffer::Framebuffer(uint32_t width, uint32_t height) :
 	glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_renderBuffer);
 
 	m_status = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
-	doNotUse();
-	if (!isValid())
+	if (m_status != GL_FRAMEBUFFER_COMPLETE)
 		throw std::runtime_error("Error while checking frame buffer status : " + std::to_string(m_status));
 }
 
-
-Framebuffer::~Framebuffer()
+void Framebuffer::destroy()
 {
-	if (m_renderBuffer)
+	if (m_renderBuffer != 0)
 		glDeleteRenderbuffers(1, &m_renderBuffer);
-	if (m_id)
+	if (m_id != 0)
 		glDeleteFramebuffers(1, &m_id);
 }
 

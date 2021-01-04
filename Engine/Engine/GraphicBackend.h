@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Texture.h"
-//#include "Framebuffer.h"
+#include "Shader.h"
+#include "Framebuffer.h"
 
 namespace app {
-
 
 struct GraphicBackend {
 	enum class API {
@@ -23,7 +23,11 @@ public:
 
 	virtual void clear() = 0;
 
-	virtual Texture* createTexture() = 0;
+	virtual void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height) = 0;
+
+	virtual Texture *createTexture(uint32_t width, uint32_t height, const uint8_t* data) = 0;
+	virtual Shader * createProgram(const ShaderInfo& info) = 0;
+	virtual ShaderID createShader(const char* shader, ShaderType type) = 0;
 private:
 	API m_api;
 };

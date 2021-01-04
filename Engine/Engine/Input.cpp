@@ -1,8 +1,5 @@
 #include "Input.h"
 
-// TODO remove iostream only here for debug
-#include <iostream>
-
 namespace app {
 namespace input {
 
@@ -21,6 +18,9 @@ void initialize()
 		cursor.pressed[iKey] = false;
 		cursor.timestamp[iKey] = 0;
 	}
+	cursor.position = { 0.f };
+	cursor.delta = { 0.f };
+	cursor.scroll = { 0.f };
 }
 
 void on_key_down(Key key)
@@ -37,20 +37,20 @@ void on_key_up(Key key)
 
 void on_mouse_button_down(Button button)
 {
-	std::cout << "down" << std::endl;
 	cursor.pressed[static_cast<int>(button)] = true;
 	cursor.timestamp[static_cast<int>(button)] = 0;
 }
 
 void on_mouse_button_up(Button button)
 {
-	std::cout << "up" << std::endl;
 	cursor.pressed[static_cast<int>(button)] = false;
 	cursor.timestamp[static_cast<int>(button)] = 0;
 }
 
 void on_mouse_move(float x, float y)
 {
+	cursor.delta.x = x - cursor.position.x;
+	cursor.delta.y = y - cursor.position.y;
 	cursor.position.x = x;
 	cursor.position.y = y;
 }
@@ -71,17 +71,20 @@ bool pressed(Button button)
 	return cursor.pressed[static_cast<int>(button)];
 }
 
-Keyboard& getKeyboard()
+Position& mouse()
 {
-	return keyboard;
+	return cursor.position;
 }
 
-Cursor& getCursor()
+Position& delta()
 {
-	return cursor;
+	return cursor.delta;
 }
 
-
-
+Position& scroll()
+{
+	return cursor.scroll;
 }
-}
+
+};
+};

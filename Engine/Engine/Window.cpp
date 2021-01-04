@@ -31,10 +31,10 @@ void setInputCallback(GLFWwindow* window)
 	});
 	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
-		input::on_mouse_move(xpos, ypos);
+		input::on_mouse_move(static_cast<float>(xpos), static_cast<float>(ypos));
 	});
 	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
-		input::on_mouse_scroll(xoffset, yoffset);
+		input::on_mouse_scroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 	});
 	glfwSetCursorEnterCallback(window, [](GLFWwindow* window, int entered) {
 		// GLFW_TRUE if entered, GLFW_FALSE if left
@@ -90,7 +90,7 @@ Window::Window(const Config& config) :
 	switch (config.api)
 	{
 	case GraphicBackend::API::OPENGL:
-		m_backend = new OpenGLBackend();
+		m_backend = new GLBackend();
 		break;
 	default:
 		throw std::runtime_error("Not implemented");
@@ -98,6 +98,7 @@ Window::Window(const Config& config) :
 	}
 	m_backend->initialize();
 	m_app->initialize(*this, *m_backend);
+	m_app->resize(m_width, m_height);
 }
 
 Window::~Window()
@@ -109,7 +110,7 @@ Window::~Window()
 
 void Window::resize(uint32_t width, uint32_t height)
 {
-	std::cout << "Resizing" << std::endl;
+	m_app->resize(width, height);
 }
 
 void Window::loop()
