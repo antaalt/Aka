@@ -1,0 +1,131 @@
+#include "Window.h"
+
+#include <iostream>
+
+#include "GLBackend.h"
+#include "Application.h"
+#include "Input.h"
+
+namespace app {
+
+void setInputCallback(GLFWwindow* window)
+{
+	input::initialize();
+	glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
+		// key : glfw keycode
+		// scancode : os code
+		// action : GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT
+		// mode : GLFW_MOD_SHIFT GLFW_MOD_CONTROL GLFW_MOD_ALT GLFW_MOD_SUPER GLFW_MOD_CAPS_LOCK GLFW_MOD_NUM_LOCK
+		if (action == GLFW_PRESS)
+			input::on_key_down(static_cast<input::Key>(key));
+		else if (action == GLFW_RELEASE)
+			input::on_key_up(static_cast<input::Key>(key));
+		// TODO manage repeat ?
+	});
+	glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mode) {
+		if (action == GLFW_PRESS)
+			input::on_mouse_button_down(static_cast<input::Button>(button));
+		else if (action == GLFW_RELEASE)
+			input::on_mouse_button_up(static_cast<input::Button>(button));
+		// TODO manage repeat ?
+	});
+	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
+		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
+		input::on_mouse_move(xpos, ypos);
+	});
+	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+		input::on_mouse_scroll(xoffset, yoffset);
+	});
+	glfwSetCursorEnterCallback(window, [](GLFWwindow* window, int entered) {
+		// GLFW_TRUE if entered, GLFW_FALSE if left
+	});
+	glfwSetJoystickCallback([](int jid, int event) {
+		// event : GLFW_CONNECTED, GLFW_DISCONNECTED
+	});
+}
+
+Window::Window(const Config& config) :
+	m_app(config.app),
+	m_width(config.width),
+	m_height(config.height)
+{
+	glfwSetErrorCallback([](int error, const char* description) {
+		std::cout << "[GLFW][" << error << "] " << description << std::endl;
+	});
+	if (glfwInit() != GLFW_TRUE)
+		throw std::runtime_error("Could not init GLFW");
+
+	// Backend API
+	// TODO create backend depending on type
+	switch (config.api)
+	{
+	case GraphicBackend::API::OPENGL:
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+#if !defined(__APPLE__)
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+#else
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
+		break;
+	default:
+		throw std::runtime_error("Not implemented");
+		break;
+	}
+	
+	m_window = glfwCreateWindow(config.width, config.height, config.name.c_str(), NULL, NULL);
+	if (m_window == NULL) {
+		glfwTerminate();
+		throw std::runtime_error("Could not init window");
+	}
+	glfwSetWindowUserPointer(m_window, this);
+	glfwMakeContextCurrent(m_window); // Initialise GLEW
+	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
+		app::Window* w = static_cast<app::Window*>(glfwGetWindowUserPointer(window));
+		w->resize(width, height);
+	});
+	setInputCallback(m_window);
+
+	switch (config.api)
+	{
+	case GraphicBackend::API::OPENGL:
+		m_backend = new OpenGLBackend();
+		break;
+	default:
+		throw std::runtime_error("Not implemented");
+		break;
+	}
+	m_backend->initialize();
+	m_app->initialize(*this, *m_backend);
+}
+
+Window::~Window()
+{
+	m_app->destroy(*m_backend);
+	delete m_backend;
+	glfwTerminate();
+}
+
+void Window::resize(uint32_t width, uint32_t height)
+{
+	std::cout << "Resizing" << std::endl;
+}
+
+void Window::loop()
+{
+	do {
+		m_app->update(*m_backend);
+		m_app->render(*m_backend);
+		glfwSwapBuffers(m_window);
+		glfwPollEvents();
+	} while (!input::pressed(input::Key::Escape) && glfwWindowShouldClose(m_window) == 0);
+}
+
+void Window::run(const Window::Config& config)
+{
+	Window window(config);
+	window.loop();
+}
+
+}
