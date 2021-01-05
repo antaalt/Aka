@@ -62,6 +62,7 @@ const uint32_t g_mouseButtonCount = 16; // should contain every glfw mouse butto
 
 // Set inputs
 void initialize();
+void update();
 void on_key_down(Key key);
 void on_key_up(Key key);
 void on_mouse_button_down(Button button);

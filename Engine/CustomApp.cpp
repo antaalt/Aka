@@ -71,12 +71,10 @@ void CustomApp::render(GraphicBackend& backend)
 	if(framebufferID == 0)
 		glGenFramebuffers(1, &framebufferID);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
-
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->getID(), 0);
-
 	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not create");
-
 	backend.viewport(0, 0, screenWidth(), screenHeight());
+	// Can do stuff in framebuffer (will update texture)
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -96,7 +94,10 @@ void CustomApp::render(GraphicBackend& backend)
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	backend.viewport(0, 0, screenWidth(), screenHeight());
-	font->render("Hello world !", 25.f, 25.f, 1.f, color3f(1.f, 0.5f, 0.5f));
+	font->viewport(0, 0, screenWidth(), screenHeight());
+	static float scale = 1.f;
+	scale += input::scroll().y;
+	font->render("Hello world !", 25.f, 25.f, scale, color3f(0.f, 0.5f, 1.f));
 
 	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
 }

@@ -22,6 +22,7 @@ void Font::render(const std::string& text, float x, float y, float scale, color3
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_shader.use();
+    m_shader.set<mat4f>("projection", mat4f::orthographic(m_y, m_height, m_x, m_width, -1.f, 1.f));
     m_shader.set<vec3f>("textColor", vec3f(color.x, color.y, color.z));
 
     glActiveTexture(GL_TEXTURE0);
@@ -112,9 +113,6 @@ void Font::createBackend(FT_Face face)
     info.uniforms.push_back(Uniform{ UniformType::Vec3, ShaderType::FRAGMENT_SHADER, "textColor" });
     info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "projection" });
     m_shader.create(info);
-    m_shader.use();
-    // TODO make width & height dynamic
-    m_shader.set<mat4f>("projection", mat4f::orthographic(0.f, 720.f, 0.f, 1280.f, -1.f, 1.f));
 
     // m_vbo for drawing
     glGenVertexArrays(1, &m_vao);

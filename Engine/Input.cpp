@@ -23,6 +23,11 @@ void initialize()
 	cursor.scroll = { 0.f };
 }
 
+void update()
+{
+	cursor.scroll = { 0.f };
+}
+
 void on_key_down(Key key)
 {
 	keyboard.pressed[static_cast<int>(key)] = true;

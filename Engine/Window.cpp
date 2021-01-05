@@ -121,6 +121,7 @@ void Window::loop()
 	do {
 		m_app->update(*m_backend);
 		m_app->render(*m_backend);
+		input::update();
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
 	} while (!input::pressed(input::Key::Escape) && glfwWindowShouldClose(m_window) == 0);

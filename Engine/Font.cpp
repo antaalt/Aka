@@ -35,4 +35,12 @@ void Font::create(const char* path)
     stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);*/
 }
 
+void Font::viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+{
+    m_x = x;
+    m_y = y;
+    m_width = width;
+    m_height = height;
+}
+
 }
