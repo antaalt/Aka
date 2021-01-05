@@ -2,8 +2,11 @@
 
 #include "GraphicBackend.h"
 #include "Platform.h"
-#include "GLTexture.h"
-#include "GLShader.h"
+
+#include <iostream>
+
+GLenum glCheckError_(const char* file, int line);
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 namespace app {
 
@@ -19,6 +22,7 @@ public:
 	Texture *createTexture(uint32_t width, uint32_t height, const uint8_t *data) override;
 	Shader* createProgram(const ShaderInfo& info) override;
 	ShaderID createShader(const char* content, ShaderType type) override;
+	Font* createFont(const char* path) override;
 private:
 	API m_api;
 };

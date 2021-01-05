@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "Framebuffer.h"
+#include "Font.h"
 
 namespace app {
 
@@ -28,6 +29,7 @@ public:
 	virtual Texture *createTexture(uint32_t width, uint32_t height, const uint8_t* data) = 0;
 	virtual Shader * createProgram(const ShaderInfo& info) = 0;
 	virtual ShaderID createShader(const char* shader, ShaderType type) = 0;
+	virtual Font* createFont(const char* path) = 0;
 private:
 	API m_api;
 };

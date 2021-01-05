@@ -24,10 +24,10 @@ struct Shader : public app::Shader {
 	GLint getUniformLocation(const char* name);
 
 	void setFloat1(const char* name, float value) override;
-	void setFloat2(const char* name, const vec2& value) override;
-	void setFloat3(const char* name, const vec3& value) override;
-	void setFloat4(const char* name, const vec4& value) override;
-	void setMat4(const char* name, const mat4& value) override;
+	void setFloat2(const char* name, const vec2f& value) override;
+	void setFloat3(const char* name, const vec3f& value) override;
+	void setFloat4(const char* name, const vec4f& value) override;
+	void setMat4(const char* name, const mat4f& value) override;
 
 private:
 	GLuint id;

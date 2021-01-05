@@ -121,13 +121,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui-1.78;$(SolutionDir)lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui-1.78;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freetype.lib;opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,6 +148,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CustomApp.cpp" />
+    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="GLFont.cpp" />
     <ClCompile Include="GLFramebuffer.cpp" />
     <ClCompile Include="GLShader.cpp" />
     <ClCompile Include="GLTexture.cpp" />
@@ -160,7 +162,9 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="CustomApp.h" />
+    <ClInclude Include="Font.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="GLFont.h" />
     <ClInclude Include="GLFramebuffer.h" />
     <ClInclude Include="GLShader.h" />
     <ClInclude Include="GLTexture.h" />

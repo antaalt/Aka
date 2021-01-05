@@ -91,24 +91,24 @@ void Shader::setFloat1(const char* name, float value)
 	glUniform1f(getUniformLocation(name), value);
 }
 
-void Shader::setFloat2(const char* name, const vec2& value)
+void Shader::setFloat2(const char* name, const vec2f& value)
 {
 	glUniform2f(getUniformLocation(name), value.x, value.y);
 }
 
-void Shader::setFloat3(const char* name, const vec3& value)
+void Shader::setFloat3(const char* name, const vec3f& value)
 {
 	glUniform3f(getUniformLocation(name), value.x, value.y, value.z);
 }
 
-void Shader::setFloat4(const char* name, const vec4& value)
+void Shader::setFloat4(const char* name, const vec4f& value)
 {
 	glUniform4f(getUniformLocation(name), value.x, value.y, value.z, value.w);
 }
 
-void Shader::setMat4(const char* name, const mat4& value)
+void Shader::setMat4(const char* name, const mat4f& value)
 {
-	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, value.data);
+	glUniformMatrix4fv(getUniformLocation(name), 1, GL_TRUE, &value.cols[0].x);
 }
 
 ShaderID Shader::create(const char* content, ShaderType type)

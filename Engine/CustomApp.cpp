@@ -11,6 +11,7 @@ namespace app {
 
 Texture* texture, *textureChar;
 Shader *shader;
+Font* font;
 const uint32_t WIDTH = 567, HEIGHT = 388;
 GLenum error = GL_NO_ERROR;
 
@@ -39,6 +40,8 @@ void CustomApp::initialize(Window& window, GraphicBackend& backend)
 	info.uniforms.push_back(uniform);
 	shader = backend.createProgram(info);
 	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
+
+	font = backend.createFont("../asset/font/arial.ttf");
 }
 
 void CustomApp::destroy(GraphicBackend& backend)
@@ -54,7 +57,6 @@ void CustomApp::update(GraphicBackend& backend)
 
 void CustomApp::render(GraphicBackend& backend)
 {
-	backend.clear();
 	if (input::pressed(input::Key::Space))
 		glClearColor(1.f, 0.f, 0.f, 1.f);
 	else
@@ -79,18 +81,22 @@ void CustomApp::render(GraphicBackend& backend)
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, WIDTH, HEIGHT, 0, 0, screenWidth() - 10, screenHeight() - 10, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Draw texture to mainbuffer
 	backend.viewport((int32_t)input::mouse().x, (int32_t)(screenHeight() - input::mouse().y), 50, 50);
 	shader->use();
 	if (input::pressed(input::Button::Button1))
-		shader->set<vec4>("u_Color", vec4{ 0.0f, 1.f, 0.0f, 1.0f });
+		shader->set<vec4f>("u_Color", vec4f( 0.0f, 1.f, 0.0f, 1.0f ));
 	else if (input::pressed(input::Button::Button2))
-		shader->set<vec4>("u_Color", vec4{ 1.0f, 0.f, 0.0f, 1.0f });
+		shader->set<vec4f>("u_Color", vec4f( 1.0f, 0.f, 0.0f, 1.0f ));
 	else
-		shader->set<vec4>("u_Color", vec4{ 0.0f, 0.f, 1.0f, 1.0f });
+		shader->set<vec4f>("u_Color", vec4f( 0.0f, 0.f, 1.0f, 1.0f ));
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	backend.viewport(0, 0, screenWidth(), screenHeight());
+	font->render("Hello world !", 25.f, 25.f, 1.f, color3f(1.f, 0.5f, 0.5f));
 
 	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
 }

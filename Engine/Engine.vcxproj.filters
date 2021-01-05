@@ -66,6 +66,12 @@
     <ClCompile Include="GLShader.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>Fichiers sources\Graphic</Filter>
+    </ClCompile>
+    <ClCompile Include="GLFont.cpp">
+      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -104,14 +110,20 @@
     <ClInclude Include="Application.h">
       <Filter>Fichiers d%27en-tête\Window</Filter>
     </ClInclude>
-    <ClInclude Include="GLShader.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="Shader.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
     <ClInclude Include="Framebuffer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="GLFont.h">
+      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="GLShader.h">
+      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

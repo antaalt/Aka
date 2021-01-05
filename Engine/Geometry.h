@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../libs/geometry/src/geometry.h"
+#include <geometry.h>
 
 namespace app {
 using namespace geometry;

@@ -2,7 +2,8 @@
 
 precision highp float;
 
-// triangle strip (reversed N shaped)
+// Triangle strip (reversed N shaped)
+// Use glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
 vec2 positions[4] = vec2[4](
 	vec2(-1.0,1.0), vec2(-1.0,-1.0),
 	vec2(1.0,1.0), vec2(1.0,-1.0)

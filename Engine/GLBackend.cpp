@@ -2,6 +2,46 @@
 
 #include <stdexcept>
 
+#include "GLShader.h"
+#include "GLTexture.h"
+#include "GLFramebuffer.h"
+#include "GLFont.h"
+
+GLenum glCheckError_(const char* file, int line)
+{
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    {
+        std::string error;
+        switch (errorCode)
+        {
+        case GL_INVALID_ENUM:
+            error = "INVALID_ENUM";
+            break;
+        case GL_INVALID_VALUE:
+            error = "INVALID_VALUE";
+            break;
+        case GL_INVALID_OPERATION:
+            error = "INVALID_OPERATION";
+            break;
+        case GL_STACK_OVERFLOW:
+            error = "STACK_OVERFLOW";
+            break;
+        case GL_STACK_UNDERFLOW:
+            error = "STACK_UNDERFLOW";
+            break;
+        case GL_OUT_OF_MEMORY:
+            error = "OUT_OF_MEMORY";
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            error = "INVALID_FRAMEBUFFER_OPERATION";
+            break;
+        }
+        std::cerr << error << " | " << file << " (" << line << ")" << std::endl;
+    }
+    return errorCode;
+}
+
 namespace app {
 
 void GLBackend::initialize()
@@ -50,6 +90,13 @@ Shader* GLBackend::createProgram(const ShaderInfo& info)
 ShaderID GLBackend::createShader(const char* content, ShaderType type)
 {
 	return gl::Shader::create(content, type);
+}
+
+Font* GLBackend::createFont(const char* path)
+{
+    gl::Font *font = new gl::Font;
+    font->create(path);
+    return font;
 }
 
 }
