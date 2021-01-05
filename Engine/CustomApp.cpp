@@ -17,21 +17,21 @@ GLenum error = GL_NO_ERROR;
 void CustomApp::initialize(Window& window, GraphicBackend& backend)
 {
 	// INIT TEXTURE BACKGROUND
-	Image image = Image::load("data/textureBase.jpg");
+	Image image = Image::load("../asset/textureBase.jpg");
 	ASSERT(image.width == WIDTH, "incorrect width");
 	ASSERT(image.height == HEIGHT, "incorrect height");
 	texture = backend.createTexture(image.width, image.height, image.bytes.data());
 
 	// INIT TEXTURE CHARACTER
-	Image imageChar = Image::load("data/textureBase.jpg");
+	Image imageChar = Image::load("../asset/textureBase.jpg");
 	ASSERT(imageChar.width == WIDTH, "incorrect width");
 	ASSERT(imageChar.height == HEIGHT, "incorrect height");
 	textureChar = backend.createTexture(imageChar.width, imageChar.height, imageChar.bytes.data());
 
 	// INIT shaders
 	ShaderInfo info {};
-	info.vertex = backend.createShader(loadFromFile("./data/shaders/shader.vert").c_str(), ShaderType::VERTEX_SHADER);
-	info.frag = backend.createShader(loadFromFile("./data/shaders/shader.frag").c_str(), ShaderType::FRAGMENT_SHADER);
+	info.vertex = backend.createShader(loadFromFile("../asset/shaders/shader.vert").c_str(), ShaderType::VERTEX_SHADER);
+	info.frag = backend.createShader(loadFromFile("../asset/shaders/shader.frag").c_str(), ShaderType::FRAGMENT_SHADER);
 	Uniform uniform;
 	uniform.name = "u_Color";
 	uniform.shaderType = ShaderType::FRAGMENT_SHADER;

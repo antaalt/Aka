@@ -1,9 +1,9 @@
-[submodule "Engine/libs/geometry"]
-	path = Engine/libs/geometry
+[submodule "lib/geometry"]
+	path = lib/geometry
 	url = git@github.com:antaalt/geometry.git
-[submodule "Engine/libs/imgui"]
-	path = Engine/libs/imgui
+[submodule "lib/imgui"]
+	path = lib/imgui
 	url = git@github.com:ocornut/imgui.git
-[submodule "Engine/libs/stb"]
-	path = Engine/libs/stb
+[submodule "lib/stb"]
+	path = lib/stb
 	url = git@github.com:nothings/stb.git
