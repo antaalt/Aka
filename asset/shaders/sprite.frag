@@ -1,17 +1,11 @@
-#version 330
+#version 330 core
+in vec2 TexCoords;
+out vec4 color;
 
-precision highp float;
-
-in vec2 v_uv;
-
-//uniform sampler2D u_Foreground;
-uniform vec4 u_Color;
-
-out vec4 FragColor;
+uniform sampler2D image;
+uniform vec3 spriteColor;
 
 void main()
 {
-	FragColor = u_Color;//texture(u_Foreground, v_uv);
-	if (FragColor.a == 0.0)
-		discard;
-}
+    color = vec4(spriteColor, 1.0) * texture(image, TexCoords);
+} 

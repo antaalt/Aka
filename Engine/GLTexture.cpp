@@ -34,6 +34,11 @@ void Texture::destroy()
 	m_textureID = 0;
 }
 
+void Texture::bind() const
+{
+	glBindTexture(GL_TEXTURE_2D, m_textureID);
+}
+
 Texture::ID Texture::getID()
 {
 	return m_textureID;

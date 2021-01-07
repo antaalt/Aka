@@ -66,11 +66,17 @@
     <ClCompile Include="GLShader.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="Font.cpp">
+    <ClCompile Include="SpriteRenderer.cpp">
       <Filter>Fichiers sources\Graphic</Filter>
     </ClCompile>
-    <ClCompile Include="GLFont.cpp">
+    <ClCompile Include="GLSpriteRenderer.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="GLFontRenderer.cpp">
+      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="FontRenderer.cpp">
+      <Filter>Fichiers sources\Graphic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -116,13 +122,19 @@
     <ClInclude Include="Framebuffer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
-    <ClInclude Include="Font.h">
-      <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
-    <ClInclude Include="GLFont.h">
+    <ClInclude Include="GLShader.h">
       <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="GLShader.h">
+    <ClInclude Include="SpriteRenderer.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="GLSpriteRenderer.h">
+      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="FontRenderer.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="GLFontRenderer.h">
       <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
     </ClInclude>
   </ItemGroup>

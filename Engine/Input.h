@@ -43,6 +43,10 @@ enum class Key {
 	Space = GLFW_KEY_SPACE,
 	BackSpace = GLFW_KEY_BACKSPACE,
 	Tab = GLFW_KEY_TAB,
+	ArrowLeft = GLFW_KEY_LEFT,
+	ArrowRight = GLFW_KEY_RIGHT,
+	ArrowUp = GLFW_KEY_UP,
+	ArrowDown = GLFW_KEY_DOWN,
 };
 
 enum class Button {

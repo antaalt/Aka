@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Font.h"
+#include "FontRenderer.h"
 #include "GLBackend.h"
 #include "GLShader.h"
 
 namespace app {
 namespace gl {
 
-class Font : public app::Font
+class FontRenderer : public app::FontRenderer
 {
 public:
 	void destroy() override;

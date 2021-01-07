@@ -14,6 +14,8 @@ public:
 	void create(uint32_t width, uint32_t height, const void* data) override;
 	void destroy() override;
 
+	void bind() const override;
+
 	ID getID() override;
 private:
 	uint32_t m_width;

@@ -5,7 +5,8 @@
 #include "GLShader.h"
 #include "GLTexture.h"
 #include "GLFramebuffer.h"
-#include "GLFont.h"
+#include "GLFontRenderer.h"
+#include "GLSpriteRenderer.h"
 
 GLenum glCheckError_(const char* file, int line)
 {
@@ -61,9 +62,9 @@ void GLBackend::destroy()
 	glBindVertexArray(0);
 }
 
-void GLBackend::clear()
+void GLBackend::clear(const color4f& color)
 {
-	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClearColor(color.r, color.g, color.b, color.a);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -92,11 +93,18 @@ ShaderID GLBackend::createShader(const char* content, ShaderType type)
 	return gl::Shader::create(content, type);
 }
 
-Font* GLBackend::createFont(const char* path)
+FontRenderer* GLBackend::createFont(const char* path)
 {
-    gl::Font *font = new gl::Font;
+    gl::FontRenderer*font = new gl::FontRenderer;
     font->create(path);
     return font;
+}
+
+SpriteRenderer* GLBackend::createSprite()
+{
+    gl::SpriteRenderer* sprite = new gl::SpriteRenderer;
+    sprite->create();
+    return sprite;
 }
 
 }

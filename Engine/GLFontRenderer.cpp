@@ -1,9 +1,9 @@
-#include "GLFont.h"
+#include "GLFontRenderer.h"
 
 namespace app {
 namespace gl {
 
-void Font::destroy()
+void FontRenderer::destroy()
 {
     for (unsigned char c = 0; c < 128; c++)
         glDeleteTextures(1, &m_characters[c].textureID);
@@ -15,14 +15,14 @@ void Font::destroy()
     m_vbo = 0;
 }
 
-void Font::render(const std::string& text, float x, float y, float scale, color3f color)
+void FontRenderer::render(const std::string& text, float x, float y, float scale, color3f color)
 {
     // Enable blending
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_shader.use();
-    m_shader.set<mat4f>("projection", mat4f::orthographic(m_y, m_height, m_x, m_width, -1.f, 1.f));
+    m_shader.set<mat4f>("projection", mat4f::orthographic((float)m_y, (float)m_height, (float)m_x, (float)m_width, -1.f, 1.f));
     m_shader.set<vec3f>("textColor", vec3f(color.x, color.y, color.z));
 
     glActiveTexture(GL_TEXTURE0);
@@ -65,7 +65,7 @@ void Font::render(const std::string& text, float x, float y, float scale, color3
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Font::createBackend(FT_Face face)
+void FontRenderer::createBackend(FT_Face face)
 {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
 
@@ -95,8 +95,8 @@ void Font::createBackend(FT_Face face)
         // set texture options
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         // now store character for later use
         m_characters[c] = {
             vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows),

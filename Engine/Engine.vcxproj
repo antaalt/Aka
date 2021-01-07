@@ -148,13 +148,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CustomApp.cpp" />
-    <ClCompile Include="Font.cpp" />
-    <ClCompile Include="GLFont.cpp" />
+    <ClCompile Include="FontRenderer.cpp" />
+    <ClCompile Include="GLFontRenderer.cpp" />
     <ClCompile Include="GLFramebuffer.cpp" />
     <ClCompile Include="GLShader.cpp" />
+    <ClCompile Include="GLSpriteRenderer.cpp" />
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GLBackend.cpp" />
@@ -162,15 +164,17 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="CustomApp.h" />
-    <ClInclude Include="Font.h" />
+    <ClInclude Include="FontRenderer.h" />
     <ClInclude Include="Framebuffer.h" />
-    <ClInclude Include="GLFont.h" />
+    <ClInclude Include="GLFontRenderer.h" />
     <ClInclude Include="GLFramebuffer.h" />
     <ClInclude Include="GLShader.h" />
+    <ClInclude Include="GLSpriteRenderer.h" />
     <ClInclude Include="GLTexture.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Geometry.h" />

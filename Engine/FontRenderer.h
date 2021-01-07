@@ -14,20 +14,22 @@ struct Character {
 	uint32_t   advance;   // Offset to advance to next glyph
 };
 
-class Font
+class FontRenderer
 {
 public:
 	void create(const char* path);
 	virtual void destroy() = 0;
 
-	void viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+	void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height);
 	virtual void render(const std::string& text, float x, float y, float scale, color3f color) = 0;
+	vec2i size(const std::string& text);
 
 protected:
 	virtual void createBackend(FT_Face face) = 0;
 
 protected:
-	uint32_t m_x, m_y, m_width, m_height;
+	int32_t m_x, m_y;
+	uint32_t m_width, m_height;
 	Character m_characters[128];
 };
 

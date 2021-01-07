@@ -1,4 +1,4 @@
-#include "Font.h"
+#include "FontRenderer.h"
 
 #include <stdexcept>
 
@@ -6,7 +6,7 @@
 
 namespace app {
 
-void Font::create(const char* path)
+void FontRenderer::create(const char* path)
 {
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
@@ -35,12 +35,24 @@ void Font::create(const char* path)
     stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);*/
 }
 
-void Font::viewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+void FontRenderer::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
 {
     m_x = x;
     m_y = y;
     m_width = width;
     m_height = height;
+}
+
+vec2i FontRenderer::size(const std::string& text)
+{
+    vec2i size(0);
+    for (const char& c : text)
+    {
+        const Character& ch = m_characters[c];
+        size.x += (ch.advance >> 6); // bitshift by 6 to get value in pixels (2^6 = 64)
+        size.y = max(size.y, ch.size.y);
+    }
+    return size;
 }
 
 }

@@ -133,4 +133,9 @@ void Window::run(const Window::Config& config)
 	window.loop();
 }
 
+void Window::setSizeLimits(int32_t minWidth, int32_t minHeight, int32_t maxWidth, int32_t maxHeight)
+{
+	glfwSetWindowSizeLimits(m_window, minWidth, minHeight, maxWidth, maxHeight);
+}
+
 }

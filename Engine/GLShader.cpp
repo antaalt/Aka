@@ -108,7 +108,7 @@ void Shader::setFloat4(const char* name, const vec4f& value)
 
 void Shader::setMat4(const char* name, const mat4f& value)
 {
-	glUniformMatrix4fv(getUniformLocation(name), 1, GL_TRUE, &value.cols[0].x);
+	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &value.cols[0].x);
 }
 
 ShaderID Shader::create(const char* content, ShaderType type)

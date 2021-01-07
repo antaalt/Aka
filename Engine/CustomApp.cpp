@@ -3,101 +3,119 @@
 #include "Platform.h"
 #include "Image.h"
 #include "Input.h"
-#include "GLShader.h"
 
 #include <iostream>
 
 namespace app {
 
-Texture* texture, *textureChar;
-Shader *shader;
-Font* font;
-const uint32_t WIDTH = 567, HEIGHT = 388;
+GLuint framebufferID;
+Texture* background, *character, *renderTarget;
+FontRenderer* font;
+SpriteRenderer* sprite;
+
+const uint32_t WIDTH = 320, HEIGHT = 180;
+const uint32_t CHAR_WIDTH = 20, CHAR_HEIGHT = 30;
 GLenum error = GL_NO_ERROR;
+
+vec2f charPosition;
 
 void CustomApp::initialize(Window& window, GraphicBackend& backend)
 {
-	// INIT TEXTURE BACKGROUND
-	Image image = Image::load("../asset/textureBase.jpg");
-	ASSERT(image.width == WIDTH, "incorrect width");
-	ASSERT(image.height == HEIGHT, "incorrect height");
-	texture = backend.createTexture(image.width, image.height, image.bytes.data());
+	{
+		// INIT TEXTURE BACKGROUND
+		Image image = Image::load("../asset/textures/background.png");
+		ASSERT(image.width == WIDTH, "incorrect width");
+		ASSERT(image.height == HEIGHT, "incorrect height");
+		background = backend.createTexture(image.width, image.height, image.bytes.data());
+	}
+	{
+		// INIT SPRITE CHARACTER
+		Image image = Image::load("../asset/textures/character.png");
+		ASSERT(image.width == CHAR_WIDTH, "incorrect width");
+		ASSERT(image.height == CHAR_HEIGHT, "incorrect height");
+		character = backend.createTexture(image.width, image.height, image.bytes.data());
+	}
 
-	// INIT TEXTURE CHARACTER
-	Image imageChar = Image::load("../asset/textureBase.jpg");
-	ASSERT(imageChar.width == WIDTH, "incorrect width");
-	ASSERT(imageChar.height == HEIGHT, "incorrect height");
-	textureChar = backend.createTexture(imageChar.width, imageChar.height, imageChar.bytes.data());
+	// INIT FRAMEBUFFER RENDER TARGET
+	renderTarget = backend.createTexture(WIDTH, HEIGHT, nullptr);
 
-	// INIT shaders
-	ShaderInfo info {};
-	info.vertex = backend.createShader(loadFromFile("../asset/shaders/shader.vert").c_str(), ShaderType::VERTEX_SHADER);
-	info.frag = backend.createShader(loadFromFile("../asset/shaders/shader.frag").c_str(), ShaderType::FRAGMENT_SHADER);
-	Uniform uniform;
-	uniform.name = "u_Color";
-	uniform.shaderType = ShaderType::FRAGMENT_SHADER;
-	uniform.type = UniformType::Vec4;
-	info.uniforms.push_back(uniform);
-	shader = backend.createProgram(info);
-	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
+	// INIT FONT
+	font = backend.createFont("../asset/font/Espera-Bold.ttf");
 
-	font = backend.createFont("../asset/font/arial.ttf");
+	// INIT FRAMEBUFFER
+	glGenFramebuffers(1, &framebufferID);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTarget->getID(), 0);
+	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
+
+	// INIT SPRITE RENDERING
+	sprite = backend.createSprite();
+
+	window.setSizeLimits(WIDTH, HEIGHT, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	charPosition.x = WIDTH / 2.f;
+	charPosition.y = HEIGHT / 2.f;
 }
 
 void CustomApp::destroy(GraphicBackend& backend)
 {
-	delete texture;
-	delete textureChar;
-	delete shader;
+	renderTarget->destroy();
+	background->destroy();
+	character->destroy();
+	sprite->destroy();
+	font->destroy();
+	glDeleteFramebuffers(1, &framebufferID);
 }
 
 void CustomApp::update(GraphicBackend& backend)
 {
+	charPosition.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
+	charPosition.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
 }
-
+// TODO
+// - Add time component & animated sprite
+// - SpriteRenderer & FontRenderer are both component. Create class Font & Sprite
+// - Hide framebuffer impl
+// - Asset class
+// - IO class
 void CustomApp::render(GraphicBackend& backend)
 {
-	if (input::pressed(input::Key::Space))
-		glClearColor(1.f, 0.f, 0.f, 1.f);
-	else
-		glClearColor(0.f, 0.f, 1.f, 1.f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	static int frame = 0;
-	std::cout << "Frame " << frame++ << " " << input::pressed(input::Button::Button1) << std::endl;
+	static uint32_t frame = 0;
+	std::cout << "FRAME " << frame++ << std::endl;
 
 
-	// INIT FRAMEBUFFER
-	static GLuint framebufferID = 0;
-	if(framebufferID == 0)
-		glGenFramebuffers(1, &framebufferID);
+	backend.viewport(0, 0, WIDTH, HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture->getID(), 0);
-	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not create");
-	backend.viewport(0, 0, screenWidth(), screenHeight());
-	// Can do stuff in framebuffer (will update texture)
+	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
+	// draw background
+	sprite->viewport(0, 0, WIDTH, HEIGHT);
+	sprite->render(*background, vec2f(0), vec2f(WIDTH, HEIGHT), radianf(0), color3f(1,1,1));
+	sprite->render(*character, charPosition, vec2f(CHAR_WIDTH, CHAR_HEIGHT), radianf(0), color3f(1, 1, 1));
 
+	// Blit to main buffer
+	uint32_t widthRatio = screenWidth() / WIDTH;
+	uint32_t heightRatio = screenHeight() / HEIGHT;
+	uint32_t ratio = min(widthRatio, heightRatio);
+	uint32_t scaledWidth = ratio * WIDTH;
+	uint32_t scaledHeight = ratio * HEIGHT;
+	uint32_t w = (screenWidth() - scaledWidth) / 2;
+	uint32_t h = (screenHeight() - scaledHeight) / 2;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	backend.viewport(0, 0, screenWidth(), screenHeight());
+	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, WIDTH, HEIGHT, 0, 0, screenWidth() - 10, screenHeight() - 10, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, WIDTH, HEIGHT, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// Draw texture to mainbuffer
-	backend.viewport((int32_t)input::mouse().x, (int32_t)(screenHeight() - input::mouse().y), 50, 50);
-	shader->use();
-	if (input::pressed(input::Button::Button1))
-		shader->set<vec4f>("u_Color", vec4f( 0.0f, 1.f, 0.0f, 1.0f ));
-	else if (input::pressed(input::Button::Button2))
-		shader->set<vec4f>("u_Color", vec4f( 1.0f, 0.f, 0.0f, 1.0f ));
-	else
-		shader->set<vec4f>("u_Color", vec4f( 0.0f, 0.f, 1.0f, 1.0f ));
-
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
+	// Draw text
 	backend.viewport(0, 0, screenWidth(), screenHeight());
 	font->viewport(0, 0, screenWidth(), screenHeight());
 	static float scale = 1.f;
 	scale += input::scroll().y;
-	font->render("Hello world !", 25.f, 25.f, scale, color3f(0.f, 0.5f, 1.f));
+	const char* str = "Hello world !";
+	vec2i size = font->size(str) * (int)scale;
+	font->render(str, (float)((int)screenWidth() / 2 - size.x / 2), (float)((int)screenHeight() / 2 - size.y / 2), scale, color3f(0.1f, 0.1f, 0.1f));
 
 	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
 }
