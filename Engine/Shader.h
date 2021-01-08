@@ -1,7 +1,7 @@
 #pragma once
 
-#include <fstream>
 #include <vector>
+#include <map>
 
 #include "Geometry.h"
 
@@ -28,6 +28,8 @@ enum class UniformType {
 };
 
 using ShaderID = uint32_t; // TODO use strict type
+using ProgramID = uint32_t; // TODO use strict type
+using UniformID = int32_t;
 
 struct Uniform {
 	UniformType type; // type of uniform (unused)
@@ -43,40 +45,32 @@ struct ShaderInfo {
 };
 
 struct Shader {
-	virtual void create(const ShaderInfo& info) = 0;
-	virtual void destroy() = 0;
+	Shader();
+	Shader(const Shader&) = delete;
+	const Shader& operator=(const Shader&) = delete;
+	~Shader();
 
-	virtual void use() = 0;
+	static ShaderID create(const char* content, ShaderType type);
+
+	void create(const ShaderInfo& info);
+	void destroy();
+
+	void use();
+
+	UniformID getUniformLocation(const char* name);
 
 	template <typename T>
 	void set(const char* name, T value);
 
-	virtual void setFloat1(const char* name, float value) = 0;
-	virtual void setFloat2(const char* name, const vec2f &value) = 0;
-	virtual void setFloat3(const char* name, const vec3f &value) = 0;
-	virtual void setFloat4(const char* name, const vec4f &value) = 0;
-	virtual void setMat4(const char* name, const mat4f &value) = 0;
-};
+	void setFloat1(const char* name, float value);
+	void setFloat2(const char* name, const vec2f &value);
+	void setFloat3(const char* name, const vec3f &value);
+	void setFloat4(const char* name, const vec4f &value);
+	void setMatrix4(const char* name, const mat4f &value, bool transpose = false);
 
-template <>
-inline void Shader::set(const char* name, float value) {
-	setFloat1(name, value);
-}
-template <>
-inline void Shader::set(const char* name, vec2f value) {
-	setFloat2(name, value);
-}
-template <>
-inline void Shader::set(const char* name, vec3f value) {
-	setFloat3(name, value);
-}
-template <>
-inline void Shader::set(const char* name, vec4f value) {
-	setFloat4(name, value);
-}
-template <>
-inline void Shader::set(const char* name, mat4f value) {
-	setMat4(name, value);
-}
+private:
+	ProgramID m_programID;
+	std::map<std::string, UniformID> m_uniforms;
+};
 
 }

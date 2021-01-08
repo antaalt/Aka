@@ -13,7 +13,7 @@ int main()
 	app::Window::Config cfg;
 	cfg.width = 1280;
 	cfg.height = 720;
-	cfg.name = "App";
+	cfg.name = "Game";
 	cfg.api = app::GraphicBackend::API::OPENGL;
 	cfg.app = &app;
 

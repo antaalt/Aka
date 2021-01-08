@@ -4,36 +4,42 @@
 #include "Shader.h"
 #include "Framebuffer.h"
 #include "FontRenderer.h"
-#include "SpriteRenderer.h"
 
 namespace app {
 
-struct GraphicBackend {
+uint32_t checkError_(const char* file, int line);
+#define checkError() checkError_(__FILE__, __LINE__) 
+
+struct Viewport {
+	int32_t x;
+	int32_t y;
+	uint32_t width;
+	uint32_t height;
+};
+
+class GraphicBackend {
+public:
 	enum class API {
 		OPENGL,
 		DIRECTX
 	};
-	struct Config {
-		API api;
-	};
-
 	API api() const { m_api; }
-
 public:
-	virtual void initialize() = 0;
-	virtual void destroy() = 0;
+	void initialize();
+	void destroy();
 
-	virtual void clear(const color4f& color) = 0;
+	void clear(const color4f& color);
 
-	virtual void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height) = 0;
+	void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height);
+	const Viewport& viewport() const;
 
-	virtual Texture *createTexture(uint32_t width, uint32_t height, const uint8_t* data) = 0;
-	virtual Shader * createProgram(const ShaderInfo& info) = 0;
-	virtual ShaderID createShader(const char* shader, ShaderType type) = 0;
-	virtual FontRenderer* createFontRenderer() = 0;
-	virtual SpriteRenderer* createSpriteRenderer() = 0;
+	Texture *createTexture(uint32_t width, uint32_t height, const uint8_t* data);
+	Shader *createProgram(const ShaderInfo& info);
+	ShaderID createShader(const char* shader, ShaderType type);
+	FontRenderer* createFontRenderer();
 private:
 	API m_api;
+	Viewport m_viewport;
 };
 
 }

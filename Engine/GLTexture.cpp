@@ -1,11 +1,10 @@
-#include "GLTexture.h"
+#include "Texture.h"
+
+#include "Platform.h"
 
 namespace app {
-namespace gl {
 
 Texture::Texture() :
-	m_width(0),
-	m_height(0),
 	m_textureID(0)
 {
 }
@@ -39,10 +38,9 @@ void Texture::bind() const
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
-Texture::ID Texture::getID()
+TextureID Texture::getID()
 {
 	return m_textureID;
 }
 
-};
 };

@@ -5,21 +5,23 @@
 #include "Input.h"
 #include "Time.h"
 #include "System.h"
+#include "SpriteAnimatorComponent.h"
 
 #include <iostream>
 
 namespace app {
 
 GLuint framebufferID;
-AnimatedSprite animatedCharacter;
+Sprite character;
 Sprite background;
+SpriteAnimatorComponent characterComponent;
+SpriteAnimatorComponent backgroundComponent;
 Texture* renderTarget;
 FontRenderer* fontRenderer;
-SpriteRenderer* spriteRenderer;
 Font font24, font48, font96;
 
 const uint32_t BACKGROUND_WIDTH = 320, BACKGROUND_HEIGHT = 180;
-const uint32_t CHAR_WIDTH = 20, CHAR_HEIGHT = 30;
+const uint32_t CHAR_WIDTH = 16, CHAR_HEIGHT = 32;
 GLenum error = GL_NO_ERROR;
 
 vec2f charPosition;
@@ -28,31 +30,47 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 {
 	{
 		// INIT TEXTURE BACKGROUND
-		Image image = Image::load(Asset::path("textures/background.png"));
+		Image image = Image::load(Asset::path("textures/background/background.png"));
 		ASSERT(image.width == BACKGROUND_WIDTH, "incorrect width");
 		ASSERT(image.height == BACKGROUND_HEIGHT, "incorrect height");
-		background.texture = backend.createTexture(image.width, image.height, image.bytes.data());
+
+		Sprite::Animation animation;
+		animation.name = "default";
+		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
+		background.animations.push_back(animation);
 		background.position = vec2f(0);
 		background.size = vec2f(BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
 		background.rotation = radianf(0);
+		
+		backgroundComponent.set(&background);
+		backgroundComponent.create(backend);
+		backgroundComponent.play("default");
 	}
 	{
 		// INIT SPRITE CHARACTER
-		animatedCharacter.position = vec2f(BACKGROUND_WIDTH / 2.f, BACKGROUND_HEIGHT / 2.f);
-		animatedCharacter.size = vec2f(CHAR_WIDTH, CHAR_HEIGHT);
-		animatedCharacter.rotation = degreef(0);
+		// TODO move initialisation in SpriteAnimator & parse ase sprite directly ?
+		// TODO load gif ?
+		Sprite::Animation animation;
+		animation.name = "idle";
 		{
-			Image image = Image::load(Asset::path("textures/character00.png"));
-			animatedCharacter.addSprite(backend.createTexture(CHAR_WIDTH, CHAR_HEIGHT, image.bytes.data()), 500);
+			Image image = Image::load(Asset::path("textures/player/player1.png"));
+			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
 		{
-			Image image = Image::load(Asset::path("textures/character01.png"));
-			animatedCharacter.addSprite(backend.createTexture(CHAR_WIDTH, CHAR_HEIGHT, image.bytes.data()), 500);
+			Image image = Image::load(Asset::path("textures/player/player2.png"));
+			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
 		{
-			Image image = Image::load(Asset::path("textures/character02.png"));
-			animatedCharacter.addSprite(backend.createTexture(CHAR_WIDTH, CHAR_HEIGHT, image.bytes.data()), 500);
+			Image image = Image::load(Asset::path("textures/player/player3.png"));
+			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
+		character.animations.push_back(animation);
+		character.position = vec2f(BACKGROUND_WIDTH / 2.f, BACKGROUND_HEIGHT / 2.f);
+		character.size = vec2f(CHAR_WIDTH, CHAR_HEIGHT);
+		character.rotation = degreef(0);
+		characterComponent.set(&character);
+		characterComponent.create(backend);
+		characterComponent.play("idle");
 	}
 
 	// INIT FRAMEBUFFER RENDER TARGET
@@ -70,48 +88,45 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTarget->getID(), 0);
 	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 
-	// INIT SPRITE RENDERING
-	spriteRenderer = backend.createSpriteRenderer();
-
 	window.setSizeLimits(BACKGROUND_WIDTH, BACKGROUND_HEIGHT, GLFW_DONT_CARE, GLFW_DONT_CARE);
 }
 
 void Game::destroy(GraphicBackend& backend)
 {
 	renderTarget->destroy();
-	spriteRenderer->destroy();
+	characterComponent.destroy(backend);
 	fontRenderer->destroyFont(font24);
 	fontRenderer->destroyFont(font48);
 	fontRenderer->destroyFont(font96);
 	fontRenderer->destroy();
-	background.texture->destroy();
-	for(Texture *texture : animatedCharacter.textures)
-		texture->destroy();
+	background.animations[0].frames[0].texture->destroy();
+	for(Sprite::Animation &animation: character.animations)
+		for (Sprite::Frame& frame : animation.frames)
+			frame.texture->destroy();
 	glDeleteFramebuffers(1, &framebufferID);
 }
 
 void Game::update(GraphicBackend& backend)
 {
-	animatedCharacter.position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
-	animatedCharacter.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
-	animatedCharacter.rotation = degreef(Time::now() / 100.f);
+	character.position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
+	character.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+	//character.rotation = degreef(Time::now() / 100.f);
+	characterComponent.update();
+	backgroundComponent.update();
 }
 // TODO
 // - Hide framebuffer impl
-// - Asset class
 void Game::render(GraphicBackend& backend)
 {
 	static uint32_t frame = 0;
-	std::cout << "FRAME " << frame++ << " " << Time::now() << std::endl;
-
+	//std::cout << "FRAME " << frame++ << " " << Time::now() << std::endl;
 
 	backend.viewport(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
-	spriteRenderer->viewport(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
-	spriteRenderer->render(background);
-	spriteRenderer->render(animatedCharacter.getSprite(Time::now()));
+	backgroundComponent.render(backend);
+	characterComponent.render(backend);
 
 	// Blit to main buffer
 	uint32_t widthRatio = screenWidth() / BACKGROUND_WIDTH;

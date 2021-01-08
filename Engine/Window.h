@@ -39,7 +39,7 @@ private:
 	Application* m_app;
 	uint32_t m_width, m_height;
 	GLFWwindow* m_window;
-	GraphicBackend *m_backend;
+	GraphicBackend m_backend;
 };
 
 }

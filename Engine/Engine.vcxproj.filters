@@ -22,9 +22,6 @@
     <Filter Include="Fichiers sources\Graphic\OpenGL">
       <UniqueIdentifier>{7a172811-2f88-4549-8bd7-86403f09b682}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Fichiers d%27en-tête\Graphic\OpenGL">
-      <UniqueIdentifier>{53239eee-2227-4bb3-9f79-11f864a6b97b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Fichiers sources\Window">
       <UniqueIdentifier>{773fde24-371b-4632-bbf2-083e628fe3fd}</UniqueIdentifier>
     </Filter>
@@ -36,6 +33,27 @@
     </Filter>
     <Filter Include="Fichiers d%27en-tête\Game">
       <UniqueIdentifier>{6a419454-bb17-4835-9daf-1f79d916815c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Graphic\D3D">
+      <UniqueIdentifier>{e4441ca5-077e-4395-9082-a7e4a54b6f5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\System">
+      <UniqueIdentifier>{ea2e8550-c2d4-45c0-b035-12931fbcc433}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Component">
+      <UniqueIdentifier>{87490d24-343a-4a80-970c-666f1d6d456a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\System">
+      <UniqueIdentifier>{a809367f-1003-4bbd-85b8-3b85096a030c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Component">
+      <UniqueIdentifier>{021e0be8-370b-4b90-8547-3875f4d078cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Entity">
+      <UniqueIdentifier>{31edf191-9177-409b-8c69-9d677936e29f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Entity">
+      <UniqueIdentifier>{155b6faf-4535-4b0f-98e6-59bdda5cc4ca}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -60,26 +78,8 @@
     <ClCompile Include="GLShader.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="SpriteRenderer.cpp">
-      <Filter>Fichiers sources\Graphic</Filter>
-    </ClCompile>
-    <ClCompile Include="GLSpriteRenderer.cpp">
-      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="GLFontRenderer.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
-    </ClCompile>
-    <ClCompile Include="FontRenderer.cpp">
-      <Filter>Fichiers sources\Graphic</Filter>
-    </ClCompile>
-    <ClCompile Include="Time.cpp">
-      <Filter>Fichiers sources\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Image.cpp">
-      <Filter>Fichiers sources\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="System.cpp">
-      <Filter>Fichiers sources\Window</Filter>
     </ClCompile>
     <ClCompile Include="Game.cpp">
       <Filter>Fichiers sources\Game</Filter>
@@ -87,36 +87,36 @@
     <ClCompile Include="World.cpp">
       <Filter>Fichiers sources\Game</Filter>
     </ClCompile>
+    <ClCompile Include="System.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Image.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Time.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>Fichiers sources\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteAnimatorComponent.cpp">
+      <Filter>Fichiers sources\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Platform.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="GraphicBackend.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
-    <ClInclude Include="GLFramebuffer.h">
-      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
-    </ClInclude>
-    <ClInclude Include="GLBackend.h">
-      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
-    <ClInclude Include="GLTexture.h">
-      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="Window.h">
       <Filter>Fichiers d%27en-tête\Window</Filter>
     </ClInclude>
     <ClInclude Include="Input.h">
-      <Filter>Fichiers d%27en-tête\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Application.h">
       <Filter>Fichiers d%27en-tête\Window</Filter>
     </ClInclude>
     <ClInclude Include="Shader.h">
@@ -125,35 +125,38 @@
     <ClInclude Include="Framebuffer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
-    <ClInclude Include="GLShader.h">
-      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
-    </ClInclude>
-    <ClInclude Include="SpriteRenderer.h">
-      <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
-    <ClInclude Include="GLSpriteRenderer.h">
-      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="FontRenderer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
-    <ClInclude Include="GLFontRenderer.h">
-      <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
-    </ClInclude>
-    <ClInclude Include="Time.h">
-      <Filter>Fichiers d%27en-tête\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Image.h">
-      <Filter>Fichiers d%27en-tête\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="System.h">
-      <Filter>Fichiers d%27en-tête\Window</Filter>
     </ClInclude>
     <ClInclude Include="Game.h">
       <Filter>Fichiers d%27en-tête\Game</Filter>
     </ClInclude>
     <ClInclude Include="World.h">
       <Filter>Fichiers d%27en-tête\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Component.h">
+      <Filter>Fichiers d%27en-tête\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
+    </ClInclude>
+    <ClInclude Include="System.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Time.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform.h">
+      <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>Fichiers d%27en-tête\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteAnimatorComponent.h">
+      <Filter>Fichiers d%27en-tête\Component</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

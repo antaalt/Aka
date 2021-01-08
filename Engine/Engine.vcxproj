@@ -148,16 +148,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="FontRenderer.cpp" />
     <ClCompile Include="GLFontRenderer.cpp" />
     <ClCompile Include="GLFramebuffer.cpp" />
     <ClCompile Include="GLShader.cpp" />
-    <ClCompile Include="GLSpriteRenderer.cpp" />
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="SpriteAnimatorComponent.cpp" />
     <ClCompile Include="System.cpp" />
-    <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="main.cpp" />
@@ -166,25 +165,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Component.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="FontRenderer.h" />
     <ClInclude Include="Framebuffer.h" />
-    <ClInclude Include="GLFontRenderer.h" />
-    <ClInclude Include="GLFramebuffer.h" />
-    <ClInclude Include="GLShader.h" />
-    <ClInclude Include="GLSpriteRenderer.h" />
-    <ClInclude Include="GLTexture.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="SpriteAnimatorComponent.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="GraphicBackend.h" />
-    <ClInclude Include="GLBackend.h" />
     <ClInclude Include="Platform.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>

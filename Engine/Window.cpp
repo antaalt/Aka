@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "GLBackend.h"
+#include "GraphicBackend.h"
 #include "Application.h"
 #include "Input.h"
 
@@ -93,21 +93,20 @@ Window::Window(const Config& config) :
 	switch (config.api)
 	{
 	case GraphicBackend::API::OPENGL:
-		m_backend = new GLBackend();
+		m_backend.initialize();
 		break;
 	default:
 		throw std::runtime_error("Not implemented");
 		break;
 	}
-	m_backend->initialize();
-	m_app->initialize(*this, *m_backend);
+	m_app->initialize(*this, m_backend);
 	m_app->resize(m_width, m_height);
 }
 
 Window::~Window()
 {
-	m_app->destroy(*m_backend);
-	delete m_backend;
+	m_app->destroy(m_backend);
+	m_backend.destroy();
 	glfwTerminate();
 }
 
@@ -119,8 +118,8 @@ void Window::resize(uint32_t width, uint32_t height)
 void Window::loop()
 {
 	do {
-		m_app->update(*m_backend);
-		m_app->render(*m_backend);
+		m_app->update(m_backend);
+		m_app->render(m_backend);
 		input::update();
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();

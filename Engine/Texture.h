@@ -4,17 +4,24 @@
 
 namespace app {
 
+using TextureID = uint32_t;
+
 class Texture
 {
 public:
-	using ID = uint32_t;
-public:
-	virtual void create(uint32_t width, uint32_t height, const void* data) = 0;
-	virtual void destroy() = 0;
+	Texture();
+	Texture(const Texture&) = delete;
+	const Texture& operator=(const Texture&) = delete;
+	~Texture();
 
-	virtual void bind() const = 0;
+	void create(uint32_t width, uint32_t height, const void* data);
+	void destroy();
 
-	virtual ID getID() = 0;
+	void bind() const;
+
+	TextureID getID();
+private:
+	TextureID m_textureID;
 };
 
 }
