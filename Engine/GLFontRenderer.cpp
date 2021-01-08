@@ -1,13 +1,34 @@
 #include "GLFontRenderer.h"
 
+#include "System.h"
+
 namespace app {
 namespace gl {
 
+void FontRenderer::create()
+{
+    // Shader
+    ShaderInfo info{};
+    info.vertex = gl::Shader::create(Asset::loadString("shaders/font.vert").c_str(), ShaderType::VERTEX_SHADER);
+    info.frag = gl::Shader::create(Asset::loadString("shaders/font.frag").c_str(), ShaderType::FRAGMENT_SHADER);
+    info.uniforms.push_back(Uniform{ UniformType::Vec3, ShaderType::FRAGMENT_SHADER, "textColor" });
+    info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "projection" });
+    m_shader.create(info);
+
+    // m_vbo for drawing
+    glGenVertexArrays(1, &m_vao);
+    glGenBuffers(1, &m_vbo);
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
 void FontRenderer::destroy()
 {
-    for (unsigned char c = 0; c < 128; c++)
-        glDeleteTextures(1, &m_characters[c].textureID);
-
     m_shader.destroy();
     glDeleteVertexArrays(1, &m_vao);
     glDeleteBuffers(1, &m_vbo);
@@ -15,7 +36,13 @@ void FontRenderer::destroy()
     m_vbo = 0;
 }
 
-void FontRenderer::render(const std::string& text, float x, float y, float scale, color3f color)
+void FontRenderer::destroyFont(const Font& font)
+{
+    for (unsigned char c = 0; c < 128; c++)
+        glDeleteTextures(1, &font.characters[c].textureID);
+}
+
+void FontRenderer::render(const Font &font, const std::string& text, float x, float y, float scale, color3f color)
 {
     // Enable blending
     glEnable(GL_BLEND);
@@ -33,7 +60,7 @@ void FontRenderer::render(const std::string& text, float x, float y, float scale
     for (const char &c : text)
     {
         // TODO check if rendering text out of screen for culling ?
-        const Character &ch = m_characters[c];
+        const Character &ch = font.characters[c];
 
         float xpos = x + ch.bearing.x * scale;
         float ypos = y - (ch.size.y - ch.bearing.y) * scale;
@@ -65,8 +92,9 @@ void FontRenderer::render(const std::string& text, float x, float y, float scale
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void FontRenderer::createBackend(FT_Face face)
+Font FontRenderer::createFontBackend(FT_Face face)
 {
+    Font font;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
 
     for (unsigned char c = 0; c < 128; c++)
@@ -98,32 +126,14 @@ void FontRenderer::createBackend(FT_Face face)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         // now store character for later use
-        m_characters[c] = {
+        font.characters[c] = {
             vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top),
             texture,
             static_cast<uint32_t>(face->glyph->advance.x)
         };
     }
-
-    // Shader
-    ShaderInfo info{};
-    info.vertex = gl::Shader::create(loadFromFile("../asset/shaders/font.vert").c_str(), ShaderType::VERTEX_SHADER);
-    info.frag = gl::Shader::create(loadFromFile("../asset/shaders/font.frag").c_str(), ShaderType::FRAGMENT_SHADER);
-    info.uniforms.push_back(Uniform{ UniformType::Vec3, ShaderType::FRAGMENT_SHADER, "textColor" });
-    info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "projection" });
-    m_shader.create(info);
-
-    // m_vbo for drawing
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    return font;
 }
 
 };

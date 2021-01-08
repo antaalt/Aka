@@ -22,8 +22,8 @@ public:
 	Texture *createTexture(uint32_t width, uint32_t height, const uint8_t *data) override;
 	Shader* createProgram(const ShaderInfo& info) override;
 	ShaderID createShader(const char* content, ShaderType type) override;
-	FontRenderer* createFont(const char* path) override;
-	SpriteRenderer* createSprite() override;
+	FontRenderer* createFontRenderer() override;
+	SpriteRenderer* createSpriteRenderer() override;
 private:
 	API m_api;
 };

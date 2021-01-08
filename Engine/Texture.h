@@ -15,10 +15,6 @@ public:
 	virtual void bind() const = 0;
 
 	virtual ID getID() = 0;
-
-private:
-	uint32_t width;
-	uint32_t height;
 };
 
 }

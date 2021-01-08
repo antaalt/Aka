@@ -25,34 +25,28 @@
     <Filter Include="Fichiers d%27en-tête\Graphic\OpenGL">
       <UniqueIdentifier>{53239eee-2227-4bb3-9f79-11f864a6b97b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Fichiers d%27en-tête\Application">
-      <UniqueIdentifier>{6a419454-bb17-4835-9daf-1f79d916815c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Fichiers sources\Application">
-      <UniqueIdentifier>{3c5a8aa8-7fa5-4780-8a99-d85ae9fee6b4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Fichiers sources\Window">
       <UniqueIdentifier>{773fde24-371b-4632-bbf2-083e628fe3fd}</UniqueIdentifier>
     </Filter>
     <Filter Include="Fichiers d%27en-tête\Window">
       <UniqueIdentifier>{7c53c8a7-59e7-493a-b8e2-ac38a86423f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers sources\Game">
+      <UniqueIdentifier>{3c5a8aa8-7fa5-4780-8a99-d85ae9fee6b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Game">
+      <UniqueIdentifier>{6a419454-bb17-4835-9daf-1f79d916815c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="CustomApp.cpp">
-      <Filter>Fichiers sources\Application</Filter>
     </ClCompile>
     <ClCompile Include="GLFramebuffer.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="GLBackend.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
-    </ClCompile>
-    <ClCompile Include="Image.cpp">
-      <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="GLTexture.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
@@ -78,6 +72,21 @@
     <ClCompile Include="FontRenderer.cpp">
       <Filter>Fichiers sources\Graphic</Filter>
     </ClCompile>
+    <ClCompile Include="Time.cpp">
+      <Filter>Fichiers sources\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Image.cpp">
+      <Filter>Fichiers sources\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="System.cpp">
+      <Filter>Fichiers sources\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Fichiers sources\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
+      <Filter>Fichiers sources\Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -89,9 +98,6 @@
     <ClInclude Include="GraphicBackend.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
-    <ClInclude Include="CustomApp.h">
-      <Filter>Fichiers d%27en-tête\Application</Filter>
-    </ClInclude>
     <ClInclude Include="GLFramebuffer.h">
       <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
     </ClInclude>
@@ -100,9 +106,6 @@
     </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
-    <ClInclude Include="Image.h">
-      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="GLTexture.h">
       <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
@@ -136,6 +139,21 @@
     </ClInclude>
     <ClInclude Include="GLFontRenderer.h">
       <Filter>Fichiers d%27en-tête\Graphic\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Time.h">
+      <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="System.h">
+      <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Fichiers d%27en-tête\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="World.h">
+      <Filter>Fichiers d%27en-tête\Game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

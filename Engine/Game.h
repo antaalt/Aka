@@ -4,7 +4,7 @@
 
 namespace app {
 
-class CustomApp : public Application
+class Game : public Application
 {
 public:
 	void initialize(Window& window, app::GraphicBackend& backend) override;

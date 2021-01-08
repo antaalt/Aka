@@ -1,6 +1,6 @@
 #include "Window.h"
 
-#include "CustomApp.h"
+#include "Game.h"
 
 // TODO use cmake
 // implement other backend
@@ -8,7 +8,7 @@
 
 int main()
 {
-	app::CustomApp app;
+	app::Game app;
 
 	app::Window::Config cfg;
 	cfg.width = 1280;

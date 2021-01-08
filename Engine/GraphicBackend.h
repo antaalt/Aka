@@ -30,8 +30,8 @@ public:
 	virtual Texture *createTexture(uint32_t width, uint32_t height, const uint8_t* data) = 0;
 	virtual Shader * createProgram(const ShaderInfo& info) = 0;
 	virtual ShaderID createShader(const char* shader, ShaderType type) = 0;
-	virtual FontRenderer* createFont(const char* path) = 0;
-	virtual SpriteRenderer* createSprite() = 0;
+	virtual FontRenderer* createFontRenderer() = 0;
+	virtual SpriteRenderer* createSpriteRenderer() = 0;
 private:
 	API m_api;
 };

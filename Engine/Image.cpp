@@ -7,12 +7,12 @@
 
 namespace app {
 
-Image Image::load(const char* name)
+Image Image::load(const Path& path)
 {
 	Image image;
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(true);
-	stbi_uc* data = stbi_load(name, &x, &y, &channel, STBI_rgb_alpha);
+	stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channel, STBI_rgb_alpha);
 	size_t size = x * y * 4;
 	image.bytes.resize(size);
 	memcpy(image.bytes.data(), data, size);

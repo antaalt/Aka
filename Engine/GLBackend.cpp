@@ -93,14 +93,14 @@ ShaderID GLBackend::createShader(const char* content, ShaderType type)
 	return gl::Shader::create(content, type);
 }
 
-FontRenderer* GLBackend::createFont(const char* path)
+FontRenderer* GLBackend::createFontRenderer()
 {
     gl::FontRenderer*font = new gl::FontRenderer;
-    font->create(path);
+    font->create();
     return font;
 }
 
-SpriteRenderer* GLBackend::createSprite()
+SpriteRenderer* GLBackend::createSpriteRenderer()
 {
     gl::SpriteRenderer* sprite = new gl::SpriteRenderer;
     sprite->create();

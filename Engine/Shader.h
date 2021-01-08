@@ -7,21 +7,6 @@
 
 namespace app {
 
-inline std::string loadFromFile(const char* path)
-{
-	std::ifstream ifs(path);
-	if (!ifs)
-		throw std::runtime_error("Could not load file " + std::string(path));
-	return std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-}
-inline std::vector<uint8_t> loadFromBinaryFile(const char* path)
-{
-	std::basic_ifstream<uint8_t> ifs(path);
-	if (!ifs)
-		throw std::runtime_error("Could not load file " + std::string(path));
-	return std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
-}
-
 enum class ShaderType {
 	VERTEX_SHADER,
 	TESS_CONTROL_SHADER,
