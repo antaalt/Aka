@@ -6,6 +6,7 @@
 #include "Time.h"
 #include "System.h"
 #include "SpriteAnimatorComponent.h"
+#include "World.h"
 
 #include <iostream>
 
@@ -19,6 +20,8 @@ SpriteAnimatorComponent backgroundComponent;
 Texture* renderTarget;
 FontRenderer* fontRenderer;
 Font font24, font48, font96;
+World world;
+Level level0;
 
 const uint32_t BACKGROUND_WIDTH = 320, BACKGROUND_HEIGHT = 180;
 const uint32_t CHAR_WIDTH = 16, CHAR_HEIGHT = 32;
@@ -28,6 +31,11 @@ vec2f charPosition;
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
+	{
+		// INIT world
+		world = World::load(Asset::path("levels/world.ogmo"));
+		level0 = Level::load(Asset::path("levels/level0.json"));
+	}
 	{
 		// INIT TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));

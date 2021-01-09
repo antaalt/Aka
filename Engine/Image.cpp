@@ -5,6 +5,8 @@
 
 #include "Platform.h"
 
+#include <stdexcept>
+
 namespace app {
 
 Image Image::load(const Path& path)
@@ -13,6 +15,8 @@ Image Image::load(const Path& path)
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(true);
 	stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channel, STBI_rgb_alpha);
+	if (data == nullptr)
+		throw std::runtime_error("Could not load image at " + path.str());
 	size_t size = x * y * 4;
 	image.bytes.resize(size);
 	memcpy(image.bytes.data(), data, size);

@@ -26,4 +26,6 @@ struct Asset {
 	static Path path(const Path& path);
 };
 
+
+
 };
