@@ -52,6 +52,8 @@ struct World
 	{
 		std::string name;
 		Image image;
+		vec2u tileSize;
+		vec2u tileCount;
 	};
 
 	std::string ogmoVersion;

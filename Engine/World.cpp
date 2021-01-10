@@ -78,6 +78,10 @@ World World::load(const Path& path)
 		tileset.name = jsonTileset["label"];
 		std::string imagePath = jsonTileset["path"];
 		tileset.image = Image::load(Path(relativePath + imagePath));
+		tileset.tileCount = vec2u(jsonTileset["tileWidth"], jsonTileset["tileHeight"]);
+		ASSERT(tileset.image.width % tileset.tileCount.x == 0, "");
+		ASSERT(tileset.image.height % tileset.tileCount.y == 0, "");
+		tileset.tileSize = vec2u(tileset.image.width / tileset.tileCount.x, tileset.image.height / tileset.tileCount.y);
 		world.tilesets.push_back(tileset);
 	}
 

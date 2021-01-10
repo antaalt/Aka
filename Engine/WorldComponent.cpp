@@ -89,6 +89,7 @@ void WorldComponent::render(GraphicBackend& backend)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	const Level::Layer* background = m_currentLevel.getLayer("Playerground");
+	const World::Tileset* atlas = m_world.getTileset(background->tileset);
 
 	// Update it for offset
 	vec2u scale = background->gridCellSize * background->gridCellCount;
@@ -96,11 +97,10 @@ void WorldComponent::render(GraphicBackend& backend)
 	model *= mat4f::translate(vec3f(m_currentLevel.offset.x + background->offset.x, m_currentLevel.offset.y + background->offset.y, 0));
 	model *= mat4f::scale(vec3f(scale.x, scale.y, 0U));
 	
-
 	m_shader.use();
 	m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().height, (float)backend.viewport().x, (float)backend.viewport().width, -1.f, 1.f));
 	m_shader.set<mat4f>("model", model);
-	m_shader.set<vec2u>("gridCountAtlas", vec2u(20,20)); // TODO not hardcoded
+	m_shader.set<vec2u>("gridCountAtlas", atlas->tileSize);
 	m_shader.set<vec2u>("gridCount", background->gridCellCount);
 	m_shader.set<color4f>("color", color4f(1.f));
 	m_shader.set<int32_t>("image", 0);
