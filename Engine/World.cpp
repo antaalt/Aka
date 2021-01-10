@@ -1,7 +1,9 @@
 #include "World.h"
 
 #include <nlohmann/json.hpp>
-#include <filesystem>
+//#include <filesystem>
+
+#include "Platform.h"
 
 namespace app {
 
@@ -17,15 +19,20 @@ Level Level::load(const Path& path)
 {
 	Level level;
 	const nlohmann::json json = nlohmann::json::parse(Asset::loadString(path));
+	level.size.x = json["width"];
+	level.size.y = json["height"];
+	level.offset.x = json["offsetX"];
+	level.offset.y = json["offsetY"];
 	const nlohmann::json& jsonLayers = json["layers"];
 	for (const nlohmann::json& jsonLayer : jsonLayers)
 	{
 		Layer layer;
 		layer.name = jsonLayer["name"];
-		layer.gridCellPosition = vec2i(jsonLayer["gridCellsX"], jsonLayer["gridCellsY"]);
+		layer.gridCellCount = vec2u(jsonLayer["gridCellsX"], jsonLayer["gridCellsY"]);
 		layer.gridCellSize = vec2u(jsonLayer["gridCellWidth"], jsonLayer["gridCellHeight"]);
 		layer.offset = vec2i(jsonLayer["offsetX"], jsonLayer["offsetY"]);
 		layer.tileset = jsonLayer["tileset"];
+		ASSERT(jsonLayer["arrayMode"].get<int>() == 0, "Only 1D array supported");
 		for (const nlohmann::json& jsonData : jsonLayer["data"])
 			layer.data.push_back(jsonData);
 		level.layers.push_back(layer);

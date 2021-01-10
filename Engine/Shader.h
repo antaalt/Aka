@@ -50,6 +50,7 @@ struct Shader {
 	const Shader& operator=(const Shader&) = delete;
 	~Shader();
 
+	static ShaderID create(const std::string &content, ShaderType type);
 	static ShaderID create(const char* content, ShaderType type);
 
 	void create(const ShaderInfo& info);
@@ -57,16 +58,26 @@ struct Shader {
 
 	void use();
 
+	ProgramID getID() const { return m_programID; }
+
 	UniformID getUniformLocation(const char* name);
 
 	template <typename T>
 	void set(const char* name, T value);
 
 	void setFloat1(const char* name, float value);
-	void setFloat2(const char* name, const vec2f &value);
-	void setFloat3(const char* name, const vec3f &value);
-	void setFloat4(const char* name, const vec4f &value);
-	void setMatrix4(const char* name, const mat4f &value, bool transpose = false);
+	void setFloat2(const char* name, float x, float y);
+	void setFloat3(const char* name, float x, float y, float z);
+	void setFloat4(const char* name, float x, float y, float z, float w);
+	void setUint1(const char* name, uint32_t value);
+	void setUint2(const char* name, uint32_t x, uint32_t y);
+	void setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z);
+	void setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w);
+	void setInt1(const char* name, int32_t value);
+	void setInt2(const char* name, int32_t x, int32_t y);
+	void setInt3(const char* name, int32_t x, int32_t y, int32_t z);
+	void setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w);
+	void setMatrix4(const char* name, const float *data, bool transpose = false);
 
 private:
 	ProgramID m_programID;

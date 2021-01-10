@@ -6,7 +6,7 @@
 #include "Time.h"
 #include "System.h"
 #include "SpriteAnimatorComponent.h"
-#include "World.h"
+#include "WorldComponent.h"
 
 #include <iostream>
 
@@ -20,8 +20,7 @@ SpriteAnimatorComponent backgroundComponent;
 Texture* renderTarget;
 FontRenderer* fontRenderer;
 Font font24, font48, font96;
-World world;
-Level level0;
+WorldComponent worldComponent;
 
 const uint32_t BACKGROUND_WIDTH = 320, BACKGROUND_HEIGHT = 180;
 const uint32_t CHAR_WIDTH = 16, CHAR_HEIGHT = 32;
@@ -33,8 +32,9 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 {
 	{
 		// INIT world
-		world = World::load(Asset::path("levels/world.ogmo"));
-		level0 = Level::load(Asset::path("levels/level0.json"));
+		worldComponent.loadWorld(Asset::path("levels/world.ogmo"));
+		worldComponent.loadLevel(Asset::path("levels/level0.json"));
+		worldComponent.create(backend);
 	}
 	{
 		// INIT TEXTURE BACKGROUND
@@ -103,6 +103,7 @@ void Game::destroy(GraphicBackend& backend)
 {
 	renderTarget->destroy();
 	characterComponent.destroy(backend);
+	worldComponent.destroy(backend);
 	fontRenderer->destroyFont(font24);
 	fontRenderer->destroyFont(font48);
 	fontRenderer->destroyFont(font96);
@@ -121,6 +122,8 @@ void Game::update(GraphicBackend& backend)
 	//character.rotation = degreef(Time::now() / 100.f);
 	characterComponent.update();
 	backgroundComponent.update();
+	worldComponent.getCurrentLevel().offset.x += input::pressed(input::Key::Q) - input::pressed(input::Key::D);
+	worldComponent.getCurrentLevel().offset.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 }
 // TODO
 // - Hide framebuffer impl
@@ -134,6 +137,7 @@ void Game::render(GraphicBackend& backend)
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
 	backgroundComponent.render(backend);
+	worldComponent.render(backend);
 	characterComponent.render(backend);
 
 	// Blit to main buffer
@@ -154,17 +158,17 @@ void Game::render(GraphicBackend& backend)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Draw text
-	backend.viewport(0, 0, screenWidth(), screenHeight());
-	fontRenderer->viewport(0, 0, screenWidth(), screenHeight());
+	//backend.viewport(0, 0, screenWidth(), screenHeight());
+	//fontRenderer->viewport(0, 0, screenWidth(), screenHeight());
 	static float scale = 1.f;
 	scale += input::scroll().y;
 	const char* str = "Hello world !";
 	vec2i size24 = font24.size(str);// *(int)scale;
 	vec2i size48 = font48.size(str);// *(int)scale;
 	vec2i size96 = font96.size(str);// *(int)scale;
-	fontRenderer->render(font48, str, (float)((int)screenWidth() / 2 - size24.x / 2), (float)((int)screenHeight() / 2 - size48.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
-	fontRenderer->render(font24, str, 10, (float)((int)screenHeight() / 2 - size24.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
-	fontRenderer->render(font96, str, (float)((int)screenWidth() / 2 - size96.x / 2) + size96.x + 10, (float)((int)screenHeight() / 2 - size96.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
+	//fontRenderer->render(font48, str, (float)((int)screenWidth() / 2 - size24.x / 2), (float)((int)screenHeight() / 2 - size48.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
+	//fontRenderer->render(font24, str, 10, (float)((int)screenHeight() / 2 - size24.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
+	//fontRenderer->render(font96, str, (float)((int)screenWidth() / 2 - size96.x / 2) + size96.x + 10, (float)((int)screenHeight() / 2 - size96.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
 
 	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
 }

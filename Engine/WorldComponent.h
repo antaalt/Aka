@@ -16,9 +16,15 @@ public:
 
 	void update() override;
 	void render(GraphicBackend& backend) override;
+
+	Level& getCurrentLevel() { return m_currentLevel; }
+
 private:
 	World m_world;
 	Level m_currentLevel;
+private:
+	Shader m_shader;
+	Texture* m_atlas;
 };
 
 };

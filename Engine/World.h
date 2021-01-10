@@ -15,7 +15,7 @@ struct Level
 		std::string name;
 		vec2i offset;
 		vec2u gridCellSize;
-		vec2i gridCellPosition;
+		vec2u gridCellCount;
 		std::string tileset;
 		std::vector<int32_t> data; // index of sprite in corresponding tileset
 

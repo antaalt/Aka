@@ -4,6 +4,8 @@
 
 #include "Platform.h"
 
+namespace app {
+
 uint32_t checkError_(const char* file, int line)
 {
     GLenum errorCode;
@@ -35,11 +37,10 @@ uint32_t checkError_(const char* file, int line)
             break;
         }
         std::cerr << error << " | " << file << " (" << line << ")" << std::endl;
+        throw std::runtime_error("Error");
     }
     return errorCode;
 }
-
-namespace app {
 
 void GraphicBackend::initialize()
 {
