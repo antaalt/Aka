@@ -109,6 +109,7 @@ std::string getKeyName(input::Key key)
 	case input::Key::Num7: return "Num7";
 	case input::Key::Num8: return "Num8";
 	case input::Key::Num9: return "Num9";
+	case input::Key::NumLock: return "NumLock";
 	case input::Key::NumPad0: return "NumPad0";
 	case input::Key::NumPad1: return "NumPad1";
 	case input::Key::NumPad2: return "NumPad2";
@@ -119,6 +120,12 @@ std::string getKeyName(input::Key key)
 	case input::Key::NumPad7: return "NumPad7";
 	case input::Key::NumPad8: return "NumPad8";
 	case input::Key::NumPad9: return "NumPad9";
+	case input::Key::Divide: return "Divide";
+	case input::Key::Decimal: return "Decimal";
+	case input::Key::Add: return "Add";
+	case input::Key::Substract: return "Substract";
+	case input::Key::Separator: return "Separator";
+	case input::Key::Multiply: return "Multiply";
 	case input::Key::RightAlt: return "RightAlt";
 	case input::Key::LeftAlt: return "LeftAlt";
 	case input::Key::RightCtrl: return "RightCtrl";
@@ -138,6 +145,21 @@ std::string getKeyName(input::Key key)
 	case input::Key::PageUp: return "PageUp";
 	case input::Key::PageDown: return "PageDown";
 	case input::Key::PrintScreen: return "PrintScreen";
+	case input::Key::Clear: return "Clear";
+	case input::Key::End: return "End";
+	case input::Key::Home: return "Home";
+	case input::Key::F1: return "F1";
+	case input::Key::F2: return "F2";
+	case input::Key::F3: return "F3";
+	case input::Key::F4: return "F4";
+	case input::Key::F5: return "F5";
+	case input::Key::F6: return "F6";
+	case input::Key::F7: return "F7";
+	case input::Key::F8: return "F8";
+	case input::Key::F9: return "F9";
+	case input::Key::F10: return "F10";
+	case input::Key::F11: return "F11";
+	case input::Key::F12: return "F12";
 	}
 }
 

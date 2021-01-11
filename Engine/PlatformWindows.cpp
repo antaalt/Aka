@@ -50,6 +50,7 @@ void initKeyboard()
 	virtualKeyCodes['8'] = input::Key::Num8;
 	virtualKeyCodes['9'] = input::Key::Num9;
 
+	virtualKeyCodes[VK_NUMLOCK] = input::Key::NumLock;
 	virtualKeyCodes[VK_NUMPAD0] = input::Key::NumPad0;
 	virtualKeyCodes[VK_NUMPAD1] = input::Key::NumPad1;
 	virtualKeyCodes[VK_NUMPAD2] = input::Key::NumPad2;
@@ -60,6 +61,12 @@ void initKeyboard()
 	virtualKeyCodes[VK_NUMPAD7] = input::Key::NumPad7;
 	virtualKeyCodes[VK_NUMPAD8] = input::Key::NumPad8;
 	virtualKeyCodes[VK_NUMPAD9] = input::Key::NumPad9;
+	virtualKeyCodes[VK_DIVIDE] = input::Key::Divide;
+	virtualKeyCodes[VK_DECIMAL] = input::Key::Decimal;
+	virtualKeyCodes[VK_ADD] = input::Key::Add;
+	virtualKeyCodes[VK_SUBTRACT] = input::Key::Substract;
+	virtualKeyCodes[VK_SEPARATOR] = input::Key::Separator;
+	virtualKeyCodes[VK_MULTIPLY] = input::Key::Multiply;
 
 	virtualKeyCodes[VK_LMENU] = input::Key::LeftAlt;
 	virtualKeyCodes[VK_RMENU] = input::Key::RightAlt;
@@ -81,6 +88,22 @@ void initKeyboard()
 	virtualKeyCodes[VK_PRIOR] = input::Key::PageUp;
 	virtualKeyCodes[VK_NEXT] = input::Key::PageDown;
 	virtualKeyCodes[VK_SNAPSHOT] = input::Key::PrintScreen;
+	virtualKeyCodes[VK_END] = input::Key::End;
+	virtualKeyCodes[VK_CLEAR] = input::Key::Clear;
+	virtualKeyCodes[VK_HOME] = input::Key::Home;
+
+	virtualKeyCodes[VK_F1] = input::Key::F1;
+	virtualKeyCodes[VK_F2] = input::Key::F2;
+	virtualKeyCodes[VK_F3] = input::Key::F3;
+	virtualKeyCodes[VK_F4] = input::Key::F4;
+	virtualKeyCodes[VK_F5] = input::Key::F5;
+	virtualKeyCodes[VK_F6] = input::Key::F6;
+	virtualKeyCodes[VK_F7] = input::Key::F7;
+	virtualKeyCodes[VK_F8] = input::Key::F8;
+	virtualKeyCodes[VK_F9] = input::Key::F9;
+	virtualKeyCodes[VK_F10] = input::Key::F10;
+	virtualKeyCodes[VK_F11] = input::Key::F11;
+	virtualKeyCodes[VK_F12] = input::Key::F12;
 }
 
 input::Key getKeyFromScancode(unsigned int scancode)
@@ -90,6 +113,7 @@ input::Key getKeyFromScancode(unsigned int scancode)
 	// Extended key flag (set with ALT, CTRL, INS, DEL, HOME, END, PAGE UP, PAGE DOWN, Arrow keys, NUM LOCK, BREAK, PRINT SCRN, DIVIDE (NUMPAD), ENTER (NUMPAD)
 	unsigned short enhanced = (scancode >> 8) & 0x000000ff;
 	UINT virtualKey = MapVirtualKey(code, MAPVK_VSC_TO_VK_EX);
+	std::cout << std::hex << "VK : " << virtualKey << " - code : " << code << "/" << enhanced << " - name : " << getKeyName(virtualKeyCodes[virtualKey]) << std::endl;
 	if (virtualKey >= virtualKeyCodesCount)
 		return input::Key::Unknown;
 	return virtualKeyCodes[virtualKey];

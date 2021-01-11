@@ -40,6 +40,7 @@ enum class Key {
 	X,
 	Y,
 	Z,
+
 	Num0,
 	Num1,
 	Num2,
@@ -50,6 +51,8 @@ enum class Key {
 	Num7,
 	Num8,
 	Num9,
+
+	NumLock,
 	NumPad0,
 	NumPad1,
 	NumPad2,
@@ -60,6 +63,13 @@ enum class Key {
 	NumPad7,
 	NumPad8,
 	NumPad9,
+	Divide,
+	Decimal,
+	Add,
+	Substract,
+	Separator,
+	Multiply,
+
 	RightAlt,
 	LeftAlt,
 	RightCtrl,
@@ -79,6 +89,22 @@ enum class Key {
 	PageUp,
 	PageDown,
 	PrintScreen,
+	Clear,
+	End,
+	Home,
+
+	F1,
+	F2,
+	F3,
+	F4,
+	F5,
+	F6,
+	F7,
+	F8,
+	F9,
+	F10,
+	F11,
+	F12,
 };
 
 enum class Button {
