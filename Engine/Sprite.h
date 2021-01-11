@@ -23,10 +23,6 @@ struct Sprite {
 		std::string name;
 		std::vector<Frame> frames;
 
-		const Frame* getFrame(Time::unit elapsed) const {
-
-		}
-
 		// Whole duration of animation
 		Time::unit duration() const {
 			Time::unit duration = 0;

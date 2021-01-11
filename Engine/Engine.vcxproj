@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Collider2D.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GLFontRenderer.cpp" />
     <ClCompile Include="GLFramebuffer.cpp" />
@@ -168,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Collider2D.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="Game.h" />

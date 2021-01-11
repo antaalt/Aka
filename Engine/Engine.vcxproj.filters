@@ -55,6 +55,12 @@
     <Filter Include="Fichiers d%27en-tête\Entity">
       <UniqueIdentifier>{155b6faf-4535-4b0f-98e6-59bdda5cc4ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers d%27en-tête\Physics">
+      <UniqueIdentifier>{a70cb1bb-2dc1-4579-84cd-e15685e270b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Physics">
+      <UniqueIdentifier>{0c7a2caf-6e27-4fd4-ae3f-5ba6bef78494}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -107,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="PlatformWindows.cpp">
       <Filter>Fichiers sources\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Collider2D.cpp">
+      <Filter>Fichiers sources\Physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="Debug.h">
       <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Collider2D.h">
+      <Filter>Fichiers d%27en-tête\Physics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
