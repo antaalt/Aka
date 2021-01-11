@@ -25,6 +25,7 @@ void initialize()
 
 void update()
 {
+	cursor.delta = { 0.f };
 	cursor.scroll = { 0.f };
 }
 

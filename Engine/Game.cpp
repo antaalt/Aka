@@ -118,20 +118,52 @@ void Game::destroy(GraphicBackend& backend)
 void Game::update(GraphicBackend& backend)
 {
 	character.position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
-	character.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+	//character.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
 	//character.rotation = degreef(Time::now() / 100.f);
 	characterComponent.update();
 	backgroundComponent.update();
-	worldComponent.getCurrentLevel().offset.x += input::pressed(input::Key::Q) - input::pressed(input::Key::D);
-	worldComponent.getCurrentLevel().offset.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
+	if (input::pressed(input::Button::Button1))
+	{
+		worldComponent.getCurrentLevel().offset.x += input::delta().x;// input::pressed(input::Key::Q) - input::pressed(input::Key::D);
+		worldComponent.getCurrentLevel().offset.y += -input::delta().y;// input::pressed(input::Key::Z) - input::pressed(input::Key::S);
+	}
+
+	// Physics
+	// Current velocity of the object
+	static vec2f acceleration = vec2f(0.f);
+	// Last update
+	static Time::unit lastTick = Time::now();
+	float dt = 0.010f; // ms
+	float mass = 1.f; // kg ?
+
+	if (input::pressed(input::Key::Space))
+	{
+		acceleration = vec2f(0.f, 3.f);
+	}
+	if (input::pressed(input::Key::LeftCtrl))
+	{
+		character.position = vec2f(160.f, 160.f);
+	}
+
+	// F = m*(G*Mearth/(Rearth*Rearth))
+	// Mearth = 5.98 * 10^24kg
+	// Rearth = 6.38*10^6m
+	// G = 6.67259* 10^-11 Nm^2/kg^2
+	// F = ma
+	Time::unit now = Time::now();
+	// dt is the timestep
+	while (lastTick + dt < now)
+	{
+		acceleration += ((vec2f(0, -9.81f)) / mass) * dt;
+		character.position += acceleration * dt * 32.f;// scale down 1m -> 8 pixel
+		lastTick += dt * 1000.f;
+	}
+	//std::cout << " accel" << acceleration << " pos" << character.position << std::endl;
 }
 // TODO
 // - Hide framebuffer impl
 void Game::render(GraphicBackend& backend)
 {
-	static uint32_t frame = 0;
-	//std::cout << "FRAME " << frame++ << " " << Time::now() << std::endl;
-
 	backend.viewport(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));

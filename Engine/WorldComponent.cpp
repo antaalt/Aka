@@ -110,9 +110,7 @@ void WorldComponent::render(GraphicBackend& backend)
 	m_atlas->bind();
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindTexture(GL_TEXTURE_BUFFER, tbo);
-	glBindBuffer(GL_TEXTURE_BUFFER, ubo);
 
 	glBindVertexArray(0);
 
