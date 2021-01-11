@@ -105,6 +105,9 @@
     <ClCompile Include="World.cpp">
       <Filter>Fichiers sources\Entity</Filter>
     </ClCompile>
+    <ClCompile Include="PlatformWindows.cpp">
+      <Filter>Fichiers sources\Window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -146,9 +149,6 @@
     <ClInclude Include="Time.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
-    <ClInclude Include="Application.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="Platform.h">
       <Filter>Fichiers d%27en-tête\Window</Filter>
     </ClInclude>
@@ -163,6 +163,15 @@
     </ClInclude>
     <ClInclude Include="World.h">
       <Filter>Fichiers d%27en-tête\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphic.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

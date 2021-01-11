@@ -1,63 +1,95 @@
 #pragma once
 
-#include "Platform.h"
+#include <stdint.h>
+#include <string>
 
 namespace app {
 namespace input {
 
-// Enum map
+enum class KeyboardLayout {
+	Azerty,
+	Qwerty,
+	Default = Qwerty
+};
+
 enum class Key {
-	UNKNOWN = GLFW_KEY_UNKNOWN,
-	A = GLFW_KEY_A,
-	B = GLFW_KEY_B,
-	C = GLFW_KEY_C,
-	D = GLFW_KEY_D,
-	E = GLFW_KEY_E,
-	F = GLFW_KEY_F,
-	G = GLFW_KEY_G,
-	H = GLFW_KEY_H,
-	I = GLFW_KEY_I,
-	J = GLFW_KEY_J,
-	K = GLFW_KEY_K,
-	L = GLFW_KEY_L,
-	M = GLFW_KEY_M,
-	N = GLFW_KEY_N,
-	O = GLFW_KEY_O,
-	P = GLFW_KEY_P,
-	Q = GLFW_KEY_Q,
-	R = GLFW_KEY_R,
-	S = GLFW_KEY_S,
-	T = GLFW_KEY_T,
-	U = GLFW_KEY_U,
-	V = GLFW_KEY_V,
-	W = GLFW_KEY_W,
-	X = GLFW_KEY_X,
-	Y = GLFW_KEY_Y,
-	Z = GLFW_KEY_Z,
-	RightAlt = GLFW_KEY_RIGHT_ALT,
-	LeftAlt = GLFW_KEY_LEFT_ALT,
-	RightCtrl = GLFW_KEY_RIGHT_CONTROL,
-	LeftCtrl = GLFW_KEY_LEFT_CONTROL,
-	Escape = GLFW_KEY_ESCAPE,
-	Enter = GLFW_KEY_ENTER,
-	Space = GLFW_KEY_SPACE,
-	BackSpace = GLFW_KEY_BACKSPACE,
-	Tab = GLFW_KEY_TAB,
-	ArrowLeft = GLFW_KEY_LEFT,
-	ArrowRight = GLFW_KEY_RIGHT,
-	ArrowUp = GLFW_KEY_UP,
-	ArrowDown = GLFW_KEY_DOWN,
+	Unknown,
+	A,
+	B,
+	C,
+	D,
+	E,
+	F,
+	G,
+	H,
+	I,
+	J,
+	K,
+	L,
+	M,
+	N,
+	O,
+	P,
+	Q,
+	R,
+	S,
+	T,
+	U,
+	V,
+	W,
+	X,
+	Y,
+	Z,
+	Num0,
+	Num1,
+	Num2,
+	Num3,
+	Num4,
+	Num5,
+	Num6,
+	Num7,
+	Num8,
+	Num9,
+	NumPad0,
+	NumPad1,
+	NumPad2,
+	NumPad3,
+	NumPad4,
+	NumPad5,
+	NumPad6,
+	NumPad7,
+	NumPad8,
+	NumPad9,
+	RightAlt,
+	LeftAlt,
+	RightCtrl,
+	LeftCtrl,
+	RightShift,
+	LeftShift,
+	Escape,
+	Enter,
+	Space,
+	BackSpace,
+	Tab,
+	ArrowLeft,
+	ArrowRight,
+	ArrowUp,
+	ArrowDown,
+	CapsLock,
+	PageUp,
+	PageDown,
+	PrintScreen,
 };
 
 enum class Button {
-	Button1 = GLFW_MOUSE_BUTTON_1,
-	Button2 = GLFW_MOUSE_BUTTON_2,
-	Button3 = GLFW_MOUSE_BUTTON_3,
-	Button4 = GLFW_MOUSE_BUTTON_4,
-	Button5 = GLFW_MOUSE_BUTTON_5,
-	Button6 = GLFW_MOUSE_BUTTON_6,
-	Button7 = GLFW_MOUSE_BUTTON_7,
-	Button8 = GLFW_MOUSE_BUTTON_8,
+	Button1,
+	Button2,
+	Button3,
+	Button4,
+	Button5,
+	Button6,
+	Button7,
+	Button8,
 };
 
 // Counts
@@ -78,6 +110,7 @@ void on_mouse_scroll(float x, float y);
 struct Keyboard {
 	bool pressed[g_keyboardKeyCount];
 	uint64_t timestamp[g_keyboardKeyCount];
+	KeyboardLayout layout;
 };
 
 struct Position {
@@ -91,6 +124,9 @@ struct Cursor {
 	Position delta; // relative movement
 	Position scroll;
 };
+
+// Infos
+std::string getKeyName(input::Key key);
 
 // Actions
 bool pressed(Key key);

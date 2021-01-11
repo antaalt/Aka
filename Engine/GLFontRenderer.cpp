@@ -1,7 +1,7 @@
 #include "FontRenderer.h"
 
+#include "Graphic.h"
 #include "System.h"
-#include "Platform.h"
 
 namespace app {
 

@@ -11,15 +11,16 @@ namespace app {
 void setInputCallback(GLFWwindow* window)
 {
 	input::initialize();
+	initKeyboard();
 	glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
 		// key : glfw keycode
 		// scancode : os code
 		// action : GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT
 		// mode : GLFW_MOD_SHIFT GLFW_MOD_CONTROL GLFW_MOD_ALT GLFW_MOD_SUPER GLFW_MOD_CAPS_LOCK GLFW_MOD_NUM_LOCK
 		if (action == GLFW_PRESS)
-			input::on_key_down(static_cast<input::Key>(key));
+			input::on_key_down(getKeyFromScancode(scancode));
 		else if (action == GLFW_RELEASE)
-			input::on_key_up(static_cast<input::Key>(key));
+			input::on_key_up(getKeyFromScancode(scancode));
 		// TODO manage repeat ?
 	});
 	glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mode) {
@@ -76,7 +77,7 @@ Window::Window(const Config& config) :
 		throw std::runtime_error("Not implemented");
 		break;
 	}
-	
+
 	m_window = glfwCreateWindow(config.width, config.height, config.name.c_str(), NULL, NULL);
 	if (m_window == NULL) {
 		glfwTerminate();

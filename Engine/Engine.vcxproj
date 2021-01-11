@@ -155,6 +155,7 @@
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="PlatformWindows.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="SpriteAnimatorComponent.cpp" />
     <ClCompile Include="System.cpp" />
@@ -168,9 +169,11 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="FontRenderer.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="Graphic.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Sprite.h" />

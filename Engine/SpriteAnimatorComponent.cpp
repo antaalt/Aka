@@ -1,12 +1,14 @@
 #include "SpriteAnimatorComponent.h"
 
-#include "Platform.h"
+#include "Graphic.h"
 
 namespace app {
+
 SpriteAnimatorComponent::SpriteAnimatorComponent() :
     m_vao(0)
 {
 }
+
 SpriteAnimatorComponent::~SpriteAnimatorComponent()
 {
     m_shader.destroy();

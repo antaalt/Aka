@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Framebuffer.h"
 #include "FontRenderer.h"
+#include "Graphic.h"
 
 namespace app {
 
