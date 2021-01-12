@@ -16,8 +16,8 @@ public:
 	void destroy(GraphicBackend& backend) override;
 
 	void update() override;
-	void render(GraphicBackend& backend) override;
-	void renderLayer(const std::string& name, GraphicBackend& backend);
+	void render(const Camera2D &camera, GraphicBackend& backend) override;
+	void renderLayer(const std::string& name, const Camera2D& camera, GraphicBackend& backend);
 
 	Level& getCurrentLevel() { return m_currentLevel; }
 

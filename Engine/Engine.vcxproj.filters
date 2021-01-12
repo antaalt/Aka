@@ -123,6 +123,9 @@
     <ClCompile Include="Shape2D.cpp">
       <Filter>Fichiers sources\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Camera2D.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -196,6 +199,9 @@
     </ClInclude>
     <ClInclude Include="Shape2D.h">
       <Filter>Fichiers d%27en-tête\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera2D.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

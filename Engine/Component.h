@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GraphicBackend.h"
+#include "Camera2D.h"
 
 namespace app {
 
@@ -11,7 +12,7 @@ public:
 	virtual void destroy(GraphicBackend& backend) = 0;
 
 	virtual void update() = 0;
-	virtual void render(GraphicBackend& backend) = 0;
+	virtual void render(const Camera2D &camera, GraphicBackend& backend) = 0;
 };
 
 };

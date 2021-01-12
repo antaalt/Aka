@@ -23,7 +23,7 @@ public:
 	void destroy(GraphicBackend& backend) override;
 
 	void update() override;
-	void render(GraphicBackend& backend) override;
+	void render(const Camera2D &camera, GraphicBackend& backend) override;
 
 private:
 	Sprite *m_sprite;

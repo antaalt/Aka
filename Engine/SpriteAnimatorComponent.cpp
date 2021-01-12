@@ -94,11 +94,12 @@ void SpriteAnimatorComponent::update()
     m_currentFrame = frameID;
 }
 
-void SpriteAnimatorComponent::render(GraphicBackend& backend)
+void SpriteAnimatorComponent::render(const Camera2D& camera, GraphicBackend& backend)
 {
     // prepare transformations
     m_shader.use();
     mat4f model = mat4f::identity();
+    model *= mat4f::translate(vec3f(-camera.position, 0.0f));
     model *= mat4f::translate(vec3f(m_sprite->position, 0.0f));
     model *= mat4f::translate(vec3f(0.5f * m_sprite->size.x, 0.5f * m_sprite->size.y, 0.0f));
     model *= mat4f::rotate(vec3f(0.0f, 0.0f, 1.0f), m_sprite->rotation);

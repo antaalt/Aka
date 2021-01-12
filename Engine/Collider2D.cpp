@@ -25,7 +25,7 @@ StaticCollider2D::~StaticCollider2D()
 {
 }
 
-const vec2f DynamicCollider2D::maxVelocity(0.f, 20.f);
+const vec2f DynamicCollider2D::maxVelocity(5.f, 5.f);
 
 DynamicCollider2D::DynamicCollider2D(Shape2D* shape) :
 	Collider2D(shape),
@@ -42,7 +42,8 @@ void DynamicCollider2D::addForce(const vec2f& force, float dt)
 {
 	acceleration += (force / mass) * dt;
 	velocity += acceleration * dt;
-	velocity = vec2f::min(velocity, maxVelocity);
+	velocity.x = clamp(velocity.x, -maxVelocity.x, maxVelocity.x);
+	velocity.y = clamp(velocity.y, -maxVelocity.y, maxVelocity.y);
 }
 
 void DynamicCollider2D::resolve(const vec2f& separation)

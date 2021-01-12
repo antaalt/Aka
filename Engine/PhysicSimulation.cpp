@@ -65,7 +65,6 @@ void PhysicSimulation::update()
 		{
 			// Move rigid
 			dynamic->move(dt);
-			std::cout << dynamic->getShape()->getPosition() << std::endl;
 			// Check collisions with static objects
 			for (StaticCollider2D* collider : m_statics)
 			{
@@ -92,20 +91,20 @@ void PhysicSimulation::update()
 		m_lastTick += static_cast<Time::unit>(dt * 1000.f);
 	}
 }
-void PhysicSimulation::render(GraphicBackend& backend)
+void PhysicSimulation::render(const Camera2D &camera, GraphicBackend& backend)
 {
 	// For debug
 	for (DynamicCollider2D* dynamic : m_dynamics)
 	{
 		debugSprite.position = dynamic->getShape()->getPosition();
 		debugSprite.size = dynamic->getShape()->getSize();
-		debugSpriteAnimator.render(backend);
+		debugSpriteAnimator.render(camera, backend);
 	}
 	for (StaticCollider2D* statics : m_statics)
 	{
 		debugSprite.position = statics->getShape()->getPosition();
 		debugSprite.size = statics->getShape()->getSize();
-		debugSpriteAnimator.render(backend);
+		debugSpriteAnimator.render(camera, backend);
 	}
 }
 DynamicRectCollider2D* PhysicSimulation::createDynamicRectCollider()

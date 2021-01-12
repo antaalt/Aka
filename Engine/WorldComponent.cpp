@@ -82,7 +82,7 @@ void WorldComponent::update()
 {
 }
 
-void WorldComponent::render(GraphicBackend& backend)
+void WorldComponent::render(const Camera2D& camera, GraphicBackend& backend)
 {
 	// Run for all layers (or select it before rendering)
 
@@ -94,12 +94,12 @@ void WorldComponent::render(GraphicBackend& backend)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	renderLayer("Background", backend);
-	renderLayer("Playerground", backend);
-	renderLayer("Foreground", backend);
+	renderLayer("Background", camera, backend);
+	renderLayer("Playerground", camera, backend);
+	renderLayer("Foreground", camera, backend);
 }
 
-void WorldComponent::renderLayer(const std::string& name, GraphicBackend& backend)
+void WorldComponent::renderLayer(const std::string& name, const Camera2D& camera, GraphicBackend& backend)
 {
 	const Level::Layer* layer = m_currentLevel.getLayer(name);
 	const World::Tileset* atlas = m_world.getTileset(layer->tileset);
@@ -107,7 +107,7 @@ void WorldComponent::renderLayer(const std::string& name, GraphicBackend& backen
 	// Update it for offset
 	vec2u scale = layer->gridCellSize * layer->gridCellCount;
 	mat4f model = mat4f::identity();
-	model *= mat4f::translate(vec3f(m_currentLevel.offset.x + layer->offset.x, m_currentLevel.offset.y + layer->offset.y, 0));
+	model *= mat4f::translate(vec3f(-camera.position.x + m_currentLevel.offset.x + layer->offset.x, -camera.position.y + m_currentLevel.offset.y + layer->offset.y, 0));
 	model *= mat4f::scale(vec3f(scale.x, scale.y, 0U));
 
 	m_shader.use();

@@ -28,7 +28,7 @@ public:
 	// Update the simulation
 	void update();
 	// Render colliders for debug
-	void render(GraphicBackend& backend);
+	void render(const Camera2D& camera, GraphicBackend& backend);
 
 	DynamicRectCollider2D *createDynamicRectCollider();
 	StaticRectCollider2D* createStaticRectCollider();

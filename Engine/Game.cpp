@@ -23,11 +23,10 @@ FontRenderer* fontRenderer;
 Font font24, font48, font96;
 WorldComponent worldComponent;
 
-const uint32_t BACKGROUND_WIDTH = 320, BACKGROUND_HEIGHT = 180;
 const uint32_t CHAR_WIDTH = 16, CHAR_HEIGHT = 32;
 GLenum error = GL_NO_ERROR;
 
-vec2f charPosition;
+Camera2D camera;
 
 PhysicSimulation physic(0.01f);
 DynamicRectCollider2D* charCollider;
@@ -35,6 +34,8 @@ DynamicRectCollider2D* charCollider;
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
+	camera.position = vec2f(0);
+	camera.viewport = vec2f(320, 180);
 	{
 		// INIT world
 		worldComponent.loadWorld(Asset::path("levels/world.ogmo"));
@@ -42,17 +43,17 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		worldComponent.create(backend);
 	}
 	{
-		// INIT TEXTURE BACKGROUND
+		// INIT FIXED TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));
-		ASSERT(image.width == BACKGROUND_WIDTH, "incorrect width");
-		ASSERT(image.height == BACKGROUND_HEIGHT, "incorrect height");
+		ASSERT(image.width == camera.viewport.x, "incorrect width");
+		ASSERT(image.height == camera.viewport.y, "incorrect height");
 
 		Sprite::Animation animation;
 		animation.name = "default";
 		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		background.animations.push_back(animation);
 		background.position = vec2f(0);
-		background.size = vec2f(BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
+		background.size = camera.viewport;
 		background.rotation = radianf(0);
 		
 		backgroundComponent.set(&background);
@@ -78,7 +79,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
 		character.animations.push_back(animation);
-		character.position = vec2f(BACKGROUND_WIDTH / 2.f, BACKGROUND_HEIGHT / 2.f);
+		character.position = camera.viewport / 2.f;
 		character.size = vec2f(CHAR_WIDTH, CHAR_HEIGHT);
 		character.rotation = degreef(0);
 		characterComponent.set(&character);
@@ -87,7 +88,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	}
 
 	// INIT FRAMEBUFFER RENDER TARGET
-	renderTarget = backend.createTexture(BACKGROUND_WIDTH, BACKGROUND_HEIGHT, nullptr);
+	renderTarget = backend.createTexture((uint32_t)camera.viewport.x, (uint32_t)camera.viewport.y, nullptr);
 
 	// INIT FONT
 	fontRenderer = backend.createFontRenderer();
@@ -101,7 +102,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTarget->getID(), 0);
 	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 
-	window.setSizeLimits(BACKGROUND_WIDTH, BACKGROUND_HEIGHT, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	window.setSizeLimits((int32_t)camera.viewport.x, (int32_t)camera.viewport.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
 	physic.create(backend);
 	{
@@ -142,19 +143,13 @@ void Game::destroy(GraphicBackend& backend)
 
 void Game::update(GraphicBackend& backend)
 {
-	//character.position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
-	//character.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
-	//character.rotation = degreef(Time::now() / 100.f);
+	camera.position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
+	camera.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
 	characterComponent.update();
 	backgroundComponent.update();
-	if (input::pressed(input::Button::Button1))
-	{
-		worldComponent.getCurrentLevel().offset.x += (int32_t)input::delta().x;
-		worldComponent.getCurrentLevel().offset.y += (int32_t)-input::delta().y;
-	}
 	Shape2D* shape = charCollider->getShape();
-	float x = shape->getPosition().x + input::pressed(input::Key::D) - input::pressed(input::Key::Q) + input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
-	float y = shape->getPosition().y + input::pressed(input::Key::Z) - input::pressed(input::Key::S) + input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+	float x = shape->getPosition().x + input::pressed(input::Key::D) - input::pressed(input::Key::Q);
+	float y = shape->getPosition().y + input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 	shape->setPosition(vec2f(x, y));
 
 	if (input::pressed(input::Key::Space))
@@ -171,6 +166,12 @@ void Game::update(GraphicBackend& backend)
 		charCollider->getShape()->setPosition(vec2f(192.f, 160.f));
 	}
 
+	if (charCollider->getShape()->getPosition().y < -charCollider->getShape()->getSize().y)
+	{
+		// teleport above
+		charCollider->getShape()->setPosition(vec2f(charCollider->getShape()->getPosition().x, camera.viewport.y));
+	}
+
 	// Update physic after moving manually objects
 	physic.update();
 }
@@ -178,22 +179,22 @@ void Game::update(GraphicBackend& backend)
 // - Hide framebuffer impl
 void Game::render(GraphicBackend& backend)
 {
-	backend.viewport(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
+	backend.viewport(0, 0, (uint32_t)camera.viewport.x, (uint32_t)camera.viewport.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
-	backgroundComponent.render(backend);
-	worldComponent.render(backend);
-	characterComponent.render(backend);
+	backgroundComponent.render(camera, backend);
+	worldComponent.render(camera, backend);
+	characterComponent.render(camera, backend);
 
-	physic.render(backend);
+	physic.render(camera, backend);
 
 	// Blit to main buffer
-	uint32_t widthRatio = screenWidth() / BACKGROUND_WIDTH;
-	uint32_t heightRatio = screenHeight() / BACKGROUND_HEIGHT;
+	uint32_t widthRatio = screenWidth() / (uint32_t)camera.viewport.x;
+	uint32_t heightRatio = screenHeight() / (uint32_t)camera.viewport.y;
 	uint32_t ratio = min(widthRatio, heightRatio);
-	uint32_t scaledWidth = ratio * BACKGROUND_WIDTH;
-	uint32_t scaledHeight = ratio * BACKGROUND_HEIGHT;
+	uint32_t scaledWidth = ratio * (uint32_t)camera.viewport.x;
+	uint32_t scaledHeight = ratio * (uint32_t)camera.viewport.y;
 	uint32_t w = (screenWidth() - scaledWidth) / 2;
 	uint32_t h = (screenHeight() - scaledHeight) / 2;
 
@@ -202,7 +203,7 @@ void Game::render(GraphicBackend& backend)
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLint)camera.viewport.x, (GLint)camera.viewport.y, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Draw text
