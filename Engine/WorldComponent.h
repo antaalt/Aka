@@ -17,6 +17,7 @@ public:
 
 	void update() override;
 	void render(GraphicBackend& backend) override;
+	void renderLayer(const std::string& name, GraphicBackend& backend);
 
 	Level& getCurrentLevel() { return m_currentLevel; }
 

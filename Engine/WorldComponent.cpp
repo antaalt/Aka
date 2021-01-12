@@ -30,10 +30,12 @@ void WorldComponent::create(GraphicBackend& backend)
 	ASSERT(background != nullptr, "");
 	ASSERT(foreground != nullptr, "");
 	ASSERT(playerground != nullptr, "");
-	const World::Tileset *tileset = m_world.getTileset(background->tileset);
+
+	const Level::Layer* layer = m_currentLevel.getLayer("Foreground");
+	ASSERT(layer != nullptr, "");
+	const World::Tileset* tileset = m_world.getTileset(layer->tileset);
 	// Consider for now they are all the same.
-	ASSERT(tileset == m_world.getTileset(foreground->tileset), "");
-	ASSERT(tileset == m_world.getTileset(playerground->tileset), "");
+	ASSERT(tileset == m_world.getTileset(layer->tileset), "");
 
 	// create texture for level
 	m_atlas = backend.createTexture(tileset->image.width, tileset->image.height, tileset->image.bytes.data());
@@ -42,9 +44,9 @@ void WorldComponent::create(GraphicBackend& backend)
 	glGenBuffers(1, &ubo);
 
 	glBindBuffer(GL_TEXTURE_BUFFER, ubo);
-	glBufferData(GL_TEXTURE_BUFFER, playerground->data.size() * sizeof(int32_t), playerground->data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_TEXTURE_BUFFER, playerground->data.size() * sizeof(int32_t), playerground->data.data(), GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_TEXTURE_BUFFER, 0);
-	
+
 	// Create TBO
 	glGenTextures(1, &tbo);
 	glBindTexture(GL_TEXTURE_BUFFER, tbo);
@@ -92,21 +94,33 @@ void WorldComponent::render(GraphicBackend& backend)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	const Level::Layer* background = m_currentLevel.getLayer("Playerground");
-	const World::Tileset* atlas = m_world.getTileset(background->tileset);
+	renderLayer("Background", backend);
+	renderLayer("Playerground", backend);
+	renderLayer("Foreground", backend);
+}
+
+void WorldComponent::renderLayer(const std::string& name, GraphicBackend& backend)
+{
+	const Level::Layer* layer = m_currentLevel.getLayer(name);
+	const World::Tileset* atlas = m_world.getTileset(layer->tileset);
 
 	// Update it for offset
-	vec2u scale = background->gridCellSize * background->gridCellCount;
+	vec2u scale = layer->gridCellSize * layer->gridCellCount;
 	mat4f model = mat4f::identity();
-	model *= mat4f::translate(vec3f(m_currentLevel.offset.x + background->offset.x, m_currentLevel.offset.y + background->offset.y, 0));
+	model *= mat4f::translate(vec3f(m_currentLevel.offset.x + layer->offset.x, m_currentLevel.offset.y + layer->offset.y, 0));
 	model *= mat4f::scale(vec3f(scale.x, scale.y, 0U));
-	
+
 	m_shader.use();
 	m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().height, (float)backend.viewport().x, (float)backend.viewport().width, -1.f, 1.f));
 	m_shader.set<mat4f>("model", model);
 	m_shader.set<vec2u>("gridCountAtlas", atlas->tileSize);
-	m_shader.set<vec2u>("gridCount", background->gridCellCount);
-	m_shader.set<color4f>("color", color4f(1.f));
+	m_shader.set<vec2u>("gridCount", layer->gridCellCount);
+	if(name == "Background")
+		m_shader.set<color4f>("color", color4f(0.5f, 0.5f, 0.5f, 1.f));
+	else if (name == "Foreground")
+		m_shader.set<color4f>("color", color4f(1.2f, 1.2f, 1.2f, 0.9f));
+	else
+		m_shader.set<color4f>("color", color4f(1.f));
 	m_shader.set<int32_t>("image", 0);
 	m_shader.set<int32_t>("spriteIndices", 1);
 
@@ -116,10 +130,16 @@ void WorldComponent::render(GraphicBackend& backend)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_BUFFER, tbo);
 
+	// Update data for new layer
+	glBindBuffer(GL_TEXTURE_BUFFER, ubo);
+	void* data = glMapBuffer(GL_TEXTURE_BUFFER, GL_WRITE_ONLY);
+	memcpy(data, layer->data.data(), layer->data.size() * sizeof(int32_t));
+	bool done = glUnmapBuffer(GL_TEXTURE_BUFFER);
+
 	glBindVertexArray(0);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		
+
 	checkError();
 }
 
