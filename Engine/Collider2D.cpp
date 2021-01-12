@@ -2,27 +2,121 @@
 
 namespace app {
 
-// https://2dengine.com/?p=intersections
-vec2f RectCollider2D::getNearestPoint(const vec2f& point) const
+
+Collider2D::Collider2D(Shape2D* shape) :
+	m_shape(shape)
 {
-	vec2f nearest = point;
-	nearest.x = max(nearest.x, this->position.x);
-	nearest.x = min(nearest.x, this->position.x + this->size.x);
-	nearest.y = max(nearest.y, this->position.y);
-	nearest.y = min(nearest.y, this->position.y + this->size.y);
-	return nearest;
 }
 
-bool RectCollider2D::isInside(const vec2f& point) const
+Collision Collider2D::overlaps(const Collider2D& collider)
 {
-	if (point.x < position.x || point.x > position.x + size.x)
-		return false;
-	if (point.y < position.y || point.y > position.y + size.y)
-		return false;
-	return true;
+	return m_shape->overlaps(*collider.m_shape);
+}
+Shape2D* Collider2D::getShape()
+{
+	return m_shape;
 }
 
-/*vec2f CircleCollider2D::getNearestPoint(const vec2f& point) const
+StaticCollider2D::StaticCollider2D(Shape2D* shape) :
+	Collider2D(shape)
+{
+}
+StaticCollider2D::~StaticCollider2D()
+{
+}
+
+const vec2f DynamicCollider2D::maxVelocity(0.f, 20.f);
+
+DynamicCollider2D::DynamicCollider2D(Shape2D* shape) :
+	Collider2D(shape),
+	mass(1.f),
+	velocity(0.f),
+	acceleration(0.f)
+{
+}
+DynamicCollider2D::~DynamicCollider2D()
+{
+}
+
+void DynamicCollider2D::addForce(const vec2f& force, float dt)
+{
+	acceleration += (force / mass) * dt;
+	velocity += acceleration * dt;
+	velocity = vec2f::min(velocity, maxVelocity);
+}
+
+void DynamicCollider2D::resolve(const vec2f& separation)
+{
+	// Adjust velocity
+	// Get normal 
+	vec2f normal = vec2f::normalize(separation);
+	// Get relative velocity
+	vec2f v = this->velocity; // substract by second object velocity if it has one
+	// Get penetration speed
+	float ps = vec2f::dot(v, normal);
+	// objects moving towards each other ?
+	if (ps <= 0.f)
+	{
+		// Move the rigid to avoid overlapping.
+		getShape()->setPosition(getShape()->getPosition() + separation);
+	}
+	// Get penetration component
+	vec2f p = normal * ps;
+	// tangent component
+	vec2f t = v - p;
+	// Restitution
+	float r = 1.f + max<float>(0.1f, 0.f); // max bouncing value of object a & b
+	// Friction
+	float f = min<float>(0.1f, 1.f); // max friction value of object a & b
+	// Change the velocity of shape a
+	this->acceleration = vec2f(0);
+	this->velocity = this->velocity - p * r + t * f;
+}
+
+StaticRectCollider2D::StaticRectCollider2D() :
+	StaticCollider2D(&rect)
+{
+}
+
+DynamicRectCollider2D::DynamicRectCollider2D() :
+	DynamicCollider2D(&rect)
+{
+}
+
+void DynamicRectCollider2D::move(float dt)
+{
+	rect.position += velocity;// *dt;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*CircleCollider2D::CircleCollider2D() :
+	Collider2D(Collider2D::Type::Circle),
+	radius(0.f)
+{
+}
+
+vec2f CircleCollider2D::getNearestPoint(const vec2f& point) const
 {
 	vec2f dxy = point - this->position;
 	float d = dxy.norm();
@@ -35,8 +129,8 @@ bool CircleCollider2D::isInside(const vec2f& point) const
 {
 	vec2f dxy = point - position;
 	return vec2f::dot(dxy, dxy) <= radius * radius;
-}
-*/
+}*/
+
 /*vec2f TriangleCollider2D::getNearestPoint(const vec2f& point) const
 {
 	vec2f AB = B - A;
@@ -99,77 +193,18 @@ bool TriangleCollider2D::isInside(const vec2f& point) const
 
 /*Collision overlap(const CircleCollider2D& c1, const CircleCollider2D& c2)
 {
-	float radius = c1.radius + c2.radius;
-	vec2f d = c2.position - c1.position;
-	return vec2f::dot(d, d)<= radius * radius;
-}*/
-
-Collision overlap(const RectCollider2D& r1, const RectCollider2D& r2)
-{
-	// distance between the rects
-	vec2f r1Pos = r1.position + r1.size / 2.f;
-	vec2f r2Pos = r2.position + r2.size / 2.f;
-	vec2f d = r1Pos - r2Pos;
-	vec2f ad = vec2f::abs(d);
-	// sum of the extents
-	vec2f sh = r1.size / 2.f + r2.size / 2.f;
-	if (ad.x >= sh.x || ad.y >= sh.y) // no intersections
-		return Collision::none();
-	// shortest separation
-	vec2f s = sh - ad;
-	// ignore longer axis
-	if (s.x < s.y)
-	{
-		if (s.x > 0.f)
-			s.y = 0.f;
-	}
-	else 
-	{
-		if (s.y > 0.f)
-			s.x = 0.f;
-	}
-	// correct sign
-	if (d.x < 0.f)
-		s.x = -s.x;
-	if (d.y < 0.f)
-		s.y = -s.y;
-	return Collision::hit(s);
+	//float radius = c1.radius + c2.radius;
+	//vec2f d = c2.position - c1.position;
+	//return vec2f::dot(d, d)<= radius * radius;
+	return Collision::none();
 }
-
-/*Collision overlap(const TriangleCollider2D& t1, const TriangleCollider2D& t2)
-{
-	throw std::runtime_error("Not implemented");
-}*/
 
 /*Collision overlap(const CircleCollider2D& c, const RectCollider2D& r)
 {
-	vec2f d = clamp(c.position, r.position, r.position + r.size) - c.position;
-	return vec2f::dot(d, d) <= c.radius * c.radius;
+	//vec2f d = clamp(c.position, r.position, r.position + r.size) - c.position;
+	//return vec2f::dot(d, d) <= c.radius * c.radius;
+	return Collision::none();
 }
-
-Collision overlap(const RectCollider2D& r, const CircleCollider2D& c)
-{
-	return overlap(c, r);
-}*/
-
-/*Collision overlap(const TriangleCollider2D& t, const CircleCollider2D& c)
-{
-	throw std::runtime_error("Not implemented");
-}
-
-Collision overlap(const CircleCollider2D& c, const TriangleCollider2D& t)
-{
-	return overlap(t, c);
-}
-
-Collision overlap(const TriangleCollider2D& t, const RectCollider2D& r)
-{
-	throw std::runtime_error("Not implemented");
-}
-
-Collision overlap(const RectCollider2D& r, const TriangleCollider2D& t)
-{
-	return overlap(t, r);
-}*/
+*/
 
 }

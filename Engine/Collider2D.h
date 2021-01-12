@@ -1,59 +1,59 @@
 #pragma once
 
-#include "Geometry.h"
+#include "Shape2D.h"
 
 namespace app {
 
 struct Collider2D
 {
-	virtual vec2f getNearestPoint(const vec2f & point) const = 0;
-	virtual bool isInside(const vec2f& point) const = 0;
-	//virtual bool overlaps(const Collider2D& collider) const = 0;
+	Collider2D(Shape2D* shape);
+
+	Collision overlaps(const Collider2D& collider);
+	Shape2D* getShape();
+	// is on floor function
+private:
+	Shape2D* m_shape;
 };
 
-struct RectCollider2D : public Collider2D
+struct StaticCollider2D : public Collider2D
 {
-	vec2f getNearestPoint(const vec2f& point) const override;
-	bool isInside(const vec2f& point) const override;
-
-	vec2f position; //top left
-	vec2f size;
+	StaticCollider2D(Shape2D*shape);
+	virtual ~StaticCollider2D() = 0;
 };
 
-/*struct CircleCollider2D : public Collider2D
+struct DynamicCollider2D : public Collider2D
 {
-	vec2f getNearestPoint(const vec2f& point) const override;
-	bool isInside(const vec2f& point) const override;
+	DynamicCollider2D(Shape2D* shape);
+	virtual ~DynamicCollider2D() = 0;
 
-	vec2f position;
-	float radius;
-};*/
+	// Add a force to the dynamic object
+	void addForce(const vec2f& force, float dt);
+	// Move the object depending on its force
+	virtual void move(float dt) = 0;
+	// Resolve the collision
+	void resolve(const vec2f& separation);
 
-/*struct TriangleCollider2D : public Collider2D
-{
-	vec2f getNearestPoint(const vec2f& point) const override;
-	bool isInside(const vec2f& point) const override;
+	static const vec2f maxVelocity; // velocity thresold
 
-	vec2f A, B, C;
-};*/
-
-struct Collision {
-	bool collided;
-	vec2f separation;
-	static Collision none() { return Collision{false, vec2f(0)}; }
-	static Collision hit(vec2f separation) { return Collision{ true, separation }; }
+	float mass;
+	vec2f velocity;
+	vec2f acceleration;
 };
 
-//Collision overlap(const CircleCollider2D& c1, const CircleCollider2D& c2);
-Collision overlap(const RectCollider2D& c1, const RectCollider2D& c2);
-//Collision overlap(const TriangleCollider2D& c1, const TriangleCollider2D& c2);
+struct StaticRectCollider2D : public StaticCollider2D
+{
+	StaticRectCollider2D();
 
-/*Collision overlap(const CircleCollider2D& c1, const RectCollider2D& c2);
-Collision overlap(const RectCollider2D& c1, const CircleCollider2D& c2);*/
-/*Collision overlap(const TriangleCollider2D& c1, const CircleCollider2D& c2);
-Collision overlap(const CircleCollider2D& c1, const TriangleCollider2D& c2);
-Collision overlap(const TriangleCollider2D& c1, const RectCollider2D& c2);
-Collision overlap(const RectCollider2D& c1, const TriangleCollider2D& c2);*/
+	Rect rect;
+};
 
+struct DynamicRectCollider2D : public DynamicCollider2D
+{
+	DynamicRectCollider2D();
+
+	void move(float dt) override;
+
+	Rect rect;
+};
 
 }

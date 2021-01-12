@@ -45,6 +45,7 @@ GLenum getType(FramebufferType type) {
 		return GL_READ_FRAMEBUFFER;
 	case FramebufferType::DRAW:
 		return GL_DRAW_FRAMEBUFFER;
+	default:
 	case FramebufferType::BOTH:
 		return GL_FRAMEBUFFER;
 	}

@@ -7,166 +7,11 @@
 #include "System.h"
 #include "SpriteAnimatorComponent.h"
 #include "WorldComponent.h"
-#include "Collider2D.h"
+#include "PhysicSimulation.h"
 
 #include <iostream>
 
 namespace app {
-
-SpriteAnimatorComponent debugSpriteAnimator;
-Sprite debugSprite;
-void createDebugSprite(GraphicBackend& backend)
-{
-	Image image = Image::load(Asset::path("textures/debug/collider.png"));
-	Sprite::Animation anim;
-	anim.name = "idle";
-	anim.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 0));
-	debugSprite.animations.push_back(anim);
-	debugSprite.position = vec2f(0, 0);
-	debugSprite.size = vec2f(16, 16);
-	debugSprite.rotation = degreef(0);
-	debugSpriteAnimator.set(&debugSprite);
-	debugSpriteAnimator.create(backend);
-	debugSpriteAnimator.play("idle");
-}
-
-// jump physic : https://2dengine.com/?p=platformers
-
-struct PhysicWorld;
-
-struct RigidBody
-{
-	friend struct PhysicWorld;
-
-	RectCollider2D* collider = nullptr;
-	vec2f position;
-	vec2f size;
-	float mass = 1.f;
-private:
-	vec2f velocity = vec2f(0.f);
-	vec2f acceleration = vec2f(0.f);
-};
-
-struct PhysicWorld
-{
-	// update the physic simulation
-	void update(float dt) {
-		if (input::pressed(input::Key::Space))
-		{
-			bodies[0]->acceleration = vec2f(0.f, 0.f);
-			bodies[0]->velocity = vec2f(0.f, 1.f);
-
-			/*bodies[0]->acceleration = vec2f(0.f, 0.f);
-			bodies[0]->velocity = vec2f(0.f, 0.f);
-			bodies[0]->position = vec2f(192.f, 160.f);*/
-		}
-		if (input::pressed(input::Key::LeftCtrl))
-		{
-			bodies[0]->position = vec2f(192.f, 160.f);
-		}
-		// F = m*(G*Mearth/(Rearth*Rearth))
-		// Mearth = 5.98 * 10^24kg
-		// Rearth = 6.38*10^6m
-		// G = 6.67259* 10^-11 Nm^2/kg^2
-		// F = ma
-		Time::unit now = Time::now();
-		// dt is the timestep
-		while (lastTick + dt < now)
-		{
-			// Update velocity vectors
-			vec2f force = vec2f(0.f, -9.81f);
-			vec2f maxVelocity(50.f);
-			for (RigidBody* rigid : bodies)
-			{
-				rigid->acceleration += (force / rigid->mass) * dt;
-				rigid->velocity += rigid->acceleration * dt;
-				rigid->velocity = min(rigid->velocity, maxVelocity);
-			}
-			// Move dynamic objects
-			for (RigidBody* rigid : bodies)
-			{
-				// Move rigid
-				rigid->position += rigid->velocity;
-				// Check collisions with static objects
-				for (RectCollider2D* collider : colliders)
-				{
-					rigid->collider->position = rigid->position;
-					Collision c = overlap(*rigid->collider, *collider);
-					if (c.collided)
-					{
-						// Adjust velocity
-						// Get normal 
-						vec2f normal = vec2f::normalize(c.separation);
-						// Get relative velocity
-						vec2f velocity = rigid->velocity; // substract by second object velocity if it has one
-						// Get penetration speed
-						float ps = vec2f::dot(velocity, normal);
-						// objects moving towards each other ?
-						if (ps <= 0.f)
-						{
-							// Move the rigid to avoid overlapping.
-							rigid->position += c.separation;
-						}
-						// Get penetration component
-						vec2f p = normal * ps;
-						// tangent component
-						vec2f t = velocity - p;
-						// Restitution
-						float r = 1.f + max<float>(0.1f, 0.f); // max bouncing value of object a & b
-						// Friction
-						float f = min<float>(0.1f, 1.f); // max friction value of object a & b
-						// Change the velocity of shape a
-						rigid->acceleration = vec2f(0);
-						rigid->velocity = rigid->velocity - p * r + t * f;
-					}
-				}
-				// Check collisions with other dynamic object
-				for (RigidBody* otherRigid : bodies)
-				{
-					// Skip self intersection
-					if (otherRigid == rigid)
-						continue;
-					Collision c = overlap(*otherRigid->collider, *rigid->collider);
-					if (c.collided)
-					{
-						// HAAA handle collision
-						// Move one of the object to avoid overlapping.
-						// Adjust velocity
-					}
-				}
-			}
-			lastTick += Time::unit(dt * 1000.f);
-		}
-	}
-	void render(GraphicBackend& backend) {
-		// For debug
-		for (RigidBody* rigid : bodies)
-		{
-			debugSprite.position = rigid->position;
-			debugSprite.size = rigid->size;
-			debugSpriteAnimator.render(backend);
-		}
-		/*for (RectCollider2D* collider : colliders)
-		{
-			debugSprite.position = collider->position;
-			debugSprite.size = collider->size;
-			debugSpriteAnimator.render(backend);
-		}*/
-	}
-	Time::unit lastTick = 0;
-	std::vector<RigidBody*> bodies;
-	std::vector<RectCollider2D*> colliders;
-};
-// Collider is a component, animator is a component
-
-/*struct Player : Object {
-	void create() {
-		components.push_back(new PhysicComponent);
-		components.push_back(new ColliderComopnent);
-		components.push_back(new SpriteAnimatorComponent);
-	}
-	std::vector<Component*> components;
-};*/
 
 GLuint framebufferID;
 Sprite character;
@@ -184,7 +29,8 @@ GLenum error = GL_NO_ERROR;
 
 vec2f charPosition;
 
-PhysicWorld physicWorld;
+PhysicSimulation physic(0.01f);
+DynamicRectCollider2D* charCollider;
 
 
 void Game::initialize(Window& window, GraphicBackend& backend)
@@ -257,29 +103,24 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 	window.setSizeLimits(BACKGROUND_WIDTH, BACKGROUND_HEIGHT, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-	createDebugSprite(backend);
+	physic.create(backend);
 	{
-		RigidBody* rigid = new RigidBody;
-		rigid->position = vec2f(192, 160);
-		rigid->size = vec2f(16);
-		rigid->collider = new RectCollider2D;
-		rigid->collider->position = rigid->position;
-		rigid->collider->size = rigid->size;
-		physicWorld.bodies.push_back(rigid);
+		charCollider = physic.createDynamicRectCollider();
+		charCollider->rect.position = vec2f(192, 160);
+		charCollider->rect.size = vec2f(16);
+		charCollider->mass = 1.f;
 	}
 	{
-		RectCollider2D *collider = new RectCollider2D;
-		collider->position = vec2f(192, 0);
-		collider->size = vec2f(128, 96);
-		physicWorld.colliders.push_back(collider);
+		StaticRectCollider2D *collider = physic.createStaticRectCollider();
+		collider->rect.position = vec2f(192, 0);
+		collider->rect.size = vec2f(128, 96);
 	}
 	{
-		RectCollider2D* collider = new RectCollider2D;
-		collider->position = vec2f(0);
-		collider->size = vec2f(320, 80);
-		physicWorld.colliders.push_back(collider);
+		StaticRectCollider2D* collider = physic.createStaticRectCollider();
+		collider->rect.position = vec2f(0);
+		collider->rect.size = vec2f(320, 80);
 	}
-	physicWorld.lastTick = Time::now();
+	physic.start();
 }
 
 void Game::destroy(GraphicBackend& backend)
@@ -311,11 +152,27 @@ void Game::update(GraphicBackend& backend)
 		worldComponent.getCurrentLevel().offset.x += (int32_t)input::delta().x;
 		worldComponent.getCurrentLevel().offset.y += (int32_t)-input::delta().y;
 	}
-	
-	physicWorld.bodies[0]->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q) + input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
-	physicWorld.bodies[0]->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S) + input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+	Shape2D* shape = charCollider->getShape();
+	float x = shape->getPosition().x + input::pressed(input::Key::D) - input::pressed(input::Key::Q) + input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
+	float y = shape->getPosition().y + input::pressed(input::Key::Z) - input::pressed(input::Key::S) + input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+	shape->setPosition(vec2f(x, y));
+
+	if (input::pressed(input::Key::Space))
+	{
+		charCollider->acceleration = vec2f(0.f, 0.f);
+		charCollider->velocity = vec2f(0.f, 1.f);
+
+		//charCollider->acceleration = vec2f(0.f, 0.f);
+		//charCollider->velocity = vec2f(0.f, 0.f);
+		//charCollider->position = vec2f(192.f, 160.f);
+	}
+	if (input::pressed(input::Key::LeftCtrl))
+	{
+		charCollider->getShape()->setPosition(vec2f(192.f, 160.f));
+	}
+
 	// Update physic after moving manually objects
-	physicWorld.update(0.01f);
+	physic.update();
 }
 // TODO
 // - Hide framebuffer impl
@@ -329,7 +186,7 @@ void Game::render(GraphicBackend& backend)
 	worldComponent.render(backend);
 	characterComponent.render(backend);
 
-	physicWorld.render(backend);
+	physic.render(backend);
 
 	// Blit to main buffer
 	uint32_t widthRatio = screenWidth() / BACKGROUND_WIDTH;

@@ -156,7 +156,9 @@
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="PhysicSimulation.cpp" />
     <ClCompile Include="PlatformWindows.cpp" />
+    <ClCompile Include="Shape2D.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="SpriteAnimatorComponent.cpp" />
     <ClCompile Include="System.cpp" />
@@ -178,6 +180,8 @@
     <ClInclude Include="Graphic.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="PhysicSimulation.h" />
+    <ClInclude Include="Shape2D.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="SpriteAnimatorComponent.h" />
     <ClInclude Include="System.h" />

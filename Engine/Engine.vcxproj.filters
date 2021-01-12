@@ -117,6 +117,12 @@
     <ClCompile Include="Collider2D.cpp">
       <Filter>Fichiers sources\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="PhysicSimulation.cpp">
+      <Filter>Fichiers sources\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Shape2D.cpp">
+      <Filter>Fichiers sources\Physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -183,6 +189,12 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="Collider2D.h">
+      <Filter>Fichiers d%27en-tête\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicSimulation.h">
+      <Filter>Fichiers d%27en-tête\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Shape2D.h">
       <Filter>Fichiers d%27en-tête\Physics</Filter>
     </ClInclude>
   </ItemGroup>
