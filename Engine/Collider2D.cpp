@@ -106,16 +106,13 @@ bool TriangleCollider2D::isInside(const vec2f& point) const
 
 Collision overlap(const RectCollider2D& r1, const RectCollider2D& r2)
 {
- 	if (r1.position.x > r2.position.x + r2.size.x || r2.position.x > r1.position.x + r1.size.x)
-		return Collision::none();
-	if (r1.position.y > r2.position.y + r2.size.y || r2.position.y > r1.position.y + r1.size.y)
-		return Collision::none();
-	return Collision::hit(vec2f(0));
-	/*// distance between the rects
-	vec2f d = r1.position - r2.position;
-	vec2f ad = vec2f(abs(d.x), abs(d.y));
+	// distance between the rects
+	vec2f r1Pos = r1.position + r1.size / 2.f;
+	vec2f r2Pos = r2.position + r2.size / 2.f;
+	vec2f d = r1Pos - r2Pos;
+	vec2f ad = vec2f::abs(d);
 	// sum of the extents
-	vec2f sh = r1.size + r2.size;
+	vec2f sh = r1.size / 2.f + r2.size / 2.f;
 	if (ad.x >= sh.x || ad.y >= sh.y) // no intersections
 		return Collision::none();
 	// shortest separation
@@ -123,17 +120,20 @@ Collision overlap(const RectCollider2D& r1, const RectCollider2D& r2)
 	// ignore longer axis
 	if (s.x < s.y)
 	{
-		if (s.x > 0)
-			s.y = 0;
-		else if (s.y > 0)
-			s.x = 0;
+		if (s.x > 0.f)
+			s.y = 0.f;
+	}
+	else 
+	{
+		if (s.y > 0.f)
+			s.x = 0.f;
 	}
 	// correct sign
-	if (d.x < 0)
+	if (d.x < 0.f)
 		s.x = -s.x;
-	if (d.y < 0)
+	if (d.y < 0.f)
 		s.y = -s.y;
-	return Collision::hit(s);*/
+	return Collision::hit(s);
 }
 
 /*Collision overlap(const TriangleCollider2D& t1, const TriangleCollider2D& t2)

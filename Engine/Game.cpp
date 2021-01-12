@@ -38,7 +38,7 @@ struct RigidBody
 {
 	friend struct PhysicWorld;
 
-	RectCollider2D* collider;
+	RectCollider2D* collider = nullptr;
 	vec2f position;
 	vec2f size;
 	float mass = 1.f;
@@ -55,7 +55,10 @@ struct PhysicWorld
 		{
 			bodies[0]->acceleration = vec2f(0.f, 0.f);
 			bodies[0]->velocity = vec2f(0.f, 1.f);
-			//bodies[0]->position = vec2f(192.f, 160.f);
+
+			/*bodies[0]->acceleration = vec2f(0.f, 0.f);
+			bodies[0]->velocity = vec2f(0.f, 0.f);
+			bodies[0]->position = vec2f(192.f, 160.f);*/
 		}
 		if (input::pressed(input::Key::LeftCtrl))
 		{
@@ -71,7 +74,7 @@ struct PhysicWorld
 		while (lastTick + dt < now)
 		{
 			// Update velocity vectors
-			vec2f force = vec2f(1.f, -9.81f);
+			vec2f force = vec2f(0.f, -9.81f);
 			vec2f maxVelocity(50.f);
 			for (RigidBody* rigid : bodies)
 			{
@@ -88,18 +91,33 @@ struct PhysicWorld
 				for (RectCollider2D* collider : colliders)
 				{
 					rigid->collider->position = rigid->position;
-					Collision c = overlap(*collider, *rigid->collider);
+					Collision c = overlap(*rigid->collider, *collider);
 					if (c.collided)
 					{
-						static int coll = 0;
-						std::cout << "Collision" << coll++ << std::endl;
-						// Move the rigid to avoid overlapping.
-						rigid->position += c.separation;
-
 						// Adjust velocity
-						// Get normal, reflect velocity by it
+						// Get normal 
+						vec2f normal = vec2f::normalize(c.separation);
+						// Get relative velocity
+						vec2f velocity = rigid->velocity; // substract by second object velocity if it has one
+						// Get penetration speed
+						float ps = vec2f::dot(velocity, normal);
+						// objects moving towards each other ?
+						if (ps <= 0.f)
+						{
+							// Move the rigid to avoid overlapping.
+							rigid->position += c.separation;
+						}
+						// Get penetration component
+						vec2f p = normal * ps;
+						// tangent component
+						vec2f t = velocity - p;
+						// Restitution
+						float r = 1.f + max<float>(0.1f, 0.f); // max bouncing value of object a & b
+						// Friction
+						float f = min<float>(0.1f, 1.f); // max friction value of object a & b
+						// Change the velocity of shape a
 						rigid->acceleration = vec2f(0);
-						rigid->velocity = vec2f(0);
+						rigid->velocity = rigid->velocity - p * r + t * f;
 					}
 				}
 				// Check collisions with other dynamic object
@@ -111,7 +129,6 @@ struct PhysicWorld
 					Collision c = overlap(*otherRigid->collider, *rigid->collider);
 					if (c.collided)
 					{
-						std::cout << "Collision" << std::endl;
 						// HAAA handle collision
 						// Move one of the object to avoid overlapping.
 						// Adjust velocity
@@ -129,14 +146,14 @@ struct PhysicWorld
 			debugSprite.size = rigid->size;
 			debugSpriteAnimator.render(backend);
 		}
-		for (RectCollider2D* collider : colliders)
+		/*for (RectCollider2D* collider : colliders)
 		{
 			debugSprite.position = collider->position;
 			debugSprite.size = collider->size;
 			debugSpriteAnimator.render(backend);
-		}
+		}*/
 	}
-	Time::unit lastTick;
+	Time::unit lastTick = 0;
 	std::vector<RigidBody*> bodies;
 	std::vector<RectCollider2D*> colliders;
 };
@@ -295,9 +312,10 @@ void Game::update(GraphicBackend& backend)
 		worldComponent.getCurrentLevel().offset.y += (int32_t)-input::delta().y;
 	}
 	
+	physicWorld.bodies[0]->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q) + input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
+	physicWorld.bodies[0]->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S) + input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+	// Update physic after moving manually objects
 	physicWorld.update(0.01f);
-	physicWorld.bodies[0]->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
-	physicWorld.bodies[0]->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 }
 // TODO
 // - Hide framebuffer impl

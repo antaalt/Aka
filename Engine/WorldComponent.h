@@ -8,6 +8,7 @@ namespace app {
 class WorldComponent : public Component
 {
 public:
+	WorldComponent();
 	void loadWorld(const Path &worldPath);
 	void loadLevel(const Path& levelPath);
 public:

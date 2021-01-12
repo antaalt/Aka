@@ -6,6 +6,10 @@ namespace app {
 
 GLuint ubo, tbo;
 
+WorldComponent::WorldComponent()
+{
+}
+
 void WorldComponent::loadWorld(const Path& worldPath)
 {
 	m_world = World::load(worldPath);
