@@ -163,6 +163,7 @@
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="PhysicSimulation.cpp" />
     <ClCompile Include="PlatformWindows.cpp" />
     <ClCompile Include="Shape2D.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="Graphic.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="PhysicSimulation.h" />
     <ClInclude Include="Shape2D.h" />
     <ClInclude Include="Sprite.h" />

@@ -1,7 +1,5 @@
 #include "Window.h"
 
-#include <iostream>
-
 #include "GraphicBackend.h"
 #include "Application.h"
 #include "Input.h"
@@ -83,13 +81,13 @@ Window::Window(const Config& config) :
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
 	}
-	glfwSwapInterval(0);
 	glfwSetWindowUserPointer(m_window, this);
 	glfwMakeContextCurrent(m_window); // Initialise GLEW
 	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
 		app::Window* w = static_cast<app::Window*>(glfwGetWindowUserPointer(window));
 		w->resize(width, height);
 	});
+	glfwSwapInterval(1); // 1 is vsync, 0 is free
 	setInputCallback(m_window);
 
 	switch (config.api)

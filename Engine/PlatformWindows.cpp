@@ -1,7 +1,5 @@
 #include "Platform.h"
 
-#include <iostream>
-
 namespace app {
 
 // https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -113,7 +111,7 @@ input::Key getKeyFromScancode(unsigned int scancode)
 	// Extended key flag (set with ALT, CTRL, INS, DEL, HOME, END, PAGE UP, PAGE DOWN, Arrow keys, NUM LOCK, BREAK, PRINT SCRN, DIVIDE (NUMPAD), ENTER (NUMPAD)
 	unsigned short enhanced = (scancode >> 8) & 0x000000ff;
 	UINT virtualKey = MapVirtualKey(code, MAPVK_VSC_TO_VK_EX);
-	std::cout << std::hex << "VK : " << virtualKey << " - code : " << code << "/" << enhanced << " - name : " << getKeyName(virtualKeyCodes[virtualKey]) << std::endl;
+	//Logger::info("VK : ", virtualKey, " - code : ", code, "/", enhanced, "- name : ", getKeyName(virtualKeyCodes[virtualKey]));
 	if (virtualKey >= virtualKeyCodesCount)
 		return input::Key::Unknown;
 	return virtualKeyCodes[virtualKey];

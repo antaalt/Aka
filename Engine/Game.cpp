@@ -4,12 +4,12 @@
 #include "Image.h"
 #include "Input.h"
 #include "Time.h"
+#include "Logger.h"
 #include "System.h"
 #include "SpriteAnimatorComponent.h"
 #include "WorldComponent.h"
 #include "PhysicSimulation.h"
 
-#include <iostream>
 #include <sstream>
 #include <imgui.h>
 #include <examples/imgui_impl_glfw.h>

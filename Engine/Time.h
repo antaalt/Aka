@@ -4,6 +4,21 @@
 
 namespace app {
 
+struct Date
+{
+	// Get the date corresponding to the local timezone
+	static Date localtime();
+	// Get the date corresponding to the UTC time
+	static Date globaltime();
+
+	uint32_t year;
+	uint32_t month;
+	uint32_t day;
+	uint32_t hour;
+	uint32_t minute;
+	uint32_t second;
+};
+
 struct Time
 {
 	struct Unit {
@@ -37,6 +52,8 @@ struct Time
 
 	// Time elapsed since app startup in ms
 	static Time::Unit now();
+	// Get unix timestamp
+	static Time::Unit unix();
 };
 
 };

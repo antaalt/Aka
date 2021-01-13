@@ -150,6 +150,9 @@
     <ClCompile Include="Camera2D.cpp">
       <Filter>Fichiers sources\Entity</Filter>
     </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -250,6 +253,9 @@
     </ClInclude>
     <ClInclude Include="Camera2D.h">
       <Filter>Fichiers d%27en-tête\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

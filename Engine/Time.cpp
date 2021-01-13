@@ -4,11 +4,23 @@
 
 namespace app {
 
-const std::chrono::time_point<std::chrono::steady_clock> g_startup = std::chrono::steady_clock::now();
+using namespace std::chrono;
+
+const time_point<steady_clock> g_startup = steady_clock::now();
 
 Time::Unit Time::now()
 {
-	return Unit(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - g_startup).count()));
+	using namespace std::chrono;
+	return Unit(static_cast<uint64_t>(duration_cast<milliseconds>(steady_clock::now() - g_startup).count()));
+}
+
+Time::Unit Time::unix()
+{
+	using namespace std::chrono;
+	time_point<system_clock> now = system_clock::now();
+	const duration<double> tse = now.time_since_epoch();
+	seconds::rep milli = duration_cast<milliseconds>(tse).count() % 1000;
+	return Time::Unit(milli);
 }
 
 Time::Unit::Unit() :
@@ -107,6 +119,50 @@ bool Time::Unit::operator<=(const Unit& rhs) const
 bool Time::Unit::operator>=(const Unit& rhs) const
 {
 	return m_value >= rhs.m_value;
+}
+
+Date Date::localtime()
+{
+	using namespace std::chrono;
+	time_point<system_clock> now = system_clock::now();
+	time_t t = system_clock::to_time_t(now);
+	std::tm lt{};
+	// Safe localtime for multithread issues
+#if defined(_WIN32)
+	localtime_s(&lt, &t);
+#else
+	localtime_r(&t, &lt);
+#endif
+	Date date;
+	date.year = lt.tm_year + 1900;
+	date.month = lt.tm_mon + 1;
+	date.day = lt.tm_mday;
+	date.hour = lt.tm_mday;
+	date.minute = lt.tm_min;
+	date.second = lt.tm_sec;
+	return date;
+}
+
+Date Date::globaltime()
+{
+	using namespace std::chrono;
+	time_point<system_clock> now = system_clock::now();
+	time_t t = system_clock::to_time_t(now);
+	std::tm lt{};
+	// Safe gmtime for multithread issues
+#if defined(_WIN32)
+	gmtime_s(&lt, &t);
+#else
+	gmtime_r(&t, &lt);
+#endif
+	Date date;
+	date.year = lt.tm_year + 1900;
+	date.month = lt.tm_mon + 1;
+	date.day = lt.tm_mday;
+	date.hour = lt.tm_mday;
+	date.minute = lt.tm_min;
+	date.second = lt.tm_sec;
+	return date;
 }
 
 }
