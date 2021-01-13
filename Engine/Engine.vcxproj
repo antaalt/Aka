@@ -169,7 +169,7 @@
     <ClCompile Include="Shape2D.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="SpriteAnimatorComponent.cpp" />
-    <ClCompile Include="System.cpp" />
+    <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="main.cpp" />
@@ -191,6 +191,7 @@
     <ClInclude Include="Collider2D.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Debug.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="FontRenderer.h" />
     <ClInclude Include="Framebuffer.h" />
@@ -202,7 +203,7 @@
     <ClInclude Include="Shape2D.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="SpriteAnimatorComponent.h" />
-    <ClInclude Include="System.h" />
+    <ClInclude Include="FileSystem.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Time.h" />

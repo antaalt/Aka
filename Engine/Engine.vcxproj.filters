@@ -96,9 +96,6 @@
     <ClCompile Include="Game.cpp">
       <Filter>Fichiers sources\Game</Filter>
     </ClCompile>
-    <ClCompile Include="System.cpp">
-      <Filter>Fichiers sources\System</Filter>
-    </ClCompile>
     <ClCompile Include="Image.cpp">
       <Filter>Fichiers sources\System</Filter>
     </ClCompile>
@@ -153,6 +150,9 @@
     <ClCompile Include="OgmoWorld.cpp">
       <Filter>Fichiers sources\Entity</Filter>
     </ClCompile>
+    <ClCompile Include="FileSystem.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -188,14 +188,8 @@
     <ClInclude Include="Image.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
-    <ClInclude Include="System.h">
-      <Filter>Fichiers d%27en-tête\System</Filter>
-    </ClInclude>
     <ClInclude Include="Time.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Platform.h">
-      <Filter>Fichiers d%27en-tête\Window</Filter>
     </ClInclude>
     <ClInclude Include="Sprite.h">
       <Filter>Fichiers d%27en-tête\Entity</Filter>
@@ -256,6 +250,15 @@
     </ClInclude>
     <ClInclude Include="OgmoWorld.h">
       <Filter>Fichiers d%27en-tête\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>Fichiers d%27en-tête\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform.h">
+      <Filter>Fichiers d%27en-tête\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSystem.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
