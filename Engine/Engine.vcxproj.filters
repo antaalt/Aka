@@ -61,6 +61,12 @@
     <Filter Include="Fichiers sources\Physics">
       <UniqueIdentifier>{0c7a2caf-6e27-4fd4-ae3f-5ba6bef78494}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers d%27en-tête\Gui">
+      <UniqueIdentifier>{cee2c663-8960-4ace-9d6f-a25c291b069e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Gui">
+      <UniqueIdentifier>{90c32b66-a06f-4f10-be34-6a97fa6dffa4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -123,8 +129,26 @@
     <ClCompile Include="Shape2D.cpp">
       <Filter>Fichiers sources\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="..\lib\imgui\imgui.cpp">
+      <Filter>Fichiers sources\Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\imgui\imgui_demo.cpp">
+      <Filter>Fichiers sources\Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\imgui\imgui_draw.cpp">
+      <Filter>Fichiers sources\Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\imgui\imgui_widgets.cpp">
+      <Filter>Fichiers sources\Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_glfw.cpp">
+      <Filter>Fichiers sources\Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_opengl3.cpp">
+      <Filter>Fichiers sources\Gui</Filter>
+    </ClCompile>
     <ClCompile Include="Camera2D.cpp">
-      <Filter>Fichiers sources</Filter>
+      <Filter>Fichiers sources\Entity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -200,8 +224,32 @@
     <ClInclude Include="Shape2D.h">
       <Filter>Fichiers d%27en-tête\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="..\lib\imgui\imconfig.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\imgui.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\imgui_internal.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\imstb_rectpack.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\imstb_textedit.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\imstb_truetype.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_glfw.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_opengl3.h">
+      <Filter>Fichiers d%27en-tête\Gui</Filter>
+    </ClInclude>
     <ClInclude Include="Camera2D.h">
-      <Filter>Fichiers d%27en-tête</Filter>
+      <Filter>Fichiers d%27en-tête\Entity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

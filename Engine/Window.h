@@ -32,7 +32,10 @@ private:
 public:
 	static void run(const Window::Config& config);
 
+	// Set window size limits
 	void setSizeLimits(int32_t minWidth, int32_t minHeight, int32_t maxWidth, int32_t maxHeight);
+	// Get window handle
+	void* getHandle() const;
 
 private:
 	// TODO : Abstraction depending on window system (SDL, GLFW...)

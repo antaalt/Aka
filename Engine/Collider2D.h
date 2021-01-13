@@ -11,6 +11,9 @@ struct Collider2D
 	Collision overlaps(const Collider2D& collider);
 	Shape2D* getShape();
 	// is on floor function
+
+	float bouncing;
+	float friction;
 private:
 	Shape2D* m_shape;
 };
@@ -31,10 +34,10 @@ struct DynamicCollider2D : public Collider2D
 	// Move the object depending on its force
 	virtual void move(float dt) = 0;
 	// Resolve the collision
-	void resolve(const vec2f& separation);
+	void resolve(const vec2f& separation, const Collider2D &other);
 
 	static const vec2f maxVelocity; // velocity thresold
-
+	
 	float mass;
 	vec2f velocity;
 	vec2f acceleration;

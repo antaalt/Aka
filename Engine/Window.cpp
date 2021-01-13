@@ -83,6 +83,7 @@ Window::Window(const Config& config) :
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
 	}
+	glfwSwapInterval(0);
 	glfwSetWindowUserPointer(m_window, this);
 	glfwMakeContextCurrent(m_window); // Initialise GLEW
 	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
@@ -125,6 +126,11 @@ void Window::loop()
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
 	} while (!input::pressed(input::Key::Escape) && glfwWindowShouldClose(m_window) == 0);
+}
+
+void* Window::getHandle() const
+{
+	return m_window;
 }
 
 void Window::run(const Window::Config& config)

@@ -36,6 +36,24 @@ Collision Shape2D::overlaps(const Shape2D& shape) const
 	}
 }
 
+Shape2D::Type Shape2D::getType() const
+{
+	return m_type;
+}
+
+std::string Shape2D::getTypeName(Shape2D::Type type)
+{
+	switch (type)
+	{
+	case Type::Circle:
+		return "circle";
+	case Type::Rect:
+		return "rect";
+	default:
+		return "undefined";
+	}
+}
+
 /*Collision overlap(const Circle& c1, const Circle& c2)
 {
 	return Collision::none();

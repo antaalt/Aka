@@ -32,13 +32,14 @@ public:
 
 	DynamicRectCollider2D *createDynamicRectCollider();
 	StaticRectCollider2D* createStaticRectCollider();
-private:
-	std::vector<DynamicCollider2D*> m_dynamics;
-	std::vector<StaticCollider2D*> m_statics;
-	std::vector<Collider2D*> m_colliders;
-	float m_timestep;
-	Time::unit m_lastTick;
-	bool m_running;
+
+	std::vector<DynamicCollider2D*> dynamics;
+	std::vector<StaticCollider2D*> statics;
+	std::vector<Collider2D*> colliders;
+	float timestep;
+	Time::unit lastTick;
+	bool running;
+	bool renderColliders;
 };
 
 }

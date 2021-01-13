@@ -121,7 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui-1.78;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -148,6 +148,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Camera2D.cpp" />
     <ClCompile Include="Collider2D.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -171,6 +177,14 @@
     <ClCompile Include="WorldComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_glfw.h" />
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\lib\imgui\imconfig.h" />
+    <ClInclude Include="..\lib\imgui\imgui.h" />
+    <ClInclude Include="..\lib\imgui\imgui_internal.h" />
+    <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera2D.h" />
     <ClInclude Include="Collider2D.h" />

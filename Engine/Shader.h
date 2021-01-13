@@ -24,7 +24,8 @@ enum class UniformType {
 	Vec4,
 	Mat4,
 	Texture2D,
-	Sampler2D
+	Sampler2D,
+	SamplerBuffer
 };
 
 using ShaderID = uint32_t; // TODO use strict type

@@ -18,7 +18,7 @@ void WorldComponent::loadWorld(const Path& worldPath)
 void WorldComponent::loadLevel(const Path& levelPath)
 {
 	// TODO destroy currentLevel
-	m_currentLevel = Level::load(levelPath);
+	m_currentLevel = Level::load(m_world, levelPath);
 }
 
 void WorldComponent::create(GraphicBackend& backend)
@@ -30,15 +30,14 @@ void WorldComponent::create(GraphicBackend& backend)
 	ASSERT(background != nullptr, "");
 	ASSERT(foreground != nullptr, "");
 	ASSERT(playerground != nullptr, "");
-
-	const Level::Layer* layer = m_currentLevel.getLayer("Foreground");
-	ASSERT(layer != nullptr, "");
-	const World::Tileset* tileset = m_world.getTileset(layer->tileset);
 	// Consider for now they are all the same.
-	ASSERT(tileset == m_world.getTileset(layer->tileset), "");
+	ASSERT(background->tileset == foreground->tileset, "");
+	ASSERT(background->tileset == playerground->tileset, "");
+
+	const Level::Layer* layer = foreground;
 
 	// create texture for level
-	m_atlas = backend.createTexture(tileset->image.width, tileset->image.height, tileset->image.bytes.data());
+	m_atlas = backend.createTexture(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data());
 
 	// Create UBO
 	glGenBuffers(1, &ubo);
@@ -66,7 +65,7 @@ void WorldComponent::create(GraphicBackend& backend)
 	info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "projection" });
 	info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "model" });
 	info.uniforms.push_back(Uniform{ UniformType::Sampler2D, ShaderType::FRAGMENT_SHADER, "image" });
-	info.uniforms.push_back(Uniform{ UniformType::Sampler2D, ShaderType::FRAGMENT_SHADER, "spriteIndices" });
+	info.uniforms.push_back(Uniform{ UniformType::SamplerBuffer, ShaderType::FRAGMENT_SHADER, "spriteIndices" });
 	m_shader.create(info);
 
 	checkError();
@@ -102,7 +101,7 @@ void WorldComponent::render(const Camera2D& camera, GraphicBackend& backend)
 void WorldComponent::renderLayer(const std::string& name, const Camera2D& camera, GraphicBackend& backend)
 {
 	const Level::Layer* layer = m_currentLevel.getLayer(name);
-	const World::Tileset* atlas = m_world.getTileset(layer->tileset);
+	const World::Tileset* atlas = layer->tileset;
 
 	// Update it for offset
 	vec2u scale = layer->gridCellSize * layer->gridCellCount;

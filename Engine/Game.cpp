@@ -10,6 +10,10 @@
 #include "PhysicSimulation.h"
 
 #include <iostream>
+#include <sstream>
+#include <imgui.h>
+#include <examples/imgui_impl_glfw.h>
+#include <examples/imgui_impl_opengl3.h>
 
 namespace app {
 
@@ -110,22 +114,62 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		charCollider->rect.position = vec2f(192, 160);
 		charCollider->rect.size = vec2f(16);
 		charCollider->mass = 1.f;
+		charCollider->bouncing = 0.1f;
+		charCollider->friction = 0.1f;
 	}
 	{
 		StaticRectCollider2D *collider = physic.createStaticRectCollider();
 		collider->rect.position = vec2f(192, 0);
-		collider->rect.size = vec2f(128, 96);
+		collider->rect.size = vec2f(224, 96);
+		collider->bouncing = 0.f;
+		collider->friction = 0.f;
 	}
 	{
 		StaticRectCollider2D* collider = physic.createStaticRectCollider();
 		collider->rect.position = vec2f(0);
-		collider->rect.size = vec2f(320, 80);
+		collider->rect.size = vec2f(196, 80);
+		collider->bouncing = 0.f;
+		collider->friction = 0.f;
+	}
+	{
+		StaticRectCollider2D* collider = physic.createStaticRectCollider();
+		collider->rect.position = vec2f(16, 96);
+		collider->rect.size = vec2f(80, 64);
+		collider->bouncing = 0.f;
+		collider->friction = 0.f;
+	}
+	{
+		StaticRectCollider2D* collider = physic.createStaticRectCollider();
+		collider->rect.position = vec2f(96, 112);
+		collider->rect.size = vec2f(16, 32);
+		collider->bouncing = 0.f;
+		collider->friction = 0.f;
 	}
 	physic.start();
+
+	// IMGUI
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+
+	ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(window.getHandle()), true);
+
+	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+	std::stringstream ss;
+	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
+	ImGui_ImplOpenGL3_Init(ss.str().c_str());
+	ImGui::StyleColorsDark();
 }
 
 void Game::destroy(GraphicBackend& backend)
 {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	renderTarget->destroy();
 	characterComponent.destroy(backend);
 	worldComponent.destroy(backend);
@@ -143,6 +187,11 @@ void Game::destroy(GraphicBackend& backend)
 
 void Game::update(GraphicBackend& backend)
 {
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
 	camera.position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
 	camera.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
 	characterComponent.update();
@@ -171,6 +220,184 @@ void Game::update(GraphicBackend& backend)
 		// teleport above
 		charCollider->getShape()->setPosition(vec2f(charCollider->getShape()->getPosition().x, camera.viewport.y));
 	}
+
+	if (ImGui::Begin("Debug##window"))
+	{
+		ImVec4 color= ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
+		if (ImGui::CollapsingHeader("Infos", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGuiIO &io = ImGui::GetIO();
+			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
+			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+			ImGui::InputFloat2("Camera", camera.position.data, 3);
+		}
+
+		if (ImGui::CollapsingHeader("Colliders##header", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::Checkbox("Render##checkbox", &physic.renderColliders);
+			char buffer[256];
+			ImGui::TextColored(color, "Dynamics");
+			for (DynamicCollider2D* dynamic : physic.dynamics)
+			{
+				Shape2D::Type type = dynamic->getShape()->getType();
+				std::string typeName = Shape2D::getTypeName(type);
+				snprintf(buffer, 256, "Dynamic%s##%p", typeName.c_str(), dynamic);
+				if (ImGui::TreeNode(buffer))
+				{
+					switch (type)
+					{
+					case Shape2D::Type::Rect: {
+						Rect* rect = reinterpret_cast<Rect*>(dynamic->getShape());
+						ImGui::InputFloat2("Position", rect->position.data, 3);
+						ImGui::InputFloat2("Size", rect->size.data, 3);
+						break;
+					}
+					/*case Shape2D::Type::Circle: {
+						Circle* circle = reinterpret_cast<Circle*>(dynamic->getShape());
+						ImGui::InputFloat2("Position", circle->position.data, 3);
+						ImGui::InputFloat("Radius", circle->radius, 0.1f, 1.f, 2);
+						break;
+					}*/
+					default:
+						break;
+					}
+					ImGui::InputFloat("Mass", &dynamic->mass, 0.1f, 1.f, 2);
+					ImGui::InputFloat("Bouncing", &dynamic->bouncing, 0.1f, 1.f, 2);
+					ImGui::InputFloat("Friction", &dynamic->friction, 0.1f, 1.f, 2);
+					ImGui::InputFloat2("Acceleration", dynamic->acceleration.data, 3);
+					ImGui::InputFloat2("Velocity", dynamic->velocity.data, 3);
+					ImGui::TreePop();
+				}
+			}
+			static int current_shape_dyn = 0;
+			const char* current_shape_dyn_name[2] = {
+				"Rect",
+				"Circle"
+			};
+			if (ImGui::Button("Add##dynamic"))
+			{
+				if (current_shape_dyn == 0)
+				{
+					DynamicRectCollider2D* c = physic.createDynamicRectCollider();
+					c->rect.position = vec2f(0.f);
+					c->rect.size = vec2f(16.f);
+				}
+				else
+				{
+
+				}
+			}
+			ImGui::SameLine();
+			ImGui::Combo("Shape##dynamic", &current_shape_dyn, current_shape_dyn_name, 2);
+			ImGui::Separator();
+
+
+			ImGui::TextColored(color, "Statics");
+			for (StaticCollider2D* staticc : physic.statics)
+			{
+				Shape2D::Type type = staticc->getShape()->getType();
+				std::string typeName = Shape2D::getTypeName(type);
+				snprintf(buffer, 256, "Static%s##%p", typeName.c_str(), staticc);
+				if (ImGui::TreeNode(buffer))
+				{
+					switch (type)
+					{
+					case Shape2D::Type::Rect: {
+						Rect* rect = reinterpret_cast<Rect*>(staticc->getShape());
+						ImGui::InputFloat2("Position", rect->position.data, 3);
+						ImGui::InputFloat2("Size", rect->size.data, 3);
+						break;
+					}
+					default:
+						break;
+					}
+					ImGui::TreePop();
+				}
+			}
+			static int current_shape = 0;
+			const char* current_shape_name[2] = {
+				"Rect",
+				"Circle"
+			};
+			if (ImGui::Button("Add"))
+			{
+				if (current_shape == 0)
+				{
+					StaticRectCollider2D* c = physic.createStaticRectCollider();
+					c->rect.position = vec2f(0.f);
+					c->rect.size = vec2f(16.f);
+				}
+				else
+				{
+
+				}
+			}
+			ImGui::SameLine();
+			ImGui::Combo("Shape##static", &current_shape, current_shape_name, 2);
+			
+		}
+		if (ImGui::CollapsingHeader("Level##header", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			Level &level = worldComponent.getCurrentLevel();
+			ImGui::TextColored(color, "Layers");
+			static const char* layerTypeName[] = {
+				"Tile",
+				"Grid",
+				"Entity"
+			};
+			for (Level::Layer& layer : level.layers)
+			{
+				if (ImGui::TreeNode(layer.layer->name.c_str()))
+				{
+					ImGui::Text("%s", layerTypeName[(int)layer.layer->type]);
+					vec2i gridCellCount = vec2i(layer.gridCellCount);
+					vec2i gridCellSize = vec2i(layer.gridCellSize);
+					if (ImGui::InputInt2("Grid count", gridCellCount.data))
+						layer.gridCellCount = vec2u(gridCellCount);
+					if (ImGui::InputInt2("Grid size", gridCellSize.data))
+						layer.gridCellSize = vec2u(gridCellSize);
+					
+					switch (layer.layer->type)
+					{
+					case World::LayerType::Tile:
+						//ImGui::Image(layer.tileset->image);
+						layer.data;
+						break;
+					case World::LayerType::Grid:
+						break;
+					case World::LayerType::Entity:
+						char buffer[256];
+						uint32_t id = 0;
+						for (Level::Entity& entity : layer.entities)
+						{
+							snprintf(buffer, 256, "%s%2u", entity.entity->name.c_str(), id++);
+							if (ImGui::TreeNode(buffer))
+							{
+								entity.entity->image;
+								vec2i origin = vec2i(entity.entity->origin);
+								vec2i tileSize = vec2i(entity.entity->size);
+								if (ImGui::InputInt2("Origin", origin.data))
+									const_cast<vec2u&>(entity.entity->origin) = vec2u(origin);
+								if (ImGui::InputInt2("Tile size", tileSize.data))
+									const_cast<vec2u&>(entity.entity->origin) = vec2u(tileSize);
+
+								vec2i position = vec2i(entity.position);
+								vec2i size = vec2i(entity.size);
+								if (ImGui::InputInt2("Position", position.data))
+									entity.position = vec2u(position);
+								if (ImGui::InputInt2("Size", size.data))
+									entity.size = vec2u(size);
+								ImGui::TreePop();
+							}
+						}
+						break;
+					}
+					ImGui::TreePop();
+				}
+			}
+		}
+	}
+	ImGui::End();
 
 	// Update physic after moving manually objects
 	physic.update();
@@ -220,6 +447,10 @@ void Game::render(GraphicBackend& backend)
 	//fontRenderer->render(font96, str, (float)((int)screenWidth() / 2 - size96.x / 2) + size96.x + 10, (float)((int)screenHeight() / 2 - size96.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
 
 	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
+
+	// Rendering imgui
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 }

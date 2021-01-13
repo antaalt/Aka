@@ -46,7 +46,7 @@ void DynamicCollider2D::addForce(const vec2f& force, float dt)
 	velocity.y = clamp(velocity.y, -maxVelocity.y, maxVelocity.y);
 }
 
-void DynamicCollider2D::resolve(const vec2f& separation)
+void DynamicCollider2D::resolve(const vec2f& separation, const Collider2D& other)
 {
 	// Adjust velocity
 	// Get normal 
@@ -66,9 +66,9 @@ void DynamicCollider2D::resolve(const vec2f& separation)
 	// tangent component
 	vec2f t = v - p;
 	// Restitution
-	float r = 1.f + max<float>(0.1f, 0.f); // max bouncing value of object a & b
+	float r = 1.f + max<float>(bouncing, other.bouncing); // max bouncing value of object a & b
 	// Friction
-	float f = min<float>(0.1f, 1.f); // max friction value of object a & b
+	float f = min<float>(friction, other.friction); // max friction value of object a & b
 	// Change the velocity of shape a
 	this->acceleration = vec2f(0);
 	this->velocity = this->velocity - p * r + t * f;

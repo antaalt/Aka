@@ -19,12 +19,16 @@ struct Shape2D
 		Circle
 	};
 	Shape2D(Type type);
+
 	Collision overlaps(const Shape2D& shape) const;
 	virtual vec2f getNearestPoint(const vec2f& point) const = 0;
 	virtual bool isInside(const vec2f& point) const = 0;
 
 	virtual vec2f getPosition() const = 0;
 	virtual vec2f getSize() const = 0;
+
+	Type getType() const;
+	static std::string getTypeName(Type type);
 
 	virtual void setPosition(const vec2f& position) = 0;
 private:

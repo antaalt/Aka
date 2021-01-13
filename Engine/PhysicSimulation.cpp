@@ -8,9 +8,10 @@ SpriteAnimatorComponent debugSpriteAnimator;
 Sprite debugSprite;
 
 PhysicSimulation::PhysicSimulation(float timestep) :
-	m_timestep(timestep),
-	m_lastTick(Time::now()),
-	m_running(false)
+	timestep(timestep),
+	lastTick(Time::now()),
+	running(false),
+	renderColliders(true)
 {
 }
 
@@ -35,47 +36,47 @@ void PhysicSimulation::destroy(GraphicBackend& backend)
 
 void PhysicSimulation::start()
 {
-	m_running = true;
-	m_lastTick = Time::now();
+	running = true;
+	lastTick = Time::now();
 }
 
 void PhysicSimulation::pause()
 {
-	m_running = false;
+	running = false;
 }
 
 void PhysicSimulation::update()
 {
-	if (!m_running)
+	if (!running)
 		return;
 
 	const Time::unit now = Time::now();
 	const vec2f force = vec2f(0.f, -9.81f);
-	float dt = m_timestep;
+	float dt = timestep;
 	// dt is the timestep
-	while (m_lastTick + dt < now)
+	while (lastTick + dt < now)
 	{
 		// Update velocity vectors
-		for (DynamicCollider2D* dynamic : m_dynamics)
+		for (DynamicCollider2D* dynamic : dynamics)
 		{
 			dynamic->addForce(force, dt);
 		}
 		// Move dynamic objects
-		for (DynamicCollider2D* dynamic : m_dynamics)
+		for (DynamicCollider2D* dynamic : dynamics)
 		{
 			// Move rigid
 			dynamic->move(dt);
 			// Check collisions with static objects
-			for (StaticCollider2D* collider : m_statics)
+			for (StaticCollider2D* collider : statics)
 			{
 				Collision c = dynamic->overlaps(*collider);
 				if (c.collided)
 				{
-					dynamic->resolve(c.separation);
+					dynamic->resolve(c.separation, *collider);
 				}
 			}
 			// Check collisions with other dynamic object
-			for (DynamicCollider2D* otherDynamic : m_dynamics)
+			for (DynamicCollider2D* otherDynamic : dynamics)
 			{
 				// Skip self intersection
 				if (otherDynamic == dynamic)
@@ -83,24 +84,25 @@ void PhysicSimulation::update()
 				Collision c = dynamic->overlaps(*otherDynamic);
 				if (c.collided)
 				{
-					dynamic->resolve(c.separation);
-					// TODO resolve other dynamic
+					dynamic->resolve(c.separation, *otherDynamic);
 				}
 			}
 		}
-		m_lastTick += static_cast<Time::unit>(dt * 1000.f);
+		lastTick += static_cast<Time::unit>(dt * 1000.f);
 	}
 }
 void PhysicSimulation::render(const Camera2D &camera, GraphicBackend& backend)
 {
+	if (!renderColliders)
+		return;
 	// For debug
-	for (DynamicCollider2D* dynamic : m_dynamics)
+	for (DynamicCollider2D* dynamic : dynamics)
 	{
 		debugSprite.position = dynamic->getShape()->getPosition();
 		debugSprite.size = dynamic->getShape()->getSize();
 		debugSpriteAnimator.render(camera, backend);
 	}
-	for (StaticCollider2D* statics : m_statics)
+	for (StaticCollider2D* statics : statics)
 	{
 		debugSprite.position = statics->getShape()->getPosition();
 		debugSprite.size = statics->getShape()->getSize();
@@ -110,15 +112,15 @@ void PhysicSimulation::render(const Camera2D &camera, GraphicBackend& backend)
 DynamicRectCollider2D* PhysicSimulation::createDynamicRectCollider()
 {
 	DynamicRectCollider2D *rect = new DynamicRectCollider2D;
-	m_dynamics.push_back(rect);
-	m_colliders.push_back(rect);
+	dynamics.push_back(rect);
+	colliders.push_back(rect);
 	return rect;
 }
 StaticRectCollider2D* PhysicSimulation::createStaticRectCollider()
 {
 	StaticRectCollider2D* rect = new StaticRectCollider2D;
-	m_statics.push_back(rect);
-	m_colliders.push_back(rect);
+	statics.push_back(rect);
+	colliders.push_back(rect);
 	return rect;
 }
 }
