@@ -32,7 +32,7 @@ GLenum error = GL_NO_ERROR;
 
 Camera2D camera;
 
-PhysicSimulation physic(0.01f);
+PhysicSimulation physic(Time::Unit::milliseconds(10));
 DynamicRectCollider2D* charCollider;
 
 

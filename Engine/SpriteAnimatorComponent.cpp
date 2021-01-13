@@ -82,9 +82,9 @@ void SpriteAnimatorComponent::destroy(GraphicBackend& backend)
 void SpriteAnimatorComponent::update()
 {
     // TODO Pass a global tick relative to the frame instead ?
-    const Time::unit now = Time::now();
-    Time::unit elapsedSincePlay = (now - m_animationStartTick) % m_currentAnimationDuration;
-    Time::unit currentFrameDuration = 0;
+    const Time::Unit now = Time::now();
+    Time::Unit elapsedSincePlay = (now - m_animationStartTick) % m_currentAnimationDuration;
+    Time::Unit currentFrameDuration = 0;
     uint32_t frameID = 0;
     while (elapsedSincePlay > (currentFrameDuration = m_sprite->animations[m_currentAnimation].frames[frameID].duration))
     {

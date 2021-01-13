@@ -15,7 +15,7 @@ namespace app {
 class PhysicSimulation
 {
 public:
-	PhysicSimulation(float timestep);
+	PhysicSimulation(Time::Unit timestep);
 
 	void create(GraphicBackend& backend);
 	void destroy(GraphicBackend& backend);
@@ -36,8 +36,8 @@ public:
 	std::vector<DynamicCollider2D*> dynamics;
 	std::vector<StaticCollider2D*> statics;
 	std::vector<Collider2D*> colliders;
-	float timestep;
-	Time::unit lastTick;
+	Time::Unit timestep;
+	Time::Unit lastTick;
 	bool running;
 	bool renderColliders;
 };

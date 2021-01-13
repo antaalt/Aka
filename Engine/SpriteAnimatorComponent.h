@@ -29,8 +29,8 @@ private:
 	Sprite *m_sprite;
 	uint32_t m_currentAnimation;
 	uint32_t m_currentFrame;
-	Time::unit m_animationStartTick;
-	Time::unit m_currentAnimationDuration;
+	Time::Unit m_animationStartTick;
+	Time::Unit m_currentAnimationDuration;
 
 private:
 	Shader m_shader;

@@ -7,7 +7,7 @@ namespace app {
 SpriteAnimatorComponent debugSpriteAnimator;
 Sprite debugSprite;
 
-PhysicSimulation::PhysicSimulation(float timestep) :
+PhysicSimulation::PhysicSimulation(Time::Unit timestep) :
 	timestep(timestep),
 	lastTick(Time::now()),
 	running(false),
@@ -50,9 +50,9 @@ void PhysicSimulation::update()
 	if (!running)
 		return;
 
-	const Time::unit now = Time::now();
+	const Time::Unit now = Time::now();
 	const vec2f force = vec2f(0.f, -9.81f);
-	float dt = timestep;
+	float dt = timestep.seconds();
 	// dt is the timestep
 	while (lastTick + dt < now)
 	{
@@ -88,7 +88,7 @@ void PhysicSimulation::update()
 				}
 			}
 		}
-		lastTick += static_cast<Time::unit>(dt * 1000.f);
+		lastTick += static_cast<Time::Unit>(dt * 1000.f);
 	}
 }
 void PhysicSimulation::render(const Camera2D &camera, GraphicBackend& backend)
