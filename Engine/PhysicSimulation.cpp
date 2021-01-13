@@ -54,7 +54,7 @@ void PhysicSimulation::update()
 	const vec2f force = vec2f(0.f, -9.81f);
 	float dt = timestep.seconds();
 	// dt is the timestep
-	while (lastTick + dt < now)
+	while (lastTick + timestep < now)
 	{
 		// Update velocity vectors
 		for (DynamicCollider2D* dynamic : dynamics)
@@ -88,7 +88,7 @@ void PhysicSimulation::update()
 				}
 			}
 		}
-		lastTick += static_cast<Time::Unit>(dt * 1000.f);
+		lastTick += timestep;
 	}
 }
 void PhysicSimulation::render(const Camera2D &camera, GraphicBackend& backend)
