@@ -174,7 +174,7 @@
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GLBackend.cpp" />
-    <ClCompile Include="World.cpp" />
+    <ClCompile Include="OgmoWorld.cpp" />
     <ClCompile Include="WorldComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -210,7 +210,7 @@
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="GraphicBackend.h" />
     <ClInclude Include="Platform.h" />
-    <ClInclude Include="World.h" />
+    <ClInclude Include="OgmoWorld.h" />
     <ClInclude Include="WorldComponent.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

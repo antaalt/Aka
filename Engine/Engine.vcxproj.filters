@@ -114,9 +114,6 @@
     <ClCompile Include="WorldComponent.cpp">
       <Filter>Fichiers sources\Component</Filter>
     </ClCompile>
-    <ClCompile Include="World.cpp">
-      <Filter>Fichiers sources\Entity</Filter>
-    </ClCompile>
     <ClCompile Include="PlatformWindows.cpp">
       <Filter>Fichiers sources\Window</Filter>
     </ClCompile>
@@ -152,6 +149,9 @@
     </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
+    <ClCompile Include="OgmoWorld.cpp">
+      <Filter>Fichiers sources\Entity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -206,9 +206,6 @@
     <ClInclude Include="WorldComponent.h">
       <Filter>Fichiers d%27en-tête\Component</Filter>
     </ClInclude>
-    <ClInclude Include="World.h">
-      <Filter>Fichiers d%27en-tête\Entity</Filter>
-    </ClInclude>
     <ClInclude Include="Graphic.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
@@ -256,6 +253,9 @@
     </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
+    </ClInclude>
+    <ClInclude Include="OgmoWorld.h">
+      <Filter>Fichiers d%27en-tête\Entity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

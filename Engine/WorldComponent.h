@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.h"
-#include "World.h"
+#include "OgmoWorld.h"
 
 namespace app {
 
@@ -19,11 +19,11 @@ public:
 	void render(const Camera2D &camera, GraphicBackend& backend) override;
 	void renderLayer(const std::string& name, const Camera2D& camera, GraphicBackend& backend);
 
-	Level& getCurrentLevel() { return m_currentLevel; }
+	OgmoLevel& getCurrentLevel() { return m_currentLevel; }
 
 private:
-	World m_world;
-	Level m_currentLevel;
+	OgmoWorld m_world;
+	OgmoLevel m_currentLevel;
 private:
 	Shader m_shader;
 	Texture* m_atlas;

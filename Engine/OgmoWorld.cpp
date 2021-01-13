@@ -1,4 +1,4 @@
-#include "World.h"
+#include "OgmoWorld.h"
 
 #include <nlohmann/json.hpp>
 //#include <filesystem>
@@ -7,17 +7,17 @@
 
 namespace app {
 
-const Level::Layer* Level::getLayer(const std::string& name) const
+const OgmoLevel::Layer* OgmoLevel::getLayer(const std::string& name) const
 {
-	for (const Level::Layer& layer : layers)
+	for (const OgmoLevel::Layer& layer : layers)
 		if (layer.layer->name == name)
 			return &layer;
 	return nullptr;
 }
 
-Level Level::load(const World &world, const Path& path)
+OgmoLevel OgmoLevel::load(const OgmoWorld &world, const Path& path)
 {
-	Level level;
+	OgmoLevel level;
 	const nlohmann::json json = nlohmann::json::parse(Asset::loadString(path));
 	level.size.x = json["width"];
 	level.size.y = json["height"];
@@ -35,13 +35,13 @@ Level Level::load(const World &world, const Path& path)
 		layer.offset = vec2i(jsonLayer["offsetX"], jsonLayer["offsetY"]);
 		switch (layer.layer->type)
 		{
-		case World::LayerType::Tile:
+		case OgmoWorld::LayerType::Tile:
 			layer.tileset = world.getTileset(jsonLayer["tileset"]);
 			ASSERT(jsonLayer["arrayMode"].get<int>() == 0, "Only 1D array supported");
 			for (const nlohmann::json& jsonData : jsonLayer["data"])
 				layer.data.push_back(jsonData);
 			break;
-		case World::LayerType::Entity:
+		case OgmoWorld::LayerType::Entity:
 			for (const nlohmann::json& jsonData : jsonLayer["entities"])
 			{
 				Entity entity;
@@ -51,7 +51,7 @@ Level Level::load(const World &world, const Path& path)
 				layer.entities.push_back(entity);
 			}
 			break;
-		case World::LayerType::Grid:
+		case OgmoWorld::LayerType::Grid:
 			break;
 		}
 		level.layers.push_back(layer);
@@ -59,33 +59,33 @@ Level Level::load(const World &world, const Path& path)
 	return level;
 }
 
-const World::Tileset* World::getTileset(const std::string& name) const
+const OgmoWorld::Tileset* OgmoWorld::getTileset(const std::string& name) const
 {
-	for (const World::Tileset &tileset : tilesets)
+	for (const OgmoWorld::Tileset &tileset : tilesets)
 		if (tileset.name == name)
 			return &tileset;
 	return nullptr;
 }
 
-const World::Entity* World::getEntity(const std::string& name) const
+const OgmoWorld::Entity* OgmoWorld::getEntity(const std::string& name) const
 {
-	for (const World::Entity& entity : entities)
+	for (const OgmoWorld::Entity& entity : entities)
 		if (entity.name == name)
 			return &entity;
 	return nullptr;
 }
 
-const World::Layer* World::getLayer(const std::string& name) const
+const OgmoWorld::Layer* OgmoWorld::getLayer(const std::string& name) const
 {
-	for (const World::Layer& layer : layers)
+	for (const OgmoWorld::Layer& layer : layers)
 		if (layer.name == name)
 			return &layer;
 	return nullptr;
 }
 
-World World::load(const Path& path)
+OgmoWorld OgmoWorld::load(const Path& path)
 {
-	World world;
+	OgmoWorld world;
 	const std::string relativePath = path.str().substr(0, path.str().find_last_of('/') + 1);
 	const nlohmann::json json = nlohmann::json::parse(Asset::loadString(path));
 	const nlohmann::json& jsonTilesets = json["tilesets"];
@@ -147,22 +147,22 @@ World World::load(const Path& path)
 		std::string file = p.path().string().substr(p.path().string().find_last_of('/') + 1);
 		if (file == currentFile)
 			continue;
-		Level::load(relativePath + file);
+		OgmoLevel::load(relativePath + file);
 	}*/
 	return world;
 }
 
-int32_t Level::Layer::getTileIndex(uint32_t tileX, uint32_t tileY) const
+int32_t OgmoLevel::Layer::getTileIndex(uint32_t tileX, uint32_t tileY) const
 {
 	return data[tileY * gridCellSize.y + tileX];
 }
 
-uint32_t Level::Layer::getTileWidth() const
+uint32_t OgmoLevel::Layer::getTileWidth() const
 {
 	return gridCellSize.x;
 }
 
-uint32_t Level::Layer::getTileHeight() const
+uint32_t OgmoLevel::Layer::getTileHeight() const
 {
 	return gridCellSize.y;
 }

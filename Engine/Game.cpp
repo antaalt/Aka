@@ -338,14 +338,14 @@ void Game::update(GraphicBackend& backend)
 		}
 		if (ImGui::CollapsingHeader("Level##header", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			Level &level = worldComponent.getCurrentLevel();
+			OgmoLevel &level = worldComponent.getCurrentLevel();
 			ImGui::TextColored(color, "Layers");
 			static const char* layerTypeName[] = {
 				"Tile",
 				"Grid",
 				"Entity"
 			};
-			for (Level::Layer& layer : level.layers)
+			for (OgmoLevel::Layer& layer : level.layers)
 			{
 				if (ImGui::TreeNode(layer.layer->name.c_str()))
 				{
@@ -359,16 +359,16 @@ void Game::update(GraphicBackend& backend)
 					
 					switch (layer.layer->type)
 					{
-					case World::LayerType::Tile:
+					case OgmoWorld::LayerType::Tile:
 						//ImGui::Image(layer.tileset->image);
 						layer.data;
 						break;
-					case World::LayerType::Grid:
+					case OgmoWorld::LayerType::Grid:
 						break;
-					case World::LayerType::Entity:
+					case OgmoWorld::LayerType::Entity:
 						char buffer[256];
 						uint32_t id = 0;
-						for (Level::Entity& entity : layer.entities)
+						for (OgmoLevel::Entity& entity : layer.entities)
 						{
 							snprintf(buffer, 256, "%s%2u", entity.entity->name.c_str(), id++);
 							if (ImGui::TreeNode(buffer))

@@ -12,21 +12,21 @@ WorldComponent::WorldComponent()
 
 void WorldComponent::loadWorld(const Path& worldPath)
 {
-	m_world = World::load(worldPath);
+	m_world = OgmoWorld::load(worldPath);
 }
 
 void WorldComponent::loadLevel(const Path& levelPath)
 {
-	// TODO destroy currentLevel
-	m_currentLevel = Level::load(m_world, levelPath);
+	// TODO destroy currentOgmoLevel
+	m_currentLevel = OgmoLevel::load(m_world, levelPath);
 }
 
 void WorldComponent::create(GraphicBackend& backend)
 {
 	// create texture for atlas
-	const Level::Layer* background = m_currentLevel.getLayer("Background");
-	const Level::Layer* foreground = m_currentLevel.getLayer("Foreground");
-	const Level::Layer* playerground = m_currentLevel.getLayer("Playerground");
+	const OgmoLevel::Layer* background = m_currentLevel.getLayer("Background");
+	const OgmoLevel::Layer* foreground = m_currentLevel.getLayer("Foreground");
+	const OgmoLevel::Layer* playerground = m_currentLevel.getLayer("Playerground");
 	ASSERT(background != nullptr, "");
 	ASSERT(foreground != nullptr, "");
 	ASSERT(playerground != nullptr, "");
@@ -34,7 +34,7 @@ void WorldComponent::create(GraphicBackend& backend)
 	ASSERT(background->tileset == foreground->tileset, "");
 	ASSERT(background->tileset == playerground->tileset, "");
 
-	const Level::Layer* layer = foreground;
+	const OgmoLevel::Layer* layer = foreground;
 
 	// create texture for level
 	m_atlas = backend.createTexture(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data());
@@ -100,8 +100,8 @@ void WorldComponent::render(const Camera2D& camera, GraphicBackend& backend)
 
 void WorldComponent::renderLayer(const std::string& name, const Camera2D& camera, GraphicBackend& backend)
 {
-	const Level::Layer* layer = m_currentLevel.getLayer(name);
-	const World::Tileset* atlas = layer->tileset;
+	const OgmoLevel::Layer* layer = m_currentLevel.getLayer(name);
+	const OgmoWorld::Tileset* atlas = layer->tileset;
 
 	// Update it for offset
 	vec2u scale = layer->gridCellSize * layer->gridCellCount;

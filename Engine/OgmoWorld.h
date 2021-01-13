@@ -8,7 +8,7 @@
 
 namespace app {
 
-struct World
+struct OgmoWorld
 {
 	enum class LayerType {
 		Tile,
@@ -50,27 +50,27 @@ struct World
 	const Entity* getEntity(const std::string& name) const;
 	const Layer* getLayer(const std::string& name) const;
 
-	static World load(const Path& path);
+	static OgmoWorld load(const Path& path);
 };
 
-struct Level
+struct OgmoLevel
 {
 	struct Entity
 	{
-		const World::Entity* entity;
+		const OgmoWorld::Entity* entity;
 		vec2u position;
 		vec2u size;
 	};
 
 	struct Layer
 	{
-		const World::Layer* layer;
+		const OgmoWorld::Layer* layer;
 
 		vec2i offset;
 		vec2u gridCellSize;
 		vec2u gridCellCount;
 
-		const World::Tileset *tileset;
+		const OgmoWorld::Tileset *tileset;
 		std::vector<int32_t> data; // index of sprite in corresponding tileset
 
 		std::vector<Entity> entities;
@@ -84,11 +84,11 @@ struct Level
 	vec2u size;
 	vec2i offset;
 	std::vector<Layer> layers;
-	World* world;
+	OgmoWorld* world;
 
 	const Layer* getLayer(const std::string& name) const;
 
-	static Level load(const World& world, const Path& path);
+	static OgmoLevel load(const OgmoWorld& world, const Path& path);
 };
 
 }
