@@ -36,13 +36,15 @@ void PhysicSystem::update()
 		});
 		m_world->each<Transform2D, RigidBody2D, Collider2D>([&](Entity* entity, Transform2D* transform, RigidBody2D* rigid, Collider2D *collider) {
 			transform->position += rigid->velocity;// *dt;
-			rigid->position += rigid->velocity;
-			collider->position += rigid->velocity;
-			m_world->each<Collider2D>([&](Entity* otherEntity, Collider2D* otherCollider) {
+			collider->position = transform->position;
+			collider->size = transform->size;
+			m_world->each<Transform2D, Collider2D>([&](Entity* otherEntity, Transform2D *otherTransform, Collider2D* otherCollider) {
 				// Skip self intersection
 				if (otherEntity == entity)
 					return;
 				const RigidBody2D* otherRigid = otherEntity->get<RigidBody2D>();
+				otherCollider->position = otherTransform->position;
+				otherCollider->size = otherTransform->size;
 				Collision2D c = collider->overlaps(*otherCollider);
 				if (c.collided)
 				{
@@ -58,8 +60,6 @@ void PhysicSystem::update()
 					{
 						// Move the rigid & its collider to avoid overlapping.
 						transform->position += c.separation;
-						rigid->position += c.separation;
-						collider->position += c.separation;
 					}
 					// Get penetration component
 					vec2f p = normal * ps;

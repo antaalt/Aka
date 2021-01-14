@@ -146,8 +146,8 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	
 	// INIT CHARACTER
 	charCollider = world.createEntity();
-	charCollider->add<RigidBody2D>(RigidBody2D(vec2f(192, 160), 1.f, 0.1f, 0.1f));
-	charCollider->add<Collider2D>(Collider2D(vec2f(192, 160), vec2f(16.f)));
+	charCollider->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
+	charCollider->add<Collider2D>(Collider2D(vec2f(0), vec2f(16.f)));
 	charCollider->add<Transform2D>(Transform2D(vec2f(192, 160), vec2f(16.f), radianf(0.f)));
 	charCollider->add<Animator>(Animator(&colliderSprite, 0.f));
 
@@ -156,23 +156,23 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	Entity* collider;
 
 	collider = world.createEntity();
-	collider->add<Collider2D>(Collider2D(vec2f(192, 0), vec2f(224, 96)));
 	collider->add<Transform2D>(Transform2D(vec2f(192, 0), vec2f(224, 96), radianf(0.f)));
+	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	collider = world.createEntity();
-	collider->add<Collider2D>(Collider2D(vec2f(0), vec2f(196, 80)));
 	collider->add<Transform2D>(Transform2D(vec2f(0), vec2f(196, 80), radianf(0.f)));
+	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	collider = world.createEntity();
-	collider->add<Collider2D>(Collider2D(vec2f(16, 96), vec2f(80, 64)));
 	collider->add<Transform2D>(Transform2D(vec2f(16, 96), vec2f(80, 64), radianf(0.f)));
+	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	collider = world.createEntity();
-	collider->add<Collider2D>(Collider2D(vec2f(96, 112), vec2f(16, 32)));
 	collider->add<Transform2D>(Transform2D(vec2f(96, 112), vec2f(16, 32), radianf(0.f)));
+	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	// IMGUI
@@ -231,10 +231,6 @@ void Game::update(GraphicBackend& backend)
 	Collider2D* collider = charCollider->get<Collider2D>();
 	transform->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
 	transform->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
-	rigid->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
-	rigid->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
-	collider->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
-	collider->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 
 	if (input::pressed(input::Key::Space))
 	{
@@ -244,15 +240,12 @@ void Game::update(GraphicBackend& backend)
 	if (input::pressed(input::Key::LeftCtrl))
 	{
 		transform->position = vec2f(192.f, 160.f);
-		rigid->position = vec2f(192.f, 160.f);
-		collider->position = vec2f(192.f, 160.f);
 	}
 
 	if (transform->position.y < -transform->size.y)
 	{
 		// teleport above
 		transform->position = vec2f(transform->position.x, c->viewport.y);
-		rigid->position = vec2f(rigid->position.x, c->viewport.y);
 	}
 
 	if (ImGui::Begin("Debug##window"))
@@ -316,7 +309,7 @@ void Game::update(GraphicBackend& backend)
 					Entity* e = world.createEntity();
 					e->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(16.f), radianf(0.f)));
 					e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
-					e->add<RigidBody2D>(RigidBody2D(vec2f(0.f), 1.f));
+					e->add<RigidBody2D>(RigidBody2D(1.f));
 				}
 				else
 				{

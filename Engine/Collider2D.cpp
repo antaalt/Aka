@@ -51,12 +51,11 @@ Collision2D Collider2D::overlaps(const Collider2D& collider)
 }
 
 RigidBody2D::RigidBody2D() :
-	RigidBody2D(vec2f(0), 1.f)
+	RigidBody2D(1.f)
 {
 }
 
-RigidBody2D::RigidBody2D(const vec2f& position, float mass, float bouncing, float friction) :
-	position(position),
+RigidBody2D::RigidBody2D(float mass, float bouncing, float friction) :
 	velocity(0.f),
 	acceleration(0.f),
 	mass(mass),

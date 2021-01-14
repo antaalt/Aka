@@ -55,9 +55,8 @@ struct RigidBody2D : public Component
 	static inline const vec2f maxVelocity = vec2f(5.f);
 
 	RigidBody2D();
-	RigidBody2D(const vec2f& position, float mass, float bouncing = 0.f, float friction = 0.f);
+	RigidBody2D(float mass, float bouncing = 0.f, float friction = 0.f);
 
-	vec2f position;
 	vec2f velocity;
 	vec2f acceleration;
 	float mass;
