@@ -101,24 +101,4 @@ void World::render(GraphicBackend& backend)
 		system->render(backend);
 }
 
-std::vector<Entity*>::iterator World::begin()
-{
-	return m_entities.begin();
-}
-
-std::vector<Entity*>::iterator World::end()
-{
-	return m_entities.end();
-}
-
-std::vector<Entity*>::const_iterator World::begin() const
-{
-	return m_entities.begin();
-}
-
-std::vector<Entity*>::const_iterator World::end() const
-{
-	return m_entities.end();
-}
-
 };

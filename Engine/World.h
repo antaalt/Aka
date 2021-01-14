@@ -42,12 +42,6 @@ public:
 	void update();
 	// Render all systems
 	void render(GraphicBackend &backend);
-public:
-	// Iterator to loop over the world
-	std::vector<Entity*>::iterator begin();
-	std::vector<Entity*>::iterator end();
-	std::vector<Entity*>::const_iterator begin() const;
-	std::vector<Entity*>::const_iterator end() const;
 private:
 	// Using std list might be faster memory wise
 	std::vector<Entity*> m_entities;

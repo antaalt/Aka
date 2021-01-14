@@ -57,11 +57,27 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	cameraSystem = m_world.createSystem<CameraSystem>();
 
 	{
+		// INIT FIXED TEXTURE BACKGROUND
+		Image image = Image::load(Asset::path("textures/background/background.png"));
+		ASSERT(image.width == viewportSize.x, "incorrect width");
+		ASSERT(image.height == viewportSize.y, "incorrect height");
+
+		Sprite::Animation animation;
+		animation.name = "default";
+		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
+		background.animations.push_back(animation);
+
+		backgroundEntity = m_world.createEntity();
+		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f(viewportSize), radianf(0)));
+		backgroundEntity->add<Animator>(Animator(&background, 0.f))->play("default");
+	}
+	{
 		// INIT world
 		OgmoWorld ogmoWorld = OgmoWorld::load(Asset::path("levels/world.ogmo"));
 		OgmoLevel ogmoLevel = OgmoLevel::load(ogmoWorld, Asset::path("levels/level0.json"));
 		const OgmoLevel::Layer* foreground = ogmoLevel.getLayer("Foreground");
 
+		// Layers
 		auto createTileLayer = [&](const OgmoLevel::Layer* layer, float depth) -> Entity* {
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
@@ -76,21 +92,21 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		createTileLayer(ogmoLevel.getLayer("Background"), 0.f);
 		createTileLayer(ogmoLevel.getLayer("Playerground"), 0.f);
 		createTileLayer(ogmoLevel.getLayer("Foreground"), 0.f);
-	}
-	{
-		// INIT FIXED TEXTURE BACKGROUND
-		Image image = Image::load(Asset::path("textures/background/background.png"));
-		ASSERT(image.width == viewportSize.x, "incorrect width");
-		ASSERT(image.height == viewportSize.y, "incorrect height");
-
+		// Colliders
 		Sprite::Animation animation;
 		animation.name = "default";
+		Image image = Image::load(Asset::path("textures/debug/collider.png"));
 		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
-		background.animations.push_back(animation);
-
-		backgroundEntity = m_world.createEntity();
-		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f(viewportSize), radianf(0)));
-		backgroundEntity->add<Animator>(Animator(&background, -2.f))->play("default");
+		colliderSprite.animations.push_back(animation);
+		
+		const OgmoLevel::Layer* layer = ogmoLevel.getLayer("Colliders");
+		for (const OgmoLevel::Entity& entity : layer->entities)
+		{
+			Entity* collider = m_world.createEntity();
+			collider->add<Transform2D>(Transform2D(vec2f(entity.position.x, layer->getHeight() - entity.position.y - entity.size.y), vec2f(entity.size), radianf(0.f)));
+			collider->add<Collider2D>(Collider2D());
+			collider->add<Animator>(Animator(&colliderSprite, 0.f));
+		}
 	}
 	{
 		// INIT SPRITE CHARACTER
@@ -114,14 +130,6 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		characterEntity = m_world.createEntity();
 		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f(characterSize), radianf(0)));
 		characterEntity->add<Animator>(Animator(&character, 0.f))->play("idle");
-	}
-	{
-		// INIT SPRITE COLLIDER
-		Sprite::Animation animation;
-		animation.name = "default";
-		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
-		colliderSprite.animations.push_back(animation);
 	}
 
 	// INIT FRAMEBUFFER RENDER TARGET
@@ -147,30 +155,6 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	charCollider->add<Collider2D>(Collider2D());
 	charCollider->add<Transform2D>(Transform2D(vec2f(192, 160), vec2f(16.f), radianf(0.f)));
 	charCollider->add<Animator>(Animator(&colliderSprite, 0.f));
-
-	// INIT COLLIDERS
-	// TODO init from collider layer
-	Entity* collider;
-
-	collider = m_world.createEntity();
-	collider->add<Transform2D>(Transform2D(vec2f(192, 0), vec2f(224, 96), radianf(0.f)));
-	collider->add<Collider2D>(Collider2D());
-	collider->add<Animator>(Animator(&colliderSprite, 0.f));
-
-	collider = m_world.createEntity();
-	collider->add<Transform2D>(Transform2D(vec2f(0), vec2f(196, 80), radianf(0.f)));
-	collider->add<Collider2D>(Collider2D());
-	collider->add<Animator>(Animator(&colliderSprite, 0.f));
-
-	collider = m_world.createEntity();
-	collider->add<Transform2D>(Transform2D(vec2f(16, 96), vec2f(80, 64), radianf(0.f)));
-	collider->add<Collider2D>(Collider2D());
-	collider->add<Animator>(Animator(&colliderSprite, 0.f));
-
-	collider = m_world.createEntity();
-	collider->add<Transform2D>(Transform2D(vec2f(96, 112), vec2f(16, 32), radianf(0.f)));
-	collider->add<Collider2D>(Collider2D());
-	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	// IMGUI
 	// Setup Dear ImGui context
@@ -237,7 +221,7 @@ void Game::update(GraphicBackend& backend)
 	if (transform->position.y < -transform->size.y)
 	{
 		// teleport above
-		transform->position = vec2f(transform->position.x, viewportSize.y);
+		transform->position = vec2f(transform->position.x, (float)viewportSize.y);
 	}
 
 	if (ImGui::Begin("Debug##window"))
@@ -256,13 +240,7 @@ void Game::update(GraphicBackend& backend)
 			ImGui::Checkbox("Render##checkbox", &renderColliders);
 			char buffer[256];
 			ImGui::TextColored(color, "Dynamics");
-			for (Entity* entity : m_world)
-			{
-				// TODO Iterate on component family instead ?
-				if (!entity->has<RigidBody2D>() || !entity->has<Collider2D>())
-					continue;
-				Collider2D* collider = entity->get<Collider2D>();
-				RigidBody2D* rigid = entity->get<RigidBody2D>();
+			m_world.each<Transform2D, RigidBody2D, Collider2D>([&](Entity* entity, Transform2D* transform, RigidBody2D* rigid, Collider2D* collider) {
 				snprintf(buffer, 256, "RigidBody##%p", entity);
 				if (ImGui::TreeNode(buffer))
 				{
@@ -277,8 +255,8 @@ void Game::update(GraphicBackend& backend)
 					default:
 						break;
 					}*/
-					ImGui::InputFloat2("Position", collider->position.data, 3);
-					ImGui::InputFloat2("Size", collider->size.data, 3);
+					ImGui::InputFloat2("Position", transform->position.data, 3);
+					ImGui::InputFloat2("Size", transform->size.data, 3);
 
 					ImGui::InputFloat("Mass", &rigid->mass, 0.1f, 1.f, 2);
 					ImGui::InputFloat("Bouncing", &rigid->bouncing, 0.1f, 1.f, 2);
@@ -287,7 +265,7 @@ void Game::update(GraphicBackend& backend)
 					ImGui::InputFloat2("Velocity", rigid->velocity.data, 3);
 					ImGui::TreePop();
 				}
-			}
+			});
 			static int current_shape_dyn = 0;
 			const char* current_shape_dyn_name[2] = {
 				"Rect",
@@ -313,11 +291,7 @@ void Game::update(GraphicBackend& backend)
 
 
 			ImGui::TextColored(color, "Statics");
-			for (Entity* entity: m_world)
-			{
-				if (!entity->has<Collider2D>())
-					continue;
-				Collider2D* collider = entity->get<Collider2D>();
+			m_world.each<Transform2D, Collider2D>([&](Entity* entity, Transform2D* transform, Collider2D* collider) {
 				snprintf(buffer, 256, "Collider##%p", collider);
 				if (ImGui::TreeNode(buffer))
 				{
@@ -332,11 +306,11 @@ void Game::update(GraphicBackend& backend)
 					default:
 						break;
 					}*/
-					ImGui::InputFloat2("Position", collider->position.data, 3);
-					ImGui::InputFloat2("Size", collider->size.data, 3);
+					ImGui::InputFloat2("Position", transform->position.data, 3);
+					ImGui::InputFloat2("Size", transform->size.data, 3);
 					ImGui::TreePop();
 				}
-			}
+			});
 			static int current_shape = 0;
 			const char* current_shape_name[2] = {
 				"Rect",
@@ -367,12 +341,7 @@ void Game::update(GraphicBackend& backend)
 				"Grid",
 				"Entity"
 			};
-			for (Entity* entity : m_world)
-			{
-				if (!entity->has<TileLayer>() || !entity->has<TileMap>())
-					continue;
-				TileLayer *layer = entity->get<TileLayer>();
-				TileMap* map = entity->get<TileMap>();
+			m_world.each<TileLayer, TileMap>([&](Entity* entity, TileLayer* layer, TileMap* map) {
 				char buffer[256];
 				snprintf(buffer, 256, "Layer##%p", layer);
 				if (ImGui::TreeNode(buffer))
@@ -383,7 +352,7 @@ void Game::update(GraphicBackend& backend)
 						layer->gridCount = vec2u(gridCount);
 					if (ImGui::InputInt2("Grid size", gridSize.data))
 						layer->gridSize = vec2u(gridSize);
-					ImGui::Image((void*)(uintptr_t)(map->texture->getID()), ImVec2(512, 512), ImVec2(0, 1), ImVec2(1, 0), ImVec4(1,1,1,1), ImVec4(1,0,0,1));
+					ImGui::Image((void*)(uintptr_t)(map->texture->getID()), ImVec2(512, 512), ImVec2(0, 1), ImVec2(1, 0), ImVec4(1, 1, 1, 1), ImVec4(1, 0, 0, 1));
 
 					static int id = 0;
 					ImGui::SliderInt("", &id, 0, (int)layer->tileID.size() - 4);
@@ -395,7 +364,7 @@ void Game::update(GraphicBackend& backend)
 
 					ImGui::TreePop();
 				}
-			}
+			});
 		}
 	}
 	ImGui::End();
