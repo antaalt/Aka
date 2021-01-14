@@ -171,9 +171,6 @@
     <ClCompile Include="Entity.cpp">
       <Filter>Fichiers sources\System</Filter>
     </ClCompile>
-    <ClCompile Include="Controller.cpp">
-      <Filter>Fichiers sources\Component</Filter>
-    </ClCompile>
     <ClCompile Include="TileSystem.cpp">
       <Filter>Fichiers sources\System</Filter>
     </ClCompile>
@@ -300,9 +297,6 @@
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
     <ClInclude Include="Camera2D.h">
-      <Filter>Fichiers d%27en-tête\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Controller.h">
       <Filter>Fichiers d%27en-tête\Component</Filter>
     </ClInclude>
     <ClInclude Include="TileSystem.h">

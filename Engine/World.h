@@ -3,7 +3,12 @@
 #include "Entity.h"
 #include "Component.h"
 #include "System.h"
+#include "Time.h"
 #include "GraphicBackend.h"
+
+#include <functional>
+#include <type_traits>
+
 
 namespace app {
 
@@ -24,6 +29,11 @@ public:
 	template <typename T>
 	T *add(Entity& entity, T&& component);
 
+	template <typename T>
+	void each(std::function<void(Entity* entity, T*)> callback);
+	template <typename T, typename U, typename... Args>
+	void each(typename std::common_type<std::function<void(Entity*, T*, U*, Args*...)>>::type callback);
+
 	// Create all systems
 	void create();
 	// Destroy everything in this world (entities, components & systems)
@@ -32,7 +42,6 @@ public:
 	void update();
 	// Render all systems
 	void render(GraphicBackend &backend);
-
 public:
 	// Iterator to loop over the world
 	std::vector<Entity*>::iterator begin();
@@ -76,22 +85,36 @@ T* World::add(Entity& entity, T&& component)
 	T* instance = new T;
 	*instance = component;
 	instance->m_type = Component::Type::get<T>();
+	instance->m_entity = &entity;
 	ASSERT(Component::Type::size() != Component::Type::count(), "Reached max component capacity");
 	m_components[instance->m_type].push_back(instance);
 	entity.m_components.push_back(instance);
-	for (System* system : m_systems)
-		system->add(&entity);
 	return instance;
+}
+
+template <typename T>
+inline void World::each(std::function<void(Entity* entity, T*)> callback)
+{
+	uint8_t type = Component::Type::get<T>();
+	for (Component* component : m_components[type])
+		callback(component->m_entity, reinterpret_cast<T*>(component));
+}
+
+template <typename T, typename U, typename... Args>
+inline void World::each(typename std::common_type<std::function<void(Entity* entity, T*, U*, Args*...)>>::type callback)
+{
+	uint8_t type = Component::Type::get<T>();
+	for (Component* component : m_components[type])
+		if (component->m_entity->has<U, Args...>())
+			callback(component->m_entity, reinterpret_cast<T*>(component), reinterpret_cast<U*>(component->m_entity->get<U>()), component->m_entity->get<Args>()...);
 }
 
 template <typename T, typename... Args>
 inline T* World::createSystem(Args&& ...args)
 {
 	static_assert(std::is_base_of<System, T>::value, "Type is not a system");
-	T *system = new T(std::forward<Args>(args)...);
+	T *system = new T(this, std::forward<Args>(args)...);
 	m_systems.push_back(system);
-	for (Entity* entity : m_entities)
-		system->add(entity);
 	return system;
 }
 

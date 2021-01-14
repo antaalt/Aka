@@ -21,12 +21,15 @@ class System
 {
 public:
 	friend class World;
+
+	System(World* world);
+
 	// Add entities to the system
-	void add(Entity* entity);
+	//void add(Entity* entity);
 	// Remove entities to the system
-	void remove(Entity* entity);
+	//void remove(Entity* entity);
 	// Check an entity has all required component by the system
-	virtual bool valid(Entity* entity);
+	//virtual bool valid(Entity* entity);
 public:
 	virtual void create();
 	virtual void destroy();
@@ -34,7 +37,7 @@ public:
 	virtual void update();
 	virtual void render(GraphicBackend &backend);
 protected:
-	std::set<Entity*> m_entities;
+	World *m_world;
 };
 
 }

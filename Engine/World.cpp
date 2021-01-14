@@ -12,8 +12,6 @@ Entity* World::createEntity()
 {
 	Entity* entity = new Entity(this);
 	m_entities.push_back(entity);
-	for (System* system : m_systems)
-		system->add(entity);
 	return entity;
 }
 
@@ -26,9 +24,6 @@ void World::destroyEntity(Entity* entity)
 	}
 	else
 	{
-		// Remove entity reference from all systems
-		for (System* system : m_systems)
-			system->remove(entity);
 		// Destroy entity components before destroying entity
 		for (Component* component : entity->m_components)
 			destroyComponent(component);

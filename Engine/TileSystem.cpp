@@ -5,8 +5,14 @@
 #include "Camera2D.h"
 #include "Transform2D.h"
 #include "Animator.h"
+#include "World.h"
 
 namespace app {
+
+TileSystem::TileSystem(World* world) :
+    System(world)
+{
+}
 
 void TileSystem::create()
 {
@@ -57,11 +63,7 @@ void TileSystem::render(GraphicBackend& backend)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    for (Entity* entity : m_entities)
-    {
-        Transform2D* transform = entity->get<Transform2D>();
-        Animator* animator = entity->get<Animator>();
-       
+    m_world->each<Transform2D, Animator>([&](Entity *entity, Transform2D *transform, Animator* animator) {
         // prepare transformations
         m_shader.use();
         mat4f model = transform->model();
@@ -76,14 +78,7 @@ void TileSystem::render(GraphicBackend& backend)
         glBindVertexArray(m_vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
-    }
-}
-
-bool TileSystem::valid(Entity* entity)
-{
-    if (!entity->has<Transform2D>()) return false;
-    if (!entity->has<Animator>()) return false;
-    return true;
+    });
 }
 
 }

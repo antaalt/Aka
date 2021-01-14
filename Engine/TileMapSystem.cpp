@@ -5,32 +5,18 @@
 #include "Camera2D.h"
 #include "Transform2D.h"
 #include "Animator.h"
+#include "World.h"
 
 namespace app {
 
-/*void load()
+TileMapSystem::TileMapSystem(World* world) :
+    System(world)
 {
-    // create texture for atlas
-    const OgmoLevel::Layer* background = m_currentLevel.getLayer("Background");
-    const OgmoLevel::Layer* foreground = m_currentLevel.getLayer("Foreground");
-    const OgmoLevel::Layer* playerground = m_currentLevel.getLayer("Playerground");
-    ASSERT(background != nullptr, "");
-    ASSERT(foreground != nullptr, "");
-    ASSERT(playerground != nullptr, "");
-    // Consider for now they are all the same.
-    ASSERT(background->tileset == foreground->tileset, "");
-    ASSERT(background->tileset == playerground->tileset, "");
-
-    const OgmoLevel::Layer* layer = foreground;
-}*/
+}
 
 void TileMapSystem::create()
 {
-    for (Entity* entity : m_entities)
-    {
-        TileMap* tileMap = entity->get<TileMap>();
-        TileLayer* tileLayer = entity->get<TileLayer>();
-
+    m_world->each<TileMap, TileLayer>([](Entity * entity, TileMap * tileMap, TileLayer* tileLayer) {
         // Create layer UBO
         glGenBuffers(1, &tileLayer->ubo);
 
@@ -45,7 +31,7 @@ void TileMapSystem::create()
         glBindTexture(GL_TEXTURE_BUFFER, 0);
 
         glActiveTexture(GL_TEXTURE0);
-    }
+    });
     checkError();
 
     // Create shader
@@ -62,6 +48,7 @@ void TileMapSystem::create()
     m_shader.create(info);
 
     checkError();
+
 }
 
 void TileMapSystem::destroy()
@@ -77,11 +64,7 @@ void TileMapSystem::render(GraphicBackend &backend)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    for (Entity* entity : m_entities)
-    {
-        TileMap* atlas = entity->get<TileMap>();
-        TileLayer* layer = entity->get<TileLayer>();
-        Transform2D* transform = entity->get<Transform2D>();
+    m_world->each<Transform2D, TileMap, TileLayer>([&](Entity* entity, Transform2D *transform, TileMap* atlas, TileLayer* layer) {
 
         ASSERT(layer->gridSize == atlas->gridSize, "");
 
@@ -111,15 +94,7 @@ void TileMapSystem::render(GraphicBackend &backend)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         checkError();
-    }
-}
-
-bool TileMapSystem::valid(Entity* entity)
-{
-    if (!entity->has<TileLayer>()) return false;
-    if (!entity->has<TileMap>()) return false;
-    if (!entity->has<Transform2D>()) return false;
-	return true;
+    });
 }
 
 }

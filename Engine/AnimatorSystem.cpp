@@ -1,12 +1,17 @@
 #include "AnimatorSystem.h"
 
+#include "World.h"
+
 namespace app {
+
+AnimatorSystem::AnimatorSystem(World* world) :
+    System(world)
+{
+}
 
 void AnimatorSystem::update()
 {
-    for (Entity* entity : m_entities)
-    {
-        Animator* animator = entity->get<Animator>();
+    m_world->each<Animator>([](Entity* entity, Animator* animator) {
         if (animator->currentAnimationDuration > 0)
         {
             const Time::Unit now = Time::now();
@@ -20,12 +25,7 @@ void AnimatorSystem::update()
             }
             animator->currentFrame = frameID;
         }
-    }
-}
-
-bool AnimatorSystem::valid(Entity* entity)
-{
-	return entity->has<Animator>();
+    });
 }
 
 }

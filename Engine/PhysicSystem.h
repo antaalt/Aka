@@ -12,15 +12,11 @@ namespace app {
 class PhysicSystem : public System
 {
 public:
-	PhysicSystem(Time::Unit timestep);
+	PhysicSystem(World* world, Time::Unit timestep);
 
 	void update() override;
-public:
-	bool valid(Entity* entity) override;
 private:
 	Time::Unit m_timestep;
-	std::vector<RigidBody2D> m_rigids;
-	std::vector<Collider2D> m_colliders;
 };
 
 };

@@ -10,13 +10,13 @@ namespace app {
 class TileMapSystem : public System
 {
 public:
+	TileMapSystem(World* world);
+
 	void create() override;
 	void destroy() override;
 
 	void update() override;
 	void render(GraphicBackend& backend) override;
-public:
-	bool valid(Entity* entity) override;
 private:
 	Shader m_shader;
 };

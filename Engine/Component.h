@@ -1,12 +1,11 @@
 #pragma once
 
-//#include "Entity.h"
-
 #include <stdint.h>
 
 namespace app {
 
 class World;
+struct Entity;
 
 // IAComponent
 // ColliderComponent
@@ -35,10 +34,10 @@ public:
 	};
 public:
 	uint8_t getType() const;
-	
+	const Entity* getEntity() const;
 private:
 	uint8_t m_type;
-	//Entity* m_entity;
+	Entity* m_entity;
 };
 
 };

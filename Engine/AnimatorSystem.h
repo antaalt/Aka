@@ -8,9 +8,9 @@ namespace app {
 class AnimatorSystem: public System
 {
 public:
-	void update() override;
+	AnimatorSystem(World* world);
 public:
-	bool valid(Entity* entity) override;
+	void update() override;
 };
 
 
