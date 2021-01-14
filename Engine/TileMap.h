@@ -1,0 +1,25 @@
+#pragma once
+
+#include "Component.h"
+#include "Geometry.h"
+#include "Texture.h"
+
+namespace app {
+
+class TileMapSystem;
+
+struct TileMap : public Component
+{
+	friend class TileMapSystem;
+
+	TileMap();
+	TileMap(const vec2u& gridCount, const vec2u& gridSize, Texture* texture);
+
+	vec2u gridCount;
+	vec2u gridSize;
+	Texture* texture;
+private:
+	uint32_t vao = 0;
+};
+
+}

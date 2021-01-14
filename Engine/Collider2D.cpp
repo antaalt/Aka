@@ -2,8 +2,74 @@
 
 namespace app {
 
+Collision2D overlap(const Collider2D& r1, const Collider2D& r2)
+{
+	// distance between the rects
+	vec2f r1Pos = r1.position + r1.size / 2.f;
+	vec2f r2Pos = r2.position + r2.size / 2.f;
+	vec2f d = r1Pos - r2Pos;
+	vec2f ad = vec2f::abs(d);
+	// sum of the extents
+	vec2f sh = r1.size / 2.f + r2.size / 2.f;
+	if (ad.x >= sh.x || ad.y >= sh.y) // no intersections
+		return Collision2D::none();
+	// shortest separation
+	vec2f s = sh - ad;
+	// ignore longer axis
+	if (s.x < s.y)
+	{
+		if (s.x > 0.f)
+			s.y = 0.f;
+	}
+	else
+	{
+		if (s.y > 0.f)
+			s.x = 0.f;
+	}
+	// correct sign
+	if (d.x < 0.f)
+		s.x = -s.x;
+	if (d.y < 0.f)
+		s.y = -s.y;
+	return Collision2D::hit(s);
+}
 
-Collider2D::Collider2D(Shape2D* shape) :
+Collider2D::Collider2D() :
+	Collider2D(vec2f(0), vec2f(1))
+{
+}
+
+Collider2D::Collider2D(const vec2f& position, const vec2f& size) :
+	position(position),
+	size(size)
+{
+}
+
+Collision2D Collider2D::overlaps(const Collider2D& collider)
+{
+	return overlap(*this, collider);
+}
+
+RigidBody2D::RigidBody2D() :
+	RigidBody2D(vec2f(0), 1.f)
+{
+}
+
+RigidBody2D::RigidBody2D(const vec2f& position, float mass, float bouncing, float friction) :
+	position(position),
+	velocity(0.f),
+	acceleration(0.f),
+	mass(mass),
+	bouncing(bouncing),
+	friction(friction)
+{
+
+}
+
+
+
+
+/*Collider2D::Collider2D(Shape2D* shape) :
 	m_shape(shape)
 {
 }
@@ -87,7 +153,7 @@ DynamicRectCollider2D::DynamicRectCollider2D() :
 void DynamicRectCollider2D::move(float dt)
 {
 	rect.position += velocity;// *dt;
-}
+}*/
 
 
 

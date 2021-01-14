@@ -76,6 +76,8 @@ struct OgmoLevel
 		std::vector<Entity> entities;
 
 		int32_t getTileIndex(uint32_t tileX, uint32_t tileY) const;
+		uint32_t getWidth() const;
+		uint32_t getHeight() const;
 		uint32_t getTileWidth() const;
 		uint32_t getTileHeight() const;
 	};

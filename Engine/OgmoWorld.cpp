@@ -95,10 +95,10 @@ OgmoWorld OgmoWorld::load(const Path& path)
 		tileset.name = jsonTileset["label"];
 		std::string imagePath = jsonTileset["path"];
 		tileset.image = Image::load(Path(relativePath + imagePath));
-		tileset.tileCount = vec2u(jsonTileset["tileWidth"], jsonTileset["tileHeight"]);
+		tileset.tileSize = vec2u(jsonTileset["tileWidth"], jsonTileset["tileHeight"]);
+		tileset.tileCount = vec2u(tileset.image.width / tileset.tileSize.x, tileset.image.height / tileset.tileSize.y);
 		ASSERT(tileset.image.width % tileset.tileCount.x == 0, "");
 		ASSERT(tileset.image.height % tileset.tileCount.y == 0, "");
-		tileset.tileSize = vec2u(tileset.image.width / tileset.tileCount.x, tileset.image.height / tileset.tileCount.y);
 		world.tilesets.push_back(tileset);
 	}
 	const nlohmann::json& jsonEntities = json["entities"];
@@ -155,6 +155,16 @@ OgmoWorld OgmoWorld::load(const Path& path)
 int32_t OgmoLevel::Layer::getTileIndex(uint32_t tileX, uint32_t tileY) const
 {
 	return data[tileY * gridCellSize.y + tileX];
+}
+
+uint32_t OgmoLevel::Layer::getWidth() const
+{
+	return gridCellSize.x * gridCellCount.x;
+}
+
+uint32_t OgmoLevel::Layer::getHeight() const
+{
+	return gridCellSize.y * gridCellCount.y;
 }
 
 uint32_t OgmoLevel::Layer::getTileWidth() const

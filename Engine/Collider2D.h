@@ -1,10 +1,71 @@
 #pragma once
 
-#include "Shape2D.h"
+//#include "Shape2D.h"
+#include "Geometry.h"
+#include "Component.h"
 
 namespace app {
 
-struct Collider2D
+
+struct Collision2D
+{
+	bool collided;
+	vec2f separation;
+	static Collision2D none() { return Collision2D{ false, vec2f(0) }; }
+	static Collision2D hit(vec2f separation) { return Collision2D{ true, separation }; }
+};
+
+/*struct Collider2D : public Component
+{
+	enum class Type {
+		Rect,
+		Circle
+	};
+	Collider2D(Type type);
+	Collision2D overlaps(const Collider2D& collider);
+	Type getType() const;
+private:
+	Type m_type;
+};
+
+struct RectCollider2D : public Collider2D
+{
+	vec2f position;
+	vec2f size;
+};
+
+struct CircleCollider2D : public Collider2D
+{
+	vec2f position;
+	float radius;
+};*/
+
+struct Collider2D : public Component
+{
+	Collider2D();
+	Collider2D(const vec2f& position, const vec2f& size);
+
+	Collision2D overlaps(const Collider2D& collider);
+	vec2f position;
+	vec2f size;
+};
+
+struct RigidBody2D : public Component
+{
+	static inline const vec2f maxVelocity = vec2f(5.f);
+
+	RigidBody2D();
+	RigidBody2D(const vec2f& position, float mass, float bouncing = 0.f, float friction = 0.f);
+
+	vec2f position;
+	vec2f velocity;
+	vec2f acceleration;
+	float mass;
+	float bouncing;
+	float friction;
+};
+
+/*struct Collider2D
 {
 	Collider2D(Shape2D* shape);
 
@@ -57,6 +118,6 @@ struct DynamicRectCollider2D : public DynamicCollider2D
 	void move(float dt) override;
 
 	Rect rect;
-};
+};*/
 
 }

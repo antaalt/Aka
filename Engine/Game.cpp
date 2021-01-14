@@ -1,14 +1,22 @@
 #include "Game.h"
 
+#include "Camera2D.h"
 #include "Platform.h"
 #include "Image.h"
 #include "Input.h"
 #include "Time.h"
 #include "Logger.h"
 #include "FileSystem.h"
-#include "SpriteAnimatorComponent.h"
-#include "WorldComponent.h"
-#include "PhysicSimulation.h"
+
+#include "World.h"
+#include "PhysicSystem.h"
+#include "Transform2D.h"
+#include "Collider2D.h"
+#include "AnimatorSystem.h"
+#include "TileMapSystem.h"
+#include "TileSystem.h"
+
+#include "OgmoWorld.h"
 
 #include <sstream>
 #include <imgui.h>
@@ -20,49 +28,72 @@ namespace app {
 GLuint framebufferID;
 Sprite character;
 Sprite background;
-SpriteAnimatorComponent characterComponent;
-SpriteAnimatorComponent backgroundComponent;
+Sprite colliderSprite;
 Texture* renderTarget;
 FontRenderer* fontRenderer;
 Font font24, font48, font96;
-WorldComponent worldComponent;
 
 const uint32_t CHAR_WIDTH = 16, CHAR_HEIGHT = 32;
 GLenum error = GL_NO_ERROR;
 
-Camera2D camera;
+Entity* camera;
+Entity* characterEntity;
+Entity* backgroundEntity;
+Entity* charCollider;
+PhysicSystem *physicSystem;
+AnimatorSystem *animatorSystem;
+TileMapSystem* tileMapSystem;
+TileSystem* tileSystem;
 
-PhysicSimulation physic(Time::Unit::milliseconds(10));
-DynamicRectCollider2D* charCollider;
+World world;
 
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
-	camera.position = vec2f(0);
-	camera.viewport = vec2f(320, 180);
+	// TODO how do system get the entities ?
+	physicSystem = world.createSystem<PhysicSystem>(Time::Unit(10));
+	tileSystem = world.createSystem<TileSystem>();
+	tileMapSystem = world.createSystem<TileMapSystem>();
+	animatorSystem = world.createSystem<AnimatorSystem>();
+
+	camera = world.createEntity();
+	camera->add<Transform2D>(Transform2D(vec2f(0), vec2f(1), radianf(0)));
+	Camera2D* c = camera->add<Camera2D>(Camera2D(vec2f(0), vec2f(320, 180)));
 	{
 		// INIT world
-		worldComponent.loadWorld(Asset::path("levels/world.ogmo"));
-		worldComponent.loadLevel(Asset::path("levels/level0.json"));
-		worldComponent.create(backend);
+		OgmoWorld ogmoWorld = OgmoWorld::load(Asset::path("levels/world.ogmo"));
+		OgmoLevel ogmoLevel = OgmoLevel::load(ogmoWorld, Asset::path("levels/level0.json"));
+		const OgmoLevel::Layer* foreground = ogmoLevel.getLayer("Foreground");
+
+		auto createTileLayer = [&](const OgmoLevel::Layer* layer, float depth) -> Entity* {
+			if (layer->layer->type != OgmoWorld::LayerType::Tile)
+				return nullptr;
+			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
+			Entity* entity = world.createEntity();
+			Texture* texture = backend.createTexture(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data());
+			TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
+			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
+			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
+			return entity;
+		};
+		createTileLayer(ogmoLevel.getLayer("Background"), 0.f);
+		createTileLayer(ogmoLevel.getLayer("Playerground"), 0.f);
+		createTileLayer(ogmoLevel.getLayer("Foreground"), 0.f);
 	}
 	{
 		// INIT FIXED TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));
-		ASSERT(image.width == camera.viewport.x, "incorrect width");
-		ASSERT(image.height == camera.viewport.y, "incorrect height");
+		ASSERT(image.width == c->viewport.x, "incorrect width");
+		ASSERT(image.height == c->viewport.y, "incorrect height");
 
 		Sprite::Animation animation;
 		animation.name = "default";
 		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		background.animations.push_back(animation);
-		background.position = vec2f(0);
-		background.size = camera.viewport;
-		background.rotation = radianf(0);
-		
-		backgroundComponent.set(&background);
-		backgroundComponent.create(backend);
-		backgroundComponent.play("default");
+
+		backgroundEntity = world.createEntity();
+		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), c->viewport, radianf(0)));
+		backgroundEntity->add<Animator>(Animator(&background, -2.f))->play("default");
 	}
 	{
 		// INIT SPRITE CHARACTER
@@ -83,16 +114,21 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
 		character.animations.push_back(animation);
-		character.position = camera.viewport / 2.f;
-		character.size = vec2f(CHAR_WIDTH, CHAR_HEIGHT);
-		character.rotation = degreef(0);
-		characterComponent.set(&character);
-		characterComponent.create(backend);
-		characterComponent.play("idle");
+		characterEntity = world.createEntity();
+		characterEntity->add<Transform2D>(Transform2D(c->viewport / 2.f, vec2f(CHAR_WIDTH, CHAR_HEIGHT), radianf(0)));
+		characterEntity->add<Animator>(Animator(&character, 0.f))->play("idle");
+	}
+	{
+		// INIT SPRITE COLLIDER
+		Sprite::Animation animation;
+		animation.name = "default";
+		Image image = Image::load(Asset::path("textures/debug/collider.png"));
+		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
+		colliderSprite.animations.push_back(animation);
 	}
 
 	// INIT FRAMEBUFFER RENDER TARGET
-	renderTarget = backend.createTexture((uint32_t)camera.viewport.x, (uint32_t)camera.viewport.y, nullptr);
+	renderTarget = backend.createTexture((uint32_t)c->viewport.x, (uint32_t)c->viewport.y, nullptr);
 
 	// INIT FONT
 	fontRenderer = backend.createFontRenderer();
@@ -106,46 +142,38 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTarget->getID(), 0);
 	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 
-	window.setSizeLimits((int32_t)camera.viewport.x, (int32_t)camera.viewport.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	window.setSizeLimits((int32_t)c->viewport.x, (int32_t)c->viewport.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	
+	// INIT CHARACTER
+	charCollider = world.createEntity();
+	charCollider->add<RigidBody2D>(RigidBody2D(vec2f(192, 160), 1.f, 0.1f, 0.1f));
+	charCollider->add<Collider2D>(Collider2D(vec2f(192, 160), vec2f(16.f)));
+	charCollider->add<Transform2D>(Transform2D(vec2f(192, 160), vec2f(16.f), radianf(0.f)));
+	charCollider->add<Animator>(Animator(&colliderSprite, 0.f));
 
-	physic.create(backend);
-	{
-		charCollider = physic.createDynamicRectCollider();
-		charCollider->rect.position = vec2f(192, 160);
-		charCollider->rect.size = vec2f(16);
-		charCollider->mass = 1.f;
-		charCollider->bouncing = 0.1f;
-		charCollider->friction = 0.1f;
-	}
-	{
-		StaticRectCollider2D *collider = physic.createStaticRectCollider();
-		collider->rect.position = vec2f(192, 0);
-		collider->rect.size = vec2f(224, 96);
-		collider->bouncing = 0.f;
-		collider->friction = 0.f;
-	}
-	{
-		StaticRectCollider2D* collider = physic.createStaticRectCollider();
-		collider->rect.position = vec2f(0);
-		collider->rect.size = vec2f(196, 80);
-		collider->bouncing = 0.f;
-		collider->friction = 0.f;
-	}
-	{
-		StaticRectCollider2D* collider = physic.createStaticRectCollider();
-		collider->rect.position = vec2f(16, 96);
-		collider->rect.size = vec2f(80, 64);
-		collider->bouncing = 0.f;
-		collider->friction = 0.f;
-	}
-	{
-		StaticRectCollider2D* collider = physic.createStaticRectCollider();
-		collider->rect.position = vec2f(96, 112);
-		collider->rect.size = vec2f(16, 32);
-		collider->bouncing = 0.f;
-		collider->friction = 0.f;
-	}
-	physic.start();
+	// INIT COLLIDERS
+	// TODO init from collider layer
+	Entity* collider;
+
+	collider = world.createEntity();
+	collider->add<Collider2D>(Collider2D(vec2f(192, 0), vec2f(224, 96)));
+	collider->add<Transform2D>(Transform2D(vec2f(192, 0), vec2f(224, 96), radianf(0.f)));
+	collider->add<Animator>(Animator(&colliderSprite, 0.f));
+
+	collider = world.createEntity();
+	collider->add<Collider2D>(Collider2D(vec2f(0), vec2f(196, 80)));
+	collider->add<Transform2D>(Transform2D(vec2f(0), vec2f(196, 80), radianf(0.f)));
+	collider->add<Animator>(Animator(&colliderSprite, 0.f));
+
+	collider = world.createEntity();
+	collider->add<Collider2D>(Collider2D(vec2f(16, 96), vec2f(80, 64)));
+	collider->add<Transform2D>(Transform2D(vec2f(16, 96), vec2f(80, 64), radianf(0.f)));
+	collider->add<Animator>(Animator(&colliderSprite, 0.f));
+
+	collider = world.createEntity();
+	collider->add<Collider2D>(Collider2D(vec2f(96, 112), vec2f(16, 32)));
+	collider->add<Transform2D>(Transform2D(vec2f(96, 112), vec2f(16, 32), radianf(0.f)));
+	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	// IMGUI
 	// Setup Dear ImGui context
@@ -162,6 +190,9 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
 	ImGui_ImplOpenGL3_Init(ss.str().c_str());
 	ImGui::StyleColorsDark();
+
+	// Initialize everything
+	world.create();
 }
 
 void Game::destroy(GraphicBackend& backend)
@@ -171,8 +202,6 @@ void Game::destroy(GraphicBackend& backend)
 	ImGui::DestroyContext();
 
 	renderTarget->destroy();
-	characterComponent.destroy(backend);
-	worldComponent.destroy(backend);
 	fontRenderer->destroyFont(font24);
 	fontRenderer->destroyFont(font48);
 	fontRenderer->destroyFont(font96);
@@ -192,33 +221,38 @@ void Game::update(GraphicBackend& backend)
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	camera.position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
-	camera.position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
-	characterComponent.update();
-	backgroundComponent.update();
-	Shape2D* shape = charCollider->getShape();
-	float x = shape->getPosition().x + input::pressed(input::Key::D) - input::pressed(input::Key::Q);
-	float y = shape->getPosition().y + input::pressed(input::Key::Z) - input::pressed(input::Key::S);
-	shape->setPosition(vec2f(x, y));
+	Camera2D* c = camera->get<Camera2D>();
+
+	c->position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
+	c->position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
+
+	Transform2D* transform = charCollider->get<Transform2D>();
+	RigidBody2D* rigid = charCollider->get<RigidBody2D>();
+	Collider2D* collider = charCollider->get<Collider2D>();
+	transform->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
+	transform->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
+	rigid->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
+	rigid->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
+	collider->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
+	collider->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 
 	if (input::pressed(input::Key::Space))
 	{
-		charCollider->acceleration = vec2f(0.f, 0.f);
-		charCollider->velocity = vec2f(0.f, 1.f);
-
-		//charCollider->acceleration = vec2f(0.f, 0.f);
-		//charCollider->velocity = vec2f(0.f, 0.f);
-		//charCollider->position = vec2f(192.f, 160.f);
+		rigid->acceleration = vec2f(0.f, 0.f);
+		rigid->velocity = vec2f(0.f, 1.f);
 	}
 	if (input::pressed(input::Key::LeftCtrl))
 	{
-		charCollider->getShape()->setPosition(vec2f(192.f, 160.f));
+		transform->position = vec2f(192.f, 160.f);
+		rigid->position = vec2f(192.f, 160.f);
+		collider->position = vec2f(192.f, 160.f);
 	}
 
-	if (charCollider->getShape()->getPosition().y < -charCollider->getShape()->getSize().y)
+	if (transform->position.y < -transform->size.y)
 	{
 		// teleport above
-		charCollider->getShape()->setPosition(vec2f(charCollider->getShape()->getPosition().x, camera.viewport.y));
+		transform->position = vec2f(transform->position.x, c->viewport.y);
+		rigid->position = vec2f(rigid->position.x, c->viewport.y);
 	}
 
 	if (ImGui::Begin("Debug##window"))
@@ -229,22 +263,26 @@ void Game::update(GraphicBackend& backend)
 			ImGuiIO &io = ImGui::GetIO();
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-			ImGui::InputFloat2("Camera", camera.position.data, 3);
+			ImGui::InputFloat2("Camera", c->position.data, 3);
 		}
 
 		if (ImGui::CollapsingHeader("Colliders##header", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Checkbox("Render##checkbox", &physic.renderColliders);
+			static bool renderColliders = true;
+			ImGui::Checkbox("Render##checkbox", &renderColliders);
 			char buffer[256];
 			ImGui::TextColored(color, "Dynamics");
-			for (DynamicCollider2D* dynamic : physic.dynamics)
+			for (Entity* entity : world)
 			{
-				Shape2D::Type type = dynamic->getShape()->getType();
-				std::string typeName = Shape2D::getTypeName(type);
-				snprintf(buffer, 256, "Dynamic%s##%p", typeName.c_str(), dynamic);
+				// TODO Iterate on component family instead ?
+				if (!entity->has<RigidBody2D>() || !entity->has<Collider2D>())
+					continue;
+				Collider2D* collider = entity->get<Collider2D>();
+				RigidBody2D* rigid = entity->get<RigidBody2D>();
+				snprintf(buffer, 256, "RigidBody##%p", entity);
 				if (ImGui::TreeNode(buffer))
 				{
-					switch (type)
+					/*switch (type)
 					{
 					case Shape2D::Type::Rect: {
 						Rect* rect = reinterpret_cast<Rect*>(dynamic->getShape());
@@ -252,20 +290,17 @@ void Game::update(GraphicBackend& backend)
 						ImGui::InputFloat2("Size", rect->size.data, 3);
 						break;
 					}
-					/*case Shape2D::Type::Circle: {
-						Circle* circle = reinterpret_cast<Circle*>(dynamic->getShape());
-						ImGui::InputFloat2("Position", circle->position.data, 3);
-						ImGui::InputFloat("Radius", circle->radius, 0.1f, 1.f, 2);
-						break;
-					}*/
 					default:
 						break;
-					}
-					ImGui::InputFloat("Mass", &dynamic->mass, 0.1f, 1.f, 2);
-					ImGui::InputFloat("Bouncing", &dynamic->bouncing, 0.1f, 1.f, 2);
-					ImGui::InputFloat("Friction", &dynamic->friction, 0.1f, 1.f, 2);
-					ImGui::InputFloat2("Acceleration", dynamic->acceleration.data, 3);
-					ImGui::InputFloat2("Velocity", dynamic->velocity.data, 3);
+					}*/
+					ImGui::InputFloat2("Position", collider->position.data, 3);
+					ImGui::InputFloat2("Size", collider->size.data, 3);
+
+					ImGui::InputFloat("Mass", &rigid->mass, 0.1f, 1.f, 2);
+					ImGui::InputFloat("Bouncing", &rigid->bouncing, 0.1f, 1.f, 2);
+					ImGui::InputFloat("Friction", &rigid->friction, 0.1f, 1.f, 2);
+					ImGui::InputFloat2("Acceleration", rigid->acceleration.data, 3);
+					ImGui::InputFloat2("Velocity", rigid->velocity.data, 3);
 					ImGui::TreePop();
 				}
 			}
@@ -278,9 +313,10 @@ void Game::update(GraphicBackend& backend)
 			{
 				if (current_shape_dyn == 0)
 				{
-					DynamicRectCollider2D* c = physic.createDynamicRectCollider();
-					c->rect.position = vec2f(0.f);
-					c->rect.size = vec2f(16.f);
+					Entity* e = world.createEntity();
+					e->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(16.f), radianf(0.f)));
+					e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
+					e->add<RigidBody2D>(RigidBody2D(vec2f(0.f), 1.f));
 				}
 				else
 				{
@@ -293,14 +329,15 @@ void Game::update(GraphicBackend& backend)
 
 
 			ImGui::TextColored(color, "Statics");
-			for (StaticCollider2D* staticc : physic.statics)
+			for (Entity* entity: world)
 			{
-				Shape2D::Type type = staticc->getShape()->getType();
-				std::string typeName = Shape2D::getTypeName(type);
-				snprintf(buffer, 256, "Static%s##%p", typeName.c_str(), staticc);
+				if (!entity->has<Collider2D>())
+					continue;
+				Collider2D* collider = entity->get<Collider2D>();
+				snprintf(buffer, 256, "Collider##%p", collider);
 				if (ImGui::TreeNode(buffer))
 				{
-					switch (type)
+					/*switch (type)
 					{
 					case Shape2D::Type::Rect: {
 						Rect* rect = reinterpret_cast<Rect*>(staticc->getShape());
@@ -310,7 +347,9 @@ void Game::update(GraphicBackend& backend)
 					}
 					default:
 						break;
-					}
+					}*/
+					ImGui::InputFloat2("Position", collider->position.data, 3);
+					ImGui::InputFloat2("Size", collider->size.data, 3);
 					ImGui::TreePop();
 				}
 			}
@@ -323,9 +362,9 @@ void Game::update(GraphicBackend& backend)
 			{
 				if (current_shape == 0)
 				{
-					StaticRectCollider2D* c = physic.createStaticRectCollider();
-					c->rect.position = vec2f(0.f);
-					c->rect.size = vec2f(16.f);
+					Entity* e = world.createEntity();
+					e->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(16.f), radianf(0.f)));
+					e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
 				}
 				else
 				{
@@ -338,60 +377,38 @@ void Game::update(GraphicBackend& backend)
 		}
 		if (ImGui::CollapsingHeader("Level##header", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			OgmoLevel &level = worldComponent.getCurrentLevel();
 			ImGui::TextColored(color, "Layers");
 			static const char* layerTypeName[] = {
 				"Tile",
 				"Grid",
 				"Entity"
 			};
-			for (OgmoLevel::Layer& layer : level.layers)
+			for (Entity* entity : world)
 			{
-				if (ImGui::TreeNode(layer.layer->name.c_str()))
+				if (!entity->has<TileLayer>() || !entity->has<TileMap>())
+					continue;
+				TileLayer *layer = entity->get<TileLayer>();
+				TileMap* map = entity->get<TileMap>();
+				char buffer[256];
+				snprintf(buffer, 256, "Layer##%p", layer);
+				if (ImGui::TreeNode(buffer))
 				{
-					ImGui::Text("%s", layerTypeName[(int)layer.layer->type]);
-					vec2i gridCellCount = vec2i(layer.gridCellCount);
-					vec2i gridCellSize = vec2i(layer.gridCellSize);
-					if (ImGui::InputInt2("Grid count", gridCellCount.data))
-						layer.gridCellCount = vec2u(gridCellCount);
-					if (ImGui::InputInt2("Grid size", gridCellSize.data))
-						layer.gridCellSize = vec2u(gridCellSize);
-					
-					switch (layer.layer->type)
-					{
-					case OgmoWorld::LayerType::Tile:
-						//ImGui::Image(layer.tileset->image);
-						layer.data;
-						break;
-					case OgmoWorld::LayerType::Grid:
-						break;
-					case OgmoWorld::LayerType::Entity:
-						char buffer[256];
-						uint32_t id = 0;
-						for (OgmoLevel::Entity& entity : layer.entities)
-						{
-							snprintf(buffer, 256, "%s%2u", entity.entity->name.c_str(), id++);
-							if (ImGui::TreeNode(buffer))
-							{
-								entity.entity->image;
-								vec2i origin = vec2i(entity.entity->origin);
-								vec2i tileSize = vec2i(entity.entity->size);
-								if (ImGui::InputInt2("Origin", origin.data))
-									const_cast<vec2u&>(entity.entity->origin) = vec2u(origin);
-								if (ImGui::InputInt2("Tile size", tileSize.data))
-									const_cast<vec2u&>(entity.entity->origin) = vec2u(tileSize);
+					vec2i gridCount = vec2i(layer->gridCount);
+					vec2i gridSize = vec2i(layer->gridSize);
+					if (ImGui::InputInt2("Grid count", gridCount.data))
+						layer->gridCount = vec2u(gridCount);
+					if (ImGui::InputInt2("Grid size", gridSize.data))
+						layer->gridSize = vec2u(gridSize);
+					ImGui::Image((void*)(uintptr_t)(map->texture->getID()), ImVec2(512, 512), ImVec2(0, 1), ImVec2(1, 0), ImVec4(1,1,1,1), ImVec4(1,0,0,1));
 
-								vec2i position = vec2i(entity.position);
-								vec2i size = vec2i(entity.size);
-								if (ImGui::InputInt2("Position", position.data))
-									entity.position = vec2u(position);
-								if (ImGui::InputInt2("Size", size.data))
-									entity.size = vec2u(size);
-								ImGui::TreePop();
-							}
-						}
-						break;
+					static int id = 0;
+					ImGui::SliderInt("", &id, 0, (int)layer->tileID.size() - 4);
+					if (ImGui::InputInt4("", layer->tileID.data() + id))
+					{
+						// TODO update TBO
+						//layer->tbo;
 					}
+
 					ImGui::TreePop();
 				}
 			}
@@ -399,29 +416,26 @@ void Game::update(GraphicBackend& backend)
 	}
 	ImGui::End();
 
-	// Update physic after moving manually objects
-	physic.update();
+	// Update world after moving manually objects
+	world.update();
 }
 // TODO
 // - Hide framebuffer impl
 void Game::render(GraphicBackend& backend)
 {
-	backend.viewport(0, 0, (uint32_t)camera.viewport.x, (uint32_t)camera.viewport.y);
+	Camera2D* c = camera->get<Camera2D>();
+	backend.viewport(0, 0, (uint32_t)c->viewport.x, (uint32_t)c->viewport.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
-	backgroundComponent.render(camera, backend);
-	worldComponent.render(camera, backend);
-	characterComponent.render(camera, backend);
-
-	physic.render(camera, backend);
+	world.render(backend);
 
 	// Blit to main buffer
-	uint32_t widthRatio = screenWidth() / (uint32_t)camera.viewport.x;
-	uint32_t heightRatio = screenHeight() / (uint32_t)camera.viewport.y;
+	uint32_t widthRatio = screenWidth() / (uint32_t)c->viewport.x;
+	uint32_t heightRatio = screenHeight() / (uint32_t)c->viewport.y;
 	uint32_t ratio = min(widthRatio, heightRatio);
-	uint32_t scaledWidth = ratio * (uint32_t)camera.viewport.x;
-	uint32_t scaledHeight = ratio * (uint32_t)camera.viewport.y;
+	uint32_t scaledWidth = ratio * (uint32_t)c->viewport.x;
+	uint32_t scaledHeight = ratio * (uint32_t)c->viewport.y;
 	uint32_t w = (screenWidth() - scaledWidth) / 2;
 	uint32_t h = (screenHeight() - scaledHeight) / 2;
 
@@ -430,7 +444,7 @@ void Game::render(GraphicBackend& backend)
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, (GLint)camera.viewport.x, (GLint)camera.viewport.y, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLint)c->viewport.x, (GLint)c->viewport.y, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Draw text

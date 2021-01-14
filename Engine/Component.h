@@ -1,18 +1,44 @@
 #pragma once
 
-#include "GraphicBackend.h"
-#include "Camera2D.h"
+//#include "Entity.h"
+
+#include <stdint.h>
 
 namespace app {
 
-class Component
+class World;
+
+// IAComponent
+// ColliderComponent
+// TransformComponent
+// GravityComponent
+struct Component
 {
 public:
-	virtual void create(GraphicBackend& backend) = 0;
-	virtual void destroy(GraphicBackend& backend) = 0;
-
-	virtual void update() = 0;
-	virtual void render(const Camera2D &camera, GraphicBackend& backend) = 0;
+	friend class World;
+	struct Type
+	{
+		// Get the id for the specified type
+		template <typename T>
+		static uint8_t get() {
+			static const uint8_t type = m_typeCounter++;
+			return type;
+		}
+		// Current number of different type
+		static uint8_t count() {
+			return m_typeCounter;
+		}
+		// Maximum number of different type
+		static constexpr uint8_t size() { return 255; }
+	private:
+		static inline uint8_t m_typeCounter = 0;
+	};
+public:
+	uint8_t getType() const;
+	
+private:
+	uint8_t m_type;
+	//Entity* m_entity;
 };
 
 };

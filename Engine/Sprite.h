@@ -34,10 +34,6 @@ struct Sprite {
 
 	std::vector<Animation> animations;
 
-	vec2f position;
-	vec2f size;
-	radianf rotation;
-
 	Animation* getAnimation(const std::string& str) {
 		for (Animation &animation : animations)
 			if (animation.name == str)
