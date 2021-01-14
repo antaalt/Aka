@@ -60,13 +60,12 @@ template<typename T>
 inline void Entity::remove()
 {
 	uint8_t type = Component::Type::get<T>();
-
-	for (Component* component : m_components)
+	for (auto it = m_components.begin(); it != m_components.end(); it++)
 	{
-		if (component->getType() == type)
+		if ((*it)->getType() == type)
 		{
-			m_world->destroyComponent(component);
-			m_components.erase(component);
+			m_world->destroyComponent(*it);
+			m_components.erase(it);
 			break;
 		}
 	}

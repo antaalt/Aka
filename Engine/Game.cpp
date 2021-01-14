@@ -103,7 +103,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		for (const OgmoLevel::Entity& entity : layer->entities)
 		{
 			Entity* collider = m_world.createEntity();
-			collider->add<Transform2D>(Transform2D(vec2f(entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
+			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
 			collider->add<Collider2D>(Collider2D());
 			collider->add<Animator>(Animator(&colliderSprite, 0.f));
 		}
@@ -137,9 +137,9 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 	// INIT FONT
 	fontRenderer = backend.createFontRenderer();
-	font24 = fontRenderer->createFont(Asset::path("font/Espera-Bold.ttf"), 24);
-	font48 = fontRenderer->createFont(Asset::path("font/Espera-Bold.ttf"), 48);
-	font96 = fontRenderer->createFont(Asset::path("font/Espera-Bold.ttf"), 96);
+	font24 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 24);
+	font48 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
+	font96 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 96);
 
 	// INIT FRAMEBUFFER
 	glGenFramebuffers(1, &framebufferID);
@@ -237,7 +237,21 @@ void Game::update(GraphicBackend& backend)
 		if (ImGui::CollapsingHeader("Colliders##header", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static bool renderColliders = true;
-			ImGui::Checkbox("Render##checkbox", &renderColliders);
+			if (ImGui::Checkbox("Render##checkbox", &renderColliders))
+			{
+				if (renderColliders)
+				{
+					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
+						entity->add<Animator>(Animator(&colliderSprite, 0.f));
+					});
+				}
+				else
+				{
+					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
+						entity->remove<Animator>();
+					});
+				}
+			}
 			char buffer[256];
 			ImGui::TextColored(color, "Dynamics");
 			m_world.each<Transform2D, RigidBody2D, Collider2D>([&](Entity* entity, Transform2D* transform, RigidBody2D* rigid, Collider2D* collider) {
