@@ -3,7 +3,7 @@
 #include "System.h"
 #include "Animator.h"
 
-namespace app {
+namespace aka {
 
 class AnimatorSystem: public System
 {

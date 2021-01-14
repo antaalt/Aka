@@ -7,7 +7,7 @@
 #include <vector>
 #include <set>
 
-namespace app {
+namespace aka {
 
 class World;
 

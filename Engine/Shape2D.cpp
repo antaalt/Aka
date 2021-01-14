@@ -1,6 +1,6 @@
 #include "Shape2D.h"
 
-namespace app {
+namespace aka {
 
 Shape2D::Shape2D(Type type) :
 	m_type(type)

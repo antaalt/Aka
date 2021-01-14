@@ -3,7 +3,7 @@
 #include "Component.h"
 #include "Geometry.h"
 
-namespace app {
+namespace aka {
 
 struct Transform2D : public Component
 {

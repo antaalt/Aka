@@ -5,7 +5,7 @@
 
 #include "Graphic.h"
 
-namespace app {
+namespace aka {
 
 Shader::Shader() :
 	m_programID(0)

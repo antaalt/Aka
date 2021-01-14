@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-namespace app {
+namespace aka {
 
 using TextureID = uint32_t;
 

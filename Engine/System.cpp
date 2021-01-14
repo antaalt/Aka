@@ -1,6 +1,6 @@
 #include "System.h"
 
-namespace app {
+namespace aka {
 
 System::System(World* world) : 
 	m_world(world)

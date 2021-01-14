@@ -4,7 +4,7 @@
 #include "System.h"
 #include "Collider2D.h"
 
-namespace app {
+namespace aka {
 
 // TODO use pixel intersection
 // TODO use box2D as lib instead (https://github.com/erincatto/box2d)

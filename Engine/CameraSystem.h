@@ -2,7 +2,7 @@
 
 #include "System.h"
 
-namespace app {
+namespace aka {
 
 class CameraSystem : public System
 {

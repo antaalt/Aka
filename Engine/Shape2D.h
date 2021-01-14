@@ -2,7 +2,7 @@
 
 #include "Geometry.h"
 
-namespace app {
+namespace aka {
 
 struct Collision
 {

@@ -1,6 +1,6 @@
 #include "Platform.h"
 
-namespace app {
+namespace aka {
 
 // https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 // http://cherrytree.at/misc/vk.htm

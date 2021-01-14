@@ -3,7 +3,7 @@
 #include "System.h"
 #include "Shader.h"
 
-namespace app {
+namespace aka {
 
 class TileSystem : public System
 {

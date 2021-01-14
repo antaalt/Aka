@@ -3,7 +3,7 @@
 #include "Sprite.h"
 #include "Component.h"
 
-namespace app {
+namespace aka {
 
 class AnimatorSystem;
 

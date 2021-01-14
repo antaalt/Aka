@@ -2,7 +2,7 @@
 
 #include "World.h"
 
-namespace app {
+namespace aka {
 
 AnimatorSystem::AnimatorSystem(World* world) :
     System(world)

@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-namespace app {
+namespace aka {
 
 std::vector<uint8_t> readBinary(const Path& path)
 {

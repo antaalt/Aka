@@ -6,7 +6,7 @@
 #include <iostream>
 #include <mutex>
 
-namespace app {
+namespace aka {
 
 struct Logger {
 

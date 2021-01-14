@@ -5,7 +5,7 @@
 
 #include "Geometry.h"
 
-namespace app {
+namespace aka {
 
 enum class ShaderType {
 	VERTEX_SHADER,

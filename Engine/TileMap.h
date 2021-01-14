@@ -4,7 +4,7 @@
 #include "Geometry.h"
 #include "Texture.h"
 
-namespace app {
+namespace aka {
 
 class TileMapSystem;
 

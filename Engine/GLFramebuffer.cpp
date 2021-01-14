@@ -5,7 +5,7 @@
 
 #include "Graphic.h"
 
-namespace app {
+namespace aka {
 
 Framebuffer::Framebuffer() :
 	m_width(0),

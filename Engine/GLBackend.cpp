@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace app {
+namespace aka {
 
 uint32_t checkError_(const char* file, int line)
 {

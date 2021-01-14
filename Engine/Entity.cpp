@@ -2,7 +2,7 @@
 
 #include "World.h"
 
-namespace app {
+namespace aka {
 
 Entity::Entity(World* world) :
 	m_world(world)

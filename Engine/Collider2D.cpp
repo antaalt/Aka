@@ -1,6 +1,6 @@
 #include "Collider2D.h"
 
-namespace app {
+namespace aka {
 
 Collision2D overlap(const Collider2D& r1, const Collider2D& r2)
 {

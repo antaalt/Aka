@@ -4,7 +4,7 @@
 #include "Transform2D.h"
 #include "Input.h"
 
-namespace app {
+namespace aka {
 
 CameraSystem::CameraSystem(World* world) :
 	System(world)

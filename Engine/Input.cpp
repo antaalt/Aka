@@ -1,6 +1,6 @@
 #include "Input.h"
 
-namespace app {
+namespace aka {
 namespace input {
 
 Keyboard keyboard;

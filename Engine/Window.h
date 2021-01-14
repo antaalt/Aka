@@ -9,7 +9,7 @@
 #include "GraphicBackend.h"
 
 // https://www.gamedesigning.org/learn/make-a-game-engine/
-namespace app {
+namespace aka {
 
 class Application;
 

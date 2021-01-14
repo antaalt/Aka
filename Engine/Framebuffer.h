@@ -4,7 +4,7 @@
 
 #include "Texture.h"
 
-namespace app {
+namespace aka {
 
 using FramebufferID = uint32_t;
 

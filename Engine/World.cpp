@@ -2,7 +2,7 @@
 
 #include "Logger.h"
 
-namespace app {
+namespace aka {
 
 World::World()
 {

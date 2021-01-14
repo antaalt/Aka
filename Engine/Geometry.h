@@ -2,6 +2,6 @@
 
 #include <geometry.h>
 
-namespace app {
+namespace aka {
 using namespace geometry;
 }

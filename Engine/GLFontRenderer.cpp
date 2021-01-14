@@ -3,7 +3,7 @@
 #include "Graphic.h"
 #include "FileSystem.h"
 
-namespace app {
+namespace aka {
 
 vec2i Font::size(const std::string& text) const
 {

@@ -5,7 +5,7 @@
 #include "TileMap.h"
 #include "TileLayer.h"
 
-namespace app {
+namespace aka {
 
 class TileMapSystem : public System
 {

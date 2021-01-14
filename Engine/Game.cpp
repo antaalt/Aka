@@ -24,7 +24,7 @@
 #include <examples/imgui_impl_glfw.h>
 #include <examples/imgui_impl_opengl3.h>
 
-namespace app {
+namespace aka {
 
 GLuint framebufferID;
 Sprite character;
@@ -103,7 +103,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		for (const OgmoLevel::Entity& entity : layer->entities)
 		{
 			Entity* collider = m_world.createEntity();
-			collider->add<Transform2D>(Transform2D(vec2f(entity.position.x, layer->getHeight() - entity.position.y - entity.size.y), vec2f(entity.size), radianf(0.f)));
+			collider->add<Transform2D>(Transform2D(vec2f(entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
 			collider->add<Collider2D>(Collider2D());
 			collider->add<Animator>(Animator(&colliderSprite, 0.f));
 		}

@@ -7,7 +7,7 @@
 #include "FileSystem.h"
 #include "Shader.h"
 
-namespace app {
+namespace aka {
 
 // TODO use signed distance field font rendering instead
 struct Character {

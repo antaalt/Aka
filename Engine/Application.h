@@ -4,7 +4,7 @@
 #include "Window.h"
 #include "World.h"
 
-namespace app {
+namespace aka {
 
 class Application
 {

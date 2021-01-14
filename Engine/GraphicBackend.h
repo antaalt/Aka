@@ -6,7 +6,7 @@
 #include "FontRenderer.h"
 #include "Graphic.h"
 
-namespace app {
+namespace aka {
 
 uint32_t checkError_(const char* file, int line);
 #define checkError() checkError_(__FILE__, __LINE__) 

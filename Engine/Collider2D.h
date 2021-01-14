@@ -4,8 +4,7 @@
 #include "Geometry.h"
 #include "Component.h"
 
-namespace app {
-
+namespace aka {
 
 struct Collision2D
 {

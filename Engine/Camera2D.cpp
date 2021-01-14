@@ -1,6 +1,6 @@
 #include "Camera2D.h"
 
-namespace app {
+namespace aka {
 
 Camera2D::Camera2D() :
 	Camera2D(vec2f(0.f), vec2f(1.f))

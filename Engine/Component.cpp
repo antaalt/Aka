@@ -1,6 +1,6 @@
 #include "Component.h"
 
-namespace app {
+namespace aka {
 
 uint8_t Component::getType() const
 {

@@ -1,6 +1,6 @@
 #include "Logger.h"
 
-namespace app {
+namespace aka {
 
 Logger::Channel Logger::critical(std::cerr, "critic", Logger::Color::FG_BRIGHT_RED);
 Logger::Channel Logger::error(std::cerr, "error", Logger::Color::FG_BRIGHT_MAGENTA);

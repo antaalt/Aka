@@ -2,7 +2,7 @@
 
 #include "Graphic.h"
 
-namespace app {
+namespace aka {
 
 Texture::Texture() :
 	m_textureID(0)

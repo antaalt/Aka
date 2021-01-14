@@ -5,7 +5,7 @@
 
 #include <stdexcept>
 
-namespace app {
+namespace aka {
 
 Image Image::load(const Path& path)
 {

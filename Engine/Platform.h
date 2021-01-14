@@ -23,7 +23,7 @@
 #endif
 #include <GLFW/glfw3.h>
 
-namespace app {
+namespace aka {
 
 void initKeyboard();
 input::Key getKeyFromScancode(unsigned int scancode);

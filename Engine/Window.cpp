@@ -4,7 +4,7 @@
 #include "Application.h"
 #include "Input.h"
 
-namespace app {
+namespace aka {
 
 void setInputCallback(GLFWwindow* window)
 {
@@ -84,7 +84,7 @@ Window::Window(const Config& config) :
 	glfwSetWindowUserPointer(m_window, this);
 	glfwMakeContextCurrent(m_window); // Initialise GLEW
 	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
-		app::Window* w = static_cast<app::Window*>(glfwGetWindowUserPointer(window));
+		Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
 		w->resize(width, height);
 	});
 	glfwSwapInterval(1); // 1 is vsync, 0 is free

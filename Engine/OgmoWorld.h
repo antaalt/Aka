@@ -6,7 +6,7 @@
 #include "Image.h"
 #include "Geometry.h"
 
-namespace app {
+namespace aka {
 
 struct OgmoWorld
 {

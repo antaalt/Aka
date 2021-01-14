@@ -1,6 +1,6 @@
 #include "TileLayer.h"
 
-namespace app {
+namespace aka {
 TileLayer::TileLayer() :
 	TileLayer(vec2u(0), vec2u(0), color4f(1.f), std::vector<int>(), 0.f)
 {

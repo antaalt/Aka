@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string>
 
-namespace app {
+namespace aka {
 namespace input {
 
 enum class KeyboardLayout {

@@ -3,7 +3,7 @@
 #include "Geometry.h"
 #include "Component.h"
 
-namespace app {
+namespace aka {
 
 struct Camera2D : Component {
 	Camera2D();

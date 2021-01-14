@@ -5,7 +5,7 @@
 
 #include "Graphic.h"
 
-namespace app {
+namespace aka {
 
 const OgmoLevel::Layer* OgmoLevel::getLayer(const std::string& name) const
 {

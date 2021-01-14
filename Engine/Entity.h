@@ -4,7 +4,7 @@
 
 #include "Component.h"
 
-namespace app {
+namespace aka {
 
 class World;
 

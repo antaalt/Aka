@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-namespace app {
+namespace aka {
 
 class World;
 struct Entity;

@@ -2,7 +2,7 @@
 
 #include "Debug.h"
 
-namespace app {
+namespace aka {
 
 Animator::Animator() :
     Animator(nullptr, 0.f)
@@ -24,7 +24,7 @@ Sprite::Frame& Animator::getCurrentSpriteFrame() const
     return sprite->animations[currentAnimation].frames[currentFrame];
 }
 
-void app::Animator::play(const std::string& animation)
+void Animator::play(const std::string& animation)
 {
     Sprite::Animation* a = sprite->getAnimation(animation);
     ASSERT(a != nullptr, "No valid animation");

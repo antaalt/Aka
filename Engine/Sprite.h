@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-namespace app {
+namespace aka {
 
 struct Sprite {
 	struct Frame {

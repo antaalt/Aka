@@ -6,7 +6,7 @@
 
 #include "World.h"
 
-namespace app {
+namespace aka {
 
 PhysicSystem::PhysicSystem(World *world, Time::Unit timestep) :
 	System(world),

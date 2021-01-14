@@ -7,7 +7,7 @@
 #include "Animator.h"
 #include "World.h"
 
-namespace app {
+namespace aka {
 
 TileMapSystem::TileMapSystem(World* world) :
     System(world)

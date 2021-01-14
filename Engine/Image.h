@@ -3,7 +3,7 @@
 #include <vector>
 #include "FileSystem.h"
 
-namespace app {
+namespace aka {
 
 struct Image
 {
