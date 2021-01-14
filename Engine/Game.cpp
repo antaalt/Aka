@@ -15,6 +15,7 @@
 #include "AnimatorSystem.h"
 #include "TileMapSystem.h"
 #include "TileSystem.h"
+#include "CameraSystem.h"
 
 #include "OgmoWorld.h"
 
@@ -33,10 +34,10 @@ Texture* renderTarget;
 FontRenderer* fontRenderer;
 Font font24, font48, font96;
 
-const uint32_t CHAR_WIDTH = 16, CHAR_HEIGHT = 32;
+const vec2u characterSize(16, 32);
+const vec2u viewportSize(320, 180);
 GLenum error = GL_NO_ERROR;
 
-Entity* camera;
 Entity* characterEntity;
 Entity* backgroundEntity;
 Entity* charCollider;
@@ -44,21 +45,17 @@ PhysicSystem *physicSystem;
 AnimatorSystem *animatorSystem;
 TileMapSystem* tileMapSystem;
 TileSystem* tileSystem;
-
-World world;
+CameraSystem* cameraSystem;
 
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
-	// TODO how do system get the entities ?
-	physicSystem = world.createSystem<PhysicSystem>(Time::Unit(10));
-	tileSystem = world.createSystem<TileSystem>();
-	tileMapSystem = world.createSystem<TileMapSystem>();
-	animatorSystem = world.createSystem<AnimatorSystem>();
+	physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit(10));
+	tileSystem = m_world.createSystem<TileSystem>();
+	tileMapSystem = m_world.createSystem<TileMapSystem>();
+	animatorSystem = m_world.createSystem<AnimatorSystem>();
+	cameraSystem = m_world.createSystem<CameraSystem>();
 
-	camera = world.createEntity();
-	camera->add<Transform2D>(Transform2D(vec2f(0), vec2f(1), radianf(0)));
-	Camera2D* c = camera->add<Camera2D>(Camera2D(vec2f(0), vec2f(320, 180)));
 	{
 		// INIT world
 		OgmoWorld ogmoWorld = OgmoWorld::load(Asset::path("levels/world.ogmo"));
@@ -69,7 +66,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
 			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
-			Entity* entity = world.createEntity();
+			Entity* entity = m_world.createEntity();
 			Texture* texture = backend.createTexture(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data());
 			TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
 			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
@@ -83,16 +80,16 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	{
 		// INIT FIXED TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));
-		ASSERT(image.width == c->viewport.x, "incorrect width");
-		ASSERT(image.height == c->viewport.y, "incorrect height");
+		ASSERT(image.width == viewportSize.x, "incorrect width");
+		ASSERT(image.height == viewportSize.y, "incorrect height");
 
 		Sprite::Animation animation;
 		animation.name = "default";
 		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		background.animations.push_back(animation);
 
-		backgroundEntity = world.createEntity();
-		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), c->viewport, radianf(0)));
+		backgroundEntity = m_world.createEntity();
+		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f(viewportSize), radianf(0)));
 		backgroundEntity->add<Animator>(Animator(&background, -2.f))->play("default");
 	}
 	{
@@ -114,8 +111,8 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
 		character.animations.push_back(animation);
-		characterEntity = world.createEntity();
-		characterEntity->add<Transform2D>(Transform2D(c->viewport / 2.f, vec2f(CHAR_WIDTH, CHAR_HEIGHT), radianf(0)));
+		characterEntity = m_world.createEntity();
+		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f(characterSize), radianf(0)));
 		characterEntity->add<Animator>(Animator(&character, 0.f))->play("idle");
 	}
 	{
@@ -128,7 +125,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	}
 
 	// INIT FRAMEBUFFER RENDER TARGET
-	renderTarget = backend.createTexture((uint32_t)c->viewport.x, (uint32_t)c->viewport.y, nullptr);
+	renderTarget = backend.createTexture((uint32_t)viewportSize.x, (uint32_t)viewportSize.y, nullptr);
 
 	// INIT FONT
 	fontRenderer = backend.createFontRenderer();
@@ -142,12 +139,12 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTarget->getID(), 0);
 	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 
-	window.setSizeLimits((int32_t)c->viewport.x, (int32_t)c->viewport.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
+	window.setSizeLimits((int32_t)viewportSize.x, (int32_t)viewportSize.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	
 	// INIT CHARACTER
-	charCollider = world.createEntity();
+	charCollider = m_world.createEntity();
 	charCollider->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
-	charCollider->add<Collider2D>(Collider2D(vec2f(0), vec2f(16.f)));
+	charCollider->add<Collider2D>(Collider2D());
 	charCollider->add<Transform2D>(Transform2D(vec2f(192, 160), vec2f(16.f), radianf(0.f)));
 	charCollider->add<Animator>(Animator(&colliderSprite, 0.f));
 
@@ -155,22 +152,22 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	// TODO init from collider layer
 	Entity* collider;
 
-	collider = world.createEntity();
+	collider = m_world.createEntity();
 	collider->add<Transform2D>(Transform2D(vec2f(192, 0), vec2f(224, 96), radianf(0.f)));
 	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
-	collider = world.createEntity();
+	collider = m_world.createEntity();
 	collider->add<Transform2D>(Transform2D(vec2f(0), vec2f(196, 80), radianf(0.f)));
 	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
-	collider = world.createEntity();
+	collider = m_world.createEntity();
 	collider->add<Transform2D>(Transform2D(vec2f(16, 96), vec2f(80, 64), radianf(0.f)));
 	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
 
-	collider = world.createEntity();
+	collider = m_world.createEntity();
 	collider->add<Transform2D>(Transform2D(vec2f(96, 112), vec2f(16, 32), radianf(0.f)));
 	collider->add<Collider2D>(Collider2D());
 	collider->add<Animator>(Animator(&colliderSprite, 0.f));
@@ -192,7 +189,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	ImGui::StyleColorsDark();
 
 	// Initialize everything
-	world.create();
+	m_world.create();
 }
 
 void Game::destroy(GraphicBackend& backend)
@@ -221,11 +218,6 @@ void Game::update(GraphicBackend& backend)
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	Camera2D* c = camera->get<Camera2D>();
-
-	c->position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);
-	c->position.y += input::pressed(input::Key::ArrowUp) - input::pressed(input::Key::ArrowDown);
-
 	Transform2D* transform = charCollider->get<Transform2D>();
 	RigidBody2D* rigid = charCollider->get<RigidBody2D>();
 	Collider2D* collider = charCollider->get<Collider2D>();
@@ -245,7 +237,7 @@ void Game::update(GraphicBackend& backend)
 	if (transform->position.y < -transform->size.y)
 	{
 		// teleport above
-		transform->position = vec2f(transform->position.x, c->viewport.y);
+		transform->position = vec2f(transform->position.x, viewportSize.y);
 	}
 
 	if (ImGui::Begin("Debug##window"))
@@ -256,7 +248,6 @@ void Game::update(GraphicBackend& backend)
 			ImGuiIO &io = ImGui::GetIO();
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-			ImGui::InputFloat2("Camera", c->position.data, 3);
 		}
 
 		if (ImGui::CollapsingHeader("Colliders##header", ImGuiTreeNodeFlags_DefaultOpen))
@@ -265,7 +256,7 @@ void Game::update(GraphicBackend& backend)
 			ImGui::Checkbox("Render##checkbox", &renderColliders);
 			char buffer[256];
 			ImGui::TextColored(color, "Dynamics");
-			for (Entity* entity : world)
+			for (Entity* entity : m_world)
 			{
 				// TODO Iterate on component family instead ?
 				if (!entity->has<RigidBody2D>() || !entity->has<Collider2D>())
@@ -306,7 +297,7 @@ void Game::update(GraphicBackend& backend)
 			{
 				if (current_shape_dyn == 0)
 				{
-					Entity* e = world.createEntity();
+					Entity* e = m_world.createEntity();
 					e->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(16.f), radianf(0.f)));
 					e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
 					e->add<RigidBody2D>(RigidBody2D(1.f));
@@ -322,7 +313,7 @@ void Game::update(GraphicBackend& backend)
 
 
 			ImGui::TextColored(color, "Statics");
-			for (Entity* entity: world)
+			for (Entity* entity: m_world)
 			{
 				if (!entity->has<Collider2D>())
 					continue;
@@ -355,7 +346,7 @@ void Game::update(GraphicBackend& backend)
 			{
 				if (current_shape == 0)
 				{
-					Entity* e = world.createEntity();
+					Entity* e = m_world.createEntity();
 					e->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(16.f), radianf(0.f)));
 					e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
 				}
@@ -376,7 +367,7 @@ void Game::update(GraphicBackend& backend)
 				"Grid",
 				"Entity"
 			};
-			for (Entity* entity : world)
+			for (Entity* entity : m_world)
 			{
 				if (!entity->has<TileLayer>() || !entity->has<TileMap>())
 					continue;
@@ -410,25 +401,24 @@ void Game::update(GraphicBackend& backend)
 	ImGui::End();
 
 	// Update world after moving manually objects
-	world.update();
+	m_world.update();
 }
 // TODO
 // - Hide framebuffer impl
 void Game::render(GraphicBackend& backend)
 {
-	Camera2D* c = camera->get<Camera2D>();
-	backend.viewport(0, 0, (uint32_t)c->viewport.x, (uint32_t)c->viewport.y);
+	backend.viewport(0, 0, (uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
-	world.render(backend);
+	m_world.render(backend);
 
 	// Blit to main buffer
-	uint32_t widthRatio = screenWidth() / (uint32_t)c->viewport.x;
-	uint32_t heightRatio = screenHeight() / (uint32_t)c->viewport.y;
+	uint32_t widthRatio = screenWidth() / (uint32_t)viewportSize.x;
+	uint32_t heightRatio = screenHeight() / (uint32_t)viewportSize.y;
 	uint32_t ratio = min(widthRatio, heightRatio);
-	uint32_t scaledWidth = ratio * (uint32_t)c->viewport.x;
-	uint32_t scaledHeight = ratio * (uint32_t)c->viewport.y;
+	uint32_t scaledWidth = ratio * (uint32_t)viewportSize.x;
+	uint32_t scaledHeight = ratio * (uint32_t)viewportSize.y;
 	uint32_t w = (screenWidth() - scaledWidth) / 2;
 	uint32_t h = (screenHeight() - scaledHeight) / 2;
 
@@ -437,7 +427,7 @@ void Game::render(GraphicBackend& backend)
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, (GLint)c->viewport.x, (GLint)c->viewport.y, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, (GLint)viewportSize.x, (GLint)viewportSize.y, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Draw text

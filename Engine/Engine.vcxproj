@@ -157,6 +157,7 @@
     <ClCompile Include="Animator.cpp" />
     <ClCompile Include="AnimatorSystem.cpp" />
     <ClCompile Include="Camera2D.cpp" />
+    <ClCompile Include="CameraSystem.cpp" />
     <ClCompile Include="Collider2D.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Entity.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="AnimatorSystem.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera2D.h" />
+    <ClInclude Include="CameraSystem.h" />
     <ClInclude Include="Collider2D.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Debug.h" />

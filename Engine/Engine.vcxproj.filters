@@ -177,6 +177,9 @@
     <ClCompile Include="TileLayer.cpp">
       <Filter>Fichiers sources\Component</Filter>
     </ClCompile>
+    <ClCompile Include="CameraSystem.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h">
@@ -304,6 +307,9 @@
     </ClInclude>
     <ClInclude Include="TileLayer.h">
       <Filter>Fichiers d%27en-tête\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraSystem.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

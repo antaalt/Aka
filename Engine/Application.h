@@ -2,6 +2,7 @@
 
 #include "GraphicBackend.h"
 #include "Window.h"
+#include "World.h"
 
 namespace app {
 
@@ -25,6 +26,8 @@ public:
 	virtual void render(GraphicBackend& backend) = 0;
 private:
 	uint32_t m_screenWidth, m_screenHeight;
+protected:
+	World m_world;
 };
 
 }
