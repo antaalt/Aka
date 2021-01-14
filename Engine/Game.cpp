@@ -14,7 +14,7 @@
 #include "Collider2D.h"
 #include "AnimatorSystem.h"
 #include "TileMapSystem.h"
-#include "TileSystem.h"
+#include "TileRenderSystem.h"
 #include "CameraSystem.h"
 
 #include "OgmoWorld.h"
@@ -34,13 +34,11 @@ Texture* renderTarget;
 FontRenderer* fontRenderer;
 Font font24, font48, font96;
 
-const vec2u characterSize(16, 32);
 const vec2u viewportSize(320, 180);
 GLenum error = GL_NO_ERROR;
 
 Entity* characterEntity;
 Entity* backgroundEntity;
-Entity* charCollider;
 PhysicSystem *physicSystem;
 AnimatorSystem *animatorSystem;
 TileMapSystem* tileMapSystem;
@@ -82,11 +80,12 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
 			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
-			Entity* entity = m_world.createEntity();
 			Texture* texture = backend.createTexture(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data());
-			TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
-			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
+			
+			Entity* entity = m_world.createEntity();
 			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
+			//TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
+			//TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
 			return entity;
 		};
 		createTileLayer(ogmoLevel.getLayer("Background"), 0.f);
@@ -114,22 +113,26 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		// TODO load gif ?
 		Sprite::Animation animation;
 		animation.name = "idle";
+		vec2f characterSize = vec2f(13, 17);
+		std::vector<Path> frames = {
+			Asset::path("textures/player/player01.png"),
+			Asset::path("textures/player/player02.png"),
+			Asset::path("textures/player/player03.png")
+		};
+		uint32_t width, height;
+		for (Path path : frames)
 		{
-			Image image = Image::load(Asset::path("textures/player/player1.png"));
-			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
-		}
-		{
-			Image image = Image::load(Asset::path("textures/player/player2.png"));
-			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
-		}
-		{
-			Image image = Image::load(Asset::path("textures/player/player3.png"));
+			Image image = Image::load(path);
+			width = image.width;
+			height = image.height;
 			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
 		}
 		character.animations.push_back(animation);
 		characterEntity = m_world.createEntity();
-		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f(characterSize), radianf(0)));
+		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f(width, height), radianf(0)));
 		characterEntity->add<Animator>(Animator(&character, 0.f))->play("idle");
+		characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
+		characterEntity->add<Collider2D>(Collider2D());
 	}
 
 	// INIT FRAMEBUFFER RENDER TARGET
@@ -150,11 +153,6 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	window.setSizeLimits((int32_t)viewportSize.x, (int32_t)viewportSize.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	
 	// INIT CHARACTER
-	charCollider = m_world.createEntity();
-	charCollider->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
-	charCollider->add<Collider2D>(Collider2D());
-	charCollider->add<Transform2D>(Transform2D(vec2f(192, 160), vec2f(16.f), radianf(0.f)));
-	charCollider->add<Animator>(Animator(&colliderSprite, 0.f));
 
 	// IMGUI
 	// Setup Dear ImGui context
@@ -202,9 +200,9 @@ void Game::update(GraphicBackend& backend)
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	Transform2D* transform = charCollider->get<Transform2D>();
-	RigidBody2D* rigid = charCollider->get<RigidBody2D>();
-	Collider2D* collider = charCollider->get<Collider2D>();
+	Transform2D* transform = characterEntity->get<Transform2D>();
+	RigidBody2D* rigid = characterEntity->get<RigidBody2D>();
+	Collider2D* collider = characterEntity->get<Collider2D>();
 	transform->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
 	transform->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 
@@ -248,7 +246,8 @@ void Game::update(GraphicBackend& backend)
 				else
 				{
 					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
-						entity->remove<Animator>();
+						if (entity->get<Animator>()->sprite == &colliderSprite)
+							entity->remove<Animator>();
 					});
 				}
 			}

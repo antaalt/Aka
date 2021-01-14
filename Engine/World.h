@@ -75,6 +75,9 @@ template <typename T>
 T* World::add(Entity& entity, T&& component)
 {
 	static_assert(std::is_base_of<Component, T>::value, "Type is not a component");
+	T* old = entity.get<T>();
+	if (old != nullptr)
+		return old;
 	T* instance = new T;
 	*instance = component;
 	instance->m_type = Component::Type::get<T>();

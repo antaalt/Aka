@@ -177,7 +177,7 @@
     <ClCompile Include="TileLayer.cpp" />
     <ClCompile Include="TileMap.cpp" />
     <ClCompile Include="TileMapSystem.cpp" />
-    <ClCompile Include="TileSystem.cpp" />
+    <ClCompile Include="TileRenderSystem.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Transform2D.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -221,7 +221,7 @@
     <ClInclude Include="TileLayer.h" />
     <ClInclude Include="TileMap.h" />
     <ClInclude Include="TileMapSystem.h" />
-    <ClInclude Include="TileSystem.h" />
+    <ClInclude Include="TileRenderSystem.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Transform2D.h" />
     <ClInclude Include="Window.h" />

@@ -22,12 +22,6 @@
     <Filter Include="Fichiers sources\Graphic\OpenGL">
       <UniqueIdentifier>{7a172811-2f88-4549-8bd7-86403f09b682}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Fichiers sources\Game">
-      <UniqueIdentifier>{3c5a8aa8-7fa5-4780-8a99-d85ae9fee6b4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Fichiers d%27en-tête\Game">
-      <UniqueIdentifier>{6a419454-bb17-4835-9daf-1f79d916815c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Fichiers sources\Graphic\D3D">
       <UniqueIdentifier>{e4441ca5-077e-4395-9082-a7e4a54b6f5b}</UniqueIdentifier>
     </Filter>
@@ -36,12 +30,6 @@
     </Filter>
     <Filter Include="Fichiers sources\Component">
       <UniqueIdentifier>{021e0be8-370b-4b90-8547-3875f4d078cd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Fichiers sources\Entity">
-      <UniqueIdentifier>{31edf191-9177-409b-8c69-9d677936e29f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Fichiers d%27en-tête\Entity">
-      <UniqueIdentifier>{155b6faf-4535-4b0f-98e6-59bdda5cc4ca}</UniqueIdentifier>
     </Filter>
     <Filter Include="Fichiers d%27en-tête\Gui">
       <UniqueIdentifier>{cee2c663-8960-4ace-9d6f-a25c291b069e}</UniqueIdentifier>
@@ -55,17 +43,23 @@
     <Filter Include="Fichiers d%27en-tête\Platform">
       <UniqueIdentifier>{7c53c8a7-59e7-493a-b8e2-ac38a86423f0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Fichiers d%27en-tête\IO">
-      <UniqueIdentifier>{ea2e8550-c2d4-45c0-b035-12931fbcc433}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Fichiers d%27en-tête\System">
       <UniqueIdentifier>{02102897-a192-4fd6-809b-073eb1f19b59}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Fichiers sources\IO">
-      <UniqueIdentifier>{a809367f-1003-4bbd-85b8-3b85096a030c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Fichiers sources\System">
       <UniqueIdentifier>{296d790b-bfe6-4ca3-ad65-f0630b3d49e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Platform\IO">
+      <UniqueIdentifier>{a809367f-1003-4bbd-85b8-3b85096a030c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Core">
+      <UniqueIdentifier>{3c5a8aa8-7fa5-4780-8a99-d85ae9fee6b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Core">
+      <UniqueIdentifier>{155b6faf-4535-4b0f-98e6-59bdda5cc4ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Platform\IO">
+      <UniqueIdentifier>{ea2e8550-c2d4-45c0-b035-12931fbcc433}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -93,14 +87,11 @@
     <ClCompile Include="GLFontRenderer.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="Game.cpp">
-      <Filter>Fichiers sources\Game</Filter>
-    </ClCompile>
     <ClCompile Include="Image.cpp">
-      <Filter>Fichiers sources\IO</Filter>
+      <Filter>Fichiers sources\Platform\IO</Filter>
     </ClCompile>
     <ClCompile Include="Time.cpp">
-      <Filter>Fichiers sources\IO</Filter>
+      <Filter>Fichiers sources\Platform\IO</Filter>
     </ClCompile>
     <ClCompile Include="PlatformWindows.cpp">
       <Filter>Fichiers sources\Platform</Filter>
@@ -124,13 +115,10 @@
       <Filter>Fichiers sources\Gui</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
-      <Filter>Fichiers sources\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="OgmoWorld.cpp">
-      <Filter>Fichiers sources\Entity</Filter>
+      <Filter>Fichiers sources\Platform\IO</Filter>
     </ClCompile>
     <ClCompile Include="FileSystem.cpp">
-      <Filter>Fichiers sources\IO</Filter>
+      <Filter>Fichiers sources\Platform\IO</Filter>
     </ClCompile>
     <ClCompile Include="PhysicSystem.cpp">
       <Filter>Fichiers sources\System</Filter>
@@ -147,15 +135,6 @@
     <ClCompile Include="Camera2D.cpp">
       <Filter>Fichiers sources\Component</Filter>
     </ClCompile>
-    <ClCompile Include="System.cpp">
-      <Filter>Fichiers sources\System</Filter>
-    </ClCompile>
-    <ClCompile Include="World.cpp">
-      <Filter>Fichiers sources\System</Filter>
-    </ClCompile>
-    <ClCompile Include="Component.cpp">
-      <Filter>Fichiers sources\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Transform2D.cpp">
       <Filter>Fichiers sources\Component</Filter>
     </ClCompile>
@@ -165,26 +144,38 @@
     <ClCompile Include="Collider2D.cpp">
       <Filter>Fichiers sources\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Shape2D.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="Entity.cpp">
-      <Filter>Fichiers sources\System</Filter>
-    </ClCompile>
-    <ClCompile Include="TileSystem.cpp">
-      <Filter>Fichiers sources\System</Filter>
-    </ClCompile>
     <ClCompile Include="TileLayer.cpp">
       <Filter>Fichiers sources\Component</Filter>
     </ClCompile>
     <ClCompile Include="CameraSystem.cpp">
       <Filter>Fichiers sources\System</Filter>
     </ClCompile>
+    <ClCompile Include="OgmoWorld.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="System.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Component.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Shape2D.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="TileRenderSystem.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Geometry.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="GraphicBackend.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
@@ -206,26 +197,20 @@
     <ClInclude Include="FontRenderer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
-      <Filter>Fichiers d%27en-tête\Game</Filter>
-    </ClInclude>
     <ClInclude Include="Image.h">
-      <Filter>Fichiers d%27en-tête\IO</Filter>
+      <Filter>Fichiers d%27en-tête\Platform\IO</Filter>
     </ClInclude>
     <ClInclude Include="Time.h">
-      <Filter>Fichiers d%27en-tête\IO</Filter>
+      <Filter>Fichiers d%27en-tête\Platform\IO</Filter>
     </ClInclude>
     <ClInclude Include="Sprite.h">
-      <Filter>Fichiers d%27en-tête\Entity</Filter>
+      <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
     <ClInclude Include="Graphic.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Fichiers d%27en-tête\Platform</Filter>
-    </ClInclude>
-    <ClInclude Include="Debug.h">
-      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="..\lib\imgui\imconfig.h">
       <Filter>Fichiers d%27en-tête\Gui</Filter>
@@ -252,16 +237,16 @@
       <Filter>Fichiers d%27en-tête\Gui</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h">
-      <Filter>Fichiers d%27en-tête\IO</Filter>
+      <Filter>Fichiers d%27en-tête\Platform\IO</Filter>
     </ClInclude>
     <ClInclude Include="OgmoWorld.h">
-      <Filter>Fichiers d%27en-tête\Entity</Filter>
+      <Filter>Fichiers d%27en-tête\Core</Filter>
     </ClInclude>
     <ClInclude Include="Platform.h">
       <Filter>Fichiers d%27en-tête\Platform</Filter>
     </ClInclude>
     <ClInclude Include="FileSystem.h">
-      <Filter>Fichiers d%27en-tête\IO</Filter>
+      <Filter>Fichiers d%27en-tête\Platform\IO</Filter>
     </ClInclude>
     <ClInclude Include="PhysicSystem.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
@@ -275,12 +260,6 @@
     <ClInclude Include="AnimatorSystem.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
-    <ClInclude Include="System.h">
-      <Filter>Fichiers d%27en-tête\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Component.h">
-      <Filter>Fichiers d%27en-tête\Component</Filter>
-    </ClInclude>
     <ClInclude Include="TileMap.h">
       <Filter>Fichiers d%27en-tête\Component</Filter>
     </ClInclude>
@@ -290,25 +269,40 @@
     <ClInclude Include="TileMapSystem.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
-    <ClInclude Include="Shape2D.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="Entity.h">
-      <Filter>Fichiers d%27en-tête\System</Filter>
-    </ClInclude>
-    <ClInclude Include="World.h">
-      <Filter>Fichiers d%27en-tête\System</Filter>
-    </ClInclude>
     <ClInclude Include="Camera2D.h">
       <Filter>Fichiers d%27en-tête\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="TileSystem.h">
-      <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
     <ClInclude Include="TileLayer.h">
       <Filter>Fichiers d%27en-tête\Component</Filter>
     </ClInclude>
     <ClInclude Include="CameraSystem.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
+    </ClInclude>
+    <ClInclude Include="World.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="System.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Component.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Geometry.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Shape2D.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="TileRenderSystem.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
   </ItemGroup>
