@@ -19,7 +19,7 @@ void TextRenderSystem::create()
     ShaderInfo info{};
     info.vertex = Shader::create(Asset::loadString("shaders/font.vert").c_str(), ShaderType::VERTEX_SHADER);
     info.frag = Shader::create(Asset::loadString("shaders/font.frag").c_str(), ShaderType::FRAGMENT_SHADER);
-    info.uniforms.push_back(Uniform{ UniformType::Vec3, ShaderType::FRAGMENT_SHADER, "textColor" });
+    info.uniforms.push_back(Uniform{ UniformType::Vec4, ShaderType::FRAGMENT_SHADER, "textColor" });
     info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "projection" });
     m_shader.create(info);
 

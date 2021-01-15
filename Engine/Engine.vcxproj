@@ -171,6 +171,7 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="PhysicSystem.cpp" />
     <ClCompile Include="PlatformWindows.cpp" />
+    <ClCompile Include="GLRenderPass.cpp" />
     <ClCompile Include="Shape2D.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="System.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="Input.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="PhysicSystem.h" />
+    <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Shape2D.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="FileSystem.h" />
