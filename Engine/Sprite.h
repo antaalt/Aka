@@ -12,12 +12,12 @@ namespace aka {
 struct Sprite {
 	struct Frame {
 		// TODO use subtexture with atlas
-		Texture* texture = nullptr;
+		Texture::Ptr texture = nullptr;
 		Time::Unit duration = 0;
 
 		void bind() { texture->bind(); }
 
-		static Frame create(Texture* texture, Time::Unit duration) { Frame frame; frame.texture = texture; frame.duration = duration; return frame; }
+		static Frame create(Texture::Ptr texture, Time::Unit duration) { Frame frame; frame.texture = texture; frame.duration = duration; return frame; }
 	};
 	struct Animation {
 		std::string name;

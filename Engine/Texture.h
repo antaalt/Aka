@@ -1,27 +1,42 @@
 #pragma once
 
 #include <stdint.h>
+#include <memory>
 
 namespace aka {
 
-using TextureID = uint32_t;
+struct Sampler
+{
+	enum class Filter {
+		Nearest,
+		Linear,
+		Default = Linear
+	};
+};
+
+
 
 class Texture
 {
 public:
-	Texture();
+	using Ptr = std::shared_ptr<Texture>;
+	using ID = uint32_t;
+
+public:
+	Texture(uint32_t width, uint32_t height, Sampler::Filter filter);
+	Texture(uint32_t width, uint32_t height, const void* data, Sampler::Filter filter);
 	Texture(const Texture&) = delete;
-	const Texture& operator=(const Texture&) = delete;
+	Texture& operator=(const Texture&) = delete;
 	~Texture();
 
-	void create(uint32_t width, uint32_t height, const void* data);
-	void destroy();
+	static Texture::Ptr create(uint32_t width, uint32_t height, Sampler::Filter filter);
+	static Texture::Ptr create(uint32_t width, uint32_t height, const void* data, Sampler::Filter filter);
 
 	void bind() const;
+	ID id() const;
 
-	TextureID getID();
 private:
-	TextureID m_textureID;
+	ID m_textureID;
 };
 
 }

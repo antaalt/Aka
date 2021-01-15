@@ -26,19 +26,20 @@
 
 namespace aka {
 
-GLuint framebufferID;
 Sprite character;
 Sprite background;
 Sprite colliderSprite;
-Texture* renderTarget;
+Framebuffer::Ptr framebuffer;
+
 FontRenderer* fontRenderer;
 Font font24, font48, font96;
 
 const vec2u viewportSize(320, 180);
-GLenum error = GL_NO_ERROR;
 
+// Entity
 Entity* characterEntity;
 Entity* backgroundEntity;
+// Systems
 PhysicSystem *physicSystem;
 AnimatorSystem *animatorSystem;
 TileMapSystem* tileMapSystem;
@@ -62,7 +63,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 		Sprite::Animation animation;
 		animation.name = "default";
-		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		background.animations.push_back(animation);
 
 		backgroundEntity = m_world.createEntity();
@@ -80,7 +81,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
 			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
-			Texture* texture = backend.createTexture(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data());
+			Texture::Ptr texture = Texture::create(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data(), Sampler::Filter::Nearest);
 			
 			Entity* entity = m_world.createEntity();
 			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
@@ -95,7 +96,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		Sprite::Animation animation;
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		colliderSprite.animations.push_back(animation);
 		
 		const OgmoLevel::Layer* layer = ogmoLevel.getLayer("Colliders");
@@ -125,30 +126,26 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Image image = Image::load(path);
 			width = image.width;
 			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(backend.createTexture(image.width, image.height, image.bytes.data()), 500));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		}
 		character.animations.push_back(animation);
 		characterEntity = m_world.createEntity();
-		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f(width, height), radianf(0)));
+		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f((float)width, (float)height), radianf(0)));
 		characterEntity->add<Animator>(Animator(&character, 0.f))->play("idle");
 		characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
 		characterEntity->add<Collider2D>(Collider2D());
 	}
 
-	// INIT FRAMEBUFFER RENDER TARGET
-	renderTarget = backend.createTexture((uint32_t)viewportSize.x, (uint32_t)viewportSize.y, nullptr);
-
 	// INIT FONT
-	fontRenderer = backend.createFontRenderer();
+	// TODO add text component & fontrenderingsystem
+	fontRenderer = new FontRenderer();
 	font24 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 24);
 	font48 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
 	font96 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 96);
 
+
 	// INIT FRAMEBUFFER
-	glGenFramebuffers(1, &framebufferID);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTarget->getID(), 0);
-	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
+	framebuffer = Framebuffer::create(viewportSize.x, viewportSize.y, Sampler::Filter::Nearest);
 
 	window.setSizeLimits((int32_t)viewportSize.x, (int32_t)viewportSize.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
 	
@@ -180,16 +177,10 @@ void Game::destroy(GraphicBackend& backend)
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 
-	renderTarget->destroy();
 	fontRenderer->destroyFont(font24);
 	fontRenderer->destroyFont(font48);
 	fontRenderer->destroyFont(font96);
 	fontRenderer->destroy();
-	background.animations[0].frames[0].texture->destroy();
-	for(Sprite::Animation &animation: character.animations)
-		for (Sprite::Frame& frame : animation.frames)
-			frame.texture->destroy();
-	glDeleteFramebuffers(1, &framebufferID);
 }
 
 
@@ -365,7 +356,7 @@ void Game::update(GraphicBackend& backend)
 						layer->gridCount = vec2u(gridCount);
 					if (ImGui::InputInt2("Grid size", gridSize.data))
 						layer->gridSize = vec2u(gridSize);
-					ImGui::Image((void*)(uintptr_t)(map->texture->getID()), ImVec2(512, 512), ImVec2(0, 1), ImVec2(1, 0), ImVec4(1, 1, 1, 1), ImVec4(1, 0, 0, 1));
+					ImGui::Image((void*)(uintptr_t)(map->texture->id()), ImVec2(512, 512), ImVec2(0, 1), ImVec2(1, 0), ImVec4(1, 1, 1, 1), ImVec4(1, 0, 0, 1));
 
 					static int id = 0;
 					ImGui::SliderInt("", &id, 0, (int)layer->tileID.size() - 4);
@@ -385,12 +376,11 @@ void Game::update(GraphicBackend& backend)
 	// Update world after moving manually objects
 	m_world.update();
 }
-// TODO
-// - Hide framebuffer impl
+
 void Game::render(GraphicBackend& backend)
 {
 	backend.viewport(0, 0, (uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
+	framebuffer->bind(Framebuffer::Type::Both);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
 	m_world.render(backend);
@@ -398,19 +388,24 @@ void Game::render(GraphicBackend& backend)
 	// Blit to main buffer
 	uint32_t widthRatio = screenWidth() / (uint32_t)viewportSize.x;
 	uint32_t heightRatio = screenHeight() / (uint32_t)viewportSize.y;
-	uint32_t ratio = min(widthRatio, heightRatio);
+	uint32_t ratio = min<uint32_t>(widthRatio, heightRatio);
 	uint32_t scaledWidth = ratio * (uint32_t)viewportSize.x;
 	uint32_t scaledHeight = ratio * (uint32_t)viewportSize.y;
 	uint32_t w = (screenWidth() - scaledWidth) / 2;
 	uint32_t h = (screenHeight() - scaledHeight) / 2;
+	Rect srcBlit{};
+	srcBlit.start = vec2i(0);
+	srcBlit.end = vec2i(viewportSize);
+	Rect dstBlit{};
+	dstBlit.start = vec2i(w, h);
+	dstBlit.end = vec2i(screenWidth() - w, screenHeight() - h);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	framebuffer->unbind(Framebuffer::Type::Both);
 	backend.viewport(0, 0, screenWidth(), screenHeight());
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferID);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, (GLint)viewportSize.x, (GLint)viewportSize.y, w, h, screenWidth() - w, screenHeight() - h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	framebuffer->bind(Framebuffer::Type::Read);
+	framebuffer->blit(srcBlit, dstBlit, Sampler::Filter::Nearest);
+	framebuffer->unbind(Framebuffer::Type::Both);
 
 	// Draw text
 	//backend.viewport(0, 0, screenWidth(), screenHeight());
@@ -425,7 +420,7 @@ void Game::render(GraphicBackend& backend)
 	//fontRenderer->render(font24, str, 10, (float)((int)screenHeight() / 2 - size24.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
 	//fontRenderer->render(font96, str, (float)((int)screenWidth() / 2 - size96.x / 2) + size96.x + 10, (float)((int)screenHeight() / 2 - size96.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
 
-	ASSERT((error = glGetError()) == GL_NO_ERROR, "");
+	checkError();
 
 	// Rendering imgui
 	ImGui::Render();

@@ -26,18 +26,17 @@ public:
 	};
 	API api() const { m_api; }
 public:
+
 	void initialize();
+
 	void destroy();
 
 	void clear(const color4f& color);
 
 	void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height);
+
 	const Viewport& viewport() const;
 
-	Texture *createTexture(uint32_t width, uint32_t height, const uint8_t* data);
-	Shader *createProgram(const ShaderInfo& info);
-	ShaderID createShader(const char* shader, ShaderType type);
-	FontRenderer* createFontRenderer();
 private:
 	API m_api;
 	Viewport m_viewport;

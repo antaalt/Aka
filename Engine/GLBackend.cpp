@@ -78,31 +78,4 @@ const Viewport& GraphicBackend::viewport() const
     return m_viewport;
 }
 
-Texture * GraphicBackend::createTexture(uint32_t width, uint32_t height, const uint8_t* data)
-{
-	// TODO use smart pointer
-	Texture *texture = new Texture;
-	texture->create(width, height, data);
-	return texture;
-}
-
-Shader* GraphicBackend::createProgram(const ShaderInfo& info)
-{
-	Shader* shader = new Shader;
-	shader->create(info);
-	return shader;
-}
-
-ShaderID GraphicBackend::createShader(const char* content, ShaderType type)
-{
-	return Shader::create(content, type);
-}
-
-FontRenderer* GraphicBackend::createFontRenderer()
-{
-    FontRenderer*font = new FontRenderer;
-    font->create();
-    return font;
-}
-
 }

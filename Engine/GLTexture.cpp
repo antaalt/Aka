@@ -4,18 +4,12 @@
 
 namespace aka {
 
-Texture::Texture() :
-	m_textureID(0)
+Texture::Texture(uint32_t width, uint32_t height, Sampler::Filter filter) :
+	Texture(width, height, nullptr, filter)
 {
 }
 
-Texture::~Texture()
-{
-	if (m_textureID != 0)
-		destroy();
-}
-
-void Texture::create(uint32_t width, uint32_t height, const void* data)
+Texture::Texture(uint32_t width, uint32_t height, const void* data, Sampler::Filter filter)
 {
 	// TODO add filter & type settings
 	glGenTextures(1, &m_textureID);
@@ -27,10 +21,20 @@ void Texture::create(uint32_t width, uint32_t height, const void* data)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-void Texture::destroy()
+Texture::~Texture()
 {
-	glDeleteTextures(1, &m_textureID);
-	m_textureID = 0;
+	if (m_textureID != 0)
+		glDeleteTextures(1, &m_textureID);
+}
+
+Texture::Ptr Texture::create(uint32_t width, uint32_t height, Sampler::Filter filter)
+{
+	return create(width, height, nullptr, filter);
+}
+
+Texture::Ptr Texture::create(uint32_t width, uint32_t height, const void* data, Sampler::Filter filter)
+{
+	return std::make_shared<Texture>(width, height, data, filter);
 }
 
 void Texture::bind() const
@@ -38,7 +42,7 @@ void Texture::bind() const
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
-TextureID Texture::getID()
+Texture::ID Texture::id() const
 {
 	return m_textureID;
 }
