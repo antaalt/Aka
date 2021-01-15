@@ -161,8 +161,8 @@
     <ClCompile Include="Collider2D.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Font.cpp" />
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="GLFontRenderer.cpp" />
     <ClCompile Include="GLFramebuffer.cpp" />
     <ClCompile Include="GLShader.cpp" />
     <ClCompile Include="GLTexture.cpp" />
@@ -174,6 +174,8 @@
     <ClCompile Include="Shape2D.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="System.cpp" />
+    <ClCompile Include="Text.cpp" />
+    <ClCompile Include="TextRenderSystem.cpp" />
     <ClCompile Include="TileLayer.cpp" />
     <ClCompile Include="TileMap.cpp" />
     <ClCompile Include="TileMapSystem.cpp" />
@@ -204,8 +206,8 @@
     <ClInclude Include="Component.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="Font.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="FontRenderer.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="Graphic.h" />
     <ClInclude Include="Image.h" />
@@ -217,6 +219,8 @@
     <ClInclude Include="FileSystem.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="System.h" />
+    <ClInclude Include="Text.h" />
+    <ClInclude Include="TextRenderSystem.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TileLayer.h" />
     <ClInclude Include="TileMap.h" />

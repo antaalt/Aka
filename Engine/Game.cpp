@@ -8,6 +8,7 @@
 #include "Logger.h"
 #include "FileSystem.h"
 
+#include "Text.h"
 #include "World.h"
 #include "PhysicSystem.h"
 #include "Transform2D.h"
@@ -15,6 +16,7 @@
 #include "AnimatorSystem.h"
 #include "TileMapSystem.h"
 #include "TileRenderSystem.h"
+#include "TextRenderSystem.h"
 #include "CameraSystem.h"
 
 #include "OgmoWorld.h"
@@ -26,25 +28,26 @@
 
 namespace aka {
 
+Font font;
 Sprite character;
 Sprite background;
 Sprite colliderSprite;
 Framebuffer::Ptr framebuffer;
 
-FontRenderer* fontRenderer;
-Font font24, font48, font96;
 
 const vec2u viewportSize(320, 180);
 
 // Entity
 Entity* characterEntity;
 Entity* backgroundEntity;
+Entity* textEntity;
 // Systems
 PhysicSystem *physicSystem;
 AnimatorSystem *animatorSystem;
 TileMapSystem* tileMapSystem;
 TileSystem* tileSystem;
 CameraSystem* cameraSystem;
+TextRenderSystem* textRenderingSystem;
 
 
 void Game::initialize(Window& window, GraphicBackend& backend)
@@ -54,6 +57,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	tileMapSystem = m_world.createSystem<TileMapSystem>();
 	animatorSystem = m_world.createSystem<AnimatorSystem>();
 	cameraSystem = m_world.createSystem<CameraSystem>();
+	textRenderingSystem = m_world.createSystem<TextRenderSystem>();
 
 	{
 		// INIT FIXED TEXTURE BACKGROUND
@@ -63,7 +67,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 		Sprite::Animation animation;
 		animation.name = "default";
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, image.bytes.data(), Sampler::Filter::Nearest), 500));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		background.animations.push_back(animation);
 
 		backgroundEntity = m_world.createEntity();
@@ -81,7 +85,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
 			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
-			Texture::Ptr texture = Texture::create(layer->tileset->image.width, layer->tileset->image.height, layer->tileset->image.bytes.data(), Sampler::Filter::Nearest);
+			Texture::Ptr texture = Texture::create(layer->tileset->image.width, layer->tileset->image.height, Texture::Format::Rgba8, Texture::Format::Rgba, layer->tileset->image.bytes.data(), Sampler::Filter::Nearest);
 			
 			Entity* entity = m_world.createEntity();
 			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
@@ -96,7 +100,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		Sprite::Animation animation;
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, image.bytes.data(), Sampler::Filter::Nearest), 500));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		colliderSprite.animations.push_back(animation);
 		
 		const OgmoLevel::Layer* layer = ogmoLevel.getLayer("Colliders");
@@ -120,13 +124,13 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Asset::path("textures/player/player02.png"),
 			Asset::path("textures/player/player03.png")
 		};
-		uint32_t width, height;
+		uint32_t width = 0, height = 0;
 		for (Path path : frames)
 		{
 			Image image = Image::load(path);
 			width = image.width;
 			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, image.bytes.data(), Sampler::Filter::Nearest), 500));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		}
 		character.animations.push_back(animation);
 		characterEntity = m_world.createEntity();
@@ -136,13 +140,20 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		characterEntity->add<Collider2D>(Collider2D());
 	}
 
-	// INIT FONT
-	// TODO add text component & fontrenderingsystem
-	fontRenderer = new FontRenderer();
-	font24 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 24);
-	font48 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
-	font96 = fontRenderer->createFont(Asset::path("font/Espera/Espera-Bold.ttf"), 96);
+	{
+		// INIT FONTS
+		font = Font::create(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
+		textEntity = m_world.createEntity();
+		Transform2D* transform = textEntity->add<Transform2D>(Transform2D());
+		Text* text = textEntity->add<Text>(Text());
 
+		text->color = color4f(1.f);
+		text->font = &font;
+		text->text = "Hello World !";
+		vec2i size = font.size(text->text);
+		transform->position = vec2f((float)((int)viewportSize.x / 2 - size.x / 2), (float)((int)viewportSize.y / 2 - size.y / 2));
+		transform->size = vec2f(1.f);
+	}
 
 	// INIT FRAMEBUFFER
 	framebuffer = Framebuffer::create(viewportSize.x, viewportSize.y, Sampler::Filter::Nearest);
@@ -156,7 +167,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
 	ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(window.getHandle()), true);
@@ -176,11 +187,6 @@ void Game::destroy(GraphicBackend& backend)
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
-	fontRenderer->destroyFont(font24);
-	fontRenderer->destroyFont(font48);
-	fontRenderer->destroyFont(font96);
-	fontRenderer->destroy();
 }
 
 
@@ -406,19 +412,6 @@ void Game::render(GraphicBackend& backend)
 	framebuffer->bind(Framebuffer::Type::Read);
 	framebuffer->blit(srcBlit, dstBlit, Sampler::Filter::Nearest);
 	framebuffer->unbind(Framebuffer::Type::Both);
-
-	// Draw text
-	//backend.viewport(0, 0, screenWidth(), screenHeight());
-	//fontRenderer->viewport(0, 0, screenWidth(), screenHeight());
-	static float scale = 1.f;
-	scale += input::scroll().y;
-	const char* str = "Hello world !";
-	vec2i size24 = font24.size(str);// *(int)scale;
-	vec2i size48 = font48.size(str);// *(int)scale;
-	vec2i size96 = font96.size(str);// *(int)scale;
-	//fontRenderer->render(font48, str, (float)((int)screenWidth() / 2 - size24.x / 2), (float)((int)screenHeight() / 2 - size48.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
-	//fontRenderer->render(font24, str, 10, (float)((int)screenHeight() / 2 - size24.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
-	//fontRenderer->render(font96, str, (float)((int)screenWidth() / 2 - size96.x / 2) + size96.x + 10, (float)((int)screenHeight() / 2 - size96.y / 2), 1.f, color3f(0.1f, 0.1f, 0.1f));
 
 	checkError();
 

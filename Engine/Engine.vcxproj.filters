@@ -84,9 +84,6 @@
     <ClCompile Include="GLShader.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="GLFontRenderer.cpp">
-      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="Image.cpp">
       <Filter>Fichiers sources\Platform\IO</Filter>
     </ClCompile>
@@ -174,6 +171,15 @@
     <ClCompile Include="TileRenderSystem.cpp">
       <Filter>Fichiers sources\System</Filter>
     </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>Fichiers sources\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Text.cpp">
+      <Filter>Fichiers sources\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderSystem.cpp">
+      <Filter>Fichiers sources\System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicBackend.h">
@@ -192,9 +198,6 @@
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
     <ClInclude Include="Framebuffer.h">
-      <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
-    <ClInclude Include="FontRenderer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
     <ClInclude Include="Image.h">
@@ -303,6 +306,15 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="TileRenderSystem.h">
+      <Filter>Fichiers d%27en-tête\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Text.h">
+      <Filter>Fichiers d%27en-tête\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderSystem.h">
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
   </ItemGroup>

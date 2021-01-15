@@ -14,6 +14,7 @@ GLenum getFramebufferAttachmentType(Framebuffer::AttachmentType type)
 	{
 	default:
 		Logger::warn("Framebuffer attachment type not defined : ", (int)type);
+		return GL_COLOR_ATTACHMENT0;
 	case Framebuffer::AttachmentType::Color0:
 		return GL_COLOR_ATTACHMENT0;
 	case Framebuffer::AttachmentType::Color1:
@@ -41,7 +42,7 @@ GLenum getType(Framebuffer::Type type) {
 	}
 }
 
-GLenum getFilter(Sampler::Filter type) {
+GLenum getFilterF(Sampler::Filter type) {
 	switch (type) {
 	default:
 	case Sampler::Filter::Linear:
@@ -76,7 +77,7 @@ Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, Sampler::F
 {
 	Attachment attachment;
 	attachment.type = AttachmentType::Color0;
-	attachment.texture = Texture::create(width, height, nullptr, filter);
+	attachment.texture = Texture::create(width, height, Texture::Format::Rgba8, Texture::Format::Rgba, nullptr, filter);
 	return create(width, height, &attachment, 1);
 }
 
@@ -108,7 +109,7 @@ void Framebuffer::blit(const Rect& srcRect, const Rect& dstRect, Sampler::Filter
 		dstRect.start.x, dstRect.start.y, 
 		dstRect.end.x, dstRect.end.y, 
 		GL_COLOR_BUFFER_BIT, 
-		getFilter(filter)
+		getFilterF(filter)
 	);
 }
 

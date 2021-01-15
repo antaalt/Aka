@@ -108,7 +108,7 @@ template<typename ...Args>
 inline void Logger::Channel::print(Args ...args)
 {
 	Date date = Date::localtime();
-	char buffer[22];
+	char buffer[26];
 	int result = snprintf(buffer, 26, "[%04d-%02d-%02d %02d:%02d:%02d]",
 		date.year,
 		date.month,
