@@ -1,7 +1,7 @@
 #include "TileRenderSystem.h"
 
 #include "FileSystem.h"
-#include "Graphic.h"
+#include "GLBackend.h"
 #include "Camera2D.h"
 #include "Transform2D.h"
 #include "Animator.h"

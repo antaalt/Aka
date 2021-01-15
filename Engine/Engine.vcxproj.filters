@@ -183,6 +183,9 @@
     <ClCompile Include="GLRenderPass.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="GLMesh.cpp">
+      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicBackend.h">
@@ -321,6 +324,12 @@
       <Filter>Fichiers d%27en-tête\System</Filter>
     </ClInclude>
     <ClInclude Include="RenderPass.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="GLBackend.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
   </ItemGroup>

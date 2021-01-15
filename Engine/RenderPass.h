@@ -1,21 +1,15 @@
 #pragma once
 
-#include <memory>
+#include "Framebuffer.h"
 
 namespace aka {
 
 class RenderPass
 {
-public:
-	using Ptr = std::shared_ptr<RenderPass>;
+	Framebuffer::Ptr framebuffer;
 
-public:
-	RenderPass();
-	RenderPass(const RenderPass&) = delete;
-	RenderPass& operator=(const RenderPass&) = delete;
-	~RenderPass();
 
-	static RenderPass::Ptr create();
+	void execute();
 };
 
 }

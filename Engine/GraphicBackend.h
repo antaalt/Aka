@@ -3,7 +3,6 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "Framebuffer.h"
-#include "Graphic.h"
 
 namespace aka {
 

@@ -169,6 +169,7 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="GLMesh.cpp" />
     <ClCompile Include="PhysicSystem.cpp" />
     <ClCompile Include="PlatformWindows.cpp" />
     <ClCompile Include="GLRenderPass.cpp" />
@@ -210,10 +211,12 @@
     <ClInclude Include="Font.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="GLBackend.h" />
     <ClInclude Include="Graphic.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="PhysicSystem.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="Shape2D.h" />

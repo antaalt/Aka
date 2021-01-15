@@ -4,6 +4,8 @@
 #include "Transform2D.h"
 #include "World.h"
 
+#include "GLBackend.h"
+
 namespace aka {
 
 TextRenderSystem::TextRenderSystem(World* world) :

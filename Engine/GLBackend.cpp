@@ -1,5 +1,7 @@
 #include "GraphicBackend.h"
 
+#include "GLBackend.h"
+
 #include <stdexcept>
 
 namespace aka {

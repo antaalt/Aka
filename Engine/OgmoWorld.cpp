@@ -3,7 +3,7 @@
 #include <nlohmann/json.hpp>
 //#include <filesystem>
 
-#include "Graphic.h"
+#include "Debug.h"
 
 namespace aka {
 

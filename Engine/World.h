@@ -4,6 +4,7 @@
 #include "Component.h"
 #include "System.h"
 #include "Time.h"
+#include "Debug.h"
 #include "GraphicBackend.h"
 
 #include <functional>

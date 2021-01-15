@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "Graphic.h"
+#include "GLBackend.h"
 
 namespace aka {
 
