@@ -4,7 +4,10 @@
 
 namespace aka {
 
-Mesh::Mesh()
+Mesh::Mesh() :
+    m_vao(0),
+    m_indexVbo(0),
+    m_vertexVbo(0)
 {
     glGenVertexArrays(1, &m_vao);
 }
@@ -27,7 +30,8 @@ Mesh::Ptr Mesh::create()
 void Mesh::vertices(const Vertex& vertex, const void* vertices, size_t count)
 {
     glBindVertexArray(m_vao);
-    glGenBuffers(1, &m_vertexVbo);
+    if (m_vertexVbo == 0)
+        glGenBuffers(1, &m_vertexVbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexVbo);
     size_t ptr = 0;
     for (const Vertex::Attribute &attribute : vertex.attributes)
@@ -94,7 +98,7 @@ void Mesh::vertices(const Vertex& vertex, const void* vertices, size_t count)
         glVertexAttribPointer(attribute.index, components, type, normalized, componentSize * components, (void*)ptr);
         ptr += components * componentSize;
     }
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -102,7 +106,8 @@ void Mesh::vertices(const Vertex& vertex, const void* vertices, size_t count)
 void Mesh::indices(IndexType indexType, const void* indices, size_t count)
 {
     glBindVertexArray(m_vao);
-    glGenBuffers(1, &m_indexVbo);
+    if (m_indexVbo == 0)
+        glGenBuffers(1, &m_indexVbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexVbo);
     size_t indexSize = 0;
     switch (indexType)
@@ -117,7 +122,8 @@ void Mesh::indices(IndexType indexType, const void* indices, size_t count)
         indexSize = 4;
         break;
     }
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize * count, indices, GL_STATIC_DRAW);
+    // GL_DYNAMIC_DRAW so we can change buffer data
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize * count, indices, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }

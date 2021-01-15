@@ -1,13 +1,17 @@
 #pragma once
 
 #include "Framebuffer.h"
+#include "Shader.h"
 
 namespace aka {
 
-class RenderPass
+struct RenderPass
 {
-	Framebuffer::Ptr framebuffer;
+	Framebuffer* framebuffer;
 
+	Mesh* mesh;
+
+	Shader *shader;
 
 	void execute();
 };
