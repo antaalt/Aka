@@ -146,10 +146,8 @@ void RenderPass::execute()
 			}
 			else
 			{
-				uint8_t data[4] = { 255, 255, 255, 255 };
-				texture = Texture::create(1, 1, Texture::Format::Rgba8, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
-				glActiveTexture(GL_TEXTURE0);
-				texture->bind();
+				Logger::error("No textures for render pass.");
+				return;
 			}
 		}
 	}

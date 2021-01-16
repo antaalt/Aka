@@ -37,6 +37,9 @@ Batch::Batch() :
 	info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "u_matrix" });
 	m_shader.create(info);
 
+	uint8_t data[4] = { 255, 255, 255, 255 };
+	m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba8, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
+
 	clear();
 }
 
@@ -45,7 +48,27 @@ Batch::~Batch()
 	m_shader.destroy();
 }
 
-void Batch::quad(const mat3f& transform, float x0, float y0, float x1, float y1, float uvx0, float uvy0, float uvx1, float uvy1, float r, float g, float b, float a)
+void Batch::rect(const mat3f& transform, const Rect& rect, const color4f& color)
+{
+	this->rect(transform, vec2f(rect.x, rect.y), vec2f(rect.x + rect.w, rect.y + rect.h), vec2f(0.f, 0.f), vec2f(1.f, 1.f), color, color, color, color);
+}
+
+void Batch::rect(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const color4f& color)
+{
+	rect(transform, pos0, pos1, vec2f(0.f), vec2f(1.f), color, color, color, color);
+}
+
+void Batch::rect(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const vec2f& uv0, const vec2f& uv1, const color4f& color)
+{
+	rect(transform, pos0, pos1, uv0, uv1, color, color, color, color);
+}
+
+void Batch::rect(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const vec2f& uv0, const vec2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3)
+{
+	quad(transform, pos0, vec2f(pos1.x, pos0.y), vec2f(pos0.x, pos1.y), pos1, uv0, vec2f(uv1.x, uv0.y), vec2f(uv0.x, uv1.y), uv1, color0, color1, color2, color3);
+}
+
+void Batch::quad(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const vec2f& pos2, const vec2f& pos3, const vec2f& uv0, const vec2f& uv1, const vec2f& uv2, const vec2f& uv3, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3)
 {
 	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
 	m_indices.push_back(offset + 0);
@@ -54,41 +77,30 @@ void Batch::quad(const mat3f& transform, float x0, float y0, float x1, float y1,
 	m_indices.push_back(offset + 2);
 	m_indices.push_back(offset + 1);
 	m_indices.push_back(offset + 3);
-	m_vertices.push_back(Vertex(transform * vec2f(x0, y0), vec2f(uvx0, uvy0), color4f(r, g, b, a)));
-	m_vertices.push_back(Vertex(transform * vec2f(x1, y0), vec2f(uvx1, uvy0), color4f(r, g, b, a)));
-	m_vertices.push_back(Vertex(transform * vec2f(x0, y1), vec2f(uvx0, uvy1), color4f(r, g, b, a)));
-	m_vertices.push_back(Vertex(transform * vec2f(x1, y1), vec2f(uvx1, uvy1), color4f(r, g, b, a)));
+	m_vertices.push_back(Vertex(transform * pos0, uv0, color0));
+	m_vertices.push_back(Vertex(transform * pos1, uv1, color1));
+	m_vertices.push_back(Vertex(transform * pos2, uv2, color2));
+	m_vertices.push_back(Vertex(transform * pos3, uv3, color3));
 	m_currentBatch.elements += 2;
 }
 
-void Batch::rect(const mat3f& transform, const Rect& rect, const color4f& color)
+void Batch::texture(const mat3f& transform, const vec2f& position, const vec2f& size, Texture::Ptr texture)
 {
-	quad(transform, rect.x, rect.y, rect.w + rect.x, rect.h + rect.y, 0.f, 0.f, 1.f, 1.f, color.r, color.g, color.b, color.a);
+	this->texture(transform, position, size, texture, color4f(1.f));
 }
 
-void Batch::texture(const mat3f& transform, Texture::Ptr texture)
+void Batch::texture(const mat3f& transform, const vec2f& position, const vec2f& size, Texture::Ptr texture, const color4f& color)
 {
-	// update texture stack & create new drawbatch
 	if (m_currentBatch.elements > 0 && m_currentBatch.texture != texture && m_currentBatch.texture != nullptr)
-	{
-		m_batches.push_back(m_currentBatch);
-		m_currentBatch.texture = texture;
-		Rect rectangle;
-		rect(transform, rectangle, color4f(1.f));
-	}
-	else
-	{
-		m_currentBatch.texture = texture;
-		Rect rectangle{ 0, 0, 50, 50};
-		rect(transform, rectangle, color4f(1.f));
-	}
+		push();
+	m_currentBatch.texture = texture;
+	rect(transform, Rect{ position.x, position.y, size.x, size.y }, color);
 }
 
 void Batch::push()
 {
 	m_batches.push_back(m_currentBatch);
-	m_currentBatch.depth = 0.f;
-	m_currentBatch.texture = nullptr;
+	m_currentBatch.texture = m_defaultTexture;
 	m_currentBatch.elementOffset += m_currentBatch.elements;
 	m_currentBatch.elements = 0;
 }
@@ -100,8 +112,8 @@ void Batch::clear()
 	m_indices.clear();
 	m_currentBatch.elementOffset = 0;
 	m_currentBatch.elements = 0;
-	m_currentBatch.texture = nullptr;
-	m_currentBatch.depth = 0.f;
+	m_currentBatch.texture = m_defaultTexture;
+	m_currentBatch.layer = 0;
 }
 
 void Batch::render()
@@ -155,8 +167,6 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 
 		renderPass.cull = CullMode::None;
 
-		renderPass.texture = m_currentBatch.texture;
-
 		renderPass.viewport = Rect{ 0.f, 0.f, w, h };
 	}
 	
@@ -168,7 +178,8 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 	for (DrawBatch &batch : m_batches)
 	{
 		renderPass.indexCount = batch.elements * 3;
-		renderPass.indexOffset = batch.elementOffset;
+		renderPass.indexOffset = batch.elementOffset * 3;
+		renderPass.texture = batch.texture;
 		renderPass.execute();
 	}
 	// Clear all batches as they are rendered
