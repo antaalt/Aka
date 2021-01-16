@@ -6,29 +6,29 @@
 
 namespace aka {
 
-enum class IndexType
+enum class IndexFormat
 {
 	Uint8,
 	Uint16,
 	Uint32
 };
+enum class VertexFormat {
+	Float,
+	Float2,
+	Float3,
+	Float4,
+	Byte4,
+	Ubyte4,
+	Short2,
+	Ushort2,
+	Short4,
+	Ushort4
+};
 
-struct Vertex {
-	enum class Type {
-		Float,
-		Float2,
-		Float3,
-		Float4,
-		Byte4,
-		Ubyte4,
-		Short2,
-		Ushort2,
-		Short4,
-		Ushort4
-	};
+struct VertexData {;
 	struct Attribute {
 		uint32_t index; // Location of the attribute
-		Type type;      // Type of the attribute
+		VertexFormat type;      // Type of the attribute
 	};
 	std::vector<Attribute> attributes;
 };
@@ -46,14 +46,23 @@ public:
 
 	static Mesh::Ptr create();
 
-	void vertices(const Vertex &vertex, const void *vertices, size_t count);
+	void vertices(const VertexData&vertex, const void *vertices, size_t count);
 
-	void indices(IndexType indexType, const void* indices, size_t count);
+	void indices(IndexFormat indexFormat, const void* indices, size_t count);
+
+	uint32_t id() const;
+
+	uint32_t indexSize() const;
+
+	IndexFormat indexFormat() const;
 
 private:
 	uint32_t m_vao;
 	uint32_t m_indexVbo;
 	uint32_t m_vertexVbo;
+
+	uint32_t m_indexSize;
+	IndexFormat m_indexFormat;
 };
 
 };

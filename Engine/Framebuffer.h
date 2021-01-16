@@ -9,8 +9,10 @@
 namespace aka {
 
 struct Rect {
-	vec2i start;
-	vec2i end;
+	float x;
+	float y;
+	float w;
+	float h;
 };
 
 class Framebuffer

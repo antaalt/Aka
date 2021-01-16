@@ -26,6 +26,7 @@
 
 #include "Framebuffer.h"
 #include "Texture.h"
+#include "Mesh.h"
 #include "Logger.h"
 
 namespace aka {
@@ -84,6 +85,19 @@ inline GLenum format(Texture::Format format) {
 		return GL_RGBA;
 	case Texture::Format::Rgba8:
 		return GL_RGBA8;
+	}
+}
+
+inline GLenum format(IndexFormat format) {
+	switch (format) {
+	default:
+		throw std::runtime_error("Not implemneted");
+	case IndexFormat::Uint8:
+		return GL_UNSIGNED_BYTE;
+	case IndexFormat::Uint16:
+		return GL_UNSIGNED_SHORT;
+	case IndexFormat::Uint32:
+		return GL_UNSIGNED_INT;
 	}
 }
 

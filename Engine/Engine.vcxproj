@@ -156,6 +156,7 @@
     <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Animator.cpp" />
     <ClCompile Include="AnimatorSystem.cpp" />
+    <ClCompile Include="Batch.cpp" />
     <ClCompile Include="Camera2D.cpp" />
     <ClCompile Include="CameraSystem.cpp" />
     <ClCompile Include="Collider2D.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="Animator.h" />
     <ClInclude Include="AnimatorSystem.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Batch.h" />
     <ClInclude Include="Camera2D.h" />
     <ClInclude Include="CameraSystem.h" />
     <ClInclude Include="Collider2D.h" />

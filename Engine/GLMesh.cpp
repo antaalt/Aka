@@ -27,105 +27,138 @@ Mesh::Ptr Mesh::create()
 	return std::make_shared<Mesh>();
 }
 
-void Mesh::vertices(const Vertex& vertex, const void* vertices, size_t count)
+void Mesh::vertices(const VertexData& vertex, const void* vertices, size_t count)
 {
     glBindVertexArray(m_vao);
     if (m_vertexVbo == 0)
         glGenBuffers(1, &m_vertexVbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexVbo);
-    size_t ptr = 0;
-    for (const Vertex::Attribute &attribute : vertex.attributes)
+    uint32_t stride = 0;
+    for (const VertexData::Attribute& attribute : vertex.attributes)
     {
-        GLsizei componentSize = 0;
+        switch (attribute.type)
+        {
+        case VertexFormat::Float: stride += 4; break;
+        case VertexFormat::Float2: stride += 8; break;
+        case VertexFormat::Float3: stride += 12; break;
+        case VertexFormat::Float4: stride += 16; break;
+        case VertexFormat::Byte4: stride += 4; break;
+        case VertexFormat::Ubyte4: stride += 4; break;
+        case VertexFormat::Short2: stride += 4; break;
+        case VertexFormat::Ushort2: stride += 4; break;
+        case VertexFormat::Short4: stride += 8; break;
+        case VertexFormat::Ushort4: stride += 8; break;
+        }
+    }
+    size_t ptr = 0;
+    for (const VertexData::Attribute &attribute : vertex.attributes)
+    {
+        GLint componentSize = 0;
         GLint components = 1;
         GLboolean normalized = GL_FALSE;
         GLenum type = GL_FLOAT;
         switch (attribute.type)
         {
-        case Vertex::Type::Float:
+        case VertexFormat::Float:
             type = GL_FLOAT;
             componentSize = 4;
             components = 1;
             break;
-        case Vertex::Type::Float2:
+        case VertexFormat::Float2:
             type = GL_FLOAT;
             componentSize = 4;
             components = 2;
             break;
-        case Vertex::Type::Float3:
+        case VertexFormat::Float3:
             type = GL_FLOAT;
             componentSize = 4;
             components = 3;
             break;
-        case Vertex::Type::Float4:
+        case VertexFormat::Float4:
             type = GL_FLOAT;
             componentSize = 4;
             components = 4;
             break;
-        case Vertex::Type::Byte4:
+        case VertexFormat::Byte4:
             type = GL_BYTE;
             componentSize = 1;
             components = 4;
             break;
-        case Vertex::Type::Ubyte4:
+        case VertexFormat::Ubyte4:
             type = GL_UNSIGNED_BYTE;
             componentSize = 1;
             components = 4;
             break;
-        case Vertex::Type::Short2:
+        case VertexFormat::Short2:
             type = GL_SHORT;
             componentSize = 2;
             components = 2;
             break;
-        case Vertex::Type::Ushort2:
+        case VertexFormat::Ushort2:
             type = GL_UNSIGNED_SHORT;
             componentSize = 2;
             components = 2;
             break;
-        case Vertex::Type::Short4:
+        case VertexFormat::Short4:
             type = GL_SHORT;
             componentSize = 2;
             components = 4;
             break;
-        case Vertex::Type::Ushort4:
+        case VertexFormat::Ushort4:
             type = GL_UNSIGNED_SHORT;
             componentSize = 2;
             components = 4;
             break;
         }
         glEnableVertexAttribArray(attribute.index);
-        // TODO check componentSize * components, use fixed stride ?
-        glVertexAttribPointer(attribute.index, components, type, normalized, componentSize * components, (void*)ptr);
+        glVertexAttribPointer(attribute.index, components, type, normalized, stride, (void*)ptr);
         ptr += components * componentSize;
     }
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBufferData(GL_ARRAY_BUFFER, stride * count, vertices, GL_DYNAMIC_DRAW);
+    // Do not unbind buffers as they will be unbind from VAO
     glBindVertexArray(0);
 }
 
-void Mesh::indices(IndexType indexType, const void* indices, size_t count)
+void Mesh::indices(IndexFormat format, const void* indices, size_t count)
 {
     glBindVertexArray(m_vao);
     if (m_indexVbo == 0)
         glGenBuffers(1, &m_indexVbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexVbo);
-    size_t indexSize = 0;
-    switch (indexType)
+    switch (format)
     {
-    case IndexType::Uint8:
-        indexSize = 1;
+    case IndexFormat::Uint8:
+        m_indexFormat = IndexFormat::Uint8;
+        m_indexSize = 1;
         break;
-    case IndexType::Uint16:
-        indexSize = 2;
+    case IndexFormat::Uint16:
+        m_indexFormat = IndexFormat::Uint16;
+        m_indexSize = 2;
         break;
-    case IndexType::Uint32:
-        indexSize = 4;
+    case IndexFormat::Uint32:
+        m_indexFormat = IndexFormat::Uint32;
+        m_indexSize = 4;
         break;
     }
     // GL_DYNAMIC_DRAW so we can change buffer data
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize * count, indices, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexSize * count, indices, GL_DYNAMIC_DRAW);
     glBindVertexArray(0);
+}
+
+uint32_t Mesh::id() const
+{
+    return m_vao;
+}
+
+uint32_t Mesh::indexSize() const
+{
+    return m_indexSize;
+}
+
+IndexFormat Mesh::indexFormat() const
+{
+    return m_indexFormat;
 }
 
 };

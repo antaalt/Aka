@@ -1,8 +1,52 @@
 #include "GraphicBackend.h"
 
 #include "GLBackend.h"
+#include "Logger.h"
 
 #include <stdexcept>
+
+void APIENTRY openglCallbackFunction(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam
+) {
+    std::string errorType;
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        errorType = "error";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        errorType = "deprecated_behaviour";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        errorType = "undefined_behaviour";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        errorType = "portability";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        errorType = "performance";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        errorType = "other";
+        break;
+    }
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_LOW:
+        aka::Logger::debug("[", errorType, "][low] ", message);
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        aka::Logger::warn("[", errorType, "][medium] ", message);
+        break;
+    case GL_DEBUG_SEVERITY_HIGH:
+        aka::Logger::error("[", errorType, "][high] ", message);
+        break;
+    }
+}
 
 namespace aka {
 
@@ -50,6 +94,25 @@ void GraphicBackend::initialize()
 	if (glewInit() != GLEW_OK) {
 		throw std::runtime_error("Could not init GLEW");
 	}
+#endif
+
+#if _DEBUG
+    if (glDebugMessageCallback) {
+        Logger::info("Setting up openGL callback.");
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(openglCallbackFunction, nullptr);
+        GLuint unused = 0;
+        glDebugMessageControl(
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            GL_DONT_CARE,
+            0,
+            &unused,
+            GL_TRUE
+        );
+    }
+    else
+        Logger::warn("glDebugMessageCallback not supported");
 #endif
 }
 

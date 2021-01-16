@@ -67,6 +67,10 @@ struct Logger {
 		template<typename ...Args>
 		void operator()(Args ...args);
 
+		void mute();
+
+		void unmute();
+
 	private:
 		template<typename T, typename ...Args>
 		void doPrint(std::ostream& out, T t, Args ...args) {
@@ -77,11 +81,12 @@ struct Logger {
 		void doPrint(std::ostream& out, T t) {
 			out << t;
 		}
-	public:
+	private:
 		static std::mutex writeLock;
 		std::ostream& ostream;
 		const std::string name;
 		const Logger::Color color;
+		bool muted;
 	};
 
 	static Channel critical;
@@ -107,6 +112,7 @@ inline std::ostream& operator<<(std::ostream& os, Logger::Color color)
 template<typename ...Args>
 inline void Logger::Channel::print(Args ...args)
 {
+	if (muted) return;
 	Date date = Date::localtime();
 	char buffer[26];
 	int result = snprintf(buffer, 26, "[%04d-%02d-%02d %02d:%02d:%02d]",
@@ -121,7 +127,7 @@ inline void Logger::Channel::print(Args ...args)
 	head += (result == 0 ? "[Unknown time]" : buffer);
 	head += "[";
 	head += this->name;
-	head += "] ";
+	head += "]";
 	std::lock_guard<std::mutex> m(this->writeLock);
 	doPrint(this->ostream, this->color, head, args...);
 	ostream << Logger::defaultColor << std::endl;

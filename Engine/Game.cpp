@@ -7,6 +7,7 @@
 #include "Time.h"
 #include "Logger.h"
 #include "FileSystem.h"
+#include "Batch.h"
 
 #include "Text.h"
 #include "World.h"
@@ -52,6 +53,7 @@ TextRenderSystem* textRenderingSystem;
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
+	Logger::debug.mute();
 	physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit(10));
 	tileSystem = m_world.createSystem<TileSystem>();
 	tileMapSystem = m_world.createSystem<TileMapSystem>();
@@ -400,11 +402,15 @@ void Game::render(GraphicBackend& backend)
 	uint32_t w = (screenWidth() - scaledWidth) / 2;
 	uint32_t h = (screenHeight() - scaledHeight) / 2;
 	Rect srcBlit{};
-	srcBlit.start = vec2i(0);
-	srcBlit.end = vec2i(viewportSize);
+	srcBlit.x = 0.f;
+	srcBlit.y = 0.f;
+	srcBlit.w = (float)viewportSize.x;
+	srcBlit.h = (float)viewportSize.y;
 	Rect dstBlit{};
-	dstBlit.start = vec2i(w, h);
-	dstBlit.end = vec2i(screenWidth() - w, screenHeight() - h);
+	dstBlit.x = (float)w;
+	dstBlit.y = (float)h;
+	dstBlit.w = (float)screenWidth() - 2.f * w;
+	dstBlit.h = (float)screenHeight() - 2.f * h;
 
 	framebuffer->unbind(Framebuffer::Type::Both);
 	backend.viewport(0, 0, screenWidth(), screenHeight());
@@ -412,8 +418,16 @@ void Game::render(GraphicBackend& backend)
 	framebuffer->bind(Framebuffer::Type::Read);
 	framebuffer->blit(srcBlit, dstBlit, Sampler::Filter::Nearest);
 	framebuffer->unbind(Framebuffer::Type::Both);
+	
+	
 
-	checkError();
+	Batch batch;
+	batch.texture(mat3f::identity(), characterEntity->get<Animator>()->getCurrentSpriteFrame().texture);
+	batch.rect(mat3f::identity(), Rect{ input::mouse().x, input::mouse().y, 100.f, 100.f }, color4f(1.f, 0.f, 0.f, 1.f));
+	batch.rect(mat3f::identity(), Rect{ input::mouse().x + 50.f, screenHeight() - input::mouse().y, 100.f, 100.f }, color4f(0.f, 0.f, 1.f, 1.f));
+	batch.rect(mat3f::identity(), Rect{ screenWidth() - input::mouse().x, screenHeight() - input::mouse().y, 100.f, 100.f }, color4f(1.f,1.f, 1.f, 1.f));
+	batch.rect(mat3f::identity(), Rect{ screenWidth() - input::mouse().x, input::mouse().y, 100.f, 100.f }, color4f(1.f, 0.f, 1.f, 1.f));
+	batch.render();
 
 	// Rendering imgui
 	ImGui::Render();

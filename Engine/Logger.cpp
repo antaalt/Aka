@@ -13,8 +13,19 @@ std::mutex Logger::Channel::writeLock;
 Logger::Channel::Channel(std::ostream& os, const std::string& name, Logger::Color color) :
 	ostream(os),
 	name(name),
-	color(color)
+	color(color),
+	muted(false)
 {
+}
+
+void Logger::Channel::mute()
+{
+	muted = true;
+}
+
+void Logger::Channel::unmute()
+{
+	muted = false;
 }
 
 }

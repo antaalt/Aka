@@ -61,10 +61,14 @@ Framebuffer::ID Framebuffer::id() const
 void Framebuffer::blit(const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter)
 {
 	glBlitFramebuffer(
-		srcRect.start.x, srcRect.start.y, 
-		srcRect.end.x, srcRect.end.y, 
-		dstRect.start.x, dstRect.start.y, 
-		dstRect.end.x, dstRect.end.y, 
+		static_cast<GLint>(srcRect.x),
+		static_cast<GLint>(srcRect.y),
+		static_cast<GLint>(srcRect.x + srcRect.w), 
+		static_cast<GLint>(srcRect.y + srcRect.h),
+		static_cast<GLint>(dstRect.x),
+		static_cast<GLint>(dstRect.y),
+		static_cast<GLint>(dstRect.x + dstRect.w), 
+		static_cast<GLint>(dstRect.y + dstRect.h),
 		GL_COLOR_BUFFER_BIT, 
 		gl::filter(filter)
 	);

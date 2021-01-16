@@ -61,6 +61,9 @@
     <Filter Include="Fichiers d%27en-tête\Platform\IO">
       <UniqueIdentifier>{ea2e8550-c2d4-45c0-b035-12931fbcc433}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers d%27en-tête\Graphic\GL">
+      <UniqueIdentifier>{35e0ab44-77d9-4c6c-8b45-67b899e15bd3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -185,6 +188,9 @@
     </ClCompile>
     <ClCompile Include="GLMesh.cpp">
       <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Batch.cpp">
+      <Filter>Fichiers sources\Graphic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -326,11 +332,14 @@
     <ClInclude Include="RenderPass.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
-    <ClInclude Include="GLBackend.h">
-      <Filter>Fichiers d%27en-tête\Graphic</Filter>
-    </ClInclude>
     <ClInclude Include="Mesh.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="Batch.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
+    </ClInclude>
+    <ClInclude Include="GLBackend.h">
+      <Filter>Fichiers d%27en-tête\Graphic\GL</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
