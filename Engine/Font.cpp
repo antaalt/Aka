@@ -2,6 +2,8 @@
 
 #include <freetype/freetype.h>
 
+#include "Logger.h"
+
 namespace aka {
 
 Font Font::create(const Path& path, uint32_t height)
@@ -17,14 +19,14 @@ Font Font::create(const Path& path, uint32_t height)
     FT_Set_Pixel_Sizes(face, 0, height);
 
     Font font;
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
 
     for (unsigned char c = 0; c < 128; c++)
     {
         // load character glyph 
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
-            std::cerr << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            Logger::error("[freetype] Failed to load glyph '", (char)c,"'");
             continue;
         }
         // now store character for later use
