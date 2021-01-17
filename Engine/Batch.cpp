@@ -94,10 +94,11 @@ void Batch::draw(const mat3f& transform, Rect&& rect)
 	m_indices.push_back(offset + 2);
 	m_indices.push_back(offset + 1);
 	m_indices.push_back(offset + 3);
-	m_vertices.push_back(Vertex(transform * rect.position, rect.uv[0], rect.color[0]));
-	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x + rect.size.x, rect.position.y), rect.uv[1], rect.color[1]));
-	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x, rect.position.y + rect.size.y), rect.uv[2], rect.color[2]));
-	m_vertices.push_back(Vertex(transform * rect.position + rect.size, rect.uv[3], rect.color[3]));
+	// Reversed uv so that we don't need to flip images at loading.
+	m_vertices.push_back(Vertex(transform * rect.position, rect.uv[2], rect.color[0])); // bottom left
+	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x + rect.size.x, rect.position.y), rect.uv[3], rect.color[1])); // bottom right
+	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x, rect.position.y + rect.size.y), rect.uv[0], rect.color[2])); // top left
+	m_vertices.push_back(Vertex(transform * rect.position + rect.size, rect.uv[1], rect.color[3])); // top right
 	m_currentBatch.elements += 2;
 }
 
@@ -123,8 +124,10 @@ void Batch::draw(const mat3f& transform, Quad&& quad)
 	m_indices.push_back(offset + 2);
 	m_indices.push_back(offset + 1);
 	m_indices.push_back(offset + 3);
-	for(uint32_t i = 0; i < 4; i++)
-		m_vertices.push_back(Vertex(transform * quad.position[i], quad.uv[i], quad.color[i]));
+	m_vertices.push_back(Vertex(transform * quad.position[0], quad.uv[2], quad.color[0]));
+	m_vertices.push_back(Vertex(transform * quad.position[1], quad.uv[3], quad.color[1]));
+	m_vertices.push_back(Vertex(transform * quad.position[2], quad.uv[0], quad.color[2]));
+	m_vertices.push_back(Vertex(transform * quad.position[3], quad.uv[1], quad.color[3]));
 	m_currentBatch.elements += 2;
 }
 

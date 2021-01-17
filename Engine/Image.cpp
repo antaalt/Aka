@@ -11,7 +11,6 @@ Image Image::load(const Path& path)
 {
 	Image image;
 	int x, y, channel;
-	stbi_set_flip_vertically_on_load(true);
 	stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 		throw std::runtime_error("Could not load image at " + path.str());
@@ -28,7 +27,6 @@ Image Image::load(const uint8_t* binaries, size_t size)
 {
 	Image image;
 	int x, y, channel;
-	stbi_set_flip_vertically_on_load(true);
 	stbi_uc* data = stbi_load_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 		throw std::runtime_error("Could not load image from binary");
