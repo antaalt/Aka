@@ -12,12 +12,12 @@ struct Animator : public Component
 	friend AnimatorSystem;
 
 	Animator();
-	Animator(Sprite* sprite, float depth);
+	Animator(Sprite* sprite, int32_t layer);
 
 	Sprite* sprite;
 	uint32_t currentAnimation;
 	uint32_t currentFrame;
-	float depth;
+	int32_t layer;
 
 	Sprite::Frame& getCurrentSpriteFrame() const;
 

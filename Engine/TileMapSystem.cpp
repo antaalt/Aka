@@ -19,6 +19,7 @@ void TileMapSystem::render(GraphicBackend &backend, Batch& batch)
     {
         // TODO alpha
         ASSERT(layer->gridSize == atlas->gridSize, "");
+        batch.pushLayer(layer->layer);
         for (size_t i = 0; i < layer->tileID.size(); i++)
         {
             // Ogmo tileID is top left to bottom while opengl pos is bottom to top.

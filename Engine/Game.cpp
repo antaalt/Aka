@@ -74,7 +74,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 		backgroundEntity = m_world.createEntity();
 		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f(viewportSize), radianf(0)));
-		backgroundEntity->add<Animator>(Animator(&background, 0.f))->play("default");
+		backgroundEntity->add<Animator>(Animator(&background, -2))->play("default");
 	}
 	{
 		// INIT world
@@ -83,7 +83,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		const OgmoLevel::Layer* foreground = ogmoLevel.getLayer("Foreground");
 
 		// Layers
-		auto createTileLayer = [&](const OgmoLevel::Layer* layer, float depth) -> Entity* {
+		auto createTileLayer = [&](const OgmoLevel::Layer* layer, int32_t layerDepth) -> Entity* {
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
 			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
@@ -92,12 +92,12 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Entity* entity = m_world.createEntity();
 			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
 			TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
-			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
+			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, layerDepth));
 			return entity;
 		};
-		createTileLayer(ogmoLevel.getLayer("Background"), 0.f);
-		createTileLayer(ogmoLevel.getLayer("Playerground"), 0.f);
-		createTileLayer(ogmoLevel.getLayer("Foreground"), 0.f);
+		createTileLayer(ogmoLevel.getLayer("Background"), -1);
+		createTileLayer(ogmoLevel.getLayer("Playerground"), 0);
+		createTileLayer(ogmoLevel.getLayer("Foreground"), 1);
 		// Colliders
 		Sprite::Animation animation;
 		animation.name = "default";
@@ -111,7 +111,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Entity* collider = m_world.createEntity();
 			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
 			collider->add<Collider2D>(Collider2D());
-			collider->add<Animator>(Animator(&colliderSprite, 0.f));
+			collider->add<Animator>(Animator(&colliderSprite, 1));
 		}
 	}
 	{
@@ -137,7 +137,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		character.animations.push_back(animation);
 		characterEntity = m_world.createEntity();
 		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f((float)width, (float)height), radianf(0)));
-		characterEntity->add<Animator>(Animator(&character, 0.f))->play("idle");
+		characterEntity->add<Animator>(Animator(&character, 1))->play("idle");
 		characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
 		characterEntity->add<Collider2D>(Collider2D());
 	}
@@ -239,7 +239,7 @@ void Game::update(GraphicBackend& backend)
 				if (renderColliders)
 				{
 					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
-						entity->add<Animator>(Animator(&colliderSprite, 0.f));
+						entity->add<Animator>(Animator(&colliderSprite, 0));
 					});
 				}
 				else

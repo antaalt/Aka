@@ -1,5 +1,7 @@
 #include "Batch.h"
 
+#include <algorithm>
+
 namespace aka {
 
 // Move somewhere else
@@ -46,6 +48,13 @@ Batch::Batch() :
 Batch::~Batch()
 {
 	m_shader.destroy();
+}
+
+void Batch::pushLayer(int32_t layer)
+{
+	if (m_currentBatch.layer != layer)
+		push();
+	m_currentBatch.layer = layer;
 }
 
 void Batch::rect(const mat3f& transform, const aka::Rect& rect, const color4f& color)
@@ -111,6 +120,7 @@ void Batch::push()
 	m_currentBatch.texture = m_defaultTexture;
 	m_currentBatch.elementOffset += m_currentBatch.elements;
 	m_currentBatch.elements = 0;
+	m_currentBatch.layer = 0;
 }
 
 void Batch::clear()

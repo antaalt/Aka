@@ -9,11 +9,11 @@ Animator::Animator() :
 {
 }
 
-Animator::Animator(Sprite* sprite, float depth) :
+Animator::Animator(Sprite* sprite, int32_t layer) :
     sprite(sprite),
     currentAnimation(0),
     currentFrame(0),
-    depth(depth),
+    layer(layer),
     animationStartTick(Time::now()),
     currentAnimationDuration(0)
 {

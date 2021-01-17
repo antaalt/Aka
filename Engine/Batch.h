@@ -54,6 +54,8 @@ public:
 public:
 	Batch();
 	~Batch();
+
+	void pushLayer(int32_t layer);
 	
 	// Draw a tri
 	void tri(const vec2f& pos0, const vec2f& pos1, const vec2f& pos2, const color4f& color);
@@ -92,7 +94,7 @@ private:
 	};
 
 	struct DrawBatch {
-		int layer; // layer of the batch for reordering
+		int32_t layer; // layer of the batch for reordering
 		size_t elementOffset; // offset of indices in global array
 		size_t elements; // number of triangles in the batch
 		Texture::Ptr texture; // Texture of the batch 
