@@ -41,8 +41,8 @@ public:
 	void destroy();
 	// Update all systems
 	void update();
-	// Render all systems
-	void render(GraphicBackend &backend, Batch &batch);
+	// Draw all systems
+	void draw(Batch &batch);
 private:
 	// Using std list might be faster memory wise
 	std::vector<Entity*> m_entities;

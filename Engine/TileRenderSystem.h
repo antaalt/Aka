@@ -10,7 +10,7 @@ class TileSystem : public System
 public:
 	TileSystem(World* world);
 
-	void render(GraphicBackend& backend, Batch &batch) override;
+	void draw(Batch &batch) override;
 };
 
 }

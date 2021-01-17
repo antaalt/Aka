@@ -29,8 +29,7 @@ public:
 	virtual void destroy();
 
 	virtual void update();
-	// TODO rename as draw as it does not render.
-	virtual void render(GraphicBackend &backend, Batch &batch);
+	virtual void draw(Batch &batch);
 protected:
 	World *m_world;
 };

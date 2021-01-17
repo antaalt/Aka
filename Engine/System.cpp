@@ -10,6 +10,6 @@ System::System(World* world) :
 void System::create() {}
 void System::destroy() {}
 void System::update() {}
-void System::render(GraphicBackend& backend, Batch &batch) {}
+void System::draw(Batch &batch) {}
 
 };

@@ -10,7 +10,7 @@ class TextRenderSystem : public System
 public:
 	TextRenderSystem(World* world);
 
-	void render(GraphicBackend& backend, Batch &batch) override;
+	void draw(Batch &batch) override;
 };
 
 }

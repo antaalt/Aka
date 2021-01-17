@@ -13,7 +13,7 @@ TileSystem::TileSystem(World* world) :
 {
 }
 
-void TileSystem::render(GraphicBackend& backend, Batch &batch)
+void TileSystem::draw(Batch &batch)
 {
     const mat3f model = mat3f::identity();
     m_world->each<Animator, Transform2D>([&](Entity *entity, Animator *animator, Transform2D* transform) {
