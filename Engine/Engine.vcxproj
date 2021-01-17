@@ -156,11 +156,13 @@
     <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Animator.cpp" />
     <ClCompile Include="AnimatorSystem.cpp" />
+    <ClCompile Include="GLBackbuffer.cpp" />
     <ClCompile Include="Batch.cpp" />
     <ClCompile Include="Camera2D.cpp" />
     <ClCompile Include="CameraSystem.cpp" />
     <ClCompile Include="Collider2D.cpp" />
     <ClCompile Include="Component.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -203,6 +205,7 @@
     <ClInclude Include="Animator.h" />
     <ClInclude Include="AnimatorSystem.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Backbuffer.h" />
     <ClInclude Include="Batch.h" />
     <ClInclude Include="Camera2D.h" />
     <ClInclude Include="CameraSystem.h" />

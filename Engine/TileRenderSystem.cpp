@@ -68,7 +68,7 @@ void TileSystem::render(GraphicBackend& backend)
         m_shader.use();
         mat4f model = transform->model();
 
-        m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().height, (float)backend.viewport().x, (float)backend.viewport().width, -1.f, 1.f));
+        m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().h, (float)backend.viewport().x, (float)backend.viewport().w, -1.f, 1.f));
         m_shader.set<mat4f>("model", model);
         m_shader.set<color3f>("spriteColor", color3f(1));
 

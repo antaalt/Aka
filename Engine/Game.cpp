@@ -412,21 +412,28 @@ void Game::render(GraphicBackend& backend)
 	dstBlit.w = (float)screenWidth() - 2.f * w;
 	dstBlit.h = (float)screenHeight() - 2.f * h;
 
-	framebuffer->unbind(Framebuffer::Type::Both);
-	backend.viewport(0, 0, screenWidth(), screenHeight());
-	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
-	framebuffer->bind(Framebuffer::Type::Read);
-	framebuffer->blit(srcBlit, dstBlit, Sampler::Filter::Nearest);
-	framebuffer->unbind(Framebuffer::Type::Both);
+
 
 	// TODO add a layering system
+	// - Use a vector of vector. Each vector is a layer and contain all batch to render.
+	// - Use multiple batch. Each one is a layer.
+
+	// 2 problem : viewport size & layering
+	// Layering -> use priority queue ? vector of vector ?
+	// viewport size -> use backbuffer class ? 
 	Batch batch;
+	batch.texture(mat3f::identity(), vec2f(0.f), vec2f(128.f), characterEntity->get<Animator>()->getCurrentSpriteFrame().texture);
 	batch.rect(mat3f::identity(), Rect{ input::mouse().x, input::mouse().y, 100.f, 100.f }, color4f(1.f, 0.f, 0.f, 1.f));
 	batch.rect(mat3f::identity(), Rect{ input::mouse().x + 50.f, screenHeight() - input::mouse().y, 100.f, 100.f }, color4f(0.f, 0.f, 1.f, 1.f));
 	batch.rect(mat3f::identity(), Rect{ screenWidth() - input::mouse().x, screenHeight() - input::mouse().y, 100.f, 100.f }, color4f(1.f, 1.f, 1.f, 1.f));
 	batch.rect(mat3f::identity(), Rect{ screenWidth() - input::mouse().x, input::mouse().y, 100.f, 100.f }, color4f(1.f, 0.f, 1.f, 1.f));
 	batch.texture(mat3f::identity(), vec2f(0.f), vec2f(128.f), characterEntity->get<Animator>()->getCurrentSpriteFrame().texture);
-	batch.render();
+	batch.render(framebuffer);
+
+	backend.backbuffer()->bind(Framebuffer::Type::Both);
+	backend.viewport(0, 0, screenWidth(), screenHeight());
+	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
+	framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
 
 	// Rendering imgui
 	ImGui::Render();

@@ -192,6 +192,12 @@
     <ClCompile Include="Batch.cpp">
       <Filter>Fichiers sources\Graphic</Filter>
     </ClCompile>
+    <ClCompile Include="Debug.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GLBackbuffer.cpp">
+      <Filter>Fichiers sources\Graphic\OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicBackend.h">
@@ -340,6 +346,9 @@
     </ClInclude>
     <ClInclude Include="GLBackend.h">
       <Filter>Fichiers d%27en-tête\Graphic\GL</Filter>
+    </ClInclude>
+    <ClInclude Include="Backbuffer.h">
+      <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -58,7 +58,7 @@ Window::Window(const Config& config) :
 	// TODO create backend depending on type
 	switch (config.api)
 	{
-	case GraphicBackend::API::OPENGL:
+	case GraphicBackend::Api::OpenGL:
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #if !defined(__APPLE__)
@@ -90,16 +90,10 @@ Window::Window(const Config& config) :
 	glfwSwapInterval(1); // 1 is vsync, 0 is free
 	setInputCallback(m_window);
 
-	switch (config.api)
-	{
-	case GraphicBackend::API::OPENGL:
-		m_backend.initialize();
-		break;
-	default:
-		throw std::runtime_error("Not implemented");
-		break;
-	}
+	m_backend.initialize();
+
 	m_app->initialize(*this, m_backend);
+	m_backend.resize(m_width, m_height);
 	m_app->resize(m_width, m_height);
 }
 
@@ -112,6 +106,7 @@ Window::~Window()
 
 void Window::resize(uint32_t width, uint32_t height)
 {
+	m_backend.resize(width, height);
 	m_app->resize(width, height);
 }
 
@@ -140,6 +135,13 @@ void Window::run(const Window::Config& config)
 void Window::setSizeLimits(int32_t minWidth, int32_t minHeight, int32_t maxWidth, int32_t maxHeight)
 {
 	glfwSetWindowSizeLimits(m_window, minWidth, minHeight, maxWidth, maxHeight);
+}
+
+vec2i Window::getBackbufferSize() const
+{
+	vec2i size;
+	glfwGetFramebufferSize(m_window, &size.x, &size.y);
+	return size;
 }
 
 }

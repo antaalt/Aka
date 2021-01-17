@@ -39,11 +39,13 @@ public:
 		AttachmentType type;
 		Texture::Ptr texture;
 	};
+protected:
+	Framebuffer();
 public:
 	Framebuffer(uint32_t width, uint32_t height, Attachment* attachments, size_t count);
 	Framebuffer(const Framebuffer&) = delete;
 	Framebuffer& operator=(const Framebuffer&) = delete;
-	~Framebuffer();
+	virtual ~Framebuffer();
 
 	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Sampler::Filter filter);
 	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Attachment*attachment, size_t count);
@@ -51,26 +53,22 @@ public:
 	// Bind the framebuffer
 	void bind(Type type);
 
-	// Unbind the framebuffer and bind the default one instead
-	void unbind(Type type);
-
 	// Get framebuffer width
-	uint32_t width() const;
+	virtual uint32_t width() const;
 
 	// Get framebuffer height
-	uint32_t height() const;
+	virtual uint32_t height() const;
 
 	// Get underlying ID
 	ID id() const;
 
 	// Blit the framebuffer to another one
-	void blit(const Rect &srcRect, const Rect& dstRect, Sampler::Filter filter);
+	void blit(Framebuffer::Ptr dst, const Rect &srcRect, const Rect& dstRect, Sampler::Filter filter);
 
 protected:
 	uint32_t m_width;
 	uint32_t m_height;
 	ID m_framebufferID;
-	std::vector<Attachment> m_attachments;
 };
 
 }

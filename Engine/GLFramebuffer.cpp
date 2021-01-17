@@ -8,7 +8,12 @@
 #include "Logger.h"
 
 namespace aka {
-
+Framebuffer::Framebuffer() :
+	m_width(0),
+	m_height(0),
+	m_framebufferID(0)
+{
+}
 Framebuffer::Framebuffer(uint32_t width, uint32_t height, Attachment* attachments, size_t count) :
 	m_width(width),
 	m_height(height)
@@ -48,18 +53,15 @@ void Framebuffer::bind(Framebuffer::Type type)
 	glBindFramebuffer(gl::framebufferType(type), m_framebufferID);
 }
 
-void Framebuffer::unbind(Type type)
-{
-	glBindFramebuffer(gl::framebufferType(type), 0);
-}
-
 Framebuffer::ID Framebuffer::id() const
 {
 	return m_framebufferID;
 }
 
-void Framebuffer::blit(const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter)
+void Framebuffer::blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter)
 {
+	bind(Type::Read);
+	dst->bind(Type::Draw);
 	glBlitFramebuffer(
 		static_cast<GLint>(srcRect.x),
 		static_cast<GLint>(srcRect.y),
@@ -72,6 +74,7 @@ void Framebuffer::blit(const Rect& srcRect, const Rect& dstRect, Sampler::Filter
 		GL_COLOR_BUFFER_BIT, 
 		gl::filter(filter)
 	);
+	dst->bind(Type::Both);
 }
 
 uint32_t Framebuffer::width() const

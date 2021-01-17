@@ -69,7 +69,7 @@ void TileMapSystem::render(GraphicBackend &backend)
         ASSERT(layer->gridSize == atlas->gridSize, "");
 
         m_shader.use();
-        m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().height, (float)backend.viewport().x, (float)backend.viewport().width, -1.f, 1.f));
+        m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().h, (float)backend.viewport().x, (float)backend.viewport().w, -1.f, 1.f));
         m_shader.set<mat4f>("model", transform->model());
         m_shader.set<vec2u>("gridCountAtlas", atlas->gridCount);
         m_shader.set<vec2u>("gridCount", layer->gridCount);

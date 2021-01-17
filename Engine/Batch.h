@@ -6,14 +6,47 @@
 #include "Texture.h"
 #include "Mesh.h"
 #include "RenderPass.h"
+#include "GraphicBackend.h"
 
 namespace aka {
 
-
-// Push render into batch so that we can easily insert new batch.
-// Use a std::list in order to insert new created batch at the correct depth.
 class Batch
 {
+public:
+	struct Rect {
+		Rect();
+		Rect(const vec2f& pos0, const vec2f& pos1, const uv2f& uv0, const uv2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3);
+		vec2f position;
+		vec2f size;
+		uv2f uv[4];
+		uv2f color[4];
+		Texture::Ptr texture;
+	};
+	struct Tri {
+		Tri();
+		vec2f position[3];
+		uv2f uv[3];
+		uv2f color[3];
+		Texture::Ptr texture;
+	};
+	struct Quad {
+		Quad();
+		Quad(Texture::Ptr t, const vec2f& p0, const vec2f& p1, const vec2f& p2, const vec2f& p3, const uv2f& u0, const uv2f& u1, const uv2f& u2, const uv2f& u3, const color4f& c0, const color4f& c1, const color4f& c2, const color4f& c3);
+		
+		vec2f position[4];
+		uv2f uv[4];
+		color4f color[4];
+		Texture::Ptr texture;
+	};
+	struct Line {
+		Line();
+		vec2f position[2];
+		color4f color[2];
+	};
+	void draw(const mat3f& transform, Rect&& rect);
+	void draw(const mat3f& transform, Tri&& tri);
+	void draw(const mat3f& transform, Quad&& quad);
+	void draw(const mat3f& transform, Line&& line);
 public:
 	Batch();
 	~Batch();
@@ -25,7 +58,7 @@ public:
 	void line(const mat3f& transform, const vec2f& from, const vec2f& to, float t, const color4f& color);
 
 	// Draw a rect on the screen
-	void rect(const mat3f& transform, const Rect& rect, const color4f& color);
+	void rect(const mat3f& transform, const aka::Rect& rect, const color4f& color);
 	void rect(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const color4f& color);
 	void rect(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const vec2f& uv0, const vec2f& uv1, const color4f& color);
 	void rect(const mat3f& transform, const vec2f& pos0, const vec2f& pos1, const vec2f& uv0, const vec2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3);
@@ -42,9 +75,6 @@ public:
 
 	// Clear all batch from stack
 	void clear();
-
-	// Render to default framebuffer
-	void render();
 
 	// Render to specified framebuffer
 	void render(Framebuffer::Ptr framebuffer);

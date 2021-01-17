@@ -88,7 +88,7 @@ uint32_t checkError_(const char* file, int line)
 
 void GraphicBackend::initialize()
 {
-    m_api = API::OPENGL;
+    m_api = Api::OpenGL;
 #if !defined(__APPLE__)
 	glewExperimental = true; // Nécessaire dans le profil de base
 	if (glewInit() != GLEW_OK) {
@@ -114,12 +114,18 @@ void GraphicBackend::initialize()
     else
         Logger::warn("glDebugMessageCallback not supported");
 #endif
+    m_backbuffer = Backbuffer::create();
 }
 
 void GraphicBackend::destroy()
 {
 	glFinish();
 	glBindVertexArray(0);
+}
+
+void GraphicBackend::resize(uint32_t width, uint32_t height)
+{
+    m_backbuffer->setSize(width, height);
 }
 
 void GraphicBackend::clear(const color4f& color)
@@ -130,17 +136,19 @@ void GraphicBackend::clear(const color4f& color)
 
 void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
 {
-    m_viewport.x = x;
-    m_viewport.y = y;
-    m_viewport.width = width;
-    m_viewport.height = height;
-
 	glViewport(x, y, width, height);
 }
 
-const Viewport& GraphicBackend::viewport() const
+Rect GraphicBackend::viewport() const
 {
-    return m_viewport;
+    GLint dims[4] = { 0 };
+    glGetIntegerv(GL_VIEWPORT, dims);
+    return Rect{ (float)dims[0], (float)dims[1], (float)dims[2], (float)dims[3] };
+}
+
+Backbuffer::Ptr GraphicBackend::backbuffer() const
+{
+    return m_backbuffer;
 }
 
 }

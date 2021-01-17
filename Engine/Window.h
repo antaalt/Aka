@@ -19,7 +19,7 @@ public:
 		uint32_t width;
 		uint32_t height;
 		std::string name;
-		GraphicBackend::API api;
+		GraphicBackend::Api api;
 		Application* app;
 	};
 private:
@@ -34,6 +34,10 @@ public:
 
 	// Set window size limits
 	void setSizeLimits(int32_t minWidth, int32_t minHeight, int32_t maxWidth, int32_t maxHeight);
+
+	// Get framebuffer size
+	vec2i getBackbufferSize() const;
+
 	// Get window handle
 	void* getHandle() const;
 

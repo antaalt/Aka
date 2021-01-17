@@ -48,7 +48,7 @@ Batch::~Batch()
 	m_shader.destroy();
 }
 
-void Batch::rect(const mat3f& transform, const Rect& rect, const color4f& color)
+void Batch::rect(const mat3f& transform, const aka::Rect& rect, const color4f& color)
 {
 	this->rect(transform, vec2f(rect.x, rect.y), vec2f(rect.x + rect.w, rect.y + rect.h), vec2f(0.f, 0.f), vec2f(1.f, 1.f), color, color, color, color);
 }
@@ -94,7 +94,7 @@ void Batch::texture(const mat3f& transform, const vec2f& position, const vec2f& 
 	if (m_currentBatch.elements > 0 && m_currentBatch.texture != texture && m_currentBatch.texture != nullptr)
 		push();
 	m_currentBatch.texture = texture;
-	rect(transform, Rect{ position.x, position.y, size.x, size.y }, color);
+	rect(transform, aka::Rect{ position.x, position.y, size.x, size.y }, color);
 }
 
 void Batch::push()
@@ -116,17 +116,8 @@ void Batch::clear()
 	m_currentBatch.layer = 0;
 }
 
-void Batch::render()
-{
-	render(nullptr);
-}
-
 void Batch::render(Framebuffer::Ptr framebuffer)
 {
-	// TODO retrieve app dimensions instead of hard written one
-	float w = 1280.f;
-	float h = 720.f;
-
 	RenderPass renderPass {};
 	{
 		// Update mesh data
@@ -138,21 +129,9 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 		m_mesh->vertices(data, m_vertices.data(), m_vertices.size());
 	}
 	{
-		// Prepare material
-		float width, height;
-		if (framebuffer)
-		{
-			width = static_cast<float>(framebuffer->width());
-			height = static_cast<float>(framebuffer->height());
-		}
-		else
-		{
-			width = w;
-			height = h;
-		}
 		// TODO build matrix out of here to support more projection type
 		m_shader.use();
-		m_shader.set<mat4f>("u_matrix", mat4f::orthographic(0.f, height, 0.f, width, -1.f, 1.f));
+		m_shader.set<mat4f>("u_matrix", mat4f::orthographic(0.f, static_cast<float>(framebuffer->height()), 0.f, static_cast<float>(framebuffer->width()), -1.f, 1.f));
 	}
 
 	{
@@ -167,7 +146,7 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 
 		renderPass.cull = CullMode::None;
 
-		renderPass.viewport = Rect{ 0.f, 0.f, w, h };
+		renderPass.viewport = aka::Rect{ 0.f, 0.f, static_cast<float>(framebuffer->width()), static_cast<float>(framebuffer->height()) };
 	}
 	
 	// Don't forget last batch if there is something

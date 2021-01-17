@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "Framebuffer.h"
+#include "Backbuffer.h"
 
 namespace aka {
 
@@ -18,26 +19,31 @@ struct Viewport {
 
 class GraphicBackend {
 public:
-	enum class API {
-		OPENGL,
-		DIRECTX
+	enum class Api {
+		OpenGL,
+		DirectX
 	};
-	API api() const { m_api; }
+	Api api() const { m_api; }
 public:
-
 	void initialize();
-
 	void destroy();
+
+	void resize(uint32_t width, uint32_t height);
+public:
 
 	void clear(const color4f& color);
 
 	void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height);
 
-	const Viewport& viewport() const;
+	Rect viewport() const;
+
+	Backbuffer::Ptr backbuffer() const;
+
+protected:
 
 private:
-	API m_api;
-	Viewport m_viewport;
+	Backbuffer::Ptr m_backbuffer;
+	Api m_api;
 };
 
 }

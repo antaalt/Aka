@@ -14,7 +14,7 @@ int main()
 	cfg.width = 1280;
 	cfg.height = 720;
 	cfg.name = "Game";
-	cfg.api = aka::GraphicBackend::API::OPENGL;
+	cfg.api = aka::GraphicBackend::Api::OpenGL;
 	cfg.app = &app;
 
 	aka::Window::run(cfg);
