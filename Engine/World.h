@@ -42,7 +42,7 @@ public:
 	// Update all systems
 	void update();
 	// Render all systems
-	void render(GraphicBackend &backend);
+	void render(GraphicBackend &backend, Batch &batch);
 private:
 	// Using std list might be faster memory wise
 	std::vector<Entity*> m_entities;

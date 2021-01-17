@@ -14,7 +14,7 @@ public:
 	void destroy() override;
 
 	void update() override;
-	void render(GraphicBackend& backend) override;
+	void render(GraphicBackend& backend, Batch &batch) override;
 private:
 	Shader m_shader;
 	uint32_t m_vbo, m_vao;

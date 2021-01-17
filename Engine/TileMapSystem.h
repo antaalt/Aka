@@ -12,13 +12,7 @@ class TileMapSystem : public System
 public:
 	TileMapSystem(World* world);
 
-	void create() override;
-	void destroy() override;
-
-	void update() override;
-	void render(GraphicBackend& backend) override;
-private:
-	Shader m_shader;
+	void render(GraphicBackend& backend, Batch &batch) override;
 };
 
 }

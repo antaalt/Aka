@@ -89,6 +89,14 @@ void Batch::texture(const mat3f& transform, const vec2f& position, const vec2f& 
 	this->texture(transform, position, size, texture, color4f(1.f));
 }
 
+void Batch::texture(const mat3f& transform, const vec2f& position, const vec2f& size, const uv2f& start, const uv2f& end, Texture::Ptr texture)
+{
+	if (m_currentBatch.elements > 0 && m_currentBatch.texture != texture && m_currentBatch.texture != nullptr)
+		push();
+	m_currentBatch.texture = texture;
+	rect(transform, position, position + size, vec2f(start), vec2f(end), color4f(1.f));
+}
+
 void Batch::texture(const mat3f& transform, const vec2f& position, const vec2f& size, Texture::Ptr texture, const color4f& color)
 {
 	if (m_currentBatch.elements > 0 && m_currentBatch.texture != texture && m_currentBatch.texture != nullptr)
@@ -153,8 +161,13 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 	if(m_currentBatch.elements > 0)
 		m_batches.push_back(m_currentBatch);
 
+	// Sort batches by layer before rendering
+	std::sort(m_batches.begin(), m_batches.end(), [](const DrawBatch &lhs, const DrawBatch &rhs) {
+		return lhs.layer < rhs.layer;
+	});
+
 	// Draw the batches
-	for (DrawBatch &batch : m_batches)
+	for (const DrawBatch &batch : m_batches)
 	{
 		renderPass.indexCount = batch.elements * 3;
 		renderPass.indexOffset = batch.elementOffset * 3;

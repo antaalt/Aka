@@ -95,10 +95,10 @@ void World::update()
 	}
 }
 
-void World::render(GraphicBackend& backend)
+void World::render(GraphicBackend& backend, Batch& batch)
 {
 	for (System* system : m_systems)
-		system->render(backend);
+		system->render(backend, batch);
 }
 
 };

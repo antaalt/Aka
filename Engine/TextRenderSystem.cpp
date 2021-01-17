@@ -50,7 +50,7 @@ void TextRenderSystem::update()
 {
 }
 
-void TextRenderSystem::render(GraphicBackend& backend)
+void TextRenderSystem::render(GraphicBackend& backend, Batch& batch)
 {
     m_world->each<Text, Transform2D>([&](Entity* entity, Text* text, Transform2D* transform) {
         // Enable blending

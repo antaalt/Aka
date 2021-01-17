@@ -1,7 +1,6 @@
 #include "TileMapSystem.h"
 
 #include "FileSystem.h"
-#include "GLBackend.h"
 #include "Camera2D.h"
 #include "Transform2D.h"
 #include "Animator.h"
@@ -14,86 +13,29 @@ TileMapSystem::TileMapSystem(World* world) :
 {
 }
 
-void TileMapSystem::create()
+void TileMapSystem::render(GraphicBackend &backend, Batch& batch)
 {
-    m_world->each<TileMap, TileLayer>([](Entity * entity, TileMap * tileMap, TileLayer* tileLayer) {
-        // Create layer UBO
-        glGenBuffers(1, &tileLayer->ubo);
-
-        glBindBuffer(GL_TEXTURE_BUFFER, tileLayer->ubo);
-        glBufferData(GL_TEXTURE_BUFFER, tileLayer->tileID.size() * sizeof(int32_t), tileLayer->tileID.data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_TEXTURE_BUFFER, 0);
-
-        // Create layer TBO
-        glGenTextures(1, &tileLayer->tbo);
-        glBindTexture(GL_TEXTURE_BUFFER, tileLayer->tbo);
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, tileLayer->ubo);
-        glBindTexture(GL_TEXTURE_BUFFER, 0);
-
-        glActiveTexture(GL_TEXTURE0);
-    });
-    checkError();
-
-    // Create shader
-    ShaderInfo info{};
-    info.vertex = Shader::create(Asset::loadString("shaders/world.vert"), ShaderType::VERTEX_SHADER);
-    info.frag = Shader::create(Asset::loadString("shaders/world.frag"), ShaderType::FRAGMENT_SHADER);
-    info.uniforms.push_back(Uniform{ UniformType::Vec4, ShaderType::FRAGMENT_SHADER, "color" });
-    info.uniforms.push_back(Uniform{ UniformType::Vec2, ShaderType::FRAGMENT_SHADER, "gridCountAtlas" });
-    info.uniforms.push_back(Uniform{ UniformType::Vec2, ShaderType::FRAGMENT_SHADER, "gridCount" });
-    info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "projection" });
-    info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "model" });
-    info.uniforms.push_back(Uniform{ UniformType::Sampler2D, ShaderType::FRAGMENT_SHADER, "image" });
-    info.uniforms.push_back(Uniform{ UniformType::SamplerBuffer, ShaderType::FRAGMENT_SHADER, "spriteIndices" });
-    m_shader.create(info);
-
-    checkError();
-
-}
-
-void TileMapSystem::destroy()
-{
-    m_shader.destroy();
-}
-
-void TileMapSystem::update()
-{
-}
-
-void TileMapSystem::render(GraphicBackend &backend)
-{
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    m_world->each<Transform2D, TileMap, TileLayer>([&](Entity* entity, Transform2D *transform, TileMap* atlas, TileLayer* layer) {
-
+    m_world->each<Transform2D, TileMap, TileLayer>([&](Entity* entity, Transform2D *transform, TileMap* atlas, TileLayer* layer)
+    {
+        // TODO alpha
         ASSERT(layer->gridSize == atlas->gridSize, "");
-
-        m_shader.use();
-        m_shader.set<mat4f>("projection", mat4f::orthographic((float)backend.viewport().y, (float)backend.viewport().h, (float)backend.viewport().x, (float)backend.viewport().w, -1.f, 1.f));
-        m_shader.set<mat4f>("model", transform->model());
-        m_shader.set<vec2u>("gridCountAtlas", atlas->gridCount);
-        m_shader.set<vec2u>("gridCount", layer->gridCount);
-        m_shader.set<color4f>("color", layer->color);
-        m_shader.set<int32_t>("image", 0);
-        m_shader.set<int32_t>("spriteIndices", 1);
-
-        glActiveTexture(GL_TEXTURE0);
-        atlas->texture->bind();
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_BUFFER, layer->tbo);
-
-        // Update data for new layer
-        /*glBindBuffer(GL_TEXTURE_BUFFER, layer->ubo);
-        void* data = glMapBuffer(GL_TEXTURE_BUFFER, GL_WRITE_ONLY);
-        memcpy(data, layer->data.data(), layer->data.size() * sizeof(int32_t));
-        bool done = glUnmapBuffer(GL_TEXTURE_BUFFER);*/
-
-        glBindVertexArray(0);
-
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-        checkError();
+        for (size_t i = 0; i < layer->tileID.size(); i++)
+        {
+            // Ogmo tileID is top left to bottom while opengl pos is bottom to top.
+            vec2u tileID = vec2u(i % layer->gridCount.x, layer->gridCount.y - 1 -  i / layer->gridCount.x);
+            vec2f position = transform->position + vec2f(tileID * layer->gridSize);
+            vec2f size = vec2f(layer->gridSize);
+            // Get the uv
+            int32_t atlasIDUnique = layer->tileID[i];
+            if (atlasIDUnique == -1)
+                continue;
+            vec2u atlasID = vec2u(atlasIDUnique % atlas->gridCount.x, atlasIDUnique / atlas->gridCount.x);
+            // uv flip function
+            uv2f start = uv2f(vec2f(atlasID) / vec2f(atlas->gridCount));
+            uv2f end = start + uv2f(vec2f(1.f) / vec2f(atlas->gridCount));
+            batch.texture(mat3f::identity(), position, size, uv2f(start.u, 1.f - end.v), uv2f(end.u, 1.f - start.v) , atlas->texture);
+        }
+        batch.rect(mat3f::identity(), transform->position, transform->position + vec2f(atlas->gridSize * atlas->gridCount), color4f(1.f));
     });
 }
 

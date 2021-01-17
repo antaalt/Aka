@@ -91,8 +91,8 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			
 			Entity* entity = m_world.createEntity();
 			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
-			//TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
-			//TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
+			TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
+			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, depth));
 			return entity;
 		};
 		createTileLayer(ogmoLevel.getLayer("Background"), 0.f);
@@ -387,11 +387,13 @@ void Game::update(GraphicBackend& backend)
 
 void Game::render(GraphicBackend& backend)
 {
+	Batch batch;
 	backend.viewport(0, 0, (uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 	framebuffer->bind(Framebuffer::Type::Both);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
-	m_world.render(backend);
+	m_world.render(backend, batch);
+	batch.render(framebuffer);
 
 	// Blit to main buffer
 	uint32_t widthRatio = screenWidth() / (uint32_t)viewportSize.x;
@@ -412,23 +414,14 @@ void Game::render(GraphicBackend& backend)
 	dstBlit.w = (float)screenWidth() - 2.f * w;
 	dstBlit.h = (float)screenHeight() - 2.f * h;
 
-
-
-	// TODO add a layering system
-	// - Use a vector of vector. Each vector is a layer and contain all batch to render.
-	// - Use multiple batch. Each one is a layer.
-
-	// 2 problem : viewport size & layering
-	// Layering -> use priority queue ? vector of vector ?
-	// viewport size -> use backbuffer class ? 
-	Batch batch;
+	/*
 	batch.texture(mat3f::identity(), vec2f(0.f), vec2f(128.f), characterEntity->get<Animator>()->getCurrentSpriteFrame().texture);
 	batch.rect(mat3f::identity(), Rect{ input::mouse().x, input::mouse().y, 100.f, 100.f }, color4f(1.f, 0.f, 0.f, 1.f));
 	batch.rect(mat3f::identity(), Rect{ input::mouse().x + 50.f, screenHeight() - input::mouse().y, 100.f, 100.f }, color4f(0.f, 0.f, 1.f, 1.f));
 	batch.rect(mat3f::identity(), Rect{ screenWidth() - input::mouse().x, screenHeight() - input::mouse().y, 100.f, 100.f }, color4f(1.f, 1.f, 1.f, 1.f));
 	batch.rect(mat3f::identity(), Rect{ screenWidth() - input::mouse().x, input::mouse().y, 100.f, 100.f }, color4f(1.f, 0.f, 1.f, 1.f));
 	batch.texture(mat3f::identity(), vec2f(0.f), vec2f(128.f), characterEntity->get<Animator>()->getCurrentSpriteFrame().texture);
-	batch.render(framebuffer);
+	batch.render(framebuffer);*/
 
 	backend.backbuffer()->bind(Framebuffer::Type::Both);
 	backend.viewport(0, 0, screenWidth(), screenHeight());

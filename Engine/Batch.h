@@ -43,10 +43,14 @@ public:
 		vec2f position[2];
 		color4f color[2];
 	};
+	struct SubTexture {
+
+	};
 	void draw(const mat3f& transform, Rect&& rect);
 	void draw(const mat3f& transform, Tri&& tri);
 	void draw(const mat3f& transform, Quad&& quad);
 	void draw(const mat3f& transform, Line&& line);
+	void draw(const mat3f& transform, SubTexture&& texture);
 public:
 	Batch();
 	~Batch();
@@ -68,6 +72,7 @@ public:
 
 	// Draw a texture
 	void texture(const mat3f& transform, const vec2f& position, const vec2f& size, Texture::Ptr texture);
+	void texture(const mat3f& transform, const vec2f& position, const vec2f& size, const uv2f &start, const uv2f &end, Texture::Ptr texture);
 	void texture(const mat3f& transform, const vec2f& position, const vec2f& size, Texture::Ptr texture, const color4f &color);
 
 	// Push the current batch to the stack and use a new one
