@@ -11,6 +11,7 @@ struct Text : public Component
 	Font *font;
 	std::string text;
 	color4f color;
+	int32_t layer;
 };
 
 }

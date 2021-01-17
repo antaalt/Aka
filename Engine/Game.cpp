@@ -152,6 +152,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		text->color = color4f(1.f);
 		text->font = &font;
 		text->text = "Hello World !";
+		text->layer = 3;
 		vec2i size = font.size(text->text);
 		transform->position = vec2f((float)((int)viewportSize.x / 2 - size.x / 2), (float)((int)viewportSize.y / 2 - size.y / 2));
 		transform->size = vec2f(1.f);
@@ -239,7 +240,7 @@ void Game::update(GraphicBackend& backend)
 				if (renderColliders)
 				{
 					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
-						entity->add<Animator>(Animator(&colliderSprite, 0));
+						entity->add<Animator>(Animator(&colliderSprite, 1));
 					});
 				}
 				else

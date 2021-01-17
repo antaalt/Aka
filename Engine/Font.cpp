@@ -18,9 +18,8 @@ Font Font::create(const Path& path, uint32_t height)
 
     FT_Set_Pixel_Sizes(face, 0, height);
 
+    // TODO build atlas texture for font packer
     Font font;
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
-
     for (unsigned char c = 0; c < 128; c++)
     {
         // load character glyph 
@@ -29,12 +28,21 @@ Font Font::create(const Path& path, uint32_t height)
             Logger::error("[freetype] Failed to load glyph '", (char)c,"'");
             continue;
         }
+        uint32_t characterSize = face->glyph->bitmap.width * face->glyph->bitmap.rows;
+        std::vector<uint8_t> rgba(characterSize * 4);
+        for (uint32_t iSrc = 0, iDst = 0; iSrc < characterSize; iSrc++, iDst += 4)
+        {
+            rgba[iDst + 0] = face->glyph->bitmap.buffer[iSrc];
+            rgba[iDst + 1] = face->glyph->bitmap.buffer[iSrc];
+            rgba[iDst + 2] = face->glyph->bitmap.buffer[iSrc];
+            rgba[iDst + 3] = face->glyph->bitmap.buffer[iSrc];
+        }
         // now store character for later use
         font.characters[c] = {
             vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top),
             static_cast<uint32_t>(face->glyph->advance.x),
-            Texture::create(face->glyph->bitmap.width, face->glyph->bitmap.rows, Texture::Format::Red, Texture::Format::Red, face->glyph->bitmap.buffer, Sampler::Filter::Nearest)
+            Texture::create(face->glyph->bitmap.width, face->glyph->bitmap.rows, Texture::Format::Rgba8, Texture::Format::Rgba, rgba.data(), Sampler::Filter::Nearest)
         };
     }
 
