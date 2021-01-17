@@ -15,10 +15,9 @@ TileSystem::TileSystem(World* world) :
 
 void TileSystem::render(GraphicBackend& backend, Batch &batch)
 {
-    // TODO push blend mode to batch
-    m_world->each<Transform2D, Animator>([&](Entity *entity, Transform2D *transform, Animator* animator) {
-        batch.pushLayer(animator->layer);
-        batch.texture(mat3f::identity(), transform->position, transform->size, animator->getCurrentSpriteFrame().texture);
+    const mat3f model = mat3f::identity();
+    m_world->each<Animator, Transform2D>([&](Entity *entity, Animator *animator, Transform2D* transform) {
+        batch.draw(model, Batch::Rect(transform->position, transform->size, animator->getCurrentSpriteFrame().texture, animator->layer));
     });
 }
 
