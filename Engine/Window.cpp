@@ -115,7 +115,7 @@ void Window::loop()
 	Time::Unit lastTick = Time::now();
 	do {
 		Time::Unit now = Time::now();
-		Time::Unit deltaTime = now - lastTick;
+		Time::Unit deltaTime = min<Time::Unit>(now - lastTick, 100);
 		lastTick = now;
 		m_app->update(deltaTime);
 		m_app->render(m_backend);

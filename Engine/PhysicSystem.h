@@ -16,6 +16,7 @@ public:
 
 	void update(Time::Unit deltaTime) override;
 private:
+	Time::Unit m_accumulator;
 	Time::Unit m_timestep;
 };
 
