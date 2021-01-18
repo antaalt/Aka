@@ -16,6 +16,7 @@ public:
 	constexpr explicit StrictType(const Type value) : m_value(value) {}
 
 	constexpr Type value() const { return m_value; }
+	constexpr Type operator()() const { return m_value; }
 
 	constexpr bool operator==(const ST& rhs) const { return m_value == rhs.m_value; }
 	constexpr bool operator!=(const ST& rhs) const { return m_value != rhs.m_value; }

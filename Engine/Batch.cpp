@@ -132,14 +132,11 @@ void Batch::draw(const mat3f& transform, Quad&& quad)
 }
 
 Batch::Batch() :
-	m_mesh(nullptr)
+	m_shader(nullptr),
+	m_mesh(nullptr),
+	m_defaultTexture(nullptr)
 {
 	clear();
-}
-
-Batch::~Batch()
-{
-	m_shader.destroy();
 }
 
 void Batch::push()
@@ -171,13 +168,16 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 {
 	RenderPass renderPass {};
 	{
-		if (m_shader.getID() == 0)
+		if (m_shader == nullptr)
 		{
-			ShaderInfo info{};
-			info.vertex = Shader::create(vertShader, ShaderType::VERTEX_SHADER);
-			info.frag = Shader::create(fragShader, ShaderType::FRAGMENT_SHADER);
-			info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "u_matrix" });
-			m_shader.create(info);
+			m_shader = Shader::create(
+				Shader::compile(vertShader, ShaderType::Vertex),
+				Shader::compile(fragShader, ShaderType::Fragment),
+				ShaderID(0),
+				std::vector<Uniform>{
+					Uniform{ UniformType::Mat4, ShaderType::Vertex, "u_matrix" } 
+				}
+			);
 		}
 		if (m_defaultTexture == nullptr)
 		{
@@ -187,8 +187,8 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 		if (m_mesh == nullptr)
 			m_mesh = Mesh::create();
 		// TODO build matrix out of here to support more projection type
-		m_shader.use();
-		m_shader.set<mat4f>("u_matrix", mat4f::orthographic(0.f, static_cast<float>(framebuffer->height()), 0.f, static_cast<float>(framebuffer->width()), -1.f, 1.f));
+		m_shader->use();
+		m_shader->set<mat4f>("u_matrix", mat4f::orthographic(0.f, static_cast<float>(framebuffer->height()), 0.f, static_cast<float>(framebuffer->width()), -1.f, 1.f));
 	}
 
 	{
@@ -207,7 +207,7 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 
 		renderPass.mesh = m_mesh;
 
-		renderPass.shader = &m_shader;
+		renderPass.shader = m_shader;
 
 		renderPass.blend = BlendMode::OneMinusSrcAlpha;
 

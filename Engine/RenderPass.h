@@ -49,7 +49,7 @@ struct RenderPass
 	// Texture to use (use material instead to handle other parameters)
 	Texture::Ptr texture;
 	// Shader for mesh
-	Shader *shader;
+	Shader::Ptr shader;
 	// Blend mode for alpha operation
 	BlendMode blend;
 	// Culling mode for triangle face

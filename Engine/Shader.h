@@ -4,16 +4,17 @@
 #include <map>
 
 #include "Geometry.h"
+#include "StrictType.h"
 
 namespace aka {
 
 enum class ShaderType {
-	VERTEX_SHADER,
-	TESS_CONTROL_SHADER,
-	TESS_EVALUATION_SHADER,
-	FRAGMENT_SHADER,
-	GEOMETRY_SHADER,
-	COMPUTE_SHADER
+	Vertex,
+	Fragment,
+	Compute,
+	Geometry,
+	TesselationControl,
+	TesselationEvaluation,
 };
 
 enum class UniformType {
@@ -28,9 +29,9 @@ enum class UniformType {
 	SamplerBuffer
 };
 
-using ShaderID = uint32_t; // TODO use strict type
-using ProgramID = uint32_t; // TODO use strict type
-using UniformID = int32_t;
+using ShaderID = StrictType<uint32_t, struct ShaderStrictType>;
+using ProgramID = StrictType<uint32_t, struct ProgramStrictType>;
+using UniformID = StrictType<int32_t, struct UniformStrictType>;
 
 struct Uniform {
 	UniformType type; // type of uniform (unused)
@@ -38,28 +39,24 @@ struct Uniform {
 	std::string name; // name of uniform
 };
 
-struct ShaderInfo {
-	ShaderID vertex;
-	ShaderID frag;
-	ShaderID compute;
-	std::vector<Uniform> uniforms;
-};
+struct Shader
+{
+	using Ptr = std::shared_ptr<Shader>;
 
-struct Shader {
 	Shader();
+	Shader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Uniform>& uniforms);
 	Shader(const Shader&) = delete;
 	const Shader& operator=(const Shader&) = delete;
 	~Shader();
 
-	static ShaderID create(const std::string &content, ShaderType type);
-	static ShaderID create(const char* content, ShaderType type);
+	static ShaderID compile(const std::string &content, ShaderType type);
+	static ShaderID compile(const char* content, ShaderType type);
 
-	void create(const ShaderInfo& info);
-	void destroy();
+	static Shader::Ptr create(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Uniform>& uniforms);
 
 	void use();
 
-	ProgramID getID() const { return m_programID; }
+	ProgramID id() const { return m_programID; }
 
 	UniformID getUniformLocation(const char* name);
 

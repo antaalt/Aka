@@ -10,72 +10,68 @@ namespace aka {
 Shader::Shader() :
 	m_programID(0)
 {
-
-}
-Shader::~Shader()
-{
-	if (m_programID != 0)
-		destroy();
 }
 
-void Shader::create(const ShaderInfo& info)
+Shader::Shader(ShaderID vertex, ShaderID frag, ShaderID compute, const std::vector<Uniform>& uniforms)
 {
-	m_programID = glCreateProgram();
+	m_programID = ProgramID(glCreateProgram());
 	// Attach shaders
-	if (info.vertex != 0 && glIsShader(info.vertex) == GL_TRUE)
-		glAttachShader(m_programID, info.vertex);
-	if (info.frag != 0 && glIsShader(info.frag) == GL_TRUE)
-		glAttachShader(m_programID, info.frag);
-	if (info.compute != 0 && glIsShader(info.compute) == GL_TRUE)
-		glAttachShader(m_programID, info.compute);
+	if (vertex() != 0 && glIsShader(vertex()) == GL_TRUE)
+		glAttachShader(m_programID(), vertex());
+	if (frag() != 0 && glIsShader(frag()) == GL_TRUE)
+		glAttachShader(m_programID(), frag());
+	if (compute() != 0 && glIsShader(compute()) == GL_TRUE)
+		glAttachShader(m_programID(), compute());
 
 	// link program
-	glLinkProgram(m_programID);
+	glLinkProgram(m_programID());
 	GLint linked;
-	glGetProgramiv(m_programID, GL_LINK_STATUS, &linked);
+	glGetProgramiv(m_programID(), GL_LINK_STATUS, &linked);
 	if (linked == GL_FALSE)
 	{
 		GLint maxLength = 0;
-		glGetProgramiv(m_programID, GL_INFO_LOG_LENGTH, &maxLength);
+		glGetProgramiv(m_programID(), GL_INFO_LOG_LENGTH, &maxLength);
 
 		// The maxLength includes the NULL character
 		std::vector<GLchar> errorLog(maxLength);
-		glGetProgramInfoLog(m_programID, maxLength, &maxLength, &errorLog[0]);
+		glGetProgramInfoLog(m_programID(), maxLength, &maxLength, &errorLog[0]);
 		std::string str(errorLog.begin(), errorLog.end());
 		// Exit with failure.
-		glDeleteProgram(m_programID); // Don't leak the program.
+		glDeleteProgram(m_programID()); // Don't leak the program.
 		throw std::runtime_error(str);
 	}
 	// Always detach shaders after a successful link.
-	if (info.vertex != 0)
+	if (vertex() != 0)
 	{
-		glDetachShader(m_programID, info.vertex);
-		glDeleteShader(info.vertex);
+		glDetachShader(m_programID(), vertex());
+		glDeleteShader(vertex());
 	}
-	if (info.frag != 0)
+	if (frag() != 0)
 	{
-		glDetachShader(m_programID, info.frag);
-		glDeleteShader(info.frag);
+		glDetachShader(m_programID(), frag());
+		glDeleteShader(frag());
 	}
-	if (info.compute != 0)
+	if (compute() != 0)
 	{
-		glDetachShader(m_programID, info.compute);
-		glDeleteShader(info.compute);
+		glDetachShader(m_programID(), compute());
+		glDeleteShader(compute());
 	}
 
-	for (Uniform uniform : info.uniforms)
-		m_uniforms.insert(std::make_pair(uniform.name, glGetUniformLocation(m_programID, uniform.name.c_str())));
+	for (Uniform uniform : uniforms)
+		m_uniforms.insert(std::make_pair(uniform.name, glGetUniformLocation(m_programID(), uniform.name.c_str())));
 
-	glValidateProgram(m_programID);
+	glValidateProgram(m_programID());
 }
-void Shader::destroy()
+
+Shader::~Shader()
 {
-	glDeleteProgram(m_programID);
+	if (m_programID() != 0)
+		glDeleteProgram(m_programID());
 }
 
 void Shader::use()
 {
-	glUseProgram(m_programID);
+	glUseProgram(m_programID());
 }
 
 UniformID Shader::getUniformLocation(const char* name)
@@ -88,96 +84,96 @@ UniformID Shader::getUniformLocation(const char* name)
 
 void Shader::setFloat1(const char* name, float value)
 {
-	glUniform1f(getUniformLocation(name), value);
+	glUniform1f(getUniformLocation(name).value(), value);
 }
 
 void Shader::setFloat2(const char* name, float x, float y)
 {
-	glUniform2f(getUniformLocation(name), x, y);
+	glUniform2f(getUniformLocation(name).value(), x, y);
 }
 
 void Shader::setFloat3(const char* name, float x, float y, float z)
 {
-	glUniform3f(getUniformLocation(name), x, y, z);
+	glUniform3f(getUniformLocation(name).value(), x, y, z);
 }
 
 void Shader::setFloat4(const char* name, float x, float y, float z, float w)
 {
-	glUniform4f(getUniformLocation(name), x, y, z, w);
+	glUniform4f(getUniformLocation(name).value(), x, y, z, w);
 }
 
 void Shader::setUint1(const char* name, uint32_t value)
 {
-	glUniform1ui(getUniformLocation(name), value);
+	glUniform1ui(getUniformLocation(name).value(), value);
 }
 
 void Shader::setUint2(const char* name, uint32_t x, uint32_t y)
 {
-	glUniform2ui(getUniformLocation(name), x, y);
+	glUniform2ui(getUniformLocation(name).value(), x, y);
 }
 
 void Shader::setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z)
 {
-	glUniform3ui(getUniformLocation(name), x, y, z);
+	glUniform3ui(getUniformLocation(name).value(), x, y, z);
 }
 
 void Shader::setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w)
 {
-	glUniform4ui(getUniformLocation(name), x, y, z, w);
+	glUniform4ui(getUniformLocation(name).value(), x, y, z, w);
 }
 
 void Shader::setInt1(const char* name, int32_t value)
 {
-	glUniform1i(getUniformLocation(name), value);
+	glUniform1i(getUniformLocation(name).value(), value);
 }
 
 void Shader::setInt2(const char* name, int32_t x, int32_t y)
 {
-	glUniform2i(getUniformLocation(name), x, y);
+	glUniform2i(getUniformLocation(name).value(), x, y);
 }
 
 void Shader::setInt3(const char* name, int32_t x, int32_t y, int32_t z)
 {
-	glUniform3i(getUniformLocation(name), x, y, z);
+	glUniform3i(getUniformLocation(name).value(), x, y, z);
 }
 
 void Shader::setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w)
 {
-	glUniform4i(getUniformLocation(name), x, y, z, w);
+	glUniform4i(getUniformLocation(name).value(), x, y, z, w);
 }
 
 void Shader::setMatrix4(const char* name, const float* data, bool transpose)
 {
-	glUniformMatrix4fv(getUniformLocation(name), 1, transpose, data);
+	glUniformMatrix4fv(getUniformLocation(name).value(), 1, transpose, data);
 }
 
 GLuint getType(ShaderType type)
 {
 	switch (type)
 	{
-	case ShaderType::VERTEX_SHADER:
+	case ShaderType::Vertex:
 		return GL_VERTEX_SHADER;
-	case ShaderType::TESS_CONTROL_SHADER:
+	case ShaderType::TesselationControl:
 		return GL_TESS_CONTROL_SHADER;
-	case ShaderType::TESS_EVALUATION_SHADER:
+	case ShaderType::TesselationEvaluation:
 		return GL_TESS_EVALUATION_SHADER;
-	case ShaderType::FRAGMENT_SHADER:
+	case ShaderType::Fragment:
 		return GL_FRAGMENT_SHADER;
-	case ShaderType::GEOMETRY_SHADER:
+	case ShaderType::Geometry:
 		return GL_GEOMETRY_SHADER;
-	case ShaderType::COMPUTE_SHADER:
+	case ShaderType::Compute:
 		return GL_COMPUTE_SHADER;
 	default:
 		return 0;
 	}
 }
 
-ShaderID Shader::create(const std::string& content, ShaderType type)
+ShaderID Shader::compile(const std::string& content, ShaderType type)
 {
-	return Shader::create(content.c_str(), type);
+	return Shader::compile(content.c_str(), type);
 }
 
-ShaderID Shader::create(const char* content, ShaderType type)
+ShaderID Shader::compile(const char* content, ShaderType type)
 {
 	GLuint shaderID = glCreateShader(getType(type));
 	glShaderSource(shaderID, 1, &content, NULL);
@@ -198,9 +194,13 @@ ShaderID Shader::create(const char* content, ShaderType type)
 		std::cerr << str << std::endl;
 		throw std::runtime_error(str);
 	}
-	return shaderID;
+	return ShaderID(shaderID);
 }
 
+Shader::Ptr Shader::create(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Uniform>& uniforms)
+{
+	return std::make_shared<Shader>(vert, frag, compute, uniforms);
+}
 
 template <>
 void Shader::set(const char* name, float value) {

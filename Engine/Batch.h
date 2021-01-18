@@ -51,7 +51,6 @@ public:
 	};
 
 	Batch();
-	~Batch();
 
 	// Draw shapes
 	void draw(const mat3f& transform, Rect&& rect);
@@ -87,7 +86,7 @@ private:
 
 	std::vector<uint32_t> m_indices;
 	std::vector<Vertex> m_vertices;
-	Shader m_shader; // Make static as we only need one instance of shader even though multiple class exist
+	Shader::Ptr m_shader; // Make static as we only need one instance of shader even though multiple class exist
 	Mesh::Ptr m_mesh;
 	Texture::Ptr m_defaultTexture;
 
