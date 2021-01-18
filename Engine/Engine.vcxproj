@@ -228,6 +228,7 @@
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="FileSystem.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="StrictType.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="TextRenderSystem.h" />

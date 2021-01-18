@@ -350,5 +350,8 @@
     <ClInclude Include="Backbuffer.h">
       <Filter>Fichiers d%27en-tête\Graphic</Filter>
     </ClInclude>
+    <ClInclude Include="StrictType.h">
+      <Filter>Fichiers d%27en-tête\Core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
