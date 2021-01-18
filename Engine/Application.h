@@ -21,7 +21,7 @@ public:
 	// Destroy everything related to the app.
 	virtual void destroy(GraphicBackend& backend) = 0;
 	// Update the app.
-	virtual void update(GraphicBackend& backend) = 0;
+	virtual void update(Time::Unit deltaTime) = 0;
 	// Render the app.
 	virtual void render(GraphicBackend& backend) = 0;
 private:

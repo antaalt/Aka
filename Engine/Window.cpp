@@ -112,8 +112,12 @@ void Window::resize(uint32_t width, uint32_t height)
 
 void Window::loop()
 {
+	Time::Unit lastTick = Time::now();
 	do {
-		m_app->update(m_backend);
+		Time::Unit now = Time::now();
+		Time::Unit deltaTime = now - lastTick;
+		lastTick = now;
+		m_app->update(deltaTime);
 		m_app->render(m_backend);
 		input::update();
 		glfwSwapBuffers(m_window);

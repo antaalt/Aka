@@ -36,8 +36,6 @@ Sprite colliderSprite;
 Framebuffer::Ptr framebuffer;
 
 
-
-Time::Unit lastTick;
 const vec2u viewportSize(320, 180);
 
 // Entity
@@ -55,7 +53,6 @@ TextRenderSystem* textRenderingSystem;
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
-	lastTick = Time::now();
 	Logger::debug.mute();
 	physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit(10));
 	tileSystem = m_world.createSystem<TileSystem>();
@@ -195,11 +192,8 @@ void Game::destroy(GraphicBackend& backend)
 	ImGui::DestroyContext();
 }
 
-void Game::update(GraphicBackend& backend)
+void Game::update(Time::Unit deltaTime)
 {
-	Time::Unit now = Time::now();
-	Time::Unit deltaTime = now - lastTick;
-	lastTick = now;
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
