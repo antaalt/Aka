@@ -34,6 +34,7 @@ Sprite character;
 Sprite background;
 Sprite colliderSprite;
 Framebuffer::Ptr framebuffer;
+Batch batch;
 
 
 const vec2u viewportSize(320, 180);
@@ -387,7 +388,6 @@ void Game::update(Time::Unit deltaTime)
 
 void Game::render(GraphicBackend& backend)
 {
-	Batch batch;
 	backend.viewport(0, 0, (uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 	framebuffer->bind(Framebuffer::Type::Both);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));

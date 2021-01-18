@@ -131,7 +131,7 @@ void GraphicBackend::resize(uint32_t width, uint32_t height)
 void GraphicBackend::clear(const color4f& color)
 {
 	glClearColor(color.r, color.g, color.b, color.a);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)

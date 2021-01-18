@@ -7,7 +7,9 @@ namespace aka {
 Mesh::Mesh() :
     m_vao(0),
     m_indexVbo(0),
-    m_vertexVbo(0)
+    m_vertexVbo(0),
+    m_indexSize(0),
+    m_indexFormat(IndexFormat::Uint32)
 {
     glGenVertexArrays(1, &m_vao);
 }

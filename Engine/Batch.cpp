@@ -132,17 +132,8 @@ void Batch::draw(const mat3f& transform, Quad&& quad)
 }
 
 Batch::Batch() :
-	m_mesh(Mesh::create())
+	m_mesh(nullptr)
 {
-	ShaderInfo info{};
-	info.vertex = Shader::create(vertShader, ShaderType::VERTEX_SHADER);
-	info.frag = Shader::create(fragShader, ShaderType::FRAGMENT_SHADER);
-	info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "u_matrix" });
-	m_shader.create(info);
-
-	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba8, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
-
 	clear();
 }
 
@@ -180,6 +171,27 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 {
 	RenderPass renderPass {};
 	{
+		if (m_shader.getID() == 0)
+		{
+			ShaderInfo info{};
+			info.vertex = Shader::create(vertShader, ShaderType::VERTEX_SHADER);
+			info.frag = Shader::create(fragShader, ShaderType::FRAGMENT_SHADER);
+			info.uniforms.push_back(Uniform{ UniformType::Mat4, ShaderType::VERTEX_SHADER, "u_matrix" });
+			m_shader.create(info);
+		}
+		if (m_defaultTexture == nullptr)
+		{
+			uint8_t data[4] = { 255, 255, 255, 255 };
+			m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba8, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
+		}
+		if (m_mesh == nullptr)
+			m_mesh = Mesh::create();
+		// TODO build matrix out of here to support more projection type
+		m_shader.use();
+		m_shader.set<mat4f>("u_matrix", mat4f::orthographic(0.f, static_cast<float>(framebuffer->height()), 0.f, static_cast<float>(framebuffer->width()), -1.f, 1.f));
+	}
+
+	{
 		// Update mesh data
 		m_mesh->indices(IndexFormat::Uint32, m_indices.data(), m_indices.size());
 		VertexData data;
@@ -187,11 +199,6 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 		data.attributes.push_back(VertexData::Attribute{ 1, VertexFormat::Float2 });
 		data.attributes.push_back(VertexData::Attribute{ 2, VertexFormat::Float4 });
 		m_mesh->vertices(data, m_vertices.data(), m_vertices.size());
-	}
-	{
-		// TODO build matrix out of here to support more projection type
-		m_shader.use();
-		m_shader.set<mat4f>("u_matrix", mat4f::orthographic(0.f, static_cast<float>(framebuffer->height()), 0.f, static_cast<float>(framebuffer->width()), -1.f, 1.f));
 	}
 
 	{
@@ -227,7 +234,7 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 		renderPass.execute();
 	}
 	// Clear all batches as they are rendered
-	m_batches.clear();
+	clear();
 }
 
 Batch::Vertex::Vertex(const vec2f& position, const uv2f& uv, const color4f& color) :
