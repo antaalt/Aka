@@ -51,14 +51,14 @@ struct Collider2D : public Component
 
 struct RigidBody2D : public Component
 {
-	static inline const vec2f maxVelocity = vec2f(5.f);
+	static inline const vec2f maxVelocity = vec2f(50.f);
 
 	RigidBody2D();
 	RigidBody2D(float mass, float bouncing = 0.f, float friction = 0.f);
 
-	vec2f velocity;
-	vec2f acceleration;
-	float mass;
+	vec2f acceleration; // m/s^2
+	vec2f velocity; // m/s
+	float mass; // kg
 	float bouncing;
 	float friction;
 };

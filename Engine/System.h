@@ -4,6 +4,7 @@
 #include "Batch.h"
 #include "Component.h"
 #include "Entity.h"
+#include "Time.h"
 
 #include <vector>
 #include <set>
@@ -28,7 +29,7 @@ public:
 	virtual void create();
 	virtual void destroy();
 
-	virtual void update();
+	virtual void update(Time::Unit deltaTime);
 	virtual void draw(Batch &batch);
 protected:
 	World *m_world;

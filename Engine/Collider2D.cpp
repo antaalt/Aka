@@ -56,8 +56,8 @@ RigidBody2D::RigidBody2D() :
 }
 
 RigidBody2D::RigidBody2D(float mass, float bouncing, float friction) :
-	velocity(0.f),
 	acceleration(0.f),
+	velocity(0.f),
 	mass(mass),
 	bouncing(bouncing),
 	friction(friction)

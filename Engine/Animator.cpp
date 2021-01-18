@@ -5,7 +5,7 @@
 namespace aka {
 
 Animator::Animator() :
-    Animator(nullptr, 0.f)
+    Animator(nullptr, 0)
 {
 }
 

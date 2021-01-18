@@ -40,7 +40,7 @@ public:
 	// Destroy everything in this world (entities, components & systems)
 	void destroy();
 	// Update all systems
-	void update();
+	void update(Time::Unit deltaTime);
 	// Draw all systems
 	void draw(Batch &batch);
 private:

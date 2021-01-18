@@ -19,5 +19,6 @@ Aka stand for red in japanese (赤) and there is no particular reason for this n
 -   Rework file structure to remove dependencies on visual studio filters
 -   Add support for joystick
 -   Add strict type for id
--   Add deltatime as update parameter for fixed update along every systems
+-   Compatibility with mac and linux
+-   Add sound support (OpenAL / Juce)
 -   Let's work on a game !

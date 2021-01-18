@@ -9,7 +9,7 @@ class CameraSystem : public System
 public:
 	CameraSystem(World* world);
 
-	virtual void update();
+	void update(Time::Unit deltaTime) override;
 };
 
 };

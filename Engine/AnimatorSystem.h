@@ -10,7 +10,7 @@ class AnimatorSystem: public System
 public:
 	AnimatorSystem(World* world);
 public:
-	void update() override;
+	void update(Time::Unit deltaTime) override;
 };
 
 

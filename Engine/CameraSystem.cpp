@@ -11,7 +11,7 @@ CameraSystem::CameraSystem(World* world) :
 {
 }
 
-void CameraSystem::update()
+void CameraSystem::update(Time::Unit deltaTime)
 {
 	m_world->each<Transform2D>([](Entity* entity, Transform2D* transform){
 		transform->position.x += input::pressed(input::Key::ArrowRight) - input::pressed(input::Key::ArrowLeft);

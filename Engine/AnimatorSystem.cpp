@@ -9,7 +9,7 @@ AnimatorSystem::AnimatorSystem(World* world) :
 {
 }
 
-void AnimatorSystem::update()
+void AnimatorSystem::update(Time::Unit deltaTime)
 {
     m_world->each<Animator>([](Entity* entity, Animator* animator) {
         if (animator->currentAnimationDuration > 0)

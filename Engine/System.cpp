@@ -9,7 +9,7 @@ System::System(World* world) :
 
 void System::create() {}
 void System::destroy() {}
-void System::update() {}
+void System::update(Time::Unit deltaTime) {}
 void System::draw(Batch &batch) {}
 
 };

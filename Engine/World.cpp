@@ -87,11 +87,11 @@ void World::destroy()
 	m_entities.clear();
 }
 
-void World::update()
+void World::update(Time::Unit deltaTime)
 {
 	for (System* system : m_systems)
 	{
-		system->update();
+		system->update(deltaTime);
 	}
 }
 
