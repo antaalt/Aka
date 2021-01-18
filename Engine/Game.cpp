@@ -2,24 +2,14 @@
 
 #include "Camera2D.h"
 #include "Platform.h"
-#include "Image.h"
 #include "Input.h"
 #include "Time.h"
 #include "Logger.h"
 #include "FileSystem.h"
-#include "Batch.h"
-
 #include "Text.h"
 #include "World.h"
-#include "PhysicSystem.h"
 #include "Transform2D.h"
 #include "Collider2D.h"
-#include "AnimatorSystem.h"
-#include "TileMapSystem.h"
-#include "TileRenderSystem.h"
-#include "TextRenderSystem.h"
-#include "CameraSystem.h"
-
 #include "OgmoWorld.h"
 
 #include <sstream>
@@ -29,53 +19,34 @@
 
 namespace aka {
 
-Font font;
-Sprite character;
-Sprite background;
-Sprite colliderSprite;
-Framebuffer::Ptr framebuffer;
-Batch batch;
-
-
-const vec2u viewportSize(320, 180);
-
-// Entity
-Entity* characterEntity;
-Entity* backgroundEntity;
-Entity* textEntity;
-// Systems
-PhysicSystem *physicSystem;
-AnimatorSystem *animatorSystem;
-TileMapSystem* tileMapSystem;
-TileSystem* tileSystem;
-CameraSystem* cameraSystem;
-TextRenderSystem* textRenderingSystem;
-
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
 	Logger::debug.mute();
-	physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit(10));
-	tileSystem = m_world.createSystem<TileSystem>();
-	tileMapSystem = m_world.createSystem<TileMapSystem>();
-	animatorSystem = m_world.createSystem<AnimatorSystem>();
-	cameraSystem = m_world.createSystem<CameraSystem>();
-	textRenderingSystem = m_world.createSystem<TextRenderSystem>();
+	m_physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit(10));
+	m_tileSystem = m_world.createSystem<TileSystem>();
+	m_tileMapSystem = m_world.createSystem<TileMapSystem>();
+	m_animatorSystem = m_world.createSystem<AnimatorSystem>();
+	m_cameraSystem = m_world.createSystem<CameraSystem>();
+	m_textRenderingSystem = m_world.createSystem<TextRenderSystem>();
+
+	// INIT FRAMEBUFFER
+	m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
 
 	{
 		// INIT FIXED TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));
-		ASSERT(image.width == viewportSize.x, "incorrect width");
-		ASSERT(image.height == viewportSize.y, "incorrect height");
+		ASSERT(image.width == m_framebuffer->width(), "incorrect width");
+		ASSERT(image.height == m_framebuffer->height(), "incorrect height");
 
 		Sprite::Animation animation;
 		animation.name = "default";
 		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
-		background.animations.push_back(animation);
+		m_background.animations.push_back(animation);
 
-		backgroundEntity = m_world.createEntity();
-		backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f(viewportSize), radianf(0)));
-		backgroundEntity->add<Animator>(Animator(&background, -2))->play("default");
+		m_backgroundEntity = m_world.createEntity();
+		m_backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()), radianf(0)));
+		m_backgroundEntity->add<Animator>(Animator(&m_background, -2))->play("default");
 	}
 	{
 		// INIT world
@@ -104,7 +75,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
 		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
-		colliderSprite.animations.push_back(animation);
+		m_colliderSprite.animations.push_back(animation);
 		
 		const OgmoLevel::Layer* layer = ogmoLevel.getLayer("Colliders");
 		for (const OgmoLevel::Entity& entity : layer->entities)
@@ -112,7 +83,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Entity* collider = m_world.createEntity();
 			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
 			collider->add<Collider2D>(Collider2D());
-			collider->add<Animator>(Animator(&colliderSprite, 1));
+			collider->add<Animator>(Animator(&m_colliderSprite, 1));
 		}
 	}
 	{
@@ -135,36 +106,31 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			height = image.height;
 			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		}
-		character.animations.push_back(animation);
-		characterEntity = m_world.createEntity();
-		characterEntity->add<Transform2D>(Transform2D(vec2f(viewportSize) / 2.f, vec2f((float)width, (float)height), radianf(0)));
-		characterEntity->add<Animator>(Animator(&character, 1))->play("idle");
-		characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
-		characterEntity->add<Collider2D>(Collider2D());
+		m_character.animations.push_back(animation);
+		m_characterEntity = m_world.createEntity();
+		m_characterEntity->add<Transform2D>(Transform2D(vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()) / 2.f, vec2f((float)width, (float)height), radianf(0)));
+		m_characterEntity->add<Animator>(Animator(&m_character, 1))->play("idle");
+		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
+		m_characterEntity->add<Collider2D>(Collider2D());
 	}
 
 	{
 		// INIT FONTS
-		font = Font::create(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
-		textEntity = m_world.createEntity();
-		Transform2D* transform = textEntity->add<Transform2D>(Transform2D());
-		Text* text = textEntity->add<Text>(Text());
+		m_font = Font::create(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
+		m_textEntity = m_world.createEntity();
+		Transform2D* transform = m_textEntity->add<Transform2D>(Transform2D());
+		Text* text = m_textEntity->add<Text>(Text());
 
 		text->color = color4f(1.f);
-		text->font = &font;
+		text->font = &m_font;
 		text->text = "Hello World !";
 		text->layer = 3;
-		vec2i size = font.size(text->text);
-		transform->position = vec2f((float)((int)viewportSize.x / 2 - size.x / 2), (float)((int)viewportSize.y / 2 - size.y / 2));
+		vec2i size = m_font.size(text->text);
+		transform->position = vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2));
 		transform->size = vec2f(1.f);
 	}
 
-	// INIT FRAMEBUFFER
-	framebuffer = Framebuffer::create(viewportSize.x, viewportSize.y, Sampler::Filter::Nearest);
-
-	window.setSizeLimits((int32_t)viewportSize.x, (int32_t)viewportSize.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
-	
-	// INIT CHARACTER
+	window.setSizeLimits(m_framebuffer->width(), m_framebuffer->height(), GLFW_DONT_CARE, GLFW_DONT_CARE);
 
 	// IMGUI
 	// Setup Dear ImGui context
@@ -200,9 +166,9 @@ void Game::update(Time::Unit deltaTime)
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	Transform2D* transform = characterEntity->get<Transform2D>();
-	RigidBody2D* rigid = characterEntity->get<RigidBody2D>();
-	Collider2D* collider = characterEntity->get<Collider2D>();
+	Transform2D* transform = m_characterEntity->get<Transform2D>();
+	RigidBody2D* rigid = m_characterEntity->get<RigidBody2D>();
+	Collider2D* collider = m_characterEntity->get<Collider2D>();
 	transform->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
 	transform->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
 
@@ -219,7 +185,7 @@ void Game::update(Time::Unit deltaTime)
 	if (transform->position.y < -transform->size.y)
 	{
 		// teleport above
-		transform->position = vec2f(transform->position.x, (float)viewportSize.y);
+		transform->position = vec2f(transform->position.x, (float)m_framebuffer->height());
 	}
 
 	if (ImGui::Begin("Debug##window"))
@@ -240,13 +206,13 @@ void Game::update(Time::Unit deltaTime)
 				if (renderColliders)
 				{
 					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
-						entity->add<Animator>(Animator(&colliderSprite, 1));
+						entity->add<Animator>(Animator(&m_colliderSprite, 1));
 					});
 				}
 				else
 				{
 					m_world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
-						if (entity->get<Animator>()->sprite == &colliderSprite)
+						if (entity->get<Animator>()->sprite == &m_colliderSprite)
 							entity->remove<Animator>();
 					});
 				}
@@ -388,26 +354,26 @@ void Game::update(Time::Unit deltaTime)
 
 void Game::render(GraphicBackend& backend)
 {
-	backend.viewport(0, 0, (uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-	framebuffer->bind(Framebuffer::Type::Both);
+	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
+	m_framebuffer->bind(Framebuffer::Type::Both);
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
 	// draw background
-	m_world.draw(batch);
-	batch.render(framebuffer);
+	m_world.draw(m_batch);
+	m_batch.render(m_framebuffer);
 
 	// Blit to main buffer
-	uint32_t widthRatio = screenWidth() / (uint32_t)viewportSize.x;
-	uint32_t heightRatio = screenHeight() / (uint32_t)viewportSize.y;
+	uint32_t widthRatio = screenWidth() / m_framebuffer->width();
+	uint32_t heightRatio = screenHeight() / m_framebuffer->height();
 	uint32_t ratio = min<uint32_t>(widthRatio, heightRatio);
-	uint32_t scaledWidth = ratio * (uint32_t)viewportSize.x;
-	uint32_t scaledHeight = ratio * (uint32_t)viewportSize.y;
+	uint32_t scaledWidth = ratio * m_framebuffer->width();
+	uint32_t scaledHeight = ratio * m_framebuffer->height();
 	uint32_t w = (screenWidth() - scaledWidth) / 2;
 	uint32_t h = (screenHeight() - scaledHeight) / 2;
 	Rect srcBlit{};
 	srcBlit.x = 0.f;
 	srcBlit.y = 0.f;
-	srcBlit.w = (float)viewportSize.x;
-	srcBlit.h = (float)viewportSize.y;
+	srcBlit.w = (float)m_framebuffer->width();
+	srcBlit.h = (float)m_framebuffer->height();
 	Rect dstBlit{};
 	dstBlit.x = (float)w;
 	dstBlit.y = (float)h;
@@ -417,7 +383,7 @@ void Game::render(GraphicBackend& backend)
 	backend.backbuffer()->bind(Framebuffer::Type::Both);
 	backend.viewport(0, 0, screenWidth(), screenHeight());
 	backend.clear(color4f(0.f, 0.f, 0.f, 1.f));
-	framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
+	m_framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
 
 	// Rendering imgui
 	ImGui::Render();
