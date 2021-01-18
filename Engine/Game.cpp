@@ -174,7 +174,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(window.getHandle()), true);
+	ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
 
 	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 	std::stringstream ss;

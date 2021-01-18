@@ -25,8 +25,6 @@ public:
 private:
 	Window(const Config& config);
 	~Window();
-	// Resize a window
-	void resize(uint32_t width, uint32_t height);
 	// Loop
 	void loop();
 public:
@@ -35,16 +33,12 @@ public:
 	// Set window size limits
 	void setSizeLimits(int32_t minWidth, int32_t minHeight, int32_t maxWidth, int32_t maxHeight);
 
-	// Get framebuffer size
-	vec2i getBackbufferSize() const;
-
 	// Get window handle
-	void* getHandle() const;
+	GLFWwindow* handle() const;
 
 private:
 	// TODO : Abstraction depending on window system (SDL, GLFW...)
 	Application* m_app;
-	uint32_t m_width, m_height;
 	GLFWwindow* m_window;
 	GraphicBackend m_backend;
 };
