@@ -23,7 +23,7 @@ Framebuffer::Framebuffer(uint32_t width, uint32_t height, Attachment* attachment
 	for (size_t iAtt = 0; iAtt < count; iAtt++)
 	{
 		Attachment& att = attachments[iAtt];
-		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(att.type), GL_TEXTURE_2D, att.texture->id(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(att.type), GL_TEXTURE_2D, att.texture->id().value(), 0);
 	}
 	ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

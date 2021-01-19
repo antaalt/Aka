@@ -62,6 +62,12 @@ void World::destroySystem(System* system)
 	}
 }
 
+void World::each(std::function<void(Entity* entity)> callback)
+{
+	for (Entity* entity : m_entities)
+		callback(entity);
+}
+
 void World::create()
 {
 	for (System* system : m_systems)

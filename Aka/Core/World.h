@@ -30,6 +30,7 @@ public:
 	template <typename T>
 	T *add(Entity& entity, T&& component);
 
+	void each(std::function<void(Entity* entity)> callback);
 	template <typename T>
 	void each(std::function<void(Entity* entity, T*)> callback);
 	template <typename T, typename U, typename... Args>
