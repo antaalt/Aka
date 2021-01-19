@@ -20,6 +20,8 @@ public:
 	virtual void initialize(Window& window, GraphicBackend& backend) = 0;
 	// Destroy everything related to the app.
 	virtual void destroy(GraphicBackend& backend) = 0;
+	// Create a new frame for the app
+	virtual void frame() = 0;
 	// Update the app.
 	virtual void update(Time::Unit deltaTime) = 0;
 	// Render the app.

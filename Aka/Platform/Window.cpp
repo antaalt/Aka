@@ -138,11 +138,19 @@ Window::~Window()
 void Window::loop()
 {
 	Time::Unit lastTick = Time::now();
+	Time::Unit accumulator;
+	Time::Unit timestep = Time::Unit::milliseconds(10);
 	do {
 		Time::Unit now = Time::now();
 		Time::Unit deltaTime = min<Time::Unit>(now - lastTick, Time::Unit::milliseconds(100));
 		lastTick = now;
-		m_app->update(deltaTime);
+		accumulator += deltaTime;
+		m_app->frame();
+		while (accumulator >= timestep)
+		{
+			m_app->update(timestep);
+			accumulator -= timestep;
+		}
 		m_app->render(m_backend);
 		input::update();
 		glfwSwapBuffers(m_window);

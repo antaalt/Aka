@@ -164,18 +164,21 @@ void Game::destroy(GraphicBackend& backend)
 	ImGui::DestroyContext();
 }
 
-void Game::update(Time::Unit deltaTime)
+void Game::frame()
 {
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+}
 
+void Game::update(Time::Unit deltaTime)
+{
 	Transform2D* transform = m_characterEntity->get<Transform2D>();
 	RigidBody2D* rigid = m_characterEntity->get<RigidBody2D>();
 	Collider2D* collider = m_characterEntity->get<Collider2D>();
-	transform->position.x += input::pressed(input::Key::D) - input::pressed(input::Key::Q);
-	transform->position.y += input::pressed(input::Key::Z) - input::pressed(input::Key::S);
+	transform->position.x += (input::pressed(input::Key::D) - input::pressed(input::Key::Q)) * 64.f * deltaTime.seconds();
+	transform->position.y += (input::pressed(input::Key::Z) - input::pressed(input::Key::S)) * 64.f * deltaTime.seconds();
 
 	if (input::pressed(input::Key::Space))
 	{
@@ -193,12 +196,50 @@ void Game::update(Time::Unit deltaTime)
 		transform->position = vec2f(transform->position.x, (float)m_framebuffer->height());
 	}
 
+	// Update world after moving manually objects
+	m_world.update(deltaTime);
+}
+
+void Game::render(GraphicBackend& backend)
+{
+	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
+	m_framebuffer->bind(Framebuffer::Type::Both);
+	backend.clear(0.f, 0.f, 0.f, 1.f);
+	// draw background
+	m_world.draw(m_batch);
+	m_batch.render(m_framebuffer);
+
+	// Blit to main buffer
+	uint32_t widthRatio = screenWidth() / m_framebuffer->width();
+	uint32_t heightRatio = screenHeight() / m_framebuffer->height();
+	uint32_t ratio = min<uint32_t>(widthRatio, heightRatio);
+	uint32_t scaledWidth = ratio * m_framebuffer->width();
+	uint32_t scaledHeight = ratio * m_framebuffer->height();
+	uint32_t w = (screenWidth() - scaledWidth) / 2;
+	uint32_t h = (screenHeight() - scaledHeight) / 2;
+	Rect srcBlit{};
+	srcBlit.x = 0.f;
+	srcBlit.y = 0.f;
+	srcBlit.w = (float)m_framebuffer->width();
+	srcBlit.h = (float)m_framebuffer->height();
+	Rect dstBlit{};
+	dstBlit.x = (float)w;
+	dstBlit.y = (float)h;
+	dstBlit.w = (float)screenWidth() - 2.f * w;
+	dstBlit.h = (float)screenHeight() - 2.f * h;
+
+	backend.backbuffer()->bind(Framebuffer::Type::Both);
+	backend.viewport(0, 0, screenWidth(), screenHeight());
+	backend.clear(0.f, 0.f, 0.f, 1.f);
+	m_framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
+
+	// Rendering imgui
 	if (ImGui::Begin("Editor##window"))
 	{
-		ImVec4 color= ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
+		ImVec4 color = ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
 		if (ImGui::CollapsingHeader("Infos", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGuiIO &io = ImGui::GetIO();
+			ImGuiIO& io = ImGui::GetIO();
 			ImGui::Text("Resolution : %ux%u", screenWidth(), screenHeight());
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
@@ -223,7 +264,7 @@ void Game::update(Time::Unit deltaTime)
 						{
 							ImGui::InputFloat2("Position", transform->position.data, 3);
 							ImGui::InputFloat2("Size", transform->size.data, 3);
-							ImGui::InputFloat ("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
+							ImGui::InputFloat("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
 
 							if (ImGui::Button("Remove")) { entity->remove<Transform2D>(); }
 
@@ -317,7 +358,7 @@ void Game::update(Time::Unit deltaTime)
 							ImGui::InputFloat2("Velocity", rigid->velocity.data, 3);
 
 							if (ImGui::Button("Remove")) { entity->remove<RigidBody2D>(); }
-								
+
 							ImGui::TreePop();
 						}
 					}
@@ -361,7 +402,7 @@ void Game::update(Time::Unit deltaTime)
 								layer->gridCount = vec2u(gridCount);
 							if (ImGui::InputInt2("Grid size", gridSize.data))
 								layer->gridSize = vec2u(gridSize);
-							
+
 							static int id = 0;
 							if (layer->tileID.size() >= 4)
 							{
@@ -457,44 +498,6 @@ void Game::update(Time::Unit deltaTime)
 	}
 	ImGui::End();
 
-	// Update world after moving manually objects
-	m_world.update(deltaTime);
-}
-
-void Game::render(GraphicBackend& backend)
-{
-	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
-	m_framebuffer->bind(Framebuffer::Type::Both);
-	backend.clear(0.f, 0.f, 0.f, 1.f);
-	// draw background
-	m_world.draw(m_batch);
-	m_batch.render(m_framebuffer);
-
-	// Blit to main buffer
-	uint32_t widthRatio = screenWidth() / m_framebuffer->width();
-	uint32_t heightRatio = screenHeight() / m_framebuffer->height();
-	uint32_t ratio = min<uint32_t>(widthRatio, heightRatio);
-	uint32_t scaledWidth = ratio * m_framebuffer->width();
-	uint32_t scaledHeight = ratio * m_framebuffer->height();
-	uint32_t w = (screenWidth() - scaledWidth) / 2;
-	uint32_t h = (screenHeight() - scaledHeight) / 2;
-	Rect srcBlit{};
-	srcBlit.x = 0.f;
-	srcBlit.y = 0.f;
-	srcBlit.w = (float)m_framebuffer->width();
-	srcBlit.h = (float)m_framebuffer->height();
-	Rect dstBlit{};
-	dstBlit.x = (float)w;
-	dstBlit.y = (float)h;
-	dstBlit.w = (float)screenWidth() - 2.f * w;
-	dstBlit.h = (float)screenHeight() - 2.f * h;
-
-	backend.backbuffer()->bind(Framebuffer::Type::Both);
-	backend.viewport(0, 0, screenWidth(), screenHeight());
-	backend.clear(0.f, 0.f, 0.f, 1.f);
-	m_framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
-
-	// Rendering imgui
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
