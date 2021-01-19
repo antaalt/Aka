@@ -23,7 +23,7 @@ struct Animator : public Component
 
 	void play(const std::string& animation);
 private:
-	Time::Unit animationStartTick;
+	Time::Unit animationTimer;
 	Time::Unit currentAnimationDuration;
 };
 

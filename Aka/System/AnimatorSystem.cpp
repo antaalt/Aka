@@ -11,17 +11,18 @@ AnimatorSystem::AnimatorSystem(World* world) :
 
 void AnimatorSystem::update(Time::Unit deltaTime)
 {
-    m_world->each<Animator>([](Entity* entity, Animator* animator) {
-        if (animator->currentAnimationDuration > 0)
+    m_world->each<Animator>([deltaTime](Entity* entity, Animator* animator) {
+        if (animator->currentAnimationDuration > 0 && animator->sprite != nullptr)
         {
-            const Time::Unit now = Time::now();
-            Time::Unit elapsedSincePlay = (now - animator->animationStartTick) % animator->currentAnimationDuration;
-            Time::Unit currentFrameDuration = 0;
+            animator->animationTimer = (animator->animationTimer + deltaTime) % animator->currentAnimationDuration;
             uint32_t frameID = 0;
-            while (elapsedSincePlay > (currentFrameDuration = animator->sprite->animations[animator->currentAnimation].frames[frameID].duration))
+            Time::Unit currentFrameDuration = 0;
+            for (Sprite::Frame& frame : animator->sprite->animations[animator->currentAnimation].frames)
             {
-                elapsedSincePlay -= currentFrameDuration;
-                frameID = (frameID + 1) % animator->sprite->animations[animator->currentAnimation].frames.size();
+                if (animator->animationTimer < currentFrameDuration + frame.duration)
+                    break;
+                currentFrameDuration += frame.duration;
+                frameID++;
             }
             animator->currentFrame = frameID;
         }
