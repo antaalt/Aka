@@ -24,7 +24,6 @@ void CollisionSystem::update(Time::Unit deltaTime)
 			// Skip self intersection
 			if (otherEntity == entity)
 				return;
-			const RigidBody2D* otherRigid = otherEntity->get<RigidBody2D>();
 			otherCollider->position = otherTransform->position;
 			otherCollider->size = otherTransform->size;
 			Collision2D c = collider->overlaps(*otherCollider);
@@ -48,10 +47,9 @@ void CollisionSystem::update(Time::Unit deltaTime)
 				// tangent component
 				vec2f t = v - p;
 				// Restitution
-				// TODO move these settings to collider.
-				float r = 1.f + max<float>(rigid->bouncing, otherRigid ? otherRigid->bouncing : 0.f); // max bouncing value of object a & b
+				float r = 1.f + max<float>(collider->bouncing, otherCollider->bouncing); // max bouncing value of object a & b
 				// Friction
-				float f = min<float>(rigid->friction, otherRigid ? otherRigid->friction : 0.f); // max friction value of object a & b
+				float f = min<float>(collider->friction, otherCollider->friction); // max friction value of object a & b
 				// Change the velocity of shape a
 				rigid->acceleration = vec2f(0);
 				rigid->velocity = rigid->velocity - p * r + t * f;

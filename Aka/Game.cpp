@@ -123,8 +123,8 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_characterEntity = m_world.createEntity();
 		m_characterEntity->add<Transform2D>(Transform2D(vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()) / 2.f, vec2f((float)width, (float)height), radianf(0)));
 		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
-		m_characterEntity->add<Collider2D>(Collider2D());
+		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
+		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
 	}
 
 	{
@@ -346,6 +346,8 @@ void Game::render(GraphicBackend& backend)
 						{
 							ImGui::InputFloat2("Position", collider->position.data, 3);
 							ImGui::InputFloat2("Size", collider->size.data, 3);
+							ImGui::InputFloat("Bouncing", &collider->bouncing, 0.1f, 1.f, 2);
+							ImGui::InputFloat("Friction", &collider->friction, 0.1f, 1.f, 2);
 
 							if (ImGui::Button("Remove")) { entity->remove<Collider2D>(); }
 
@@ -360,8 +362,6 @@ void Game::render(GraphicBackend& backend)
 						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 						{
 							ImGui::InputFloat("Mass", &rigid->mass, 0.1f, 1.f, 2);
-							ImGui::InputFloat("Bouncing", &rigid->bouncing, 0.1f, 1.f, 2);
-							ImGui::InputFloat("Friction", &rigid->friction, 0.1f, 1.f, 2);
 							ImGui::InputFloat2("Acceleration", rigid->acceleration.data, 3);
 							ImGui::InputFloat2("Velocity", rigid->velocity.data, 3);
 

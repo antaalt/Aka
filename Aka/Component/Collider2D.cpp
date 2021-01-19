@@ -39,9 +39,11 @@ Collider2D::Collider2D() :
 {
 }
 
-Collider2D::Collider2D(const vec2f& position, const vec2f& size) :
+Collider2D::Collider2D(const vec2f& position, const vec2f& size, float bouncing, float friction) :
 	position(position),
-	size(size)
+	size(size),
+	bouncing(bouncing),
+	friction(friction)
 {
 }
 
@@ -55,12 +57,10 @@ RigidBody2D::RigidBody2D() :
 {
 }
 
-RigidBody2D::RigidBody2D(float mass, float bouncing, float friction) :
+RigidBody2D::RigidBody2D(float mass) :
 	acceleration(0.f),
 	velocity(0.f),
-	mass(mass),
-	bouncing(bouncing),
-	friction(friction)
+	mass(mass)
 {
 
 }

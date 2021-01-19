@@ -42,11 +42,15 @@ struct CircleCollider2D : public Collider2D
 struct Collider2D : public Component
 {
 	Collider2D();
-	Collider2D(const vec2f& position, const vec2f& size);
+	Collider2D(const vec2f& position, const vec2f& size, float bouncing = 0.f, float friction = 0.f);
 
 	Collision2D overlaps(const Collider2D& collider);
+
 	vec2f position;
 	vec2f size;
+
+	float bouncing;
+	float friction;
 };
 
 struct RigidBody2D : public Component
@@ -54,13 +58,11 @@ struct RigidBody2D : public Component
 	static inline const vec2f maxVelocity = vec2f(50.f);
 
 	RigidBody2D();
-	RigidBody2D(float mass, float bouncing = 0.f, float friction = 0.f);
+	RigidBody2D(float mass);
 
 	vec2f acceleration; // m/s^2
 	vec2f velocity; // m/s
 	float mass; // kg
-	float bouncing;
-	float friction;
 };
 
 /*struct Collider2D
