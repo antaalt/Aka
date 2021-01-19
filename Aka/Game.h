@@ -2,15 +2,10 @@
 
 #include "Core/Application.h"
 #include "Core/Font.h"
+#include "Core/Sprite.h"
 #include "Platform/Window.h"
 #include "Platform/IO/Image.h"
 #include "Graphic/Batch.h"
-#include "System/PhysicSystem.h"
-#include "System/AnimatorSystem.h"
-#include "System/TileMapSystem.h"
-#include "System/TileRenderSystem.h"
-#include "System/TextRenderSystem.h"
-#include "System/CameraSystem.h"
 
 namespace aka {
 
@@ -42,13 +37,6 @@ private:
 	Entity* m_characterEntity;
 	Entity* m_backgroundEntity;
 	Entity* m_textEntity;
-	// Systems
-	PhysicSystem* m_physicSystem;
-	AnimatorSystem* m_animatorSystem;
-	TileMapSystem* m_tileMapSystem;
-	TileSystem* m_tileSystem;
-	CameraSystem* m_cameraSystem;
-	TextRenderSystem* m_textRenderingSystem;
 };
 
 }

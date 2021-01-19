@@ -12,12 +12,9 @@ namespace aka {
 class PhysicSystem : public System
 {
 public:
-	PhysicSystem(World* world, Time::Unit timestep);
+	PhysicSystem(World* world);
 
 	void update(Time::Unit deltaTime) override;
-private:
-	Time::Unit m_accumulator;
-	Time::Unit m_timestep;
 };
 
 };

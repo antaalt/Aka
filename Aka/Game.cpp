@@ -13,6 +13,13 @@
 #include "Component/TileLayer.h"
 #include "Core/OgmoWorld.h"
 #include "Core/World.h"
+#include "System/PhysicSystem.h"
+#include "System/AnimatorSystem.h"
+#include "System/TileMapSystem.h"
+#include "System/TileRenderSystem.h"
+#include "System/TextRenderSystem.h"
+#include "System/CameraSystem.h"
+#include "System/CollisionSystem.h"
 
 #include <sstream>
 #include <imgui.h>
@@ -25,12 +32,13 @@ namespace aka {
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
 	Logger::debug.mute();
-	m_physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit::milliseconds(10));
-	m_tileSystem = m_world.createSystem<TileSystem>();
-	m_tileMapSystem = m_world.createSystem<TileMapSystem>();
-	m_animatorSystem = m_world.createSystem<AnimatorSystem>();
-	m_cameraSystem = m_world.createSystem<CameraSystem>();
-	m_textRenderingSystem = m_world.createSystem<TextRenderSystem>();
+	m_world.createSystem<PhysicSystem>();
+	m_world.createSystem<CollisionSystem>();
+	m_world.createSystem<TileSystem>();
+	m_world.createSystem<TileMapSystem>();
+	m_world.createSystem<AnimatorSystem>();
+	m_world.createSystem<CameraSystem>();
+	m_world.createSystem<TextRenderSystem>();
 
 	// INIT FRAMEBUFFER
 	m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
