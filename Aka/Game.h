@@ -32,10 +32,8 @@ public:
 	void render(GraphicBackend& backend) override;
 private:
 	// Resources
-	Font m_font;
-	Sprite m_character;
-	Sprite m_background;
-	Sprite m_colliderSprite;
+	std::vector<std::shared_ptr<Font>> m_fonts;
+	std::vector<std::shared_ptr<Sprite>> m_sprites;
 	// Rendering
 	Batch m_batch;
 	Framebuffer::Ptr m_framebuffer;

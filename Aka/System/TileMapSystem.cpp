@@ -20,6 +20,8 @@ void TileMapSystem::draw(Batch& batch)
     const mat3f model = mat3f::identity();
     m_world->each<Transform2D, TileMap, TileLayer>([&](Entity* entity, Transform2D *transform, TileMap* atlas, TileLayer* layer)
     {
+        if (atlas->texture == nullptr)
+            return;
         ASSERT(layer->gridSize == atlas->gridSize, "");
         for (size_t i = 0; i < layer->tileID.size(); i++)
         {

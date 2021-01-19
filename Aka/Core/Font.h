@@ -15,11 +15,24 @@ struct Character {
 };
 
 struct Font {
-	Character characters[128];
+	Font(const Path& path, uint32_t height);
 
+	
 	static Font create(const Path& path, uint32_t height);
 
+
 	vec2i size(const std::string& text) const;
+
+	const Character &character(char c) const;
+
+	const std::string& family() const;
+
+	const std::string style() const;
+
+private:
+	std::string m_familyName;
+	std::string m_styleName;
+	Character m_characters[128];
 };
 
 

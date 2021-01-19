@@ -30,8 +30,10 @@ void PhysicSystem::update(Time::Unit deltaTime)
 			rigid->velocity.x = clamp(rigid->velocity.x, -RigidBody2D::maxVelocity.x, RigidBody2D::maxVelocity.x);
 			rigid->velocity.y = clamp(rigid->velocity.y, -RigidBody2D::maxVelocity.y, RigidBody2D::maxVelocity.y);
 		});
-		m_world->each<Transform2D, RigidBody2D, Collider2D>([&](Entity* entity, Transform2D* transform, RigidBody2D* rigid, Collider2D* collider) {
+		m_world->each<RigidBody2D, Transform2D>([&](Entity* entity, RigidBody2D* rigid, Transform2D *transform)  -> void {
 			transform->position += rigid->velocity * dt * 16.f; // scale by 16 as 16 is ~ 1m in game unit
+		});
+		m_world->each<Transform2D, RigidBody2D, Collider2D>([&](Entity* entity, Transform2D* transform, RigidBody2D* rigid, Collider2D* collider) {
 			collider->position = transform->position;
 			collider->size = transform->size;
 			m_world->each<Transform2D, Collider2D>([&](Entity* otherEntity, Transform2D* otherTransform, Collider2D* otherCollider) {

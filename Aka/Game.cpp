@@ -44,11 +44,12 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		Sprite::Animation animation;
 		animation.name = "default";
 		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
-		m_background.animations.push_back(animation);
+		m_sprites.push_back(std::make_shared<Sprite>());
+		m_sprites.back()->animations.push_back(animation);
 
 		m_backgroundEntity = m_world.createEntity();
 		m_backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()), radianf(0)));
-		m_backgroundEntity->add<Animator>(Animator(&m_background, -2))->play("default");
+		m_backgroundEntity->add<Animator>(Animator(m_sprites.back().get(), -2))->play("default");
 	}
 	{
 		// INIT world
@@ -77,7 +78,8 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
 		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
-		m_colliderSprite.animations.push_back(animation);
+		m_sprites.push_back(std::make_shared<Sprite>());
+		m_sprites.back()->animations.push_back(animation);
 		
 		const OgmoLevel::Layer* layer = ogmoLevel.getLayer("Colliders");
 		for (const OgmoLevel::Entity& entity : layer->entities)
@@ -85,7 +87,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Entity* collider = m_world.createEntity();
 			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
 			collider->add<Collider2D>(Collider2D());
-			collider->add<Animator>(Animator(&m_colliderSprite, 1));
+			collider->add<Animator>(Animator(m_sprites.back().get(), 1));
 		}
 	}
 	{
@@ -108,26 +110,27 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			height = image.height;
 			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
 		}
-		m_character.animations.push_back(animation);
+		m_sprites.push_back(std::make_shared<Sprite>());
+		m_sprites.back()->animations.push_back(animation);
 		m_characterEntity = m_world.createEntity();
 		m_characterEntity->add<Transform2D>(Transform2D(vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()) / 2.f, vec2f((float)width, (float)height), radianf(0)));
-		m_characterEntity->add<Animator>(Animator(&m_character, 1))->play("idle");
+		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f, 0.1f, 0.1f));
 		m_characterEntity->add<Collider2D>(Collider2D());
 	}
 
 	{
 		// INIT FONTS
-		m_font = Font::create(Asset::path("font/Espera/Espera-Bold.ttf"), 48);
+		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Espera/Espera-Bold.ttf"), 48));
 		m_textEntity = m_world.createEntity();
 		Transform2D* transform = m_textEntity->add<Transform2D>(Transform2D());
 		Text* text = m_textEntity->add<Text>(Text());
 
 		text->color = color4f(1.f);
-		text->font = &m_font;
+		text->font = m_fonts.back().get();
 		text->text = "Hello World !";
 		text->layer = 3;
-		vec2i size = m_font.size(text->text);
+		vec2i size = m_fonts.back()->size(text->text);
 		transform->position = vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2));
 		transform->size = vec2f(1.f);
 	}
@@ -234,11 +237,50 @@ void Game::update(Time::Unit deltaTime)
 						snprintf(buffer, 256, "Animator##%p", animator);
 						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 						{
-							Texture::Ptr current = animator->getCurrentSpriteFrame().texture;
-							float ratio = static_cast<float>(current->width()) / static_cast<float>(current->height());
-							ImGui::Image((void*)(uintptr_t)(current->id().value()), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
-							ImGui::SliderInt("Animation", reinterpret_cast<int*>(&animator->currentAnimation), 0, animator->sprite->animations.size() - 1);
-							ImGui::SliderInt("Frame", reinterpret_cast<int*>(&animator->currentFrame), 0, animator->sprite->animations[animator->currentAnimation].frames.size() - 1);
+							if (animator->sprite == nullptr)
+							{
+								static char path[256];
+								ImGui::InputText("Path", path, 256);
+								if (ImGui::Button("Load sprite"))
+								{
+									Sprite::Animation animation;
+									animation.name = "default";
+									Image image = Image::load(Asset::path(path));
+									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
+									m_sprites.push_back(std::make_shared<Sprite>());
+									m_sprites.back()->animations.push_back(animation);
+									animator->sprite = m_sprites.back().get();
+								}
+							}
+							else
+							{
+								for (Sprite::Animation& anim : animator->sprite->animations)
+								{
+									snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration()());
+									if (ImGui::TreeNode(buffer))
+									{
+										strcpy_s(buffer, anim.name.c_str());
+										if (ImGui::InputText("Name", buffer, 256))
+											anim.name = buffer;
+										int frameID = 0;
+										for (Sprite::Frame& frame : anim.frames)
+										{
+											snprintf(buffer, 256, "Frame %d (%llu ms)", frameID++, frame.duration());
+											if (ImGui::TreeNode(buffer))
+											{
+												float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());
+												ImGui::Image((void*)(uintptr_t)(frame.texture->id().value()), ImVec2(256, 256 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
+
+												ImGui::TreePop();
+											}
+										}
+										ImGui::TreePop();
+									}
+								}
+							}
+
+							ImGui::SliderInt("Animation", reinterpret_cast<int*>(&animator->currentAnimation), 0, animator->sprite ? (int)animator->sprite->animations.size() - 1 : 0);
+							ImGui::SliderInt("Frame", reinterpret_cast<int*>(&animator->currentFrame), 0, animator->sprite ? (int)animator->sprite->animations[animator->currentAnimation].frames.size() - 1 : 0);
 							ImGui::SliderInt("Layer", &animator->layer, -20, 20);
 
 							if (ImGui::Button("Remove")) { entity->remove<Animator>(); }
@@ -292,10 +334,15 @@ void Game::update(Time::Unit deltaTime)
 								map->gridCount = vec2u(gridCount);
 							if (ImGui::InputInt2("Grid size", gridSize.data))
 								map->gridSize = vec2u(gridSize);
-							
-							float ratio = static_cast<float>(map->texture->width()) / static_cast<float>(map->texture->height());
-							ImGui::Image((void*)(uintptr_t)(map->texture->id().value()), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
-
+							if (map->texture == nullptr)
+							{
+								// TODO load texture button
+							}
+							else
+							{
+								float ratio = static_cast<float>(map->texture->width()) / static_cast<float>(map->texture->height());
+								ImGui::Image((void*)(uintptr_t)(map->texture->id().value()), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
+							}
 							if (ImGui::Button("Remove")) { entity->remove<TileMap>(); }
 
 							ImGui::TreePop();
@@ -316,8 +363,11 @@ void Game::update(Time::Unit deltaTime)
 								layer->gridSize = vec2u(gridSize);
 							
 							static int id = 0;
-							ImGui::SliderInt("Index", &id, 0, (int)layer->tileID.size() - 4);
-							ImGui::InputInt4("TileID", layer->tileID.data() + id);
+							if (layer->tileID.size() >= 4)
+							{
+								ImGui::SliderInt("Index", &id, 0, (int)layer->tileID.size() - 4);
+								ImGui::InputInt4("TileID", layer->tileID.data() + id);
+							}
 							ImGui::SliderInt("Layer", &layer->layer, -20, 20);
 							ImGui::InputFloat4("Color", layer->color.data, 3);
 
@@ -335,13 +385,32 @@ void Game::update(Time::Unit deltaTime)
 						{
 							ImGui::InputFloat4("Color", text->color.data, 3);
 							ImGui::SliderInt("Layer", &text->layer, -20, 20);
+
+							static int currentFontID = 0;
+							const char* currentFont = m_fonts[currentFontID]->family().c_str();
+							if (ImGui::BeginCombo("Font", currentFont))
+							{
+								for (int n = 0; n < m_fonts.size(); n++)
+								{
+									bool is_selected = (currentFont == m_fonts[n]->family().c_str());
+									if (ImGui::Selectable(m_fonts[n]->family().c_str(), is_selected))
+									{
+										if (n != currentFontID)
+										{
+											text->font = m_fonts[n].get();
+											currentFontID = n;
+										}
+									}
+									if (is_selected)
+										ImGui::SetItemDefaultFocus();
+								}
+								ImGui::EndCombo();
+							}
+
 							char t[256];
 							strcpy_s(t, text->text.c_str());
 							if (ImGui::InputText("Text", t, 256))
-							{
 								text->text = t;
-							}
-							text->font;
 
 							if (ImGui::Button("Remove")) { entity->remove<Text>(); }
 
@@ -364,7 +433,7 @@ void Game::update(Time::Unit deltaTime)
 						switch (currentComponent)
 						{
 						case 0: entity->add<Transform2D>(Transform2D()); break;
-						case 1: entity->add<Animator>(Animator()); break;
+						case 1:  entity->add<Animator>(Animator()); break;
 						case 2: entity->add<Collider2D>(Collider2D()); break;
 						case 3: entity->add<RigidBody2D>(RigidBody2D()); break;
 						case 4: entity->add<Text>(Text()); break;
@@ -381,6 +450,9 @@ void Game::update(Time::Unit deltaTime)
 			if (ImGui::Button("Add entity")) {
 				m_world.createEntity();
 			}
+		}
+		if (ImGui::CollapsingHeader("Resources##header", ImGuiTreeNodeFlags_DefaultOpen))
+		{
 		}
 	}
 	ImGui::End();
