@@ -93,6 +93,8 @@
     <ClCompile Include="..\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Core\Event.cpp" />
+    <ClCompile Include="System\PlayerSystem.cpp" />
     <ClCompile Include="System\CollisionSystem.cpp" />
     <ClCompile Include="Component\Animator.cpp" />
     <ClCompile Include="Component\Camera2D.cpp" />
@@ -142,6 +144,10 @@
     <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
+    <ClInclude Include="Component\Interact.h" />
+    <ClInclude Include="Component\Player.h" />
+    <ClInclude Include="Core\Event.h" />
+    <ClInclude Include="System\PlayerSystem.h" />
     <ClInclude Include="System\CollisionSystem.h" />
     <ClInclude Include="Component\Animator.h" />
     <ClInclude Include="Component\Camera2D.h" />

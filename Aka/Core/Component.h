@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Debug.h"
+
 #include <stdint.h>
 
 namespace aka {
@@ -20,6 +22,7 @@ public:
 		// Get the id for the specified type
 		template <typename T>
 		static uint8_t get() {
+			ASSERT(m_typeCounter < 255, "Reach max type capacity");
 			static const uint8_t type = m_typeCounter++;
 			return type;
 		}

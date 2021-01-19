@@ -11,6 +11,8 @@
 #include "Component/Text.h"
 #include "Component/TileMap.h"
 #include "Component/TileLayer.h"
+#include "Component/Player.h"
+#include "Component/Interact.h"
 #include "Core/OgmoWorld.h"
 #include "Core/World.h"
 #include "System/PhysicSystem.h"
@@ -20,6 +22,7 @@
 #include "System/TextRenderSystem.h"
 #include "System/CameraSystem.h"
 #include "System/CollisionSystem.h"
+#include "System/PlayerSystem.h"
 
 #include <sstream>
 #include <imgui.h>
@@ -39,6 +42,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	m_world.createSystem<AnimatorSystem>();
 	m_world.createSystem<CameraSystem>();
 	m_world.createSystem<TextRenderSystem>();
+	m_world.createSystem<PlayerSystem>();
 
 	// INIT FRAMEBUFFER
 	m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
@@ -125,8 +129,39 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
 		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		m_characterEntity->add<Player>(Player());
 	}
-
+	{
+		// INIT coin
+		Sprite::Animation animation;
+		animation.name = "picked";
+		vec2f characterSize = vec2f(13, 17);
+		std::vector<Path> frames = {
+			Asset::path("textures/interact/coin01.png"),
+			Asset::path("textures/interact/coin02.png"),
+			Asset::path("textures/interact/coin03.png")
+		};
+		uint32_t width = 0, height = 0;
+		for (Path path : frames)
+		{
+			Image image = Image::load(path);
+			width = image.width;
+			height = image.height;
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(300)));
+		}
+		m_sprites.push_back(std::make_shared<Sprite>());
+		m_sprites.back()->animations.push_back(animation);
+		Texture::Ptr tex = animation.frames[0].texture;
+		animation.frames.clear();
+		animation.name = "idle";
+		animation.frames.push_back(Sprite::Frame::create(tex, Time::Unit::milliseconds(500)));
+		m_sprites.back()->animations.push_back(animation);
+		Entity *e = m_world.createEntity();
+		e->add<Transform2D>(Transform2D(vec2f(120, 80), vec2f(16, 16), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+		e->add<Coin>(Coin());
+	}
 	{
 		// INIT FONTS
 		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Espera/Espera-Bold.ttf"), 48));
@@ -179,12 +214,13 @@ void Game::frame()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 }
-
+// Need a component movable -> take inputs and update movements
+// Component hurtable
+// collision -> if hurtable and collider has component damage
 void Game::update(Time::Unit deltaTime)
 {
 	Transform2D* transform = m_characterEntity->get<Transform2D>();
 	RigidBody2D* rigid = m_characterEntity->get<RigidBody2D>();
-	Collider2D* collider = m_characterEntity->get<Collider2D>();
 	transform->position.x += (input::pressed(input::Key::D) - input::pressed(input::Key::Q)) * 64.f * deltaTime.seconds();
 	transform->position.y += (input::pressed(input::Key::Z) - input::pressed(input::Key::S)) * 64.f * deltaTime.seconds();
 

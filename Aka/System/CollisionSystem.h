@@ -5,6 +5,12 @@
 
 namespace aka {
 
+struct CollisionEvent {
+	Entity* left;
+	Entity* right;
+	vec2f separation;
+};
+
 class CollisionSystem : public System
 {
 public:

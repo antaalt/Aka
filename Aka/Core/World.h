@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include "Component.h"
 #include "System.h"
+#include "Event.h"
 #include "Time.h"
 #include "Debug.h"
 #include "../Graphic/GraphicBackend.h"
@@ -36,6 +37,14 @@ public:
 	template <typename T, typename U, typename... Args>
 	void each(typename std::common_type<std::function<void(Entity*, T*, U*, Args*...)>>::type callback);
 
+	// Events
+	template <typename T>
+	void emit(T& event);
+	template <typename T>
+	void subscribe(EventSubscriber<T>* subscriber);
+	template <typename T>
+	void unsubscribe(EventSubscriber<T>* subscriber);
+
 	// Create all systems
 	void create();
 	// Destroy everything in this world (entities, components & systems)
@@ -49,6 +58,7 @@ private:
 	std::vector<Entity*> m_entities;
 	std::vector<Component*> m_components[Component::Type::size()];
 	std::vector<System*> m_systems;
+	std::map<uint8_t, std::vector<BaseEventSubscriber*>> m_subscribers;
 };
 
 template<typename T>
@@ -114,6 +124,35 @@ inline T* World::createSystem(Args&& ...args)
 	T *system = new T(this, std::forward<Args>(args)...);
 	m_systems.push_back(system);
 	return system;
+}
+
+template <typename T>
+void World::emit(T& event)
+{
+	auto it = m_subscribers.find(EventType::get<T>());
+	if (it != m_subscribers.end())
+		for (BaseEventSubscriber* subscriber : it->second)
+			reinterpret_cast<EventSubscriber<T>*>(subscriber)->receive(this, event);
+}
+template <typename T>
+void World::subscribe(EventSubscriber<T>* subscriber) {
+	auto it = m_subscribers.find(EventType::get<T>());
+	if (it == m_subscribers.end())
+	{
+		auto itSub = m_subscribers.insert(std::make_pair(EventType::get<T>(), std::vector<BaseEventSubscriber*>()));
+		itSub.first->second.push_back(subscriber);
+	}
+	else
+		it->second.push_back(subscriber);
+}
+template <typename T>
+void World::unsubscribe(EventSubscriber<T>* subscriber) {
+	auto it = m_subscribers.find(EventType::get<T>());
+	if (it != m_subscribers.end())
+	{
+		auto itSub = std::find(it->second.begin(), it->second.end(), subscriber);
+		it->second.erase(itSub);
+	}
 }
 
 }
