@@ -14,8 +14,8 @@ Animator::Animator(Sprite* sprite, int32_t layer) :
     currentAnimation(0),
     currentFrame(0),
     layer(layer),
-    animationTimer(Time::now()),
-    currentAnimationDuration(0)
+    animationTimer(),
+    currentAnimationDuration()
 {
 }
 
@@ -30,7 +30,7 @@ void Animator::play(const std::string& animation)
     ASSERT(a != nullptr, "No valid animation");
     currentAnimation = static_cast<uint32_t>(a - sprite->animations.data());
     currentFrame = 0;
-    animationTimer = 0;
+    animationTimer = Time::Unit();
     currentAnimationDuration = a->duration();
 }
 

@@ -10,7 +10,7 @@ namespace aka {
 
 PhysicSystem::PhysicSystem(World *world, Time::Unit timestep) :
 	System(world),
-	m_accumulator(0),
+	m_accumulator(),
 	m_timestep(timestep)
 {
 }

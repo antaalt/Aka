@@ -140,7 +140,7 @@ void Window::loop()
 	Time::Unit lastTick = Time::now();
 	do {
 		Time::Unit now = Time::now();
-		Time::Unit deltaTime = min<Time::Unit>(now - lastTick, 100);
+		Time::Unit deltaTime = min<Time::Unit>(now - lastTick, Time::Unit::milliseconds(100));
 		lastTick = now;
 		m_app->update(deltaTime);
 		m_app->render(m_backend);

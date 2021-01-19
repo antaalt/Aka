@@ -23,14 +23,15 @@ struct Time
 {
 	struct Unit {
 		Unit();
+	private:
+		friend struct Time;
 		Unit(uint64_t milliseconds);
 		Unit& operator=(uint64_t milliseconds);
-
+	public:
 		static Time::Unit milliseconds(uint64_t seconds);
 		static Time::Unit seconds(float seconds);
 
-		const uint64_t& operator()() const;
-		uint64_t& operator()();
+		uint64_t milliseconds() const;
 		float seconds() const;
 
 		Unit operator+(const Unit& rhs) const;

@@ -25,7 +25,7 @@ namespace aka {
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
 	Logger::debug.mute();
-	m_physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit(10));
+	m_physicSystem = m_world.createSystem<PhysicSystem>(Time::Unit::milliseconds(10));
 	m_tileSystem = m_world.createSystem<TileSystem>();
 	m_tileMapSystem = m_world.createSystem<TileMapSystem>();
 	m_animatorSystem = m_world.createSystem<AnimatorSystem>();
@@ -43,7 +43,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 		Sprite::Animation animation;
 		animation.name = "default";
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
 
@@ -77,7 +77,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		Sprite::Animation animation;
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
 		
@@ -108,7 +108,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Image image = Image::load(path);
 			width = image.width;
 			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 		}
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
@@ -246,7 +246,7 @@ void Game::update(Time::Unit deltaTime)
 									Sprite::Animation animation;
 									animation.name = "default";
 									Image image = Image::load(Asset::path(path));
-									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), 500));
+									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 									m_sprites.push_back(std::make_shared<Sprite>());
 									m_sprites.back()->animations.push_back(animation);
 									animator->sprite = m_sprites.back().get();
@@ -256,7 +256,7 @@ void Game::update(Time::Unit deltaTime)
 							{
 								for (Sprite::Animation& anim : animator->sprite->animations)
 								{
-									snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration()());
+									snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration().milliseconds());
 									if (ImGui::TreeNode(buffer))
 									{
 										strcpy_s(buffer, anim.name.c_str());
@@ -265,7 +265,7 @@ void Game::update(Time::Unit deltaTime)
 										int frameID = 0;
 										for (Sprite::Frame& frame : anim.frames)
 										{
-											snprintf(buffer, 256, "Frame %d (%llu ms)", frameID++, frame.duration());
+											snprintf(buffer, 256, "Frame %d (%llu ms)", frameID++, frame.duration.milliseconds());
 											if (ImGui::TreeNode(buffer))
 											{
 												float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());

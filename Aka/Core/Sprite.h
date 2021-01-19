@@ -13,7 +13,7 @@ struct Sprite {
 	struct Frame {
 		// TODO use subtexture with atlas
 		Texture::Ptr texture = nullptr;
-		Time::Unit duration = 0;
+		Time::Unit duration = Time::Unit();
 
 		void bind() { texture->bind(); }
 
@@ -25,7 +25,7 @@ struct Sprite {
 
 		// Whole duration of animation
 		Time::Unit duration() const {
-			Time::Unit duration = 0;
+			Time::Unit duration = Time::Unit();
 			for (const Frame& frame : frames)
 				duration += frame.duration;
 			return duration;

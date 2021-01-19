@@ -49,12 +49,7 @@ Time::Unit Time::Unit::seconds(float seconds)
 	return Time::Unit(static_cast<uint64_t>(seconds * 1000.f));
 }
 
-const uint64_t& Time::Unit::operator()() const
-{
-	return m_value;
-}
-
-uint64_t& Time::Unit::operator()()
+uint64_t Time::Unit::milliseconds() const
 {
 	return m_value;
 }
