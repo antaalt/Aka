@@ -23,6 +23,7 @@
 #include "System/CameraSystem.h"
 #include "System/CollisionSystem.h"
 #include "System/PlayerSystem.h"
+#include "System/CoinSystem.h"
 
 #include <sstream>
 #include <imgui.h>
@@ -43,10 +44,26 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	m_world.createSystem<CameraSystem>();
 	m_world.createSystem<TextRenderSystem>();
 	m_world.createSystem<PlayerSystem>();
+	m_world.createSystem<CoinSystem>();
 
 	// INIT FRAMEBUFFER
 	m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
 
+	{
+		// INIT FONTS
+		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Espera/Espera-Bold.ttf"), 48));
+		m_textEntity = m_world.createEntity();
+		Transform2D* transform = m_textEntity->add<Transform2D>(Transform2D());
+		Text* text = m_textEntity->add<Text>(Text());
+
+		text->color = color4f(1.f);
+		text->font = m_fonts.back().get();
+		text->text = "Hello World !";
+		text->layer = 3;
+		vec2i size = m_fonts.back()->size(text->text);
+		transform->position = vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2 - 50));
+		transform->size = vec2f(1.f);
+	}
 	{
 		// INIT FIXED TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));
@@ -130,6 +147,11 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
 		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
 		m_characterEntity->add<Player>(Player());
+		Text * text = m_characterEntity->add<Text>(Text());
+		text->color = color4f(1.f);
+		text->font = m_fonts[0].get();
+		text->layer = 3;
+		text->text = "0";
 	}
 	{
 		// INIT coin
@@ -147,7 +169,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Image image = Image::load(path);
 			width = image.width;
 			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(300)));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(100)));
 		}
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
@@ -156,26 +178,36 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		animation.name = "idle";
 		animation.frames.push_back(Sprite::Frame::create(tex, Time::Unit::milliseconds(500)));
 		m_sprites.back()->animations.push_back(animation);
+
 		Entity *e = m_world.createEntity();
+		e->add<Transform2D>(Transform2D(vec2f(80, 80), vec2f(16, 16), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+		e->add<Coin>(Coin());
+
+		e = m_world.createEntity();
+		e->add<Transform2D>(Transform2D(vec2f(100, 80), vec2f(16, 16), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+		e->add<Coin>(Coin());
+
+		e = m_world.createEntity();
 		e->add<Transform2D>(Transform2D(vec2f(120, 80), vec2f(16, 16), radianf(0)));
 		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
 		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		e->add<Coin>(Coin());
-	}
-	{
-		// INIT FONTS
-		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Espera/Espera-Bold.ttf"), 48));
-		m_textEntity = m_world.createEntity();
-		Transform2D* transform = m_textEntity->add<Transform2D>(Transform2D());
-		Text* text = m_textEntity->add<Text>(Text());
 
-		text->color = color4f(1.f);
-		text->font = m_fonts.back().get();
-		text->text = "Hello World !";
-		text->layer = 3;
-		vec2i size = m_fonts.back()->size(text->text);
-		transform->position = vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2));
-		transform->size = vec2f(1.f);
+		e = m_world.createEntity();
+		e->add<Transform2D>(Transform2D(vec2f(260, 96), vec2f(16, 16), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+		e->add<Coin>(Coin());
+
+		e = m_world.createEntity();
+		e->add<Transform2D>(Transform2D(vec2f(280, 96), vec2f(16, 16), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+		e->add<Coin>(Coin());
 	}
 
 	window.setSizeLimits(m_framebuffer->width(), m_framebuffer->height(), GLFW_DONT_CARE, GLFW_DONT_CARE);

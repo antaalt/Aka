@@ -24,10 +24,11 @@ public:
 	template <typename T, typename... Args>
 	T* createSystem(Args&& ...args);
 
+private:
 	void destroyEntity(Entity* entity);
+public:
 	void destroyComponent(Component* component);
 	void destroySystem(System* system);
-
 	template <typename T>
 	T *add(Entity& entity, T&& component);
 
@@ -55,9 +56,9 @@ public:
 	void draw(Batch &batch);
 private:
 	// Using std list might be faster memory wise
-	std::vector<Entity*> m_entities;
-	std::vector<Component*> m_components[Component::Type::size()];
-	std::vector<System*> m_systems;
+	std::list<Entity*> m_entities;
+	std::list<Component*> m_components[Component::Type::size()];
+	std::list<System*> m_systems;
 	std::map<uint8_t, std::vector<BaseEventSubscriber*>> m_subscribers;
 };
 

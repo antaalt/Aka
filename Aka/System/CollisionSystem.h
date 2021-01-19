@@ -9,6 +9,8 @@ struct CollisionEvent {
 	Entity* left;
 	Entity* right;
 	vec2f separation;
+
+	void resolve() const;
 };
 
 class CollisionSystem : public System

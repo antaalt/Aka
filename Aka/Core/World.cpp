@@ -99,6 +99,23 @@ void World::update(Time::Unit deltaTime)
 	{
 		system->update(deltaTime);
 	}
+	// Destroy entities marked as dead
+	for (auto it = m_entities.begin(); it != m_entities.end();)
+	{
+		if (!(*it)->m_alive)
+		{
+			// Destroy entity components before destroying entity
+			for (Component* component : (*it)->m_components)
+				destroyComponent(component);
+			delete (*it);
+			// Destroy entity
+			it = m_entities.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
 }
 
 void World::draw(Batch& batch)

@@ -21,6 +21,9 @@ struct Entity final
 	template <typename T>
 	void remove();
 
+	// Mark as destroyed
+	void destroy();
+
 	// Get the component for the entity
 	template <typename T>
 	T* get();
@@ -37,6 +40,7 @@ private:
 	Entity(World* world);
 	~Entity() {}
 
+	bool m_alive;
 	World* m_world;
 	std::vector<Component*> m_components;
 };

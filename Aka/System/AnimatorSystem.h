@@ -5,6 +5,10 @@
 
 namespace aka {
 
+struct AnimationFinishedEvent {
+	Entity* entity;
+};
+
 class AnimatorSystem: public System
 {
 public:
