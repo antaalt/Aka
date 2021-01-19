@@ -16,9 +16,7 @@ Aka stand for red in japanese (赤) and there is no particular reason for this n
 -   Use stb_true_type for less big dependencies (freetype)
 -   Parse aseprite files directly
 -   Project to CMake to support build for Linux
--   Rework file structure to remove dependencies on visual studio filters
 -   Add support for joystick
--   Add strict type for id
--   Compatibility with mac and linux
+-   Compatibility with linux
 -   Add sound support (OpenAL / Juce)
 -   Let's work on a game !
