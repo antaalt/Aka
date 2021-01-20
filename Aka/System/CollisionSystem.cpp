@@ -39,8 +39,9 @@ void CollisionEvent::resolve() const
 {
 	RigidBody2D* rigid = left->get<RigidBody2D>();
 	Transform2D* transform = left->get<Transform2D>();
-	Collider2D* collider = left->get<Collider2D>();
-	Collider2D* otherCollider = right->get<Collider2D>();
+	Collider2D*  collider = left->get<Collider2D>();
+	RigidBody2D* otherRigid = right->get<RigidBody2D>();
+	Collider2D*  otherCollider = right->get<Collider2D>();
 
 	// Adjust velocity
 	// Get normal 
@@ -50,11 +51,8 @@ void CollisionEvent::resolve() const
 	// Get penetration speed
 	float ps = vec2f::dot(v, normal);
 	// objects moving towards each other ?
-	if (ps <= 0.f)
-	{
-		// Move the rigid & its collider to avoid overlapping.
-		transform->position += separation;
-	}
+	if (ps > 0.f)
+		return;
 	// Get penetration component
 	vec2f p = normal * ps;
 	// tangent component
@@ -66,6 +64,12 @@ void CollisionEvent::resolve() const
 	// Change the velocity of shape a
 	rigid->acceleration = vec2f(0);
 	rigid->velocity = rigid->velocity - p * r + t * f;
+	if (otherRigid != nullptr) {
+		otherRigid->acceleration = vec2f(0.f);
+		otherRigid->velocity = otherRigid->velocity + (p * r + t * f);
+	}
+	// Move the rigid & its collider to avoid overlapping.
+	transform->position += separation;
 }
 
 };
