@@ -174,7 +174,7 @@ void Batch::clear()
 	m_currentBatch.layer = 0;
 }
 
-void Batch::render(Framebuffer::Ptr framebuffer)
+void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& projection)
 {
 	RenderPass renderPass {};
 	{
@@ -198,7 +198,7 @@ void Batch::render(Framebuffer::Ptr framebuffer)
 			m_mesh = Mesh::create();
 		// TODO build matrix out of here to support more projection type
 		m_shader->use();
-		m_shader->set<mat4f>("u_matrix", mat4f::orthographic(0.f, static_cast<float>(framebuffer->height()), 0.f, static_cast<float>(framebuffer->width()), -1.f, 1.f));
+		m_shader->set<mat4f>("u_matrix", projection);
 	}
 
 	{

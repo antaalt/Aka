@@ -69,7 +69,7 @@ public:
 	void clear();
 
 	// Render to specified framebuffer
-	void render(Framebuffer::Ptr framebuffer);
+	void render(Framebuffer::Ptr framebuffer, const mat4f &projection);
 private:
 	struct Vertex {
 		vec2f position;

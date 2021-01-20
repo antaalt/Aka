@@ -258,6 +258,24 @@ void Game::frame()
 // collision -> if hurtable and collider has component damage
 void Game::update(Time::Unit deltaTime)
 {
+	if (input::pressed(input::Key::F1))
+	{
+		glFinish();
+		Image image;
+		image.width = screenWidth();
+		image.height = screenHeight();
+		image.bytes.resize(image.width * image.height * 4);
+		std::vector<uint8_t> bytes(image.bytes.size());
+		glReadPixels(0, 0, screenWidth(), screenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, bytes.data());
+		uint32_t stride = 4 * image.width;
+		for (uint32_t y = 0; y < image.height; y++)
+			memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
+		image.save("./output.jpg");
+	}
+	if (input::down(input::Key::H))
+	{
+		m_displayUI = !m_displayUI;
+	}
 	// Update world after moving manually objects
 	m_world.update(deltaTime);
 }
@@ -267,9 +285,10 @@ void Game::render(GraphicBackend& backend)
 	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
 	m_framebuffer->bind(Framebuffer::Type::Both);
 	backend.clear(0.f, 0.f, 0.f, 1.f);
+	mat4f projection = mat4f::orthographic(0.f, static_cast<float>(m_framebuffer->height()), 0.f, static_cast<float>(m_framebuffer->width()), -1.f, 1.f);
 	// draw background
 	m_world.draw(m_batch);
-	m_batch.render(m_framebuffer);
+	m_batch.render(m_framebuffer, projection);
 
 	// Blit to main buffer
 	uint32_t widthRatio = screenWidth() / m_framebuffer->width();
@@ -296,270 +315,273 @@ void Game::render(GraphicBackend& backend)
 	m_framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
 
 	// Rendering imgui
-	if (ImGui::Begin("Editor##window"))
+	if (m_displayUI)
 	{
-		ImVec4 color = ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
-		if (ImGui::CollapsingHeader("Infos", ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::Begin("Editor##window"))
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			ImGui::Text("Resolution : %ux%u", screenWidth(), screenHeight());
-			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
-			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-		}
+			ImVec4 color = ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
+			if (ImGui::CollapsingHeader("Infos", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGuiIO& io = ImGui::GetIO();
+				ImGui::Text("Resolution : %ux%u", screenWidth(), screenHeight());
+				ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
+				ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+			}
 
-		if (ImGui::CollapsingHeader("Entities##header", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			ImGui::TextColored(color, "Entities");
-			// TODO add filter
-			int index = 0;
-			m_world.each([&](Entity* entity) {
-				char buffer[256];
-				snprintf(buffer, 256, "Entity %d", index++);
-				if (ImGui::TreeNode(buffer))
-				{
-					// --- Transform2D
-					if (entity->has<Transform2D>())
+			if (ImGui::CollapsingHeader("Entities##header", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::TextColored(color, "Entities");
+				// TODO add filter
+				int index = 0;
+				m_world.each([&](Entity* entity) {
+					char buffer[256];
+					snprintf(buffer, 256, "Entity %d", index++);
+					if (ImGui::TreeNode(buffer))
 					{
-						Transform2D* transform = entity->get<Transform2D>();
-						snprintf(buffer, 256, "Transform2D##%p", transform);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						// --- Transform2D
+						if (entity->has<Transform2D>())
 						{
-							ImGui::InputFloat2("Position", transform->position.data, 3);
-							ImGui::InputFloat2("Size", transform->size.data, 3);
-							ImGui::InputFloat("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
-
-							if (ImGui::Button("Remove")) { entity->remove<Transform2D>(); }
-
-							ImGui::TreePop();
-						}
-					}
-					// --- Animator
-					if (entity->has<Animator>())
-					{
-						Animator* animator = entity->get<Animator>();
-						snprintf(buffer, 256, "Animator##%p", animator);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
-						{
-							if (animator->sprite == nullptr)
+							Transform2D* transform = entity->get<Transform2D>();
+							snprintf(buffer, 256, "Transform2D##%p", transform);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								static char path[256];
-								ImGui::InputText("Path", path, 256);
-								if (ImGui::Button("Load sprite"))
-								{
-									Sprite::Animation animation;
-									animation.name = "default";
-									Image image = Image::load(Asset::path(path));
-									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
-									m_sprites.push_back(std::make_shared<Sprite>());
-									m_sprites.back()->animations.push_back(animation);
-									animator->sprite = m_sprites.back().get();
-								}
+								ImGui::InputFloat2("Position", transform->position.data, 3);
+								ImGui::InputFloat2("Size", transform->size.data, 3);
+								ImGui::InputFloat("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
+
+								if (ImGui::Button("Remove")) { entity->remove<Transform2D>(); }
+
+								ImGui::TreePop();
 							}
-							else
+						}
+						// --- Animator
+						if (entity->has<Animator>())
+						{
+							Animator* animator = entity->get<Animator>();
+							snprintf(buffer, 256, "Animator##%p", animator);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								for (Sprite::Animation& anim : animator->sprite->animations)
+								if (animator->sprite == nullptr)
 								{
-									snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration().milliseconds());
-									if (ImGui::TreeNode(buffer))
+									static char path[256];
+									ImGui::InputText("Path", path, 256);
+									if (ImGui::Button("Load sprite"))
 									{
-										strcpy_s(buffer, anim.name.c_str());
-										if (ImGui::InputText("Name", buffer, 256))
-											anim.name = buffer;
-										int frameID = 0;
-										for (Sprite::Frame& frame : anim.frames)
+										Sprite::Animation animation;
+										animation.name = "default";
+										Image image = Image::load(Asset::path(path));
+										animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+										m_sprites.push_back(std::make_shared<Sprite>());
+										m_sprites.back()->animations.push_back(animation);
+										animator->sprite = m_sprites.back().get();
+									}
+								}
+								else
+								{
+									for (Sprite::Animation& anim : animator->sprite->animations)
+									{
+										snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration().milliseconds());
+										if (ImGui::TreeNode(buffer))
 										{
-											snprintf(buffer, 256, "Frame %d (%llu ms)", frameID++, frame.duration.milliseconds());
-											if (ImGui::TreeNode(buffer))
+											strcpy_s(buffer, anim.name.c_str());
+											if (ImGui::InputText("Name", buffer, 256))
+												anim.name = buffer;
+											int frameID = 0;
+											for (Sprite::Frame& frame : anim.frames)
 											{
-												float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());
-												ImGui::Image((void*)(uintptr_t)(frame.texture->id().value()), ImVec2(256, 256 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
+												snprintf(buffer, 256, "Frame %d (%llu ms)", frameID++, frame.duration.milliseconds());
+												if (ImGui::TreeNode(buffer))
+												{
+													float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());
+													ImGui::Image((void*)(uintptr_t)(frame.texture->id().value()), ImVec2(256, 256 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
 
-												ImGui::TreePop();
+													ImGui::TreePop();
+												}
 											}
+											ImGui::TreePop();
 										}
-										ImGui::TreePop();
 									}
 								}
+
+								ImGui::SliderInt("Animation", reinterpret_cast<int*>(&animator->currentAnimation), 0, animator->sprite ? (int)animator->sprite->animations.size() - 1 : 0);
+								ImGui::SliderInt("Frame", reinterpret_cast<int*>(&animator->currentFrame), 0, animator->sprite ? (int)animator->sprite->animations[animator->currentAnimation].frames.size() - 1 : 0);
+								ImGui::SliderInt("Layer", &animator->layer, -20, 20);
+
+								if (ImGui::Button("Remove")) { entity->remove<Animator>(); }
+
+								ImGui::TreePop();
 							}
-
-							ImGui::SliderInt("Animation", reinterpret_cast<int*>(&animator->currentAnimation), 0, animator->sprite ? (int)animator->sprite->animations.size() - 1 : 0);
-							ImGui::SliderInt("Frame", reinterpret_cast<int*>(&animator->currentFrame), 0, animator->sprite ? (int)animator->sprite->animations[animator->currentAnimation].frames.size() - 1 : 0);
-							ImGui::SliderInt("Layer", &animator->layer, -20, 20);
-
-							if (ImGui::Button("Remove")) { entity->remove<Animator>(); }
-
-							ImGui::TreePop();
 						}
-					}
-					// --- Collider2D
-					if (entity->has<Collider2D>())
-					{
-						Collider2D* collider = entity->get<Collider2D>();
-						snprintf(buffer, 256, "Collider2D##%p", collider);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						// --- Collider2D
+						if (entity->has<Collider2D>())
 						{
-							ImGui::InputFloat2("Position", collider->position.data, 3);
-							ImGui::InputFloat2("Size", collider->size.data, 3);
-							ImGui::InputFloat("Bouncing", &collider->bouncing, 0.1f, 1.f, 2);
-							ImGui::InputFloat("Friction", &collider->friction, 0.1f, 1.f, 2);
-
-							if (ImGui::Button("Remove")) { entity->remove<Collider2D>(); }
-
-							ImGui::TreePop();
-						}
-					}
-					// --- RigidBody2D
-					if (entity->has<RigidBody2D>())
-					{
-						RigidBody2D* rigid = entity->get<RigidBody2D>();
-						snprintf(buffer, 256, "RigidBody2D##%p", rigid);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
-						{
-							ImGui::InputFloat("Mass", &rigid->mass, 0.1f, 1.f, 2);
-							ImGui::InputFloat2("Acceleration", rigid->acceleration.data, 3);
-							ImGui::InputFloat2("Velocity", rigid->velocity.data, 3);
-
-							if (ImGui::Button("Remove")) { entity->remove<RigidBody2D>(); }
-
-							ImGui::TreePop();
-						}
-					}
-					// --- TileMap
-					if (entity->has<TileMap>())
-					{
-						TileMap* map = entity->get<TileMap>();
-						snprintf(buffer, 256, "TileMap##%p", map);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
-						{
-							vec2i gridCount = vec2i(map->gridCount);
-							vec2i gridSize = vec2i(map->gridSize);
-							if (ImGui::InputInt2("Grid count", gridCount.data))
-								map->gridCount = vec2u(gridCount);
-							if (ImGui::InputInt2("Grid size", gridSize.data))
-								map->gridSize = vec2u(gridSize);
-							if (map->texture == nullptr)
+							Collider2D* collider = entity->get<Collider2D>();
+							snprintf(buffer, 256, "Collider2D##%p", collider);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								// TODO load texture button
+								ImGui::InputFloat2("Position", collider->position.data, 3);
+								ImGui::InputFloat2("Size", collider->size.data, 3);
+								ImGui::InputFloat("Bouncing", &collider->bouncing, 0.1f, 1.f, 2);
+								ImGui::InputFloat("Friction", &collider->friction, 0.1f, 1.f, 2);
+
+								if (ImGui::Button("Remove")) { entity->remove<Collider2D>(); }
+
+								ImGui::TreePop();
 							}
-							else
-							{
-								float ratio = static_cast<float>(map->texture->width()) / static_cast<float>(map->texture->height());
-								ImGui::Image((void*)(uintptr_t)(map->texture->id().value()), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
-							}
-							if (ImGui::Button("Remove")) { entity->remove<TileMap>(); }
-
-							ImGui::TreePop();
 						}
-					}
-					// --- TileLayer
-					if (entity->has<TileLayer>())
-					{
-						TileLayer* layer = entity->get<TileLayer>();
-						snprintf(buffer, 256, "TileLayer##%p", layer);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						// --- RigidBody2D
+						if (entity->has<RigidBody2D>())
 						{
-							vec2i gridCount = vec2i(layer->gridCount);
-							vec2i gridSize = vec2i(layer->gridSize);
-							if (ImGui::InputInt2("Grid count", gridCount.data))
-								layer->gridCount = vec2u(gridCount);
-							if (ImGui::InputInt2("Grid size", gridSize.data))
-								layer->gridSize = vec2u(gridSize);
-
-							static int id = 0;
-							if (layer->tileID.size() >= 4)
+							RigidBody2D* rigid = entity->get<RigidBody2D>();
+							snprintf(buffer, 256, "RigidBody2D##%p", rigid);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								ImGui::SliderInt("Index", &id, 0, (int)layer->tileID.size() - 4);
-								ImGui::InputInt4("TileID", layer->tileID.data() + id);
+								ImGui::InputFloat("Mass", &rigid->mass, 0.1f, 1.f, 2);
+								ImGui::InputFloat2("Acceleration", rigid->acceleration.data, 3);
+								ImGui::InputFloat2("Velocity", rigid->velocity.data, 3);
+
+								if (ImGui::Button("Remove")) { entity->remove<RigidBody2D>(); }
+
+								ImGui::TreePop();
 							}
-							ImGui::SliderInt("Layer", &layer->layer, -20, 20);
-							ImGui::InputFloat4("Color", layer->color.data, 3);
-
-							if (ImGui::Button("Remove")) { entity->remove<TileLayer>(); }
-
-							ImGui::TreePop();
 						}
-					}
-					// --- Text
-					if (entity->has<Text>())
-					{
-						Text* text = entity->get<Text>();
-						snprintf(buffer, 256, "Text##%p", text);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						// --- TileMap
+						if (entity->has<TileMap>())
 						{
-							ImGui::InputFloat4("Color", text->color.data, 3);
-							ImGui::SliderInt("Layer", &text->layer, -20, 20);
-
-							uint32_t currentHeight = text->font->height();
-							const char* currentFont = text->font->family().c_str();
-							snprintf(buffer, 256, "%s (%u)", text->font->family().c_str(), text->font->height());
-							if (ImGui::BeginCombo("Font", buffer))
+							TileMap* map = entity->get<TileMap>();
+							snprintf(buffer, 256, "TileMap##%p", map);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								for (int n = 0; n < m_fonts.size(); n++)
+								vec2i gridCount = vec2i(map->gridCount);
+								vec2i gridSize = vec2i(map->gridSize);
+								if (ImGui::InputInt2("Grid count", gridCount.data))
+									map->gridCount = vec2u(gridCount);
+								if (ImGui::InputInt2("Grid size", gridSize.data))
+									map->gridSize = vec2u(gridSize);
+								if (map->texture == nullptr)
 								{
-									bool sameHeight = (currentHeight == m_fonts[n]->height());
-									bool sameFamily = (currentFont == m_fonts[n]->family().c_str());
-									bool sameFont = sameHeight && sameFamily;
-									snprintf(buffer, 256, "%s (%u)", m_fonts[n]->family().c_str(), m_fonts[n]->height());
-									if (ImGui::Selectable(buffer, sameFont))
-									{
-										if (!sameFont)
-											text->font = m_fonts[n].get();
-									}
-									if (sameFont)
-										ImGui::SetItemDefaultFocus();
+									// TODO load texture button
 								}
-								ImGui::EndCombo();
+								else
+								{
+									float ratio = static_cast<float>(map->texture->width()) / static_cast<float>(map->texture->height());
+									ImGui::Image((void*)(uintptr_t)(map->texture->id().value()), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
+								}
+								if (ImGui::Button("Remove")) { entity->remove<TileMap>(); }
+
+								ImGui::TreePop();
 							}
-
-							char t[256];
-							strcpy_s(t, text->text.c_str());
-							if (ImGui::InputText("Text", t, 256))
-								text->text = t;
-
-							if (ImGui::Button("Remove")) { entity->remove<Text>(); }
-
-							ImGui::TreePop();
 						}
-					}
-					// --- Add component
-					static const int componentCount = 7;
-					static const char* components[componentCount] = {
-						"Transform2D",
-						"Animator",
-						"Collider2D",
-						"RigidBody2D",
-						"Text",
-						"TileMap",
-						"TileLayer",
-					};
-					static int currentComponent = 0;
-					if (ImGui::Button("Add")) {
-						switch (currentComponent)
+						// --- TileLayer
+						if (entity->has<TileLayer>())
 						{
-						case 0: entity->add<Transform2D>(Transform2D()); break;
-						case 1:  entity->add<Animator>(Animator()); break;
-						case 2: entity->add<Collider2D>(Collider2D()); break;
-						case 3: entity->add<RigidBody2D>(RigidBody2D()); break;
-						case 4: entity->add<Text>(Text()); break;
-						case 5: entity->add<TileMap>(TileMap()); break;
-						case 6: entity->add<TileLayer>(TileLayer()); break;
+							TileLayer* layer = entity->get<TileLayer>();
+							snprintf(buffer, 256, "TileLayer##%p", layer);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								vec2i gridCount = vec2i(layer->gridCount);
+								vec2i gridSize = vec2i(layer->gridSize);
+								if (ImGui::InputInt2("Grid count", gridCount.data))
+									layer->gridCount = vec2u(gridCount);
+								if (ImGui::InputInt2("Grid size", gridSize.data))
+									layer->gridSize = vec2u(gridSize);
+
+								static int id = 0;
+								if (layer->tileID.size() >= 4)
+								{
+									ImGui::SliderInt("Index", &id, 0, (int)layer->tileID.size() - 4);
+									ImGui::InputInt4("TileID", layer->tileID.data() + id);
+								}
+								ImGui::SliderInt("Layer", &layer->layer, -20, 20);
+								ImGui::InputFloat4("Color", layer->color.data, 3);
+
+								if (ImGui::Button("Remove")) { entity->remove<TileLayer>(); }
+
+								ImGui::TreePop();
+							}
 						}
+						// --- Text
+						if (entity->has<Text>())
+						{
+							Text* text = entity->get<Text>();
+							snprintf(buffer, 256, "Text##%p", text);
+							if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								ImGui::InputFloat4("Color", text->color.data, 3);
+								ImGui::SliderInt("Layer", &text->layer, -20, 20);
+
+								uint32_t currentHeight = text->font->height();
+								const char* currentFont = text->font->family().c_str();
+								snprintf(buffer, 256, "%s (%u)", text->font->family().c_str(), text->font->height());
+								if (ImGui::BeginCombo("Font", buffer))
+								{
+									for (int n = 0; n < m_fonts.size(); n++)
+									{
+										bool sameHeight = (currentHeight == m_fonts[n]->height());
+										bool sameFamily = (currentFont == m_fonts[n]->family().c_str());
+										bool sameFont = sameHeight && sameFamily;
+										snprintf(buffer, 256, "%s (%u)", m_fonts[n]->family().c_str(), m_fonts[n]->height());
+										if (ImGui::Selectable(buffer, sameFont))
+										{
+											if (!sameFont)
+												text->font = m_fonts[n].get();
+										}
+										if (sameFont)
+											ImGui::SetItemDefaultFocus();
+									}
+									ImGui::EndCombo();
+								}
+
+								char t[256];
+								strcpy_s(t, text->text.c_str());
+								if (ImGui::InputText("Text", t, 256))
+									text->text = t;
+
+								if (ImGui::Button("Remove")) { entity->remove<Text>(); }
+
+								ImGui::TreePop();
+							}
+						}
+						// --- Add component
+						static const int componentCount = 7;
+						static const char* components[componentCount] = {
+							"Transform2D",
+							"Animator",
+							"Collider2D",
+							"RigidBody2D",
+							"Text",
+							"TileMap",
+							"TileLayer",
+						};
+						static int currentComponent = 0;
+						if (ImGui::Button("Add")) {
+							switch (currentComponent)
+							{
+							case 0: entity->add<Transform2D>(Transform2D()); break;
+							case 1:  entity->add<Animator>(Animator()); break;
+							case 2: entity->add<Collider2D>(Collider2D()); break;
+							case 3: entity->add<RigidBody2D>(RigidBody2D()); break;
+							case 4: entity->add<Text>(Text()); break;
+							case 5: entity->add<TileMap>(TileMap()); break;
+							case 6: entity->add<TileLayer>(TileLayer()); break;
+							}
+						}
+						ImGui::SameLine();
+						ImGui::Combo("Component", &currentComponent, components, componentCount);
+						ImGui::TreePop();
 					}
-					ImGui::SameLine();
-					ImGui::Combo("Component", &currentComponent, components, componentCount);
-					ImGui::TreePop();
+					ImGui::Separator();
+				});
+				if (ImGui::Button("Add entity")) {
+					m_world.createEntity();
 				}
-				ImGui::Separator();
-			});
-			if (ImGui::Button("Add entity")) {
-				m_world.createEntity();
+			}
+			if (ImGui::CollapsingHeader("Resources##header", ImGuiTreeNodeFlags_DefaultOpen))
+			{
 			}
 		}
-		if (ImGui::CollapsingHeader("Resources##header", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-		}
+		ImGui::End();
 	}
-	ImGui::End();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

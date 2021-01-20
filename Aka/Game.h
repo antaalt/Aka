@@ -27,6 +27,8 @@ public:
 	void update(Time::Unit deltaTime) override;
 	void render(GraphicBackend& backend) override;
 private:
+	// UI
+	bool m_displayUI = true;
 	// Resources
 	std::vector<std::shared_ptr<Font>> m_fonts;
 	std::vector<std::shared_ptr<Sprite>> m_sprites;

@@ -11,6 +11,8 @@ struct Image
 	static Image load(const uint8_t* binaries, size_t size);
 	static Image load(const std::vector<uint8_t>& binaries);
 
+	void save(const Path& path);
+
 	std::vector<uint8_t> bytes;
 	uint32_t width, height;
 };
