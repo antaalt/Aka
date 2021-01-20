@@ -113,7 +113,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 
 		if (input::pressed(input::Key::LeftCtrl))
 		{
-			transform->position = vec2f(192.f, 160.f);
+			transform->position = vec2f(80, 224);
 		}
 	});
 }

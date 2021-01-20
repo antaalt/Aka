@@ -16,7 +16,7 @@ TileSystem::TileSystem(World* world) :
 void TileSystem::draw(Batch &batch)
 {
     const mat3f model = mat3f::identity();
-    m_world->each<Animator, Transform2D>([&](Entity *entity, Animator *animator, Transform2D* transform) {
+    m_world->each<Animator>([&](Entity *entity, Animator *animator) {
         uv2f uv0 = uv2f(0.f);
         uv2f uv1 = uv2f(1.f);
         if (animator->flipU)
@@ -29,7 +29,16 @@ void TileSystem::draw(Batch &batch)
             uv0.v = 1.f - uv0.v;
             uv1.v = 1.f - uv1.v;
         }
-        batch.draw(model, Batch::Rect(transform->position, transform->size, uv0, uv1, animator->getCurrentSpriteFrame().texture, animator->layer));
+        Transform2D* transform = entity->get<Transform2D>();
+        Texture::Ptr texture = animator->getCurrentSpriteFrame().texture;
+        vec2f position = vec2f(0.f);
+        vec2f size = vec2f(texture->width(), texture->height());
+        if (transform != nullptr)
+        {
+            position = transform->position;
+            size = transform->size;
+        }
+        batch.draw(model, Batch::Rect(position, size, uv0, uv1, texture, animator->layer));
     });
 }
 

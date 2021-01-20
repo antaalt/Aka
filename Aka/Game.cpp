@@ -77,7 +77,6 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_sprites.back()->animations.push_back(animation);
 
 		m_backgroundEntity = m_world.createEntity();
-		m_backgroundEntity->add<Transform2D>(Transform2D(vec2f(0), vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()), radianf(0)));
 		m_backgroundEntity->add<Animator>(Animator(m_sprites.back().get(), -2))->play("default");
 	}
 	{
@@ -116,7 +115,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Entity* collider = m_world.createEntity();
 			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
 			collider->add<Collider2D>(Collider2D());
-			collider->add<Animator>(Animator(m_sprites.back().get(), 1));
+			//collider->add<Animator>(Animator(m_sprites.back().get(), 1));
 		}
 	}
 	{
@@ -125,7 +124,6 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		// TODO load gif ?
 		Sprite::Animation animation;
 		animation.name = "idle";
-		vec2f characterSize = vec2f(13, 17);
 		std::vector<Path> frames = {
 			Asset::path("textures/player/player01.png"),
 			Asset::path("textures/player/player02.png"),
@@ -142,7 +140,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
 		m_characterEntity = m_world.createEntity();
-		m_characterEntity->add<Transform2D>(Transform2D(vec2f((float)m_framebuffer->width(), (float)m_framebuffer->height()) / 2.f, vec2f((float)width, (float)height), radianf(0)));
+		m_characterEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f((float)width, (float)height), radianf(0)));
 		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
 		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
@@ -256,13 +254,6 @@ void Game::frame()
 // collision -> if hurtable and collider has component damage
 void Game::update(Time::Unit deltaTime)
 {
-	Transform2D* transform = m_characterEntity->get<Transform2D>();
-	if (transform->position.y < -transform->size.y)
-	{
-		// teleport above
-		transform->position = vec2f(transform->position.x, (float)m_framebuffer->height());
-	}
-
 	// Update world after moving manually objects
 	m_world.update(deltaTime);
 }
