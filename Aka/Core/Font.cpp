@@ -19,6 +19,7 @@ Font::Font(const Path& path, uint32_t height)
 
     m_familyName = face->family_name;
     m_styleName = face->style_name;
+    m_height = height;
 
     // TODO build atlas texture for font packer
     for (unsigned char c = 0; c < 128; c++)
@@ -89,9 +90,14 @@ const std::string& Font::family() const
     return m_familyName;
 }
 
-const std::string Font::style() const
+const std::string& Font::style() const
 {
     return m_styleName;
+}
+
+uint32_t Font::height() const
+{
+    return m_height;
 }
 
 }

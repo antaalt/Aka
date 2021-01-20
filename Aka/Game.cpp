@@ -52,14 +52,17 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	{
 		// INIT FONTS
 		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Espera/Espera-Bold.ttf"), 48));
+		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Espera/Espera-Bold.ttf"), 16));
+		m_fonts.push_back(std::make_shared<Font>(Asset::path("font/Theboldfont/theboldfont.ttf"), 48));
 		m_textEntity = m_world.createEntity();
 		Transform2D* transform = m_textEntity->add<Transform2D>(Transform2D());
 		Text* text = m_textEntity->add<Text>(Text());
 
+		text->offset = vec2f(0.f);
 		text->color = color4f(1.f);
 		text->font = m_fonts.back().get();
 		text->text = "Hello World !";
-		text->layer = 3;
+		text->layer = 0;
 		vec2i size = m_fonts.back()->size(text->text);
 		transform->position = vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2 - 50));
 		transform->size = vec2f(1.f);
@@ -151,8 +154,9 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		player->right = Control(input::Key::D);
 
 		Text * text = m_characterEntity->add<Text>(Text());
+		text->offset = vec2f(3.f, 17.f);
 		text->color = color4f(1.f);
-		text->font = m_fonts[0].get();
+		text->font = m_fonts[1].get();
 		text->layer = 3;
 		text->text = "0";
 	}
@@ -485,22 +489,23 @@ void Game::render(GraphicBackend& backend)
 							ImGui::InputFloat4("Color", text->color.data, 3);
 							ImGui::SliderInt("Layer", &text->layer, -20, 20);
 
-							static int currentFontID = 0;
-							const char* currentFont = m_fonts[currentFontID]->family().c_str();
-							if (ImGui::BeginCombo("Font", currentFont))
+							uint32_t currentHeight = text->font->height();
+							const char* currentFont = text->font->family().c_str();
+							snprintf(buffer, 256, "%s (%u)", text->font->family().c_str(), text->font->height());
+							if (ImGui::BeginCombo("Font", buffer))
 							{
 								for (int n = 0; n < m_fonts.size(); n++)
 								{
-									bool is_selected = (currentFont == m_fonts[n]->family().c_str());
-									if (ImGui::Selectable(m_fonts[n]->family().c_str(), is_selected))
+									bool sameHeight = (currentHeight == m_fonts[n]->height());
+									bool sameFamily = (currentFont == m_fonts[n]->family().c_str());
+									bool sameFont = sameHeight && sameFamily;
+									snprintf(buffer, 256, "%s (%u)", m_fonts[n]->family().c_str(), m_fonts[n]->height());
+									if (ImGui::Selectable(buffer, sameFont))
 									{
-										if (n != currentFontID)
-										{
+										if (!sameFont)
 											text->font = m_fonts[n].get();
-											currentFontID = n;
-										}
 									}
-									if (is_selected)
+									if (sameFont)
 										ImGui::SetItemDefaultFocus();
 								}
 								ImGui::EndCombo();

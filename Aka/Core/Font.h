@@ -27,9 +27,12 @@ struct Font {
 
 	const std::string& family() const;
 
-	const std::string style() const;
+	const std::string& style() const;
+
+	uint32_t height() const;
 
 private:
+	uint32_t m_height;
 	std::string m_familyName;
 	std::string m_styleName;
 	Character m_characters[128];
