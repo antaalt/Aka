@@ -40,11 +40,9 @@ public:
 
 	// Events
 	template <typename T>
-	void emit(T& event);
+	void emit(T&& event);
 	template <typename T>
-	void subscribe(EventSubscriber<T>* subscriber);
-	template <typename T>
-	void unsubscribe(EventSubscriber<T>* subscriber);
+	void receive(std::function<void(T*)> callback);
 
 	// Create all systems
 	void create();
@@ -55,11 +53,10 @@ public:
 	// Draw all systems
 	void draw(Batch &batch);
 private:
-	// Using std list might be faster memory wise
 	std::list<Entity*> m_entities;
 	std::list<Component*> m_components[Component::Type::size()];
 	std::list<System*> m_systems;
-	std::map<uint8_t, std::vector<BaseEventSubscriber*>> m_subscribers;
+	std::list<Event*> m_events[Event::Type::size()];
 };
 
 template<typename T>
@@ -128,32 +125,21 @@ inline T* World::createSystem(Args&& ...args)
 }
 
 template <typename T>
-void World::emit(T& event)
+void World::emit(T&& event)
 {
-	auto it = m_subscribers.find(EventType::get<T>());
-	if (it != m_subscribers.end())
-		for (BaseEventSubscriber* subscriber : it->second)
-			reinterpret_cast<EventSubscriber<T>*>(subscriber)->receive(this, event);
+	static_assert(std::is_base_of<Event, T>::value, "Type is not an event");
+	uint8_t type = Event::Type::get<T>();
+	T* e = new T(event);
+	m_events[type].push_back(e);
 }
+
 template <typename T>
-void World::subscribe(EventSubscriber<T>* subscriber) {
-	auto it = m_subscribers.find(EventType::get<T>());
-	if (it == m_subscribers.end())
-	{
-		auto itSub = m_subscribers.insert(std::make_pair(EventType::get<T>(), std::vector<BaseEventSubscriber*>()));
-		itSub.first->second.push_back(subscriber);
-	}
-	else
-		it->second.push_back(subscriber);
-}
-template <typename T>
-void World::unsubscribe(EventSubscriber<T>* subscriber) {
-	auto it = m_subscribers.find(EventType::get<T>());
-	if (it != m_subscribers.end())
-	{
-		auto itSub = std::find(it->second.begin(), it->second.end(), subscriber);
-		it->second.erase(itSub);
-	}
+void World::receive(std::function<void(T*)> callback)
+{
+	static_assert(std::is_base_of<Event, T>::value, "Type is not an event");
+	uint8_t type = Event::Type::get<T>();
+	for (Event* event : m_events[type])
+		callback(reinterpret_cast<T*>(event));
 }
 
 }

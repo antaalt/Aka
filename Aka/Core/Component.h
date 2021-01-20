@@ -16,6 +16,7 @@ struct Entity;
 struct Component
 {
 public:
+	virtual ~Component() {}
 	friend class World;
 	struct Type
 	{

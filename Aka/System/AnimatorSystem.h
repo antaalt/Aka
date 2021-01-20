@@ -1,11 +1,14 @@
 #pragma once
 
 #include "../Core/System.h"
+#include "../Core/Event.h"
 #include "../Component/Animator.h"
 
 namespace aka {
 
-struct AnimationFinishedEvent {
+struct AnimationFinishedEvent : public Event {
+	AnimationFinishedEvent(Entity *e) : entity(e) {}
+
 	Entity* entity;
 };
 

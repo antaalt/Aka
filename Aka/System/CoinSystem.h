@@ -6,15 +6,12 @@
 
 namespace aka {
 
-class CoinSystem : public System, public EventSubscriber<AnimationFinishedEvent>
+class CoinSystem : public System
 {
 public:
 	CoinSystem(World* world);
 public:
-	void create() override;
-	void destroy() override;
 	void update(Time::Unit deltaTime) override;
-	void receive(World* world, const AnimationFinishedEvent& event) override;
 };
 
 

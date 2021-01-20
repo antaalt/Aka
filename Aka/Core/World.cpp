@@ -91,6 +91,12 @@ void World::destroy()
 	for (Entity* entity : m_entities)
 		delete entity;
 	m_entities.clear();
+	for (uint8_t i = 0; i < Event::Type::count(); i++)
+	{
+		for (Event* event : m_events[i])
+			delete event;
+		m_events[i].clear();
+	}
 }
 
 void World::update(Time::Unit deltaTime)
@@ -115,6 +121,13 @@ void World::update(Time::Unit deltaTime)
 		{
 			it++;
 		}
+	}
+	// Clear all events
+	for (uint8_t i = 0; i < Event::Type::count(); i++)
+	{
+		for (Event* event : m_events[i])
+			delete event;
+		m_events[i].clear();
 	}
 }
 

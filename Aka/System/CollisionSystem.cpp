@@ -29,11 +29,7 @@ void CollisionSystem::update(Time::Unit deltaTime)
 			Collision2D c = collider->overlaps(*otherCollider);
 			if (c.collided)
 			{
-				CollisionEvent e;
-				e.left = entity;
-				e.right = otherEntity;
-				e.separation = c.separation;
-				m_world->emit<CollisionEvent>(e);
+				m_world->emit<CollisionEvent>(CollisionEvent(entity, otherEntity, c.separation));
 			}
 		});
 	});

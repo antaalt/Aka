@@ -1,11 +1,15 @@
 #pragma once
 
 #include "../Core/System.h"
+#include "../Core/Event.h"
 #include "../Component/Collider2D.h"
 
 namespace aka {
 
-struct CollisionEvent {
+struct CollisionEvent : public Event {
+	CollisionEvent(Entity *left, Entity *right, vec2f separation) :
+		left(left), right(right), separation(separation) {}
+
 	Entity* left;
 	Entity* right;
 	vec2f separation;

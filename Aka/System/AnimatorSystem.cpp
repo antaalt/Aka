@@ -19,9 +19,7 @@ void AnimatorSystem::update(Time::Unit deltaTime)
             animator->animationTimer = (animator->animationTimer + deltaTime);
             if (animator->animationTimer >= animator->currentAnimationDuration)
             {
-                AnimationFinishedEvent a;
-                a.entity = entity;
-                m_world->emit<AnimationFinishedEvent>(a);
+                m_world->emit<AnimationFinishedEvent>(AnimationFinishedEvent(entity));
                 animator->animationTimer = animator->animationTimer % animator->currentAnimationDuration;
             }
             uint32_t frameID = 0;
