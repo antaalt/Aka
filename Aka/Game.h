@@ -25,6 +25,7 @@ public:
 	void destroy(GraphicBackend& backend) override;
 	void frame() override;
 	void update(Time::Unit deltaTime) override;
+	void renderGUI();
 	void render(GraphicBackend& backend) override;
 private:
 	// UI
