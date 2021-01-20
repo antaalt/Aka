@@ -14,6 +14,8 @@ Animator::Animator(Sprite* sprite, int32_t layer) :
     currentAnimation(0),
     currentFrame(0),
     layer(layer),
+    flipU(false),
+    flipV(false),
     animationTimer(),
     currentAnimationDuration()
 {

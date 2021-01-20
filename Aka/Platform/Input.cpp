@@ -25,30 +25,42 @@ void initialize()
 
 void update()
 {
+	for (uint32_t iKey = 0; iKey < g_keyboardKeyCount; iKey++)
+		keyboard.down[iKey] = false;
+	for (uint32_t iKey = 0; iKey < g_keyboardKeyCount; iKey++)
+		keyboard.up[iKey] = false;
+	for (uint32_t iKey = 0; iKey < g_mouseButtonCount; iKey++)
+		cursor.down[iKey] = false;
+	for (uint32_t iKey = 0; iKey < g_mouseButtonCount; iKey++)
+		cursor.up[iKey] = false;
 	cursor.delta = { 0.f };
 	cursor.scroll = { 0.f };
 }
 
 void on_key_down(Key key)
 {
+	keyboard.down[static_cast<int>(key)] = true;
 	keyboard.pressed[static_cast<int>(key)] = true;
 	keyboard.timestamp[static_cast<int>(key)] = 0;
 }
 
 void on_key_up(Key key)
 {
+	keyboard.up[static_cast<int>(key)] = true;
 	keyboard.pressed[static_cast<int>(key)] = false;
 	keyboard.timestamp[static_cast<int>(key)] = 0;
 }
 
 void on_mouse_button_down(Button button)
 {
+	cursor.down[static_cast<int>(button)] = true;
 	cursor.pressed[static_cast<int>(button)] = true;
 	cursor.timestamp[static_cast<int>(button)] = 0;
 }
 
 void on_mouse_button_up(Button button)
 {
+	cursor.up[static_cast<int>(button)] = true;
 	cursor.pressed[static_cast<int>(button)] = false;
 	cursor.timestamp[static_cast<int>(button)] = 0;
 }
@@ -163,9 +175,29 @@ std::string getKeyName(input::Key key)
 	}
 }
 
+bool down(Key key)
+{
+	return keyboard.down[static_cast<int>(key)];
+}
+
+bool up(Key key)
+{
+	return keyboard.up[static_cast<int>(key)];
+}
+
 bool pressed(Key key)
 {
 	return keyboard.pressed[static_cast<int>(key)];
+}
+
+bool down(Button button)
+{
+	return cursor.down[static_cast<int>(button)];
+}
+
+bool up(Button button)
+{
+	return cursor.up[static_cast<int>(button)];
 }
 
 bool pressed(Button button)

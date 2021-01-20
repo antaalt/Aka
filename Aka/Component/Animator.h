@@ -18,6 +18,7 @@ struct Animator : public Component
 	uint32_t currentAnimation;
 	uint32_t currentFrame;
 	int32_t layer;
+	bool flipU, flipV;
 
 	Sprite::Frame& getCurrentSpriteFrame() const;
 

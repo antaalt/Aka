@@ -145,16 +145,16 @@ void Window::loop()
 		Time::Unit deltaTime = min<Time::Unit>(now - lastTick, Time::Unit::milliseconds(100));
 		lastTick = now;
 		accumulator += deltaTime;
-		m_app->frame();
 		while (accumulator >= timestep)
 		{
+			input::update();
+			glfwPollEvents();
 			m_app->update(timestep);
 			accumulator -= timestep;
 		}
+		m_app->frame();
 		m_app->render(m_backend);
-		input::update();
 		glfwSwapBuffers(m_window);
-		glfwPollEvents();
 	} while (!input::pressed(input::Key::Escape) && glfwWindowShouldClose(m_window) == 0);
 }
 

@@ -146,7 +146,12 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
 		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
-		m_characterEntity->add<Player>(Player());
+
+		Player *player = m_characterEntity->add<Player>(Player());
+		player->jump = Control(input::Key::Space);
+		player->left = Control(input::Key::Q);
+		player->right = Control(input::Key::D);
+
 		Text * text = m_characterEntity->add<Text>(Text());
 		text->color = color4f(1.f);
 		text->font = m_fonts[0].get();
@@ -252,20 +257,6 @@ void Game::frame()
 void Game::update(Time::Unit deltaTime)
 {
 	Transform2D* transform = m_characterEntity->get<Transform2D>();
-	RigidBody2D* rigid = m_characterEntity->get<RigidBody2D>();
-	transform->position.x += (input::pressed(input::Key::D) - input::pressed(input::Key::Q)) * 64.f * deltaTime.seconds();
-	transform->position.y += (input::pressed(input::Key::Z) - input::pressed(input::Key::S)) * 64.f * deltaTime.seconds();
-
-	if (input::pressed(input::Key::Space))
-	{
-		rigid->acceleration = vec2f(0.f, 0.f);
-		rigid->velocity = vec2f(0.f, 8.f); // 16 pixels / s
-	}
-	if (input::pressed(input::Key::LeftCtrl))
-	{
-		transform->position = vec2f(192.f, 160.f);
-	}
-
 	if (transform->position.y < -transform->size.y)
 	{
 		// teleport above

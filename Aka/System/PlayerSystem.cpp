@@ -35,7 +35,85 @@ void PlayerSystem::update(Time::Unit deltaTime)
 		}
 		else
 		{
+			player->state = Player::State::Idle;
 			event->resolve();
+		}
+	});
+	m_world->each<Player, Transform2D, RigidBody2D, Animator>([deltaTime](Entity* entity, Player* player, Transform2D* transform, RigidBody2D* rigid, Animator* animator) {
+		player->jump.update(deltaTime);
+		player->left.update(deltaTime);
+		player->right.update(deltaTime);
+
+		player->ground = false;
+		if (player->state == Player::State::Jumping || player->state == Player::State::DoubleJumping)
+		{
+			if (player->left.pressed())
+			{
+				animator->flipU = true;
+				rigid->velocity.x = -player->speed.metric();
+			}
+			else if (player->right.pressed())
+			{
+				animator->flipU = false;
+				rigid->velocity.x = player->speed.metric();
+			}
+			else if (player->right.up() || player->left.up())
+			{
+				rigid->velocity = vec2f(0.f);
+			}
+
+			if (player->jump.down() && player->state == Player::State::Jumping)
+			{
+				player->state = Player::State::DoubleJumping;
+				rigid->acceleration.y = 0.f;
+				rigid->velocity.y = 16.f;
+			}
+		}
+		else
+		{
+			if (player->left.pressed())
+			{
+				animator->flipU = true;
+				player->state = Player::State::Walking;
+				rigid->velocity.x = -player->speed.metric();
+			}
+			else if (player->right.pressed())
+			{
+				animator->flipU = false;
+				player->state = Player::State::Walking;
+				rigid->velocity.x = player->speed.metric();
+			}
+			else if (player->right.up() || player->left.up())
+			{
+				player->state = Player::State::Idle;
+				rigid->velocity = vec2f(0.f);
+			}
+
+			if (player->jump.down())
+			{
+				player->state = Player::State::Jumping;
+				rigid->velocity.y = 16.f;
+			}
+		}
+		/*switch (player->state)
+		{
+		case Player::State::Idle:
+			Logger::info("Idle");
+			break;
+		case Player::State::Walking:
+			Logger::info("Walking");
+			break;
+		case Player::State::Falling:
+			Logger::info("Falling");
+			break;
+		case Player::State::Jumping:
+			Logger::info("Jumping");
+			break;
+		}*/
+
+		if (input::pressed(input::Key::LeftCtrl))
+		{
+			transform->position = vec2f(192.f, 160.f);
 		}
 	});
 }

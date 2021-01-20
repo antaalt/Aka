@@ -135,6 +135,8 @@ void on_mouse_scroll(float x, float y);
 // Structs
 struct Keyboard {
 	bool pressed[g_keyboardKeyCount];
+	bool down[g_keyboardKeyCount];
+	bool up[g_keyboardKeyCount];
 	uint64_t timestamp[g_keyboardKeyCount];
 	KeyboardLayout layout;
 };
@@ -145,6 +147,8 @@ struct Position {
 
 struct Cursor {
 	bool pressed[g_mouseButtonCount];
+	bool down[g_mouseButtonCount];
+	bool up[g_mouseButtonCount];
 	uint64_t timestamp[g_keyboardKeyCount];
 	Position position; // raw position
 	Position delta; // relative movement
@@ -155,7 +159,11 @@ struct Cursor {
 std::string getKeyName(input::Key key);
 
 // Actions
+bool down(Key key);
+bool up(Key key);
 bool pressed(Key key);
+bool down(Button button);
+bool up(Button button);
 bool pressed(Button button);
 Position &mouse();
 Position &delta();
