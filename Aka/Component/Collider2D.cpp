@@ -34,6 +34,38 @@ Collision2D overlap(const Collider2D& r1, const Collider2D& r2)
 	return Collision2D::hit(s);
 }
 
+Collision2D overlap(const vec2f& p0, const vec2f& s0, const vec2f& p1, const vec2f& s1)
+{
+	// distance between the rects
+	vec2f r1Pos = p0 + s0 / 2.f;
+	vec2f r2Pos = p1 + s1 / 2.f;
+	vec2f d = r1Pos - r2Pos;
+	vec2f ad = vec2f::abs(d);
+	// sum of the extents
+	vec2f sh = s0 / 2.f + s1 / 2.f;
+	if (ad.x >= sh.x || ad.y >= sh.y) // no intersections
+		return Collision2D::none();
+	// shortest separation
+	vec2f s = sh - ad;
+	// ignore longer axis
+	if (s.x < s.y)
+	{
+		if (s.x > 0.f)
+			s.y = 0.f;
+	}
+	else
+	{
+		if (s.y > 0.f)
+			s.x = 0.f;
+	}
+	// correct sign
+	if (d.x < 0.f)
+		s.x = -s.x;
+	if (d.y < 0.f)
+		s.y = -s.y;
+	return Collision2D::hit(s);
+}
+
 Collider2D::Collider2D() :
 	Collider2D(vec2f(0), vec2f(1))
 {
@@ -47,10 +79,10 @@ Collider2D::Collider2D(const vec2f& position, const vec2f& size, float bouncing,
 {
 }
 
-Collision2D Collider2D::overlaps(const Collider2D& collider)
+/*Collision2D Collider2D::overlaps(const Collider2D& collider)
 {
 	return overlap(*this, collider);
-}
+}*/
 
 RigidBody2D::RigidBody2D() :
 	RigidBody2D(1.f)

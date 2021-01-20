@@ -62,10 +62,9 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		text->color = color4f(1.f);
 		text->font = m_fonts.back().get();
 		text->text = "Hello World !";
-		text->layer = 0;
+		text->layer = 2;
 		vec2i size = m_fonts.back()->size(text->text);
-		transform->position = vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2 - 50));
-		transform->size = vec2f(1.f);
+		transform->translate(vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2 - 50)));
 	}
 	{
 		// INIT FIXED TEXTURE BACKGROUND
@@ -96,14 +95,15 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Texture::Ptr texture = Texture::create(layer->tileset->image.width, layer->tileset->image.height, Texture::Format::Rgba8, Texture::Format::Rgba, layer->tileset->image.bytes.data(), Sampler::Filter::Nearest);
 			
 			Entity* entity = m_world.createEntity();
-			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(vec2u(layer->getWidth(), layer->getHeight())), radianf(0.f)));
+			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(1.f), radianf(0.f)));
 			TileMap* tileMap = entity->add<TileMap>(TileMap(layer->tileset->tileCount, layer->tileset->tileSize, texture));
-			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, layerDepth));
+			TileLayer* tileLayer = entity->add<TileLayer>(TileLayer(vec2f(0.f), layer->gridCellCount, layer->gridCellSize, color4f(1.f), layer->data, layerDepth));
 			return entity;
 		};
 		createTileLayer(ogmoLevel.getLayer("Background"), -1);
 		createTileLayer(ogmoLevel.getLayer("Playerground"), 0);
 		createTileLayer(ogmoLevel.getLayer("Foreground"), 1);
+
 		// Colliders
 		Sprite::Animation animation;
 		animation.name = "default";
@@ -116,9 +116,12 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		for (const OgmoLevel::Entity& entity : layer->entities)
 		{
 			Entity* collider = m_world.createEntity();
-			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size), radianf(0.f)));
-			collider->add<Collider2D>(Collider2D());
-			//collider->add<Animator>(Animator(m_sprites.back().get(), 1));
+			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(1.f), radianf(0.f)));
+			collider->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(entity.size)));
+			m_sprites.push_back(std::make_shared<Sprite>(*m_sprites.back().get()));
+			m_sprites.back()->animations[0].frames[0].width = entity.size.x;
+			m_sprites.back()->animations[0].frames[0].height = entity.size.y;
+			collider->add<Animator>(Animator(m_sprites.back().get(), 1));
 		}
 	}
 	{
@@ -143,10 +146,10 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
 		m_characterEntity = m_world.createEntity();
-		m_characterEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f((float)width, (float)height), radianf(0)));
+		m_characterEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f(1.f), radianf(0)));
 		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
-		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f((float)width, (float)height), 0.1f, 0.1f));
 
 		Player *player = m_characterEntity->add<Player>(Player());
 		player->jump = Control(input::Key::Space);
@@ -187,32 +190,32 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_sprites.back()->animations.push_back(animation);
 
 		Entity *e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(80, 80), vec2f(16, 16), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Transform2D>(Transform2D(vec2f(80, 80), vec2f(1.f), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
 		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		e->add<Coin>(Coin());
 
 		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(100, 80), vec2f(16, 16), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Transform2D>(Transform2D(vec2f(100, 80), vec2f(1.f), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
 		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		e->add<Coin>(Coin());
 
 		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(120, 80), vec2f(16, 16), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Transform2D>(Transform2D(vec2f(120, 80), vec2f(1.f), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
 		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		e->add<Coin>(Coin());
 
 		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(260, 96), vec2f(16, 16), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Transform2D>(Transform2D(vec2f(260, 96), vec2f(1.f), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
 		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		e->add<Coin>(Coin());
 
 		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(280, 96), vec2f(16, 16), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(0.f), 0.1f, 0.1f));
+		e->add<Transform2D>(Transform2D(vec2f(280, 96), vec2f(1.f), radianf(0)));
+		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
 		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
 		e->add<Coin>(Coin());
 	}
@@ -310,9 +313,10 @@ void Game::renderGUI()
 						snprintf(buffer, 256, "Transform2D##%p", transform);
 						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 						{
-							ImGui::InputFloat2("Position", transform->position.data, 3);
-							ImGui::InputFloat2("Size", transform->size.data, 3);
-							ImGui::InputFloat("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
+							ImGui::InputFloat2("Position", transform->model[2].data, 3);
+							vec2f size = vec2f(transform->model[0].x, transform->model[1].y);
+							ImGui::InputFloat2("Size", size.data, 3);
+							//ImGui::InputFloat("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
 
 							if (ImGui::Button("Remove")) { entity->remove<Transform2D>(); }
 

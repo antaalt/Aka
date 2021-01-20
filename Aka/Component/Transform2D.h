@@ -8,13 +8,14 @@ namespace aka {
 struct Transform2D : public Component
 {
 	Transform2D();
-	Transform2D(const vec2f& position, const vec2f& size, radianf rotation);
+	Transform2D(const vec2f& position, const vec2f& scale, radianf rotation);
 
-	mat4f model() const;
+	mat3f model;
 
-	vec2f position;
-	vec2f size;
-	radianf rotation;
+	void translate(const vec2f& translation);
+	void move(const vec2f& move);
+	void rotate(radianf rotation);
+	void scale(const vec2f& scale);
 };
 
 }

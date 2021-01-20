@@ -14,10 +14,19 @@ struct Sprite {
 		// TODO use subtexture with atlas
 		Texture::Ptr texture = nullptr;
 		Time::Unit duration = Time::Unit();
+		uint32_t width = 0;
+		uint32_t height = 0;
 
 		void bind() { texture->bind(); }
 
-		static Frame create(Texture::Ptr texture, Time::Unit duration) { Frame frame; frame.texture = texture; frame.duration = duration; return frame; }
+		static Frame create(Texture::Ptr texture, Time::Unit duration) { 
+			Frame frame; 
+			frame.texture = texture; 
+			frame.duration = duration; 
+			frame.width = texture->width();
+			frame.height = texture->height();
+			return frame; 
+		}
 	};
 	struct Animation {
 		std::string name;

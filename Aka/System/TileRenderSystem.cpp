@@ -30,15 +30,14 @@ void TileSystem::draw(Batch &batch)
             uv1.v = 1.f - uv1.v;
         }
         Transform2D* transform = entity->get<Transform2D>();
-        Texture::Ptr texture = animator->getCurrentSpriteFrame().texture;
+        Sprite::Frame &currentFrame = animator->getCurrentSpriteFrame();
+        Texture::Ptr texture = currentFrame.texture;
         vec2f position = vec2f(0.f);
-        vec2f size = vec2f(texture->width(), texture->height());
+        vec2f size = vec2f((float)currentFrame.width, (float)currentFrame.height);
         if (transform != nullptr)
-        {
-            position = transform->position;
-            size = transform->size;
-        }
-        batch.draw(model, Batch::Rect(position, size, uv0, uv1, texture, animator->layer));
+            batch.draw(transform->model, Batch::Rect(position, size, uv0, uv1, texture, animator->layer));
+        else
+            batch.draw(model, Batch::Rect(position, size, uv0, uv1, texture, animator->layer));
     });
 }
 

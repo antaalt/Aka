@@ -113,7 +113,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 
 		if (input::pressed(input::Key::LeftCtrl))
 		{
-			transform->position = vec2f(80, 224);
+			transform->model[2] = col3f(80, 224, 1);
 		}
 	});
 }

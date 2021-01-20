@@ -39,12 +39,15 @@ struct CircleCollider2D : public Collider2D
 	float radius;
 };*/
 
+Collision2D overlap(const vec2f& p0, const vec2f &s0, const vec2f& p1, const vec2f& s1);
+
+
 struct Collider2D : public Component
 {
 	Collider2D();
 	Collider2D(const vec2f& position, const vec2f& size, float bouncing = 0.f, float friction = 0.f);
 
-	Collision2D overlaps(const Collider2D& collider);
+	//Collision2D overlaps(const Collider2D& collider);
 
 	vec2f position;
 	vec2f size;

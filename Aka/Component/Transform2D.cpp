@@ -2,17 +2,39 @@
 
 namespace aka {
 Transform2D::Transform2D() :
-	Transform2D(vec2f(0.f), vec2f(1.f), radianf(0.f))
+	model(mat3f::identity())
 {
 }
-Transform2D::Transform2D(const vec2f& position, const vec2f& size, radianf rotation) :
-	position(position),
-	size(size),
-	rotation(rotation)
+Transform2D::Transform2D(const vec2f& position, const vec2f& scale, radianf rotation) :
+	model(mat3f::identity())
 {
+	model *= mat3f::translate(position);
+	model *= mat3f::rotate(rotation);
+	model *= mat3f::scale(scale);
 }
 
-mat4f Transform2D::model() const
+void Transform2D::translate(const vec2f &translation)
+{
+	model *= mat3f::translate(translation);
+}
+
+void Transform2D::move(const vec2f& move)
+{
+	model[2].x += move.x;
+	model[2].y += move.y;
+}
+
+void Transform2D::rotate(radianf rotation)
+{
+	model *= mat3f::rotate(rotation);
+}
+
+void Transform2D::scale(const vec2f &scale)
+{
+	model *= mat3f::scale(scale);
+}
+
+/*mat4f Transform2D::model() const
 {
 	mat4f model = mat4f::identity();
 	// Translate
@@ -24,6 +46,6 @@ mat4f Transform2D::model() const
 	// Scale
 	model *= mat4f::scale(vec3f(size, 1.0f));
 	return model;
-}
+}*/
 
 };

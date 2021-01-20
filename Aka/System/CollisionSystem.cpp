@@ -15,18 +15,18 @@ void CollisionSystem::update(Time::Unit deltaTime)
 	float dt = deltaTime.seconds();
 
 	m_world->each<RigidBody2D, Transform2D>([dt](Entity* entity, RigidBody2D* rigid, Transform2D* transform) {
-		transform->position += rigid->velocity * dt * 16.f; // scale by 16 as 16 is ~ 1m in game unit
+		transform->translate(rigid->velocity * dt * 16.f); // scale by 16 as 16 is ~ 1m in game unit
 	});
 	m_world->each<RigidBody2D, Transform2D, Collider2D>([&](Entity* entity, RigidBody2D* rigid, Transform2D* transform, Collider2D* collider) {
-		collider->position = transform->position;
-		collider->size = transform->size;
+		vec2f position = transform->model.multiplyPoint(collider->position);
+		vec2f size = transform->model.multiplyVector(collider->size);
 		m_world->each<Collider2D, Transform2D>([&](Entity* otherEntity, Collider2D* otherCollider, Transform2D* otherTransform) {
 			// Skip self intersection
 			if (otherEntity == entity)
 				return;
-			otherCollider->position = otherTransform->position;
-			otherCollider->size = otherTransform->size;
-			Collision2D c = collider->overlaps(*otherCollider);
+			vec2f otherPosition = otherTransform->model.multiplyPoint(otherCollider->position);
+			vec2f otherSize = otherTransform->model.multiplyVector(otherCollider->size);
+			Collision2D c = overlap(position, size, otherPosition, otherSize);
 			if (c.collided)
 			{
 				m_world->emit<CollisionEvent>(CollisionEvent(entity, otherEntity, c.separation));
@@ -69,7 +69,7 @@ void CollisionEvent::resolve() const
 		otherRigid->velocity = otherRigid->velocity + (p * r + t * f);
 	}
 	// Move the rigid & its collider to avoid overlapping.
-	transform->position += separation;
+	transform->translate(separation);
 }
 
 };
