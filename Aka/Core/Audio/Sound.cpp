@@ -39,9 +39,9 @@ bool Mp3AudioDecoder::decode(int16_t* buffer, uint32_t bytes)
     return readed == bytes; // Reached eof if condition met
 }
 
-void Mp3AudioDecoder::seek()
+void Mp3AudioDecoder::seek(uint64_t position)
 {
-   // mp3dec_ex_seek(&_dec.mp3d, progress);
+    mp3dec_ex_seek(&m_mp3d, position);
 }
 
 uint32_t Mp3AudioDecoder::channels() const
@@ -107,7 +107,7 @@ SoundPlayer::SoundPlayer(const Path& path) :
                 return 1; // EOF
             },
             &m_decoder
-            );
+        );
         m_audio.startStream();
     }
     catch (RtAudioError& e)
@@ -137,6 +137,13 @@ SoundPlayer::~SoundPlayer()
 bool SoundPlayer::playing()
 {
     return m_audio.isStreamRunning();
+}
+
+void SoundPlayer::restart()
+{
+    m_decoder.seek(0);
+    if (!m_audio.isStreamRunning())
+        m_audio.startStream();
 }
 
 const Mp3AudioDecoder& SoundPlayer::decoder() const

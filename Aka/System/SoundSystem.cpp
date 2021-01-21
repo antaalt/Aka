@@ -26,8 +26,16 @@ void SoundSystem::update(Time::Unit deltaTime)
 			// Stop the sound
 			if (!it->second->playing())
 			{
-				m_sounds.erase(it);
-				entity->destroy();
+				if (sound->loop)
+				{
+					// Restart it
+					it->second->restart();
+				}
+				else
+				{
+					m_sounds.erase(it);
+					entity->destroy();
+				}
 			}
 		}
 	});

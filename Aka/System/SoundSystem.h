@@ -10,8 +10,9 @@ namespace aka {
 
 struct SoundInstance : public Component {
 	SoundInstance() {}
-	SoundInstance(const Path &path) : path(path) {}
+	SoundInstance(const Path &path, bool loop = false) : path(path), loop(loop) {}
 	Path path;
+	bool loop;
 };
 
 class SoundSystem : public System

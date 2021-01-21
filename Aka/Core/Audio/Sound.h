@@ -14,7 +14,7 @@ struct Mp3AudioDecoder
 	~Mp3AudioDecoder();
 
     bool decode(int16_t *buffer, uint32_t bytes);
-    void seek();
+    void seek(uint64_t position);
     uint32_t channels() const;
     uint32_t frequency() const;
     uint64_t samples() const;
@@ -28,6 +28,8 @@ struct SoundPlayer {
     ~SoundPlayer();
 
     bool playing();
+
+    void restart();
 
     const Mp3AudioDecoder& decoder() const;
 
