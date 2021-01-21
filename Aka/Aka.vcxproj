@@ -146,7 +146,7 @@
     <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
     <ClInclude Include="System\CoinSystem.h" />
-    <ClInclude Include="Component\Interact.h" />
+    <ClInclude Include="Component\Coin.h" />
     <ClInclude Include="Component\Player.h" />
     <ClInclude Include="Core\Event.h" />
     <ClInclude Include="System\PlayerSystem.h" />

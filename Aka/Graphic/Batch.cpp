@@ -108,7 +108,7 @@ void Batch::draw(const mat3f& transform, Rect&& rect)
 	m_vertices.push_back(Vertex(transform * rect.position, rect.uv[2], rect.color[0])); // bottom left
 	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x + rect.size.x, rect.position.y), rect.uv[3], rect.color[1])); // bottom right
 	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x, rect.position.y + rect.size.y), rect.uv[0], rect.color[2])); // top left
-	m_vertices.push_back(Vertex(transform * rect.position + rect.size, rect.uv[1], rect.color[3])); // top right
+	m_vertices.push_back(Vertex(transform * (rect.position + rect.size), rect.uv[1], rect.color[3])); // top right
 	m_currentBatch.elements += 2;
 }
 

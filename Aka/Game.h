@@ -37,7 +37,7 @@ private:
 	Batch m_batch;
 	Framebuffer::Ptr m_framebuffer;
 	// Entity
-	Entity* m_characterEntity;
+	Entity* m_playerEntity;
 	Entity* m_backgroundEntity;
 	Entity* m_textEntity;
 };

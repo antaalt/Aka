@@ -3,7 +3,7 @@
 #include "../Platform/Logger.h"
 #include "../Core/World.h"
 #include "../Component/Transform2D.h"
-#include "../Component/Interact.h"
+#include "../Component/Coin.h"
 #include "../Component/Player.h"
 #include "../Component/Animator.h"
 #include "../Component/Text.h"

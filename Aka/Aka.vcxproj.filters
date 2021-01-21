@@ -323,10 +323,10 @@
     <ClInclude Include="Component\Player.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Component\Interact.h">
+    <ClInclude Include="System\CoinSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="System\CoinSystem.h">
+    <ClInclude Include="Component\Coin.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>

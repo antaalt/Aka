@@ -12,7 +12,7 @@
 #include "Component/TileMap.h"
 #include "Component/TileLayer.h"
 #include "Component/Player.h"
-#include "Component/Interact.h"
+#include "Component/Coin.h"
 #include "Core/OgmoWorld.h"
 #include "Core/World.h"
 #include "System/PhysicSystem.h"
@@ -36,18 +36,30 @@ namespace aka {
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
 	Logger::debug.mute();
-	m_world.createSystem<PhysicSystem>();
-	m_world.createSystem<CollisionSystem>();
-	m_world.createSystem<TileSystem>();
-	m_world.createSystem<TileMapSystem>();
-	m_world.createSystem<AnimatorSystem>();
-	m_world.createSystem<CameraSystem>();
-	m_world.createSystem<TextRenderSystem>();
-	m_world.createSystem<PlayerSystem>();
-	m_world.createSystem<CoinSystem>();
+	{
+		// INI SYSTEMS
+		m_world.createSystem<PhysicSystem>();
+		m_world.createSystem<CollisionSystem>();
+		m_world.createSystem<TileSystem>();
+		m_world.createSystem<TileMapSystem>();
+		m_world.createSystem<AnimatorSystem>();
+		m_world.createSystem<CameraSystem>();
+		m_world.createSystem<TextRenderSystem>();
+		m_world.createSystem<PlayerSystem>();
+		m_world.createSystem<CoinSystem>();
+	}
 
-	// INIT FRAMEBUFFER
-	m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
+	{
+		// INIT FRAMEBUFFER
+		m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
+	}
+
+	{
+		// INIT CAMERA
+		Entity* cameraEntity = m_world.createEntity();
+		cameraEntity->add<Transform2D>(Transform2D());
+		cameraEntity->add<Camera2D>(Camera2D(vec2f(0), vec2f(320, 180) ));
+	}
 
 	{
 		// INIT FONTS
@@ -66,6 +78,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		vec2i size = m_fonts.back()->size(text->text);
 		transform->translate(vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2 - 50)));
 	}
+
 	{
 		// INIT FIXED TEXTURE BACKGROUND
 		Image image = Image::load(Asset::path("textures/background/background.png"));
@@ -81,13 +94,14 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_backgroundEntity = m_world.createEntity();
 		m_backgroundEntity->add<Animator>(Animator(m_sprites.back().get(), -2))->play("default");
 	}
+
 	{
 		// INIT world
 		OgmoWorld ogmoWorld = OgmoWorld::load(Asset::path("levels/world.ogmo"));
 		OgmoLevel ogmoLevel = OgmoLevel::load(ogmoWorld, Asset::path("levels/level0.json"));
 		const OgmoLevel::Layer* foreground = ogmoLevel.getLayer("Foreground");
 
-		// Layers
+		// - Layers
 		auto createTileLayer = [&](const OgmoLevel::Layer* layer, int32_t layerDepth) -> Entity* {
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
@@ -104,7 +118,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		createTileLayer(ogmoLevel.getLayer("Playerground"), 0);
 		createTileLayer(ogmoLevel.getLayer("Foreground"), 1);
 
-		// Colliders
+		// - Colliders
 		Sprite::Animation animation;
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
@@ -116,16 +130,14 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		for (const OgmoLevel::Entity& entity : layer->entities)
 		{
 			Entity* collider = m_world.createEntity();
-			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(1.f), radianf(0.f)));
-			collider->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(entity.size)));
-			m_sprites.push_back(std::make_shared<Sprite>(*m_sprites.back().get()));
-			m_sprites.back()->animations[0].frames[0].width = entity.size.x;
-			m_sprites.back()->animations[0].frames[0].height = entity.size.y;
+			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size) / 16.f, radianf(0.f)));
+			collider->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
 			collider->add<Animator>(Animator(m_sprites.back().get(), 1));
 		}
 	}
+
 	{
-		// INIT SPRITE CHARACTER
+		// INIT CHARACTER
 		// TODO move initialisation in SpriteAnimator & parse ase sprite directly ?
 		// TODO load gif ?
 		Sprite::Animation animation;
@@ -145,26 +157,22 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		}
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
-		m_characterEntity = m_world.createEntity();
-		m_characterEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f(1.f), radianf(0)));
-		m_characterEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		m_characterEntity->add<RigidBody2D>(RigidBody2D(1.f));
-		m_characterEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f((float)width, (float)height), 0.1f, 0.1f));
+		m_playerEntity = m_world.createEntity();
+		m_playerEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f(1.f), radianf(0)));
+		m_playerEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+		m_playerEntity->add<RigidBody2D>(RigidBody2D(1.f));
+		m_playerEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f((float)width, (float)height), 0.1f, 0.1f));
 
-		Player *player = m_characterEntity->add<Player>(Player());
+		Player *player = m_playerEntity->add<Player>(Player());
 		player->jump = Control(input::Key::Space);
 		player->left = Control(input::Key::Q);
 		player->right = Control(input::Key::D);
 
-		Text * text = m_characterEntity->add<Text>(Text());
-		text->offset = vec2f(3.f, 17.f);
-		text->color = color4f(1.f);
-		text->font = m_fonts[1].get();
-		text->layer = 3;
-		text->text = "0";
+		m_playerEntity->add<Text>(Text(vec2f(3.f, 17.f), m_fonts[1].get(), "0", color4f(1.f), 3));
 	}
+
 	{
-		// INIT coin
+		// INIT COINS
 		Sprite::Animation animation;
 		animation.name = "picked";
 		vec2f characterSize = vec2f(13, 17);
@@ -220,26 +228,31 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		e->add<Coin>(Coin());
 	}
 
-	window.setSizeLimits(m_framebuffer->width(), m_framebuffer->height(), GLFW_DONT_CARE, GLFW_DONT_CARE);
+	{
+		window.setSizeLimits(m_framebuffer->width(), m_framebuffer->height(), GLFW_DONT_CARE, GLFW_DONT_CARE);
+	}
 
-	// IMGUI
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+	{
+		// IMGUI
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
+		ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
 
-	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-	std::stringstream ss;
-	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
-	ImGui_ImplOpenGL3_Init(ss.str().c_str());
-	ImGui::StyleColorsDark();
-
-	// Initialize everything
-	m_world.create();
+		float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+		std::stringstream ss;
+		ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
+		ImGui_ImplOpenGL3_Init(ss.str().c_str());
+		ImGui::StyleColorsDark();
+	}
+	{
+		// Initialize everything
+		m_world.create();
+	}
 }
 
 void Game::destroy(GraphicBackend& backend)
@@ -294,16 +307,62 @@ void Game::renderGUI()
 			ImGui::Text("Resolution : %ux%u", screenWidth(), screenHeight());
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+
+			static bool renderColliders = true;
+			if (ImGui::Checkbox("Render colliders", &renderColliders))
+			{
+				m_world.each<Collider2D>([&](Entity * entity, Collider2D * collider) {
+					if (renderColliders)
+					{
+						if(!entity->has<Animator>())
+							entity->add<Animator>(Animator(m_sprites[1].get(), 2));
+					}
+					else
+					{
+						if (entity->has<Animator>() && !entity->has<Player>() && !entity->has<Coin>())
+							entity->remove<Animator>();
+					}
+				});
+			}
 		}
 
 		if (ImGui::CollapsingHeader("Entities##header", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::TextColored(color, "Entities");
-			// TODO add filter
-			int index = 0;
+			static const int componentCount = 11;
+			static const char* components[componentCount] = {
+				"None",
+				"Transform2D",
+				"Animator",
+				"Collider2D",
+				"RigidBody2D",
+				"Text",
+				"TileMap",
+				"TileLayer",
+				"Coin",
+				"Player",
+				"Camera2D",
+			};
+			static int currentFilter = 0;
+			ImGui::Combo("Filter", &currentFilter, components, componentCount);
+			uint32_t index = 0;
 			m_world.each([&](Entity* entity) {
+				index++;
+				switch (currentFilter)
+				{
+				case 1: if (!entity->has<Transform2D>()) return; break;
+				case 2: if (!entity->has<Animator>()) return; break;
+				case 3: if (!entity->has<Collider2D>()) return; break;
+				case 4: if (!entity->has<RigidBody2D>()) return; break;
+				case 5: if (!entity->has<Text>()) return; break;
+				case 6: if (!entity->has<TileMap>()) return; break;
+				case 7: if (!entity->has<TileLayer>()) return; break;
+				case 8: if (!entity->has<Coin>()) return; break;
+				case 9: if (!entity->has<Player>()) return; break;
+				case 10: if (!entity->has<Camera2D>()) return; break;
+				}
 				char buffer[256];
-				snprintf(buffer, 256, "Entity %d", index++);
+				snprintf(buffer, 256, "Entity %u", index);
 				if (ImGui::TreeNode(buffer))
 				{
 					// --- Transform2D
@@ -511,28 +570,73 @@ void Game::renderGUI()
 							ImGui::TreePop();
 						}
 					}
+					// --- Coin
+					if (entity->has<Coin>())
+					{
+						Coin* coin = entity->get<Coin>();
+						snprintf(buffer, 256, "Coin##%p", coin);
+						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						{
+							ImGui::Checkbox("Picked", &coin->picked);
+
+							if (ImGui::Button("Remove")) { entity->remove<Coin>(); }
+
+							ImGui::TreePop();
+						}
+					}
+					// --- Player
+					if (entity->has<Player>())
+					{
+						Player* player = entity->get<Player>();
+						snprintf(buffer, 256, "Player##%p", player);
+						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						{
+							ImGui::SliderInt("Coin", &player->coin, 0, 50);
+							float metric = player->speed.metric();
+							if (ImGui::SliderFloat("Speed", &metric, 0.f, 50.f))
+							{
+								player->speed = Speed(metric);
+							}
+							player->state;
+							player->jump;
+							player->left;
+							player->right;
+
+							if (ImGui::Button("Remove")) { entity->remove<Player>(); }
+
+							ImGui::TreePop();
+						}
+					}
+					// --- Camera2D
+					if (entity->has<Camera2D>())
+					{
+						Camera2D* camera = entity->get<Camera2D>();
+						snprintf(buffer, 256, "Camera2D##%p", camera);
+						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						{
+							camera->position;
+							camera->viewport;
+
+							if (ImGui::Button("Remove")) { entity->remove<Camera2D>(); }
+
+							ImGui::TreePop();
+						}
+					}
 					// --- Add component
-					static const int componentCount = 7;
-					static const char* components[componentCount] = {
-						"Transform2D",
-						"Animator",
-						"Collider2D",
-						"RigidBody2D",
-						"Text",
-						"TileMap",
-						"TileLayer",
-					};
 					static int currentComponent = 0;
 					if (ImGui::Button("Add")) {
 						switch (currentComponent)
 						{
-						case 0: entity->add<Transform2D>(Transform2D()); break;
-						case 1:  entity->add<Animator>(Animator()); break;
-						case 2: entity->add<Collider2D>(Collider2D()); break;
-						case 3: entity->add<RigidBody2D>(RigidBody2D()); break;
-						case 4: entity->add<Text>(Text()); break;
-						case 5: entity->add<TileMap>(TileMap()); break;
-						case 6: entity->add<TileLayer>(TileLayer()); break;
+						case 1: entity->add<Transform2D>(Transform2D()); break;
+						case 2: entity->add<Animator>(Animator()); break;
+						case 3: entity->add<Collider2D>(Collider2D()); break;
+						case 4: entity->add<RigidBody2D>(RigidBody2D()); break;
+						case 5: entity->add<Text>(Text()); break;
+						case 6: entity->add<TileMap>(TileMap()); break;
+						case 7: entity->add<TileLayer>(TileLayer()); break;
+						case 8: entity->add<Coin>(Coin()); break;
+						case 9: entity->add<Player>(Player()); break;
+						case 10: entity->add<Camera2D>(Camera2D()); break;
 						}
 					}
 					ImGui::SameLine();

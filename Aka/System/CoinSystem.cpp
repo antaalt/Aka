@@ -1,7 +1,7 @@
 #include "CoinSystem.h"
 
 #include "../Core/World.h"
-#include "../Component/Interact.h"
+#include "../Component/Coin.h"
 #include "../Component/Animator.h"
 #include "../Platform/Logger.h"
 
