@@ -17,7 +17,7 @@
 
 namespace aka {
 
-AudioDecoder::AudioDecoder(const Path& path)
+Mp3AudioDecoder::Mp3AudioDecoder(const Path& path)
 {
     memset(&m_mp3d, 0, sizeof(m_mp3d));
     int sample = mp3dec_ex_open(&m_mp3d, path.c_str(), MP3D_SEEK_TO_SAMPLE);
@@ -25,47 +25,49 @@ AudioDecoder::AudioDecoder(const Path& path)
         Logger::error("Could not load audio");
 }
 
-AudioDecoder::~AudioDecoder()
+Mp3AudioDecoder::~Mp3AudioDecoder()
 {
     mp3dec_ex_close(&m_mp3d);
     memset(&m_mp3d, 0, sizeof(m_mp3d));
 }
 
-void AudioDecoder::decode(int16_t* buffer, uint32_t bytes)
+bool Mp3AudioDecoder::decode(int16_t* buffer, uint32_t bytes)
 {
     memset(buffer, 0, bytes);
-    size_t out = mp3dec_ex_read(&m_mp3d, (mp3d_sample_t*)buffer, bytes);
+    size_t readed = mp3dec_ex_read(&m_mp3d, (mp3d_sample_t*)buffer, bytes);
+    ASSERT(m_mp3d.last_error == 0, "Error while reading file");
+    return readed == bytes; // Reached eof if condition met
 }
 
-void AudioDecoder::seek()
+void Mp3AudioDecoder::seek()
 {
    // mp3dec_ex_seek(&_dec.mp3d, progress);
 }
 
-uint32_t AudioDecoder::channels() const
+uint32_t Mp3AudioDecoder::channels() const
 {
     return static_cast<uint32_t>(m_mp3d.info.channels);
 }
 
-uint32_t AudioDecoder::frequency() const
+uint32_t Mp3AudioDecoder::frequency() const
 {
     return static_cast<uint32_t>(m_mp3d.info.hz);
 }
 
-uint64_t AudioDecoder::samples() const
+uint64_t Mp3AudioDecoder::samples() const
 {
     return m_mp3d.samples;
 }
 
-static AudioDecoder decoder(Asset::path("sounds/forest.mp3"));
-
-SoundPlayer::SoundPlayer() :
-    m_audio(RtAudio::Api::WINDOWS_DS)
+size_t Mp3AudioDecoder::fileSize() const
 {
+    return m_mp3d.file.size;
 }
 
-void SoundPlayer::create()
-{
+SoundPlayer::SoundPlayer(const Path& path) :
+    m_audio(RtAudio::Api::WINDOWS_DS),
+    m_decoder(path)
+{ 
     // Determine the number of devices available
     unsigned int devices = m_audio.getDeviceCount();
     if (devices == 0)
@@ -81,7 +83,7 @@ void SoundPlayer::create()
 
     RtAudio::StreamParameters parameters;
     parameters.deviceId = m_audio.getDefaultOutputDevice();
-    parameters.nChannels = decoder.channels();
+    parameters.nChannels = m_decoder.channels();
     parameters.firstChannel = 0;
 
     // Frames is not samples
@@ -94,7 +96,7 @@ void SoundPlayer::create()
             &parameters,
             nullptr,
             RTAUDIO_SINT16,
-            decoder.frequency(),
+            m_decoder.frequency(),
             &frames,
             [](
                 void* outputBuffer,
@@ -103,16 +105,17 @@ void SoundPlayer::create()
                 double streamTime,
                 RtAudioStreamStatus status,
                 void* userData
-            )
+                )
             {
                 int16_t* out = static_cast<int16_t*>(outputBuffer);
-                AudioDecoder* decoder = (AudioDecoder*)userData;
+                Mp3AudioDecoder* decoder = (Mp3AudioDecoder*)userData;
                 if (status) Logger::error("Audio stream underflow detected!");
-                decoder->decode(out, nFrames * decoder->channels());
-                return 0;
+                if (decoder->decode(out, nFrames * decoder->channels()))
+                    return 0;
+                return 1; // EOF
             },
-            &decoder
-        );
+            &m_decoder
+            );
         m_audio.startStream();
     }
     catch (RtAudioError& e)
@@ -122,7 +125,7 @@ void SoundPlayer::create()
     }
 }
 
-void SoundPlayer::destroy()
+SoundPlayer::~SoundPlayer()
 {
     try
     {
@@ -136,6 +139,16 @@ void SoundPlayer::destroy()
     }
     if (m_audio.isStreamOpen())
         m_audio.closeStream();
+}
+
+bool SoundPlayer::playing()
+{
+    return m_audio.isStreamRunning();
+}
+
+const Mp3AudioDecoder& SoundPlayer::decoder() const
+{
+    return m_decoder;
 }
 
 };

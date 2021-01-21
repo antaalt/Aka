@@ -1,7 +1,7 @@
 #include "SoundSystem.h"
 
 #include "../Platform/Logger.h"
-#include "../Core/Audio/Sound.h"
+#include "../Core/World.h"
 
 namespace aka {
 
@@ -11,20 +11,27 @@ SoundSystem::SoundSystem(World* world) :
 {
 }
 
-static SoundPlayer player;
-
-void SoundSystem::create()
-{
-    player.create();
-}
-
-void SoundSystem::destroy()
-{
-    player.destroy();
-}
-
 void SoundSystem::update(Time::Unit deltaTime)
 {
+    // Manage audiodecoder depending on sound to play
+	m_world->each<SoundInstance>([&](Entity * entity, SoundInstance * sound) {
+		auto it = m_sounds.find(sound->path.str());
+		if (it == m_sounds.end())
+		{
+			// Start the sound
+			m_sounds.insert(std::make_pair(sound->path.str(), std::make_unique<SoundPlayer>(sound->path)));
+
+		}
+		else
+		{
+			// Stop the sound
+			if (!it->second->playing())
+			{
+				m_sounds.erase(it);
+				entity->destroy();
+			}
+		}
+	});
 }
 
 };

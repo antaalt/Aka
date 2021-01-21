@@ -8,32 +8,32 @@
 
 namespace aka {
 
-struct SoundPlayer {
-    SoundPlayer();
-
-    void create();
-
-    void destroy();
-private:
-    RtAudio m_audio;
-};
-
-struct AudioDecoder
+struct Mp3AudioDecoder
 {
-    AudioDecoder(const Path &path);
-	~AudioDecoder();
+    Mp3AudioDecoder(const Path &path);
+	~Mp3AudioDecoder();
 
-    static AudioDecoder create(const Path& path);
-
-
-
-    void decode(int16_t *buffer, uint32_t bytes);
+    bool decode(int16_t *buffer, uint32_t bytes);
     void seek();
     uint32_t channels() const;
     uint32_t frequency() const;
     uint64_t samples() const;
+    size_t fileSize() const;
 private:
     mp3dec_ex_t m_mp3d;
+};
+
+struct SoundPlayer {
+    SoundPlayer(const Path& path);
+    ~SoundPlayer();
+
+    bool playing();
+
+    const Mp3AudioDecoder& decoder() const;
+
+private:
+    Mp3AudioDecoder m_decoder;
+    RtAudio m_audio;
 };
 
 };

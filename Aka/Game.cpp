@@ -37,7 +37,6 @@ namespace aka {
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
-	//Sound sound(Asset::path("sounds/Symphony. Of. The. Night..mp3"));
 	Logger::debug.mute();
 	{
 		// INI SYSTEMS
@@ -51,6 +50,14 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_world.createSystem<PlayerSystem>();
 		m_world.createSystem<CoinSystem>();
 		m_world.createSystem<SoundSystem>();
+	}
+
+	{
+		// INIT sounds
+		Entity *e = m_world.createEntity();
+		e->add<SoundInstance>(SoundInstance(Asset::path("sounds/forest.mp3")));
+		e = m_world.createEntity();
+		e->add<SoundInstance>(SoundInstance(Asset::path("sounds/Symphony. Of. The. Night..mp3")));
 	}
 
 	{
@@ -333,7 +340,7 @@ void Game::renderGUI()
 		if (ImGui::CollapsingHeader("Entities##header", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::TextColored(color, "Entities");
-			static const int componentCount = 11;
+			static const int componentCount = 12;
 			static const char* components[componentCount] = {
 				"None",
 				"Transform2D",
@@ -346,6 +353,7 @@ void Game::renderGUI()
 				"Coin",
 				"Player",
 				"Camera2D",
+				"SoundInstance"
 			};
 			static int currentFilter = 0;
 			ImGui::Combo("Filter", &currentFilter, components, componentCount);
@@ -364,6 +372,7 @@ void Game::renderGUI()
 				case 8: if (!entity->has<Coin>()) return; break;
 				case 9: if (!entity->has<Player>()) return; break;
 				case 10: if (!entity->has<Camera2D>()) return; break;
+				case 11: if (!entity->has<SoundInstance>()) return; break;
 				}
 				char buffer[256];
 				snprintf(buffer, 256, "Entity %u", index);
@@ -626,6 +635,20 @@ void Game::renderGUI()
 							ImGui::TreePop();
 						}
 					}
+					// --- SoundInstance
+					if (entity->has<SoundInstance>())
+					{
+						SoundInstance* sound = entity->get<SoundInstance>();
+						snprintf(buffer, 256, "SoundInstance##%p", sound);
+						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
+						{
+							ImGui::Text("Sound : %s", sound->path.c_str());
+
+							if (ImGui::Button("Remove")) { entity->remove<SoundInstance>(); }
+
+							ImGui::TreePop();
+						}
+					}
 					// --- Add component
 					static int currentComponent = 0;
 					if (ImGui::Button("Add")) {
@@ -641,6 +664,7 @@ void Game::renderGUI()
 						case 8: entity->add<Coin>(Coin()); break;
 						case 9: entity->add<Player>(Player()); break;
 						case 10: entity->add<Camera2D>(Camera2D()); break;
+						case 11: entity->add<SoundInstance>(SoundInstance()); break;
 						}
 					}
 					ImGui::SameLine();

@@ -1,25 +1,27 @@
 #pragma once
 
+#include "../Platform/IO/FileSystem.h"
 #include "../Core/System.h"
-#include "../Core/Event.h"
-#include "CollisionSystem.h"
+#include "../Core/Audio/Sound.h"
 
 #include <RtAudio.h>
 
 namespace aka {
 
-
+struct SoundInstance : public Component {
+	SoundInstance() {}
+	SoundInstance(const Path &path) : path(path) {}
+	Path path;
+};
 
 class SoundSystem : public System
 {
 public:
 	SoundSystem(World* world);
 
-	void create() override;
-
-	void destroy() override;
-
 	void update(Time::Unit deltaTime) override;
+private:
+	std::map<std::string, std::unique_ptr<SoundPlayer>> m_sounds;
 };
 
 };
