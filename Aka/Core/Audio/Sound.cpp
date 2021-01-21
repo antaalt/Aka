@@ -72,14 +72,6 @@ SoundPlayer::SoundPlayer(const Path& path) :
     unsigned int devices = m_audio.getDeviceCount();
     if (devices == 0)
         throw std::runtime_error("No audio devices found");
-    // Scan through devices for various capabilities
-    RtAudio::DeviceInfo info;
-    for (unsigned int i = 0; i < devices; i++) {
-        info = m_audio.getDeviceInfo(i);
-        if (info.probed == true) {
-            Logger::info("Audio device ", i, " : ", info.name);
-        }
-    }
 
     RtAudio::StreamParameters parameters;
     parameters.deviceId = m_audio.getDefaultOutputDevice();
@@ -130,7 +122,8 @@ SoundPlayer::~SoundPlayer()
     try
     {
         // Stop the stream
-        m_audio.stopStream();
+        if(m_audio.isStreamRunning())
+            m_audio.stopStream();
     }
     catch (RtAudioError& e)
     {
@@ -149,6 +142,22 @@ bool SoundPlayer::playing()
 const Mp3AudioDecoder& SoundPlayer::decoder() const
 {
     return m_decoder;
+}
+
+uint32_t SoundPlayer::getDeviceCount()
+{
+    RtAudio audio(RtAudio::Api::WINDOWS_DS);
+    return audio.getDeviceCount();
+    /*if (devices == 0)
+        throw std::runtime_error("No audio devices found");
+    // Scan through devices for various capabilities
+    RtAudio::DeviceInfo info;
+    for (unsigned int i = 0; i < devices; i++) {
+        info = audio.getDeviceInfo(i);
+        if (info.probed == true) {
+            Logger::info("Audio device ", i, " : ", info.name);
+        }
+    }*/
 }
 
 };

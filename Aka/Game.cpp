@@ -56,8 +56,6 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		// INIT sounds
 		Entity *e = m_world.createEntity();
 		e->add<SoundInstance>(SoundInstance(Asset::path("sounds/forest.mp3")));
-		e = m_world.createEntity();
-		e->add<SoundInstance>(SoundInstance(Asset::path("sounds/Symphony. Of. The. Night..mp3")));
 	}
 
 	{

@@ -31,6 +31,8 @@ struct SoundPlayer {
 
     const Mp3AudioDecoder& decoder() const;
 
+    static uint32_t getDeviceCount();
+
 private:
     Mp3AudioDecoder m_decoder;
     RtAudio m_audio;

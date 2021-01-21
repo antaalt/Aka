@@ -7,6 +7,7 @@
 #include "../Component/Player.h"
 #include "../Component/Animator.h"
 #include "../Component/Text.h"
+#include "SoundSystem.h"
 
 namespace aka {
 
@@ -39,7 +40,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 			event->resolve();
 		}
 	});
-	m_world->each<Player, Transform2D, RigidBody2D, Animator>([deltaTime](Entity* entity, Player* player, Transform2D* transform, RigidBody2D* rigid, Animator* animator) {
+	m_world->each<Player, Transform2D, RigidBody2D, Animator>([&](Entity* entity, Player* player, Transform2D* transform, RigidBody2D* rigid, Animator* animator) {
 		player->jump.update(deltaTime);
 		player->left.update(deltaTime);
 		player->right.update(deltaTime);
@@ -64,6 +65,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 
 			if (player->jump.down() && player->state == Player::State::Jumping)
 			{
+				m_world->createEntity()->add<SoundInstance>(SoundInstance(Asset::path("sounds/jump.mp3")));
 				player->state = Player::State::DoubleJumping;
 				rigid->acceleration.y = 0.f;
 				rigid->velocity.y = 16.f;
@@ -91,6 +93,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 
 			if (player->jump.down())
 			{
+				m_world->createEntity()->add<SoundInstance>(SoundInstance(Asset::path("sounds/jump.mp3")));
 				player->state = Player::State::Jumping;
 				rigid->velocity.y = 16.f;
 			}

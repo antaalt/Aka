@@ -21,7 +21,7 @@ public:
 
 	void update(Time::Unit deltaTime) override;
 private:
-	std::map<std::string, std::unique_ptr<SoundPlayer>> m_sounds;
+	std::map<SoundInstance*, std::unique_ptr<SoundPlayer>> m_sounds;
 };
 
 };
