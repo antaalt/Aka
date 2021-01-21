@@ -6,7 +6,7 @@ namespace aka {
 
 std::vector<uint8_t> readBinary(const Path& path)
 {
-	std::basic_ifstream<uint8_t> ifs(path.str());
+	std::basic_ifstream<uint8_t> ifs(path.str(), std::ios::binary);
 	if (!ifs)
 		throw std::runtime_error("Could not load file " + path.str());
 	return std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
@@ -14,7 +14,7 @@ std::vector<uint8_t> readBinary(const Path& path)
 
 void writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
 {
-	std::basic_ofstream<uint8_t> ofs(path.str());
+	std::basic_ofstream<uint8_t> ofs(path.str(), std::ios::binary);
 	ofs.write(bytes.data(), bytes.size());
 }
 
@@ -56,28 +56,34 @@ const std::string& Path::str() const
 
 Path Path::operator+(const Path& rhs) const
 {
-	if (m_string.back() != '\\' && m_string.back() != '/')
-		return Path(m_string + '/' + rhs.m_string);
+	if (m_string.size() == 0)
+	{
+		return rhs;
+	}
 	else
-		return Path(m_string + rhs.m_string);
+	{
+		if (m_string.back() != '\\' && m_string.back() != '/')
+			return Path(m_string + '/' + rhs.m_string);
+		else
+			return Path(m_string + rhs.m_string);
+	}
 }
 
 
-const Path g_assetPath = "../asset/";
 
 std::string Asset::loadString(const Path& path)
 {
-	return readString(g_assetPath + path);
+	return readString(Path("../asset/") + path);
 }
 
 std::vector<uint8_t> Asset::loadBinary(const Path& path)
 {
-	return readBinary(g_assetPath + path);
+	return readBinary(Path("../asset/") + path);
 }
 
 Path Asset::path(const Path& path)
 {
-	return g_assetPath + path;
+	return Path("../asset/") + path;
 }
 
 };

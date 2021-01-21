@@ -15,6 +15,7 @@
 #include "Component/Coin.h"
 #include "Core/OgmoWorld.h"
 #include "Core/World.h"
+#include "Core/Audio/Sound.h"
 #include "System/PhysicSystem.h"
 #include "System/AnimatorSystem.h"
 #include "System/TileMapSystem.h"
@@ -24,6 +25,7 @@
 #include "System/CollisionSystem.h"
 #include "System/PlayerSystem.h"
 #include "System/CoinSystem.h"
+#include "System/SoundSystem.h"
 
 #include <sstream>
 #include <imgui.h>
@@ -35,6 +37,7 @@ namespace aka {
 
 void Game::initialize(Window& window, GraphicBackend& backend)
 {
+	//Sound sound(Asset::path("sounds/Symphony. Of. The. Night..mp3"));
 	Logger::debug.mute();
 	{
 		// INI SYSTEMS
@@ -47,6 +50,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		m_world.createSystem<TextRenderSystem>();
 		m_world.createSystem<PlayerSystem>();
 		m_world.createSystem<CoinSystem>();
+		m_world.createSystem<SoundSystem>();
 	}
 
 	{

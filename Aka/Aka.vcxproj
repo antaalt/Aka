@@ -57,16 +57,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__WINDOWS_DS__;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;$(SolutionDir)lib\rtaudio-5.1.0\include;$(SolutionDir)lib\minimp3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>freetype.lib;opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dsound.lib;freetype.lib;opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;$(SolutionDir)lib\rtaudio-5.1.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -93,6 +93,9 @@
     <ClCompile Include="..\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp" />
+    <ClCompile Include="Core\Audio\Sound.cpp" />
+    <ClCompile Include="System\SoundSystem.cpp" />
     <ClCompile Include="System\CoinSystem.cpp" />
     <ClCompile Include="Core\Event.cpp" />
     <ClCompile Include="System\PlayerSystem.cpp" />
@@ -145,6 +148,8 @@
     <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
+    <ClInclude Include="Core\Audio\Sound.h" />
+    <ClInclude Include="System\SoundSystem.h" />
     <ClInclude Include="System\CoinSystem.h" />
     <ClInclude Include="Component\Coin.h" />
     <ClInclude Include="Component\Player.h" />
