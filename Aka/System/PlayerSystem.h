@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/System.h"
-#include "../Core/Event.h"
+#include "../Core/ECS/System.h"
+#include "../Core/ECS/Event.h"
 #include "CollisionSystem.h"
 
 namespace aka {

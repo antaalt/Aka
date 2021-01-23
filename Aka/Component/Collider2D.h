@@ -2,7 +2,7 @@
 
 //#include "Shape2D.h"
 #include "../Core/Geometry.h"
-#include "../Core/Component.h"
+#include "../Core/ECS/Component.h"
 
 namespace aka {
 

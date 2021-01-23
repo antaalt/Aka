@@ -1,6 +1,6 @@
 #include "CameraSystem.h"
 
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 #include "../Component/Transform2D.h"
 #include "../Platform/Input.h"
 

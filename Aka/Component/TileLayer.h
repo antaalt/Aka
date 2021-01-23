@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Core/Geometry.h"
-#include "../Core/Component.h"
+#include "../Core/ECS/Component.h"
 
 #include <vector>
 

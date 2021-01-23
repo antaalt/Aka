@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Core/Font.h"
-#include "../Core/Component.h"
+#include "../Core/ECS/Component.h"
 
 
 namespace aka {

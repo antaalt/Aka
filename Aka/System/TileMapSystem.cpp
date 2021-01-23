@@ -6,7 +6,7 @@
 #include "../Component/Animator.h"
 #include "../Component/TileMap.h"
 #include "../Component/Tilelayer.h"
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 
 namespace aka {
 

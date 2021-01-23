@@ -1,7 +1,7 @@
 #include "PlayerSystem.h"
 
 #include "../Platform/Logger.h"
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 #include "../Component/Transform2D.h"
 #include "../Component/Coin.h"
 #include "../Component/Player.h"

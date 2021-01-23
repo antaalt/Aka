@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Platform/IO/FileSystem.h"
-#include "../Core/System.h"
+#include "../Core/ECS/System.h"
 #include "../Core/Audio/AudioPlayer.h"
 
 #include <RtAudio.h>

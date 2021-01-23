@@ -5,8 +5,8 @@
 #include "System.h"
 #include "Event.h"
 #include "Time.h"
-#include "Debug.h"
-#include "../Graphic/GraphicBackend.h"
+#include "../Debug.h"
+#include "../../Graphic/GraphicBackend.h"
 
 #include <functional>
 #include <type_traits>

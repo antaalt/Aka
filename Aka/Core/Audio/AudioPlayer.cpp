@@ -115,7 +115,7 @@ AudioDecoder::ID AudioPlayer::play(const Path& path, bool loop)
     }
     else
     {
-        Logger::error("Audio format not supported");
+        Logger::error("Audio format not supported : ", path.extension());
         return AudioDecoder::ID(0);
     }
     ASSERT(m_frequency == decoder->frequency(), "Audio will need resampling");

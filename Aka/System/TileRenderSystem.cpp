@@ -4,7 +4,7 @@
 #include "../Component/Camera2D.h"
 #include "../Component/Transform2D.h"
 #include "../Component/Animator.h"
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 
 namespace aka {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/Component.h"
+#include "../Core/ECS/Component.h"
 
 namespace aka {
 

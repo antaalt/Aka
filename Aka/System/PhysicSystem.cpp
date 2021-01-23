@@ -4,7 +4,7 @@
 #include "../Core/Geometry.h"
 #include "../Component/Transform2D.h"
 #include "../Component/Collider2D.h"
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 
 namespace aka {
 

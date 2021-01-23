@@ -1,6 +1,6 @@
 #include "AnimatorSystem.h"
 
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 
 namespace aka {
 

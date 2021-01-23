@@ -1,6 +1,6 @@
 #pragma once
-#include "../Core/System.h"
-#include "../Core/Event.h"
+#include "../Core/ECS/System.h"
+#include "../Core/ECS/Event.h"
 #include "../Component/Animator.h"
 #include "../System/AnimatorSystem.h"
 

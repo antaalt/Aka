@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Platform/Time.h"
-#include "../Core/System.h"
+#include "../Core/ECS/System.h"
 #include "../Component/Collider2D.h"
 
 namespace aka {

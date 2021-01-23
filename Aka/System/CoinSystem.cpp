@@ -1,6 +1,6 @@
 #include "CoinSystem.h"
 
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 #include "../Component/Coin.h"
 #include "../Component/Animator.h"
 #include "../Platform/Logger.h"

@@ -14,7 +14,7 @@
 #include "Component/Player.h"
 #include "Component/Coin.h"
 #include "Core/OgmoWorld.h"
-#include "Core/World.h"
+#include "Core/ECS/World.h"
 #include "System/PhysicSystem.h"
 #include "System/AnimatorSystem.h"
 #include "System/TileMapSystem.h"

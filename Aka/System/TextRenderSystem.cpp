@@ -2,7 +2,7 @@
 
 #include "../Component/Text.h"
 #include "../Component/Transform2D.h"
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 #include "../Core/Font.h"
 
 namespace aka {

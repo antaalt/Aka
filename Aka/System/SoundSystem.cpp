@@ -1,7 +1,7 @@
 #include "SoundSystem.h"
 
 #include "../Platform/Logger.h"
-#include "../Core/World.h"
+#include "../Core/ECS/World.h"
 
 namespace aka {
 

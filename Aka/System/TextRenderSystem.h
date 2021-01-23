@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/System.h"
+#include "../Core/ECS/System.h"
 #include "../Graphic/Shader.h"
 
 namespace aka {
