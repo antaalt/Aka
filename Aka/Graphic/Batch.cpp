@@ -10,11 +10,12 @@ const char* vertShader =
 "layout (location = 0) in vec2 a_position;\n"
 "layout (location = 1) in vec2 a_uv;\n"
 "layout (location = 2) in vec4 a_color;\n"
-"uniform mat4 u_matrix;\n"
+"uniform mat4 u_projection;\n"
+"uniform mat4 u_view;\n"
 "out vec2 v_uv;\n"
 "out vec4 v_color;\n"
 "void main(void) {\n"
-"	gl_Position = u_matrix * vec4(a_position.xy, 0.0, 1.0);\n"
+"	gl_Position = u_projection * u_view * vec4(a_position.xy, 0.0, 1.0);\n"
 "	v_uv = a_uv;\n"
 "	v_color = a_color;\n"
 "}"
@@ -174,7 +175,7 @@ void Batch::clear()
 	m_currentBatch.layer = 0;
 }
 
-void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& projection)
+void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)
 {
 	RenderPass renderPass {};
 	{
@@ -185,7 +186,8 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& projection)
 				Shader::compile(fragShader, ShaderType::Fragment),
 				ShaderID(0),
 				std::vector<Uniform>{
-					Uniform{ UniformType::Mat4, ShaderType::Vertex, "u_matrix" } 
+					Uniform{ UniformType::Mat4, ShaderType::Vertex, "u_projection" },
+					Uniform{ UniformType::Mat4, ShaderType::Vertex, "u_view" }
 				}
 			);
 		}
@@ -198,7 +200,8 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& projection)
 			m_mesh = Mesh::create();
 		// TODO build matrix out of here to support more projection type
 		m_shader->use();
-		m_shader->set<mat4f>("u_matrix", projection);
+		m_shader->set<mat4f>("u_projection", projection);
+		m_shader->set<mat4f>("u_view", view);
 	}
 
 	{

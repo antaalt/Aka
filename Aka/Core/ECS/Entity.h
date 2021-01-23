@@ -65,7 +65,7 @@ inline const T* Entity::get() const
 	uint8_t type = Component::Type::get<T>();
 	for (const Component* component : m_components)
 		if (component->getType() == type)
-			return reinterpret_cast<T*>(component);
+			return reinterpret_cast<const T*>(component);
 	return nullptr;
 }
 

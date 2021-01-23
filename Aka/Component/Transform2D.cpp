@@ -13,6 +13,11 @@ Transform2D::Transform2D(const vec2f& position, const vec2f& scale, radianf rota
 	model *= mat3f::scale(scale);
 }
 
+vec2f Transform2D::position() const
+{
+	return vec2f(model[2].x, model[2].y);
+}
+
 void Transform2D::translate(const vec2f &translation)
 {
 	model *= mat3f::translate(translation);

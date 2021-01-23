@@ -64,9 +64,9 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 	{
 		// INIT CAMERA
-		Entity* cameraEntity = m_world.createEntity();
-		cameraEntity->add<Transform2D>(Transform2D());
-		cameraEntity->add<Camera2D>(Camera2D(vec2f(0), vec2f(320, 180) ));
+		m_cameraEntity = m_world.createEntity();
+		m_cameraEntity->add<Transform2D>(Transform2D());
+		m_cameraEntity->add<Camera2D>(Camera2D(vec2f(0), vec2f(320, 180) ));
 	}
 
 	{
@@ -81,7 +81,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		text->offset = vec2f(0.f);
 		text->color = color4f(1.f);
 		text->font = m_fonts.back().get();
-		text->text = "Hello World !";
+		text->text = "Find them all !";
 		text->layer = 2;
 		vec2i size = m_fonts.back()->size(text->text);
 		transform->translate(vec2f((float)((int)m_framebuffer->width() / 2 - size.x / 2), (float)((int)m_framebuffer->height() / 2 - size.y / 2 - 50)));
@@ -140,7 +140,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Entity* collider = m_world.createEntity();
 			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size) / 16.f, radianf(0.f)));
 			collider->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
-			collider->add<Animator>(Animator(m_sprites.back().get(), 1));
+			//collider->add<Animator>(Animator(m_sprites.back().get(), 1));
 		}
 	}
 
@@ -316,7 +316,7 @@ void Game::renderGUI()
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
 
-			static bool renderColliders = true;
+			static bool renderColliders = false;
 			if (ImGui::Checkbox("Render colliders", &renderColliders))
 			{
 				m_world.each<Collider2D>([&](Entity * entity, Collider2D * collider) {
@@ -624,8 +624,8 @@ void Game::renderGUI()
 						snprintf(buffer, 256, "Camera2D##%p", camera);
 						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 						{
-							camera->position;
-							camera->viewport;
+							ImGui::InputFloat2("Position", camera->position.data, 3);
+							ImGui::InputFloat2("Viewport", camera->viewport.data, 3);
 
 							if (ImGui::Button("Remove")) { entity->remove<Camera2D>(); }
 
@@ -687,11 +687,19 @@ void Game::render(GraphicBackend& backend)
 {
 	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
 	m_framebuffer->bind(Framebuffer::Type::Both);
-	backend.clear(0.f, 0.f, 0.f, 1.f);
+	backend.clear(1.f, 0.63f, 0.f, 1.f);
+
+	// Render
+	Camera2D *camera = m_cameraEntity->get<Camera2D>();
+	mat4f view = mat4f::inverse(mat4f(
+		col4f(1.f, 0.f, 0.f, 0.f),
+		col4f(0.f, 1.f, 0.f, 0.f),
+		col4f(0.f, 0.f, 1.f, 0.f),
+		col4f(camera->position.x, camera->position.y, 0.f, 1.f)
+	));
 	mat4f projection = mat4f::orthographic(0.f, static_cast<float>(m_framebuffer->height()), 0.f, static_cast<float>(m_framebuffer->width()), -1.f, 1.f);
-	// draw background
 	m_world.draw(m_batch);
-	m_batch.render(m_framebuffer, projection);
+	m_batch.render(m_framebuffer, view, projection);
 
 	// Blit to main buffer
 	uint32_t widthRatio = screenWidth() / m_framebuffer->width();

@@ -32,6 +32,8 @@ public:
 	template <typename T>
 	T *add(Entity& entity, T&& component);
 
+	template <typename T>
+	T* first();
 	void each(std::function<void(Entity* entity)> callback);
 	template <typename T>
 	void each(std::function<void(Entity* entity, T*)> callback);
@@ -96,6 +98,13 @@ T* World::add(Entity& entity, T&& component)
 	m_components[instance->m_type].push_back(instance);
 	entity.m_components.push_back(instance);
 	return instance;
+}
+
+template<typename T>
+inline T* World::first()
+{
+	static_assert(std::is_base_of<Component, T>::value, "Type is not a component");
+	return reinterpret_cast<T*>(m_components[Component::Type::get<T>()].front());
 }
 
 template <typename T>
