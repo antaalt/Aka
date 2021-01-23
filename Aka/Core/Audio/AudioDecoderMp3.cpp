@@ -16,8 +16,8 @@
 namespace aka {
 
 
-AudioDecoderMp3::AudioDecoderMp3(const Path& path, bool loop) :
-    AudioDecoder(loop)
+AudioDecoderMp3::AudioDecoderMp3(const Path& path, float volume, bool loop) :
+    AudioDecoder(volume, loop)
 {
     memset(&m_mp3d, 0, sizeof(m_mp3d));
     int sample = mp3dec_ex_open(&m_mp3d, path.c_str(), MP3D_SEEK_TO_SAMPLE);

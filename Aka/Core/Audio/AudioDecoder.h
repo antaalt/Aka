@@ -10,7 +10,7 @@ class AudioDecoder
 public:
     using ID = StrictType<uint64_t, struct AudioDecoderTagName>;
 public:
-    AudioDecoder(bool loop) : m_playing(false), m_loop(loop) {}
+    AudioDecoder(float volume, bool loop) : m_volume(volume), m_playing(false), m_loop(loop) {}
     virtual ~AudioDecoder() {}
 
     virtual bool playing() { return m_playing; }
@@ -20,7 +20,10 @@ public:
     virtual uint32_t frequency() const = 0;
     virtual uint64_t samples() const = 0;
     virtual size_t fileSize() const = 0;
+    float volume() const { return m_volume; }
+    void volume(float volume) { m_volume = volume; }
 protected:
+    float m_volume;
     bool m_playing;
     bool m_loop;
 };

@@ -65,7 +65,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 
 			if (player->jump.down() && player->state == Player::State::Jumping)
 			{
-				m_world->createEntity()->add<SoundInstance>(SoundInstance(Asset::path("sounds/jump.mp3")));
+				m_world->createEntity()->add<SoundInstance>(SoundInstance(Asset::path("sounds/jump.mp3"), 1.f));
 				player->state = Player::State::DoubleJumping;
 				rigid->acceleration.y = 0.f;
 				rigid->velocity.y = 16.f;
@@ -93,7 +93,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 
 			if (player->jump.down())
 			{
-				m_world->createEntity()->add<SoundInstance>(SoundInstance(Asset::path("sounds/jump.mp3")));
+				m_world->createEntity()->add<SoundInstance>(SoundInstance(Asset::path("sounds/jump.mp3"), 1.f));
 				player->state = Player::State::Jumping;
 				rigid->velocity.y = 16.f;
 			}

@@ -17,9 +17,10 @@ public:
 
     uint32_t getDeviceCount();
 
-    AudioDecoder::ID play(const Path& path, bool loop = false);
+    AudioDecoder::ID play(const Path& path, float volume, bool loop = false);
     bool finished(AudioDecoder::ID id);
     bool exist(AudioDecoder::ID id);
+    void setVolume(AudioDecoder::ID id, float volume);
     void close(AudioDecoder::ID id);
 
 private:

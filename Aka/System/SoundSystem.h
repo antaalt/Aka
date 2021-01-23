@@ -12,10 +12,11 @@ class SoundSystem;
 
 struct SoundInstance : public Component {
 	friend class SoundSystem;
-	SoundInstance(): SoundInstance("", false) {}
-	SoundInstance(const Path &path, bool loop = false) : path(path), loop(loop) {}
+	SoundInstance() : SoundInstance("", 1.f, false) {}
+	SoundInstance(const Path &path, float volume, bool loop = false) : path(path), volume(volume), loop(loop) {}
 
 	Path path;
+	float volume;
 	bool loop;
 private:
 	AudioDecoder::ID decoder;

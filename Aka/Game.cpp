@@ -640,6 +640,8 @@ void Game::renderGUI()
 						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 						{
 							ImGui::Text("Sound : %s", sound->path.c_str());
+							ImGui::SliderFloat("Volume", &sound->volume, 0.f, 2.f);
+							ImGui::Checkbox("Loop", &sound->loop);
 
 							if (ImGui::Button("Remove")) { entity->remove<SoundInstance>(); }
 

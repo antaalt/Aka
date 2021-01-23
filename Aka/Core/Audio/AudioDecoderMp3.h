@@ -9,7 +9,7 @@ namespace aka {
 
 struct AudioDecoderMp3 : public AudioDecoder
 {
-    AudioDecoderMp3(const Path& path, bool loop = false);
+    AudioDecoderMp3(const Path& path, float volume, bool loop = false);
     ~AudioDecoderMp3();
 
     void decode(int16_t* buffer, uint32_t bytes) override;

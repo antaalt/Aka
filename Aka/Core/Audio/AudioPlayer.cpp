@@ -106,12 +106,12 @@ AudioDecoder::ID generateUniqueHandle(AudioDecoder* decoder)
     return AudioDecoder::ID((uintptr_t)decoder);
 }
 
-AudioDecoder::ID AudioPlayer::play(const Path& path, bool loop)
+AudioDecoder::ID AudioPlayer::play(const Path& path, float volume, bool loop)
 {
     std::unique_ptr<AudioDecoder> decoder;
     if (path.extension() == ".mp3")
     {
-        decoder = std::make_unique<AudioDecoderMp3>(path, loop);
+        decoder = std::make_unique<AudioDecoderMp3>(path, volume, loop);
     }
     else
     {
@@ -139,6 +139,16 @@ bool AudioPlayer::exist(AudioDecoder::ID id)
 {
     auto it = m_decoders.find(id);
     return (it != m_decoders.end());
+}
+
+void AudioPlayer::setVolume(AudioDecoder::ID id, float volume)
+{
+    auto it = m_decoders.find(id);
+    if (it != m_decoders.end())
+    {
+        std::lock_guard<std::mutex> m(m_lock);
+        it->second->volume(volume);
+    }
 }
 
 void AudioPlayer::close(AudioDecoder::ID id)
@@ -172,9 +182,10 @@ void AudioPlayer::process(int16_t* buffer, uint32_t frames)
     std::vector<int16_t> tmp(frames * m_channels);
     for (auto &decoder : m_decoders)
     {
-        decoder.second->decode(tmp.data(), frames * m_channels);
+        AudioDecoder* dec = decoder.second.get();
+        dec->decode(tmp.data(), frames * m_channels);
         for (unsigned int i = 0; i < frames * m_channels; i++)
-            buffer[i] = mix(buffer[i], static_cast<int16_t>(tmp[i] * m_volume));
+            buffer[i] = mix(buffer[i], static_cast<int16_t>(tmp[i] * dec->volume()));
     }
 }
 
