@@ -1,6 +1,10 @@
 #include "FileSystem.h"
 
 #include <fstream>
+#if defined(_WIN32)
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")  
+#endif
 
 namespace aka {
 
@@ -69,7 +73,15 @@ Path Path::operator+(const Path& rhs) const
 	}
 }
 
-
+std::string Path::extension() const
+{
+#if defined(_WIN32)
+	return std::string(PathFindExtensionA(m_string.c_str()));
+#else
+#error "Not implemented"
+	return "";
+#endif
+}
 
 std::string Asset::loadString(const Path& path)
 {

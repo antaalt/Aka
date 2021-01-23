@@ -7,36 +7,25 @@ namespace aka {
 
 
 SoundSystem::SoundSystem(World* world) :
-	System(world)
+	System(world),
+	m_player(44100, 2)
 {
 }
 
 void SoundSystem::update(Time::Unit deltaTime)
 {
-    // Manage audiodecoder depending on sound to play
 	m_world->each<SoundInstance>([&](Entity * entity, SoundInstance * sound) {
-		auto it = m_sounds.find(sound);
-		if (it == m_sounds.end())
+		if (m_player.exist(sound->decoder))
 		{
-			// Start the sound
-			m_sounds.insert(std::make_pair(sound, std::make_unique<SoundPlayer>(sound->path)));
+			if (m_player.finished(sound->decoder))
+			{
+				m_player.close(sound->decoder);
+				entity->destroy();
+			}
 		}
 		else
 		{
-			// Stop the sound
-			if (!it->second->playing())
-			{
-				if (sound->loop)
-				{
-					// Restart it
-					it->second->restart();
-				}
-				else
-				{
-					m_sounds.erase(it);
-					entity->destroy();
-				}
-			}
+			sound->decoder = m_player.play(sound->path, sound->loop);
 		}
 	});
 }

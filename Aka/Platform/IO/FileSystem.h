@@ -16,6 +16,8 @@ struct Path
 
 	Path operator+(const Path& rhs) const;
 
+	std::string extension() const;
+
 private:
 	std::string m_string;
 };

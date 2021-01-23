@@ -162,10 +162,13 @@
     <ClCompile Include="System\SoundSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Audio\Sound.cpp">
+    <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp">
+    <ClCompile Include="Core\Audio\AudioDecoderMp3.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Audio\AudioPlayer.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -341,7 +344,13 @@
     <ClInclude Include="System\SoundSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Audio\Sound.h">
+    <ClInclude Include="Core\Audio\AudioDecoder.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Audio\AudioDecoderMp3.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Audio\AudioPlayer.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>

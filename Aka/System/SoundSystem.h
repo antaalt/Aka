@@ -2,17 +2,23 @@
 
 #include "../Platform/IO/FileSystem.h"
 #include "../Core/System.h"
-#include "../Core/Audio/Sound.h"
+#include "../Core/Audio/AudioPlayer.h"
 
 #include <RtAudio.h>
 
 namespace aka {
 
+class SoundSystem;
+
 struct SoundInstance : public Component {
-	SoundInstance() {}
+	friend class SoundSystem;
+	SoundInstance(): SoundInstance("", false) {}
 	SoundInstance(const Path &path, bool loop = false) : path(path), loop(loop) {}
+
 	Path path;
 	bool loop;
+private:
+	AudioDecoder::ID decoder;
 };
 
 class SoundSystem : public System
@@ -22,7 +28,7 @@ public:
 
 	void update(Time::Unit deltaTime) override;
 private:
-	std::map<SoundInstance*, std::unique_ptr<SoundPlayer>> m_sounds;
+	AudioPlayer m_player;
 };
 
 };
