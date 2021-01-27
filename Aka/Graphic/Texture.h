@@ -51,8 +51,6 @@ public:
 
 	uint32_t height() const;
 
-	virtual void bind() = 0;
-
 	virtual Handle handle() = 0;
 
 	virtual bool isFramebuffer() = 0;

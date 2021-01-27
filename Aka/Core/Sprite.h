@@ -17,8 +17,6 @@ struct Sprite {
 		uint32_t width = 0;
 		uint32_t height = 0;
 
-		void bind() { texture->bind(); }
-
 		static Frame create(Texture::Ptr texture, Time::Unit duration) { 
 			Frame frame; 
 			frame.texture = texture; 

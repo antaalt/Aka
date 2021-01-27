@@ -31,6 +31,27 @@ struct VertexData {
 		VertexFormat type; // Type of the attribute
 	};
 	std::vector<Attribute> attributes;
+
+	uint32_t stride() const {
+		uint32_t stride = 0;
+		for (const VertexData::Attribute& attribute : attributes)
+		{
+			switch (attribute.type)
+			{
+			case VertexFormat::Float: stride += 4; break;
+			case VertexFormat::Float2: stride += 8; break;
+			case VertexFormat::Float3: stride += 12; break;
+			case VertexFormat::Float4: stride += 16; break;
+			case VertexFormat::Byte4: stride += 4; break;
+			case VertexFormat::Ubyte4: stride += 4; break;
+			case VertexFormat::Short2: stride += 4; break;
+			case VertexFormat::Ushort2: stride += 4; break;
+			case VertexFormat::Short4: stride += 8; break;
+			case VertexFormat::Ushort4: stride += 8; break;
+			}
+		}
+		return stride;
+	}
 };
 
 class Mesh

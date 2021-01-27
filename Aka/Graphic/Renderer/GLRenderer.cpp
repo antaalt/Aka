@@ -423,11 +423,6 @@ public:
 		if (m_textureID != 0)
 			glDeleteTextures(1, &m_textureID);
 	}
-public:
-	void bind() override
-	{
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-	}
 	Handle handle() override
 	{
 		return Handle((uintptr_t)m_textureID);
@@ -917,7 +912,7 @@ void GLRenderer::render(RenderPass& pass)
 		if (pass.texture != nullptr)
 		{
 			glActiveTexture(GL_TEXTURE0);
-			pass.texture->bind();
+			glBindTexture(GL_TEXTURE_2D, (GLuint)pass.texture->handle().value());
 		}
 	}
 	{

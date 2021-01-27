@@ -354,10 +354,6 @@ public:
 		if (m_texture)
 			m_texture->Release();
 	}
-	void bind() override
-	{
-		throw std::runtime_error("Not implemented");
-	}
 	Handle handle() override
 	{
 		return Handle((uintptr_t)m_view);
@@ -532,11 +528,6 @@ public:
 		// Clear the depth buffer.
 		ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
-	/*void bind(Type type) override
-	{
-		ctx.deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
-		ctx.deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
-	}*/
 	Texture::Ptr attachment(AttachmentType type) override
 	{
 		// TODO create Texture as attachment
@@ -573,23 +564,10 @@ public:
 	{
 		m_vertexData = vertex;
 		m_vertexCount = static_cast<uint32_t>(count);
-		m_vertexStride = 0;
-		for (const VertexData::Attribute& attribute : vertex.attributes)
-		{
-			switch (attribute.type)
-			{
-			case VertexFormat::Float: m_vertexStride += 4; break;
-			case VertexFormat::Float2: m_vertexStride += 8; break;
-			case VertexFormat::Float3: m_vertexStride += 12; break;
-			case VertexFormat::Float4: m_vertexStride += 16; break;
-			case VertexFormat::Byte4: m_vertexStride += 4; break;
-			case VertexFormat::Ubyte4: m_vertexStride += 4; break;
-			case VertexFormat::Short2: m_vertexStride += 4; break;
-			case VertexFormat::Ushort2: m_vertexStride += 4; break;
-			case VertexFormat::Short4: m_vertexStride += 8; break;
-			case VertexFormat::Ushort4: m_vertexStride += 8; break;
-			}
-		}
+		m_vertexStride = vertex.stride();
+
+		if (m_vertexBuffer)
+			m_vertexBuffer->Release();
 
 		D3D11_BUFFER_DESC vertexBufferDesc{};
 		// Set up the description of the static vertex buffer.
@@ -613,19 +591,25 @@ public:
 	void indices(IndexFormat indexFormat, const void* indices, size_t count) override
 	{
 		m_indexCount = static_cast<uint32_t>(count);
+
+		if (m_indexBuffer)
+			m_indexBuffer->Release();
 		switch (indexFormat)
 		{
 		case IndexFormat::Uint8:
 			// TODO check for support
 			m_indexFormat = IndexFormat::Uint8;
 			m_indexSize = 1;
+			m_format = DXGI_FORMAT_R8_UINT;
 			break;
 		case IndexFormat::Uint16:
 			m_indexFormat = IndexFormat::Uint16;
+			m_format = DXGI_FORMAT_R16_UINT;
 			m_indexSize = 2;
 			break;
 		case IndexFormat::Uint32:
 			m_indexFormat = IndexFormat::Uint32;
+			m_format = DXGI_FORMAT_R32_UINT;
 			m_indexSize = 4;
 			break;
 		}
@@ -653,13 +637,14 @@ public:
 		// Set the vertex buffer to active in the input assembler so it can be rendered.
 		ctx.deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &offset);
 		// Set the index buffer to active in the input assembler so it can be rendered.
-		ctx.deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		ctx.deviceContext->IASetIndexBuffer(m_indexBuffer, m_format, 0);
 		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 		ctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		// Draw indexed primitives
 		ctx.deviceContext->DrawIndexed(indexCount, indexOffset, 0);
 	}
 private:
+	DXGI_FORMAT m_format;
 	ID3D11Buffer* m_indexBuffer;
 	ID3D11Buffer* m_vertexBuffer;
 };
