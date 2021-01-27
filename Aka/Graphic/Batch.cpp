@@ -5,6 +5,7 @@
 namespace aka {
 
 #if defined(AKA_USE_OPENGL)
+const bool originBottomLeft = true;
 // Move somewhere else
 const char* vertShader =
 "#version 330\n"
@@ -32,6 +33,7 @@ const char* fragShader =
 "}"
 "";
 #elif defined(AKA_USE_D3D11)
+const bool originBottomLeft = false;
 const char* shader = ""
 "cbuffer constants : register(b0)\n"
 "{\n"
@@ -115,7 +117,6 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv
 {
 }
 
-
 Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3, int32_t layer) :
 	position(pos),
 	size(size),
@@ -150,10 +151,20 @@ void Batch::draw(const mat3f& transform, Rect&& rect)
 	m_indices.push_back(offset + 1);
 	m_indices.push_back(offset + 3);
 	// Reversed uv so that we don't need to flip images at loading.
-	m_vertices.push_back(Vertex(transform * rect.position, rect.uv[2], rect.color[0])); // bottom left
-	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x + rect.size.x, rect.position.y), rect.uv[3], rect.color[1])); // bottom right
-	m_vertices.push_back(Vertex(transform * vec2f(rect.position.x, rect.position.y + rect.size.y), rect.uv[0], rect.color[2])); // top left
-	m_vertices.push_back(Vertex(transform * (rect.position + rect.size), rect.uv[1], rect.color[3])); // top right
+	// D3D / Metal / Consoles origin is top left
+	// OpenGL / OpenGL ES origin is bottom left
+	uint8_t uvIndex[4] = { 2, 3, 0, 1 };
+	if (originBottomLeft && rect.texture && rect.texture->isFramebuffer())
+	{
+		uvIndex[0] = 0;
+		uvIndex[1] = 1;
+		uvIndex[2] = 2;
+		uvIndex[3] = 3;
+	}
+	m_vertices.push_back(Vertex(transform.multiplyPoint(rect.position), rect.uv[uvIndex[0]], rect.color[0])); // bottom left
+	m_vertices.push_back(Vertex(transform.multiplyPoint(vec2f(rect.position.x + rect.size.x, rect.position.y)), rect.uv[uvIndex[1]], rect.color[1])); // bottom right
+	m_vertices.push_back(Vertex(transform.multiplyPoint(vec2f(rect.position.x, rect.position.y + rect.size.y)), rect.uv[uvIndex[2]], rect.color[2])); // top left
+	m_vertices.push_back(Vertex(transform.multiplyPoint(rect.position + rect.size), rect.uv[uvIndex[3]], rect.color[3])); // top right
 	m_currentBatch.elements += 2;
 }
 
