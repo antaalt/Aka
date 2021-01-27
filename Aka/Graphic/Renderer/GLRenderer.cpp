@@ -111,6 +111,8 @@ uint32_t checkError_(const char* file, int line)
 
 namespace aka {
 
+static GLFWwindow* s_window;
+
 namespace gl {
 GLenum attachmentType(Framebuffer::AttachmentType type)
 {
@@ -401,8 +403,9 @@ class GLTexture : public Texture
 {
 public:
 	friend class GLFramebuffer;
-	GLTexture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter) :
-		Texture(width, height)
+	GLTexture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
+		Texture(width, height),
+		m_isFramebuffer(isFramebuffer)
 	{
 		// TODO add filter & type settings
 		glGenTextures(1, &m_textureID);
@@ -429,8 +432,13 @@ public:
 	{
 		return Handle((uintptr_t)m_textureID);
 	}
+	bool isFramebuffer() override
+	{
+		return m_isFramebuffer;
+	}
 private:
 	GLuint m_textureID;
+	bool m_isFramebuffer;
 };
 
 class GLMesh : public Mesh
@@ -625,7 +633,7 @@ public:
 				format = Texture::Format::DepthStencil;
 				break;
 			}
-			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, nullptr, filter);
+			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, nullptr, filter, true);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt]), GL_TEXTURE_2D, tex->m_textureID, 0);
 			m_attachments.emplace_back();
 			Attachment& att = m_attachments.back();
@@ -652,28 +660,6 @@ public:
 		glClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
-	void bind(Type type) override
-	{
-		glBindFramebuffer(gl::framebufferType(type), m_framebufferID);
-	}
-	/*void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
-	{
-		bind(Type::Read);
-		dst->bind(Type::Draw);
-		glBlitFramebuffer(
-			static_cast<GLint>(srcRect.x),
-			static_cast<GLint>(srcRect.y),
-			static_cast<GLint>(srcRect.x + srcRect.w),
-			static_cast<GLint>(srcRect.y + srcRect.h),
-			static_cast<GLint>(dstRect.x),
-			static_cast<GLint>(dstRect.y),
-			static_cast<GLint>(dstRect.x + dstRect.w),
-			static_cast<GLint>(dstRect.y + dstRect.h),
-			GL_COLOR_BUFFER_BIT,
-			gl::filter(filter)
-		);
-		dst->bind(Type::Both);
-	}*/
 	Texture::Ptr attachment(AttachmentType type) override
 	{
 		for (Attachment& attachment : m_attachments)
@@ -683,6 +669,7 @@ public:
 		}
 		return nullptr;
 	}
+	GLuint getFramebufferID() const { return m_framebufferID; }
 private:
 	std::vector<Attachment> m_attachments;
 	GLuint m_framebufferID;
@@ -709,10 +696,6 @@ public:
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	}
-	void bind(Type type) override
-	{
-		glBindFramebuffer(gl::framebufferType(type), 0);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
@@ -750,6 +733,7 @@ GLRenderer::GLRenderer(Window& window, uint32_t width, uint32_t height) :
 	else
 		Logger::warn("glDebugMessageCallback not supported");
 #endif
+	s_window = window.handle();
 	m_backbuffer = std::make_shared<GLBackBuffer>(width, height);
 }
 
@@ -776,7 +760,7 @@ void GLRenderer::frame()
 
 void GLRenderer::present()
 {
-	glfwSwapBuffers(m_window);
+	glfwSwapBuffers(s_window);
 }
 
 void GLRenderer::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -800,9 +784,9 @@ void GLRenderer::render(RenderPass& pass)
 {
 	{
 		// Set framebuffer
-		if (pass.framebuffer != nullptr)
+		if (pass.framebuffer != m_backbuffer)
 		{
-			pass.framebuffer->bind(Framebuffer::Type::Both);
+			glBindFramebuffer(GL_FRAMEBUFFER, ((GLFramebuffer*)pass.framebuffer.get())->getFramebufferID());
 		}
 		else
 		{
@@ -957,7 +941,7 @@ uint32_t GLRenderer::deviceCount()
 
 Texture::Ptr GLRenderer::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
 {
-	return std::make_shared<GLTexture>(width, height, format, data, filter);
+	return std::make_shared<GLTexture>(width, height, format, data, filter, false);
 }
 
 Framebuffer::Ptr GLRenderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
