@@ -185,20 +185,20 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 				Shader::compile(vertShader, ShaderType::Vertex),
 				Shader::compile(fragShader, ShaderType::Fragment),
 				ShaderID(0),
-				std::vector<Uniform>{
-					Uniform{ UniformType::Mat4, ShaderType::Vertex, "u_projection" },
-					Uniform{ UniformType::Mat4, ShaderType::Vertex, "u_view" }
+				std::vector<Attributes>{ // HLSL only
+					Attributes{ AttributeID(0), "POS"},
+					Attributes{ AttributeID(0), "TEX" },
+					Attributes{ AttributeID(0), "COL" }
 				}
 			);
 		}
 		if (m_defaultTexture == nullptr)
 		{
 			uint8_t data[4] = { 255, 255, 255, 255 };
-			m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba8, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
+			m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
 		}
 		if (m_mesh == nullptr)
 			m_mesh = Mesh::create();
-		// TODO build matrix out of here to support more projection type
 		m_shader->use();
 		m_shader->set<mat4f>("u_projection", projection);
 		m_shader->set<mat4f>("u_view", view);

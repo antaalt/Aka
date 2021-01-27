@@ -19,7 +19,7 @@ public:
 		uint32_t width;
 		uint32_t height;
 		std::string name;
-		GraphicBackend::Api api;
+		GraphicApi api;
 		Application* app;
 	};
 private:
@@ -40,7 +40,6 @@ private:
 	// TODO : Abstraction depending on window system (SDL, GLFW...)
 	Application* m_app;
 	GLFWwindow* m_window;
-	GraphicBackend m_backend;
 };
 
 }

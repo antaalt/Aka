@@ -57,7 +57,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>__WINDOWS_DS__;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AKA_USE_OPENGL;__WINDOWS_DS__;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;$(SolutionDir)lib\rtaudio-5.1.0\include;$(SolutionDir)lib\minimp3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -87,6 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\lib\imgui\examples\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\lib\imgui\examples\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\lib\imgui\imgui.cpp" />
@@ -96,6 +97,15 @@
     <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp" />
     <ClCompile Include="Core\Audio\AudioDecoderMp3.cpp" />
     <ClCompile Include="Core\Audio\AudioPlayer.cpp" />
+    <ClCompile Include="Graphic\Renderer\D3D11Renderer.cpp" />
+    <ClCompile Include="Graphic\Renderer\GLRenderer.cpp" />
+    <ClCompile Include="Graphic\Device.cpp" />
+    <ClCompile Include="Graphic\Framebuffer.cpp" />
+    <ClCompile Include="Graphic\GraphicBackend.cpp" />
+    <ClCompile Include="Graphic\Mesh.cpp" />
+    <ClCompile Include="Graphic\RenderPass.cpp" />
+    <ClCompile Include="Graphic\Shader.cpp" />
+    <ClCompile Include="Graphic\Texture.cpp" />
     <ClCompile Include="System\SoundSystem.cpp" />
     <ClCompile Include="System\CoinSystem.cpp" />
     <ClCompile Include="Core\ECS\Event.cpp" />
@@ -118,13 +128,6 @@
     <ClCompile Include="Core\ECS\World.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Graphic\Batch.cpp" />
-    <ClCompile Include="Graphic\GL\GLBackbuffer.cpp" />
-    <ClCompile Include="Graphic\GL\GLBackend.cpp" />
-    <ClCompile Include="Graphic\GL\GLFramebuffer.cpp" />
-    <ClCompile Include="Graphic\GL\GLMesh.cpp" />
-    <ClCompile Include="Graphic\GL\GLRenderPass.cpp" />
-    <ClCompile Include="Graphic\GL\GLShader.cpp" />
-    <ClCompile Include="Graphic\GL\GLTexture.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Platform\Input.cpp" />
     <ClCompile Include="Platform\IO\FileSystem.cpp" />
@@ -141,6 +144,7 @@
     <ClCompile Include="System\TileRenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_dx11.h" />
     <ClInclude Include="..\lib\imgui\examples\imgui_impl_glfw.h" />
     <ClInclude Include="..\lib\imgui\examples\imgui_impl_opengl3.h" />
     <ClInclude Include="..\lib\imgui\imconfig.h" />
@@ -152,6 +156,9 @@
     <ClInclude Include="Core\Audio\AudioDecoderMp3.h" />
     <ClInclude Include="Core\Audio\AudioDecoder.h" />
     <ClInclude Include="Core\Audio\AudioPlayer.h" />
+    <ClInclude Include="Graphic\Renderer\D3D11Renderer.h" />
+    <ClInclude Include="Graphic\Renderer\GLRenderer.h" />
+    <ClInclude Include="Graphic\Device.h" />
     <ClInclude Include="System\SoundSystem.h" />
     <ClInclude Include="System\CoinSystem.h" />
     <ClInclude Include="Component\Coin.h" />
@@ -179,10 +186,8 @@
     <ClInclude Include="Core\ECS\System.h" />
     <ClInclude Include="Core\ECS\World.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="Graphic\Backbuffer.h" />
     <ClInclude Include="Graphic\Batch.h" />
     <ClInclude Include="Graphic\Framebuffer.h" />
-    <ClInclude Include="Graphic\GL\GLBackend.h" />
     <ClInclude Include="Graphic\GraphicBackend.h" />
     <ClInclude Include="Graphic\Mesh.h" />
     <ClInclude Include="Graphic\RenderPass.h" />

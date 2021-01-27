@@ -25,44 +25,45 @@ enum class VertexFormat {
 	Ushort4
 };
 
-struct VertexData {;
+struct VertexData {
 	struct Attribute {
-		uint32_t index; // Location of the attribute
-		VertexFormat type;      // Type of the attribute
+		uint32_t index;	   // Location of the attribute
+		VertexFormat type; // Type of the attribute
 	};
 	std::vector<Attribute> attributes;
 };
-
 
 class Mesh
 {
 public:
 	using Ptr = std::shared_ptr<Mesh>;
-public:
+protected:
 	Mesh();
 	Mesh(const Mesh&) = delete;
 	Mesh& operator=(const Mesh&) = delete;
-	~Mesh();
-
+	virtual ~Mesh();
+public:
 	static Mesh::Ptr create();
 
-	void vertices(const VertexData&vertex, const void *vertices, size_t count);
+	virtual void vertices(const VertexData&vertex, const void *vertices, size_t count) = 0;
 
-	void indices(IndexFormat indexFormat, const void* indices, size_t count);
+	virtual void indices(IndexFormat indexFormat, const void* indices, size_t count) = 0;
 
-	uint32_t id() const;
+	void draw() const { draw(m_indexCount, 0); }
+	virtual void draw(uint32_t indexCount, uint32_t indexOffset) const = 0;
 
-	uint32_t indexSize() const;
+	uint32_t getIndexCount() const;
+	uint32_t getIndexSize() const;
+	IndexFormat getIndexFormat() const;
+	const VertexData &getVertexData() const;
 
-	IndexFormat indexFormat() const;
-
-private:
-	uint32_t m_vao;
-	uint32_t m_indexVbo;
-	uint32_t m_vertexVbo;
-
+protected:
+	uint32_t m_vertexStride;
+	uint32_t m_vertexCount;
 	uint32_t m_indexSize;
+	uint32_t m_indexCount;
 	IndexFormat m_indexFormat;
+	VertexData m_vertexData;
 };
 
 };

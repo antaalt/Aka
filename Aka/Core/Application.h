@@ -17,15 +17,15 @@ public:
 	uint32_t screenHeight() const { return m_screenHeight; }
 public:
 	// Initialize the app, set the listener on inputs, create resources...
-	virtual void initialize(Window& window, GraphicBackend& backend) = 0;
+	virtual void initialize(Window& window) = 0;
 	// Destroy everything related to the app.
-	virtual void destroy(GraphicBackend& backend) = 0;
+	virtual void destroy() = 0;
 	// Create a new frame for the app
 	virtual void frame() = 0;
 	// Update the app.
 	virtual void update(Time::Unit deltaTime) = 0;
 	// Render the app.
-	virtual void render(GraphicBackend& backend) = 0;
+	virtual void render() = 0;
 private:
 	uint32_t m_screenWidth, m_screenHeight;
 protected:

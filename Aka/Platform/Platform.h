@@ -17,14 +17,25 @@
 
 #include "Input.h"
 
-#define GLEW_NO_GLU
-#include <gl/glew.h>
-#include <gl/gl.h>
-#if defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#include <Windows.h>
+#if defined(AKA_USE_OPENGL)
+	#define GLEW_NO_GLU
+	#include <gl/glew.h>
+	#include <gl/gl.h>
+	#if defined(_WIN32)
+		#define WIN32_LEAN_AND_MEAN
+		#include <Windows.h>
+	#endif
+	#include <GLFW/glfw3.h>
+#elif defined(AKA_USE_D3D11)
+	#define GLFW_INCLUDE_NONE
+	#define GLFW_EXPOSE_NATIVE_WIN32
+	#if defined(_WIN32)
+		#define WIN32_LEAN_AND_MEAN
+		#include <Windows.h>
+	#endif
+	#include <GLFW/glfw3.h>
+	#include <GLFW/glfw3native.h>
 #endif
-#include <GLFW/glfw3.h>
 
 namespace aka {
 

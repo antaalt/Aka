@@ -16,10 +16,11 @@ Window::Window(const Config& config) :
 		throw std::runtime_error("Could not init GLFW");
 
 	// Backend API
-	// TODO create backend depending on type
 	switch (config.api)
 	{
-	case GraphicBackend::Api::OpenGL:
+#if defined(AKA_USE_OPENGL)
+	case GraphicApi::OpenGL:
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #if !defined(__APPLE__)
@@ -32,6 +33,12 @@ Window::Window(const Config& config) :
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 #endif
 		break;
+#endif
+#if defined(AKA_USE_D3D11)
+	case GraphicApi::DirectX11:
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		break;
+#endif
 	default:
 		throw std::runtime_error("Not implemented");
 		break;
@@ -42,10 +49,11 @@ Window::Window(const Config& config) :
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
 	}
-	glfwSetWindowUserPointer(m_window, this);
-	glfwMakeContextCurrent(m_window); // Initialise GLEW
+	if(config.api == GraphicApi::OpenGL)
+		glfwMakeContextCurrent(m_window);
 
 	// --- Callbacks ---
+	glfwSetWindowUserPointer(m_window, this);
 	// --- Size
 	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
 		Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
@@ -54,7 +62,7 @@ Window::Window(const Config& config) :
 	});
 	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
 		Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
-		w->m_backend.resize(width, height);
+		GraphicBackend::resize(width, height);
 		Logger::info("[GLFW] New framebuffer size : ", width, " - ", height);
 	});
 	glfwSetWindowContentScaleCallback(m_window, [](GLFWwindow* window, float x, float y) {
@@ -121,17 +129,16 @@ Window::Window(const Config& config) :
 	});
 	glfwSwapInterval(1); // 1 is vsync, 0 is free
 
-	m_backend.initialize();
+	GraphicBackend::initialize(config.api, *this, config.width, config.height);
 
-	m_app->initialize(*this, m_backend);
-	m_backend.resize(config.width, config.height);
+	m_app->initialize(*this);
 	m_app->resize(config.width, config.height);
 }
 
 Window::~Window()
 {
-	m_app->destroy(m_backend);
-	m_backend.destroy();
+	m_app->destroy();
+	GraphicBackend::destroy();
 	glfwTerminate();
 }
 
@@ -152,8 +159,10 @@ void Window::loop()
 			m_app->update(timestep);
 			accumulator -= timestep;
 		}
+		GraphicBackend::frame();
 		m_app->frame();
-		m_app->render(m_backend);
+		m_app->render();
+		GraphicBackend::present();
 		glfwSwapBuffers(m_window);
 	} while (!input::pressed(input::Key::Escape) && glfwWindowShouldClose(m_window) == 0);
 }

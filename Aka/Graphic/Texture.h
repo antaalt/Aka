@@ -16,13 +16,11 @@ struct Sampler
 	};
 };
 
-
-
 class Texture
 {
 public:
 	using Ptr = std::shared_ptr<Texture>;
-	using ID = StrictType<uint32_t, struct TextureTagName>;
+	using Handle = StrictType<uintptr_t, struct TextureTagName>;
 	enum class Format {
 		Red,
 		Rgba,
@@ -31,28 +29,27 @@ public:
 		Rgba32f,
 		Rgb8,
 		Rgb16,
+		DepthStencil,
 	};
-public:
-	Texture(uint32_t width, uint32_t height, Format internalFormat, Format format, Sampler::Filter filter);
-	Texture(uint32_t width, uint32_t height, Format internalFormat, Format format, const uint8_t* data, Sampler::Filter filter);
+protected:
+	Texture(uint32_t width, uint32_t height);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
-	~Texture();
-
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format internalFormat, Format format, Sampler::Filter filter);
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format internalFormat, Format format, const uint8_t* data, Sampler::Filter filter);
+	virtual ~Texture();
+public:
+	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, Sampler::Filter filter);
+	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter);
 
 	uint32_t width() const;
 
 	uint32_t height() const;
 
-	void bind() const;
+	virtual void bind() = 0;
 
-	ID id() const;
+	virtual Handle handle() = 0;
 
-private:
+protected:
 	uint32_t m_width, m_height;
-	ID m_textureID;
 };
 
 }

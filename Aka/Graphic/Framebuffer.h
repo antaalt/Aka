@@ -40,35 +40,36 @@ public:
 		Texture::Ptr texture;
 	};
 protected:
-	Framebuffer();
-public:
-	Framebuffer(uint32_t width, uint32_t height, Attachment* attachments, size_t count);
+	Framebuffer(uint32_t width, uint32_t height);
 	Framebuffer(const Framebuffer&) = delete;
 	Framebuffer& operator=(const Framebuffer&) = delete;
 	virtual ~Framebuffer();
+public:
 
 	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Sampler::Filter filter);
 	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Attachment*attachment, size_t count);
 
-	// Bind the framebuffer
-	void bind(Type type);
-
 	// Get framebuffer width
-	virtual uint32_t width() const;
+	uint32_t width() const;
 
 	// Get framebuffer height
-	virtual uint32_t height() const;
+	uint32_t height() const;
 
-	// Get underlying ID
-	ID id() const;
+	// Resize the framebuffer
+	virtual void resize(uint32_t width, uint32_t height) = 0;
+
+	// Bind the framebuffer
+	virtual void bind(Type type) = 0;
+
+	// Clear the framebuffer
+	virtual void clear(float r, float g, float b, float a) = 0;
 
 	// Blit the framebuffer to another one
-	void blit(Framebuffer::Ptr dst, const Rect &srcRect, const Rect& dstRect, Sampler::Filter filter);
+	virtual void blit(Framebuffer::Ptr dst, const Rect &srcRect, const Rect& dstRect, Sampler::Filter filter) = 0;
 
 protected:
 	uint32_t m_width;
 	uint32_t m_height;
-	ID m_framebufferID;
 };
 
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <map>
 
 #include "../Core/Geometry.h"
 #include "../Core/StrictType.h"
@@ -29,57 +28,64 @@ enum class UniformType {
 	SamplerBuffer
 };
 
-using ShaderID = StrictType<uint32_t, struct ShaderStrictType>;
-using ProgramID = StrictType<uint32_t, struct ProgramStrictType>;
-using UniformID = StrictType<int32_t, struct UniformStrictType>;
+using ShaderID = StrictType<uintptr_t, struct ShaderStrictType>;
+using ProgramID = StrictType<uintptr_t, struct ProgramStrictType>;
+using UniformID = StrictType<uintptr_t, struct UniformStrictType>;
+using AttributeID = StrictType<uint32_t, struct UniformStrictType>;
 
 struct Uniform {
-	UniformType type; // type of uniform (unused)
-	ShaderType shaderType; // attached shader (unused)
+	UniformID id;
+	UniformType type; // type of uniform
+	ShaderType shaderType; // attached shader
+	uint32_t bufferIndex;
+	uint32_t arrayLength;
 	std::string name; // name of uniform
 };
 
-struct Shader
-{
-	using Ptr = std::shared_ptr<Shader>;
+struct Attributes {
+	AttributeID id;
+	std::string name;
+};
 
-	Shader();
-	Shader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Uniform>& uniforms);
+class Shader
+{
+public:
+	using Ptr = std::shared_ptr<Shader>;
+protected:
+	Shader(const std::vector<Attributes>& attributes);
 	Shader(const Shader&) = delete;
 	const Shader& operator=(const Shader&) = delete;
-	~Shader();
-
+	virtual ~Shader();
+public:
 	static ShaderID compile(const std::string &content, ShaderType type);
 	static ShaderID compile(const char* content, ShaderType type);
 
-	static Shader::Ptr create(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Uniform>& uniforms);
+	static Shader::Ptr create(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes);
 
-	void use();
+	virtual void use() = 0;
 
-	ProgramID id() const { return m_programID; }
-
-	UniformID getUniformLocation(const char* name);
+	UniformID getUniformID(const char* name);
+	const Uniform *getUniform(const char* name) const;
 
 	template <typename T>
 	void set(const char* name, T value);
 
-	void setFloat1(const char* name, float value);
-	void setFloat2(const char* name, float x, float y);
-	void setFloat3(const char* name, float x, float y, float z);
-	void setFloat4(const char* name, float x, float y, float z, float w);
-	void setUint1(const char* name, uint32_t value);
-	void setUint2(const char* name, uint32_t x, uint32_t y);
-	void setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z);
-	void setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w);
-	void setInt1(const char* name, int32_t value);
-	void setInt2(const char* name, int32_t x, int32_t y);
-	void setInt3(const char* name, int32_t x, int32_t y, int32_t z);
-	void setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w);
-	void setMatrix4(const char* name, const float *data, bool transpose = false);
-
-private:
-	ProgramID m_programID;
-	std::map<std::string, UniformID> m_uniforms;
+	virtual void setFloat1(const char* name, float value) {}
+	virtual void setFloat2(const char* name, float x, float y) {}
+	virtual void setFloat3(const char* name, float x, float y, float z) {}
+	virtual void setFloat4(const char* name, float x, float y, float z, float w) {}
+	virtual void setUint1(const char* name, uint32_t value) {}
+	virtual void setUint2(const char* name, uint32_t x, uint32_t y) {}
+	virtual void setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z) {}
+	virtual void setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w) {}
+	virtual void setInt1(const char* name, int32_t value) {}
+	virtual void setInt2(const char* name, int32_t x, int32_t y) {}
+	virtual void setInt3(const char* name, int32_t x, int32_t y, int32_t z) {}
+	virtual void setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w) {}
+	virtual void setMatrix4(const char* name, const float *data, bool transpose = false) {}
+protected:
+	std::vector<Uniform> m_uniforms;
+	std::vector<Attributes> m_attributes;
 };
 
 }

@@ -43,9 +43,9 @@ struct RenderPass
 	// Mesh to render
 	Mesh::Ptr mesh;
 	// Offset index in mesh
-	size_t indexOffset;
+	uint32_t indexOffset;
 	// Count of index in mesh
-	size_t indexCount;
+	uint32_t indexCount;
 	// Texture to use (use material instead to handle other parameters)
 	Texture::Ptr texture;
 	// Shader for mesh

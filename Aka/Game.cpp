@@ -25,16 +25,23 @@
 #include "System/PlayerSystem.h"
 #include "System/CoinSystem.h"
 #include "System/SoundSystem.h"
+#include "Graphic/Renderer/GLRenderer.h"
+#include "Graphic/Renderer/D3D11Renderer.h"
+
 
 #include <sstream>
 #include <imgui.h>
 #include <examples/imgui_impl_glfw.h>
+#if defined(AKA_USE_OPENGL)
 #include <examples/imgui_impl_opengl3.h>
+#endif
+#if defined(AKA_USE_D3D11)
+#include <examples/imgui_impl_dx11.h>
+#endif
 
 namespace aka {
 
-
-void Game::initialize(Window& window, GraphicBackend& backend)
+void Game::initialize(Window& window)
 {
 	Logger::debug.mute();
 	{
@@ -95,7 +102,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 
 		Sprite::Animation animation;
 		animation.name = "default";
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
 
@@ -114,7 +121,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			if (layer->layer->type != OgmoWorld::LayerType::Tile)
 				return nullptr;
 			ASSERT(layer->tileset->tileSize == layer->gridCellSize, "");
-			Texture::Ptr texture = Texture::create(layer->tileset->image.width, layer->tileset->image.height, Texture::Format::Rgba8, Texture::Format::Rgba, layer->tileset->image.bytes.data(), Sampler::Filter::Nearest);
+			Texture::Ptr texture = Texture::create(layer->tileset->image.width, layer->tileset->image.height, Texture::Format::Rgba, layer->tileset->image.bytes.data(), Sampler::Filter::Nearest);
 			
 			Entity* entity = m_world.createEntity();
 			Transform2D* transform = entity->add<Transform2D>(Transform2D(vec2f(0.f), vec2f(1.f), radianf(0.f)));
@@ -130,7 +137,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		Sprite::Animation animation;
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
 		
@@ -161,7 +168,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Image image = Image::load(path);
 			width = image.width;
 			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 		}
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
@@ -195,7 +202,7 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 			Image image = Image::load(path);
 			width = image.width;
 			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(100)));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(100)));
 		}
 		m_sprites.push_back(std::make_shared<Sprite>());
 		m_sprites.back()->animations.push_back(animation);
@@ -249,12 +256,17 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
+#if defined(AKA_USE_OPENGL)
 		ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
 
 		float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 		std::stringstream ss;
 		ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
 		ImGui_ImplOpenGL3_Init(ss.str().c_str());
+#else
+		D3D11Renderer* renderer = reinterpret_cast<D3D11Renderer*>(GraphicBackend::renderer());
+		ImGui_ImplDX11_Init(renderer->context().device, renderer->context().deviceContext);
+#endif
 		ImGui::StyleColorsDark();
 	}
 	{
@@ -263,9 +275,13 @@ void Game::initialize(Window& window, GraphicBackend& backend)
 	}
 }
 
-void Game::destroy(GraphicBackend& backend)
+void Game::destroy()
 {
+#if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
+#else
+	ImGui_ImplDX11_Shutdown();
+#endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 }
@@ -273,7 +289,11 @@ void Game::destroy(GraphicBackend& backend)
 void Game::frame()
 {
 	// Start the Dear ImGui frame
+#if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_NewFrame();
+#else
+	ImGui_ImplDX11_NewFrame();
+#endif
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 }
@@ -284,6 +304,7 @@ void Game::update(Time::Unit deltaTime)
 {
 	if (input::pressed(input::Key::F1))
 	{
+#if defined(AKA_USE_OPENGL)
 		glFinish();
 		Image image;
 		image.width = screenWidth();
@@ -295,6 +316,7 @@ void Game::update(Time::Unit deltaTime)
 		for (uint32_t y = 0; y < image.height; y++)
 			memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
 		image.save("./output.jpg");
+#endif
 	}
 	if (input::down(input::Key::H))
 	{
@@ -408,7 +430,7 @@ void Game::renderGUI()
 									Sprite::Animation animation;
 									animation.name = "default";
 									Image image = Image::load(Asset::path(path));
-									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba8, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
 									m_sprites.push_back(std::make_shared<Sprite>());
 									m_sprites.back()->animations.push_back(animation);
 									animator->sprite = m_sprites.back().get();
@@ -431,7 +453,7 @@ void Game::renderGUI()
 											if (ImGui::TreeNode(buffer))
 											{
 												float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());
-												ImGui::Image((void*)(uintptr_t)(frame.texture->id().value()), ImVec2(256, 256 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
+												ImGui::Image((void*)frame.texture->handle().value(), ImVec2(256, 256 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
 
 												ImGui::TreePop();
 											}
@@ -503,7 +525,7 @@ void Game::renderGUI()
 							else
 							{
 								float ratio = static_cast<float>(map->texture->width()) / static_cast<float>(map->texture->height());
-								ImGui::Image((void*)(uintptr_t)(map->texture->id().value()), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
+								ImGui::Image((void*)map->texture->handle().value(), ImVec2(384, 384 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
 							}
 							if (ImGui::Button("Remove")) { entity->remove<TileMap>(); }
 
@@ -683,11 +705,11 @@ void Game::renderGUI()
 	ImGui::End();
 }
 
-void Game::render(GraphicBackend& backend)
+void Game::render()
 {
 	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
 	m_framebuffer->bind(Framebuffer::Type::Both);
-	backend.clear(1.f, 0.63f, 0.f, 1.f);
+	m_framebuffer->clear(1.f, 0.63f, 0.f, 1.f);
 
 	// Render
 	Camera2D *camera = m_cameraEntity->get<Camera2D>();
@@ -720,17 +742,21 @@ void Game::render(GraphicBackend& backend)
 	dstBlit.w = (float)screenWidth() - 2.f * w;
 	dstBlit.h = (float)screenHeight() - 2.f * h;
 
-	backend.backbuffer()->bind(Framebuffer::Type::Both);
-	backend.viewport(0, 0, screenWidth(), screenHeight());
-	backend.clear(0.f, 0.f, 0.f, 1.f);
-	m_framebuffer->blit(backend.backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
+	GraphicBackend::backbuffer()->bind(Framebuffer::Type::Both);
+	GraphicBackend::viewport(0, 0, screenWidth(), screenHeight());
+	GraphicBackend::backbuffer()->clear(0.f, 0.f, 0.f, 1.f);
+	m_framebuffer->blit(GraphicBackend::backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
 
 	// Rendering imgui
 	if (m_displayUI)
 		renderGUI();
 
 	ImGui::Render();
+#if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#else
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+#endif
 }
 
 }

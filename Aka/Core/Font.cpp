@@ -3,6 +3,7 @@
 #include <freetype/freetype.h>
 
 #include "../Platform/Logger.h"
+#include "../Core/Debug.h"
 
 namespace aka {
 
@@ -31,6 +32,11 @@ Font::Font(const Path& path, uint32_t height)
             continue;
         }
         uint32_t characterSize = face->glyph->bitmap.width * face->glyph->bitmap.rows;
+        if (characterSize == 0)
+        {
+            Logger::error("[freetype] Empty character '", (char)c, "'");
+            continue;
+        }
         std::vector<uint8_t> rgba(characterSize * 4);
         for (uint32_t iSrc = 0, iDst = 0; iSrc < characterSize; iSrc++, iDst += 4)
         {
@@ -44,7 +50,7 @@ Font::Font(const Path& path, uint32_t height)
             vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top),
             static_cast<uint32_t>(face->glyph->advance.x),
-            Texture::create(face->glyph->bitmap.width, face->glyph->bitmap.rows, Texture::Format::Rgba8, Texture::Format::Rgba, rgba.data(), Sampler::Filter::Nearest)
+            Texture::create(face->glyph->bitmap.width, face->glyph->bitmap.rows, Texture::Format::Rgba, rgba.data(), Sampler::Filter::Nearest)
         };
     }
 

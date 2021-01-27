@@ -80,8 +80,8 @@ private:
 
 	struct DrawBatch {
 		int32_t layer; // layer of the batch for reordering
-		size_t elementOffset; // offset of indices in global array
-		size_t elements; // number of triangles in the batch
+		uint32_t elementOffset; // offset of indices in global array
+		uint32_t elements; // number of triangles in the batch
 		Texture::Ptr texture; // Texture of the batch 
 	};
 
