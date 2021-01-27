@@ -29,7 +29,7 @@ protected:
 	Texture::Ptr createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter) override;
 
 	friend class Framebuffer;
-	Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::Attachment* attachment, size_t count) override;
+	Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter) override;
 
 	friend class Mesh;
 	Mesh::Ptr createMesh() override;

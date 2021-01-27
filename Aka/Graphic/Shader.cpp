@@ -37,7 +37,7 @@ UniformID Shader::getUniformID(const char* name)
 
 const Uniform *Shader::getUniform(const char* name) const
 {
-	for (Uniform uniform : m_uniforms)
+	for (const Uniform &uniform : m_uniforms)
 	{
 		if (uniform.name == std::string(name))
 			return &uniform;

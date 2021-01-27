@@ -330,54 +330,67 @@ public:
 	}
 	void setFloat1(const char* name, float value) override
 	{
+		glUseProgram(m_programID);
 		glUniform1f((GLint)getUniformID(name).value(), value);
 	}
 	void setFloat2(const char* name, float x, float y) override
 	{
+		glUseProgram(m_programID);
 		glUniform2f((GLint)getUniformID(name).value(), x, y);
 	}
 	void setFloat3(const char* name, float x, float y, float z) override
 	{
+		glUseProgram(m_programID);
 		glUniform3f((GLint)getUniformID(name).value(), x, y, z);
 	}
 	void setFloat4(const char* name, float x, float y, float z, float w) override
 	{
+		glUseProgram(m_programID);
 		glUniform4f((GLint)getUniformID(name).value(), x, y, z, w);
 	}
 	void setUint1(const char* name, uint32_t value) override
 	{
+		glUseProgram(m_programID);
 		glUniform1ui((GLint)getUniformID(name).value(), value);
 	}
 	void setUint2(const char* name, uint32_t x, uint32_t y) override
 	{
+		glUseProgram(m_programID);
 		glUniform2ui((GLint)getUniformID(name).value(), x, y);
 	}
 	void setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z) override
 	{
+		glUseProgram(m_programID);
 		glUniform3ui((GLint)getUniformID(name).value(), x, y, z);
 	}
 	void setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w) override
 	{
+		glUseProgram(m_programID);
 		glUniform4ui((GLint)getUniformID(name).value(), x, y, z, w);
 	}
 	void setInt1(const char* name, int32_t value) override
 	{
+		glUseProgram(m_programID);
 		glUniform1i((GLint)getUniformID(name).value(), value);
 	}
 	void setInt2(const char* name, int32_t x, int32_t y) override
 	{
+		glUseProgram(m_programID);
 		glUniform2i((GLint)getUniformID(name).value(), x, y);
 	}
 	void setInt3(const char* name, int32_t x, int32_t y, int32_t z) override
 	{
+		glUseProgram(m_programID);
 		glUniform3i((GLint)getUniformID(name).value(), x, y, z);
 	}
 	void setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w) override
 	{
+		glUseProgram(m_programID);
 		glUniform4i((GLint)getUniformID(name).value(), x, y, z, w);
 	}
 	void setMatrix4(const char* name, const float* data, bool transpose) override
 	{
+		glUseProgram(m_programID);
 		glUniformMatrix4fv((GLint)getUniformID(name).value(), 1, transpose, data);
 	}
 private:
@@ -589,7 +602,7 @@ private:
 class GLFramebuffer : public Framebuffer
 {
 public:
-	GLFramebuffer(uint32_t width, uint32_t height, Attachment* attachments, size_t count) :
+	GLFramebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler::Filter filter) :
 		Framebuffer(width, height),
 		m_framebufferID(0)
 	{
@@ -597,9 +610,27 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
 		for (size_t iAtt = 0; iAtt < count; iAtt++)
 		{
-			Attachment& att = attachments[iAtt];
-			GLTexture* texture = reinterpret_cast<GLTexture*>(att.texture.get());
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(att.type), GL_TEXTURE_2D, texture->m_textureID, 0);
+			Texture::Format format;
+			switch (attachments[iAtt])
+			{
+			case AttachmentType::Color0:
+			case AttachmentType::Color1:
+			case AttachmentType::Color2:
+			case AttachmentType::Color3:
+				format = Texture::Format::Rgba;
+				break;
+			case AttachmentType::Depth:
+			case AttachmentType::Stencil:
+			case AttachmentType::DepthStencil:
+				format = Texture::Format::DepthStencil;
+				break;
+			}
+			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, nullptr, filter);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt]), GL_TEXTURE_2D, tex->m_textureID, 0);
+			m_attachments.emplace_back();
+			Attachment& att = m_attachments.back();
+			att.type = attachments[iAtt];
+			att.texture = tex;
 		}
 		ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -644,6 +675,7 @@ public:
 		dst->bind(Type::Both);
 	}
 private:
+	std::vector<Attachment> m_attachments;
 	GLuint m_framebufferID;
 };
 
@@ -930,9 +962,9 @@ Texture::Ptr GLRenderer::createTexture(uint32_t width, uint32_t height, Texture:
 	return std::make_shared<GLTexture>(width, height, format, data, filter);
 }
 
-Framebuffer::Ptr GLRenderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::Attachment* attachment, size_t count)
+Framebuffer::Ptr GLRenderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
 {
-	return std::make_shared<GLFramebuffer>(width, height, attachment, count);
+	return std::make_shared<GLFramebuffer>(width, height, attachment, count, filter);
 }
 
 Mesh::Ptr GLRenderer::createMesh()

@@ -32,7 +32,8 @@ public:
 		Color2,
 		Color3,
 		Depth,
-		Stencil
+		Stencil,
+		DepthStencil
 	};
 	struct Attachment
 	{
@@ -47,7 +48,7 @@ protected:
 public:
 
 	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Sampler::Filter filter);
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Attachment*attachment, size_t count);
+	static Framebuffer::Ptr create(uint32_t width, uint32_t height, AttachmentType* attachment, size_t count, Sampler::Filter filter);
 
 	// Get framebuffer width
 	uint32_t width() const;

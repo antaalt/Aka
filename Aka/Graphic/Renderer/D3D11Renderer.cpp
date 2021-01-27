@@ -12,9 +12,12 @@
 #include <d3dcommon.h>
 #include <d3dcompiler.h>
 #include <stdexcept>
+#include <array>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxguid.lib")
+
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -34,7 +37,7 @@
             __LINE__				\
         );							\
         ::aka::Logger::error(buffer);   \
-        throw std::runtime_error(buffer);\
+       DEBUG_BREAK;\
 	}								\
 }
 
@@ -42,25 +45,67 @@ namespace aka {
 
 struct D3D11SwapChain {
 	IDXGISwapChain* swapChain;
-	ID3D11RenderTargetView* renderTargetView;
-	ID3D11DepthStencilView* depthStencilView;
-	ID3D11DepthStencilState* depthStencilState;
-	ID3D11Texture2D* depthStencilBuffer;
 	bool vsync = true;
 	bool fullscreen = false;
-	ID3D11RasterizerState* rasterState;
 };
 
 D3D11Context ctx;
 D3D11SwapChain swapChain;
 
+struct D3D11RasterPass {
+	CullMode cull;
+	ID3D11RasterizerState* rasterState;
+	static ID3D11RasterizerState* get(CullMode cull)
+	{
+		for (D3D11RasterPass& pass : cache)
+			if (pass.cull == cull)
+				return pass.rasterState;
+		D3D11_RASTERIZER_DESC rasterDesc;
+		rasterDesc.AntialiasedLineEnable = false;
+		rasterDesc.CullMode = D3D11_CULL_NONE;
+		switch (cull)
+		{
+		case CullMode::None: rasterDesc.CullMode = D3D11_CULL_NONE; break;
+		case CullMode::FrontFace: rasterDesc.CullMode = D3D11_CULL_FRONT; break;
+		case CullMode::BackFace: rasterDesc.CullMode = D3D11_CULL_BACK; break;
+		}
+		rasterDesc.DepthBias = 0;
+		rasterDesc.DepthBiasClamp = 0.0f;
+		rasterDesc.DepthClipEnable = true;
+		rasterDesc.FillMode = D3D11_FILL_SOLID;
+		rasterDesc.FrontCounterClockwise = false;
+		rasterDesc.MultisampleEnable = false;
+		rasterDesc.ScissorEnable = false;
+		rasterDesc.SlopeScaledDepthBias = 0.0f;
+
+		// Create the rasterizer state from the description we just filled out.
+		ID3D11RasterizerState* rasterState;
+		D3D_CHECK_RESULT(ctx.device->CreateRasterizerState(&rasterDesc, &rasterState));
+		D3D11RasterPass pass;
+		pass.cull = cull;
+		pass.rasterState = rasterState;
+		cache.push_back(pass);
+		return cache.back().rasterState;
+	}
+	static void clear()
+	{
+		for (D3D11RasterPass& pass : cache)
+			pass.rasterState->Release();
+	}
+private:
+	static std::vector<D3D11RasterPass> cache;
+};
+std::vector<D3D11RasterPass> D3D11RasterPass::cache;
+
 class D3D11Texture : public Texture
 {
 public:
-	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter) :
+	friend class D3D11Framebuffer;
+	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
 		Texture(width, height),
 		m_texture(nullptr),
-		m_view(nullptr)
+		m_view(nullptr),
+		m_component(0)
 	{
 		D3D11_TEXTURE2D_DESC desc{};
 		desc.Width = width;
@@ -70,25 +115,29 @@ public:
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;
 		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE; // BIND_RENDER_TARGET
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 
-		//if (is_framebuffer)
-		//	desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+		if (isFramebuffer)
+			desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+		else
+			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 		switch (format)
 		{
 		case Texture::Format::Red:
 			desc.Format = DXGI_FORMAT_R8_UNORM;
+			m_component = 1;
 			break;
 		case Texture::Format::Rgba:
 		case Texture::Format::Rgba8:
 			desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			m_component = 4;
 			break;
 		case Texture::Format::DepthStencil:
 			desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			m_component = 4;
 			break;
 		default:
 			Logger::error("Format not supported");
@@ -96,8 +145,26 @@ public:
 		}
 
 		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
-		D3D_CHECK_RESULT(ctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
-		// TODO upload data
+		if (!isFramebuffer)
+			D3D_CHECK_RESULT(ctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
+		if (data != nullptr)
+		{
+			D3D11_BOX box{};
+			box.left = 0;
+			box.right = m_width;
+			box.top = 0;
+			box.bottom = m_height;
+			box.front = 0;
+			box.back = 1;
+			ctx.deviceContext->UpdateSubresource(
+				m_texture,
+				0,
+				&box,
+				data,
+				m_width * m_component / m_height,
+				0
+			);
+		}
 	}
 	D3D11Texture(D3D11Texture&) = delete;
 	D3D11Texture& operator=(D3D11Texture&) = delete;
@@ -119,71 +186,180 @@ public:
 private:
 	ID3D11Texture2D* m_texture;
 	ID3D11ShaderResourceView* m_view;
+	uint32_t m_component;
 };
 
 class D3D11Framebuffer : public Framebuffer
 {
 public:
-	D3D11Framebuffer(uint32_t width, uint32_t height, Attachment* attachment, size_t count) :
+	D3D11Framebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler::Filter filter) :
 		Framebuffer(width, height),
-		m_renderTargetView(nullptr),
+		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
+		for (size_t i = 0; i < count; i++)
+		{
+			Texture::Format format;
+			switch (attachments[i])
+			{
+			case AttachmentType::Color0:
+			case AttachmentType::Color1:
+			case AttachmentType::Color2:
+			case AttachmentType::Color3:
+				format = Texture::Format::Rgba;
+				break;
+			case AttachmentType::Depth:
+			case AttachmentType::Stencil:
+			case AttachmentType::DepthStencil:
+				format = Texture::Format::DepthStencil;
+				break;
+			}
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, filter, true);
+			m_attachments.push_back(Attachment{ attachments[i], tex });
+			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
+			{
+				D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
+			}
+			else
+			{
+				ID3D11RenderTargetView* view = nullptr;
+				D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
+				m_colorViews.push_back(view);
+			}
+		}
 	}
 	D3D11Framebuffer(const D3D11Framebuffer&) = delete;
 	D3D11Framebuffer& operator=(const D3D11Framebuffer&) = delete;
 	~D3D11Framebuffer()
 	{
+		for (ID3D11RenderTargetView* colorView : m_colorViews)
+			colorView->Release();
 
+		if (m_depthStencilView)
+			m_depthStencilView->Release();
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-
+		throw std::runtime_error("not implemented");
 	}
 	void clear(float r, float g, float b, float a) override
 	{
-		// clear
 		float color[4];
 		color[0] = r;
 		color[1] = g;
 		color[2] = b;
 		color[3] = a;
-		// Clear the back buffer.
-		ctx.deviceContext->ClearRenderTargetView(m_renderTargetView, color);
-		// Clear the depth buffer.
+		for (ID3D11RenderTargetView *view : m_colorViews)
+			ctx.deviceContext->ClearRenderTargetView(view, color);
 		ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 	void bind(Type type) override
 	{
-
+		ctx.deviceContext->OMSetRenderTargets(m_colorViews.size(), m_colorViews.data(), m_depthStencilView);
 	}
 	void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
 	{
-
+		throw std::runtime_error("not implemented");
 	}
 private:
-	ID3D11RenderTargetView* m_renderTargetView;
+	std::vector<Attachment> m_attachments;
+	std::vector<ID3D11RenderTargetView*> m_colorViews;
 	ID3D11DepthStencilView* m_depthStencilView;
 };
 
 class D3D11BackBuffer : public Framebuffer
 {
 public:
-	D3D11BackBuffer(uint32_t width, uint32_t height) :
+	D3D11BackBuffer(uint32_t width, uint32_t height, ID3D11Texture2D *texture) :
 		Framebuffer(width, height),
 		m_renderTargetView(nullptr),
 		m_depthStencilView(nullptr)
 	{
+		// Create the render target view with the back buffer pointer.
+		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
+
+		// Initialize the description of the depth buffer.
+		D3D11_TEXTURE2D_DESC depthBufferDesc{};
+		// Set up the description of the depth buffer.
+		depthBufferDesc.Width = width;
+		depthBufferDesc.Height = height;
+		depthBufferDesc.MipLevels = 1;
+		depthBufferDesc.ArraySize = 1;
+		depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthBufferDesc.SampleDesc.Count = 1;
+		depthBufferDesc.SampleDesc.Quality = 0;
+		depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthBufferDesc.CPUAccessFlags = 0;
+		depthBufferDesc.MiscFlags = 0;
+		// Create the texture for the depth buffer using the filled out description.
+		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
+
+		// Initialize the description of the stencil state.
+		D3D11_DEPTH_STENCIL_DESC depthStencilDesc{};
+		// Set up the description of the stencil state.
+		depthStencilDesc.DepthEnable = true;
+		depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+		depthStencilDesc.StencilEnable = true;
+		depthStencilDesc.StencilReadMask = 0xFF;
+		depthStencilDesc.StencilWriteMask = 0xFF;
+		// Stencil operations if pixel is front-facing.
+		depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+		depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		// Stencil operations if pixel is back-facing.
+		depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+		depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		// Create the depth stencil state.
+		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState));
+
+		// Initailze the depth stencil view.
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
+		// Set up the depth stencil view description.
+		depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthStencilViewDesc.Texture2D.MipSlice = 0;
+		// Create the depth stencil view.
+		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
+
+		// Bind the render target view and depth stencil buffer to the output render pipeline.
+		ctx.deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 	}
 	D3D11BackBuffer(const D3D11BackBuffer&) = delete;
 	D3D11BackBuffer& operator=(const D3D11BackBuffer&) = delete;
 	~D3D11BackBuffer()
 	{
+		if (m_depthStencilView)
+		{
+			m_depthStencilView->Release();
+			m_depthStencilView = 0;
+		}
 
+		if (m_depthStencilState)
+		{
+			m_depthStencilState->Release();
+			m_depthStencilState = 0;
+		}
+
+		if (m_depthStencilBuffer)
+		{
+			m_depthStencilBuffer->Release();
+			m_depthStencilBuffer = 0;
+		}
+
+		if (m_renderTargetView)
+		{
+			m_renderTargetView->Release();
+			m_renderTargetView = 0;
+		}
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-
+		throw std::runtime_error("Not implemented");
 	}
 	void clear(float r, float g, float b, float a) override
 	{
@@ -200,15 +376,18 @@ public:
 	}
 	void bind(Type type) override
 	{
-
+		ctx.deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+		ctx.deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
 	}
 	void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
 	{
-
+		throw std::runtime_error("Not implemented");
 	}
 private:
 	ID3D11RenderTargetView* m_renderTargetView;
 	ID3D11DepthStencilView* m_depthStencilView;
+	ID3D11DepthStencilState* m_depthStencilState;
+	ID3D11Texture2D* m_depthStencilBuffer;
 };
 
 class D3D11Mesh : public Mesh
@@ -348,7 +527,8 @@ public:
 
 		getUniforms(m_vertexShaderBuffer, m_vertexUniformBuffers, ShaderType::Vertex);
 		getUniforms(m_pixelShaderBuffer, m_fragmentUniformBuffers, ShaderType::Fragment);
-
+		m_vertexUniformValues.resize(m_vertexUniformBuffers.size());
+		m_fragmentUniformValues.resize(m_fragmentUniformBuffers.size());
 		// combine uniforms that were in both
 		// TODO check for same buffer index ?
 		for (size_t i = 0; i < m_uniforms.size(); i++)
@@ -445,7 +625,7 @@ private:
 			uniformBuffers.push_back(buffer);
 			
 			// get the uniforms
-			for (int j = 0; j < desc.Variables; j++)
+			for (uint32_t j = 0; j < desc.Variables; j++)
 			{
 				D3D11_SHADER_VARIABLE_DESC varDesc{};
 				ID3D11ShaderReflectionVariable* var = cb->GetVariableByIndex(j);
@@ -492,26 +672,33 @@ public:
 		ctx.deviceContext->IASetInputLayout(m_layout);
 
 		// Vertex shader
-		for (uint32_t iBuffer = 0; iBuffer < m_vertexUniformBuffers.size(); iBuffer++)
-		{
-			D3D11_MAPPED_SUBRESOURCE mappedResource{};
-			D3D_CHECK_RESULT(ctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-			memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
-			ctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
-		}
 		ctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
-		ctx.deviceContext->VSSetConstantBuffers(0, m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
-
-		// Pixel shader
-		for (uint32_t iBuffer = 0; iBuffer < m_fragmentUniformBuffers.size(); iBuffer++)
+		if (m_vertexUniformBuffers.size() > 0)
 		{
-			D3D11_MAPPED_SUBRESOURCE mappedResource{};
-			D3D_CHECK_RESULT(ctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-			memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());
-			ctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
+			for (uint32_t iBuffer = 0; iBuffer < m_vertexUniformBuffers.size(); iBuffer++)
+			{
+				ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
+				D3D11_MAPPED_SUBRESOURCE mappedResource{};
+				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
+				ctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
+			}
+			ctx.deviceContext->VSSetConstantBuffers(0, (UINT)m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
 		}
+		// Pixel shader
 		ctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
-		ctx.deviceContext->PSSetConstantBuffers(0, m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
+		if (m_fragmentUniformBuffers.size() > 0)
+		{
+			for (uint32_t iBuffer = 0; iBuffer < m_fragmentUniformBuffers.size(); iBuffer++)
+			{
+				ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
+				D3D11_MAPPED_SUBRESOURCE mappedResource{};
+				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());
+				ctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
+			}
+			ctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
+		}
 	}
 
 	void setLayout(VertexData data)
@@ -548,17 +735,26 @@ public:
 		// Create the vertex input layout.
 		D3D_CHECK_RESULT(ctx.device->CreateInputLayout(
 			polygonLayout.data(),
-			polygonLayout.size(),
+			(UINT)polygonLayout.size(),
 			m_vertexShaderBuffer->GetBufferPointer(),
 			m_vertexShaderBuffer->GetBufferSize(),
 			&m_layout
 		));
-		m_vertexShaderBuffer->Release();
-		m_vertexShaderBuffer = nullptr;
-		m_pixelShaderBuffer->Release();
-		m_pixelShaderBuffer = nullptr;
-		m_computeShaderBuffer->Release();
-		m_computeShaderBuffer = nullptr;
+		if (m_vertexShaderBuffer)
+		{
+			m_vertexShaderBuffer->Release();
+			m_vertexShaderBuffer = nullptr;
+		}
+		if (m_pixelShaderBuffer)
+		{
+			m_pixelShaderBuffer->Release();
+			m_pixelShaderBuffer = nullptr;
+		}
+		if (m_computeShaderBuffer)
+		{
+			m_computeShaderBuffer->Release();
+			m_computeShaderBuffer = nullptr;
+		}
 	}
 
 	void setFloat1(const char* name, float value) override { throw std::runtime_error("Not supported"); }
@@ -702,87 +898,8 @@ D3D11Renderer::D3D11Renderer(Window& window, uint32_t width, uint32_t height)
 	// Get the pointer to the back buffer.
 	ID3D11Texture2D* backBufferPtr;
 	D3D_CHECK_RESULT(swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr));
-	// Create the render target view with the back buffer pointer.
-	D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(backBufferPtr, nullptr, &swapChain.renderTargetView));
-	// Release pointer to the back buffer as we no longer need it.
-	backBufferPtr->Release();
-	backBufferPtr = 0;
 
-	// Initialize the description of the depth buffer.
-	D3D11_TEXTURE2D_DESC depthBufferDesc{};
-	// Set up the description of the depth buffer.
-	depthBufferDesc.Width = width;
-	depthBufferDesc.Height = height;
-	depthBufferDesc.MipLevels = 1;
-	depthBufferDesc.ArraySize = 1;
-	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthBufferDesc.SampleDesc.Count = 1;
-	depthBufferDesc.SampleDesc.Quality = 0;
-	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthBufferDesc.CPUAccessFlags = 0;
-	depthBufferDesc.MiscFlags = 0;
-	// Create the texture for the depth buffer using the filled out description.
-	D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &swapChain.depthStencilBuffer));
-
-	// Initialize the description of the stencil state.
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc{};
-	// Set up the description of the stencil state.
-	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	depthStencilDesc.StencilEnable = true;
-	depthStencilDesc.StencilReadMask = 0xFF;
-	depthStencilDesc.StencilWriteMask = 0xFF;
-	// Stencil operations if pixel is front-facing.
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	// Stencil operations if pixel is back-facing.
-	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	// Create the depth stencil state.
-	D3D_CHECK_RESULT(ctx.device->CreateDepthStencilState(&depthStencilDesc, &swapChain.depthStencilState));
-
-	// Set the depth stencil state.
-	ctx.deviceContext->OMSetDepthStencilState(swapChain.depthStencilState, 1);
-
-	// Initailze the depth stencil view.
-	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
-	// Set up the depth stencil view description.
-	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	depthStencilViewDesc.Texture2D.MipSlice = 0;
-	// Create the depth stencil view.
-	D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(swapChain.depthStencilBuffer, &depthStencilViewDesc, &swapChain.depthStencilView));
-
-	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	ctx.deviceContext->OMSetRenderTargets(1, &swapChain.renderTargetView, swapChain.depthStencilView);
-
-	// --- Rasterizer ---
-	// Setup the raster description which will determine how and what polygons will be drawn.
-	D3D11_RASTERIZER_DESC rasterDesc;
-	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_BACK;
-	rasterDesc.DepthBias = 0;
-	rasterDesc.DepthBiasClamp = 0.0f;
-	rasterDesc.DepthClipEnable = true;
-	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FrontCounterClockwise = false;
-	rasterDesc.MultisampleEnable = false;
-	rasterDesc.ScissorEnable = false;
-	rasterDesc.SlopeScaledDepthBias = 0.0f;
-
-	// Create the rasterizer state from the description we just filled out.
-	D3D_CHECK_RESULT(ctx.device->CreateRasterizerState(&rasterDesc, &swapChain.rasterState));
-
-	// Now set the rasterizer state.
-	ctx.deviceContext->RSSetState(swapChain.rasterState);
-
-	m_backbuffer = std::make_shared<D3D11BackBuffer>(width, height);
+	m_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, backBufferPtr);
 }
 
 D3D11Renderer::~D3D11Renderer()
@@ -793,35 +910,7 @@ D3D11Renderer::~D3D11Renderer()
 		swapChain.swapChain->SetFullscreenState(false, nullptr);
 	}
 
-	if (swapChain.rasterState)
-	{
-		swapChain.rasterState->Release();
-		swapChain.rasterState = 0;
-	}
-
-	if (swapChain.depthStencilView)
-	{
-		swapChain.depthStencilView->Release();
-		swapChain.depthStencilView = 0;
-	}
-
-	if (swapChain.depthStencilState)
-	{
-		swapChain.depthStencilState->Release();
-		swapChain.depthStencilState = 0;
-	}
-
-	if (swapChain.depthStencilBuffer)
-	{
-		swapChain.depthStencilBuffer->Release();
-		swapChain.depthStencilBuffer = 0;
-	}
-
-	if (swapChain.renderTargetView)
-	{
-		swapChain.renderTargetView->Release();
-		swapChain.renderTargetView = 0;
-	}
+	D3D11RasterPass::clear();
 
 	if (ctx.deviceContext)
 	{
@@ -890,7 +979,7 @@ Framebuffer::Ptr D3D11Renderer::backbuffer()
 	return m_backbuffer;
 }
 
-void D3D11Renderer::render(RenderPass& renderPass)
+void D3D11Renderer::render(RenderPass& pass)
 {
 	/*{
 		// Set framebuffer
@@ -903,150 +992,72 @@ void D3D11Renderer::render(RenderPass& renderPass)
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 	}*/
-
-	/*{
-		// Blending
-		if (blend == BlendMode::None)
+	{
+		// Set Framebuffer
+		if (pass.framebuffer == m_backbuffer)
 		{
-			glDisable(GL_BLEND);
+			m_backbuffer->bind(Framebuffer::Type::Both);
 		}
 		else
 		{
-			glEnable(GL_BLEND);
-			switch (blend)
-			{
-			case BlendMode::Zero:
-				glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
-				break;
-			case BlendMode::One:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-				break;
-			case BlendMode::SrcColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
-				break;
-			case BlendMode::OneMinusSrcColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
-				break;
-			case BlendMode::DstColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
-				break;
-			case BlendMode::OneMinusDstColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_COLOR);
-				break;
-			case BlendMode::SrcAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA);
-				break;
-			case BlendMode::OneMinusSrcAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				break;
-			case BlendMode::DstAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
-				break;
-			case BlendMode::OneMinusDstAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-				break;
-			case BlendMode::ConstantColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_CONSTANT_COLOR);
-				break;
-			case BlendMode::OneMinusConstantColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR);
-				break;
-			case BlendMode::ConstantAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_CONSTANT_ALPHA);
-				break;
-			case BlendMode::OneMinusConstantAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA);
-				break;
-			case BlendMode::SrcAlphaSaturate:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE);
-				break;
-			case BlendMode::Src1Color:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC1_COLOR);
-				break;
-			case BlendMode::OneMinusSrc1Color:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC1_COLOR);
-				break;
-			case BlendMode::Src1Alpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC1_ALPHA);
-				break;
-			case BlendMode::OneMinusSrc1Alpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC1_ALPHA);
-				break;
-			}
+			pass.framebuffer->bind(Framebuffer::Type::Both);
 		}
-	}*/
+	}
+	{
+		// Rasterizer
+		ID3D11RasterizerState* rasterState = D3D11RasterPass::get(pass.cull);
+		ctx.deviceContext->RSSetState(rasterState);
+	}
+
 	/*{
-		// Cull
-		if (cull == CullMode::None)
-		{
-			glDisable(GL_CULL_FACE);
-		}
-		else
-		{
-			glEnable(GL_CULL_FACE);
-			switch (cull)
-			{
-			case CullMode::FrontFace:
-				glCullFace(GL_FRONT);
-				glFrontFace(GL_CCW);
-				break;
-			case CullMode::BackFace:
-				glCullFace(GL_BACK);
-				glFrontFace(GL_CCW);
-				break;
-			case CullMode::AllFace:
-				glCullFace(GL_FRONT_AND_BACK);
-				glFrontFace(GL_CCW);
-				break;
-			}
-		}
+		// Depth
+		auto depthstencil = state.get_depthstencil(pass);
+		if (depthstencil)
+			ctx->OMSetDepthStencilState(depthstencil, 0);
 	}*/
 
 	/*{
-		// TODO set depth
+		// Blend
+		ctx.deviceContext->OMSetBlendState();
 	}*/
 
 	{
 		// Viewport
 		D3D11_VIEWPORT viewport;
-		viewport.Width = (float)renderPass.viewport.w;
-		viewport.Height = (float)renderPass.viewport.h;
+		viewport.Width = (float)pass.viewport.w;
+		viewport.Height = (float)pass.viewport.h;
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = renderPass.viewport.x;
-		viewport.TopLeftY = renderPass.viewport.y;
+		viewport.TopLeftX = pass.viewport.x;
+		viewport.TopLeftY = pass.viewport.y;
 
 		// Create the viewport.
 		ctx.deviceContext->RSSetViewports(1, &viewport);
 	}
 
 	{
-		// TODO Scissor
-	}
-
-	{
 		// Shader
-		if (renderPass.shader == nullptr)
+		if (pass.shader == nullptr)
 		{
 			Logger::error("No shader set for render pass");
 			return;
 		}
 		else
 		{
-			((D3D11Shader*)renderPass.shader.get())->setLayout(renderPass.mesh->getVertexData());
-			renderPass.shader->use();
+			((D3D11Shader*)pass.shader.get())->setLayout(pass.mesh->getVertexData());
+			pass.shader->use();
 		}
 	}
 	{
 		// Mesh
-		if (renderPass.mesh == nullptr)
+		if (pass.mesh == nullptr)
 		{
 			Logger::error("No mesh set for render pass");
 			return;
 		}
 		else
 		{
-			renderPass.mesh->draw(renderPass.indexCount, renderPass.indexOffset);
+			pass.mesh->draw(pass.indexCount, pass.indexOffset);
 		}
 	}
 }
@@ -1125,12 +1136,15 @@ uint32_t D3D11Renderer::deviceCount()
 
 Texture::Ptr D3D11Renderer::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
 {
-	return std::make_shared<D3D11Texture>(width, height, format, data, filter);
+	// DirectX do not support texture with null size (but opengl does ?).
+	if (width == 0 || height == 0)
+		return nullptr;
+	return std::make_shared<D3D11Texture>(width, height, format, data, filter, false);
 }
 
-Framebuffer::Ptr D3D11Renderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::Attachment* attachment, size_t count)
+Framebuffer::Ptr D3D11Renderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
 {
-	return std::make_shared<D3D11Framebuffer>(width, height, attachment, count);
+	return std::make_shared<D3D11Framebuffer>(width, height, attachment, count, filter);
 }
 
 Mesh::Ptr D3D11Renderer::createMesh()
@@ -1143,6 +1157,23 @@ ShaderID D3D11Renderer::compile(const char* content, ShaderType type)
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorMessage = nullptr;
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	std::string entryPoint;
+	std::string version;
+	switch (type)
+	{
+	case ShaderType::Vertex:
+		entryPoint = "vs_main";
+		version = "vs_5_0";
+		break;
+	case ShaderType::Fragment:
+		entryPoint = "ps_main";
+		version = "ps_5_0";
+		break;
+	case ShaderType::Compute:
+		entryPoint = "";
+		version = "";
+		break;
+	}
 	// Compile from command line instead
 	HRESULT result = D3DCompile(
 		content,
@@ -1150,8 +1181,8 @@ ShaderID D3D11Renderer::compile(const char* content, ShaderType type)
 		nullptr, // error string
 		nullptr,
 		nullptr,
-		"vs_main",
-		"vs_5_0",
+		entryPoint.c_str(),
+		version.c_str(),
 		flags,
 		0,
 		&shaderBuffer,

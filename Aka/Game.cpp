@@ -28,8 +28,10 @@
 #include "Graphic/Renderer/GLRenderer.h"
 #include "Graphic/Renderer/D3D11Renderer.h"
 
+#define USE_IMGUI
 
 #include <sstream>
+#if defined(USE_IMGUI)
 #include <imgui.h>
 #include <examples/imgui_impl_glfw.h>
 #if defined(AKA_USE_OPENGL)
@@ -37,6 +39,7 @@
 #endif
 #if defined(AKA_USE_D3D11)
 #include <examples/imgui_impl_dx11.h>
+#endif
 #endif
 
 namespace aka {
@@ -246,7 +249,7 @@ void Game::initialize(Window& window)
 	{
 		window.setSizeLimits(m_framebuffer->width(), m_framebuffer->height(), GLFW_DONT_CARE, GLFW_DONT_CARE);
 	}
-
+#if defined(USE_IMGUI)
 	{
 		// IMGUI
 		// Setup Dear ImGui context
@@ -273,10 +276,12 @@ void Game::initialize(Window& window)
 		// Initialize everything
 		m_world.create();
 	}
+#endif
 }
 
 void Game::destroy()
 {
+#if defined(USE_IMGUI)
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
 #else
@@ -284,10 +289,12 @@ void Game::destroy()
 #endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+#endif
 }
 
 void Game::frame()
 {
+#if defined(USE_IMGUI)
 	// Start the Dear ImGui frame
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_NewFrame();
@@ -296,6 +303,7 @@ void Game::frame()
 #endif
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+#endif
 }
 // Need a component movable -> take inputs and update movements
 // Component hurtable
@@ -328,6 +336,7 @@ void Game::update(Time::Unit deltaTime)
 
 void Game::renderGUI()
 {
+#if defined(USE_IMGUI)
 	if (ImGui::Begin("Editor##window"))
 	{
 		ImVec4 color = ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
@@ -703,6 +712,7 @@ void Game::renderGUI()
 		}
 	}
 	ImGui::End();
+#endif
 }
 
 void Game::render()
@@ -751,11 +761,13 @@ void Game::render()
 	if (m_displayUI)
 		renderGUI();
 
+#if defined(USE_IMGUI)
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #else
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+#endif
 #endif
 }
 

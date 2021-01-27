@@ -120,9 +120,9 @@ Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Text
 	return m_backend->m_renderer->createTexture(width, height, format, data, filter);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::Attachment* attachment, size_t count)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
 {
-	return m_backend->m_renderer->createFramebuffer(width, height, attachment, count);
+	return m_backend->m_renderer->createFramebuffer(width, height, attachment, count, filter);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()

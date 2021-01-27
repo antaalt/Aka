@@ -12,6 +12,7 @@ namespace aka {
 class Window;
 
 enum class GraphicApi {
+	Auto,
 #if defined(AKA_USE_OPENGL)
 	OpenGL,
 #endif
@@ -39,7 +40,7 @@ protected:
 	virtual Device getDevice(uint32_t id) = 0;
 	virtual uint32_t deviceCount() = 0;
 	virtual Texture::Ptr createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter) = 0;
-	virtual Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::Attachment* attachment, size_t count) = 0;
+	virtual Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter) = 0;
 	virtual Mesh::Ptr createMesh() = 0;
 	virtual ShaderID compile(const char* content, ShaderType type) = 0;
 	virtual Shader::Ptr createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes) = 0;
@@ -84,7 +85,7 @@ protected:
 	static Texture::Ptr createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter);
 
 	friend class Framebuffer;
-	static Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::Attachment* attachment, size_t count);
+	static Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter);
 
 	friend class Mesh;
 	static Mesh::Ptr createMesh();

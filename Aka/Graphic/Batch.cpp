@@ -4,6 +4,7 @@
 
 namespace aka {
 
+#if defined(AKA_USE_OPENGL)
 // Move somewhere else
 const char* vertShader =
 "#version 330\n"
@@ -27,9 +28,52 @@ const char* fragShader =
 "uniform sampler2D u_texture;\n"
 "out vec4 o_color;\n"
 "void main(void) {\n"
-"	o_color = v_color *texture(u_texture, v_uv);\n"
+"	o_color = v_color * texture(u_texture, v_uv);\n"
 "}"
 "";
+#elif defined(AKA_USE_D3D11)
+const char* shader = ""
+"cbuffer constants : register(b0)\n"
+"{\n"
+"	row_major float4x4 u_view;\n"
+"	row_major float4x4 u_projection;\n"
+"}\n"
+
+"struct vs_in\n"
+"{\n"
+"	float2 position : POS;\n"
+"	float2 texcoord : TEX;\n"
+"	float4 color : COL;\n"
+"};\n"
+
+"struct vs_out\n"
+"{\n"
+"	float4 position : SV_POSITION;\n"
+"	float2 texcoord : TEX;\n"
+"	float4 color : COL;\n"
+"};\n"
+
+"Texture2D    u_texture : register(t0);\n"
+"SamplerState u_sampler : register(s0);\n"
+
+"vs_out vs_main(vs_in input)\n"
+"{\n"
+"	vs_out output;\n"
+
+"	output.position = mul(mul(float4(input.position, 0.0f, 1.0f), u_view), u_projection);\n"
+"	output.texcoord = input.texcoord;\n"
+"	output.color = input.color;\n"
+
+"	return output;\n"
+"}\n"
+
+"float4 ps_main(vs_out input) : SV_TARGET\n"
+"{\n"
+"	return input.color * u_texture.Sample(u_sampler, input.texcoord);\n"
+"}\n";
+const char* vertShader = shader;
+const char* fragShader = shader;
+#endif
 
 Batch::Rect::Rect() :
 	position(0.f),
@@ -199,7 +243,6 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 		}
 		if (m_mesh == nullptr)
 			m_mesh = Mesh::create();
-		m_shader->use();
 		m_shader->set<mat4f>("u_projection", projection);
 		m_shader->set<mat4f>("u_view", view);
 	}

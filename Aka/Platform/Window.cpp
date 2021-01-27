@@ -16,8 +16,10 @@ Window::Window(const Config& config) :
 		throw std::runtime_error("Could not init GLFW");
 
 	// Backend API
-	switch (config.api)
+	GraphicApi api = config.api;
+	switch (api)
 	{
+	case GraphicApi::Auto:
 #if defined(AKA_USE_OPENGL)
 	case GraphicApi::OpenGL:
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -32,11 +34,13 @@ Window::Window(const Config& config) :
 #if defined(_DEBUG)
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 #endif
+		api = GraphicApi::OpenGL;
 		break;
 #endif
 #if defined(AKA_USE_D3D11)
 	case GraphicApi::DirectX11:
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		api = GraphicApi::DirectX11;
 		break;
 #endif
 	default:
@@ -49,8 +53,10 @@ Window::Window(const Config& config) :
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
 	}
-	if(config.api == GraphicApi::OpenGL)
+#if defined(AKA_USE_OPENGL)
+	if(api == GraphicApi::OpenGL)
 		glfwMakeContextCurrent(m_window);
+#endif
 
 	// --- Callbacks ---
 	glfwSetWindowUserPointer(m_window, this);
@@ -129,7 +135,7 @@ Window::Window(const Config& config) :
 	});
 	glfwSwapInterval(1); // 1 is vsync, 0 is free
 
-	GraphicBackend::initialize(config.api, *this, config.width, config.height);
+	GraphicBackend::initialize(api, *this, config.width, config.height);
 
 	m_app->initialize(*this);
 	m_app->resize(config.width, config.height);

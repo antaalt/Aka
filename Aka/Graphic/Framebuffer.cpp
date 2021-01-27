@@ -15,15 +15,13 @@ Framebuffer::~Framebuffer()
 
 Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, Sampler::Filter filter)
 {
-	Attachment attachment;
-	attachment.type = AttachmentType::Color0;
-	attachment.texture = Texture::create(width, height, Texture::Format::Rgba, nullptr, filter);
-	return create(width, height, &attachment, 1);
+	AttachmentType type = AttachmentType::Color0;
+	return create(width, height, &type, 1, filter);
 }
 
-Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, Attachment* attachment, size_t count)
+Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, AttachmentType* attachment, size_t count, Sampler::Filter filter)
 {
-	return GraphicBackend::createFramebuffer(width, height, attachment, count);
+	return GraphicBackend::createFramebuffer(width, height, attachment, count, filter);
 }
 
 uint32_t Framebuffer::width() const
