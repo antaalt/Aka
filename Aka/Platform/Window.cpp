@@ -54,8 +54,11 @@ Window::Window(const Config& config) :
 		throw std::runtime_error("Could not init window");
 	}
 #if defined(AKA_USE_OPENGL)
-	if(api == GraphicApi::OpenGL)
+	if (api == GraphicApi::OpenGL)
+	{
 		glfwMakeContextCurrent(m_window);
+		glfwSwapInterval(1); // 1 is vsync, 0 is free
+	}
 #endif
 
 	// --- Callbacks ---
@@ -133,7 +136,6 @@ Window::Window(const Config& config) :
 		// event : GLFW_CONNECTED, GLFW_DISCONNECTED
 		Logger::info("[GLFW] Joystick event", event);
 	});
-	glfwSwapInterval(1); // 1 is vsync, 0 is free
 
 	GraphicBackend::initialize(api, *this, config.width, config.height);
 
@@ -169,7 +171,6 @@ void Window::loop()
 		m_app->frame();
 		m_app->render();
 		GraphicBackend::present();
-		glfwSwapBuffers(m_window);
 	} while (!input::pressed(input::Key::Escape) && glfwWindowShouldClose(m_window) == 0);
 }
 

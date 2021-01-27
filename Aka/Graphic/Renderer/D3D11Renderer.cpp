@@ -80,12 +80,16 @@ struct D3D11RasterPass {
 
 		// Create the rasterizer state from the description we just filled out.
 		ID3D11RasterizerState* rasterState;
-		D3D_CHECK_RESULT(ctx.device->CreateRasterizerState(&rasterDesc, &rasterState));
-		D3D11RasterPass pass;
-		pass.cull = cull;
-		pass.rasterState = rasterState;
-		cache.push_back(pass);
-		return cache.back().rasterState;
+		HRESULT res = ctx.device->CreateRasterizerState(&rasterDesc, &rasterState);
+		if (SUCCEEDED(res))
+		{
+			D3D11RasterPass pass;
+			pass.cull = cull;
+			pass.rasterState = rasterState;
+			cache.push_back(pass);
+			return cache.back().rasterState;
+		}
+		return nullptr;
 	}
 	static void clear()
 	{
@@ -95,17 +99,193 @@ struct D3D11RasterPass {
 private:
 	static std::vector<D3D11RasterPass> cache;
 };
+
+struct D3D11Sampler
+{
+	ID3D11ShaderResourceView* texture;
+	ID3D11SamplerState* samplerState;
+	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, Sampler::Filter filter)
+	{
+		for (D3D11Sampler& sampler : cache)
+			if (sampler.texture == texture)
+				return sampler.samplerState;
+
+		D3D11_SAMPLER_DESC desc {};
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+		switch (filter)
+		{
+		case Sampler::Filter::Nearest: desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; break;
+		case Sampler::Filter::Linear: desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break;
+		}
+
+		ID3D11SamplerState* result;
+		HRESULT res = ctx.device->CreateSamplerState(&desc, &result);
+		if (SUCCEEDED(res))
+		{
+			D3D11Sampler sampler;
+			sampler.texture = texture;
+			sampler.samplerState = result;
+			cache.push_back(sampler);
+			return cache.back().samplerState;
+		}
+		return nullptr;
+	}
+	static void clear()
+	{
+		for (D3D11Sampler& pass : cache)
+			pass.samplerState->Release();
+	}
+private:
+	static std::vector<D3D11Sampler> cache;
+};
+
+struct D3D11Depth
+{
+	DepthCompare compare;
+	ID3D11DepthStencilState* depthState;
+	static ID3D11DepthStencilState* get(DepthCompare compare)
+	{
+		for (D3D11Depth& depth : cache)
+			if (depth.compare == compare)
+				return depth.depthState;
+
+		D3D11_DEPTH_STENCIL_DESC desc {};
+		desc.DepthEnable = (compare != DepthCompare::None);
+		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		desc.DepthFunc = D3D11_COMPARISON_NEVER;
+		switch (compare)
+		{
+		case DepthCompare::None: desc.DepthFunc = D3D11_COMPARISON_NEVER; break;
+		case DepthCompare::Always: desc.DepthFunc = D3D11_COMPARISON_ALWAYS; break;
+		case DepthCompare::Never: desc.DepthFunc = D3D11_COMPARISON_NEVER; break;
+		case DepthCompare::Less: desc.DepthFunc = D3D11_COMPARISON_LESS; break;
+		case DepthCompare::Equal: desc.DepthFunc = D3D11_COMPARISON_EQUAL; break;
+		case DepthCompare::LessOrEqual: desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL; break;
+		case DepthCompare::Greater: desc.DepthFunc = D3D11_COMPARISON_GREATER; break;
+		case DepthCompare::NotEqual: desc.DepthFunc = D3D11_COMPARISON_NOT_EQUAL; break;
+		case DepthCompare::GreaterOrEqual: desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL; break;
+		}
+		ID3D11DepthStencilState* result;
+		HRESULT res = ctx.device->CreateDepthStencilState(&desc, &result);
+		if (SUCCEEDED(res))
+		{
+			D3D11Depth depth;
+			depth.compare = compare;
+			depth.depthState = result;
+			cache.push_back(depth);
+			return cache.back().depthState;
+		}
+		return nullptr;
+	}
+	static void clear()
+	{
+		for (D3D11Depth& depth : cache)
+			depth.depthState->Release();
+	}
+private:
+	static std::vector<D3D11Depth> cache;
+};
+
+D3D11_BLEND blendFactor(BlendMode mode)
+{
+	switch (mode)
+	{
+	case BlendMode::Zero: return D3D11_BLEND_ZERO;
+	case BlendMode::One: return D3D11_BLEND_ONE;
+	case BlendMode::SrcColor: return D3D11_BLEND_SRC_COLOR;
+	case BlendMode::OneMinusSrcColor: return D3D11_BLEND_INV_SRC_COLOR;
+	case BlendMode::DstColor: return D3D11_BLEND_DEST_COLOR;
+	case BlendMode::OneMinusDstColor: return D3D11_BLEND_INV_DEST_COLOR;
+	case BlendMode::SrcAlpha: return D3D11_BLEND_SRC_ALPHA;
+	case BlendMode::OneMinusSrcAlpha: return D3D11_BLEND_INV_SRC_ALPHA;
+	case BlendMode::DstAlpha: return D3D11_BLEND_DEST_ALPHA;
+	case BlendMode::OneMinusDstAlpha: return D3D11_BLEND_INV_DEST_ALPHA;
+	case BlendMode::ConstantColor: return D3D11_BLEND_BLEND_FACTOR;
+	case BlendMode::OneMinusConstantColor: return D3D11_BLEND_INV_BLEND_FACTOR;
+	case BlendMode::ConstantAlpha: return D3D11_BLEND_BLEND_FACTOR;
+	case BlendMode::OneMinusConstantAlpha: return D3D11_BLEND_INV_BLEND_FACTOR;
+	case BlendMode::SrcAlphaSaturate: return D3D11_BLEND_SRC_ALPHA_SAT;
+	case BlendMode::Src1Color: return D3D11_BLEND_SRC1_COLOR;
+	case BlendMode::OneMinusSrc1Color: return D3D11_BLEND_INV_SRC1_COLOR;
+	case BlendMode::Src1Alpha: return D3D11_BLEND_SRC1_ALPHA;
+	case BlendMode::OneMinusSrc1Alpha: return D3D11_BLEND_INV_SRC1_ALPHA;
+	}
+	return D3D11_BLEND_ZERO;
+}
+
+struct D3D11Blend
+{
+	BlendMode blend;
+	ID3D11BlendState* blendState;
+	static ID3D11BlendState* get(BlendMode blendMode)
+	{
+		for (D3D11Blend& blend : cache)
+			if (blend.blend == blendMode)
+				return blend.blendState;
+
+		D3D11_BLEND_DESC desc{};
+		desc.AlphaToCoverageEnable = 0;
+		desc.IndependentBlendEnable = 0;
+
+		desc.RenderTarget[0].BlendEnable = blendMode != BlendMode::None;
+		desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		if (blendMode != BlendMode::None)
+		{
+			// TODO upgrade blend to support this
+			desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;// blendFactor(blendMode);
+			desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;// blendFactor(blendMode);
+			desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;// blendFactor(blendMode);
+			desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;// blendFactor(blendMode);
+		}
+
+		for (uint32_t i = 1; i < 8; i++)
+			desc.RenderTarget[i] = desc.RenderTarget[0];
+
+		ID3D11BlendState* result = nullptr;
+		HRESULT res = ctx.device->CreateBlendState(&desc, &result);
+		if (SUCCEEDED(res))
+		{
+			D3D11Blend blend;
+			blend.blend = blendMode;
+			blend.blendState = result;
+			cache.push_back(blend);
+			return cache.back().blendState;
+		}
+		return nullptr;
+	}
+	static void clear()
+	{
+		for (D3D11Blend& blend : cache)
+			blend.blendState->Release();
+	}
+private:
+	static std::vector<D3D11Blend> cache;
+};
+
+
 std::vector<D3D11RasterPass> D3D11RasterPass::cache;
+std::vector<D3D11Sampler> D3D11Sampler::cache;
+std::vector<D3D11Depth> D3D11Depth::cache;
+std::vector<D3D11Blend> D3D11Blend::cache;
 
 class D3D11Texture : public Texture
 {
 public:
 	friend class D3D11Framebuffer;
+	friend class D3D11Renderer;
 	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
 		Texture(width, height),
 		m_texture(nullptr),
 		m_view(nullptr),
-		m_component(0)
+		m_component(0),
+		m_isFramebuffer(isFramebuffer)
 	{
 		D3D11_TEXTURE2D_DESC desc{};
 		desc.Width = width;
@@ -119,7 +299,7 @@ public:
 		desc.MiscFlags = 0;
 
 		if (isFramebuffer)
-			desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+			desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 		else
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
@@ -145,8 +325,7 @@ public:
 		}
 
 		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
-		if (!isFramebuffer)
-			D3D_CHECK_RESULT(ctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
+		D3D_CHECK_RESULT(ctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
 		if (data != nullptr)
 		{
 			D3D11_BOX box{};
@@ -161,7 +340,7 @@ public:
 				0,
 				&box,
 				data,
-				m_width * m_component / m_height,
+				m_width * m_component,
 				0
 			);
 		}
@@ -183,10 +362,15 @@ public:
 	{
 		return Handle((uintptr_t)m_view);
 	}
+	bool isFramebuffer() override
+	{
+		return m_isFramebuffer;
+	}
 private:
 	ID3D11Texture2D* m_texture;
 	ID3D11ShaderResourceView* m_view;
 	uint32_t m_component;
+	bool m_isFramebuffer;
 };
 
 class D3D11Framebuffer : public Framebuffer
@@ -253,16 +437,18 @@ public:
 			ctx.deviceContext->ClearRenderTargetView(view, color);
 		ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
-	void bind(Type type) override
+	Texture::Ptr attachment(AttachmentType type) override
 	{
-		ctx.deviceContext->OMSetRenderTargets(m_colorViews.size(), m_colorViews.data(), m_depthStencilView);
-	}
-	void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
-	{
-		throw std::runtime_error("not implemented");
+		for (Attachment& attachment : m_attachments)
+		{
+			if (attachment.type == type)
+				return attachment.texture;
+		}
+		return nullptr;
 	}
 private:
 	std::vector<Attachment> m_attachments;
+public:
 	std::vector<ID3D11RenderTargetView*> m_colorViews;
 	ID3D11DepthStencilView* m_depthStencilView;
 };
@@ -295,28 +481,6 @@ public:
 		// Create the texture for the depth buffer using the filled out description.
 		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
 
-		// Initialize the description of the stencil state.
-		D3D11_DEPTH_STENCIL_DESC depthStencilDesc{};
-		// Set up the description of the stencil state.
-		depthStencilDesc.DepthEnable = true;
-		depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-		depthStencilDesc.StencilEnable = true;
-		depthStencilDesc.StencilReadMask = 0xFF;
-		depthStencilDesc.StencilWriteMask = 0xFF;
-		// Stencil operations if pixel is front-facing.
-		depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-		depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		// Stencil operations if pixel is back-facing.
-		depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-		depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		// Create the depth stencil state.
-		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState));
-
 		// Initailze the depth stencil view.
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
 		// Set up the depth stencil view description.
@@ -337,12 +501,6 @@ public:
 		{
 			m_depthStencilView->Release();
 			m_depthStencilView = 0;
-		}
-
-		if (m_depthStencilState)
-		{
-			m_depthStencilState->Release();
-			m_depthStencilState = 0;
 		}
 
 		if (m_depthStencilBuffer)
@@ -374,19 +532,20 @@ public:
 		// Clear the depth buffer.
 		ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
-	void bind(Type type) override
+	/*void bind(Type type) override
 	{
 		ctx.deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 		ctx.deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
-	}
-	void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
+	}*/
+	Texture::Ptr attachment(AttachmentType type) override
 	{
-		throw std::runtime_error("Not implemented");
+		// TODO create Texture as attachment
+		return nullptr;
 	}
-private:
+public:
 	ID3D11RenderTargetView* m_renderTargetView;
 	ID3D11DepthStencilView* m_depthStencilView;
-	ID3D11DepthStencilState* m_depthStencilState;
+private:
 	ID3D11Texture2D* m_depthStencilBuffer;
 };
 
@@ -911,6 +1070,8 @@ D3D11Renderer::~D3D11Renderer()
 	}
 
 	D3D11RasterPass::clear();
+	D3D11Sampler::clear();
+	D3D11Depth::clear();
 
 	if (ctx.deviceContext)
 	{
@@ -981,45 +1142,46 @@ Framebuffer::Ptr D3D11Renderer::backbuffer()
 
 void D3D11Renderer::render(RenderPass& pass)
 {
-	/*{
-		// Set framebuffer
-		if (framebuffer != nullptr)
-		{
-			framebuffer->bind(Framebuffer::Type::Both);
-		}
-		else
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-	}*/
 	{
 		// Set Framebuffer
 		if (pass.framebuffer == m_backbuffer)
 		{
-			m_backbuffer->bind(Framebuffer::Type::Both);
+			D3D11BackBuffer* backbuffer = (D3D11BackBuffer*)m_backbuffer.get();
+			ctx.deviceContext->OMSetRenderTargets(1, &backbuffer->m_renderTargetView, backbuffer->m_depthStencilView);
 		}
 		else
 		{
-			pass.framebuffer->bind(Framebuffer::Type::Both);
+			D3D11Framebuffer* framebuffer = (D3D11Framebuffer*)pass.framebuffer.get();
+			ctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->m_colorViews.size(), framebuffer->m_colorViews.data(), framebuffer->m_depthStencilView);
 		}
 	}
 	{
 		// Rasterizer
 		ID3D11RasterizerState* rasterState = D3D11RasterPass::get(pass.cull);
-		ctx.deviceContext->RSSetState(rasterState);
+		if (rasterState != nullptr)
+			ctx.deviceContext->RSSetState(rasterState);
 	}
 
-	/*{
+	{
 		// Depth
-		auto depthstencil = state.get_depthstencil(pass);
-		if (depthstencil)
-			ctx->OMSetDepthStencilState(depthstencil, 0);
-	}*/
+		ID3D11DepthStencilState* depthState = D3D11Depth::get(pass.depth);
+		if (depthState != nullptr)
+			ctx.deviceContext->OMSetDepthStencilState(depthState, 1);
+	}
 
-	/*{
+	{
 		// Blend
-		ctx.deviceContext->OMSetBlendState();
-	}*/
+		ID3D11BlendState *blendState = D3D11Blend::get(pass.blend);
+		if (blendState != nullptr)
+		{
+			float blendFactor[4] = { 1.f, 1.f, 1.f, 1.f };
+			ctx.deviceContext->OMSetBlendState(blendState, blendFactor, 0xffffffff);
+		}
+		else
+		{
+			ctx.deviceContext->OMSetBlendState(nullptr, nullptr, 0);
+		}
+	}
 
 	{
 		// Viewport
@@ -1046,6 +1208,24 @@ void D3D11Renderer::render(RenderPass& pass)
 		{
 			((D3D11Shader*)pass.shader.get())->setLayout(pass.mesh->getVertexData());
 			pass.shader->use();
+			// Textures
+			//for (uint32_t iTex = 0; iTex < textures.size(); iTex++)
+			{
+				if (pass.texture != nullptr)
+				{
+					// Assign the Texture
+					ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->m_view;
+					ctx.deviceContext->PSSetShaderResources(0, 1, &view);
+				}
+			}
+			// Fragment Shader Samplers
+			//for (int i = 0; i < samplers.size(); i++)
+			{
+				ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->m_view;
+				ID3D11SamplerState* sampler = D3D11Sampler::get(view, Sampler::Filter::Nearest);
+				if (sampler != nullptr)
+					ctx.deviceContext->PSSetSamplers(0, 1, &sampler);
+			}
 		}
 	}
 	{

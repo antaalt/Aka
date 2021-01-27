@@ -14,6 +14,13 @@ struct Sampler
 		Linear,
 		Default = Linear
 	};
+	enum class Wrap {
+		Clamp,
+		Repeat
+	};
+	Filter filter;
+	Wrap wrap;
+	//Texture::Ptr texture;
 };
 
 class Texture
@@ -47,6 +54,8 @@ public:
 	virtual void bind() = 0;
 
 	virtual Handle handle() = 0;
+
+	virtual bool isFramebuffer() = 0;
 
 protected:
 	uint32_t m_width, m_height;

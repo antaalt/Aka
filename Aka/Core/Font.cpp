@@ -32,11 +32,6 @@ Font::Font(const Path& path, uint32_t height)
             continue;
         }
         uint32_t characterSize = face->glyph->bitmap.width * face->glyph->bitmap.rows;
-        if (characterSize == 0)
-        {
-            Logger::error("[freetype] Empty character '", (char)c, "'");
-            continue;
-        }
         std::vector<uint8_t> rgba(characterSize * 4);
         for (uint32_t iSrc = 0, iDst = 0; iSrc < characterSize; iSrc++, iDst += 4)
         {

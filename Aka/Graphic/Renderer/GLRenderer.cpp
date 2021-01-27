@@ -656,7 +656,7 @@ public:
 	{
 		glBindFramebuffer(gl::framebufferType(type), m_framebufferID);
 	}
-	void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
+	/*void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
 	{
 		bind(Type::Read);
 		dst->bind(Type::Draw);
@@ -673,6 +673,15 @@ public:
 			gl::filter(filter)
 		);
 		dst->bind(Type::Both);
+	}*/
+	Texture::Ptr attachment(AttachmentType type) override
+	{
+		for (Attachment& attachment : m_attachments)
+		{
+			if (attachment.type == type)
+				return attachment.texture;
+		}
+		return nullptr;
 	}
 private:
 	std::vector<Attachment> m_attachments;
@@ -705,23 +714,10 @@ public:
 	{
 		glBindFramebuffer(gl::framebufferType(type), 0);
 	}
-	void blit(Framebuffer::Ptr dst, const Rect& srcRect, const Rect& dstRect, Sampler::Filter filter) override
+	Texture::Ptr attachment(AttachmentType type) override
 	{
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-		dst->bind(Type::Draw);
-		glBlitFramebuffer(
-			static_cast<GLint>(srcRect.x),
-			static_cast<GLint>(srcRect.y),
-			static_cast<GLint>(srcRect.x + srcRect.w),
-			static_cast<GLint>(srcRect.y + srcRect.h),
-			static_cast<GLint>(dstRect.x),
-			static_cast<GLint>(dstRect.y),
-			static_cast<GLint>(dstRect.x + dstRect.w),
-			static_cast<GLint>(dstRect.y + dstRect.h),
-			GL_COLOR_BUFFER_BIT,
-			gl::filter(filter)
-		);
-		dst->bind(Type::Both);
+		// We do not have access to backbuffer attachment with GL.
+		return nullptr;
 	}
 };
 
@@ -780,6 +776,7 @@ void GLRenderer::frame()
 
 void GLRenderer::present()
 {
+	glfwSwapBuffers(m_window);
 }
 
 void GLRenderer::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -815,6 +812,7 @@ void GLRenderer::render(RenderPass& pass)
 
 	{
 		// Blending
+		// TODO glBlendEquation (default to GL_FUNC_ADD)
 		if (pass.blend == BlendMode::None)
 		{
 			glDisable(GL_BLEND);

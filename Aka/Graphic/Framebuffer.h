@@ -59,14 +59,11 @@ public:
 	// Resize the framebuffer
 	virtual void resize(uint32_t width, uint32_t height) = 0;
 
-	// Bind the framebuffer
-	virtual void bind(Type type) = 0;
-
 	// Clear the framebuffer
 	virtual void clear(float r, float g, float b, float a) = 0;
 
-	// Blit the framebuffer to another one
-	virtual void blit(Framebuffer::Ptr dst, const Rect &srcRect, const Rect& dstRect, Sampler::Filter filter) = 0;
+	// Get the attachment of the framebuffer
+	virtual Texture::Ptr attachment(AttachmentType type) = 0;
 
 protected:
 	uint32_t m_width;

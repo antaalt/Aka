@@ -269,6 +269,8 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 		renderPass.cull = CullMode::None;
 
+		renderPass.depth = DepthCompare::None;
+
 		renderPass.viewport = aka::Rect{ 0.f, 0.f, static_cast<float>(framebuffer->width()), static_cast<float>(framebuffer->height()) };
 	}
 	
@@ -289,8 +291,6 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 		renderPass.texture = batch.texture;
 		renderPass.execute();
 	}
-	// Clear all batches as they are rendered
-	clear();
 }
 
 Batch::Vertex::Vertex(const vec2f& position, const uv2f& uv, const color4f& color) :

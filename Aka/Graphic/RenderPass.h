@@ -36,6 +36,18 @@ enum class CullMode {
 	AllFace
 };
 
+enum class DepthCompare {
+	None,
+	Always,
+	Never,
+	Less,
+	Equal,
+	LessOrEqual,
+	Greater,
+	NotEqual,
+	GreaterOrEqual
+};
+
 struct RenderPass
 {
 	// Framebuffer to render to
@@ -54,6 +66,8 @@ struct RenderPass
 	BlendMode blend;
 	// Culling mode for triangle face
 	CullMode cull;
+	// Depth mode
+	DepthCompare depth;
 	// Viewport for rendering
 	Rect viewport;
 

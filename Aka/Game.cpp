@@ -28,7 +28,7 @@
 #include "Graphic/Renderer/GLRenderer.h"
 #include "Graphic/Renderer/D3D11Renderer.h"
 
-#define USE_IMGUI
+//#define USE_IMGUI
 
 #include <sstream>
 #if defined(USE_IMGUI)
@@ -717,49 +717,37 @@ void Game::renderGUI()
 
 void Game::render()
 {
-	//backend.viewport(0, 0, framebuffer->width(), framebuffer->height());
-	m_framebuffer->bind(Framebuffer::Type::Both);
-	m_framebuffer->clear(1.f, 0.63f, 0.f, 1.f);
+	{
+		// Render to framebuffer
+		Camera2D* camera = m_cameraEntity->get<Camera2D>();
+		mat4f view = mat4f::inverse(mat4f(
+			col4f(1.f, 0.f, 0.f, 0.f),
+			col4f(0.f, 1.f, 0.f, 0.f),
+			col4f(0.f, 0.f, 1.f, 0.f),
+			col4f(camera->position.x, camera->position.y, 0.f, 1.f)
+		));
+		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(m_framebuffer->height()), 0.f, static_cast<float>(m_framebuffer->width()), -1.f, 1.f);
+		m_framebuffer->clear(1.f, 0.63f, 0.f, 1.f); 
+		m_world.draw(m_batch);
+		m_batch.render(m_framebuffer, view, projection);
+		m_batch.clear();
+	}
 
-	// Render
-	Camera2D *camera = m_cameraEntity->get<Camera2D>();
-	mat4f view = mat4f::inverse(mat4f(
-		col4f(1.f, 0.f, 0.f, 0.f),
-		col4f(0.f, 1.f, 0.f, 0.f),
-		col4f(0.f, 0.f, 1.f, 0.f),
-		col4f(camera->position.x, camera->position.y, 0.f, 1.f)
-	));
-	mat4f projection = mat4f::orthographic(0.f, static_cast<float>(m_framebuffer->height()), 0.f, static_cast<float>(m_framebuffer->width()), -1.f, 1.f);
-	m_world.draw(m_batch);
-	m_batch.render(m_framebuffer, view, projection);
+	{
+		// Blit to backbuffer
+		GraphicBackend::backbuffer()->clear(0.f, 0.f, 0.f, 1.f);
+		mat4f view = mat4f::identity();
+		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(screenHeight()), 0.f, static_cast<float>(screenWidth()), -1.f, 1.f);
+		m_batch.draw(mat3f::scale(vec2f((float)screenWidth(), (float)screenHeight())), Batch::Rect(vec2f(0), vec2f(1.f), m_framebuffer->attachment(Framebuffer::AttachmentType::Color0), 0));
+		m_batch.render(GraphicBackend::backbuffer(), view, projection);
+		m_batch.clear();
+	}
 
-	// Blit to main buffer
-	uint32_t widthRatio = screenWidth() / m_framebuffer->width();
-	uint32_t heightRatio = screenHeight() / m_framebuffer->height();
-	uint32_t ratio = min<uint32_t>(widthRatio, heightRatio);
-	uint32_t scaledWidth = ratio * m_framebuffer->width();
-	uint32_t scaledHeight = ratio * m_framebuffer->height();
-	uint32_t w = (screenWidth() - scaledWidth) / 2;
-	uint32_t h = (screenHeight() - scaledHeight) / 2;
-	Rect srcBlit{};
-	srcBlit.x = 0.f;
-	srcBlit.y = 0.f;
-	srcBlit.w = (float)m_framebuffer->width();
-	srcBlit.h = (float)m_framebuffer->height();
-	Rect dstBlit{};
-	dstBlit.x = (float)w;
-	dstBlit.y = (float)h;
-	dstBlit.w = (float)screenWidth() - 2.f * w;
-	dstBlit.h = (float)screenHeight() - 2.f * h;
-
-	GraphicBackend::backbuffer()->bind(Framebuffer::Type::Both);
-	GraphicBackend::viewport(0, 0, screenWidth(), screenHeight());
-	GraphicBackend::backbuffer()->clear(0.f, 0.f, 0.f, 1.f);
-	m_framebuffer->blit(GraphicBackend::backbuffer(), srcBlit, dstBlit, Sampler::Filter::Nearest);
-
-	// Rendering imgui
-	if (m_displayUI)
-		renderGUI();
+	{
+		// Rendering imgui
+		if (m_displayUI)
+			renderGUI();
+	}
 
 #if defined(USE_IMGUI)
 	ImGui::Render();
