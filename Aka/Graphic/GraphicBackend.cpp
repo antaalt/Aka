@@ -105,6 +105,11 @@ GraphicRenderer* GraphicBackend::renderer()
 	return m_backend->m_renderer;
 }
 
+void GraphicBackend::screenshot(const Path& path)
+{
+	return m_backend->m_renderer->screenshot(path);
+}
+
 Device GraphicBackend::getDevice(uint32_t id)
 {
 	return m_backend->m_renderer->getDevice(id);

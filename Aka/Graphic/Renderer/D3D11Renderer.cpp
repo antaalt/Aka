@@ -279,7 +279,6 @@ class D3D11Texture : public Texture
 {
 public:
 	friend class D3D11Framebuffer;
-	friend class D3D11Renderer;
 	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
 		Texture(width, height),
 		m_texture(nullptr),
@@ -362,6 +361,8 @@ public:
 	{
 		return m_isFramebuffer;
 	}
+	ID3D11Texture2D* getTexture() const { return m_texture; }
+	ID3D11ShaderResourceView* getView() const { return m_view; }
 private:
 	ID3D11Texture2D* m_texture;
 	ID3D11ShaderResourceView* m_view;
@@ -374,6 +375,7 @@ class D3D11Framebuffer : public Framebuffer
 public:
 	D3D11Framebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler::Filter filter) :
 		Framebuffer(width, height),
+		m_filter(filter),
 		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
@@ -398,6 +400,7 @@ public:
 			m_attachments.push_back(Attachment{ attachments[i], tex });
 			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
 			{
+				ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
 				D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
 			}
 			else
@@ -420,7 +423,44 @@ public:
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-		throw std::runtime_error("not implemented");
+		for (ID3D11RenderTargetView* colorView : m_colorViews)
+			colorView->Release();
+		m_colorViews.clear();
+		if (m_depthStencilView)
+			m_depthStencilView->Release();
+
+		for (Attachment& attachment : m_attachments)
+		{
+			Texture::Format format;
+			switch (attachment.type)
+			{
+			case AttachmentType::Color0:
+			case AttachmentType::Color1:
+			case AttachmentType::Color2:
+			case AttachmentType::Color3:
+				format = Texture::Format::Rgba;
+				break;
+			case AttachmentType::Depth:
+			case AttachmentType::Stencil:
+			case AttachmentType::DepthStencil:
+				format = Texture::Format::DepthStencil;
+				break;
+			}
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, m_filter, true);
+			attachment.texture = tex;
+			if (attachment.type == AttachmentType::Depth || attachment.type == AttachmentType::Stencil || attachment.type == AttachmentType::DepthStencil)
+			{
+				D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
+			}
+			else
+			{
+				ID3D11RenderTargetView* view = nullptr;
+				D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
+				m_colorViews.push_back(view);
+			}
+		}
+		m_width = width;
+		m_height = height;
 	}
 	void clear(float r, float g, float b, float a) override
 	{
@@ -442,9 +482,12 @@ public:
 		}
 		return nullptr;
 	}
+	uint32_t getNumberView() const { return static_cast<uint32_t>(m_colorViews.size()); }
+	ID3D11RenderTargetView* getRenderTargetView(uint32_t index) const { return m_colorViews[index]; }
+	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
 private:
+	Sampler::Filter m_filter;
 	std::vector<Attachment> m_attachments;
-public:
 	std::vector<ID3D11RenderTargetView*> m_colorViews;
 	ID3D11DepthStencilView* m_depthStencilView;
 };
@@ -452,13 +495,64 @@ public:
 class D3D11BackBuffer : public Framebuffer
 {
 public:
-	D3D11BackBuffer(uint32_t width, uint32_t height, ID3D11Texture2D *texture) :
+	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
 		Framebuffer(width, height),
+		m_swapChain(sc),
+		m_texture(nullptr),
 		m_renderTargetView(nullptr),
 		m_depthStencilView(nullptr)
 	{
-		// Create the render target view with the back buffer pointer.
-		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
+		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_texture));
+		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(m_texture, nullptr, &m_renderTargetView));
+
+		// Initialize the description of the depth buffer.
+		D3D11_TEXTURE2D_DESC depthBufferDesc{};
+		// Set up the description of the depth buffer.
+		depthBufferDesc.Width = width;
+		depthBufferDesc.Height = height;
+		depthBufferDesc.MipLevels = 1;
+		depthBufferDesc.ArraySize = 1;
+		depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthBufferDesc.SampleDesc.Count = 1;
+		depthBufferDesc.SampleDesc.Quality = 0;
+		depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthBufferDesc.CPUAccessFlags = 0;
+		depthBufferDesc.MiscFlags = 0;
+		// Create the texture for the depth buffer using the filled out description.
+		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
+
+		// Initailze the depth stencil view.
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
+		// Set up the depth stencil view description.
+		depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthStencilViewDesc.Texture2D.MipSlice = 0;
+		// Create the depth stencil view.
+		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
+	}
+	D3D11BackBuffer(const D3D11BackBuffer&) = delete;
+	D3D11BackBuffer& operator=(const D3D11BackBuffer&) = delete;
+	~D3D11BackBuffer()
+	{
+		if (m_texture)
+			m_texture->Release();
+		if (m_depthStencilView)
+			m_depthStencilView->Release();
+		if (m_depthStencilBuffer)
+			m_depthStencilBuffer->Release();
+		if (m_renderTargetView)
+			m_renderTargetView->Release();
+	}
+	void resize(uint32_t width, uint32_t height) override
+	{
+		m_texture->Release();
+		m_renderTargetView->Release();
+		m_depthStencilBuffer->Release();
+		m_depthStencilView->Release();
+		m_swapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_texture));
+		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(m_texture, nullptr, &m_renderTargetView));
 
 		// Initialize the description of the depth buffer.
 		D3D11_TEXTURE2D_DESC depthBufferDesc{};
@@ -486,34 +580,8 @@ public:
 		// Create the depth stencil view.
 		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
 
-		// Bind the render target view and depth stencil buffer to the output render pipeline.
-		ctx.deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
-	}
-	D3D11BackBuffer(const D3D11BackBuffer&) = delete;
-	D3D11BackBuffer& operator=(const D3D11BackBuffer&) = delete;
-	~D3D11BackBuffer()
-	{
-		if (m_depthStencilView)
-		{
-			m_depthStencilView->Release();
-			m_depthStencilView = 0;
-		}
-
-		if (m_depthStencilBuffer)
-		{
-			m_depthStencilBuffer->Release();
-			m_depthStencilBuffer = 0;
-		}
-
-		if (m_renderTargetView)
-		{
-			m_renderTargetView->Release();
-			m_renderTargetView = 0;
-		}
-	}
-	void resize(uint32_t width, uint32_t height) override
-	{
-		throw std::runtime_error("Not implemented");
+		m_width = width;
+		m_height = height;
 	}
 	void clear(float r, float g, float b, float a) override
 	{
@@ -533,10 +601,13 @@ public:
 		// TODO create Texture as attachment
 		return nullptr;
 	}
-public:
+	ID3D11RenderTargetView* getRenderTargetView() const { return m_renderTargetView; }
+	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
+private:
+	IDXGISwapChain* m_swapChain;
+	ID3D11Texture2D* m_texture;
 	ID3D11RenderTargetView* m_renderTargetView;
 	ID3D11DepthStencilView* m_depthStencilView;
-private:
 	ID3D11Texture2D* m_depthStencilBuffer;
 };
 
@@ -973,7 +1044,7 @@ private:
 	std::vector<ID3D11Buffer*> m_vertexUniformBuffers;
 	std::vector<ID3D11Buffer*> m_fragmentUniformBuffers;
 	std::vector<std::vector<float>> m_vertexUniformValues;
-	std::vector< std::vector<float>> m_fragmentUniformValues;
+	std::vector<std::vector<float>> m_fragmentUniformValues;
 };
 
 D3D11Renderer::D3D11Renderer(Window& window, uint32_t width, uint32_t height)
@@ -1037,13 +1108,7 @@ D3D11Renderer::D3D11Renderer(Window& window, uint32_t width, uint32_t height)
 		nullptr,
 		&ctx.deviceContext
 	));
-
-	// --- Backbuffer
-	// Get the pointer to the back buffer.
-	ID3D11Texture2D* backBufferPtr;
-	D3D_CHECK_RESULT(swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr));
-
-	m_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, backBufferPtr);
+	m_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, swapChain.swapChain);
 }
 
 D3D11Renderer::~D3D11Renderer()
@@ -1132,12 +1197,14 @@ void D3D11Renderer::render(RenderPass& pass)
 		if (pass.framebuffer == m_backbuffer)
 		{
 			D3D11BackBuffer* backbuffer = (D3D11BackBuffer*)m_backbuffer.get();
-			ctx.deviceContext->OMSetRenderTargets(1, &backbuffer->m_renderTargetView, backbuffer->m_depthStencilView);
+			ID3D11RenderTargetView* view = backbuffer->getRenderTargetView();
+			ctx.deviceContext->OMSetRenderTargets(1, &view, backbuffer->getDepthStencilView());
 		}
 		else
 		{
 			D3D11Framebuffer* framebuffer = (D3D11Framebuffer*)pass.framebuffer.get();
-			ctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->m_colorViews.size(), framebuffer->m_colorViews.data(), framebuffer->m_depthStencilView);
+			ID3D11RenderTargetView* view = framebuffer->getRenderTargetView(0);
+			ctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
 		}
 	}
 	{
@@ -1199,14 +1266,14 @@ void D3D11Renderer::render(RenderPass& pass)
 				if (pass.texture != nullptr)
 				{
 					// Assign the Texture
-					ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->m_view;
+					ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->getView();
 					ctx.deviceContext->PSSetShaderResources(0, 1, &view);
 				}
 			}
 			// Fragment Shader Samplers
 			//for (int i = 0; i < samplers.size(); i++)
 			{
-				ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->m_view;
+				ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->getView();
 				ID3D11SamplerState* sampler = D3D11Sampler::get(view, Sampler::Filter::Nearest);
 				if (sampler != nullptr)
 					ctx.deviceContext->PSSetSamplers(0, 1, &sampler);
@@ -1225,6 +1292,10 @@ void D3D11Renderer::render(RenderPass& pass)
 			pass.mesh->draw(pass.indexCount, pass.indexOffset);
 		}
 	}
+}
+void D3D11Renderer::screenshot(const Path& path)
+{
+	throw std::runtime_error("not implemented");
 }
 
 D3D11Context& D3D11Renderer::context()

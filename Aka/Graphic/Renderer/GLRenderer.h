@@ -19,6 +19,7 @@ public:
 	Rect viewport() override;
 	Framebuffer::Ptr backbuffer() override;
 	void render(RenderPass& renderPass) override;
+	void screenshot(const Path& path) override;
 protected:
 	friend class GraphicBackend;
 	friend struct Device;

@@ -28,6 +28,7 @@ private:
 	Batch m_batch;
 	Framebuffer::Ptr m_framebuffer;
 	// Entity
+	World m_world;
 	Entity* m_cameraEntity;
 	Entity* m_playerEntity;
 	Entity* m_backgroundEntity;

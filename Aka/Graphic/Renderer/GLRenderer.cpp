@@ -4,6 +4,7 @@
 #include "../../Core/Debug.h"
 #include "../../Platform/Logger.h"
 #include "../../Platform/Window.h"
+#include "../../Platform/IO/Image.h"
 
 #define GLEW_NO_GLU
 #include <gl/glew.h>
@@ -684,7 +685,8 @@ public:
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-		throw std::runtime_error("Not implemented");
+		m_width = width;
+		m_height = height;
 	}
 	void clear(float r, float g, float b, float a) override
 	{
@@ -919,6 +921,21 @@ void GLRenderer::render(RenderPass& pass)
 		// Mesh
 		pass.mesh->draw(pass.indexCount, pass.indexOffset);
 	}
+}
+
+void GLRenderer::screenshot(const Path& path)
+{
+	glFinish();
+	Image image;
+	image.width = m_backbuffer->width();
+	image.height = m_backbuffer->height();
+	image.bytes.resize(image.width * image.height * 4);
+	std::vector<uint8_t> bytes(image.bytes.size());
+	glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE, bytes.data());
+	uint32_t stride = 4 * image.width;
+	for (uint32_t y = 0; y < image.height; y++)
+		memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
+	image.save("./output.jpg");
 }
 
 Device GLRenderer::getDevice(uint32_t id)

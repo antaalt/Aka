@@ -6,6 +6,7 @@
 #include "Framebuffer.h"
 #include "Mesh.h"
 #include "RenderPass.h"
+#include "../Platform/IO/FileSystem.h"
 
 namespace aka {
 
@@ -35,6 +36,7 @@ public:
 	virtual Rect viewport() = 0;
 	virtual Framebuffer::Ptr backbuffer() = 0;
 	virtual void render(RenderPass& renderPass) = 0;
+	virtual void screenshot(const Path& path) = 0;
 protected:
 	friend class GraphicBackend;
 	virtual Device getDevice(uint32_t id) = 0;
@@ -76,6 +78,8 @@ public:
 	static void render(RenderPass& renderPass);
 	// Get the renderer
 	static GraphicRenderer* renderer();
+	// Take a screenshot
+	static void screenshot(const Path& path);
 protected:
 	friend struct Device;
 	static Device getDevice(uint32_t id);

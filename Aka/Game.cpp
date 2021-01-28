@@ -312,19 +312,8 @@ void Game::update(Time::Unit deltaTime)
 {
 	if (input::pressed(input::Key::F1))
 	{
-#if defined(AKA_USE_OPENGL)
-		glFinish();
-		Image image;
-		image.width = screenWidth();
-		image.height = screenHeight();
-		image.bytes.resize(image.width * image.height * 4);
-		std::vector<uint8_t> bytes(image.bytes.size());
-		glReadPixels(0, 0, screenWidth(), screenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, bytes.data());
-		uint32_t stride = 4 * image.width;
-		for (uint32_t y = 0; y < image.height; y++)
-			memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
-		image.save("./output.jpg");
-#endif
+		GraphicBackend::screenshot("./output.jpg");
+		Logger::info("Screenshot taken.");
 	}
 	if (input::down(input::Key::H))
 	{

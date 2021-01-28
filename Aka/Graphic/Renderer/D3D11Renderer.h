@@ -26,6 +26,7 @@ public:
 	Rect viewport() override;
 	Framebuffer::Ptr backbuffer() override;
 	void render(RenderPass& renderPass) override;
+	void screenshot(const Path& path) override;
 	D3D11Context& context();
 protected:
 	friend class GraphicBackend;
