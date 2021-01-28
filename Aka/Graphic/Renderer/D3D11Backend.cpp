@@ -1,14 +1,14 @@
 #if defined(AKA_USE_D3D11)
-#include "D3D11Renderer.h"
 #include "../GraphicBackend.h"
 #include "../../Core/Debug.h"
 #include "../../Platform/Platform.h"
 #include "../../Platform/Logger.h"
-#include "../../Platform/Window.h"
+#include "../../PlatformBackend.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <dxgi.h>
+#include <d3d11.h>
 #include <d3dcommon.h>
 #include <d3dcompiler.h>
 #include <stdexcept>
@@ -44,9 +44,14 @@
 namespace aka {
 
 struct D3D11SwapChain {
-	IDXGISwapChain* swapChain;
+	IDXGISwapChain* swapChain = nullptr;
 	bool vsync = true;
 	bool fullscreen = false;
+};
+
+struct D3D11Context {
+	ID3D11Device* device = nullptr;
+	ID3D11DeviceContext* deviceContext = nullptr;
 };
 
 D3D11Context ctx;
@@ -1047,7 +1052,9 @@ private:
 	std::vector<std::vector<float>> m_fragmentUniformValues;
 };
 
-D3D11Renderer::D3D11Renderer(Window& window, uint32_t width, uint32_t height)
+static std::shared_ptr<D3D11BackBuffer> s_backbuffer;
+
+void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
 	Device device = getDevice(0);
 	Logger::info("Device : ", device.name, " - ", device.memory);
@@ -1077,7 +1084,7 @@ D3D11Renderer::D3D11Renderer(Window& window, uint32_t width, uint32_t height)
 	// Set the usage of the back buffer.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = glfwGetWin32Window(window.handle());
+	swapChainDesc.OutputWindow = PlatformBackend::getD3DHandle();
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;
@@ -1108,10 +1115,10 @@ D3D11Renderer::D3D11Renderer(Window& window, uint32_t width, uint32_t height)
 		nullptr,
 		&ctx.deviceContext
 	));
-	m_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, swapChain.swapChain);
+	s_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, swapChain.swapChain);
 }
 
-D3D11Renderer::~D3D11Renderer()
+void GraphicBackend::destroy()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
 	if (swapChain.swapChain)
@@ -1142,16 +1149,21 @@ D3D11Renderer::~D3D11Renderer()
 	}
 }
 
-void D3D11Renderer::resize(uint32_t width, uint32_t height)
+GraphicApi GraphicBackend::api()
 {
-	m_backbuffer->resize(width, height);
+	return GraphicApi::DirectX11;
 }
 
-void D3D11Renderer::frame()
+void GraphicBackend::resize(uint32_t width, uint32_t height)
+{
+	s_backbuffer->resize(width, height);
+}
+
+void GraphicBackend::frame()
 {
 }
 
-void D3D11Renderer::present()
+void GraphicBackend::present()
 {
 	// Present the back buffer to the screen since rendering is complete.
 	if (swapChain.vsync)
@@ -1166,7 +1178,7 @@ void D3D11Renderer::present()
 	}
 }
 
-void D3D11Renderer::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
+void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
 {
 	D3D11_VIEWPORT viewport;
 	viewport.Width = (float)width;
@@ -1180,23 +1192,18 @@ void D3D11Renderer::viewport(int32_t x, int32_t y, uint32_t width, uint32_t heig
 	ctx.deviceContext->RSSetViewports(1, &viewport);
 }
 
-Rect D3D11Renderer::viewport()
+Framebuffer::Ptr GraphicBackend::backbuffer()
 {
-	return Rect{};
+	return s_backbuffer;
 }
 
-Framebuffer::Ptr D3D11Renderer::backbuffer()
-{
-	return m_backbuffer;
-}
-
-void D3D11Renderer::render(RenderPass& pass)
+void GraphicBackend::render(RenderPass& pass)
 {
 	{
 		// Set Framebuffer
-		if (pass.framebuffer == m_backbuffer)
+		if (pass.framebuffer == s_backbuffer)
 		{
-			D3D11BackBuffer* backbuffer = (D3D11BackBuffer*)m_backbuffer.get();
+			D3D11BackBuffer* backbuffer = (D3D11BackBuffer*)s_backbuffer.get();
 			ID3D11RenderTargetView* view = backbuffer->getRenderTargetView();
 			ctx.deviceContext->OMSetRenderTargets(1, &view, backbuffer->getDepthStencilView());
 		}
@@ -1293,17 +1300,22 @@ void D3D11Renderer::render(RenderPass& pass)
 		}
 	}
 }
-void D3D11Renderer::screenshot(const Path& path)
+void GraphicBackend::screenshot(const Path& path)
 {
 	throw std::runtime_error("not implemented");
 }
 
-D3D11Context& D3D11Renderer::context()
+ID3D11Device* GraphicBackend::getD3D11Device()
 {
-	return ctx;
+	return ctx.device;
 }
 
-Device D3D11Renderer::getDevice(uint32_t id)
+ID3D11DeviceContext* GraphicBackend::getD3D11DeviceContext()
+{
+	return ctx.deviceContext;
+}
+
+Device GraphicBackend::getDevice(uint32_t id)
 {
 	Device device{};
 
@@ -1365,12 +1377,12 @@ Device D3D11Renderer::getDevice(uint32_t id)
 	return device;
 }
 
-uint32_t D3D11Renderer::deviceCount()
+uint32_t GraphicBackend::deviceCount()
 {
 	return 0;
 }
 
-Texture::Ptr D3D11Renderer::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
@@ -1378,17 +1390,17 @@ Texture::Ptr D3D11Renderer::createTexture(uint32_t width, uint32_t height, Textu
 	return std::make_shared<D3D11Texture>(width, height, format, data, filter, false);
 }
 
-Framebuffer::Ptr D3D11Renderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
 {
 	return std::make_shared<D3D11Framebuffer>(width, height, attachment, count, filter);
 }
 
-Mesh::Ptr D3D11Renderer::createMesh()
+Mesh::Ptr GraphicBackend::createMesh()
 {
 	return std::make_shared<D3D11Mesh>();
 }
 
-ShaderID D3D11Renderer::compile(const char* content, ShaderType type)
+ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 {
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorMessage = nullptr;
@@ -1448,7 +1460,7 @@ ShaderID D3D11Renderer::compile(const char* content, ShaderType type)
 	return ShaderID((uintptr_t)shaderBuffer);
 }
 
-Shader::Ptr D3D11Renderer::createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes)
 {
 	return std::make_shared<D3D11Shader>(vert, frag, compute, attributes);
 }

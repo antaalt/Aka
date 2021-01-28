@@ -122,16 +122,6 @@ enum class Button {
 const uint32_t g_keyboardKeyCount = 512; // should contain every glfw key code
 const uint32_t g_mouseButtonCount = 16; // should contain every glfw mouse button code
 
-// Set inputs
-void initialize();
-void update();
-void on_key_down(Key key);
-void on_key_up(Key key);
-void on_mouse_button_down(Button button);
-void on_mouse_button_up(Button button);
-void on_mouse_move(float x, float y);
-void on_mouse_scroll(float x, float y);
-
 // Structs
 struct Keyboard {
 	bool pressed[g_keyboardKeyCount];

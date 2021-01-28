@@ -1,5 +1,3 @@
-#include "Platform/Window.h"
-
 #include "Game.h"
 
 // TODO use cmake
@@ -10,14 +8,13 @@ int main()
 {
 	aka::Game app;
 
-	aka::Window::Config cfg;
+	aka::Config cfg;
 	cfg.width = 1280;
 	cfg.height = 720;
 	cfg.name = "Game";
-	cfg.api = aka::GraphicApi::Auto;
 	cfg.app = &app;
 
-	aka::Window::run(cfg);
+	aka::Game::run(cfg);
 
 	return 0;
 }

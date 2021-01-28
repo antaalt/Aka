@@ -25,8 +25,7 @@
 #include "System/PlayerSystem.h"
 #include "System/CoinSystem.h"
 #include "System/SoundSystem.h"
-#include "Graphic/Renderer/GLRenderer.h"
-#include "Graphic/Renderer/D3D11Renderer.h"
+#include "PlatformBackend.h"
 
 //#define USE_IMGUI
 
@@ -44,7 +43,7 @@
 
 namespace aka {
 
-void Game::initialize(Window& window)
+void Game::initialize()
 {
 	Logger::debug.mute();
 	{
@@ -247,7 +246,7 @@ void Game::initialize(Window& window)
 	}
 
 	{
-		window.setSizeLimits(m_framebuffer->width(), m_framebuffer->height(), GLFW_DONT_CARE, GLFW_DONT_CARE);
+		PlatformBackend::setLimits(m_framebuffer->width(), m_framebuffer->height(), 0, 0);
 	}
 #if defined(USE_IMGUI)
 	{
@@ -260,15 +259,15 @@ void Game::initialize(Window& window)
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
 #if defined(AKA_USE_OPENGL)
-		ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
+		ImGui_ImplGlfw_InitForOpenGL(PlatformBackend::getGLFW3Handle(), true);
 
 		float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 		std::stringstream ss;
 		ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
 		ImGui_ImplOpenGL3_Init(ss.str().c_str());
 #else
-		D3D11Renderer* renderer = reinterpret_cast<D3D11Renderer*>(GraphicBackend::renderer());
-		ImGui_ImplDX11_Init(renderer->context().device, renderer->context().deviceContext);
+		ImGui_ImplGlfw_InitForVulkan(PlatformBackend::getGLFW3Handle(), true);
+		ImGui_ImplDX11_Init(GraphicBackend::getD3D11Device(), GraphicBackend::getD3D11DeviceContext());
 #endif
 		ImGui::StyleColorsDark();
 	}
@@ -331,8 +330,10 @@ void Game::renderGUI()
 		ImVec4 color = ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
 		if (ImGui::CollapsingHeader("Infos", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			uint32_t width, height;
+			PlatformBackend::getSize(&width, &height);
 			ImGuiIO& io = ImGui::GetIO();
-			ImGui::Text("Resolution : %ux%u", screenWidth(), screenHeight());
+			ImGui::Text("Resolution : %ux%u", width, height);
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
 
@@ -726,8 +727,8 @@ void Game::render()
 		// Blit to backbuffer
 		GraphicBackend::backbuffer()->clear(0.f, 0.f, 0.f, 1.f);
 		mat4f view = mat4f::identity();
-		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(screenHeight()), 0.f, static_cast<float>(screenWidth()), -1.f, 1.f);
-		m_batch.draw(mat3f::scale(vec2f((float)screenWidth(), (float)screenHeight())), Batch::Rect(vec2f(0), vec2f(1.f), m_framebuffer->attachment(Framebuffer::AttachmentType::Color0), 0));
+		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(GraphicBackend::backbuffer()->height()), 0.f, static_cast<float>(GraphicBackend::backbuffer()->width()), -1.f, 1.f);
+		m_batch.draw(mat3f::scale(vec2f((float)GraphicBackend::backbuffer()->width(), (float)GraphicBackend::backbuffer()->height())), Batch::Rect(vec2f(0), vec2f(1.f), m_framebuffer->attachment(Framebuffer::AttachmentType::Color0), 0));
 		m_batch.render(GraphicBackend::backbuffer(), view, projection);
 		m_batch.clear();
 	}
@@ -746,6 +747,11 @@ void Game::render()
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #endif
 #endif
+}
+
+bool Game::running()
+{
+	return !input::pressed(input::Key::Escape);
 }
 
 }

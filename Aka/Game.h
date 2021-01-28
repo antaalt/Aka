@@ -3,7 +3,6 @@
 #include "Core/Application.h"
 #include "Core/Font.h"
 #include "Core/Sprite.h"
-#include "Platform/Window.h"
 #include "Platform/IO/Image.h"
 #include "Graphic/Batch.h"
 
@@ -12,12 +11,13 @@ namespace aka {
 class Game : public Application
 {
 public:
-	void initialize(Window& window) override;
+	void initialize() override;
 	void destroy() override;
 	void frame() override;
 	void update(Time::Unit deltaTime) override;
 	void renderGUI();
 	void render() override;
+	bool running() override;
 private:
 	// UI
 	bool m_displayUI = true;

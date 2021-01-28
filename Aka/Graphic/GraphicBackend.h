@@ -8,57 +8,29 @@
 #include "RenderPass.h"
 #include "../Platform/IO/FileSystem.h"
 
+#if defined(AKA_USE_D3D11)
+#include <d3d11.h>
+#endif
+
 namespace aka {
 
 class Window;
 
 enum class GraphicApi {
-	Auto,
-#if defined(AKA_USE_OPENGL)
 	OpenGL,
-#endif
-#if defined(AKA_USE_D3D11)
 	DirectX11,
-#endif
-};
-
-class GraphicRenderer
-{
-public:
-	GraphicRenderer() {}
-	virtual ~GraphicRenderer() {}
-
-	virtual GraphicApi api() = 0;
-	virtual void resize(uint32_t width, uint32_t height) = 0;
-	virtual void frame() = 0;
-	virtual void present() = 0;
-	virtual void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height) = 0;
-	virtual Rect viewport() = 0;
-	virtual Framebuffer::Ptr backbuffer() = 0;
-	virtual void render(RenderPass& renderPass) = 0;
-	virtual void screenshot(const Path& path) = 0;
-protected:
-	friend class GraphicBackend;
-	virtual Device getDevice(uint32_t id) = 0;
-	virtual uint32_t deviceCount() = 0;
-	virtual Texture::Ptr createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter) = 0;
-	virtual Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter) = 0;
-	virtual Mesh::Ptr createMesh() = 0;
-	virtual ShaderID compile(const char* content, ShaderType type) = 0;
-	virtual Shader::Ptr createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes) = 0;
 };
 
 class GraphicBackend {
-	GraphicBackend(Window& window, uint32_t width, uint32_t height);
+	GraphicBackend() {}
 	GraphicBackend(GraphicBackend&) = delete;
 	GraphicBackend& operator=(GraphicBackend&) = delete;
-	~GraphicBackend();
-	static GraphicBackend* m_backend;
+	~GraphicBackend() {}
 public:
 	// Get the current API
 	static GraphicApi api();
 	// Initialize the graphic API
-	static void initialize(GraphicApi api, Window &window, uint32_t width, uint32_t height);
+	static void initialize(uint32_t width, uint32_t height);
 	// Destroy the graphic API
 	static void destroy();
 	// Resize the graphic swapchain
@@ -70,16 +42,19 @@ public:
 	static void present();
 	// Set the viewport
 	static void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height);
-	// Get the viewport
-	static Rect viewport();
 	// Get the backbuffer
 	static Framebuffer::Ptr backbuffer();
 	// Render a render pass
 	static void render(RenderPass& renderPass);
-	// Get the renderer
-	static GraphicRenderer* renderer();
 	// Take a screenshot
 	static void screenshot(const Path& path);
+public:
+#if defined(AKA_USE_D3D11)
+	// Get D3D11 device
+	static ID3D11Device* getD3D11Device();
+	// Get D3D11 device context
+	static ID3D11DeviceContext* getD3D11DeviceContext();
+#endif
 protected:
 	friend struct Device;
 	static Device getDevice(uint32_t id);
@@ -97,8 +72,6 @@ protected:
 	friend class Shader;
 	static ShaderID compile(const char* content, ShaderType type);
 	static Shader::Ptr createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes);
-protected:
-	GraphicRenderer* m_renderer;
 };
 
 }

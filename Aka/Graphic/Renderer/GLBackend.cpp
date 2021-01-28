@@ -1,5 +1,4 @@
 #if defined(AKA_USE_OPENGL)
-#include "GLRenderer.h"
 #include "../GraphicBackend.h"
 #include "../../Core/Debug.h"
 #include "../../Platform/Logger.h"
@@ -111,8 +110,6 @@ uint32_t checkError_(const char* file, int line)
 #define checkError() checkError_(__FILE__, __LINE__)
 
 namespace aka {
-
-static GLFWwindow* s_window;
 
 namespace gl {
 GLenum attachmentType(Framebuffer::AttachmentType type)
@@ -701,9 +698,13 @@ public:
 	}
 };
 
+struct GLContext {
+	std::shared_ptr<GLBackBuffer> backbuffer;
+};
 
-GLRenderer::GLRenderer(Window& window, uint32_t width, uint32_t height) :
-	m_backbuffer(nullptr)
+GLContext ctx;
+
+void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
 #if !defined(__APPLE__)
 	glewExperimental = true; // Nécessaire dans le profil de base
@@ -730,58 +731,49 @@ GLRenderer::GLRenderer(Window& window, uint32_t width, uint32_t height) :
 	else
 		Logger::warn("glDebugMessageCallback not supported");
 #endif
-	s_window = window.handle();
-	m_backbuffer = std::make_shared<GLBackBuffer>(width, height);
+	ctx.backbuffer = std::make_shared<GLBackBuffer>(width, height);
 }
 
-GLRenderer::~GLRenderer()
+void GraphicBackend::destroy()
 {
-	m_backbuffer.reset();
+	ctx.backbuffer.reset();
 	glFinish();
 	glBindVertexArray(0);
 }
 
-GraphicApi GLRenderer::api()
+GraphicApi GraphicBackend::api()
 {
 	return GraphicApi::OpenGL;
 }
 
-void GLRenderer::resize(uint32_t width, uint32_t height)
+void GraphicBackend::resize(uint32_t width, uint32_t height)
 {
-	m_backbuffer->resize(width, height);
+	ctx.backbuffer->resize(width, height);
 }
 
-void GLRenderer::frame()
+void GraphicBackend::frame()
 {
 }
 
-void GLRenderer::present()
+void GraphicBackend::present()
 {
-	glfwSwapBuffers(s_window);
 }
 
-void GLRenderer::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
+void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
 {
 	glViewport(x, y, width, height);
 }
 
-Rect GLRenderer::viewport()
+Framebuffer::Ptr GraphicBackend::backbuffer()
 {
-	GLint dims[4] = { 0 };
-	glGetIntegerv(GL_VIEWPORT, dims);
-	return Rect{ (float)dims[0], (float)dims[1], (float)dims[2], (float)dims[3] };
+	return ctx.backbuffer;
 }
 
-Framebuffer::Ptr GLRenderer::backbuffer()
-{
-	return m_backbuffer;
-}
-
-void GLRenderer::render(RenderPass& pass)
+void GraphicBackend::render(RenderPass& pass)
 {
 	{
 		// Set framebuffer
-		if (pass.framebuffer != m_backbuffer)
+		if (pass.framebuffer != ctx.backbuffer)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, ((GLFramebuffer*)pass.framebuffer.get())->getFramebufferID());
 		}
@@ -923,12 +915,12 @@ void GLRenderer::render(RenderPass& pass)
 	}
 }
 
-void GLRenderer::screenshot(const Path& path)
+void GraphicBackend::screenshot(const Path& path)
 {
 	glFinish();
 	Image image;
-	image.width = m_backbuffer->width();
-	image.height = m_backbuffer->height();
+	image.width = ctx.backbuffer->width();
+	image.height = ctx.backbuffer->height();
 	image.bytes.resize(image.width * image.height * 4);
 	std::vector<uint8_t> bytes(image.bytes.size());
 	glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE, bytes.data());
@@ -938,7 +930,7 @@ void GLRenderer::screenshot(const Path& path)
 	image.save("./output.jpg");
 }
 
-Device GLRenderer::getDevice(uint32_t id)
+Device GraphicBackend::getDevice(uint32_t id)
 {
 	Device device;
 	glGetString(GL_VENDOR);
@@ -946,27 +938,27 @@ Device GLRenderer::getDevice(uint32_t id)
 	return device;
 }
 
-uint32_t GLRenderer::deviceCount()
+uint32_t GraphicBackend::deviceCount()
 {
 	return 0;
 }
 
-Texture::Ptr GLRenderer::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
 {
 	return std::make_shared<GLTexture>(width, height, format, data, filter, false);
 }
 
-Framebuffer::Ptr GLRenderer::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
 {
 	return std::make_shared<GLFramebuffer>(width, height, attachment, count, filter);
 }
 
-Mesh::Ptr GLRenderer::createMesh()
+Mesh::Ptr GraphicBackend::createMesh()
 {
 	return std::make_shared<GLMesh>();
 }
 
-ShaderID GLRenderer::compile(const char* content, ShaderType type)
+ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 {
 	GLuint shaderID = glCreateShader(gl::getType(type));
 	glShaderSource(shaderID, 1, &content, NULL);
@@ -990,7 +982,7 @@ ShaderID GLRenderer::compile(const char* content, ShaderType type)
 	return ShaderID(shaderID);
 }
 
-Shader::Ptr GLRenderer::createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes)
 {
 	return std::make_shared<GLShader>(vert, frag, compute, attributes);
 }

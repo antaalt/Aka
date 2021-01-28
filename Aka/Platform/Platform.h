@@ -37,11 +37,3 @@
 	#include <GLFW/glfw3native.h>
 #endif
 
-namespace aka {
-
-void initKeyboard();
-input::Key getKeyFromScancode(unsigned int scancode);
-input::KeyboardLayout getKeyboardLayout();
-
-}
-
