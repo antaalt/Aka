@@ -27,26 +27,26 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GLDebug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='D3DDebug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GLRelease|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='D3DRelease|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -94,7 +94,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>AKA_USE_OPENGL;__WINDOWS_DS__;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AKA_USE_OPENGL;AKA_BUILD_DLL;__WINDOWS_DS__;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;$(SolutionDir)lib\rtaudio-5.1.0\include;$(SolutionDir)lib\minimp3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -105,6 +105,10 @@
       <AdditionalDependencies>dsound.lib;freetype.lib;opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;$(SolutionDir)lib\rtaudio-5.1.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Lib>
+      <AdditionalDependencies>dsound.lib;freetype.lib;opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;$(SolutionDir)lib\rtaudio-5.1.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='D3DDebug|x64'">
     <ClCompile>
@@ -121,6 +125,10 @@
       <AdditionalDependencies>dsound.lib;freetype.lib;opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\glew-2.1.0\lib\Release\x64;$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;$(SolutionDir)lib\rtaudio-5.1.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Lib>
+      <AdditionalDependencies>dsound.lib;freetype.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\glfw-3.3.2\lib-vc2019;$(SolutionDir)lib\freetype-windows-binaries\win64;$(SolutionDir)lib\rtaudio-5.1.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GLRelease|x64'">
     <ClCompile>
@@ -157,13 +165,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\lib\imgui\examples\imgui_impl_dx11.cpp" />
-    <ClCompile Include="..\lib\imgui\examples\imgui_impl_glfw.cpp" />
-    <ClCompile Include="..\lib\imgui\examples\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="..\lib\imgui\imgui.cpp" />
-    <ClCompile Include="..\lib\imgui\imgui_demo.cpp" />
-    <ClCompile Include="..\lib\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp" />
     <ClCompile Include="Audio\AudioBackend.cpp" />
     <ClCompile Include="Audio\RtAudio\RtAudioBackend.cpp" />
@@ -178,85 +179,41 @@
     <ClCompile Include="Graphic\Shader.cpp" />
     <ClCompile Include="Graphic\Texture.cpp" />
     <ClCompile Include="Platform\GLFW3\PlatformGLFW3.cpp" />
-    <ClCompile Include="Game\System\SoundSystem.cpp" />
-    <ClCompile Include="Game\System\CoinSystem.cpp" />
     <ClCompile Include="Core\ECS\Event.cpp" />
-    <ClCompile Include="Game\System\PlayerSystem.cpp" />
-    <ClCompile Include="Game\System\CollisionSystem.cpp" />
-    <ClCompile Include="Game\Component\Animator.cpp" />
-    <ClCompile Include="Game\Component\Camera2D.cpp" />
-    <ClCompile Include="Game\Component\Collider2D.cpp" />
-    <ClCompile Include="Game\Component\Text.cpp" />
-    <ClCompile Include="Game\Component\TileLayer.cpp" />
-    <ClCompile Include="Game\Component\TileMap.cpp" />
-    <ClCompile Include="Game\Component\Transform2D.cpp" />
     <ClCompile Include="Core\ECS\Component.cpp" />
     <ClCompile Include="Core\Debug.cpp" />
     <ClCompile Include="Core\ECS\Entity.cpp" />
     <ClCompile Include="Core\Font.cpp" />
-    <ClCompile Include="Game\OgmoWorld.cpp" />
     <ClCompile Include="Core\Shape2D.cpp" />
     <ClCompile Include="Core\ECS\System.cpp" />
     <ClCompile Include="Core\ECS\World.cpp" />
-    <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Graphic\Batch.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="Platform\Input.cpp" />
     <ClCompile Include="OS\FileSystem.cpp" />
     <ClCompile Include="OS\Image.cpp" />
     <ClCompile Include="OS\Logger.cpp" />
     <ClCompile Include="OS\Time.cpp" />
-    <ClCompile Include="Game\System\AnimatorSystem.cpp" />
-    <ClCompile Include="Game\System\CameraSystem.cpp" />
-    <ClCompile Include="Game\System\PhysicSystem.cpp" />
-    <ClCompile Include="Game\System\TextRenderSystem.cpp" />
-    <ClCompile Include="Game\System\TileMapSystem.cpp" />
-    <ClCompile Include="Game\System\TileRenderSystem.cpp" />
     <ClCompile Include="Platform\Windows\PlatformWindows.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\lib\imgui\examples\imgui_impl_dx11.h" />
-    <ClInclude Include="..\lib\imgui\examples\imgui_impl_glfw.h" />
-    <ClInclude Include="..\lib\imgui\examples\imgui_impl_opengl3.h" />
-    <ClInclude Include="..\lib\imgui\imconfig.h" />
-    <ClInclude Include="..\lib\imgui\imgui.h" />
-    <ClInclude Include="..\lib\imgui\imgui_internal.h" />
-    <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
-    <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
-    <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
     <ClInclude Include="Audio\AudioBackend.h" />
     <ClInclude Include="Audio\Codec\AudioDecoderMp3.h" />
     <ClInclude Include="Audio\AudioDecoder.h" />
     <ClInclude Include="Graphic\Device.h" />
     <ClInclude Include="Platform\PlatformBackend.h" />
     <ClInclude Include="Platform\InputBackend.h" />
-    <ClInclude Include="Game\System\SoundSystem.h" />
-    <ClInclude Include="Game\System\CoinSystem.h" />
-    <ClInclude Include="Game\Component\Coin.h" />
-    <ClInclude Include="Game\Component\Player.h" />
     <ClInclude Include="Core\ECS\Event.h" />
-    <ClInclude Include="Game\System\PlayerSystem.h" />
-    <ClInclude Include="Game\System\CollisionSystem.h" />
-    <ClInclude Include="Game\Component\Animator.h" />
-    <ClInclude Include="Game\Component\Camera2D.h" />
-    <ClInclude Include="Game\Component\Collider2D.h" />
-    <ClInclude Include="Game\Component\Text.h" />
-    <ClInclude Include="Game\Component\TileLayer.h" />
-    <ClInclude Include="Game\Component\TileMap.h" />
-    <ClInclude Include="Game\Component\Transform2D.h" />
     <ClInclude Include="Core\Application.h" />
     <ClInclude Include="Core\ECS\Component.h" />
     <ClInclude Include="Core\Debug.h" />
     <ClInclude Include="Core\ECS\Entity.h" />
     <ClInclude Include="Core\Font.h" />
     <ClInclude Include="Core\Geometry.h" />
-    <ClInclude Include="Game\OgmoWorld.h" />
     <ClInclude Include="Core\Shape2D.h" />
     <ClInclude Include="Core\Sprite.h" />
     <ClInclude Include="Core\StrictType.h" />
     <ClInclude Include="Core\ECS\System.h" />
     <ClInclude Include="Core\ECS\World.h" />
-    <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Graphic\Batch.h" />
     <ClInclude Include="Graphic\Framebuffer.h" />
     <ClInclude Include="Graphic\GraphicBackend.h" />
@@ -270,12 +227,7 @@
     <ClInclude Include="OS\Logger.h" />
     <ClInclude Include="Platform\Platform.h" />
     <ClInclude Include="OS\Time.h" />
-    <ClInclude Include="Game\System\AnimatorSystem.h" />
-    <ClInclude Include="Game\System\CameraSystem.h" />
-    <ClInclude Include="Game\System\PhysicSystem.h" />
-    <ClInclude Include="Game\System\TextRenderSystem.h" />
-    <ClInclude Include="Game\System\TileMapSystem.h" />
-    <ClInclude Include="Game\System\TileRenderSystem.h" />
+    <ClInclude Include="Aka.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Platform/Platform.h"
 #include "ECS/World.h"
 
 namespace aka {

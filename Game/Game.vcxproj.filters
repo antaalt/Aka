@@ -15,189 +15,177 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Graphic\Batch.cpp">
+    <ClCompile Include="Component\Animator.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Debug.cpp">
+    <ClCompile Include="Component\Camera2D.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Font.cpp">
+    <ClCompile Include="Component\Collider2D.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Shape2D.cpp">
+    <ClCompile Include="Component\Text.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp">
+    <ClCompile Include="Component\TileLayer.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\ECS\World.cpp">
+    <ClCompile Include="Component\TileMap.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\ECS\System.cpp">
+    <ClCompile Include="Component\Transform2D.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\ECS\Event.cpp">
+    <ClCompile Include="System\AnimatorSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\ECS\Entity.cpp">
+    <ClCompile Include="System\CameraSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\ECS\Component.cpp">
+    <ClCompile Include="System\CoinSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\Texture.cpp">
+    <ClCompile Include="System\CollisionSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\Mesh.cpp">
+    <ClCompile Include="System\PhysicSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\RenderPass.cpp">
+    <ClCompile Include="System\PlayerSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\Device.cpp">
+    <ClCompile Include="System\SoundSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\Framebuffer.cpp">
+    <ClCompile Include="System\TextRenderSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\Shader.cpp">
+    <ClCompile Include="System\TileMapSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Application.cpp">
+    <ClCompile Include="System\TileRenderSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="OS\FileSystem.cpp">
+    <ClCompile Include="Game.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="OS\Image.cpp">
+    <ClCompile Include="OgmoWorld.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="OS\Logger.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="OS\Time.cpp">
+    <ClCompile Include="..\lib\imgui\imgui.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Audio\AudioBackend.cpp">
+    <ClCompile Include="..\lib\imgui\imgui_demo.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Audio\Codec\AudioDecoderMp3.cpp">
+    <ClCompile Include="..\lib\imgui\imgui_draw.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Platform\Windows\PlatformWindows.cpp">
+    <ClCompile Include="..\lib\imgui\imgui_widgets.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Platform\Input.cpp">
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_dx11.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Platform\GLFW3\PlatformGLFW3.cpp">
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_glfw.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Graphic\GL\GLBackend.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphic\D3D11\D3D11Backend.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="Audio\RtAudio\RtAudioBackend.cpp">
+    <ClCompile Include="..\lib\imgui\examples\imgui_impl_opengl3.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Graphic\Batch.h">
+    <ClInclude Include="Component\Animator.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\Framebuffer.h">
+    <ClInclude Include="Component\Camera2D.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\GraphicBackend.h">
+    <ClInclude Include="Component\Coin.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\Mesh.h">
+    <ClInclude Include="Component\Collider2D.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\RenderPass.h">
+    <ClInclude Include="Component\Player.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\Shader.h">
+    <ClInclude Include="Component\Text.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\Texture.h">
+    <ClInclude Include="Component\TileLayer.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Application.h">
+    <ClInclude Include="Component\TileMap.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Debug.h">
+    <ClInclude Include="Component\Transform2D.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Font.h">
+    <ClInclude Include="System\AnimatorSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Geometry.h">
+    <ClInclude Include="System\CameraSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Shape2D.h">
+    <ClInclude Include="System\CoinSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Sprite.h">
+    <ClInclude Include="System\CollisionSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\StrictType.h">
+    <ClInclude Include="System\PhysicSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\ECS\World.h">
+    <ClInclude Include="System\PlayerSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\ECS\System.h">
+    <ClInclude Include="System\SoundSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\ECS\Event.h">
+    <ClInclude Include="System\TextRenderSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\ECS\Entity.h">
+    <ClInclude Include="System\TileMapSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Core\ECS\Component.h">
+    <ClInclude Include="System\TileRenderSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Graphic\Device.h">
+    <ClInclude Include="Game.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="OS\FileSystem.h">
+    <ClInclude Include="OgmoWorld.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="OS\Image.h">
+    <ClInclude Include="..\lib\imgui\imconfig.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="OS\Logger.h">
+    <ClInclude Include="..\lib\imgui\imgui.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="OS\Time.h">
+    <ClInclude Include="..\lib\imgui\imgui_internal.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Platform\PlatformBackend.h">
+    <ClInclude Include="..\lib\imgui\imstb_rectpack.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Audio\AudioDecoder.h">
+    <ClInclude Include="..\lib\imgui\imstb_textedit.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Audio\AudioBackend.h">
+    <ClInclude Include="..\lib\imgui\imstb_truetype.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Audio\Codec\AudioDecoderMp3.h">
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_dx11.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Platform\Input.h">
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_glfw.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Platform\InputBackend.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="Platform\Platform.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="Aka.h">
+    <ClInclude Include="..\lib\imgui\examples\imgui_impl_opengl3.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
