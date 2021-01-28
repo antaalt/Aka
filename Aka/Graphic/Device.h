@@ -20,8 +20,9 @@ struct Device
 	static Device get(uint32_t id);
 	static uint32_t count();
 
-	char name[128]; // name of the device
-	char vendor[128]; // vendor of the device
+	char renderer[128]; // Renderer of the device
+	char vendor[128]; // Vendor of the device
+	char version[128]; // Version of the device
 	uint32_t memory; // dedicated memory
 	std::vector<Monitor> monitors; // supported monitors
 };

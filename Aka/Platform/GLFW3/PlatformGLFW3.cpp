@@ -39,7 +39,7 @@ void PlatformBackend::initialize(const Config& config)
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
-#if defined(_DEBUG)
+#if defined(DEBUG)
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 #endif
 #elif defined(AKA_USE_D3D11)

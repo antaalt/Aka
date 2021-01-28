@@ -1,7 +1,8 @@
 #include "FileSystem.h"
+#include "../Platform/Platform.h"
 
 #include <fstream>
-#if defined(_WIN32)
+#if defined(AKA_WINDOWS)
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")  
 #endif
@@ -75,7 +76,7 @@ Path Path::operator+(const Path& rhs) const
 
 std::string Path::extension() const
 {
-#if defined(_WIN32)
+#if defined(AKA_WINDOWS)
 	return std::string(PathFindExtensionA(m_string.c_str()));
 #else
 #error "Not implemented"

@@ -706,6 +706,12 @@ GLContext ctx;
 
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
+	Device device = getDevice(0);
+	Logger::info("Device vendor : ", device.vendor);
+	Logger::info("Device renderer : ", device.renderer);
+	Logger::info("Device memory : ", device.memory);
+	Logger::info("Device version : ", device.version);
+
 #if !defined(__APPLE__)
 	glewExperimental = true; // Nécessaire dans le profil de base
 	if (glewInit() != GLEW_OK) {
@@ -713,7 +719,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	}
 #endif
 
-#if _DEBUG
+#if defined(DEBUG)
 	if (glDebugMessageCallback) {
 		Logger::info("Setting up openGL callback.");
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -933,8 +939,12 @@ void GraphicBackend::screenshot(const Path& path)
 Device GraphicBackend::getDevice(uint32_t id)
 {
 	Device device;
-	glGetString(GL_VENDOR);
-	glGetString(GL_RENDERER);
+	memcpy(device.vendor, glGetString(GL_VENDOR), 128);
+	memcpy(device.renderer, glGetString(GL_RENDERER), 128);
+	memcpy(device.version, glGetString(GL_VERSION), 128);
+	device.memory = 0; // Can't get this info with GL
+	// GL_SHADING_LANGUAGE_VERSION
+	device.monitors;
 	return device;
 }
 

@@ -1,13 +1,5 @@
 #include "Game.h"
 
-#include <Platform/Input.h>
-#include <Platform/PlatformBackend.h>
-#include <Platform/Platform.h>
-#include <OS/Logger.h>
-#include <OS/FileSystem.h>
-#include <OS/Time.h>
-#include <Core/ECS/World.h>
-
 #include "Component/Transform2D.h"
 #include "Component/Collider2D.h"
 #include "Component/Camera2D.h"

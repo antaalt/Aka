@@ -11,7 +11,7 @@ namespace aka {
 struct Logger {
 
 	enum class Color {
-#if defined(_WIN32)
+#if defined(AKA_WINDOWS)
 		// FG
 		FG_BLACK = 0,
 		FG_RED = FOREGROUND_RED,
@@ -100,7 +100,7 @@ inline std::ostream& operator<<(std::ostream& os, Logger::Color color)
 {
 	if (color == Logger::Color::FG_NONE)
 		return os;
-#if defined(_WIN32)
+#if defined(AKA_WINDOWS)
 	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hdl, static_cast<WORD>(color));
 	return os;
