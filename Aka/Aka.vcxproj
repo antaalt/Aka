@@ -165,9 +165,10 @@
     <ClCompile Include="..\lib\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\lib\rtaudio-5.1.0\src\RtAudio.cpp" />
+    <ClCompile Include="Audio\AudioBackend.cpp" />
+    <ClCompile Include="Audio\RtAudioBackend.cpp" />
     <ClCompile Include="Core\Application.cpp" />
-    <ClCompile Include="Audio\AudioDecoderMp3.cpp" />
-    <ClCompile Include="Audio\AudioPlayer.cpp" />
+    <ClCompile Include="Audio\Codec\AudioDecoderMp3.cpp" />
     <ClCompile Include="Graphic\Backend\D3D11Backend.cpp" />
     <ClCompile Include="Graphic\Backend\GLBackend.cpp" />
     <ClCompile Include="Graphic\Device.cpp" />
@@ -222,9 +223,9 @@
     <ClInclude Include="..\lib\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\lib\imgui\imstb_textedit.h" />
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
-    <ClInclude Include="Audio\AudioDecoderMp3.h" />
+    <ClInclude Include="Audio\AudioBackend.h" />
+    <ClInclude Include="Audio\Codec\AudioDecoderMp3.h" />
     <ClInclude Include="Audio\AudioDecoder.h" />
-    <ClInclude Include="Audio\AudioPlayer.h" />
     <ClInclude Include="Graphic\Device.h" />
     <ClInclude Include="Platform\PlatformBackend.h" />
     <ClInclude Include="Platform\Input\InputBackend.h" />

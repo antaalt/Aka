@@ -2,6 +2,7 @@
 
 #include "../Platform/PlatformBackend.h"
 #include "../Platform/Input/InputBackend.h"
+#include "../Audio/AudioBackend.h"
 
 namespace aka {
 
@@ -11,6 +12,7 @@ void Application::run(const Config& config)
 	PlatformBackend::initialize(config);
 	GraphicBackend::initialize(config.width, config.height);
 	InputBackend::initialize();
+	AudioBackend::initialize(44100, 2);
 
 	app->initialize();
 
@@ -40,6 +42,7 @@ void Application::run(const Config& config)
 
 	app->destroy();
 
+	AudioBackend::destroy();
 	InputBackend::destroy();
 	GraphicBackend::destroy();
 	PlatformBackend::destroy();

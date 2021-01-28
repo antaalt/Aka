@@ -2,7 +2,7 @@
 
 #include "../../OS/FileSystem.h"
 #include "../../Core/ECS/System.h"
-#include "../../Audio/AudioPlayer.h"
+#include "../../Audio/AudioBackend.h"
 
 #include <RtAudio.h>
 
@@ -19,7 +19,7 @@ struct SoundInstance : public Component {
 	float volume;
 	bool loop;
 private:
-	AudioDecoder::ID decoder;
+	AudioID audio;
 };
 
 class SoundSystem : public System
@@ -28,8 +28,6 @@ public:
 	SoundSystem(World* world);
 
 	void update(Time::Unit deltaTime) override;
-private:
-	AudioPlayer m_player;
 };
 
 };

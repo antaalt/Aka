@@ -3,7 +3,7 @@
 #include <minimp3.h>
 #include <minimp3_ex.h>
 
-#include "AudioDecoder.h"
+#include "../AudioDecoder.h"
 
 namespace aka {
 

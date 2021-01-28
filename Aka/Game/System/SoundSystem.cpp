@@ -7,26 +7,25 @@ namespace aka {
 
 
 SoundSystem::SoundSystem(World* world) :
-	System(world),
-	m_player(44100, 2)
+	System(world)
 {
 }
 
 void SoundSystem::update(Time::Unit deltaTime)
 {
 	m_world->each<SoundInstance>([&](Entity * entity, SoundInstance * sound) {
-		if (m_player.exist(sound->decoder))
+		if (AudioBackend::exist(sound->audio))
 		{
-			m_player.setVolume(sound->decoder, sound->volume);
-			if (m_player.finished(sound->decoder))
+			AudioBackend::setVolume(sound->audio, sound->volume);
+			if (AudioBackend::finished(sound->audio))
 			{
-				m_player.close(sound->decoder);
+				AudioBackend::close(sound->audio);
 				entity->destroy();
 			}
 		}
 		else
 		{
-			sound->decoder = m_player.play(sound->path, sound->loop);
+			sound->audio = AudioBackend::play(sound->path, sound->loop);
 		}
 	});
 }

@@ -10,8 +10,8 @@
 #include <minimp3.h>
 #include <minimp3_ex.h>
 
-#include "../OS/Logger.h"
-#include "../Core/Debug.h"
+#include "../../OS/Logger.h"
+#include "../../Core/Debug.h"
 
 namespace aka {
 

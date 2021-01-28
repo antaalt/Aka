@@ -8,8 +8,6 @@ namespace aka {
 class AudioDecoder
 {
 public:
-    using ID = StrictType<uint64_t, struct AudioDecoderTagName>;
-public:
     AudioDecoder(float volume, bool loop) : m_volume(volume), m_playing(false), m_loop(loop) {}
     virtual ~AudioDecoder() {}
 
