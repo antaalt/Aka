@@ -1,7 +1,7 @@
 #include "Application.h"
 
-#include "../PlatformBackend.h"
-#include "../Platform/InputBackend.h"
+#include "../Platform/PlatformBackend.h"
+#include "../Platform/Input/InputBackend.h"
 
 namespace aka {
 

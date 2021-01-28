@@ -2,7 +2,7 @@
 
 #include <freetype/freetype.h>
 
-#include "../Platform/Logger.h"
+#include "../OS/Logger.h"
 #include "../Core/Debug.h"
 
 namespace aka {

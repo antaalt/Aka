@@ -1,4 +1,4 @@
-#include "Game.h"
+#include "Game/Game.h"
 
 // TODO use cmake
 // implement other backend
