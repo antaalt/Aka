@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../OS/Platform.h"
+#include "Platform.h"
 
 namespace aka {
 

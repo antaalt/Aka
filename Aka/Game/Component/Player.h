@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Core/ECS/Component.h"
-#include "../../Platform/Input/Input.h"
+#include "../../Platform/Input.h"
 
 namespace aka {
 

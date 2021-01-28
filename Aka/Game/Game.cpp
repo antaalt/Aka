@@ -1,8 +1,8 @@
 #include "Game.h"
 
-#include "../Platform/Input/Input.h"
+#include "../Platform/Input.h"
 #include "../Platform/PlatformBackend.h"
-#include "../OS/Platform.h"
+#include "../Platform/Platform.h"
 #include "../OS/Logger.h"
 #include "../OS/FileSystem.h"
 #include "../OS/Time.h"
@@ -27,7 +27,7 @@
 #include "System/CoinSystem.h"
 #include "System/SoundSystem.h"
 
-//#define USE_IMGUI
+#define USE_IMGUI
 
 #include <sstream>
 #if defined(USE_IMGUI)

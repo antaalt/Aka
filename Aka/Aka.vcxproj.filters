@@ -90,9 +90,6 @@
     <ClCompile Include="Core\Application.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Platform\Input\Input.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="OS\FileSystem.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -103,15 +100,6 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="OS\Time.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="Platform\PlatformGLFW3.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphic\Backend\D3D11Backend.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphic\Backend\GLBackend.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="Game\Game.cpp">
@@ -171,13 +159,28 @@
     <ClCompile Include="Game\OgmoWorld.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Audio\RtAudioBackend.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="Audio\AudioBackend.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="Audio\Codec\AudioDecoderMp3.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform\Windows\PlatformWindows.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform\Input.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform\GLFW3\PlatformGLFW3.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphic\GL\GLBackend.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphic\D3D11\D3D11Backend.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\RtAudio\RtAudioBackend.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -269,12 +272,6 @@
     <ClInclude Include="..\lib\imgui\examples\imgui_impl_dx11.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Platform\Input\Input.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="Platform\Input\InputBackend.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="OS\FileSystem.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
@@ -356,13 +353,19 @@
     <ClInclude Include="Audio\AudioDecoder.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="OS\Platform.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="Audio\AudioBackend.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
     <ClInclude Include="Audio\Codec\AudioDecoderMp3.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform\Input.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform\InputBackend.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform\Platform.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>

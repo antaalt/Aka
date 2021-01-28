@@ -96,8 +96,7 @@ void AudioBackend::process(int16_t* buffer, uint32_t frames)
     if (decoders.size() == 0)
         return; // No audio to process
     // Set buffer to zero for mixing
-    for (unsigned int i = 0; i < frames * AudioBackend::getChannels(); i++)
-        buffer[i] = 0;
+    memset(buffer, 0, frames * AudioBackend::getChannels() * sizeof(int16_t));
     // Mix all audiodecoder
     std::vector<int16_t> tmp(frames * AudioBackend::getChannels());
     for (auto& decoder : decoders)

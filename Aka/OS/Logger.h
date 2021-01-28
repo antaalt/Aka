@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Platform.h"
+#include "../Platform/Platform.h"
 #include "Time.h"
 
 #include <iostream>

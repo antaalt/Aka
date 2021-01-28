@@ -18,7 +18,8 @@ private:
 	static void onMouseButtonUp(input::Button button);
 	static void onMouseMove(float x, float y);
 	static void onMouseScroll(float x, float y);
-	static input::Key getKeyFromScancode(unsigned int scancode);
+	static input::Key getKeyFromScancode(int scancode);
+	static input::Key getKeyFromKey(int key);
 	input::KeyboardLayout getKeyboardLayout();
 };
 

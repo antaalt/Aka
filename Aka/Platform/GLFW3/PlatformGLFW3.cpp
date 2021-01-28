@@ -1,9 +1,9 @@
-#include "PlatformBackend.h"
+#include "../PlatformBackend.h"
 
-#include "../OS/Logger.h"
-#include "../Core/Application.h"
-#include "../Graphic/GraphicBackend.h"
-#include "Input/InputBackend.h"
+#include "../../OS/Logger.h"
+#include "../../Core/Application.h"
+#include "../../Graphic/GraphicBackend.h"
+#include "../InputBackend.h"
 
 namespace aka {
 
@@ -13,11 +13,12 @@ struct GLFW3Context {
 
 GLFW3Context ctx;
 
-input::Key getKeyFromGLFW(int key)
+input::Key InputBackend::getKeyFromKey(int key)
 {
 	// TODO implement
 	return input::Key::Space;
 }
+
 
 void PlatformBackend::initialize(const Config& config)
 {

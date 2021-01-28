@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Graphic/GraphicBackend.h"
 #include "ECS/World.h"
 
 namespace aka {
@@ -17,6 +16,8 @@ struct Config {
 class Application
 {
 public:
+	Application() {}
+	virtual ~Application() {}
 	// Initialize the app, set the listener on inputs, create resources...
 	virtual void initialize() {};
 	// Destroy everything related to the app.

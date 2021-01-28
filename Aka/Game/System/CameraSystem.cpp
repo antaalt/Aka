@@ -5,7 +5,7 @@
 #include "../Component/Player.h"
 #include "../Component/Transform2D.h"
 #include "../Component/TileLayer.h"
-#include "../../Platform/Input/Input.h"
+#include "../../Platform/Input.h"
 #include "../../OS/Logger.h"
 
 
