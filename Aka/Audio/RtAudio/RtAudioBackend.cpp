@@ -8,9 +8,9 @@
 namespace aka {
 
 struct RtAudioContext {
-    uint32_t frequency;
-    uint32_t channels;
-    RtAudio *audio;
+    uint32_t frequency = 0;
+    uint32_t channels = 0;
+    RtAudio *audio = nullptr;
 };
 
 RtAudioContext ctx;
@@ -88,6 +88,8 @@ void AudioBackend::destroy()
     }
     if (ctx.audio->isStreamOpen())
         ctx.audio->closeStream();
+    delete ctx.audio;
+    ctx.audio = nullptr;
 }
 
 uint32_t AudioBackend::getDeviceCount()

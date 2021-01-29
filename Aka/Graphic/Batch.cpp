@@ -212,6 +212,11 @@ void Batch::push()
 
 void Batch::push(Texture::Ptr texture, int32_t layer)
 {
+	if (m_defaultTexture == nullptr)
+	{
+		uint8_t data[4] = { 255, 255, 255, 255 };
+		m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
+	}
 	m_batches.push_back(m_currentBatch);
 	m_currentBatch.texture = texture ? texture : m_defaultTexture;
 	m_currentBatch.elementOffset += m_currentBatch.elements;
@@ -230,6 +235,13 @@ void Batch::clear()
 	m_currentBatch.layer = 0;
 }
 
+uint32_t Batch::count()
+{
+	if (m_currentBatch.elements > 0)
+		return static_cast<uint32_t>(m_batches.size()) + 1;
+	return static_cast<uint32_t>(m_batches.size());
+}
+
 void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)
 {
 	RenderPass renderPass {};
@@ -246,11 +258,6 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 					Attributes{ AttributeID(0), "COL" }
 				}
 			);
-		}
-		if (m_defaultTexture == nullptr)
-		{
-			uint8_t data[4] = { 255, 255, 255, 255 };
-			m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
 		}
 		if (m_mesh == nullptr)
 			m_mesh = Mesh::create();

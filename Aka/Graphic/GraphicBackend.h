@@ -48,6 +48,8 @@ public:
 	static void render(RenderPass& renderPass);
 	// Take a screenshot
 	static void screenshot(const Path& path);
+	// Set the vsync
+	static void vsync(bool enabled);
 public:
 #if defined(AKA_USE_D3D11)
 	// Get D3D11 device

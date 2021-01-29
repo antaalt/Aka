@@ -91,6 +91,82 @@
       "values": [],
       "texture": "../textures/debug/collider.png",
       "textureImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAGdJREFUOI1jXGNk9J+BAsACY4ScO8dIika4xTAGKS5B0YOskRhDMNSja8JnCFa12DSQJIbLRmK8tsbI6D8LNgkGBkiswDTiiyEmXBJEA0q9QP1ApCgaKUpI5CZloqIKnyGMpNiMDQAAP8NmhCizhEsAAAAASUVORK5CYII="
+    },
+    {
+      "exportID": "87164600",
+      "name": "Character",
+      "limit": -1,
+      "size": {"x": 13, "y": 16},
+      "origin": {"x": 0, "y": 0},
+      "originAnchored": true,
+      "shape": {
+        "label": "Rectangle",
+        "points": [
+          {"x": -1, "y": -1},
+          {"x": 1, "y": -1},
+          {"x": -1, "y": 1},
+          {"x": 1, "y": -1},
+          {"x": -1, "y": 1},
+          {"x": 1, "y": 1}
+        ]
+      },
+      "color": "#ff0000ff",
+      "tileX": false,
+      "tileY": false,
+      "tileSize": {"x": 13, "y": 16},
+      "resizeableX": false,
+      "resizeableY": false,
+      "rotatable": false,
+      "rotationDegrees": 360,
+      "canFlipX": false,
+      "canFlipY": false,
+      "canSetColor": false,
+      "hasNodes": false,
+      "nodeLimit": 0,
+      "nodeDisplay": 0,
+      "nodeGhost": true,
+      "tags": [],
+      "values": [],
+      "texture": "../textures/player/player01.png",
+      "textureImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAAQCAYAAADNo/U5AAAAAXNSR0IArs4c6QAAAYVJREFUKJGFkj0sQ1EcxX+3ra96IlckeIaKRNKSVGowmRhYxMAgkVgwCvExivjYmjQmBkTS1MbAKjEZDCKI6mDpIA0JuYPnqyLP8PS9vmr4Jze5/3Pvuef8T66gSPU2V5r5fVjXiJ48iFwvCglSSnO8rbTYWzbRU6jQKbNFCQDzXXWmS+kvhcLy/H/ld/lyG8uWozQ50Q9A+/Q++Q62ktniSjkCwOXaIFcZw+6VUsID1jxhXXNbqNbttRObBbDJvsfKHnNEntrWGs5qaJVhXtvG8Ce3CQQ7SHkj+GUtJclF4MWZKedXn9wkvb5I0w/2dHeL3zhH06r4+MFcM5X1xUh5IzR1D7B8tEH6+ADDeCYQ7OD6MMHCWz0AIlYeMke9Oi2l53x2LXEzdAVA614YTavi+jBB/CvD3PQZ6dCUE3n8KwOAvIjCUK+zByI1lovG3SCsWmcCIFYeMgFWKu7RNCtFw3BizseUUsIHMPOeEgCyQrp+t1JKSOnGfgUBMBzIMhzI/ol9A9HKeZZQp2Q5AAAAAElFTkSuQmCC"
+    },
+    {
+      "exportID": "87172475",
+      "name": "Coin",
+      "limit": -1,
+      "size": {"x": 16, "y": 16},
+      "origin": {"x": 0, "y": 0},
+      "originAnchored": true,
+      "shape": {
+        "label": "Rectangle",
+        "points": [
+          {"x": -1, "y": -1},
+          {"x": 1, "y": -1},
+          {"x": -1, "y": 1},
+          {"x": 1, "y": -1},
+          {"x": -1, "y": 1},
+          {"x": 1, "y": 1}
+        ]
+      },
+      "color": "#ff0000ff",
+      "tileX": false,
+      "tileY": false,
+      "tileSize": {"x": 16, "y": 16},
+      "resizeableX": false,
+      "resizeableY": false,
+      "rotatable": false,
+      "rotationDegrees": 360,
+      "canFlipX": false,
+      "canFlipY": false,
+      "canSetColor": false,
+      "hasNodes": false,
+      "nodeLimit": 0,
+      "nodeDisplay": 0,
+      "nodeGhost": true,
+      "tags": [],
+      "values": [],
+      "texture": "../textures/interact/coin01.png",
+      "textureImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAH9JREFUOI1jZMACvq+3+I9NnDPwBCO6GIYALs24DEHhIGu+du81ikYtJVGshsAZMM3oGtEBzCCYIYykaMZmCBMhP+MD39db/GeCcYi1HV0tEx51RIFBZAByPBMCyGqZsCVPYgFn4AlG6iQkdEOwGUQwKWMzBJezkflY/U9KdgYABPVBGA+2qhEAAAAASUVORK5CYII="
     }
   ],
   "tilesets": [

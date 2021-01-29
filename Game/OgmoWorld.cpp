@@ -47,7 +47,10 @@ OgmoLevel OgmoLevel::load(const OgmoWorld &world, const Path& path)
 				Entity entity;
 				entity.entity = world.getEntity(jsonData["name"]);
 				entity.position = vec2u(jsonData["x"], jsonData["y"]);
-				entity.size = vec2u(jsonData["width"], jsonData["height"]);
+				if(jsonData.find("width") == jsonData.end() || jsonData.find("height") == jsonData.end())
+					entity.size = entity.entity->size;
+				else
+					entity.size = vec2u(jsonData["width"], jsonData["height"]);
 				layer.entities.push_back(entity);
 			}
 			break;

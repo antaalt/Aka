@@ -68,6 +68,9 @@ public:
 	// Clear all batch from stack
 	void clear();
 
+	// Get number of batch
+	uint32_t count();
+
 	// Render to specified framebuffer
 	void render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f &projection);
 private:

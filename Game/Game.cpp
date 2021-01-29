@@ -20,7 +20,7 @@
 #include "System/CoinSystem.h"
 #include "System/SoundSystem.h"
 
-//#define USE_IMGUI
+#define USE_IMGUI
 
 #include <sstream>
 #if defined(USE_IMGUI)
@@ -128,114 +128,98 @@ void Game::initialize()
 		createTileLayer(ogmoLevel.getLayer("Playerground"), 0);
 		createTileLayer(ogmoLevel.getLayer("Foreground"), 1);
 
-		// - Colliders
-		Sprite::Animation animation;
-		animation.name = "default";
-		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
-		m_sprites.push_back(std::make_shared<Sprite>());
-		m_sprites.back()->animations.push_back(animation);
-		
+		{
+			// - Colliders
+			Sprite::Animation animation;
+			animation.name = "default";
+			Image image = Image::load(Asset::path("textures/debug/collider.png"));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+			m_sprites.push_back(std::make_shared<Sprite>());
+			m_sprites.back()->animations.push_back(animation);
+		}
+		Sprite *coinSprite;
+		{
+			// - Coins
+			Sprite::Animation animation;
+			animation.name = "picked";
+			std::vector<Path> frames = {
+				Asset::path("textures/interact/coin01.png"),
+				Asset::path("textures/interact/coin02.png"),
+				Asset::path("textures/interact/coin03.png")
+			};
+			for (Path path : frames)
+			{
+				Image image = Image::load(path);
+				animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(100)));
+			}
+			m_sprites.push_back(std::make_shared<Sprite>());
+			m_sprites.back()->animations.push_back(animation);
+			Texture::Ptr tex = animation.frames[0].texture;
+			animation.frames.clear();
+			animation.name = "idle";
+			animation.frames.push_back(Sprite::Frame::create(tex, Time::Unit::milliseconds(500)));
+			m_sprites.back()->animations.push_back(animation);
+			coinSprite = m_sprites.back().get();
+		}
+		Sprite* playerSprite;
+		{
+			// - Player
+			// TODO move initialisation in SpriteAnimator & parse ase sprite directly ?
+			// TODO load gif ?
+			Sprite::Animation animation;
+			animation.name = "idle";
+			std::vector<Path> frames = {
+				Asset::path("textures/player/player01.png"),
+				Asset::path("textures/player/player02.png"),
+				Asset::path("textures/player/player03.png")
+			};
+			for (Path path : frames)
+			{
+				Image image = Image::load(path);
+				animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+			}
+			m_sprites.push_back(std::make_shared<Sprite>());
+			m_sprites.back()->animations.push_back(animation);
+			playerSprite = m_sprites.back().get();
+		}
 		const OgmoLevel::Layer* layer = ogmoLevel.getLayer("Colliders");
 		for (const OgmoLevel::Entity& entity : layer->entities)
 		{
 			Entity* collider = m_world.createEntity();
-			collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size) / 16.f, radianf(0.f)));
-			collider->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
-			//collider->add<Animator>(Animator(m_sprites.back().get(), 1));
+			if (entity.entity->name == "Collider")
+			{
+				collider->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size) / 16.f, radianf(0.f)));
+				collider->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f)));
+				//collider->add<Animator>(Animator(m_sprites.back().get(), 1));
+			}
+			else if (entity.entity->name == "Coin")
+			{
+				Entity* e = m_world.createEntity();
+				e->add<Transform2D>(Transform2D(vec2f((float)entity.position.x, (float)(layer->getHeight() - entity.position.y - entity.size.y)), vec2f(entity.size) / 16.f, radianf(0)));
+				e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
+				e->add<Animator>(Animator(coinSprite, 1))->play("idle");
+				e->add<Coin>(Coin());
+			}
+			else if (entity.entity->name == "Character")
+			{
+				m_playerEntity = m_world.createEntity();
+				m_playerEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f(1.f), radianf(0)));
+				m_playerEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
+				m_playerEntity->add<RigidBody2D>(RigidBody2D(1.f));
+				m_playerEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f((float)playerSprite->animations[0].frames[0].width, (float)playerSprite->animations[0].frames[0].height), 0.1f, 0.1f));
+
+				Player* player = m_playerEntity->add<Player>(Player());
+				player->jump = Control(input::Key::Space);
+				player->left = Control(input::Key::Q);
+				player->right = Control(input::Key::D);
+
+				m_playerEntity->add<Text>(Text(vec2f(3.f, 17.f), m_fonts[1].get(), "0", color4f(1.f), 3));
+			}
+			else
+			{
+				Logger::warn("Entity not supported : ", entity.entity->name);
+			}
 		}
-	}
-
-	{
-		// INIT CHARACTER
-		// TODO move initialisation in SpriteAnimator & parse ase sprite directly ?
-		// TODO load gif ?
-		Sprite::Animation animation;
-		animation.name = "idle";
-		std::vector<Path> frames = {
-			Asset::path("textures/player/player01.png"),
-			Asset::path("textures/player/player02.png"),
-			Asset::path("textures/player/player03.png")
-		};
-		uint32_t width = 0, height = 0;
-		for (Path path : frames)
-		{
-			Image image = Image::load(path);
-			width = image.width;
-			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
-		}
-		m_sprites.push_back(std::make_shared<Sprite>());
-		m_sprites.back()->animations.push_back(animation);
-		m_playerEntity = m_world.createEntity();
-		m_playerEntity->add<Transform2D>(Transform2D(vec2f(80, 224), vec2f(1.f), radianf(0)));
-		m_playerEntity->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		m_playerEntity->add<RigidBody2D>(RigidBody2D(1.f));
-		m_playerEntity->add<Collider2D>(Collider2D(vec2f(0.f), vec2f((float)width, (float)height), 0.1f, 0.1f));
-
-		Player *player = m_playerEntity->add<Player>(Player());
-		player->jump = Control(input::Key::Space);
-		player->left = Control(input::Key::Q);
-		player->right = Control(input::Key::D);
-
-		m_playerEntity->add<Text>(Text(vec2f(3.f, 17.f), m_fonts[1].get(), "0", color4f(1.f), 3));
-	}
-
-	{
-		// INIT COINS
-		Sprite::Animation animation;
-		animation.name = "picked";
-		vec2f characterSize = vec2f(13, 17);
-		std::vector<Path> frames = {
-			Asset::path("textures/interact/coin01.png"),
-			Asset::path("textures/interact/coin02.png"),
-			Asset::path("textures/interact/coin03.png")
-		};
-		uint32_t width = 0, height = 0;
-		for (Path path : frames)
-		{
-			Image image = Image::load(path);
-			width = image.width;
-			height = image.height;
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(100)));
-		}
-		m_sprites.push_back(std::make_shared<Sprite>());
-		m_sprites.back()->animations.push_back(animation);
-		Texture::Ptr tex = animation.frames[0].texture;
-		animation.frames.clear();
-		animation.name = "idle";
-		animation.frames.push_back(Sprite::Frame::create(tex, Time::Unit::milliseconds(500)));
-		m_sprites.back()->animations.push_back(animation);
-
-		Entity *e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(80, 80), vec2f(1.f), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
-		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		e->add<Coin>(Coin());
-
-		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(100, 80), vec2f(1.f), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
-		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		e->add<Coin>(Coin());
-
-		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(120, 80), vec2f(1.f), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
-		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		e->add<Coin>(Coin());
-
-		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(260, 96), vec2f(1.f), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
-		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		e->add<Coin>(Coin());
-
-		e = m_world.createEntity();
-		e->add<Transform2D>(Transform2D(vec2f(280, 96), vec2f(1.f), radianf(0)));
-		e->add<Collider2D>(Collider2D(vec2f(0.f), vec2f(16.f), 0.1f, 0.1f));
-		e->add<Animator>(Animator(m_sprites.back().get(), 1))->play("idle");
-		e->add<Coin>(Coin());
 	}
 
 	{
@@ -325,10 +309,18 @@ void Game::renderGUI()
 		{
 			uint32_t width, height;
 			PlatformBackend::getSize(&width, &height);
+			static Device device = Device::getDefault();
 			ImGuiIO& io = ImGui::GetIO();
 			ImGui::Text("Resolution : %ux%u", width, height);
 			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+			ImGui::Text("Draw call : %u", m_drawCall);
+			const char* apiName[] = {
+				"OpenGL",
+				"DirectX11"
+			};
+			ImGui::Text("Api : %s", apiName[(int)GraphicBackend::api()]);
+			ImGui::Text("Device : %s", device.vendor);
 
 			static bool renderColliders = false;
 			if (ImGui::Checkbox("Render colliders", &renderColliders))
@@ -345,6 +337,11 @@ void Game::renderGUI()
 							entity->remove<Animator>();
 					}
 				});
+			}
+			static bool vsync = true;
+			if (ImGui::Checkbox("Vsync", &vsync))
+			{
+				GraphicBackend::vsync(vsync);
 			}
 		}
 
@@ -713,6 +710,7 @@ void Game::render()
 		m_framebuffer->clear(1.f, 0.63f, 0.f, 1.f); 
 		m_world.draw(m_batch);
 		m_batch.render(m_framebuffer, view, projection);
+		m_drawCall = m_batch.count();
 		m_batch.clear();
 	}
 

@@ -37,7 +37,6 @@ void Application::run(const Config& config)
 			app->frame();
 			app->render();
 			GraphicBackend::present();
-			PlatformBackend::present();
 		} while (app->running() && PlatformBackend::running());
 	}
 

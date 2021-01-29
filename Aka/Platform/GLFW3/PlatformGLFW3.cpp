@@ -8,7 +8,7 @@
 namespace aka {
 
 struct GLFW3Context {
-	GLFWwindow* window;
+	GLFWwindow* window = nullptr;
 };
 
 GLFW3Context ctx;
@@ -53,7 +53,7 @@ void PlatformBackend::initialize(const Config& config)
 	}
 #if defined(AKA_USE_OPENGL)
 	glfwMakeContextCurrent(ctx.window);
-	glfwSwapInterval(1); // 1 is vsync, 0 is free
+	glfwSwapInterval(1); // default enable vsync
 #endif
 
 	// --- Callbacks ---
@@ -125,19 +125,17 @@ void PlatformBackend::initialize(const Config& config)
 		Logger::info("[GLFW] Joystick event", event);
 	});
 }
+
 void PlatformBackend::destroy()
 {
 	glfwTerminate();
 }
+
 void PlatformBackend::frame()
 {
 	glfwPollEvents();
 }
-void PlatformBackend::present()
-{
-	if(GraphicBackend::api() == GraphicApi::OpenGL)
-		glfwSwapBuffers(ctx.window);
-}
+
 bool PlatformBackend::running()
 {
 	return !glfwWindowShouldClose(ctx.window);

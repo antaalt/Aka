@@ -21,6 +21,7 @@ private:
 	std::vector<std::shared_ptr<Font>> m_fonts;
 	std::vector<std::shared_ptr<Sprite>> m_sprites;
 	// Rendering
+	uint32_t m_drawCall = 0;
 	Batch m_batch;
 	Framebuffer::Ptr m_framebuffer;
 	// Entity

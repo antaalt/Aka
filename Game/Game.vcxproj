@@ -230,7 +230,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>AKA_USE_OPENGL;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AKA_USE_D3D11;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Aka;$(SolutionDir)lib\glfw-3.3.2\include;$(SolutionDir)lib\glew-2.1.0\include;$(SolutionDir)lib\imgui;$(SolutionDir)lib\stb;$(SolutionDir)lib\freetype-windows-binaries\include;$(SolutionDir)lib\geometry\include;$(SolutionDir)lib\json\include;$(SolutionDir)lib\rtaudio-5.1.0\include;$(SolutionDir)lib\minimp3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

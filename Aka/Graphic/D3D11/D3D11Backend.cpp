@@ -1052,12 +1052,12 @@ private:
 	std::vector<std::vector<float>> m_fragmentUniformValues;
 };
 
-static std::shared_ptr<D3D11BackBuffer> s_backbuffer;
+static std::shared_ptr<D3D11BackBuffer> s_backbuffer = nullptr;
 
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
 	Device device = getDevice(0);
-	Logger::info("Device : ", device.name, " - ", device.memory);
+	Logger::info("Device : ", device.vendor, " - ", device.memory);
 
 	// --- SwapChain ---
 	// Initialize the swap chain description.
@@ -1070,7 +1070,6 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// Set the refresh rate of the back buffer.
-	swapChain.vsync = true;
 	if (swapChain.vsync)
 	{
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = device.monitors[0].numerator;
@@ -1305,6 +1304,11 @@ void GraphicBackend::screenshot(const Path& path)
 	throw std::runtime_error("not implemented");
 }
 
+void GraphicBackend::vsync(bool enabled)
+{
+	swapChain.vsync = enabled;
+}
+
 ID3D11Device* GraphicBackend::getD3D11Device()
 {
 	return ctx.device;
@@ -1358,7 +1362,7 @@ Device GraphicBackend::getDevice(uint32_t id)
 
 	// Convert the name of the video card to a character array and store it.
 	size_t stringLength;
-	int error = wcstombs_s(&stringLength, device.name, 128, adapterDesc.Description, 128);
+	int error = wcstombs_s(&stringLength, device.vendor, 128, adapterDesc.Description, 128);
 	if (error != 0)
 		Logger::error("Could not get video card name");
 

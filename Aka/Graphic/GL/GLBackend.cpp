@@ -699,7 +699,8 @@ public:
 };
 
 struct GLContext {
-	std::shared_ptr<GLBackBuffer> backbuffer;
+	std::shared_ptr<GLBackBuffer> backbuffer = nullptr;
+	bool vsync = true;
 };
 
 GLContext ctx;
@@ -763,6 +764,7 @@ void GraphicBackend::frame()
 
 void GraphicBackend::present()
 {
+	glfwSwapBuffers(PlatformBackend::getGLFW3Handle());
 }
 
 void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
@@ -934,6 +936,15 @@ void GraphicBackend::screenshot(const Path& path)
 	for (uint32_t y = 0; y < image.height; y++)
 		memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
 	image.save("./output.jpg");
+}
+
+void GraphicBackend::vsync(bool enabled)
+{
+	if (enabled)
+		glfwSwapInterval(1);
+	else
+		glfwSwapInterval(0);
+	ctx.vsync = enabled;
 }
 
 Device GraphicBackend::getDevice(uint32_t id)
