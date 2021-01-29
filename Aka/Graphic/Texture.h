@@ -4,8 +4,16 @@
 #include <memory>
 
 #include "../Core/StrictType.h"
+#include "../Core/Geometry.h"
 
 namespace aka {
+
+struct Rect {
+	float x;
+	float y;
+	float w;
+	float h;
+};
 
 struct Sampler
 {
@@ -51,12 +59,31 @@ public:
 
 	uint32_t height() const;
 
+	virtual void upload(const Rect& rect, const uint8_t* data) = 0;
+
+	virtual void upload(const uint8_t* data) = 0;
+
+	virtual void download(uint8_t *data) = 0;
+
 	virtual Handle handle() = 0;
 
 	virtual bool isFramebuffer() = 0;
 
 protected:
 	uint32_t m_width, m_height;
+};
+
+struct SubTexture 
+{
+	Rect region;
+	Texture::Ptr texture;
+
+	// Update the uv values depending on region
+	void update();
+	// Get the uv value
+	const uv2f& get(uint32_t uv) const;
+private:
+	uv2f m_uv[2];
 };
 
 }

@@ -26,9 +26,9 @@ void TextRenderSystem::draw(Batch& batch)
             const Character& ch = text->font->character(c);
             vec2f position = vec2f(advance + ch.bearing.x, transform->model[2].y + text->offset.y - (ch.size.y - ch.bearing.y)) * scale;
             vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
-            batch.draw(model, Batch::Rect(position, size, ch.texture, text->color, text->layer));
+            batch.draw(model, Batch::Rect(position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, text->color, text->layer));
             // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-            advance += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+            advance += ch.advance * scale;
         }
     });
 }

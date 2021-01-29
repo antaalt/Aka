@@ -403,12 +403,13 @@ public:
 	friend class GLFramebuffer;
 	GLTexture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
 		Texture(width, height),
+		m_format(gl::format(format)),
 		m_isFramebuffer(isFramebuffer)
 	{
 		// TODO add filter & type settings
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::format(format), width, height, 0, gl::format(format), GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, m_format, width, height, 0, m_format, GL_UNSIGNED_BYTE, data);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(filter));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(filter));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -421,6 +422,26 @@ public:
 		if (m_textureID != 0)
 			glDeleteTextures(1, &m_textureID);
 	}
+	void upload(const uint8_t* data) override
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, m_format, m_width, m_height, 0, m_format, GL_UNSIGNED_BYTE, data);
+	}
+	void upload(const Rect& rect, const uint8_t* data) override
+	{
+		ASSERT(rect.x + rect.w < m_width, "");
+		ASSERT(rect.y + rect.h < m_height, "");
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x, rect.y, rect.w, rect.h, m_format, GL_UNSIGNED_BYTE, data);
+	}
+	void download(uint8_t* data) override
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glGetTexImage(GL_TEXTURE_2D, 0, m_format, GL_UNSIGNED_BYTE, data);
+	}
 	Handle handle() override
 	{
 		return Handle((uintptr_t)m_textureID);
@@ -430,6 +451,7 @@ public:
 		return m_isFramebuffer;
 	}
 private:
+	GLenum m_format;
 	GLuint m_textureID;
 	bool m_isFramebuffer;
 };

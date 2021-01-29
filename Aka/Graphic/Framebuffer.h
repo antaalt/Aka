@@ -8,13 +8,6 @@
 
 namespace aka {
 
-struct Rect {
-	float x;
-	float y;
-	float w;
-	float h;
-};
-
 class Framebuffer
 {
 public:

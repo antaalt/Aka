@@ -56,7 +56,7 @@ Image Image::load(const std::vector<uint8_t>& binaries)
 
 void Image::save(const Path& path)
 {
-	int error = stbi_write_jpg(path.c_str(), width, height, 4, bytes.data(), 80);
+	int error = stbi_write_png(path.c_str(), width, height, 4, bytes.data(), width * 4);
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());
 }

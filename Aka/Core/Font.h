@@ -4,6 +4,8 @@
 #include "../Graphic/Texture.h"
 #include "../OS/FileSystem.h"
 
+#define NUM_GLYPH 255
+
 namespace aka {
 
 // TODO use signed distance field font rendering instead
@@ -11,7 +13,7 @@ struct Character {
 	vec2i size;           // Size of glyph
 	vec2i bearing;        // Offset from baseline to left/top of glyph
 	uint32_t advance;     // Offset to advance to next glyph
-	Texture::Ptr texture; // Glyph texture
+	SubTexture texture;   // Glyph texture
 };
 
 struct Font {
@@ -35,7 +37,7 @@ private:
 	uint32_t m_height;
 	std::string m_familyName;
 	std::string m_styleName;
-	Character m_characters[128];
+	Character m_characters[NUM_GLYPH];
 };
 
 
