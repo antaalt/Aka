@@ -160,9 +160,10 @@ vec2i Font::size(const std::string& text) const
     return size;
 }
 
-const Character& Font::character(char c) const
+const Character& Font::getCharacter(uint32_t c) const
 {
-    return m_characters[(unsigned char)c];
+    ASSERT(c < NUM_GLYPH, "Glyph out of range");
+    return m_characters[c];
 }
 
 const std::string& Font::family() const

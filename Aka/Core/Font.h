@@ -25,7 +25,7 @@ struct Font {
 
 	vec2i size(const std::string& text) const;
 
-	const Character &character(char c) const;
+	const Character &getCharacter(uint32_t c) const;
 
 	const std::string& family() const;
 

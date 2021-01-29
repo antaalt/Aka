@@ -434,7 +434,7 @@ public:
 		ASSERT(rect.y + rect.h < m_height, "");
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x, rect.y, rect.w, rect.h, m_format, GL_UNSIGNED_BYTE, data);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, m_format, GL_UNSIGNED_BYTE, data);
 	}
 	void download(uint8_t* data) override
 	{

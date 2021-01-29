@@ -6,6 +6,8 @@
 #include "../Component/Text.h"
 #include "../Component/Transform2D.h"
 
+#include <utf8.h>
+
 namespace aka {
 
 TextRenderSystem::TextRenderSystem(World* world) :
@@ -20,10 +22,12 @@ void TextRenderSystem::draw(Batch& batch)
         // iterate through all characters
         float scale = 1.f;
         float advance = transform->model[2].x + text->offset.x;
-        for (const char& c : text->text)
+        std::u32string str;
+        utf8::utf8to32(text->text.begin(), text->text.end(), std::back_inserter(str));
+        for (const uint32_t& c : str)
         {
             // TODO check if rendering text out of screen for culling ?
-            const Character& ch = text->font->character(c);
+            const Character& ch = text->font->getCharacter(c);
             vec2f position = vec2f(advance + ch.bearing.x, transform->model[2].y + text->offset.y - (ch.size.y - ch.bearing.y)) * scale;
             vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
             batch.draw(model, Batch::Rect(position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, text->color, text->layer));
