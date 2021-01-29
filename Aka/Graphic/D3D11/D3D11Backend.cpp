@@ -287,8 +287,10 @@ public:
 	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
 		Texture(width, height),
 		m_texture(nullptr),
+		m_staging(nullptr),
 		m_view(nullptr),
 		m_component(0),
+		m_format(DXGI_FORMAT_UNKNOWN),
 		m_isFramebuffer(isFramebuffer)
 	{
 		D3D11_TEXTURE2D_DESC desc{};
@@ -310,16 +312,16 @@ public:
 		switch (format)
 		{
 		case Texture::Format::Red:
-			desc.Format = DXGI_FORMAT_R8_UNORM;
+			m_format = DXGI_FORMAT_R8_UNORM;
 			m_component = 1;
 			break;
 		case Texture::Format::Rgba:
 		case Texture::Format::Rgba8:
-			desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			m_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			m_component = 4;
 			break;
 		case Texture::Format::DepthStencil:
-			desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			m_format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 			m_component = 4;
 			break;
@@ -327,27 +329,12 @@ public:
 			Logger::error("Format not supported");
 			break;
 		}
+		desc.Format = m_format;
 
 		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
 		D3D_CHECK_RESULT(ctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
 		if (data != nullptr)
-		{
-			D3D11_BOX box{};
-			box.left = 0;
-			box.right = m_width;
-			box.top = 0;
-			box.bottom = m_height;
-			box.front = 0;
-			box.back = 1;
-			ctx.deviceContext->UpdateSubresource(
-				m_texture,
-				0,
-				&box,
-				data,
-				m_width * m_component,
-				0
-			);
-		}
+			upload(data);
 	}
 	D3D11Texture(D3D11Texture&) = delete;
 	D3D11Texture& operator=(D3D11Texture&) = delete;
@@ -357,6 +344,83 @@ public:
 			m_view->Release();
 		if (m_texture)
 			m_texture->Release();
+		if (m_staging)
+			m_staging->Release();
+	}
+	void upload(const uint8_t* data) override
+	{
+		D3D11_BOX box{};
+		box.left = 0;
+		box.right = m_width;
+		box.top = 0;
+		box.bottom = m_height;
+		box.front = 0;
+		box.back = 1;
+		ctx.deviceContext->UpdateSubresource(
+			m_texture,
+			0,
+			&box,
+			data,
+			m_width * m_component,
+			0
+		);
+	}
+	void upload(const Rect& rect, const uint8_t* data) override
+	{
+		D3D11_BOX box{};
+		box.left = (UINT)rect.x;
+		box.right = (UINT)rect.w;
+		box.top = (UINT)rect.y;
+		box.bottom = (UINT)rect.h;
+		box.front = 0;
+		box.back = 1;
+		ctx.deviceContext->UpdateSubresource(
+			m_texture,
+			0,
+			&box,
+			data,
+			m_width * m_component,
+			0
+		);
+	}
+	void download(uint8_t* data) override
+	{
+		D3D11_BOX box{};
+		box.left = 0;
+		box.right = m_width;
+		box.top = 0;
+		box.bottom = m_height;
+		box.front = 0;
+		box.back = 1;
+
+		// create staging texture
+		if (!m_staging)
+		{
+			D3D11_TEXTURE2D_DESC desc;
+			desc.Width = m_width;
+			desc.Height = m_height;
+			desc.MipLevels = 1;
+			desc.ArraySize = 1;
+			desc.Format = m_format;
+			desc.SampleDesc.Count = 1;
+			desc.SampleDesc.Quality = 0;
+			desc.Usage = D3D11_USAGE_STAGING;
+			desc.BindFlags = 0;
+			desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+			desc.MiscFlags = 0;
+
+			D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&desc, nullptr, &m_staging));
+		}
+		ctx.deviceContext->CopySubresourceRegion(
+			m_staging, 0,
+			0, 0, 0,
+			m_texture, 0,
+			&box
+		);
+		D3D11_MAPPED_SUBRESOURCE map{};
+		D3D_CHECK_RESULT(ctx.deviceContext->Map(m_staging, 0, D3D11_MAP_READ, 0, &map));
+		memcpy(data, map.pData, m_width * m_height * 4);
+		ctx.deviceContext->Unmap(m_staging, 0);
 	}
 	Handle handle() override
 	{
@@ -370,7 +434,9 @@ public:
 	ID3D11ShaderResourceView* getView() const { return m_view; }
 private:
 	ID3D11Texture2D* m_texture;
+	ID3D11Texture2D* m_staging;
 	ID3D11ShaderResourceView* m_view;
+	DXGI_FORMAT m_format;
 	uint32_t m_component;
 	bool m_isFramebuffer;
 };
@@ -548,6 +614,7 @@ public:
 			m_depthStencilBuffer->Release();
 		if (m_renderTargetView)
 			m_renderTargetView->Release();
+		// m_swapChain not owned by this class. Do not release.
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
@@ -621,6 +688,7 @@ class D3D11Mesh : public Mesh
 public:
 	D3D11Mesh() :
 		Mesh(),
+		m_format(DXGI_FORMAT_UNKNOWN),
 		m_indexBuffer(nullptr),
 		m_vertexBuffer(nullptr)
 	{
@@ -772,8 +840,10 @@ public:
 	D3D11Shader& operator=(const D3D11Shader&) = delete;
 	~D3D11Shader()
 	{
-		//if (m_uniformBuffer)
-		//	m_uniformBuffer->Release();
+		for (ID3D11Buffer* buffer : m_vertexUniformBuffers)
+			buffer->Release();
+		for (ID3D11Buffer* buffer : m_fragmentUniformBuffers)
+			buffer->Release();
 		if (m_layout)
 			m_layout->Release();
 		if (m_pixelShader)
@@ -1128,6 +1198,7 @@ void GraphicBackend::destroy()
 	D3D11RasterPass::clear();
 	D3D11Sampler::clear();
 	D3D11Depth::clear();
+	D3D11Blend::clear();
 
 	if (ctx.deviceContext)
 	{
