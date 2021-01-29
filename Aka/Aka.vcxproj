@@ -193,6 +193,7 @@
     <ClCompile Include="OS\Image.cpp" />
     <ClCompile Include="OS\Logger.cpp" />
     <ClCompile Include="OS\Time.cpp" />
+    <ClCompile Include="Platform\Linux\PlatformLinux.cpp" />
     <ClCompile Include="Platform\Windows\PlatformWindows.cpp" />
   </ItemGroup>
   <ItemGroup>

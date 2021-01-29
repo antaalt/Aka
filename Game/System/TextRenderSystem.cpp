@@ -22,10 +22,11 @@ void TextRenderSystem::draw(Batch& batch)
         // iterate through all characters
         float scale = 1.f;
         float advance = transform->model[2].x + text->offset.x;
-        std::u32string str;
-        utf8::utf8to32(text->text.begin(), text->text.end(), std::back_inserter(str));
-        for (const uint32_t& c : str)
+        std::string::iterator start = text->text.begin();
+        std::string::iterator end = text->text.end();
+        while (start < end)
         {
+            uint32_t c = utf8::next(start, end);
             // TODO check if rendering text out of screen for culling ?
             const Character& ch = text->font->getCharacter(c);
             vec2f position = vec2f(advance + ch.bearing.x, transform->model[2].y + text->offset.y - (ch.size.y - ch.bearing.y)) * scale;

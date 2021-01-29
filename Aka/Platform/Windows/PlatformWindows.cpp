@@ -1,8 +1,17 @@
 #include "../InputBackend.h"
+#include "../PlatformBackend.h"
 #include "../Platform.h"
+#include "../../OS/FileSystem.h"
+
+#if defined(AKA_WINDOWS)
+
+#include <string>
+#include <fstream>
+#include <utf8.h>
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")  
 
 namespace aka {
-
 
 // https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 // http://cherrytree.at/misc/vk.htm
@@ -298,4 +307,180 @@ input::KeyboardLayout InputBackend::getKeyboardLayout()
 	return input::KeyboardLayout::Default;
 }
 
+
+bool PlatformBackend::directoryExist(const Path& path)
+{
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	DWORD ftyp = GetFileAttributes(str.c_str());
+	if (ftyp == INVALID_FILE_ATTRIBUTES)
+		return false; // Incorrect path
+	if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
+		return true; // Directory
+	return false;
+}
+bool PlatformBackend::directoryCreate(const Path& path)
+{
+	size_t pos = 0;
+	const std::string& str = path.str();
+	do
+	{
+		pos = str.find_first_of("\\/", pos + 1);
+		if (pos == str.length())
+			return true;
+		std::string p = str.substr(0, pos);
+		if (p == "." || p == ".." || p == "/" || p == "\\")
+			continue;
+		std::wstring wstr;
+		utf8::utf8to16(p.begin(), p.end(), std::back_inserter(wstr));
+		if (!CreateDirectory(wstr.c_str(), NULL))
+		{
+			DWORD error = GetLastError();
+			if (ERROR_ALREADY_EXISTS == error)
+				continue;
+			else if (ERROR_SUCCESS != error)
+				return false;
+		}
+	} while (pos != std::string::npos);
+	return true;
+}
+bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
+{
+	if (recursive)
+	{
+		std::wstring wstr;
+		utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(wstr));
+		WIN32_FIND_DATA data;
+		wchar_t cwd[512];
+		GetCurrentDirectory(512, cwd);
+		SetCurrentDirectory(wstr.c_str());
+		HANDLE hFind = FindFirstFile(L"*", &data);
+		do {
+			if (data.dwFileAttributes & ~FILE_ATTRIBUTE_DIRECTORY)
+				DeleteFile(data.cFileName);
+			else
+			{
+				// TODO delete folder recursively
+			}
+		} while (FindNextFile(hFind, &data) != 0);
+		FindClose(hFind);
+		SetCurrentDirectory(cwd);
+	}
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	return RemoveDirectory(str.c_str()) == TRUE;
+}
+bool PlatformBackend::fileExist(const Path& path)
+{
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	DWORD ftyp = GetFileAttributes(str.c_str());
+	if (ftyp == INVALID_FILE_ATTRIBUTES)
+		return false;  //something is wrong with your path!
+	return (!(ftyp & FILE_ATTRIBUTE_DIRECTORY));
+}
+bool PlatformBackend::fileCreate(const Path& path)
+{
+	std::ofstream file(path.str());
+	return file.is_open();
+}
+bool PlatformBackend::fileRemove(const Path& path)
+{
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	return DeleteFile(str.c_str()) == TRUE;
+}
+
+std::vector<Path> PlatformBackend::enumerate(const Path& path)
+{
+	const wchar_t separator = '/';
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	WIN32_FIND_DATA data;
+	std::wstring searchString;
+	if (str.back() == separator)
+		searchString = str + L'*';
+	else
+		searchString = str + separator + L'*';
+	HANDLE hFind = FindFirstFile(searchString.c_str(), &data);
+	std::vector<Path> paths;
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			if (data.dwFileAttributes == INVALID_FILE_ATTRIBUTES)
+				continue;
+			else if (wcscmp(data.cFileName, L"..") == 0)
+				continue;
+			else if (wcscmp(data.cFileName, L".") == 0)
+				continue;
+			if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				// directory
+				std::string str;
+				utf8::utf16to8(data.cFileName, data.cFileName + wcslen(data.cFileName), std::back_inserter(str));
+				paths.push_back(path.str() + str);
+			}
+			else
+			{
+				// file
+				std::string str;
+				utf8::utf16to8(data.cFileName, data.cFileName + wcslen(data.cFileName), std::back_inserter(str));
+				paths.push_back(path.str() + str);
+				// size :((unsigned long long)data.nFileSizeHigh * ((unsigned long long)MAXDWORD + 1ULL)) + (unsigned long long)data.nFileSizeLow;
+			}
+		} while (FindNextFile(hFind, &data));
+		FindClose(hFind);
+	}
+	return paths;
+}
+
+Path PlatformBackend::normalize(const Path& path)
+{
+	// On windows, correct path should be only with '\\'
+	// Remove ../ & ./ aswell.
+	return path;
+}
+
+Path PlatformBackend::executablePath()
+{
+	wchar_t path[MAX_PATH]{};
+	if (GetModuleFileName(NULL, path, MAX_PATH) == 0)
+		return Path();
+	std::string str;
+	utf8::utf16to8(path, path + wcslen(path), std::back_inserter(str));
+	return Path(str);
+}
+
+Path PlatformBackend::cwd()
+{
+	WCHAR path[MAX_PATH] = { 0 };
+	if (GetCurrentDirectory(MAX_PATH, path) == 0)
+		return Path();
+	std::string str;
+	utf8::utf16to8(path, path + wcslen(path), std::back_inserter(str));
+	return Path(str + '\\');
+}
+
+std::string PlatformBackend::extension(const Path& path)
+{
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	LPWSTR extension = PathFindExtension(str.c_str());
+	std::string out;
+	utf8::utf16to8(extension, extension + wcslen(extension), std::back_inserter(out));
+	if (out.size() < 1)
+		return std::string();
+	return out.substr(1, out.size() - 1);
+}
+
+std::string PlatformBackend::fileName(const Path& path)
+{
+	std::wstring str;
+	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	LPWSTR extension = PathFindFileName(str.c_str());
+	std::string out;
+	utf8::utf16to8(extension, extension + wcslen(extension), std::back_inserter(out));
+	return out;
+}
+
 };
+#endif

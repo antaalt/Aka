@@ -29,13 +29,13 @@ AudioID generateUniqueHandle(AudioDecoder* decoder)
 AudioID AudioBackend::play(const Path& path, float volume, bool loop)
 {
     std::unique_ptr<AudioDecoder> decoder;
-    if (path.extension() == ".mp3")
+    if (Path::extension(path) == "mp3")
     {
         decoder = std::make_unique<AudioDecoderMp3>(path, volume, loop);
     }
     else
     {
-        Logger::error("Audio format not supported : ", path.extension());
+        Logger::error("Audio format not supported : ", Path::extension(path));
         return AudioID(0);
     }
     ASSERT(AudioBackend::getFrequency() == decoder->frequency(), "Audio will need resampling");

@@ -1,6 +1,7 @@
 #include "Font.h"
 
 #include <freetype/freetype.h>
+#include <utf8.h>
 
 #include "../OS/Logger.h"
 #include "../Core/Debug.h"
@@ -41,6 +42,7 @@ struct Packer {
         m_subTexture(elements),
         m_texture(Texture::create(m_atlasSize.x, m_atlasSize.y, Texture::Format::Rgba, Sampler::Filter::Nearest))
     {
+        Logger::info("Creating font atlas of ", m_atlasSize.x, "x", m_atlasSize.y);
     }
     void add(uint32_t id, uint32_t width, uint32_t height, uint8_t* data)
     {
@@ -106,8 +108,9 @@ Font::Font(const Path& path, uint32_t height)
     uint32_t fontMaxAdvance = face->size->metrics.max_advance >> 6;
     uint32_t fontHeight = (face->size->metrics.height >> 6) + 1;
     Packer packer(NUM_GLYPH, fontMaxAdvance, fontHeight);
-    for (unsigned char c = 0; c < NUM_GLYPH; c++)
+    for (uint32_t c = 0; c < NUM_GLYPH; c++)
     {
+        // FT_Get_Char_Index (if zero returned, missing glyph)
         // load character glyph 
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
@@ -151,8 +154,11 @@ Font Font::create(const Path& path, uint32_t height)
 vec2i Font::size(const std::string& text) const
 {
     vec2i size(0);
-    for (const char& c : text)
+    std::string::const_iterator start = text.begin();
+    std::string::const_iterator end = text.end();
+    while (start < end)
     {
+        uint32_t c = utf8::next(start, end);
         const Character& ch = m_characters[c];
         size.x += ch.advance;
         size.y = max(size.y, ch.size.y);

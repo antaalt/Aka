@@ -16,10 +16,27 @@ struct Path
 
 	Path operator+(const Path& rhs) const;
 
-	std::string extension() const;
+	static std::string extension(const Path &path);
+	static Path cwd();
+	static Path executable();
+	static std::vector<Path> enumerate(const Path& path);
 
 private:
 	std::string m_string;
+};
+
+std::ostream& operator<<(std::ostream& os, const Path& path);
+
+namespace directory {
+bool exist(const Path &path);
+bool create(const Path& path);
+bool remove(const Path& path);
+};
+
+namespace file {
+bool create(const Path& path);
+bool exist(const Path& path);
+bool remove(const Path& path);
 };
 
 struct Asset {

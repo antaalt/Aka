@@ -8,7 +8,6 @@
 
 namespace aka {
 
-// TODO use signed distance field font rendering instead
 struct Character {
 	vec2i size;           // Size of glyph
 	vec2i bearing;        // Offset from baseline to left/top of glyph

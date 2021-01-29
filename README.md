@@ -13,7 +13,6 @@ Aka stand for red in japanese (赤) and there is no particular reason for this n
 ## RoadMap
 -   More robust physic engine or use third party like [Box2D](https://box2d.org/)
 -   Add multiple shapes for colliders
--   Use an atlas for font rendering
 -   Use stb_true_type for less big dependencies (freetype)
 -   Parse aseprite files directly
 -   Project to CMake to support build for Linux

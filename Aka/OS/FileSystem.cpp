@@ -1,11 +1,7 @@
 #include "FileSystem.h"
-#include "../Platform/Platform.h"
+#include "../Platform/PlatformBackend.h"
 
 #include <fstream>
-#if defined(AKA_WINDOWS)
-#include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")  
-#endif
 
 namespace aka {
 
@@ -74,14 +70,24 @@ Path Path::operator+(const Path& rhs) const
 	}
 }
 
-std::string Path::extension() const
+std::string Path::extension(const Path& path)
 {
-#if defined(AKA_WINDOWS)
-	return std::string(PathFindExtensionA(m_string.c_str()));
-#else
-#error "Not implemented"
-	return "";
-#endif
+	return PlatformBackend::extension(path);
+}
+
+Path Path::cwd()
+{
+	return PlatformBackend::cwd();
+}
+
+Path Path::executable()
+{
+	return PlatformBackend::executablePath();
+}
+
+std::vector<Path> Path::enumerate(const Path& path)
+{
+	return PlatformBackend::enumerate(path);
 }
 
 std::string Asset::loadString(const Path& path)
@@ -97,6 +103,41 @@ std::vector<uint8_t> Asset::loadBinary(const Path& path)
 Path Asset::path(const Path& path)
 {
 	return Path("../asset/") + path;
+}
+
+bool directory::exist(const Path& path)
+{
+	return PlatformBackend::directoryExist(path);
+}
+
+bool directory::create(const Path& path)
+{
+	return PlatformBackend::directoryCreate(path);
+}
+
+bool directory::remove(const Path& path)
+{
+	return PlatformBackend::directoryRemove(path);
+}
+
+bool file::create(const Path& path)
+{
+	return PlatformBackend::fileCreate(path);
+}
+
+bool file::exist(const Path& path)
+{
+	return PlatformBackend::fileExist(path);
+}
+
+bool file::remove(const Path& path)
+{
+	return PlatformBackend::fileRemove(path);
+}
+
+std::ostream& operator<<(std::ostream& os, const Path& path)
+{
+	return os << path.c_str();
 }
 
 };

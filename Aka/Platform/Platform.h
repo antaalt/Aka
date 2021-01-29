@@ -26,6 +26,7 @@
 	#include <gl/glew.h>
 	#include <gl/gl.h>
 	#if defined(AKA_WINDOWS)
+		#define NOMINMAX
 		#define WIN32_LEAN_AND_MEAN
 		#include <Windows.h>
 	#endif
@@ -34,6 +35,7 @@
 	#define GLFW_INCLUDE_NONE
 	#define GLFW_EXPOSE_NATIVE_WIN32
 	#if defined(AKA_WINDOWS)
+		#define NOMINMAX
 		#define WIN32_LEAN_AND_MEAN
 		#include <Windows.h>
 	#endif
