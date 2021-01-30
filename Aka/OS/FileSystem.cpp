@@ -57,17 +57,26 @@ const std::string& Path::str() const
 
 Path Path::operator+(const Path& rhs) const
 {
+	Path path(*this);
+	path += rhs;
+	return path;
+}
+
+Path& Path::operator+=(const Path& rhs)
+{
 	if (m_string.size() == 0)
 	{
-		return rhs;
+		m_string = rhs.m_string;
+		return *this;
 	}
 	else
 	{
 		if (m_string.back() != '\\' && m_string.back() != '/')
-			return Path(m_string + '/' + rhs.m_string);
+			m_string += '/' + rhs.m_string;
 		else
-			return Path(m_string + rhs.m_string);
+			m_string += rhs.m_string;
 	}
+	return *this;
 }
 
 std::string Path::extension(const Path& path)

@@ -23,7 +23,7 @@
             __LINE__				 \
         );							 \
         ::aka::Logger::error(buffer);\
-       DEBUG_BREAK;                  \
+        throw std::runtime_error(buffer);\
 	}								 \
 }
 

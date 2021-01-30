@@ -15,6 +15,7 @@ struct Path
 	const std::string &str() const;
 
 	Path operator+(const Path& rhs) const;
+	Path &operator+=(const Path& rhs);
 
 	static std::string extension(const Path &path);
 	static Path cwd();

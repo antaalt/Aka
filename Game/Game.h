@@ -1,6 +1,10 @@
 #pragma once
 
 #include <Aka.h>
+#include <map>
+
+#include "Resources.h"
+#include "GUI/GUINode.h"
 
 namespace aka {
 
@@ -11,15 +15,13 @@ public:
 	void destroy() override;
 	void frame() override;
 	void update(Time::Unit deltaTime) override;
-	void renderGUI();
 	void render() override;
 	bool running() override;
 private:
 	// UI
-	bool m_displayUI = true;
+	GUI m_gui;
 	// Resources
-	std::vector<std::shared_ptr<Font>> m_fonts;
-	std::vector<std::shared_ptr<Sprite>> m_sprites;
+	Resources m_resources;
 	// Rendering
 	uint32_t m_drawCall = 0;
 	Batch m_batch;

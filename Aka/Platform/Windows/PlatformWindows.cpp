@@ -417,14 +417,14 @@ std::vector<Path> PlatformBackend::enumerate(const Path& path)
 				// directory
 				std::string str;
 				utf8::utf16to8(data.cFileName, data.cFileName + wcslen(data.cFileName), std::back_inserter(str));
-				paths.push_back(path.str() + str);
+				paths.push_back(str + '/');
 			}
 			else
 			{
 				// file
 				std::string str;
 				utf8::utf16to8(data.cFileName, data.cFileName + wcslen(data.cFileName), std::back_inserter(str));
-				paths.push_back(path.str() + str);
+				paths.push_back(str);
 				// size :((unsigned long long)data.nFileSizeHigh * ((unsigned long long)MAXDWORD + 1ULL)) + (unsigned long long)data.nFileSizeLow;
 			}
 		} while (FindNextFile(hFind, &data));
