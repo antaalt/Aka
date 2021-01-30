@@ -19,30 +19,50 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 					ImGui::Text("Family : %s", font->family().c_str());
 					ImGui::Text("Style : %s", font->style().c_str());
 					ImGui::Text("Height : %upx", font->height());
+
+					Texture::Ptr atlas = font->getCharacter(0).texture.texture;
+					float uvx = 1.f / (atlas->height() / font->height());
+					float uvy = 1.f / (atlas->width() / font->height());
+
+					uint32_t lineCount = 0;
 					for (uint32_t i = 0; i < NUM_GLYPH; i++)
 					{
 						const Character &character = font->getCharacter(i);
-						char buffer[256];
-						int error = snprintf(buffer, 256, "Glyph %u", i);
-						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet))
+						ImGui::Image(
+							(ImTextureID)character.texture.texture->handle().value(),
+							ImVec2(30, 30),
+							ImVec2(character.texture.get(0).u, character.texture.get(0).v),
+							ImVec2(character.texture.get(0).u + uvx, character.texture.get(0).v + uvy),
+							ImVec4(1,1,1,1),
+							ImVec4(1,1,1,1)
+						);
+						if (ImGui::IsItemHovered())
 						{
+							ImGui::BeginTooltip();
 							ImGui::Text("Advance : %u", character.advance);
 							ImGui::Text("Size : (%d, %d)", character.size.x, character.size.y);
 							ImGui::Text("Bearing : (%d, %d)", character.bearing.x, character.bearing.y);
+							ImVec2 size = ImVec2(300, 300);
 							ImGui::Image(
-								(ImTextureID)character.texture.texture->handle().value(),
-								ImVec2((float)character.size.x, (float)character.size.y),
-								ImVec2(character.texture.get(0).u, character.texture.get(0).v),
-								ImVec2(character.texture.get(1).u, character.texture.get(1).v)
+								(ImTextureID)character.texture.texture->handle().value(), 
+								size,
+								ImVec2(0,0),
+								ImVec2(1,1), 
+								ImVec4(1,1,1,1), 
+								ImVec4(1,1,1,1)
 							);
-							if (ImGui::IsItemHovered())
-							{
-								ImGui::BeginTooltip();
-								ImGui::Image((ImTextureID)character.texture.texture->handle().value(), ImVec2(300, 300));
-								ImGui::EndTooltip();
-							}
-							ImGui::TreePop();
+							uv2f start = character.texture.get(0);
+							uv2f end = character.texture.get(1);
+							ImVec2 startVec = ImVec2(ImGui::GetItemRectMin().x + start.u * size.x, ImGui::GetItemRectMin().y + start.v * size.y);
+							ImVec2 endVec = ImVec2(ImGui::GetItemRectMin().x + end.u * size.x + 1, ImGui::GetItemRectMin().y + end.v * size.y + 1);
+							ImU32 red = (93 << 24) | (4 << 16) | (26 << 8) | (255 << 0);
+							ImGui::GetWindowDrawList()->AddRect(startVec, endVec, ImU32(red), 0.f, ImDrawCornerFlags_All, 2.f);
+							ImGui::EndTooltip();
 						}
+						if (lineCount++ < 10)
+							ImGui::SameLine();
+						else
+							lineCount = 0;
 					}
 					ImGui::TreePop();
 				}
@@ -105,7 +125,7 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 									{
 										frame.duration = Time::Unit::milliseconds(d);
 									}
-									int size[2]{ frame.width, frame.height };
+									int size[2]{ (int)frame.width, (int)frame.height };
 									ImGui::InputInt2("Size", size);
 									ImGui::Image((ImTextureID)frame.texture->handle().value(), ImVec2(200, 200));
 									ImGui::TreePop();
@@ -137,7 +157,7 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 					static char buffer[256];
 					ImGui::InputText("##Name", buffer, 256);
 					ImGui::SameLine();
-					if (ImGui::Button("Add animation"))
+					if (ImGui::Button("Add animation") && strlen(buffer) > 0)
 					{
 						Sprite::Animation animation;
 						animation.name = buffer;

@@ -32,8 +32,11 @@ struct Font {
 
 	uint32_t height() const;
 
+	uint32_t advance() const;
+
 private:
 	uint32_t m_height;
+	uint32_t m_advance;
 	std::string m_familyName;
 	std::string m_styleName;
 	Character m_characters[NUM_GLYPH];

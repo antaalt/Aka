@@ -2,6 +2,7 @@
 
 #include <freetype/freetype.h>
 #include <utf8.h>
+#include <stdexcept>
 
 #include "../OS/Logger.h"
 #include "../Core/Debug.h"
@@ -103,11 +104,10 @@ Font::Font(const Path& path, uint32_t height)
 
     m_familyName = face->family_name;
     m_styleName = face->style_name;
-    m_height = height;
+    m_height = (face->size->metrics.height >> 6) + 1;
+    m_advance = face->size->metrics.max_advance >> 6;
 
-    uint32_t fontMaxAdvance = face->size->metrics.max_advance >> 6;
-    uint32_t fontHeight = (face->size->metrics.height >> 6) + 1;
-    Packer packer(NUM_GLYPH, fontMaxAdvance, fontHeight);
+    Packer packer(NUM_GLYPH, m_advance, m_height);
     for (uint32_t c = 0; c < NUM_GLYPH; c++)
     {
         // FT_Get_Char_Index (if zero returned, missing glyph)
@@ -185,6 +185,11 @@ const std::string& Font::style() const
 uint32_t Font::height() const
 {
     return m_height;
+}
+
+uint32_t Font::advance() const
+{
+    return m_advance;
 }
 
 }
