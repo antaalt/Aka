@@ -84,6 +84,11 @@ std::string Path::extension(const Path& path)
 	return PlatformBackend::extension(path);
 }
 
+std::string Path::name(const Path& path)
+{
+	return PlatformBackend::fileName(path);
+}
+
 Path Path::cwd()
 {
 	return PlatformBackend::cwd();

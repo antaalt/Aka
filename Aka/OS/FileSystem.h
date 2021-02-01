@@ -18,6 +18,7 @@ struct Path
 	Path &operator+=(const Path& rhs);
 
 	static std::string extension(const Path &path);
+	static std::string name(const Path& path);
 	static Path cwd();
 	static Path executable();
 	static std::vector<Path> enumerate(const Path& path);

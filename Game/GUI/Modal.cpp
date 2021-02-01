@@ -1,5 +1,7 @@
 #include "Modal.h"
 
+#include "IconsFontAwesome5.h"
+
 namespace aka {
 
 bool Modal::LoadButton(const char* label, Path* resultPath) {
@@ -65,25 +67,34 @@ bool Modal::LoadButton(const char* label, Path* resultPath) {
 			currentPath = currentPathBuffer;
 			updatedList = true;
 		}
-
-		/*ImVec4 dirColor = ImVec4(0.93f, 0.04f, 0.26f, 1.f);
-		ImVec4 fileColor = ImVec4(0.01f, 0.47f, 0.96f, 1.f);
-		ImGui::TextColored(dirColor, "Directory"); ImGui::SameLine();
-		ImGui::TextColored(fileColor, "File");*/
 		if (ImGui::BeginChild("##list", ImVec2(0, 200), true))
 		{
 			for (Path& path : paths)
 			{
 				bool selected = (&path == selectedPath);
-				if (ImGui::Selectable(path.c_str(), &selected))
+				bool isFolder = (path.str().back() == '/');
+				if (isFolder)
 				{
-					selectedPath = &path;
+					int err = snprintf(buffer, 256, "%s %s", ICON_FA_FOLDER, path.c_str());
+					if (ImGui::Selectable(buffer, &selected))
+					{
+						selectedPath = &path;
+					}
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+					{
+						currentPath += path;
+						updatedList = true;
+					}
 				}
-				if (path.str().back() == '/' && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+				else
 				{
-					currentPath += path;
-					updatedList = true;
+					int err = snprintf(buffer, 256, "%s %s", ICON_FA_FILE, path.c_str());
+					if (ImGui::Selectable(buffer, &selected))
+					{
+						selectedPath = &path;
+					}
 				}
+				
 			}
 		}
 		ImGui::EndChild();

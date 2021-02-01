@@ -1,5 +1,7 @@
 #include "GUINode.h"
 
+#include "IconsFontAwesome5.h"
+
 namespace aka {
 
 void GUI::initialize()
@@ -25,6 +27,17 @@ void GUI::initialize()
 		ImGui_ImplGlfw_InitForVulkan(PlatformBackend::getGLFW3Handle(), true);
 		ImGui_ImplDX11_Init(GraphicBackend::getD3D11Device(), GraphicBackend::getD3D11DeviceContext());
 #endif
+        // --- Font
+        io.Fonts->AddFontDefault();
+        ImFontConfig config;
+        config.MergeMode = true;
+        config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+        static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+        Path asset = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Regular-400.otf");
+        ImFont * iconFont = io.Fonts->AddFontFromFileTTF(asset.c_str(), 13.0f, &config, icon_ranges);
+        ASSERT(iconFont != nullptr, "Icon font not loaded");
+
+        // --- Style
 		ImGui::StyleColorsClassic();
 		ImGuiStyle& style = ImGui::GetStyle();
 		ImVec4* colors = style.Colors;

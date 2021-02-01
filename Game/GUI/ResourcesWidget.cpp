@@ -1,5 +1,6 @@
 #include "ResourcesWidget.h"
 
+#include "../Component/Animator.h"
 #include "Modal.h"
 
 namespace aka {
@@ -74,18 +75,14 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 			Path path;
 			if (Modal::LoadButton("Load font", &path))
 			{
+				error = "";
 				if (file::exist(Path(path)))
 				{
 					try
 					{
-						if (resources.font.create(path.str(), new Font(path, height)) == nullptr)
-						{
+						std::string name = Path::name(path);
+						if (resources.font.create(name, new Font(path, height)) == nullptr)
 							error = "Failed to load the font";
-						}
-						else
-						{
-							error = "";
-						}
 					}
 					catch (const std::exception& e)
 					{
@@ -93,9 +90,7 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 					}
 				}
 				else
-				{
 					error = "File does not exist";
-				}
 				path = "";
 			}
 			if (error.size() > 0)
@@ -124,6 +119,11 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 									if (ImGui::SliderInt("Duration", &d, 0, 1000))
 									{
 										frame.duration = Time::Unit::milliseconds(d);
+										world.each<Animator>([&](Entity* ent, Animator* animator) {
+											// Reset current frame duration stored in animator
+											if (animator->sprite == sprite)
+												animator->update();
+										});
 									}
 									int size[2]{ (int)frame.width, (int)frame.height };
 									ImGui::InputInt2("Size", size);

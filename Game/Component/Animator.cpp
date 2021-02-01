@@ -36,4 +36,10 @@ void Animator::play(const std::string& animation)
     currentAnimationDuration = a->duration();
 }
 
+void Animator::update()
+{
+    animationTimer = Time::Unit();
+    currentAnimationDuration = sprite->animations[currentAnimation].duration();
+}
+
 }
