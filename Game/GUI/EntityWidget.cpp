@@ -14,74 +14,35 @@
 
 #include "../System/SoundSystem.h"
 
+#include "Modal.h"
+
 namespace aka {
 
 void EntityWidget::draw(World& world, Resources& resources)
 {
-	if (ImGui::Begin("Editor##window"))
+	if (ImGui::Begin("Entities##window"))
 	{
 		ImVec4 color = ImVec4(236.f / 255.f, 11.f / 255.f, 67.f / 255.f, 1.f);
-		if (ImGui::CollapsingHeader("Infos", ImGuiTreeNodeFlags_DefaultOpen))
+		static const int componentCount = 12;
+		static const char* components[componentCount] = {
+			"None",
+			"Transform2D",
+			"Animator",
+			"Collider2D",
+			"RigidBody2D",
+			"Text",
+			"TileMap",
+			"TileLayer",
+			"Coin",
+			"Player",
+			"Camera2D",
+			"SoundInstance"
+		};
+		static int currentFilter = 0;
+		ImGui::Combo("Filter", &currentFilter, components, componentCount);
+		uint32_t index = 0;
+		if (ImGui::BeginChild("##list", ImVec2(0, -30), true))
 		{
-			uint32_t width, height;
-			PlatformBackend::getSize(&width, &height);
-			static Device device = Device::getDefault();
-			ImGuiIO& io = ImGui::GetIO();
-			ImGui::Text("Resolution : %ux%u", width, height);
-			ImGui::Text("%.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
-			ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-			//ImGui::Text("Draw call : %u", m_drawCall);
-			const char* apiName[] = {
-				"OpenGL",
-				"DirectX11"
-			};
-			ImGui::Text("Api : %s", apiName[(int)GraphicBackend::api()]);
-			ImGui::Text("Device : %s", device.vendor);
-
-			static bool renderColliders = false;
-			if (ImGui::Checkbox("Render colliders", &renderColliders))
-			{
-				world.each<Collider2D>([&](Entity* entity, Collider2D* collider) {
-					if (renderColliders)
-					{
-						if (!entity->has<Animator>())
-							entity->add<Animator>(Animator(resources.sprite.get("Collider"), 2));
-					}
-					else
-					{
-						if (entity->has<Animator>() && !entity->has<Player>() && !entity->has<Coin>())
-							entity->remove<Animator>();
-					}
-				});
-			}
-			static bool vsync = true;
-			if (ImGui::Checkbox("Vsync", &vsync))
-			{
-				GraphicBackend::vsync(vsync);
-			}
-		}
-
-		if (ImGui::CollapsingHeader("Entities##header", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			ImGui::TextColored(color, "Entities");
-			static const int componentCount = 12;
-			static const char* components[componentCount] = {
-				"None",
-				"Transform2D",
-				"Animator",
-				"Collider2D",
-				"RigidBody2D",
-				"Text",
-				"TileMap",
-				"TileLayer",
-				"Coin",
-				"Player",
-				"Camera2D",
-				"SoundInstance"
-			};
-			static int currentFilter = 0;
-			ImGui::Combo("Filter", &currentFilter, components, componentCount);
-			uint32_t index = 0;
 			world.each([&](Entity* entity) {
 				index++;
 				switch (currentFilter)
@@ -111,7 +72,11 @@ void EntityWidget::draw(World& world, Resources& resources)
 						{
 							ImGui::InputFloat2("Position", transform->model[2].data, 3);
 							vec2f size = vec2f(transform->model[0].x, transform->model[1].y);
-							ImGui::InputFloat2("Size", size.data, 3);
+							if (ImGui::InputFloat2("Size", size.data, 3))
+							{
+								transform->model[0].x = size.x;
+								transform->model[1].y = size.y;
+							}
 							//ImGui::InputFloat("Rotation", &transform->rotation(), 0.1f, 1.f, 3);
 
 							if (ImGui::Button("Remove")) { entity->remove<Transform2D>(); }
@@ -126,49 +91,51 @@ void EntityWidget::draw(World& world, Resources& resources)
 						snprintf(buffer, 256, "Animator##%p", animator);
 						if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_DefaultOpen))
 						{
-							if (animator->sprite == nullptr)
+							char currentSpriteName[256] = "None";
+							Sprite* currentSprite = animator->sprite;
+							for (auto& sprite : resources.sprite)
 							{
-								static char path[256];
-								ImGui::InputText("Path", path, 256);
-								if (ImGui::Button("Load sprite"))
+								if (currentSprite == sprite.second)
 								{
-									/*Sprite::Animation animation;
-									animation.name = "default";
-									Image image = Image::load(Asset::path(path));
-									animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
-									m_sprites.push_back(std::make_shared<Sprite>());
-									m_sprites.back()->animations.push_back(animation);
-									animator->sprite = m_sprites.back().get();*/
+									strcpy_s(currentSpriteName, 256, sprite.first.c_str());
 								}
 							}
-							else
+							snprintf(buffer, 256, "%s", currentSpriteName);
+							if (ImGui::BeginCombo("Sprite", buffer))
 							{
-								for (Sprite::Animation& anim : animator->sprite->animations)
+								for (auto& sprite : resources.sprite)
 								{
-									snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration().milliseconds());
-									if (ImGui::TreeNode(buffer))
+									bool sameSprite = (currentSprite == sprite.second);
+									snprintf(buffer, 256, "%s", sprite.first.c_str());
+									if (ImGui::Selectable(buffer, sameSprite))
 									{
-										strcpy_s(buffer, anim.name.c_str());
-										if (ImGui::InputText("Name", buffer, 256))
-											anim.name = buffer;
-										int frameID = 0;
-										for (Sprite::Frame& frame : anim.frames)
+										if (!sameSprite)
 										{
-											snprintf(buffer, 256, "Frame %d (%llu ms)", frameID++, frame.duration.milliseconds());
-											if (ImGui::TreeNode(buffer))
-											{
-												float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());
-												ImGui::Image((void*)frame.texture->handle().value(), ImVec2(256, 256 * 1 / ratio), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), color);
-
-												ImGui::TreePop();
-											}
+											animator->sprite = sprite.second;
+											animator->currentAnimation = 0;
+											animator->currentFrame = 0;
+											animator->update();
+											strcpy_s(currentSpriteName, 256, sprite.first.c_str());
 										}
-										ImGui::TreePop();
 									}
+									if (sameSprite)
+										ImGui::SetItemDefaultFocus();
 								}
+								ImGui::EndCombo();
 							}
-
-							ImGui::SliderInt("Animation", reinterpret_cast<int*>(&animator->currentAnimation), 0, animator->sprite ? (int)animator->sprite->animations.size() - 1 : 0);
+							uint32_t i = 0;
+							for (Sprite::Animation& anim : animator->sprite->animations)
+							{
+								snprintf(buffer, 256, "%s (%llu ms)", anim.name.c_str(), anim.duration().milliseconds());
+								bool currentAnimation = animator->currentAnimation == i;
+								if (ImGui::RadioButton(buffer, currentAnimation))
+								{
+									animator->currentAnimation = i;
+									animator->currentFrame = 0;
+									animator->update();
+								}
+								i++;
+							}
 							ImGui::SliderInt("Frame", reinterpret_cast<int*>(&animator->currentFrame), 0, animator->sprite ? (int)animator->sprite->animations[animator->currentAnimation].frames.size() - 1 : 0);
 							ImGui::SliderInt("Layer", &animator->layer, -20, 20);
 
@@ -225,7 +192,16 @@ void EntityWidget::draw(World& world, Resources& resources)
 								map->gridSize = vec2u(gridSize);
 							if (map->texture == nullptr)
 							{
-								// TODO load texture button
+								Path path;
+								if (Modal::LoadButton("Load image", &path))
+								{
+									try
+									{
+										Image image = Image::load(path);
+										map->texture = Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest);
+									}
+									catch (const std::exception& e) {}
+								}
 							}
 							else
 							{
@@ -381,7 +357,7 @@ void EntityWidget::draw(World& world, Resources& resources)
 						switch (currentComponent)
 						{
 						case 1: entity->add<Transform2D>(Transform2D()); break;
-						case 2: entity->add<Animator>(Animator()); break;
+						case 2: entity->add<Animator>(Animator(resources.sprite.getDefault(), 0)); break;
 						case 3: entity->add<Collider2D>(Collider2D()); break;
 						case 4: entity->add<RigidBody2D>(RigidBody2D()); break;
 						case 5: entity->add<Text>(Text()); break;
@@ -399,9 +375,10 @@ void EntityWidget::draw(World& world, Resources& resources)
 				}
 				ImGui::Separator();
 			});
-			if (ImGui::Button("Add entity")) {
-				world.createEntity();
-			}
+		}
+		ImGui::EndChild();
+		if (ImGui::Button("Add entity")) {
+			world.createEntity();
 		}
 	}
 	ImGui::End();

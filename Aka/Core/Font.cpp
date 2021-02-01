@@ -130,7 +130,7 @@ Font::Font(const Path& path, uint32_t height)
     Texture::Ptr atlas = packer.pack();
     for (unsigned char c = 0; c < NUM_GLYPH; c++)
         m_characters[c].texture = packer.get(c);
-    std::wstring str;
+
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 

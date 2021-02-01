@@ -13,6 +13,7 @@ public:
 	~ResourceManager();
 	T* create(const std::string& str, T* font);
 	T* get(const std::string& str);
+	T* getDefault();
 	void destroy(const std::string& str);
 	size_t count() const { return m_data.size(); }
 
@@ -64,6 +65,12 @@ T* ResourceManager<T>::get(const std::string& str)
 	if (it == m_data.end())
 		return nullptr;
 	return it->second;
+}
+
+template<typename T>
+inline T* ResourceManager<T>::getDefault()
+{
+	return m_data.begin()->second;
 }
 
 template <typename T>

@@ -25,7 +25,7 @@ bool Modal::LoadButton(const char* label, Path* resultPath) {
 	{
 		bool updatedList = false;
 		// Go to parent folder
-		if (ImGui::ArrowButton("##Up", ImGuiDir_Up))
+		if (ImGui::Button(ICON_FA_ARROW_UP))
 		{
 			std::string path = currentPath.str();
 			const size_t separatorCount = std::count(path.begin(), path.end(), '/');
@@ -56,7 +56,7 @@ bool Modal::LoadButton(const char* label, Path* resultPath) {
 		}
 		// Refresh directory
 		ImGui::SameLine();
-		if (ImGui::Button("Refresh"))
+		if (ImGui::Button(ICON_FA_SYNC))
 		{
 			updatedList = true;
 		}
@@ -93,8 +93,13 @@ bool Modal::LoadButton(const char* label, Path* resultPath) {
 					{
 						selectedPath = &path;
 					}
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+					{
+						loading = true;
+						*resultPath = currentPath + path;
+						ImGui::CloseCurrentPopup();
+					}
 				}
-				
 			}
 		}
 		ImGui::EndChild();
@@ -120,7 +125,7 @@ bool Modal::LoadButton(const char* label, Path* resultPath) {
 		}
 		ImGui::EndPopup();
 	}
-	return (loading && resultPath->str().size() > 0);
+	return (loading && resultPath->str().size() > 0 && file::exist(Path(*resultPath)));
 };
 
 };

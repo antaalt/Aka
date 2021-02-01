@@ -69,29 +69,40 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 				}
 				ImGui::Separator();
 			}
-			static std::string error;
-			static int height = 48;
-			ImGui::SliderInt("Height", &height, 1, 200);
-			Path path;
+			static Path path;
+			// Load a file
 			if (Modal::LoadButton("Load font", &path))
+				ImGui::OpenPopup("Font settings");
+			// Load a font
+			static std::string error;
+			bool opened = true;
+			if (ImGui::BeginPopupModal("Font settings", &opened, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				error = "";
-				if (file::exist(Path(path)))
+				static int height = 48;
+				ImGui::Text("%s", path.c_str());
+				ImGui::SliderInt("Height", &height, 1, 200);
+				if (ImGui::Button("OK"))
 				{
 					try
 					{
 						std::string name = Path::name(path);
 						if (resources.font.create(name, new Font(path, height)) == nullptr)
-							error = "Failed to load the font";
+							error = "Failed to create the font";
 					}
 					catch (const std::exception& e)
 					{
 						error = e.what();
 					}
+					path = "";
+					ImGui::CloseCurrentPopup();
 				}
-				else
-					error = "File does not exist";
-				path = "";
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndPopup();
 			}
 			if (error.size() > 0)
 				ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", error.c_str());
@@ -108,10 +119,13 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 					{
 						if (ImGui::TreeNodeEx(animation.name.c_str()))
 						{
+							char buffer[256];
+							strcpy_s(buffer, animation.name.c_str());
+							if (ImGui::InputText("Name", buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+								animation.name = buffer;
 							uint32_t frameID = 0;
 							for (Sprite::Frame& frame : animation.frames)
 							{
-								char buffer[256];
 								int error = snprintf(buffer, 256, "Frame %u", frameID++);
 								if (ImGui::TreeNodeEx(buffer, ImGuiTreeNodeFlags_Bullet))
 								{
@@ -126,8 +140,15 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 										});
 									}
 									int size[2]{ (int)frame.width, (int)frame.height };
-									ImGui::InputInt2("Size", size);
-									ImGui::Image((ImTextureID)frame.texture->handle().value(), ImVec2(200, 200));
+									if (ImGui::InputInt2("Size", size))
+									{
+										if (size[0] < 1) size[0] = 1;
+										if (size[1] < 1) size[1] = 1;
+										frame.width = (uint32_t)size[0];
+										frame.height = (uint32_t)size[1];
+									}
+									float ratio = static_cast<float>(frame.texture->width()) / static_cast<float>(frame.texture->height());
+									ImGui::Image((ImTextureID)frame.texture->handle().value(), ImVec2(200, 200 * 1 / ratio));
 									ImGui::TreePop();
 								}
 							}
@@ -167,6 +188,23 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 					ImGui::TreePop();
 				}
 				ImGui::Separator();
+			}
+			if (ImGui::Button("Add sprite"))
+				ImGui::OpenPopup("Sprite settings");
+			bool opened = true;
+			if (ImGui::BeginPopupModal("Sprite settings", &opened, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				static char spriteName[256];
+				ImGui::InputText("Name", spriteName, 256);
+				if (ImGui::Button("Create"))
+				{
+					resources.sprite.create(spriteName, new Sprite);
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+					ImGui::CloseCurrentPopup();
+				ImGui::EndPopup();
 			}
 		}
 	}

@@ -297,6 +297,7 @@
     <ClCompile Include="GUI\EntityWidget.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GUI\GUINode.cpp" />
+    <ClCompile Include="GUI\InfoWidget.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GUI\Modal.cpp" />
     <ClCompile Include="OgmoWorld.cpp" />
@@ -336,6 +337,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="GUI\GUINode.h" />
     <ClInclude Include="GUI\Modal.h" />
+    <ClInclude Include="GUI\InfoWidget.h" />
     <ClInclude Include="OgmoWorld.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="GUI\ResourcesWidget.h" />

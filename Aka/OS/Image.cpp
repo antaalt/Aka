@@ -54,6 +54,25 @@ Image Image::load(const std::vector<uint8_t>& binaries)
 	return load(binaries.data(), binaries.size());
 }
 
+Image Image::create(uint32_t width, uint32_t height, uint32_t components)
+{
+	Image image;
+	image.width = width;
+	image.height = height;
+	image.bytes.resize(width * height * components);
+	return image;
+}
+
+Image Image::create(uint32_t width, uint32_t height, uint32_t components, const uint8_t* data)
+{
+	Image image;
+	image.width = width;
+	image.height = height;
+	image.bytes.resize(width * height * components);
+	memcpy(image.bytes.data(), data, width * height * components);
+	return image;
+}
+
 void Image::save(const Path& path)
 {
 	int error = stbi_write_png(path.c_str(), width, height, 4, bytes.data(), width * 4);

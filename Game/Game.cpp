@@ -20,6 +20,7 @@
 #include "System/CoinSystem.h"
 #include "System/SoundSystem.h"
 #include "GUI/EntityWidget.h"
+#include "GUI/InfoWidget.h"
 #include "GUI/ResourcesWidget.h"
 
 
@@ -213,6 +214,7 @@ void Game::initialize()
 	}
 
 	{
+		m_gui.add(new InfoWidget);
 		m_gui.add(new EntityWidget);
 		m_gui.add(new ResourcesWidget);
 		m_gui.initialize();

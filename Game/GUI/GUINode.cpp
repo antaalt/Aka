@@ -34,8 +34,11 @@ void GUI::initialize()
         config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
         static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
         Path asset = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Regular-400.otf");
-        ImFont * iconFont = io.Fonts->AddFontFromFileTTF(asset.c_str(), 13.0f, &config, icon_ranges);
+        Path asset2 = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Solid-900.otf");
+        ImFont* iconFont = io.Fonts->AddFontFromFileTTF(asset.c_str(), 13.0f, &config, icon_ranges);
+        ImFont* iconFont2 = io.Fonts->AddFontFromFileTTF(asset2.c_str(), 13.0f, &config, icon_ranges);
         ASSERT(iconFont != nullptr, "Icon font not loaded");
+        ASSERT(iconFont2 != nullptr, "Icon font not loaded");
 
         // --- Style
 		ImGui::StyleColorsClassic();
