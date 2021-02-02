@@ -123,7 +123,7 @@ Date Date::localtime()
 	time_t t = system_clock::to_time_t(now);
 	std::tm lt{};
 	// Safe localtime for multithread issues
-#if defined(AKA_WINDOWS)
+#if defined(AKA_PLATFORM_WINDOWS)
 	localtime_s(&lt, &t);
 #else
 	localtime_r(&t, &lt);
@@ -145,7 +145,7 @@ Date Date::globaltime()
 	time_t t = system_clock::to_time_t(now);
 	std::tm lt{};
 	// Safe gmtime for multithread issues
-#if defined(AKA_WINDOWS)
+#if defined(AKA_PLATFORM_WINDOWS)
 	gmtime_s(&lt, &t);
 #else
 	gmtime_r(&t, &lt);

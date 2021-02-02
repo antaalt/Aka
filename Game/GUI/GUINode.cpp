@@ -2,6 +2,9 @@
 
 #include "IconsFontAwesome5.h"
 
+#include <GL/glew.h>
+#include <GL/GL.h>
+
 namespace aka {
 
 void GUI::initialize()

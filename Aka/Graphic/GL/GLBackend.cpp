@@ -8,6 +8,7 @@
 #define GLEW_NO_GLU
 #include <gl/glew.h>
 #include <gl/gl.h>
+#include <GLFW/glfw3.h>
 
 #define GL_CHECK_RESULT(result)                \
 {                                              \

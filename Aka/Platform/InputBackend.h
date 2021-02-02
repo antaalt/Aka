@@ -19,8 +19,8 @@ private:
 	static void onMouseMove(float x, float y);
 	static void onMouseScroll(float x, float y);
 	static input::Key getKeyFromScancode(int scancode);
-	static input::Key getKeyFromKey(int key);
-	input::KeyboardLayout getKeyboardLayout();
+	static input::Key getKeyFromPlatformKey(int key);
+	static input::KeyboardLayout getKeyboardLayout();
 };
 
 }

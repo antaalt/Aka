@@ -61,7 +61,7 @@ void EntityWidget::draw(World& world, Resources& resources)
 				}
 				char buffer[256];
 				snprintf(buffer, 256, "Entity %u", index);
-				if (ImGui::TreeNode(buffer))
+				if (ImGui::CollapsingHeader(buffer))
 				{
 					// --- Transform2D
 					if (entity->has<Transform2D>())
@@ -200,7 +200,7 @@ void EntityWidget::draw(World& world, Resources& resources)
 										Image image = Image::load(path);
 										map->texture = Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest);
 									}
-									catch (const std::exception& e) {}
+									catch (const std::exception&) {}
 								}
 							}
 							else
@@ -371,9 +371,7 @@ void EntityWidget::draw(World& world, Resources& resources)
 					}
 					ImGui::SameLine();
 					ImGui::Combo("Component", &currentComponent, components, componentCount);
-					ImGui::TreePop();
 				}
-				ImGui::Separator();
 			});
 		}
 		ImGui::EndChild();

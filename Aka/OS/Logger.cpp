@@ -2,11 +2,11 @@
 
 namespace aka {
 
-Logger::Channel Logger::critical(std::cerr, "critic", Logger::Color::FG_BRIGHT_RED);
-Logger::Channel Logger::error(std::cerr, "error", Logger::Color::FG_BRIGHT_MAGENTA);
-Logger::Channel Logger::warn(std::cerr, "warn", Logger::Color::FG_BRIGHT_YELLOW);
-Logger::Channel Logger::info(std::cout, "info", Logger::Color::FG_WHITE);
-Logger::Channel Logger::debug(std::cout, "debug", Logger::Color::FG_BRIGHT_BLACK);
+Logger::Channel Logger::critical(std::cerr, "critic", Logger::Color::ForegroundBrightRed);
+Logger::Channel Logger::error(std::cerr, "error", Logger::Color::ForegroundBrightMagenta);
+Logger::Channel Logger::warn(std::cerr, "warn", Logger::Color::ForegroundBrightYellow);
+Logger::Channel Logger::info(std::cout, "info", Logger::Color::ForegroundWhite);
+Logger::Channel Logger::debug(std::cout, "debug", Logger::Color::ForgeroundBrightBlack);
 
 std::mutex Logger::Channel::writeLock;
 

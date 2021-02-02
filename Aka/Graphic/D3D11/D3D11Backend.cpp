@@ -6,6 +6,7 @@
 #include "../../Platform/PlatformBackend.h"
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #include <dxgi.h>
 #include <d3d11.h>
@@ -13,6 +14,10 @@
 #include <d3dcompiler.h>
 #include <stdexcept>
 #include <array>
+
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
@@ -1153,7 +1158,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	// Set the usage of the back buffer.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = PlatformBackend::getD3DHandle();
+	swapChainDesc.OutputWindow = glfwGetWin32Window(PlatformBackend::getGLFW3Handle());
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;

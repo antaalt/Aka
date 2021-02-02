@@ -1,9 +1,11 @@
 #pragma once
 
-#include <stdint.h>
-
 #include "Platform.h"
 #include "../OS/FileSystem.h"
+
+#include <stdint.h>
+
+struct GLFWwindow;
 
 namespace aka {
 
@@ -33,10 +35,6 @@ public:
 	static std::string fileName(const Path& path);
 
 	static GLFWwindow* getGLFW3Handle();
-
-#if defined(AKA_USE_D3D11)
-	static HWND getD3DHandle();
-#endif
 };
 
 };

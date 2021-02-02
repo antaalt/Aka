@@ -7,9 +7,9 @@ namespace aka {
 namespace input {
 
 enum class KeyboardLayout {
+	Unknown,
 	Azerty,
 	Qwerty,
-	Default = Qwerty
 };
 
 enum class Key {

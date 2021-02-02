@@ -2,9 +2,12 @@
 #include "../PlatformBackend.h"
 #include "../Platform.h"
 #include "../../OS/FileSystem.h"
+#include "../../OS/Logger.h"
 
-#if defined(AKA_WINDOWS)
-
+#if defined(AKA_PLATFORM_WINDOWS)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #include <string>
 #include <fstream>
 #include <utf8.h>
@@ -275,6 +278,34 @@ input::Key virtualKeyCodes[]{
 	input::Key::Unknown
 };
 
+const WORD terminalColors[20] = {
+	0, // ForgeroundBlack
+	FOREGROUND_RED, // ForegroundRed
+	FOREGROUND_GREEN, // ForegroundGreen
+	FOREGROUND_RED | FOREGROUND_GREEN, // ForegroundYellow
+	FOREGROUND_BLUE, // ForegroundBlue
+	FOREGROUND_RED | FOREGROUND_BLUE, // ForegroundMagenta
+	FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundCyan
+	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundWhite
+	FOREGROUND_INTENSITY, // ForgeroundBrightBlack
+	FOREGROUND_RED | FOREGROUND_INTENSITY, // ForegroundBrightRed
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightGreen
+	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightYellow
+	FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightBlue 
+	FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightMagenta
+	FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightCyan
+	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightWhite
+};
+
+std::ostream& operator<<(std::ostream& os, Logger::Color color)
+{
+	if (color == Logger::Color::ForegroundNone)
+		return os;
+	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hdl, terminalColors[(unsigned int)color]);
+	return os;
+}
+
 
 input::Key InputBackend::getKeyFromScancode(int scancode)
 {
@@ -290,21 +321,24 @@ input::Key InputBackend::getKeyFromScancode(int scancode)
 
 input::KeyboardLayout InputBackend::getKeyboardLayout()
 {
-	/*HWND hwnd = GetForegroundWindow();
-	if (hwnd) {
-		DWORD threadID = GetWindowThreadProcessId(hwnd, NULL);
-		HKL currentLayout = GetKeyboardLayout(threadID);
-		unsigned int x = (unsigned int)currentLayout & 0x0000FFFF;
-
-		WORD languageIdentifier = LOWORD(currentLayout);
-		WORD deviceHdlToPhysicalLayout = HIWORD(currentLayout);
-		//std::cout << languageIdentifier << " - " << deviceHdlToPhysicalLayout << " - " << MAKELANGID(LANG_FRENCH, SUBLANG_FRENCH) << " - " << MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_UK) << std::endl;
-
-		//ToAsciiEx(VirtualKey, ScanCode, KeyState, (LPWORD)&wd, 0, hKL);
-
-		return input::KeyboardLayout::Azerty;
-	}*/
-	return input::KeyboardLayout::Default;
+	/*HWND hwnd = PlatformBackend::getWin32WindowHandle();
+	DWORD threadID = GetWindowThreadProcessId(hwnd, NULL);
+	HKL currentLayout = GetKeyboardLayout(threadID);
+	unsigned int x = (unsigned int)currentLayout & 0x0000FFFF;
+	WORD languageIdentifier = LOWORD(currentLayout);
+	WORD deviceHdlToPhysicalLayout = HIWORD(currentLayout);*/
+	wchar_t data[KL_NAMELENGTH];
+	if (TRUE == GetKeyboardLayoutName(data))
+	{
+		return input::KeyboardLayout::Qwerty;
+		//if (wcscmp(data, L"0000041C") == 0)
+		//	return "Albanian";
+		// https://stackoverflow.com/questions/19319194/getkeyboardlayoutname-of-other-process
+	}
+	else
+	{
+		return input::KeyboardLayout::Qwerty;
+	}
 }
 
 
