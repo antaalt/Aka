@@ -7,6 +7,7 @@
 #include "../Component/Player.h"
 #include "../Component/Animator.h"
 #include "../Component/Text.h"
+#include "../Component/Door.h"
 #include "SoundSystem.h"
 
 namespace aka {
@@ -24,6 +25,7 @@ void PlayerSystem::update(Time::Unit deltaTime)
 			return;
 		Text* text = event->left->get<Text>();
 		Coin* coin = event->right->get<Coin>();
+		Door* door = event->right->get<Door>();
 		if (coin != nullptr)
 		{
 			if (!coin->picked)
@@ -33,6 +35,10 @@ void PlayerSystem::update(Time::Unit deltaTime)
 				event->right->get<Animator>()->play("picked");
 				text->text = std::to_string(player->coin);
 			}
+		}
+		else if (door != nullptr)
+		{
+
 		}
 		else
 		{

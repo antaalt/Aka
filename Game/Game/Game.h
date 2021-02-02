@@ -4,13 +4,15 @@
 #include <map>
 
 #include "Resources.h"
-#include "GUI/GUINode.h"
+#include "Level.h"
+#include "../GUI/GUINode.h"
 
 namespace aka {
 
 class Game : public Application
 {
 public:
+	Game();
 	void initialize() override;
 	void destroy() override;
 	void frame() override;
@@ -29,9 +31,9 @@ private:
 	// Entity
 	World m_world;
 	Entity* m_cameraEntity;
-	Entity* m_playerEntity;
-	Entity* m_backgroundEntity;
-	Entity* m_textEntity;
+	// Levels
+	std::string m_currentLevel;
+	WorldMap m_map;
 };
 
 }

@@ -13,6 +13,7 @@ struct Transform2D : public Component
 	mat3f model;
 
 	vec2f position() const;
+	vec2f size() const;
 
 	void translate(const vec2f& translation);
 	void move(const vec2f& move);

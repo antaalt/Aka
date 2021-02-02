@@ -55,7 +55,8 @@ T* ResourceManager<T>::create(const std::string& str, T* data)
 	auto it = m_data.insert(std::make_pair(str, data));
 	if (it.second)
 		return it.first->second;
-	return nullptr;
+	delete data;
+	return it.first->second;
 }
 
 template <typename T>

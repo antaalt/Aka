@@ -18,6 +18,11 @@ vec2f Transform2D::position() const
 	return vec2f(model[2].x, model[2].y);
 }
 
+vec2f Transform2D::size() const
+{
+	return vec2f(model[0].x, model[1].y);
+}
+
 void Transform2D::translate(const vec2f &translation)
 {
 	model *= mat3f::translate(translation);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Resources.h"
+#include "../Game/Resources.h"
 
 #define USE_IMGUI
 
