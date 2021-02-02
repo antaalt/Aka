@@ -7,7 +7,6 @@
 namespace aka {
 
 enum class BlendMode {
-	None,
 	Zero,
 	One,
 	SrcColor,
@@ -27,6 +26,49 @@ enum class BlendMode {
 	OneMinusSrc1Color,
 	Src1Alpha,
 	OneMinusSrc1Alpha
+};
+
+enum class BlendOp
+{
+	Add,
+	Substract,
+	ReverseSubstract,
+	Min,
+	Max
+};
+
+enum class BlendMask
+{
+	None  = 0,
+	Red   = 1,
+	Green = 2,
+	Blue  = 4,
+	Alpha = 8,
+	Rgb   = Red | Green | Blue,
+	Rgba  = Red | Green | Blue | Alpha 
+};
+
+struct Blending
+{
+	BlendMode colorModeSrc;
+	BlendMode colorModeDst;
+	BlendOp colorOp;
+
+	BlendMode alphaModeSrc;
+	BlendMode alphaModeDst;
+	BlendOp alphaOp;
+
+	BlendMask mask;
+
+	color32 blendColor;
+
+	static Blending none();
+	static Blending normal();
+
+	bool operator==(const Blending& rhs) const;
+	bool operator!=(const Blending& rhs) const;
+
+	bool enabled() const;
 };
 
 enum class CullMode {
@@ -62,8 +104,8 @@ struct RenderPass
 	Texture::Ptr texture;
 	// Shader for mesh
 	Shader::Ptr shader;
-	// Blend mode for alpha operation
-	BlendMode blend;
+	// Blending for alpha operation
+	Blending blend;
 	// Culling mode for triangle face
 	CullMode cull;
 	// Depth mode

@@ -203,6 +203,71 @@ GLuint getType(ShaderType type)
 	}
 }
 
+GLenum blendMode(BlendMode mode)
+{
+	switch (mode)
+	{
+	case BlendMode::Zero:
+		return GL_ZERO;
+	case BlendMode::One:
+		return GL_ONE;
+	case BlendMode::SrcColor:
+		return GL_SRC_COLOR;
+	case BlendMode::OneMinusSrcColor:
+		return GL_ONE_MINUS_SRC_COLOR;
+	case BlendMode::DstColor:
+		return GL_DST_COLOR;
+	case BlendMode::OneMinusDstColor:
+		return GL_ONE_MINUS_DST_COLOR;
+	case BlendMode::SrcAlpha:
+		return GL_SRC_ALPHA;
+	case BlendMode::OneMinusSrcAlpha:
+		return GL_ONE_MINUS_SRC_ALPHA;
+	case BlendMode::DstAlpha:
+		return GL_DST_ALPHA;
+	case BlendMode::OneMinusDstAlpha:
+		return GL_ONE_MINUS_DST_ALPHA;
+	case BlendMode::ConstantColor:
+		return GL_CONSTANT_COLOR;
+	case BlendMode::OneMinusConstantColor:
+		return GL_ONE_MINUS_CONSTANT_COLOR;
+	case BlendMode::ConstantAlpha:
+		return GL_CONSTANT_ALPHA;
+	case BlendMode::OneMinusConstantAlpha:
+		return GL_ONE_MINUS_CONSTANT_ALPHA;
+	case BlendMode::SrcAlphaSaturate:
+		return GL_SRC_ALPHA_SATURATE;
+	case BlendMode::Src1Color:
+		return GL_SRC1_COLOR;
+	case BlendMode::OneMinusSrc1Color:
+		return GL_ONE_MINUS_SRC1_COLOR;
+	case BlendMode::Src1Alpha:
+		return GL_SRC1_ALPHA;
+	case BlendMode::OneMinusSrc1Alpha:
+		return GL_ONE_MINUS_SRC1_ALPHA;
+	default:
+		return 0;
+	}
+}
+GLenum blendOp(BlendOp op)
+{
+	switch (op)
+	{
+	case BlendOp::Add:
+		return GL_FUNC_ADD;
+	case BlendOp::Substract:
+		return GL_FUNC_SUBTRACT;
+	case BlendOp::ReverseSubstract:
+		return GL_FUNC_REVERSE_SUBTRACT;
+	case BlendOp::Min:
+		return GL_MIN;
+	case BlendOp::Max:
+		return GL_MAX;
+	default:
+		return 0;
+	}
+}
+
 };
 
 class GLShader : public Shader
@@ -816,74 +881,33 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Blending
-		// TODO glBlendEquation (default to GL_FUNC_ADD)
-		if (pass.blend == BlendMode::None)
+		if (!pass.blend.enabled())
 		{
 			glDisable(GL_BLEND);
 		}
 		else
 		{
 			glEnable(GL_BLEND);
-			switch (pass.blend)
-			{
-			case BlendMode::Zero:
-				glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
-				break;
-			case BlendMode::One:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-				break;
-			case BlendMode::SrcColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC_COLOR);
-				break;
-			case BlendMode::OneMinusSrcColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
-				break;
-			case BlendMode::DstColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
-				break;
-			case BlendMode::OneMinusDstColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_COLOR);
-				break;
-			case BlendMode::SrcAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA);
-				break;
-			case BlendMode::OneMinusSrcAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-				break;
-			case BlendMode::DstAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
-				break;
-			case BlendMode::OneMinusDstAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);
-				break;
-			case BlendMode::ConstantColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_CONSTANT_COLOR);
-				break;
-			case BlendMode::OneMinusConstantColor:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR);
-				break;
-			case BlendMode::ConstantAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_CONSTANT_ALPHA);
-				break;
-			case BlendMode::OneMinusConstantAlpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA);
-				break;
-			case BlendMode::SrcAlphaSaturate:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE);
-				break;
-			case BlendMode::Src1Color:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC1_COLOR);
-				break;
-			case BlendMode::OneMinusSrc1Color:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC1_COLOR);
-				break;
-			case BlendMode::Src1Alpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_SRC1_ALPHA);
-				break;
-			case BlendMode::OneMinusSrc1Alpha:
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC1_ALPHA);
-				break;
-			}
+			GLenum colorModeSrc = gl::blendMode(pass.blend.colorModeSrc);
+			GLenum colorModeDst = gl::blendMode(pass.blend.colorModeDst);
+			GLenum alphaModeSrc = gl::blendMode(pass.blend.alphaModeSrc);
+			GLenum alphaModeDst = gl::blendMode(pass.blend.alphaModeDst);
+			GLenum colorOp = gl::blendOp(pass.blend.colorOp);
+			GLenum alphaOp = gl::blendOp(pass.blend.alphaOp);
+			glBlendEquationSeparate(colorOp, alphaOp);
+			glBlendFuncSeparate(colorModeSrc, colorModeDst, alphaModeSrc, alphaModeDst);
+			glBlendColor(
+				pass.blend.blendColor.r, 
+				pass.blend.blendColor.g, 
+				pass.blend.blendColor.b, 
+				pass.blend.blendColor.a
+			);
+			glColorMask(
+				(BlendMask)((int)pass.blend.mask & (int)BlendMask::Red) == BlendMask::Red,
+				(BlendMask)((int)pass.blend.mask & (int)BlendMask::Green) == BlendMask::Green,
+				(BlendMask)((int)pass.blend.mask & (int)BlendMask::Blue) == BlendMask::Blue,
+				(BlendMask)((int)pass.blend.mask & (int)BlendMask::Alpha) == BlendMask::Alpha
+			);
 		}
 	}
 	{
@@ -914,7 +938,41 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 
 	{
-		// TODO set depth
+		if (pass.depth == DepthCompare::None)
+		{
+			glDisable(GL_DEPTH_TEST);
+		}
+		else
+		{
+			glEnable(GL_DEPTH_TEST);
+			switch (pass.depth)
+			{
+			case DepthCompare::Always:
+				glDepthFunc(GL_ALWAYS);
+				break;
+			case DepthCompare::Never:
+				glDepthFunc(GL_NEVER);
+				break;
+			case DepthCompare::Less:
+				glDepthFunc(GL_LESS);
+				break;
+			case DepthCompare::Equal:
+				glDepthFunc(GL_EQUAL);
+				break;
+			case DepthCompare::LessOrEqual:
+				glDepthFunc(GL_LEQUAL);
+				break;
+			case DepthCompare::Greater:
+				glDepthFunc(GL_GREATER);
+				break;
+			case DepthCompare::NotEqual:
+				glDepthFunc(GL_NOTEQUAL);
+				break;
+			case DepthCompare::GreaterOrEqual:
+				glDepthFunc(GL_GEQUAL);
+				break;
+			}
+		}
 	}
 
 	{

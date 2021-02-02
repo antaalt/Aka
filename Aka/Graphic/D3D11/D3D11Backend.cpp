@@ -201,6 +201,33 @@ private:
 	static std::vector<D3D11Depth> cache;
 };
 
+UINT8 blendMask(BlendMask mask)
+{
+	UINT8 m = 0;
+	if ((BlendMask)((int)mask & (int)BlendMask::Red) == BlendMask::Red)
+		m |= D3D11_COLOR_WRITE_ENABLE_RED;
+	if ((BlendMask)((int)mask & (int)BlendMask::Green) == BlendMask::Green)
+		m |= D3D11_COLOR_WRITE_ENABLE_GREEN;
+	if ((BlendMask)((int)mask & (int)BlendMask::Blue) == BlendMask::Blue)
+		m |= D3D11_COLOR_WRITE_ENABLE_BLUE;
+	if ((BlendMask)((int)mask & (int)BlendMask::Alpha) == BlendMask::Alpha)
+		m |= D3D11_COLOR_WRITE_ENABLE_ALPHA;
+	return m;
+}
+
+D3D11_BLEND_OP blendOp(BlendOp op)
+{
+	switch (op)
+	{
+	case BlendOp::Add: return D3D11_BLEND_OP_ADD;
+	case BlendOp::Substract: return D3D11_BLEND_OP_SUBTRACT;
+	case BlendOp::ReverseSubstract: return D3D11_BLEND_OP_REV_SUBTRACT;
+	case BlendOp::Min: return D3D11_BLEND_OP_MIN;
+	case BlendOp::Max: return D3D11_BLEND_OP_MAX;
+	}
+	return D3D11_BLEND_OP_ADD;
+}
+
 D3D11_BLEND blendFactor(BlendMode mode)
 {
 	switch (mode)
@@ -230,29 +257,28 @@ D3D11_BLEND blendFactor(BlendMode mode)
 
 struct D3D11Blend
 {
-	BlendMode blend;
+	Blending blend;
 	ID3D11BlendState* blendState;
-	static ID3D11BlendState* get(BlendMode blendMode)
+	static ID3D11BlendState* get(Blending blending)
 	{
 		for (D3D11Blend& blend : cache)
-			if (blend.blend == blendMode)
+			if (blend.blend == blending)
 				return blend.blendState;
 
 		D3D11_BLEND_DESC desc{};
 		desc.AlphaToCoverageEnable = 0;
 		desc.IndependentBlendEnable = 0;
 
-		desc.RenderTarget[0].BlendEnable = blendMode != BlendMode::None;
-		desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-		if (blendMode != BlendMode::None)
+		desc.RenderTarget[0].BlendEnable = blending.enabled();
+		desc.RenderTarget[0].RenderTargetWriteMask = blendMask(blending.mask);
+		if (blending.enabled())
 		{
-			// TODO upgrade blend to support this
-			desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;// blendFactor(blendMode);
-			desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;// blendFactor(blendMode);
-			desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;// blendFactor(blendMode);
-			desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;// blendFactor(blendMode);
+			desc.RenderTarget[0].BlendOp = blendOp(blending.colorOp);
+			desc.RenderTarget[0].SrcBlend = blendFactor(blending.colorModeSrc);
+			desc.RenderTarget[0].DestBlend = blendFactor(blending.colorModeDst);
+			desc.RenderTarget[0].BlendOpAlpha = blendOp(blending.alphaOp);
+			desc.RenderTarget[0].SrcBlendAlpha = blendFactor(blending.alphaModeSrc);
+			desc.RenderTarget[0].DestBlendAlpha = blendFactor(blending.alphaModeDst);
 		}
 
 		for (uint32_t i = 1; i < 8; i++)
@@ -263,7 +289,7 @@ struct D3D11Blend
 		if (SUCCEEDED(res))
 		{
 			D3D11Blend blend;
-			blend.blend = blendMode;
+			blend.blend = blending;
 			blend.blendState = result;
 			cache.push_back(blend);
 			return cache.back().blendState;

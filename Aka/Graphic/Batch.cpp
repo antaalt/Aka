@@ -292,7 +292,7 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 		renderPass.shader = m_shader;
 
-		renderPass.blend = BlendMode::OneMinusSrcAlpha;
+		renderPass.blend = Blending::normal();
 
 		renderPass.cull = CullMode::None;
 
