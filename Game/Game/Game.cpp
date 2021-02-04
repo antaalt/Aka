@@ -31,6 +31,11 @@ Game::Game() :
 }
 void Game::initialize()
 {
+	Sampler sampler;
+	sampler.filterMag = aka::Sampler::Filter::Nearest;
+	sampler.filterMin = aka::Sampler::Filter::Nearest;
+	sampler.wrapS = aka::Sampler::Wrap::Clamp;
+	sampler.wrapT = aka::Sampler::Wrap::Clamp;
 	Logger::debug.mute();
 	{
 		// INI SYSTEMS
@@ -54,7 +59,7 @@ void Game::initialize()
 
 	{
 		// INIT FRAMEBUFFER
-		m_framebuffer = Framebuffer::create(320, 180, Sampler::Filter::Nearest);
+		m_framebuffer = Framebuffer::create(320, 180, sampler);
 		PlatformBackend::setLimits(m_framebuffer->width(), m_framebuffer->height(), 0, 0);
 	}
 
@@ -91,7 +96,7 @@ void Game::initialize()
 
 		Sprite::Animation animation;
 		animation.name = "default";
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), sampler), Time::Unit::milliseconds(500)));
 		Sprite *sprite = m_resources.sprite.create("Background", new Sprite());
 		sprite->animations.push_back(animation);
 

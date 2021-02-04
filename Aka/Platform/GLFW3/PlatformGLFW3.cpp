@@ -434,7 +434,7 @@ void PlatformBackend::initialize(const Config& config)
 		Logger::info("[GLFW] Window refresh");
 	});
 	glfwSetWindowIconifyCallback(ctx.window, [](GLFWwindow* window, int iconified) {
-		Logger::info("[GLFW] Focus : ", iconified);
+		Logger::info("[GLFW] Iconify : ", iconified);
 	});
 	glfwSetWindowCloseCallback(ctx.window, [](GLFWwindow* window) {
 		Logger::info("[GLFW] Closing window ");

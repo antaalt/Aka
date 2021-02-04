@@ -198,7 +198,12 @@ void EntityWidget::draw(World& world, Resources& resources)
 									try
 									{
 										Image image = Image::load(path);
-										map->texture = Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest);
+										Sampler sampler;
+										sampler.filterMag = aka::Sampler::Filter::Nearest;
+										sampler.filterMin = aka::Sampler::Filter::Nearest;
+										sampler.wrapS = aka::Sampler::Wrap::Clamp;
+										sampler.wrapT = aka::Sampler::Wrap::Clamp;
+										map->texture = Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), sampler);
 									}
 									catch (const std::exception&) {}
 								}

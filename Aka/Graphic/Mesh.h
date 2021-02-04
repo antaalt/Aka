@@ -5,51 +5,50 @@
 #include <vector>
 
 namespace aka {
-
+// TODO merge index format & vert format as format.
 enum class IndexFormat
 {
-	Uint8,
-	Uint16,
-	Uint32
+	UnsignedByte,
+	UnsignedShort,
+	UnsignedInt
 };
 enum class VertexFormat {
 	Float,
-	Float2,
-	Float3,
-	Float4,
-	Byte4,
-	Ubyte4,
-	Short2,
-	Ushort2,
-	Short4,
-	Ushort4
+	Double,
+	Byte,
+	UnsignedByte,
+	Short,
+	UnsignedShort,
+	Int,
+	UnsignedInt
 };
+enum class VertexType
+{
+	Vec2,
+	Vec3,
+	Vec4,
+	Mat2,
+	Mat3,
+	Mat4,
+	Scalar,
+};
+
+uint32_t size(IndexFormat format);
+uint32_t size(VertexFormat format);
+uint32_t size(VertexType type);
 
 struct VertexData {
 	struct Attribute {
 		uint32_t index;	   // Location of the attribute
-		VertexFormat type; // Type of the attribute
+		VertexFormat format; // Type of the attribute
+		VertexType type;
 	};
 	std::vector<Attribute> attributes;
 
 	uint32_t stride() const {
 		uint32_t stride = 0;
 		for (const VertexData::Attribute& attribute : attributes)
-		{
-			switch (attribute.type)
-			{
-			case VertexFormat::Float: stride += 4; break;
-			case VertexFormat::Float2: stride += 8; break;
-			case VertexFormat::Float3: stride += 12; break;
-			case VertexFormat::Float4: stride += 16; break;
-			case VertexFormat::Byte4: stride += 4; break;
-			case VertexFormat::Ubyte4: stride += 4; break;
-			case VertexFormat::Short2: stride += 4; break;
-			case VertexFormat::Ushort2: stride += 4; break;
-			case VertexFormat::Short4: stride += 8; break;
-			case VertexFormat::Ushort4: stride += 8; break;
-			}
-		}
+			stride += size(attribute.format) * size(attribute.type);
 		return stride;
 	}
 };

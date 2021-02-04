@@ -58,6 +58,11 @@ void WorldMap::loadLevel(const std::string &str)
 	level->height = ogmoLevel.size.y;
 
 	// - Layers
+	Sampler sampler;
+	sampler.filterMag = aka::Sampler::Filter::Nearest;
+	sampler.filterMin = aka::Sampler::Filter::Nearest;
+	sampler.wrapS = aka::Sampler::Wrap::Clamp;
+	sampler.wrapT = aka::Sampler::Wrap::Clamp;
 	std::map<std::string, Texture::Ptr> atlas;
 	auto createTileLayer = [&](Level::Layer& layer, const OgmoLevel::Layer* ogmoLayer, int32_t layerDepth) -> Entity* {
 		if (ogmoLayer->layer->type != OgmoWorld::LayerType::Tile)
@@ -72,7 +77,7 @@ void WorldMap::loadLevel(const std::string &str)
 				ogmoLayer->tileset->image.height, 
 				Texture::Format::Rgba, 
 				ogmoLayer->tileset->image.bytes.data(), 
-				Sampler::Filter::Nearest
+				sampler
 			);
 			atlas.insert(std::make_pair(ogmoLayer->tileset->name, texture));
 		}
@@ -99,7 +104,7 @@ void WorldMap::loadLevel(const std::string &str)
 	std::vector<uint8_t> data;
 	data.resize(level->width * level->height * 4);
 	memset(data.data(), 0xffffffff, sizeof(data.size()));
-	level->backgroundTexture = Texture::create(level->width, level->height, Texture::Format::Rgba, data.data(), Sampler::Filter::Nearest);
+	level->backgroundTexture = Texture::create(level->width, level->height, Texture::Format::Rgba, data.data(), sampler);
 
 
 	{
@@ -107,7 +112,7 @@ void WorldMap::loadLevel(const std::string &str)
 		Sprite::Animation animation;
 		animation.name = "default";
 		Image image = Image::load(Asset::path("textures/debug/collider.png"));
-		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+		animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), sampler), Time::Unit::milliseconds(500)));
 		Sprite* sprite = m_resources.sprite.create("Collider", new Sprite());
 		sprite->animations.push_back(animation);
 	}
@@ -123,7 +128,7 @@ void WorldMap::loadLevel(const std::string &str)
 		for (Path path : frames)
 		{
 			Image image = Image::load(path);
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(100)));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), sampler), Time::Unit::milliseconds(100)));
 		}
 		Sprite* sprite = m_resources.sprite.create("Coin", new Sprite());
 		sprite->animations.push_back(animation);
@@ -147,7 +152,7 @@ void WorldMap::loadLevel(const std::string &str)
 		for (Path path : frames)
 		{
 			Image image = Image::load(path);
-			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest), Time::Unit::milliseconds(500)));
+			animation.frames.push_back(Sprite::Frame::create(Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), sampler), Time::Unit::milliseconds(500)));
 		}
 		Sprite* sprite = m_resources.sprite.create("Player", new Sprite());
 		sprite->animations.push_back(animation);

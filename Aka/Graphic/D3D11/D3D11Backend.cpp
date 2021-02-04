@@ -21,6 +21,7 @@
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 
 
@@ -114,7 +115,7 @@ struct D3D11Sampler
 {
 	ID3D11ShaderResourceView* texture;
 	ID3D11SamplerState* samplerState;
-	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, Sampler::Filter filter)
+	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, Sampler sampler)
 	{
 		for (D3D11Sampler& sampler : cache)
 			if (sampler.texture == texture)
@@ -122,12 +123,23 @@ struct D3D11Sampler
 
 		D3D11_SAMPLER_DESC desc {};
 		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		
+		switch (sampler.wrapS)
+		{
+		case Sampler::Wrap::Repeat: desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; break;
+		case Sampler::Wrap::Clamp: desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case Sampler::Wrap::Mirror: desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		}
+		switch (sampler.wrapT)
+		{
+		case Sampler::Wrap::Repeat: desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP; break;
+		case Sampler::Wrap::Clamp: desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case Sampler::Wrap::Mirror: desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		}
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
-		switch (filter)
+		switch (sampler.filterMag)
 		{
 		case Sampler::Filter::Nearest: desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; break;
 		case Sampler::Filter::Linear: desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break;
@@ -315,8 +327,9 @@ class D3D11Texture : public Texture
 {
 public:
 	friend class D3D11Framebuffer;
-	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
+	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler, bool isFramebuffer) :
 		Texture(width, height),
+		m_sampler(sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -461,9 +474,11 @@ public:
 	{
 		return m_isFramebuffer;
 	}
+	const Sampler& getSampler() const { return m_sampler; }
 	ID3D11Texture2D* getTexture() const { return m_texture; }
 	ID3D11ShaderResourceView* getView() const { return m_view; }
 private:
+	Sampler m_sampler;
 	ID3D11Texture2D* m_texture;
 	ID3D11Texture2D* m_staging;
 	ID3D11ShaderResourceView* m_view;
@@ -475,9 +490,9 @@ private:
 class D3D11Framebuffer : public Framebuffer
 {
 public:
-	D3D11Framebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler::Filter filter) :
+	D3D11Framebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler sampler) :
 		Framebuffer(width, height),
-		m_filter(filter),
+		m_sampler(sampler),
 		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
@@ -498,7 +513,7 @@ public:
 				format = Texture::Format::DepthStencil;
 				break;
 			}
-			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, filter, true);
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, sampler, true);
 			m_attachments.push_back(Attachment{ attachments[i], tex });
 			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
 			{
@@ -548,7 +563,7 @@ public:
 				format = Texture::Format::DepthStencil;
 				break;
 			}
-			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, m_filter, true);
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, m_sampler, true);
 			attachment.texture = tex;
 			if (attachment.type == AttachmentType::Depth || attachment.type == AttachmentType::Stencil || attachment.type == AttachmentType::DepthStencil)
 			{
@@ -588,7 +603,7 @@ public:
 	ID3D11RenderTargetView* getRenderTargetView(uint32_t index) const { return m_colorViews[index]; }
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
 private:
-	Sampler::Filter m_filter;
+	Sampler m_sampler;
 	std::vector<Attachment> m_attachments;
 	std::vector<ID3D11RenderTargetView*> m_colorViews;
 	ID3D11DepthStencilView* m_depthStencilView;
@@ -769,23 +784,18 @@ public:
 
 		if (m_indexBuffer)
 			m_indexBuffer->Release();
+		m_indexFormat = indexFormat;
+		m_indexSize = size(indexFormat);
 		switch (indexFormat)
 		{
-		case IndexFormat::Uint8:
-			// TODO check for support
-			m_indexFormat = IndexFormat::Uint8;
-			m_indexSize = 1;
+		case IndexFormat::UnsignedByte:
 			m_format = DXGI_FORMAT_R8_UINT;
 			break;
-		case IndexFormat::Uint16:
-			m_indexFormat = IndexFormat::Uint16;
+		case IndexFormat::UnsignedShort:
 			m_format = DXGI_FORMAT_R16_UINT;
-			m_indexSize = 2;
 			break;
-		case IndexFormat::Uint32:
-			m_indexFormat = IndexFormat::Uint32;
+		case IndexFormat::UnsignedInt:
 			m_format = DXGI_FORMAT_R32_UINT;
-			m_indexSize = 4;
 			break;
 		}
 		// Set up the description of the static index buffer.
@@ -1034,18 +1044,65 @@ public:
 		{
 			polygonLayout[i].SemanticName = m_attributes[i].name.c_str();
 			polygonLayout[i].SemanticIndex = m_attributes[i].id.value();
-			switch (data.attributes[i].type)
+			const VertexData::Attribute& a = data.attributes[i];
+			if (a.format == VertexFormat::Float)
 			{
-			case VertexFormat::Float: polygonLayout[i].Format = DXGI_FORMAT_R32_FLOAT;  break;
-			case VertexFormat::Float2: polygonLayout[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
-			case VertexFormat::Float3: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
-			case VertexFormat::Float4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-			case VertexFormat::Byte4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
-			case VertexFormat::Ubyte4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-			case VertexFormat::Short2: polygonLayout[i].Format = DXGI_FORMAT_R16G16_SNORM; break;
-			case VertexFormat::Ushort2: polygonLayout[i].Format = DXGI_FORMAT_R16G16_UNORM; break;
-			case VertexFormat::Short4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-			case VertexFormat::Ushort4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				switch (a.type)
+				{
+				case VertexType::Scalar: polygonLayout[i].Format = DXGI_FORMAT_R32_FLOAT;  break;
+				case VertexType::Vec2: polygonLayout[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
+				case VertexType::Vec3: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::Byte)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::UnsignedByte)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::Short)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::UnsignedShort)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::Int)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_SINT; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::UnsignedInt)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_UINT; break;
+				default: Logger::error("Format not supported for layout");
+				}
 			}
 			polygonLayout[i].InputSlot = 0;
 			polygonLayout[i].AlignedByteOffset = (i == 0 ? 0 : D3D11_APPEND_ALIGNED_ELEMENT);
@@ -1382,7 +1439,7 @@ void GraphicBackend::render(RenderPass& pass)
 			//for (int i = 0; i < samplers.size(); i++)
 			{
 				ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->getView();
-				ID3D11SamplerState* sampler = D3D11Sampler::get(view, Sampler::Filter::Nearest);
+				ID3D11SamplerState* sampler = D3D11Sampler::get(view, ((D3D11Texture*)pass.texture.get())->getSampler());
 				if (sampler != nullptr)
 					ctx.deviceContext->PSSetSamplers(0, 1, &sampler);
 			}
@@ -1488,17 +1545,17 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler sampler)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, data, filter, false);
+	return std::make_shared<D3D11Texture>(width, height, format, data, sampler, false);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler sampler)
 {
-	return std::make_shared<D3D11Framebuffer>(width, height, attachment, count, filter);
+	return std::make_shared<D3D11Framebuffer>(width, height, attachment, count, sampler);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()

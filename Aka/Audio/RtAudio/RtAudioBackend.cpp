@@ -5,6 +5,10 @@
 #include "../../OS/Logger.h"
 #include "../../Core/Debug.h"
 
+#if defined(AKA_PLATFORM_WINDOWS)
+#pragma comment(lib, "dsound.lib")
+#endif
+
 namespace aka {
 
 struct RtAudioContext {
@@ -19,7 +23,11 @@ void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
 {
     ctx.channels = channels;
     ctx.frequency = frequency;
+#if defined(AKA_PLATFORM_WINDOWS)
     ctx.audio = new RtAudio(RtAudio::Api::WINDOWS_DS);
+#else
+    ctx.audio = nullptr;
+#endif
     // Determine the number of devices available
     unsigned int devices = ctx.audio->getDeviceCount();
     if (devices == 0)

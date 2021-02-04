@@ -146,6 +146,7 @@ GLenum framebufferType(Framebuffer::Type type) {
 		return GL_FRAMEBUFFER;
 	}
 }
+
 GLenum filter(Sampler::Filter type) {
 	switch (type) {
 	default:
@@ -153,6 +154,18 @@ GLenum filter(Sampler::Filter type) {
 		return GL_LINEAR;
 	case Sampler::Filter::Nearest:
 		return GL_NEAREST;
+	}
+}
+
+GLenum wrap(Sampler::Wrap wrap) {
+	switch (wrap) {
+	default:
+	case Sampler::Wrap::Clamp:
+		return GL_CLAMP_TO_EDGE;
+	case Sampler::Wrap::Repeat:
+		return GL_REPEAT;
+	case Sampler::Wrap::Mirror:
+		return GL_MIRRORED_REPEAT;
 	}
 }
 
@@ -173,11 +186,34 @@ GLenum format(IndexFormat format) {
 	switch (format) {
 	default:
 		throw std::runtime_error("Not implemneted");
-	case IndexFormat::Uint8:
+	case IndexFormat::UnsignedByte:
 		return GL_UNSIGNED_BYTE;
-	case IndexFormat::Uint16:
+	case IndexFormat::UnsignedShort:
 		return GL_UNSIGNED_SHORT;
-	case IndexFormat::Uint32:
+	case IndexFormat::UnsignedInt:
+		return GL_UNSIGNED_INT;
+	}
+}
+
+GLenum format(VertexFormat format) {
+	switch (format) {
+	default:
+		throw std::runtime_error("Not implemneted");
+	case VertexFormat::Float:
+		return GL_FLOAT;
+	case VertexFormat::Double:
+		return GL_DOUBLE;
+	case VertexFormat::Byte:
+		return GL_BYTE;
+	case VertexFormat::UnsignedByte:
+		return GL_UNSIGNED_BYTE;
+	case VertexFormat::Short:
+		return GL_SHORT;
+	case VertexFormat::UnsignedShort:
+		return GL_UNSIGNED_SHORT;
+	case VertexFormat::Int:
+		return GL_INT;
+	case VertexFormat::UnsignedInt:
 		return GL_UNSIGNED_INT;
 	}
 }
@@ -466,8 +502,7 @@ private:
 class GLTexture : public Texture
 {
 public:
-	friend class GLFramebuffer;
-	GLTexture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter, bool isFramebuffer) :
+	GLTexture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler, bool isFramebuffer) :
 		Texture(width, height),
 		m_format(gl::format(format)),
 		m_isFramebuffer(isFramebuffer)
@@ -476,10 +511,10 @@ public:
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, m_format, width, height, 0, m_format, GL_UNSIGNED_BYTE, data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(filter));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(filter));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(sampler.filterMag));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(sampler.filterMin));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(sampler.wrapS));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(sampler.wrapT));
 	}
 	GLTexture(GLTexture&) = delete;
 	GLTexture& operator=(GLTexture&) = delete;
@@ -516,6 +551,10 @@ public:
 	{
 		return m_isFramebuffer;
 	}
+	GLuint getTextureID() const
+	{ 
+		return m_textureID;
+	}
 private:
 	GLenum m_format;
 	GLuint m_textureID;
@@ -549,94 +588,24 @@ public:
 	{
 		m_vertexData = vertex;
 		m_vertexCount = static_cast<uint32_t>(count);
-		m_vertexStride = 0;
+		m_vertexStride = vertex.stride();
 		glBindVertexArray(m_vao);
 		if (m_vertexVbo == 0)
 			glGenBuffers(1, &m_vertexVbo);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vertexVbo);
-		uint32_t stride = 0;
+		size_t offset = 0;
 		for (const VertexData::Attribute& attribute : vertex.attributes)
 		{
-			switch (attribute.type)
-			{
-			case VertexFormat::Float: stride += 4; break;
-			case VertexFormat::Float2: stride += 8; break;
-			case VertexFormat::Float3: stride += 12; break;
-			case VertexFormat::Float4: stride += 16; break;
-			case VertexFormat::Byte4: stride += 4; break;
-			case VertexFormat::Ubyte4: stride += 4; break;
-			case VertexFormat::Short2: stride += 4; break;
-			case VertexFormat::Ushort2: stride += 4; break;
-			case VertexFormat::Short4: stride += 8; break;
-			case VertexFormat::Ushort4: stride += 8; break;
-			}
-		}
-		size_t ptr = 0;
-		for (const VertexData::Attribute& attribute : vertex.attributes)
-		{
-			GLint componentSize = 0;
-			GLint components = 1;
+			GLint componentSize = size(attribute.format);
+			GLint components = size(attribute.type);
+			GLenum type = gl::format(attribute.format);
 			GLboolean normalized = GL_FALSE;
-			GLenum type = GL_FLOAT;
-			switch (attribute.type)
-			{
-			case VertexFormat::Float:
-				type = GL_FLOAT;
-				componentSize = 4;
-				components = 1;
-				break;
-			case VertexFormat::Float2:
-				type = GL_FLOAT;
-				componentSize = 4;
-				components = 2;
-				break;
-			case VertexFormat::Float3:
-				type = GL_FLOAT;
-				componentSize = 4;
-				components = 3;
-				break;
-			case VertexFormat::Float4:
-				type = GL_FLOAT;
-				componentSize = 4;
-				components = 4;
-				break;
-			case VertexFormat::Byte4:
-				type = GL_BYTE;
-				componentSize = 1;
-				components = 4;
-				break;
-			case VertexFormat::Ubyte4:
-				type = GL_UNSIGNED_BYTE;
-				componentSize = 1;
-				components = 4;
-				break;
-			case VertexFormat::Short2:
-				type = GL_SHORT;
-				componentSize = 2;
-				components = 2;
-				break;
-			case VertexFormat::Ushort2:
-				type = GL_UNSIGNED_SHORT;
-				componentSize = 2;
-				components = 2;
-				break;
-			case VertexFormat::Short4:
-				type = GL_SHORT;
-				componentSize = 2;
-				components = 4;
-				break;
-			case VertexFormat::Ushort4:
-				type = GL_UNSIGNED_SHORT;
-				componentSize = 2;
-				components = 4;
-				break;
-			}
 			glEnableVertexAttribArray(attribute.index);
-			glVertexAttribPointer(attribute.index, components, type, normalized, stride, (void*)ptr);
-			ptr += components * componentSize;
+			glVertexAttribPointer(attribute.index, components, type, normalized, m_vertexStride, (void*)offset);
+			offset += components * componentSize;
 		}
 
-		glBufferData(GL_ARRAY_BUFFER, stride * count, vertices, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, m_vertexStride * count, vertices, GL_DYNAMIC_DRAW);
 		// Do not unbind buffers as they will be unbind from VAO
 		glBindVertexArray(0);
 	}
@@ -647,21 +616,9 @@ public:
 		if (m_indexVbo == 0)
 			glGenBuffers(1, &m_indexVbo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexVbo);
-		switch (indexFormat)
-		{
-		case IndexFormat::Uint8:
-			m_indexFormat = IndexFormat::Uint8;
-			m_indexSize = 1;
-			break;
-		case IndexFormat::Uint16:
-			m_indexFormat = IndexFormat::Uint16;
-			m_indexSize = 2;
-			break;
-		case IndexFormat::Uint32:
-			m_indexFormat = IndexFormat::Uint32;
-			m_indexSize = 4;
-			break;
-		}
+		m_indexFormat = indexFormat;
+		m_indexSize = size(indexFormat);
+		m_indexCount = (uint32_t)count;
 		// GL_DYNAMIC_DRAW so we can change buffer data
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexSize * count, indices, GL_DYNAMIC_DRAW);
 		glBindVertexArray(0);
@@ -672,13 +629,20 @@ public:
 		// We could use glDrawArrays for non indexed array.
 		// But using indexed allow to reduce the number of draw call for different types
 		// We can also reuse vertices with glDrawElements as they are indexed
-		void* indices = (void*)(uintptr_t)(m_indexSize * indexOffset);
-		glDrawElements(
-			GL_TRIANGLES,
-			static_cast<GLsizei>(indexCount),
-			gl::format(m_indexFormat),
-			indices
-		);
+		if (m_indexCount > 0)
+		{
+			void* indices = (void*)(uintptr_t)(m_indexSize * indexOffset);
+			glDrawElements(
+				GL_TRIANGLES,
+				static_cast<GLsizei>(indexCount),
+				gl::format(m_indexFormat),
+				indices
+			);
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
+		}
 		glBindVertexArray(0);
 	}
 
@@ -691,7 +655,7 @@ private:
 class GLFramebuffer : public Framebuffer
 {
 public:
-	GLFramebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler::Filter filter) :
+	GLFramebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler sampler) :
 		Framebuffer(width, height),
 		m_framebufferID(0)
 	{
@@ -714,8 +678,8 @@ public:
 				format = Texture::Format::DepthStencil;
 				break;
 			}
-			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, nullptr, filter, true);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt]), GL_TEXTURE_2D, tex->m_textureID, 0);
+			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, nullptr, sampler, true);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt]), GL_TEXTURE_2D, tex->getTextureID(), 0);
 			m_attachments.emplace_back();
 			Attachment& att = m_attachments.back();
 			att.type = attachments[iAtt];
@@ -739,6 +703,7 @@ public:
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
 		glClearColor(r, g, b, a);
+		glClearDepth(1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
@@ -777,6 +742,7 @@ public:
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glClearColor(r, g, b, a);
+		glClearDepth(1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
@@ -938,6 +904,7 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 
 	{
+		// Depth
 		if (pass.depth == DepthCompare::None)
 		{
 			glDisable(GL_DEPTH_TEST);
@@ -1045,14 +1012,14 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler::Filter filter)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler sampler)
 {
-	return std::make_shared<GLTexture>(width, height, format, data, filter, false);
+	return std::make_shared<GLTexture>(width, height, format, data, sampler, false);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler::Filter filter)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler sampler)
 {
-	return std::make_shared<GLFramebuffer>(width, height, attachment, count, filter);
+	return std::make_shared<GLFramebuffer>(width, height, attachment, count, sampler);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()

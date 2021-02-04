@@ -163,8 +163,14 @@ void ResourcesWidget::draw(World& world, Resources& resources)
 								}
 								else
 								{
+									// TODO modal to select sampler
+									Sampler sampler;
+									sampler.filterMag = aka::Sampler::Filter::Nearest;
+									sampler.filterMin = aka::Sampler::Filter::Nearest;
+									sampler.wrapS = aka::Sampler::Wrap::Clamp;
+									sampler.wrapT = aka::Sampler::Wrap::Clamp;
 									Sprite::Frame frame = Sprite::Frame::create(
-										Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), Sampler::Filter::Nearest),
+										Texture::create(image.width, image.height, Texture::Format::Rgba, image.bytes.data(), sampler),
 										Time::Unit::milliseconds(500)
 									);
 									animation.frames.push_back(frame);

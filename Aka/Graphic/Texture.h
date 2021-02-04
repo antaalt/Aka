@@ -20,15 +20,19 @@ struct Sampler
 	enum class Filter {
 		Nearest,
 		Linear,
-		Default = Linear
 	};
 	enum class Wrap {
 		Clamp,
-		Repeat
+		Repeat,
+		Mirror,
 	};
-	Filter filter;
-	Wrap wrap;
-	//Texture::Ptr texture;
+	Filter filterMin;
+	Filter filterMag;
+	Wrap wrapS;
+	Wrap wrapT;
+
+	bool operator==(const Sampler& rhs);
+	bool operator!=(const Sampler& rhs);
 };
 
 class Texture
@@ -38,6 +42,7 @@ public:
 	using Handle = StrictType<uintptr_t, struct TextureTagName>;
 	enum class Format {
 		Red,
+		Rgb,
 		Rgba,
 		Rgba8,
 		Rgba16,
@@ -52,8 +57,8 @@ protected:
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
 public:
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, Sampler::Filter filter);
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter);
+	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, Sampler sampler);
+	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler);
 
 	uint32_t width() const;
 

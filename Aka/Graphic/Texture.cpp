@@ -14,14 +14,14 @@ Texture::~Texture()
 {
 }
 
-Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, Sampler::Filter filter)
+Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, Sampler sampler)
 {
-	return create(width, height, format, nullptr, filter);
+	return create(width, height, format, nullptr, sampler);
 }
 
-Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler::Filter filter)
+Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler)
 {
-	return GraphicBackend::createTexture(width, height, format, data, filter);
+	return GraphicBackend::createTexture(width, height, format, data, sampler);
 }
 
 uint32_t Texture::width() const
@@ -43,6 +43,16 @@ void SubTexture::update()
 const uv2f& SubTexture::get(uint32_t uv) const
 {
 	return m_uv[uv];
+}
+
+bool Sampler::operator==(const Sampler& rhs)
+{
+	return filterMin == rhs.filterMin && filterMag == rhs.filterMag && wrapS == rhs.wrapS && wrapT == rhs.wrapT;
+}
+
+bool Sampler::operator!=(const Sampler& rhs)
+{
+	return filterMin != rhs.filterMin || filterMag != rhs.filterMag || wrapS != rhs.wrapS || wrapT != rhs.wrapT;
 }
 
 };

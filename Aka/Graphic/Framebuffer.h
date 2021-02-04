@@ -40,8 +40,8 @@ protected:
 	virtual ~Framebuffer();
 public:
 
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Sampler::Filter filter);
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height, AttachmentType* attachment, size_t count, Sampler::Filter filter);
+	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Sampler sampler);
+	static Framebuffer::Ptr create(uint32_t width, uint32_t height, AttachmentType* attachment, size_t count, Sampler sampler);
 
 	// Get framebuffer width
 	uint32_t width() const;

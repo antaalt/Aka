@@ -41,7 +41,7 @@ struct Packer {
         m_atlasSize(m_elementCount * m_elementSize),
         m_data(m_atlasSize.x * m_atlasSize.y * 4),
         m_subTexture(elements),
-        m_texture(Texture::create(m_atlasSize.x, m_atlasSize.y, Texture::Format::Rgba, Sampler::Filter::Nearest))
+        m_texture(Texture::create(m_atlasSize.x, m_atlasSize.y, Texture::Format::Rgba, Sampler{ Sampler::Filter::Nearest, Sampler::Filter::Nearest, Sampler::Wrap::Repeat, Sampler::Wrap::Repeat }))
     {
         Logger::info("Creating font atlas of ", m_atlasSize.x, "x", m_atlasSize.y);
     }

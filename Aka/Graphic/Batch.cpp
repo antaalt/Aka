@@ -224,7 +224,12 @@ void Batch::push(Texture::Ptr texture, int32_t layer)
 	if (m_defaultTexture == nullptr)
 	{
 		uint8_t data[4] = { 255, 255, 255, 255 };
-		m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba, data, Sampler::Filter::Nearest);
+		Sampler sampler;
+		sampler.filterMag = Sampler::Filter::Nearest;
+		sampler.filterMin = Sampler::Filter::Nearest;
+		sampler.wrapS = Sampler::Wrap::Clamp;
+		sampler.wrapT = Sampler::Wrap::Clamp;
+		m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba, data, sampler);
 	}
 	m_batches.push_back(m_currentBatch);
 	m_currentBatch.texture = texture ? texture : m_defaultTexture;
@@ -276,11 +281,11 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 	{
 		// Update mesh data
-		m_mesh->indices(IndexFormat::Uint32, m_indices.data(), m_indices.size());
+		m_mesh->indices(IndexFormat::UnsignedInt, m_indices.data(), m_indices.size());
 		VertexData data;
-		data.attributes.push_back(VertexData::Attribute{ 0, VertexFormat::Float2 });
-		data.attributes.push_back(VertexData::Attribute{ 1, VertexFormat::Float2 });
-		data.attributes.push_back(VertexData::Attribute{ 2, VertexFormat::Float4 });
+		data.attributes.push_back(VertexData::Attribute{ 0, VertexFormat::Float, VertexType::Vec2 });
+		data.attributes.push_back(VertexData::Attribute{ 1, VertexFormat::Float, VertexType::Vec2 });
+		data.attributes.push_back(VertexData::Attribute{ 2, VertexFormat::Float, VertexType::Vec4 });
 		m_mesh->vertices(data, m_vertices.data(), m_vertices.size());
 	}
 
