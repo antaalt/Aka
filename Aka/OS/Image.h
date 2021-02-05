@@ -2,22 +2,47 @@
 
 #include <vector>
 #include "FileSystem.h"
+#include "../Core/Geometry.h"
+
+#if defined(AKA_USE_OPENGL)
+#define ORIGIN_BOTTOM_LEFT
+#elif defined(AKA_USE_D3D11)
+#define ORIGIN_TOP_LEFT
+#endif
 
 namespace aka {
 
+struct Rect {
+	float x;
+	float y;
+	float w;
+	float h;
+};
+
 struct Image
 {
+	Image();
+	Image(uint32_t width, uint32_t height, uint32_t components);
+	Image(uint32_t width, uint32_t height, uint32_t components, const uint8_t* data);
+
 	static Image load(const Path& path);
 	static Image load(const uint8_t* binaries, size_t size);
 	static Image load(const std::vector<uint8_t>& binaries);
 
-	static Image create(uint32_t width, uint32_t height, uint32_t components);
-	static Image create(uint32_t width, uint32_t height, uint32_t components, const uint8_t *data);
+	void save(const Path& path) const;
 
-	void save(const Path& path);
+
+	void set(uint32_t x, uint32_t y, const color24& color);
+	void set(uint32_t x, uint32_t y, const color32& color);
+	void set(uint32_t x, uint32_t y, const color3f& color);
+	void set(uint32_t x, uint32_t y, const color4f& color);
+	color32 get(uint32_t x, uint32_t y) const;
+	void clear();
+	void flip();
 
 	std::vector<uint8_t> bytes;
 	uint32_t width, height;
+	uint32_t components;
 };
 
 }

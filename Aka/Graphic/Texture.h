@@ -5,20 +5,10 @@
 
 #include "../Core/StrictType.h"
 #include "../Core/Geometry.h"
+#include "../OS/Image.h"
 
 namespace aka {
 
-struct Rect {
-	float x;
-	float y;
-	float w;
-	float h;
-};
-
-#define GL_NEAREST_MIPMAP_NEAREST 0x2700
-#define GL_LINEAR_MIPMAP_NEAREST 0x2701
-#define GL_NEAREST_MIPMAP_LINEAR 0x2702
-#define GL_LINEAR_MIPMAP_LINEAR 0x2703
 struct Sampler
 {
 	enum class Filter {

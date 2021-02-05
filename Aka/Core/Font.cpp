@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "../OS/Logger.h"
+#include "../OS/ImagePacker.h"
 #include "../Core/Debug.h"
 
 #define STRINGIFY(x) #x
@@ -29,69 +30,6 @@
 }
 
 namespace aka {
-
-// Basic packer to create font atlas
-// TODO optimize
-// https://en.wikipedia.org/wiki/Bin_packing_problem
-struct Packer {
-    Packer(uint32_t elements, uint32_t elementWidth, uint32_t elementHeight) :
-        m_elements(elements),
-        m_elementCount((uint32_t)ceil<float>(sqrt<float>((float)elements)), (uint32_t)floor<float>(sqrt<float>((float)elements) + 0.5f)),
-        m_elementSize(elementWidth, elementHeight),
-        m_atlasSize(m_elementCount * m_elementSize),
-        m_data(m_atlasSize.x * m_atlasSize.y * 4),
-        m_subTexture(elements),
-        m_texture(Texture::create(m_atlasSize.x, m_atlasSize.y, Texture::Format::Rgba, Sampler{ Sampler::Filter::Nearest, Sampler::Filter::Nearest, Sampler::Wrap::Repeat, Sampler::Wrap::Repeat }))
-    {
-        Logger::info("Creating font atlas of ", m_atlasSize.x, "x", m_atlasSize.y);
-    }
-    void add(uint32_t id, uint32_t width, uint32_t height, uint8_t* data)
-    {
-        ASSERT(width <= m_elementSize.x, "Element too big on x");
-        ASSERT(height <= m_elementSize.y, "Element too big on y");
-        ASSERT(id < m_elements, "ID out of bound");
-        uint32_t idx = id % m_elementCount.x;
-        uint32_t idy = id / m_elementCount.x;
-        for (uint32_t y = 0; y < height; y++)
-        {
-            uint32_t yy = idy * m_elementSize.y + y;
-            for (uint32_t x = 0; x < width; x++)
-            {
-                uint32_t xx = idx * m_elementSize.x + x;
-                uint32_t index = xx + yy * m_atlasSize.x;
-                m_data[index * 4 + 0] = data[y * width + x];
-                m_data[index * 4 + 1] = data[y * width + x];
-                m_data[index * 4 + 2] = data[y * width + x];
-                m_data[index * 4 + 3] = data[y * width + x];
-            }
-        }
-        SubTexture &subTexture = m_subTexture[id];
-        subTexture.texture = m_texture;
-        subTexture.region.x = static_cast<float>(idx * m_elementSize.x);
-        subTexture.region.y = static_cast<float>(idy * m_elementSize.y);
-        subTexture.region.w = static_cast<float>(width);
-        subTexture.region.h = static_cast<float>(height);
-        subTexture.update();
-    }
-    Texture::Ptr pack()
-    {
-        m_texture->upload(m_data.data());
-        return m_texture;
-    }
-    SubTexture get(uint32_t id)
-    {
-        return m_subTexture[id];
-    }
-private:
-    uint32_t m_elements;
-    vec2u m_elementCount;
-    vec2u m_elementSize;
-    vec2u m_atlasSize;
-    std::vector<uint8_t> m_data;
-private: // output
-    std::vector<SubTexture> m_subTexture;
-    Texture::Ptr m_texture;
-};
 
 Font::Font(const Path& path, uint32_t height)
 {
@@ -127,9 +65,16 @@ Font::Font(const Path& path, uint32_t height)
         };
     }
     // Generate the atlas and store it.
-    Texture::Ptr atlas = packer.pack();
+    Image atlas = packer.pack();
+    Texture::Ptr textureAtlas = Texture::create(atlas.width, atlas.height, Texture::Format::Rgba, atlas.bytes.data(), Sampler{ Sampler::Filter::Nearest, Sampler::Filter::Nearest, Sampler::Wrap::Repeat, Sampler::Wrap::Repeat });
+    textureAtlas->upload(atlas.bytes.data());
+    //atlas.save("atlas.png");
     for (unsigned char c = 0; c < NUM_GLYPH; c++)
-        m_characters[c].texture = packer.get(c);
+    {
+        m_characters[c].texture.texture = textureAtlas;
+        m_characters[c].texture.region = packer.getRegion(c);
+        m_characters[c].texture.update();
+    }
 
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
