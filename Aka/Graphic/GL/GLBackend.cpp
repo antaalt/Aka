@@ -154,6 +154,10 @@ GLenum filter(Sampler::Filter type) {
 		return GL_LINEAR;
 	case Sampler::Filter::Nearest:
 		return GL_NEAREST;
+	case Sampler::Filter::MipMapNearest:
+		return GL_NEAREST_MIPMAP_NEAREST;
+	case Sampler::Filter::MipMapLinear:
+		return GL_LINEAR_MIPMAP_LINEAR;
 	}
 }
 
@@ -386,6 +390,7 @@ public:
 			case GL_FLOAT_VEC2:
 			case GL_FLOAT_VEC3:
 			case GL_FLOAT_VEC4:
+			case GL_FLOAT_MAT3:
 			case GL_FLOAT_MAT4: {
 				Uniform uniform;
 				uniform.id = UniformID(glGetUniformLocation(m_programID, name));
@@ -403,16 +408,21 @@ public:
 					uniform.type = UniformType::Vec3;
 				else if (type == GL_FLOAT_VEC4)
 					uniform.type = UniformType::Vec4;
+				else if (type == GL_FLOAT_MAT3)
+					uniform.type = UniformType::Mat3;
 				else if (type == GL_FLOAT_MAT4)
 					uniform.type = UniformType::Mat4;
 				else
 				{
-					Logger::error("Unsupported Uniform Type");
+					Logger::error("Unsupported Uniform Type : ", type);
 					break;
 				}
 				m_uniforms.push_back(uniform);
 				break;
 			}
+			default:
+				Logger::warn("Unsupported Uniform Type : ", type);
+				break;
 			}
 		}
 
@@ -490,6 +500,11 @@ public:
 		glUseProgram(m_programID);
 		glUniform4i((GLint)getUniformID(name).value(), x, y, z, w);
 	}
+	void setMatrix3(const char* name, const float* data, bool transpose) override
+	{
+		glUseProgram(m_programID);
+		glUniformMatrix3fv((GLint)getUniformID(name).value(), 1, transpose, data);
+	}
 	void setMatrix4(const char* name, const float* data, bool transpose) override
 	{
 		glUseProgram(m_programID);
@@ -507,7 +522,6 @@ public:
 		m_format(gl::format(format)),
 		m_isFramebuffer(isFramebuffer)
 	{
-		// TODO add filter & type settings
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, m_format, width, height, 0, m_format, GL_UNSIGNED_BYTE, data);
@@ -515,6 +529,8 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(sampler.filterMin));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(sampler.wrapS));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(sampler.wrapT));
+		if (sampler.filterMin == Sampler::Filter::MipMapLinear || sampler.filterMin == Sampler::Filter::MipMapNearest)
+			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLTexture(GLTexture&) = delete;
 	GLTexture& operator=(GLTexture&) = delete;

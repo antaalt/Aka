@@ -935,7 +935,7 @@ private:
 				uniform.shaderType = shaderType;
 				uniform.bufferIndex = 0;
 				uniform.arrayLength = max(1, desc.BindCount);
-				uniform.type = UniformType::Texture2D;
+				uniform.type = UniformType::Sampler2D;
 			}
 		}
 
@@ -988,10 +988,22 @@ private:
 						else if (typeDesc.Columns == 4)
 							uniform.type = UniformType::Vec4;
 					}
+					else if (typeDesc.Rows == 3 && typeDesc.Columns == 3)
+					{
+						uniform.type = UniformType::Mat3;
+					}
 					else if (typeDesc.Rows == 4 && typeDesc.Columns == 4)
 					{
 						uniform.type = UniformType::Mat4;
 					}
+					else
+					{
+						Logger::warn("Unsupported uniform size : ", typeDesc.Rows, "x", typeDesc.Columns);
+					}
+				}
+				else
+				{
+					Logger::warn("Unsupported uniform type : ", typeDesc.Type);
 				}
 			}
 		}
@@ -1135,10 +1147,123 @@ public:
 		}
 	}
 
-	void setFloat1(const char* name, float value) override { throw std::runtime_error("Not supported"); }
-	void setFloat2(const char* name, float x, float y) override { throw std::runtime_error("Not supported"); }
-	void setFloat3(const char* name, float x, float y, float z) override { throw std::runtime_error("Not supported"); }
-	void setFloat4(const char* name, float x, float y, float z, float w) override { throw std::runtime_error("Not supported"); }
+	void setFloat(const Uniform* currentUniform, const float* data, size_t size)
+	{
+		// Get the offset of the currentUniform in the constant buffer.
+		const bool isVertex = (ShaderType)((int)currentUniform->shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
+		const bool isFrag = (ShaderType)((int)currentUniform->shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
+		
+		uint32_t offset = 0;
+		for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
+		{
+			Uniform& uniform = m_uniforms[iUniform];
+			if (uniform.type == UniformType::None || uniform.type == UniformType::Texture2D || uniform.type == UniformType::Sampler2D)
+				continue;
+			if (uniform.type == UniformType::Mat4)
+			{
+				uint32_t length = 16 * uniform.arrayLength;
+				if (uniform.name == currentUniform->name)
+				{
+					ASSERT(size == length, "Incorrect size");
+					size_t size = offset + length;
+					if (isVertex)
+					{
+						if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
+							m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
+						memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
+					}
+					if (isFrag)
+					{
+						if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
+							m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
+						memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
+					}
+					break;
+				}
+				offset += length;
+			}
+			else if (uniform.type == UniformType::Mat3)
+			{
+				uint32_t length = 9 * uniform.arrayLength;
+				if (uniform.name == currentUniform->name)
+				{
+					ASSERT(size == length, "Incorrect size");
+					size_t size = offset + length;
+					if (isVertex)
+					{
+						if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
+							m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
+						memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
+					}
+					if (isFrag)
+					{
+						if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
+							m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
+						memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
+					}
+					break;
+				}
+				// Packing of values.
+				// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
+				offset += 12 * uniform.arrayLength;
+			}
+			else if (uniform.type == UniformType::Vec4)
+			{
+				uint32_t length = 4 * uniform.arrayLength;
+				if (uniform.name == currentUniform->name)
+				{
+					ASSERT(size == length, "Incorrect size");
+					size_t size = offset + length;
+					if (isVertex)
+					{
+						if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
+							m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
+						memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
+					}
+					if (isFrag)
+					{
+						if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
+							m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
+						memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
+					}
+					break;
+				}
+				offset += length;
+			}
+			else
+			{
+				Logger::warn("Unsupported uniform type : ", (int)uniform.type);
+			}
+		}
+	}
+
+	void setFloat1(const char* name, float value) override
+	{
+		const Uniform* currentUniform = getUniform(name);
+		ASSERT(currentUniform->type == UniformType::Vec, "Incorrect type.");
+		setFloat(currentUniform, &value, 1);
+	}
+	void setFloat2(const char* name, float x, float y) override
+	{
+		const Uniform* currentUniform = getUniform(name);
+		ASSERT(currentUniform->type == UniformType::Vec2, "Incorrect type.");
+		float data[] = { x,y };
+		setFloat(currentUniform, data, 2);
+	}
+	void setFloat3(const char* name, float x, float y, float z) override
+	{
+		const Uniform* currentUniform = getUniform(name);
+		ASSERT(currentUniform->type == UniformType::Vec3, "Incorrect type.");
+		float data[] = { x, y, z };
+		setFloat(currentUniform, data, 3);
+	}
+	void setFloat4(const char* name, float x, float y, float z, float w) override 
+	{
+		const Uniform* currentUniform = getUniform(name);
+		ASSERT(currentUniform->type == UniformType::Vec4, "Incorrect type.");
+		float data[] = { x, y, z, w };
+		setFloat(currentUniform, data, 4);
+	}
 	void setUint1 (const char* name, uint32_t value) override { throw std::runtime_error("Not supported"); }
 	void setUint2 (const char* name, uint32_t x, uint32_t y) override { throw std::runtime_error("Not supported"); }
 	void setUint3 (const char* name, uint32_t x, uint32_t y, uint32_t z) override { throw std::runtime_error("Not supported"); }
@@ -1147,54 +1272,19 @@ public:
 	void setInt2  (const char* name, int32_t x, int32_t y) override { throw std::runtime_error("Not supported"); }
 	void setInt3  (const char* name, int32_t x, int32_t y, int32_t z) override { throw std::runtime_error("Not supported"); }
 	void setInt4  (const char* name, int32_t x, int32_t y, int32_t z, int32_t w) override { throw std::runtime_error("Not supported"); }
+	void setMatrix3(const char* name, const float* data, bool transpose = false) override
+	{
+		const Uniform* currentUniform = getUniform(name);
+		ASSERT(transpose == false, "Do not support transpose yet.");
+		ASSERT(currentUniform->type == UniformType::Mat3, "Incorrect type.");
+		setFloat(currentUniform, data, 9);
+	}
 	void setMatrix4(const char* name, const float* data, bool transpose = false) override
 	{
 		const Uniform* currentUniform = getUniform(name);
-		ASSERT(currentUniform->type == UniformType::Mat4, "Incorrect type.");
 		ASSERT(transpose == false, "Do not support transpose yet.");
-		// Get the offset of the currentUniform in the constant buffer.
-		const bool isVertex = (ShaderType)((int)currentUniform->shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
-		const bool isFrag = (ShaderType)((int)currentUniform->shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
-		if (isVertex)
-		{
-			uint32_t offset = 0;
-			for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
-			{
-				Uniform& uniform = m_uniforms[iUniform];
-				if (uniform.type == UniformType::None || uniform.type == UniformType::Texture2D || uniform.type == UniformType::Sampler2D)
-					continue;
-				uint32_t length = 16 * uniform.arrayLength;
-				if (uniform.name == currentUniform->name)
-				{
-					size_t size = offset + length;
-					if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
-						m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
-					memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, sizeof(float) * 16);
-					break;
-				}
-				offset += length;
-			}
-		}
-		if (isFrag)
-		{
-			uint32_t offset = 0;
-			for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
-			{
-				Uniform& uniform = m_uniforms[iUniform];
-				if (uniform.type == UniformType::None || uniform.type == UniformType::Texture2D || uniform.type == UniformType::Sampler2D)
-					continue;
-				uint32_t length = 16 * uniform.arrayLength;
-				if (uniform.name == currentUniform->name)
-				{
-					size_t size = offset + length;
-					if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
-						m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
-					memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, sizeof(float) * 16);
-					break;
-				}
-				offset += length;
-			}
-		}
+		ASSERT(currentUniform->type == UniformType::Mat4, "Incorrect type.");
+		setFloat(currentUniform, data, 16);
 	}
 private:
 	ID3D10Blob* m_vertexShaderBuffer;

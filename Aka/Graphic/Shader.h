@@ -22,6 +22,7 @@ enum class UniformType {
 	Vec2,
 	Vec3,
 	Vec4,
+	Mat3,
 	Mat4,
 	Texture2D,
 	Sampler2D,
@@ -82,6 +83,7 @@ public:
 	virtual void setInt2(const char* name, int32_t x, int32_t y) {}
 	virtual void setInt3(const char* name, int32_t x, int32_t y, int32_t z) {}
 	virtual void setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w) {}
+	virtual void setMatrix3(const char* name, const float* data, bool transpose = false) {}
 	virtual void setMatrix4(const char* name, const float *data, bool transpose = false) {}
 protected:
 	std::vector<Uniform> m_uniforms;

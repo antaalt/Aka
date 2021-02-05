@@ -88,6 +88,10 @@ void Shader::set(const char* name, color4f value) {
 	setFloat4(name, value.r, value.g, value.b, value.a);
 }
 template <>
+void Shader::set(const char* name, mat3f value) {
+	setMatrix3(name, &value.cols[0].x, false);
+}
+template <>
 void Shader::set(const char* name, mat4f value) {
 	setMatrix4(name, &value.cols[0].x, false);
 }
