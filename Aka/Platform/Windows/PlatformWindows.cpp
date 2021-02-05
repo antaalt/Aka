@@ -10,11 +10,24 @@
 #include <Windows.h>
 #include <string>
 #include <fstream>
-#include <utf8.h>
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")  
 
 namespace aka {
+
+std::wstring Utf8ToWchar(const std::string& str) {
+	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
+	std::wstring wstr(wstr_size, 0);
+	MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], (int)wstr.size());
+	return wstr;
+}
+
+std::string WcharToUtf8(const std::wstring& wstr) {
+	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), nullptr, 0, NULL, NULL);
+	std::string str(str_size, 0);
+	WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), &str[0], (int)str.size(), NULL, NULL);
+	return str;
+}
 
 // https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 // http://cherrytree.at/misc/vk.htm
@@ -341,12 +354,10 @@ input::KeyboardLayout InputBackend::getKeyboardLayout()
 	}
 }
 
-
 bool PlatformBackend::directoryExist(const Path& path)
 {
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
-	DWORD ftyp = GetFileAttributes(str.c_str());
+	std::wstring wstr = Utf8ToWchar(path.str());
+	DWORD ftyp = GetFileAttributes(wstr.c_str());
 	if (ftyp == INVALID_FILE_ATTRIBUTES)
 		return false; // Incorrect path
 	if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
@@ -365,8 +376,7 @@ bool PlatformBackend::directoryCreate(const Path& path)
 		std::string p = str.substr(0, pos);
 		if (p == "." || p == ".." || p == "/" || p == "\\")
 			continue;
-		std::wstring wstr;
-		utf8::utf8to16(p.begin(), p.end(), std::back_inserter(wstr));
+		std::wstring wstr = Utf8ToWchar(p);
 		if (!CreateDirectory(wstr.c_str(), NULL))
 		{
 			DWORD error = GetLastError();
@@ -382,8 +392,7 @@ bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
 {
 	if (recursive)
 	{
-		std::wstring wstr;
-		utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(wstr));
+		std::wstring wstr = Utf8ToWchar(path.str());
 		WIN32_FIND_DATA data;
 		wchar_t cwd[512];
 		GetCurrentDirectory(512, cwd);
@@ -400,14 +409,12 @@ bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
 		FindClose(hFind);
 		SetCurrentDirectory(cwd);
 	}
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	std::wstring str = Utf8ToWchar(path.str());
 	return RemoveDirectory(str.c_str()) == TRUE;
 }
 bool PlatformBackend::fileExist(const Path& path)
 {
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	std::wstring str = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(str.c_str());
 	if (ftyp == INVALID_FILE_ATTRIBUTES)
 		return false;  //something is wrong with your path!
@@ -420,16 +427,14 @@ bool PlatformBackend::fileCreate(const Path& path)
 }
 bool PlatformBackend::fileRemove(const Path& path)
 {
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	std::wstring str = Utf8ToWchar(path.str());
 	return DeleteFile(str.c_str()) == TRUE;
 }
 
 std::vector<Path> PlatformBackend::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
+	std::wstring str = Utf8ToWchar(path.str());
 	WIN32_FIND_DATA data;
 	std::wstring searchString;
 	if (str.back() == separator)
@@ -449,15 +454,13 @@ std::vector<Path> PlatformBackend::enumerate(const Path& path)
 			if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
 				// directory
-				std::string str;
-				utf8::utf16to8(data.cFileName, data.cFileName + wcslen(data.cFileName), std::back_inserter(str));
+				std::string str = WcharToUtf8(data.cFileName);
 				paths.push_back(str + '/');
 			}
 			else
 			{
 				// file
-				std::string str;
-				utf8::utf16to8(data.cFileName, data.cFileName + wcslen(data.cFileName), std::back_inserter(str));
+				std::string str = WcharToUtf8(data.cFileName);
 				paths.push_back(str);
 				// size :((unsigned long long)data.nFileSizeHigh * ((unsigned long long)MAXDWORD + 1ULL)) + (unsigned long long)data.nFileSizeLow;
 			}
@@ -469,18 +472,28 @@ std::vector<Path> PlatformBackend::enumerate(const Path& path)
 
 Path PlatformBackend::normalize(const Path& path)
 {
-	// On windows, correct path should be only with '\\'
-	// Remove ../ & ./ aswell.
+	WCHAR canonicalizedPath[MAX_PATH];
+	std::wstring wstr = Utf8ToWchar(path.str());
+	if (PathCanonicalize(canonicalizedPath, wstr.c_str()) == TRUE)
+	{
+		std::string str = WcharToUtf8(canonicalizedPath);
+		for (char& c : str)
+			if (c == '\\')
+				c = '/';
+		return str;
+	}
 	return path;
 }
 
 Path PlatformBackend::executablePath()
 {
-	wchar_t path[MAX_PATH]{};
+	WCHAR path[MAX_PATH]{};
 	if (GetModuleFileName(NULL, path, MAX_PATH) == 0)
 		return Path();
-	std::string str;
-	utf8::utf16to8(path, path + wcslen(path), std::back_inserter(str));
+	std::string str = WcharToUtf8(path);
+	for (char& c : str)
+		if (c == '\\')
+			c = '/';
 	return Path(str);
 }
 
@@ -489,18 +502,18 @@ Path PlatformBackend::cwd()
 	WCHAR path[MAX_PATH] = { 0 };
 	if (GetCurrentDirectory(MAX_PATH, path) == 0)
 		return Path();
-	std::string str;
-	utf8::utf16to8(path, path + wcslen(path), std::back_inserter(str));
-	return Path(str + '\\');
+	std::string str = WcharToUtf8(path);
+	for (char& c : str)
+		if (c == '\\')
+			c = '/';
+	return Path(str + '/');
 }
 
 std::string PlatformBackend::extension(const Path& path)
 {
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
-	LPWSTR extension = PathFindExtension(str.c_str());
-	std::string out;
-	utf8::utf16to8(extension, extension + wcslen(extension), std::back_inserter(out));
+	std::wstring wstr = Utf8ToWchar(path.str());
+	LPWSTR extension = PathFindExtension(wstr.c_str());
+	std::string out = WcharToUtf8(extension);
 	if (out.size() < 1)
 		return std::string();
 	return out.substr(1, out.size() - 1);
@@ -508,12 +521,9 @@ std::string PlatformBackend::extension(const Path& path)
 
 std::string PlatformBackend::fileName(const Path& path)
 {
-	std::wstring str;
-	utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(str));
-	LPWSTR extension = PathFindFileName(str.c_str());
-	std::string out;
-	utf8::utf16to8(extension, extension + wcslen(extension), std::back_inserter(out));
-	return out;
+	std::wstring str = Utf8ToWchar(path.str());
+	LPWSTR fileName = PathFindFileName(str.c_str());
+	return WcharToUtf8(fileName);
 }
 
 };
