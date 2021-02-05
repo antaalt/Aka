@@ -31,7 +31,7 @@ void TileMapSystem::draw(Batch& batch)
             int32_t atlasIDUnique = layer->tileID[i];
             if (atlasIDUnique == -1)
                 continue;
-            vec2u atlasID = vec2u(atlasIDUnique % atlas->gridCount.x, atlasIDUnique / atlas->gridCount.x);
+            vec2u atlasID = vec2u(atlasIDUnique % atlas->gridCount.x, atlas->gridCount.y - 1 - atlasIDUnique / atlas->gridCount.x);
             uv2f start = uv2f(vec2f(atlasID) / vec2f(atlas->gridCount));
             uv2f end = start + uv2f(vec2f(1.f) / vec2f(atlas->gridCount));
             batch.draw(transform->model, Batch::Rect(position, size, start, end, atlas->texture, layer->layer));

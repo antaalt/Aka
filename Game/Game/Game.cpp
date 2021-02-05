@@ -194,7 +194,7 @@ void Game::render()
 			col4f(0.f, 0.f, 1.f, 0.f),
 			col4f(camera->position.x, camera->position.y, 0.f, 1.f)
 		));
-		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(m_framebuffer->height()), 0.f, static_cast<float>(m_framebuffer->width()), -1.f, 1.f);
+		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(m_framebuffer->height()), 0.f, static_cast<float>(m_framebuffer->width()));
 		m_framebuffer->clear(1.f, 0.63f, 0.f, 1.f); 
 		m_world.draw(m_batch);
 		m_batch.render(m_framebuffer, view, projection);
@@ -206,7 +206,7 @@ void Game::render()
 		// Blit to backbuffer
 		GraphicBackend::backbuffer()->clear(0.f, 0.f, 0.f, 1.f);
 		mat4f view = mat4f::identity();
-		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(GraphicBackend::backbuffer()->height()), 0.f, static_cast<float>(GraphicBackend::backbuffer()->width()), -1.f, 1.f);
+		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(GraphicBackend::backbuffer()->height()), 0.f, static_cast<float>(GraphicBackend::backbuffer()->width()));
 		m_batch.draw(mat3f::scale(vec2f((float)GraphicBackend::backbuffer()->width(), (float)GraphicBackend::backbuffer()->height())), Batch::Rect(vec2f(0), vec2f(1.f), m_framebuffer->attachment(Framebuffer::AttachmentType::Color0), 0));
 		m_batch.render(GraphicBackend::backbuffer(), view, projection);
 		m_batch.clear();

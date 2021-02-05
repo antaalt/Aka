@@ -15,6 +15,9 @@ Image Image::load(const Path& path)
 {
 	Image image{};
 	int x, y, channel;
+#if defined(AKA_USE_OPENGL)
+	stbi_set_flip_vertically_on_load(true);
+#endif
 	stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
@@ -34,6 +37,9 @@ Image Image::load(const uint8_t* binaries, size_t size)
 {
 	Image image{};
 	int x, y, channel;
+#if defined(AKA_USE_OPENGL)
+	stbi_set_flip_vertically_on_load(true);
+#endif
 	stbi_uc* data = stbi_load_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
