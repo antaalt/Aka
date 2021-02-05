@@ -289,6 +289,49 @@ std::vector<norm3f> generateNormal(const vec3f *vertices, size_t vertexCount, co
 	}
 	return normals;
 }
+void flipIndices(IndexFormat format, void *voidIndices, size_t indexCount)
+{
+	ASSERT(indexCount % 3 == 0, "Incomplete triangles");
+	switch (format)
+	{
+	case IndexFormat::UnsignedByte: {
+		uint8_t* indices = reinterpret_cast<uint8_t*>(voidIndices);
+		uint8_t tmp;
+		for (size_t i = 0; i < indexCount / 3; i++)
+		{
+			tmp = indices[i * 3 + 2];
+			indices[i * 3 + 2] = indices[i * 3 + 1];
+			indices[i * 3 + 1] = tmp;
+		}
+		break;
+	}
+	case IndexFormat::UnsignedShort: {
+		uint16_t* indices = reinterpret_cast<uint16_t*>(voidIndices);
+		uint16_t tmp;
+		for (size_t i = 0; i < indexCount / 3; i++)
+		{
+			tmp = indices[i * 3 + 2];
+			indices[i * 3 + 2] = indices[i * 3 + 1];
+			indices[i * 3 + 1] = tmp;
+		}
+		break;
+	}
+	case IndexFormat::UnsignedInt: {
+		uint32_t* indices = reinterpret_cast<uint32_t*>(voidIndices);
+		uint32_t tmp;
+		for (size_t i = 0; i < indexCount / 3; i++)
+		{
+			tmp = indices[i * 3 + 2];
+			indices[i * 3 + 2] = indices[i * 3 + 1];
+			indices[i * 3 + 1] = tmp;
+		}
+		break;
+	}
+	default:
+		Logger::error("Unsupported type. Cannot flip indices.");
+		break;
+	}
+}
 
 Mesh::Ptr convertMesh(const tinygltf::Model& tinyModel, const tinygltf::Primitive& primitive, BoundingBox &bbox, const mat4f &t)
 {
@@ -300,9 +343,10 @@ Mesh::Ptr convertMesh(const tinygltf::Model& tinyModel, const tinygltf::Primitiv
 	vertData.attributes.push_back(VertexData::Attribute{ 2, VertexFormat::Float, VertexType::Vec2 });
 	vertData.attributes.push_back(VertexData::Attribute{ 3, VertexFormat::Float, VertexType::Vec4 });
 	std::vector<Vertex> vertices; // TODO do not force a layout.
+	bool flipVert = false;
 	// Index
 	aka::IndexFormat index = aka::IndexFormat::UnsignedByte;
-	const void* indices = nullptr;
+	std::vector<uint8_t> indices;
 	size_t indexCount = 0;
 	{
 		// Indices
@@ -312,9 +356,19 @@ Mesh::Ptr convertMesh(const tinygltf::Model& tinyModel, const tinygltf::Primitiv
 			ASSERT(accessor.type == TINYGLTF_TYPE_SCALAR, "Only scalar supported for index");
 			const tinygltf::BufferView& bufferView = tinyModel.bufferViews[accessor.bufferView];
 			const tinygltf::Buffer& buffer = tinyModel.buffers[bufferView.buffer];
+			const unsigned char *data = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
 			index = indexFormat(accessor.componentType);
-			indices = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
 			indexCount = accessor.count;
+			indices.resize(size(index) * indexCount);
+			memcpy(indices.data(), data, indices.size());
+#if defined(GEOMETRY_LEFT_HANDED)
+			ASSERT(accessor.ByteStride(bufferView) == size(index), "");
+			flipIndices(index, indices.data(), indexCount);
+#endif
+		}
+		else
+		{
+			flipVert = true;
 		}
 	}
 	{
@@ -333,7 +387,7 @@ Mesh::Ptr convertMesh(const tinygltf::Model& tinyModel, const tinygltf::Primitiv
 		// Normal
 		if (stridedData[1].data == nullptr)
 		{
-			normals = generateNormal(reinterpret_cast<const vec3f*>(stridedData[0].data), stridedData[0].count, indices, index, indexCount);
+			normals = generateNormal(reinterpret_cast<const vec3f*>(stridedData[0].data), stridedData[0].count, indices.data(), index, indexCount);
 			stridedData[1].data = reinterpret_cast<uint8_t*>(normals.data());
 			stridedData[1].count = normals.size();
 			stridedData[1].stride = sizeof(vec3f);
@@ -357,19 +411,37 @@ Mesh::Ptr convertMesh(const tinygltf::Model& tinyModel, const tinygltf::Primitiv
 
 		// --- Create vertex
 		vertices.resize(count);
-		for (size_t iVert = 0; iVert < count; iVert++)
+		if (flipVert)
 		{
-			Vertex& v = vertices[iVert];
-			memcpy(v.position.data, stridedData[0].get(iVert), sizeof(float) * 3);
-			memcpy(v.normal.data, stridedData[1].get(iVert), sizeof(float) * 3);
-			memcpy(v.uv.data, stridedData[2].get(iVert), sizeof(float) * 2);
-			memcpy(v.color.data, stridedData[3].get(iVert), sizeof(float) * 4);
-			bbox.include(t.multiplyPoint(v.position));
+			uint8_t id[3] = { 0,2,1 };
+			for (size_t iVert = 0; iVert < count; iVert++)
+			{
+				size_t i = iVert / 3;
+				size_t i2 = iVert % 3;
+				Vertex& v = vertices[i + id[i2]];
+				memcpy(v.position.data, stridedData[0].get(iVert), sizeof(float) * 3);
+				memcpy(v.normal.data, stridedData[1].get(iVert), sizeof(float) * 3);
+				memcpy(v.uv.data, stridedData[2].get(iVert), sizeof(float) * 2);
+				memcpy(v.color.data, stridedData[3].get(iVert), sizeof(float) * 4);
+				bbox.include(t.multiplyPoint(v.position));
+			}
+		}
+		else
+		{
+			for (size_t iVert = 0; iVert < count; iVert++)
+			{
+				Vertex& v = vertices[iVert];
+				memcpy(v.position.data, stridedData[0].get(iVert), sizeof(float) * 3);
+				memcpy(v.normal.data, stridedData[1].get(iVert), sizeof(float) * 3);
+				memcpy(v.uv.data, stridedData[2].get(iVert), sizeof(float) * 2);
+				memcpy(v.color.data, stridedData[3].get(iVert), sizeof(float) * 4);
+				bbox.include(t.multiplyPoint(v.position));
+			}
 		}
 	}
 	mesh->vertices(vertData, vertices.data(), vertices.size());
-	if (indices != nullptr)
-		mesh->indices(index, indices, indexCount);
+	if (indices.size() > 0)
+		mesh->indices(index, indices.data(), indexCount);
 	return mesh;
 }
 
