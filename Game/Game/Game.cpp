@@ -31,12 +31,17 @@ Game::Game() :
 }
 void Game::initialize()
 {
+	Device device = Device::getDefault();
+	Logger::info("Device vendor : ", device.vendor);
+	Logger::info("Device renderer : ", device.renderer);
+	Logger::info("Device memory : ", device.memory);
+	Logger::info("Device version : ", device.version);
+
 	Sampler sampler;
 	sampler.filterMag = aka::Sampler::Filter::Nearest;
 	sampler.filterMin = aka::Sampler::Filter::Nearest;
 	sampler.wrapS = aka::Sampler::Wrap::Clamp;
 	sampler.wrapT = aka::Sampler::Wrap::Clamp;
-	Logger::debug.mute();
 	{
 		// INI SYSTEMS
 		m_world.createSystem<PhysicSystem>();
@@ -181,6 +186,12 @@ void Game::update(Time::Unit deltaTime)
 
 		}
 	});
+
+	// Quit the app if requested
+	if (input::pressed(aka::input::Key::Escape))
+	{
+		quit();
+	}
 }
 
 void Game::render()
@@ -206,8 +217,8 @@ void Game::render()
 		// Blit to backbuffer
 		GraphicBackend::backbuffer()->clear(0.f, 0.f, 0.f, 1.f);
 		mat4f view = mat4f::identity();
-		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(GraphicBackend::backbuffer()->height()), 0.f, static_cast<float>(GraphicBackend::backbuffer()->width()));
-		m_batch.draw(mat3f::scale(vec2f((float)GraphicBackend::backbuffer()->width(), (float)GraphicBackend::backbuffer()->height())), Batch::Rect(vec2f(0), vec2f(1.f), m_framebuffer->attachment(Framebuffer::AttachmentType::Color0), 0));
+		mat4f projection = mat4f::orthographic(0.f, static_cast<float>(height()), 0.f, static_cast<float>(width()));
+		m_batch.draw(mat3f::scale(vec2f((float)width(), (float)height())), Batch::Rect(vec2f(0), vec2f(1.f), m_framebuffer->attachment(Framebuffer::AttachmentType::Color0), 0));
 		m_batch.render(GraphicBackend::backbuffer(), view, projection);
 		m_batch.clear();
 	}
@@ -219,11 +230,6 @@ void Game::render()
 		m_gui.render();
 	}
 
-}
-
-bool Game::running()
-{
-	return !input::pressed(input::Key::Escape);
 }
 
 }

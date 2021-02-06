@@ -14,7 +14,6 @@ public:
 	void destroy() override;
 	void update(Time::Unit deltaTime) override;
 	void render() override;
-	bool running() override;
 private:
 	aka::ShaderMaterial::Ptr m_material;
 	aka::Shader::Ptr m_shader;

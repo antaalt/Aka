@@ -88,6 +88,11 @@ void Viewer::update(aka::Time::Unit deltaTime)
 		Logger::info("Reloading shaders...");
 		loadShader();
 	}
+	// Quit the app if requested
+	if (aka::input::pressed(aka::input::Key::Escape))
+	{
+		quit();
+	}
 }
 
 void Viewer::render()
@@ -125,11 +130,6 @@ void Viewer::render()
 		};
 		renderPass.execute();
 	}
-}
-
-bool Viewer::running()
-{
-	return !aka::input::pressed(aka::input::Key::Escape);
 }
 
 };

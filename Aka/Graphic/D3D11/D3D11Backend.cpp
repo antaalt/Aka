@@ -326,6 +326,12 @@ std::vector<D3D11Sampler> D3D11Sampler::cache;
 std::vector<D3D11Depth> D3D11Depth::cache;
 std::vector<D3D11Blend> D3D11Blend::cache;
 
+void SetDebugName(ID3D11DeviceChild* child, const std::string& name)
+{
+	if (child != nullptr)
+		child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.c_str());
+}
+
 class D3D11Texture : public Texture
 {
 public:
@@ -619,12 +625,13 @@ public:
 	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
 		Framebuffer(width, height),
 		m_swapChain(sc),
-		m_texture(nullptr),
 		m_renderTargetView(nullptr),
 		m_depthStencilView(nullptr)
 	{
-		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_texture));
-		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(m_texture, nullptr, &m_renderTargetView));
+		ID3D11Texture2D* texture = nullptr;
+		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&texture));
+		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
+		texture->Release();
 
 		// Initialize the description of the depth buffer.
 		D3D11_TEXTURE2D_DESC depthBufferDesc{};
@@ -656,8 +663,6 @@ public:
 	D3D11BackBuffer& operator=(const D3D11BackBuffer&) = delete;
 	~D3D11BackBuffer()
 	{
-		if (m_texture)
-			m_texture->Release();
 		if (m_depthStencilView)
 			m_depthStencilView->Release();
 		if (m_depthStencilBuffer)
@@ -668,14 +673,16 @@ public:
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-		m_texture->Release();
 		m_renderTargetView->Release();
 		m_depthStencilBuffer->Release();
 		m_depthStencilView->Release();
-		m_swapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_texture));
-		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(m_texture, nullptr, &m_renderTargetView));
 
+		m_swapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+
+		ID3D11Texture2D* texture = nullptr;
+		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&texture));
+		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
+		texture->Release();
 		// Initialize the description of the depth buffer.
 		D3D11_TEXTURE2D_DESC depthBufferDesc{};
 		// Set up the description of the depth buffer.
@@ -727,7 +734,6 @@ public:
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
 private:
 	IDXGISwapChain* m_swapChain;
-	ID3D11Texture2D* m_texture;
 	ID3D11RenderTargetView* m_renderTargetView;
 	ID3D11DepthStencilView* m_depthStencilView;
 	ID3D11Texture2D* m_depthStencilBuffer;
@@ -1144,6 +1150,8 @@ public:
 					}
 				}
 			}
+			m_vertexUniformValues.resize(m_vertexUniformBuffers.size());
+			m_fragmentUniformValues.resize(m_fragmentUniformBuffers.size());
 		}
 		size_t bufferSize = 0;
 		size_t textureCount = 0;
@@ -1193,7 +1201,7 @@ public:
 			buffer->Release();
 	}
 public:
-	void apply() const
+	void apply()
 	{
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
 		d3dShader->use();
@@ -1201,9 +1209,6 @@ public:
 		size_t offset = 0;
 		size_t offsetFrag = 0;
 		size_t offsetVert = 0;
-		// TODO create at first and store.
-		std::vector<std::vector<float>> m_vertexUniformValues(m_vertexUniformBuffers.size());
-		std::vector<std::vector<float>> m_fragmentUniformValues(m_fragmentUniformBuffers.size());
 		for (const Uniform& uniform : m_uniforms)
 		{
 			const bool isVertex = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
@@ -1332,6 +1337,8 @@ public:
 private:
 	std::vector<ID3D11Buffer*> m_vertexUniformBuffers;
 	std::vector<ID3D11Buffer*> m_fragmentUniformBuffers;
+	std::vector<std::vector<float>> m_vertexUniformValues;
+	std::vector<std::vector<float>> m_fragmentUniformValues;
 };
 
 
@@ -1339,9 +1346,7 @@ static std::shared_ptr<D3D11BackBuffer> s_backbuffer = nullptr;
 
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
-	Device device = getDevice(0);
-	Logger::info("Device : ", device.vendor, " - ", device.memory);
-
+	Device device = Device::getDefault();
 	// --- SwapChain ---
 	// Initialize the swap chain description.
 	DXGI_SWAP_CHAIN_DESC swapChainDesc{};
@@ -1448,6 +1453,12 @@ GraphicApi GraphicBackend::api()
 void GraphicBackend::resize(uint32_t width, uint32_t height)
 {
 	s_backbuffer->resize(width, height);
+}
+
+void GraphicBackend::getSize(uint32_t* width, uint32_t* height)
+{
+	*width = s_backbuffer->width();
+	*height = s_backbuffer->height();
 }
 
 void GraphicBackend::frame()

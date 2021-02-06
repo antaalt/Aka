@@ -18,7 +18,6 @@ public:
 	void frame() override;
 	void update(Time::Unit deltaTime) override;
 	void render() override;
-	bool running() override;
 private:
 	// UI
 	GUI m_gui;

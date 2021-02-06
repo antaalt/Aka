@@ -413,36 +413,36 @@ void PlatformBackend::initialize(const Config& config)
 	// --- Callbacks ---
 	// --- Size
 	glfwSetWindowSizeCallback(ctx.window, [](GLFWwindow* window, int width, int height) {
-		Logger::info("[GLFW] New window size : ", width, "x", height);
+		Logger::debug("[GLFW] New window size : ", width, "x", height);
 	});
 	glfwSetFramebufferSizeCallback(ctx.window, [](GLFWwindow* window, int width, int height) {
 		GraphicBackend::resize(width, height);
-		Logger::info("[GLFW] New framebuffer size : ", width, " - ", height);
+		Logger::debug("[GLFW] New framebuffer size : ", width, " - ", height);
 	});
 	glfwSetWindowContentScaleCallback(ctx.window, [](GLFWwindow* window, float x, float y) {
-		Logger::info("[GLFW] Content scaled : ", x, " - ", y);
+		Logger::debug("[GLFW] Content scaled : ", x, " - ", y);
 	});
 	glfwSetWindowMaximizeCallback(ctx.window, [](GLFWwindow* window, int maximized) {
 		// Called when window is maximized or unmaximized
-		Logger::info("[GLFW] Maximized : ", maximized);
+		Logger::debug("[GLFW] Maximized : ", maximized);
 	});
 	// --- Window
 	glfwSetWindowFocusCallback(ctx.window, [](GLFWwindow* window, int focus) {
-		Logger::info("[GLFW] Focus : ", focus);
+		Logger::debug("[GLFW] Focus : ", focus);
 	});
 	glfwSetWindowRefreshCallback(ctx.window, [](GLFWwindow* window) {
-		Logger::info("[GLFW] Window refresh");
+		Logger::debug("[GLFW] Window refresh");
 	});
 	glfwSetWindowIconifyCallback(ctx.window, [](GLFWwindow* window, int iconified) {
-		Logger::info("[GLFW] Iconify : ", iconified);
+		Logger::debug("[GLFW] Iconify : ", iconified);
 	});
 	glfwSetWindowCloseCallback(ctx.window, [](GLFWwindow* window) {
-		Logger::info("[GLFW] Closing window ");
+		Logger::debug("[GLFW] Closing window ");
 	});
 	// --- Monitor
 	glfwSetMonitorCallback([](GLFWmonitor* monitor, int event) {
 		// GLFW_CONNECTED or GLFW_DISCONNECTED
-		Logger::info("[GLFW] Monitor event : ", event);
+		Logger::debug("[GLFW] Monitor event : ", event);
 	});
 	// --- Inputs
 	glfwSetKeyCallback(ctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -472,11 +472,11 @@ void PlatformBackend::initialize(const Config& config)
 	});
 	glfwSetCursorEnterCallback(ctx.window, [](GLFWwindow* window, int entered) {
 		// GLFW_TRUE if entered, GLFW_FALSE if left
-		Logger::info("[GLFW] Cursor enter : ", entered);
+		Logger::debug("[GLFW] Cursor enter : ", entered);
 	});
 	glfwSetJoystickCallback([](int jid, int event) {
 		// event : GLFW_CONNECTED, GLFW_DISCONNECTED
-		Logger::info("[GLFW] Joystick event", event);
+		Logger::debug("[GLFW] Joystick event", event);
 	});
 }
 
@@ -485,7 +485,7 @@ void PlatformBackend::destroy()
 	glfwTerminate();
 }
 
-void PlatformBackend::frame()
+void PlatformBackend::update()
 {
 	glfwPollEvents();
 }

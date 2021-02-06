@@ -9,7 +9,7 @@ class InputBackend
 public:
 	static void initialize();
 	static void destroy();
-	static void frame();
+	static void update();
 private:
 	friend class PlatformBackend;
 	static void onKeyDown(input::Key key);

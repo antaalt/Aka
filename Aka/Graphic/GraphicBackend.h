@@ -36,6 +36,8 @@ public:
 	static void destroy();
 	// Resize the graphic swapchain
 	static void resize(uint32_t width, uint32_t height);
+	// Get the size of the backbuffer
+	static void getSize(uint32_t* width, uint32_t* height);
 public:
 	// Start a new frame
 	static void frame();

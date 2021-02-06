@@ -17,23 +17,34 @@ struct Config {
 class Application
 {
 public:
-	Application() {}
+	Application() : m_running(true), m_width(0), m_height(0) {}
 	virtual ~Application() {}
 	// Initialize the app, set the listener on inputs, create resources...
-	virtual void initialize() {};
+	virtual void initialize() {}
 	// Destroy everything related to the app.
-	virtual void destroy() {};
+	virtual void destroy() {}
 	// Create a new frame for the app
-	virtual void frame() {};
+	virtual void frame() {}
 	// Update the app.
-	virtual void update(Time::Unit deltaTime) {};
+	virtual void update(Time::Unit deltaTime) {}
 	// Render the app.
-	virtual void render() {};
-	// Is the app running
-	virtual bool running() { return true; };
+	virtual void render() {}
+	// On app resize
+	virtual void resize(uint32_t width, uint32_t height) {}
+public:
+	// Request to quit the app
+	void quit() { m_running = false; }
+	// Get the draw width of the app
+	uint32_t width() const { return m_width; }
+	// Get the draw height of the app
+	uint32_t height() const { return m_height; }
 public:
 	// Entry point of the application
 	static void run(const Config& config);
+private:
+	bool m_running; // Is the app running
+	uint32_t m_width;
+	uint32_t m_height;
 };
 
 }

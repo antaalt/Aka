@@ -55,60 +55,47 @@ void APIENTRY openglCallbackFunction(
 	case GL_DEBUG_TYPE_PERFORMANCE:
 		errorType = "performance";
 		break;
+	default:
 	case GL_DEBUG_TYPE_OTHER:
 		errorType = "other";
 		break;
 	}
 	switch (severity) {
+	default:
 	case GL_DEBUG_SEVERITY_LOW:
-		aka::Logger::debug("[", errorType, "][low] ", message);
+		aka::Logger::debug("[GL][", errorType, "][low] ", message);
 		break;
 	case GL_DEBUG_SEVERITY_MEDIUM:
-		aka::Logger::warn("[", errorType, "][medium] ", message);
+		aka::Logger::warn("[GL][", errorType, "][medium] ", message);
 		break;
 	case GL_DEBUG_SEVERITY_HIGH:
-		aka::Logger::error("[", errorType, "][high] ", message);
+		aka::Logger::error("[GL][", errorType, "][high] ", message);
 		break;
 	}
 }
 
-uint32_t checkError_(const char* file, int line)
+std::string glGetErrorString(GLenum error)
 {
-	GLenum errorCode;
-	while ((errorCode = glGetError()) != GL_NO_ERROR)
+	switch (error)
 	{
-		std::string error;
-		switch (errorCode)
-		{
-		case GL_INVALID_ENUM:
-			error = "INVALID_ENUM";
-			break;
-		case GL_INVALID_VALUE:
-			error = "INVALID_VALUE";
-			break;
-		case GL_INVALID_OPERATION:
-			error = "INVALID_OPERATION";
-			break;
-		case GL_STACK_OVERFLOW:
-			error = "STACK_OVERFLOW";
-			break;
-		case GL_STACK_UNDERFLOW:
-			error = "STACK_UNDERFLOW";
-			break;
-		case GL_OUT_OF_MEMORY:
-			error = "OUT_OF_MEMORY";
-			break;
-		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			error = "INVALID_FRAMEBUFFER_OPERATION";
-			break;
-		}
-		std::cerr << error << " | " << file << " (" << line << ")" << std::endl;
-		throw std::runtime_error("Error");
+	case GL_INVALID_ENUM:
+		return "INVALID_ENUM";
+	case GL_INVALID_VALUE:
+		return "INVALID_VALUE";
+	case GL_INVALID_OPERATION:
+		return "INVALID_OPERATION";
+	case GL_STACK_OVERFLOW:
+		return "STACK_OVERFLOW";
+	case GL_STACK_UNDERFLOW:
+		return "STACK_UNDERFLOW";
+	case GL_OUT_OF_MEMORY:
+		return "OUT_OF_MEMORY";
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return "INVALID_FRAMEBUFFER_OPERATION";
+	default:
+		return "ERROR_UNKNOWN";
 	}
-	return errorCode;
 }
-
-#define checkError() checkError_(__FILE__, __LINE__)
 
 namespace aka {
 
@@ -767,12 +754,6 @@ GLContext ctx;
 
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
-	Device device = getDevice(0);
-	Logger::info("Device vendor : ", device.vendor);
-	Logger::info("Device renderer : ", device.renderer);
-	Logger::info("Device memory : ", device.memory);
-	Logger::info("Device version : ", device.version);
-
 #if !defined(__APPLE__)
 	glewExperimental = true; // Nécessaire dans le profil de base
 	if (glewInit() != GLEW_OK) {
@@ -782,7 +763,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 
 #if defined(DEBUG)
 	if (glDebugMessageCallback) {
-		Logger::info("Setting up openGL callback.");
+		Logger::debug("Setting up openGL callback.");
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(openglCallbackFunction, nullptr);
 		GLuint unused = 0;
@@ -818,12 +799,23 @@ void GraphicBackend::resize(uint32_t width, uint32_t height)
 	ctx.backbuffer->resize(width, height);
 }
 
+void GraphicBackend::getSize(uint32_t* width, uint32_t* height)
+{
+	*width = ctx.backbuffer->width();
+	*height = ctx.backbuffer->height();
+}
+
 void GraphicBackend::frame()
 {
 }
 
 void GraphicBackend::present()
 {
+#if defined(DEBUG)
+	GLenum errorCode;
+	while ((errorCode = glGetError()) != GL_NO_ERROR)
+		Logger::error("[GL] Error during frame : ", glGetErrorString(errorCode));
+#endif
 	glfwSwapBuffers(PlatformBackend::getGLFW3Handle());
 }
 

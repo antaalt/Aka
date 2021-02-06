@@ -173,7 +173,7 @@ void InputBackend::destroy()
 
 }
 
-void InputBackend::frame()
+void InputBackend::update()
 {
 	for (uint32_t iKey = 0; iKey < input::g_keyboardKeyCount; iKey++)
 		input::keyboard.down[iKey] = false;
