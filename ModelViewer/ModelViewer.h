@@ -16,6 +16,7 @@ public:
 	void render() override;
 	bool running() override;
 private:
+	aka::ShaderMaterial::Ptr m_material;
 	aka::Shader::Ptr m_shader;
 	Model::Ptr m_model;
 	ArcballCamera m_camera;

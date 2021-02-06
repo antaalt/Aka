@@ -3,6 +3,7 @@
 #include "Framebuffer.h"
 #include "Mesh.h"
 #include "Shader.h"
+#include "ShaderMaterial.h"
 
 namespace aka {
 
@@ -100,10 +101,8 @@ struct RenderPass
 	uint32_t indexOffset;
 	// Count of index in mesh
 	uint32_t indexCount;
-	// Texture to use (use material instead to handle other parameters)
-	Texture::Ptr texture;
-	// Shader for mesh
-	Shader::Ptr shader;
+	// Material for mesh
+	ShaderMaterial::Ptr material;
 	// Blending for alpha operation
 	Blending blend;
 	// Culling mode for triangle face

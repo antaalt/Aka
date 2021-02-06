@@ -361,71 +361,6 @@ public:
 			glDetachShader(m_programID, comp);
 			glDeleteShader(comp);
 		}
-
-		GLint active_uniforms = 0;
-		glGetProgramiv(m_programID, GL_ACTIVE_UNIFORMS, &active_uniforms);
-		for (GLint iUniform = 0; iUniform < active_uniforms; iUniform++)
-		{
-			GLsizei length;
-			GLsizei size;
-			GLenum type;
-			GLchar name[257];
-			glGetActiveUniform(m_programID, iUniform, 256, &length, &size, &type, name);
-			name[length] = '\0';
-			switch (type)
-			{
-			case GL_SAMPLER_2D: {
-				Uniform texUniform;
-				texUniform.id = UniformID(glGetUniformLocation(m_programID, name));
-				texUniform.name = name;
-				texUniform.bufferIndex = 0;
-				texUniform.arrayLength = size;
-				texUniform.type = UniformType::Texture2D;
-				texUniform.shaderType = ShaderType::Fragment;
-				m_uniforms.push_back(texUniform);
-				// TODO add sampler
-				break;
-			}
-			case GL_FLOAT:
-			case GL_FLOAT_VEC2:
-			case GL_FLOAT_VEC3:
-			case GL_FLOAT_VEC4:
-			case GL_FLOAT_MAT3:
-			case GL_FLOAT_MAT4: {
-				Uniform uniform;
-				uniform.id = UniformID(glGetUniformLocation(m_programID, name));
-				uniform.name = name;
-				uniform.type = UniformType::None;
-				uniform.bufferIndex = 0;
-				uniform.arrayLength = size;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-
-				if (type == GL_FLOAT)
-					uniform.type = UniformType::Vec;
-				else if (type == GL_FLOAT_VEC2)
-					uniform.type = UniformType::Vec2;
-				else if (type == GL_FLOAT_VEC3)
-					uniform.type = UniformType::Vec3;
-				else if (type == GL_FLOAT_VEC4)
-					uniform.type = UniformType::Vec4;
-				else if (type == GL_FLOAT_MAT3)
-					uniform.type = UniformType::Mat3;
-				else if (type == GL_FLOAT_MAT4)
-					uniform.type = UniformType::Mat4;
-				else
-				{
-					Logger::error("Unsupported Uniform Type : ", type);
-					break;
-				}
-				m_uniforms.push_back(uniform);
-				break;
-			}
-			default:
-				Logger::warn("Unsupported Uniform Type : ", type);
-				break;
-			}
-		}
-
 		glValidateProgram(m_programID);
 	}
 	GLShader(const GLShader&) = delete;
@@ -436,82 +371,137 @@ public:
 			glDeleteProgram(m_programID);
 	}
 public:
-	void use() override
-	{
-		glUseProgram(m_programID);
-	}
-	void setFloat1(const char* name, float value) override
-	{
-		glUseProgram(m_programID);
-		glUniform1f((GLint)getUniformID(name).value(), value);
-	}
-	void setFloat2(const char* name, float x, float y) override
-	{
-		glUseProgram(m_programID);
-		glUniform2f((GLint)getUniformID(name).value(), x, y);
-	}
-	void setFloat3(const char* name, float x, float y, float z) override
-	{
-		glUseProgram(m_programID);
-		glUniform3f((GLint)getUniformID(name).value(), x, y, z);
-	}
-	void setFloat4(const char* name, float x, float y, float z, float w) override
-	{
-		glUseProgram(m_programID);
-		glUniform4f((GLint)getUniformID(name).value(), x, y, z, w);
-	}
-	void setUint1(const char* name, uint32_t value) override
-	{
-		glUseProgram(m_programID);
-		glUniform1ui((GLint)getUniformID(name).value(), value);
-	}
-	void setUint2(const char* name, uint32_t x, uint32_t y) override
-	{
-		glUseProgram(m_programID);
-		glUniform2ui((GLint)getUniformID(name).value(), x, y);
-	}
-	void setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z) override
-	{
-		glUseProgram(m_programID);
-		glUniform3ui((GLint)getUniformID(name).value(), x, y, z);
-	}
-	void setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w) override
-	{
-		glUseProgram(m_programID);
-		glUniform4ui((GLint)getUniformID(name).value(), x, y, z, w);
-	}
-	void setInt1(const char* name, int32_t value) override
-	{
-		glUseProgram(m_programID);
-		glUniform1i((GLint)getUniformID(name).value(), value);
-	}
-	void setInt2(const char* name, int32_t x, int32_t y) override
-	{
-		glUseProgram(m_programID);
-		glUniform2i((GLint)getUniformID(name).value(), x, y);
-	}
-	void setInt3(const char* name, int32_t x, int32_t y, int32_t z) override
-	{
-		glUseProgram(m_programID);
-		glUniform3i((GLint)getUniformID(name).value(), x, y, z);
-	}
-	void setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w) override
-	{
-		glUseProgram(m_programID);
-		glUniform4i((GLint)getUniformID(name).value(), x, y, z, w);
-	}
-	void setMatrix3(const char* name, const float* data, bool transpose) override
-	{
-		glUseProgram(m_programID);
-		glUniformMatrix3fv((GLint)getUniformID(name).value(), 1, transpose, data);
-	}
-	void setMatrix4(const char* name, const float* data, bool transpose) override
-	{
-		glUseProgram(m_programID);
-		glUniformMatrix4fv((GLint)getUniformID(name).value(), 1, transpose, data);
-	}
+	GLuint getProgramID() const { return m_programID; }
 private:
 	GLuint m_programID;
+};
+
+class GLShaderMaterial : public ShaderMaterial
+{
+public:
+	GLShaderMaterial(Shader::Ptr shader) :
+		ShaderMaterial(shader)
+	{
+		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
+		GLint activeUniforms = 0;
+		uint32_t bufferSize = 0;
+		uint32_t textureCount = 0;
+		glGetProgramiv(glShader->getProgramID(), GL_ACTIVE_UNIFORMS, &activeUniforms);
+		for (GLint iUniform = 0; iUniform < activeUniforms; iUniform++)
+		{
+			GLsizei length;
+			GLsizei size;
+			GLenum type;
+			GLchar name[257];
+			glGetActiveUniform(glShader->getProgramID(), iUniform, 256, &length, &size, &type, name);
+			name[length] = '\0';
+
+			Uniform uniform;
+			uniform.id = UniformID(glGetUniformLocation(glShader->getProgramID(), name));
+			uniform.name = name;
+			uniform.bufferIndex = 0;
+			uniform.arrayLength = size;
+			switch (type)
+			{
+			case GL_SAMPLER_2D:
+				uniform.type = UniformType::Texture2D;
+				uniform.shaderType = ShaderType::Fragment;
+				// TODO add sampler
+				textureCount++;
+				break;
+			case GL_FLOAT:
+				uniform.type = UniformType::Vec;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 1;
+				break;
+			case GL_FLOAT_VEC2:
+				uniform.type = UniformType::Vec2;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 2;
+				break;
+			case GL_FLOAT_VEC3:
+				uniform.type = UniformType::Vec3;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 4;
+				break;
+			case GL_FLOAT_VEC4:
+				uniform.type = UniformType::Vec4;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 4;
+				break;
+			case GL_FLOAT_MAT3:
+				uniform.type = UniformType::Mat3;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 9;
+				break;
+			case GL_FLOAT_MAT4:
+				uniform.type = UniformType::Mat4;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 16;
+				break;
+			default:
+				Logger::warn("Unsupported Uniform Type : ", name);
+				break;
+			}
+			m_uniforms.push_back(uniform);
+		}
+		m_data.resize(bufferSize, 0.f);
+		m_textures.resize(textureCount, nullptr);
+	}
+	GLShaderMaterial(const GLShaderMaterial&) = delete;
+	const GLShaderMaterial& operator=(const GLShaderMaterial&) = delete;
+	~GLShaderMaterial()
+	{
+	}
+public:
+	void use() const
+	{
+		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
+		GLint textureUnit = 0;
+		size_t offset = 0;
+		glUseProgram(glShader->getProgramID());
+		for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
+		{
+			const Uniform& uniform = m_uniforms[iUniform];
+			if (uniform.type == UniformType::None)
+				continue;
+			else if (uniform.type == UniformType::Texture2D)
+			{
+				Texture::Ptr texture = m_textures[textureUnit];
+				glUniform1i((GLint)uniform.id.value(), textureUnit);
+				glActiveTexture(GL_TEXTURE0 + textureUnit);
+				if(texture != nullptr)
+					glBindTexture(GL_TEXTURE_2D, (GLint)texture->handle().value());
+				else
+					glBindTexture(GL_TEXTURE_2D, 0);
+				textureUnit++;
+			}
+			else if (uniform.type == UniformType::Sampler2D)
+			{
+				// TODO store sampler
+			}
+			else if (uniform.type == UniformType::Mat4)
+			{
+				glUniformMatrix4fv((GLint)uniform.id.value(), 1, false, &m_data[offset]);
+				offset += 16 * uniform.arrayLength;
+			}
+			else if (uniform.type == UniformType::Mat3)
+			{
+				glUniformMatrix3fv((GLint)uniform.id.value(), 1, false, &m_data[offset]);
+				offset += 9 * uniform.arrayLength;
+			}
+			else if (uniform.type == UniformType::Vec4)
+			{
+				for(uint32_t i = 0; i < uniform.arrayLength; i++)
+					glUniform4f((GLint)uniform.id.value(), m_data[offset + 4 * i + 0], m_data[offset + 4 * i + 1], m_data[offset + 4 * i + 2], m_data[offset + 4 * i + 3]);
+				offset += 4 * uniform.arrayLength;
+			}
+			else
+			{
+				Logger::error("Unsupported uniform type : ", (int)uniform.type);
+			}
+		}
+	}
 };
 
 class GLTexture : public Texture
@@ -974,12 +964,8 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Shader
-		pass.shader->use();
-		if (pass.texture != nullptr)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, (GLuint)pass.texture->handle().value());
-		}
+		GLShaderMaterial* material = (GLShaderMaterial*)pass.material.get();
+		material->use();
 	}
 	{
 		// Mesh
@@ -1071,6 +1057,12 @@ Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, ShaderID 
 {
 	return std::make_shared<GLShader>(vert, frag, compute, attributes);
 }
+
+ShaderMaterial::Ptr aka::GraphicBackend::createShaderMaterial(Shader::Ptr shader)
+{
+	return std::make_shared<GLShaderMaterial>(shader);
+}
+
 
 };
 #endif

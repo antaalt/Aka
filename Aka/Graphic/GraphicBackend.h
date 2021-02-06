@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "Device.h"
 #include "Shader.h"
+#include "ShaderMaterial.h"
 #include "Framebuffer.h"
 #include "Mesh.h"
 #include "RenderPass.h"
@@ -74,6 +75,9 @@ protected:
 	friend class Shader;
 	static ShaderID compile(const char* content, ShaderType type);
 	static Shader::Ptr createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes);
+
+	friend class ShaderMaterial;
+	static ShaderMaterial::Ptr createShaderMaterial(Shader::Ptr shader);
 };
 
 }

@@ -24,6 +24,7 @@ void Viewer::loadShader()
 #endif
 		aka::Shader::Ptr shader = aka::Shader::create(vert, frag, aka::ShaderID(0), attributes);
 		m_shader = shader;
+		m_material = aka::ShaderMaterial::create(shader);
 	}
 	catch (const std::exception& e)
 	{
@@ -100,17 +101,19 @@ void Viewer::render()
 		aka::mat4f model = m_model->transforms[i];
 		aka::mat4f view = aka::mat4f::inverse(m_camera.transform);
 		aka::mat3f normal = aka::mat3f::transpose(aka::mat3f::inverse(mat3f(view * model)));
-		m_shader->set<aka::mat4f>("u_projection", perspective);
-		m_shader->set<aka::mat4f>("u_model", model);
-		m_shader->set<aka::mat4f>("u_view", view);
-		m_shader->set<aka::mat3f>("u_normalMatrix", normal);
-		m_shader->set<aka::color4f>("u_color", m_model->materials[i].color);
+		aka::color4f color = m_model->materials[i].color;
+		m_material->set<mat4f>("u_projection", perspective);
+		m_material->set<mat4f>("u_model", model);
+		m_material->set<mat4f>("u_view", view);
+		m_material->set<mat3f>("u_normalMatrix", normal);
+		m_material->set<color4f>("u_color", color);
+		m_material->set<Texture::Ptr>("u_colorTexture", m_model->materials[i].colorTexture);
+		m_material->set<Texture::Ptr>("u_normalTexture", m_model->materials[i].normalTexture);
 		renderPass.framebuffer = backbuffer;
 		renderPass.mesh = m_model->meshes[i];
 		renderPass.indexCount = m_model->meshes[i]->getIndexCount();
 		renderPass.indexOffset = 0;
-		renderPass.texture = m_model->materials[i].colorTexture;
-		renderPass.shader = m_shader;
+		renderPass.material = m_material;
 		renderPass.blend = aka::Blending::normal();
 		renderPass.cull = m_model->materials[i].doubleSided ? aka::CullMode::None : aka::CullMode::BackFace;
 		renderPass.depth = aka::DepthCompare::LessOrEqual;

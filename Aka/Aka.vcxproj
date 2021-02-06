@@ -200,6 +200,7 @@
     <ClCompile Include="Platform\Linux\PlatformLinux.cpp" />
     <ClCompile Include="Platform\Windows\PlatformWindows.cpp" />
     <ClCompile Include="OS\ImagePacker.cpp" />
+    <ClCompile Include="Graphic\ShaderMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Audio\AudioBackend.h" />
@@ -235,6 +236,7 @@
     <ClInclude Include="OS\Time.h" />
     <ClInclude Include="Aka.h" />
     <ClInclude Include="OS\ImagePacker.h" />
+    <ClInclude Include="Graphic\ShaderMaterial.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

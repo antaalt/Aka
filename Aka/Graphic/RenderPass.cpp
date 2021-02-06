@@ -53,14 +53,9 @@ bool Blending::enabled() const
 
 void RenderPass::execute()
 {
-	if (this->shader == nullptr)
+	if (this->material == nullptr)
 	{
-		Logger::error("No shader set for render pass.");
-		return;
-	}
-	if (this->texture == nullptr)
-	{
-		Logger::warn("No texture set for render pass.");
+		Logger::error("No Material set for render pass.");
 		return;
 	}
 	if (this->mesh == nullptr)

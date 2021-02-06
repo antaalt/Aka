@@ -13,10 +13,12 @@ uniform vec4 u_color;
 out vec3 v_normal;
 out vec2 v_uv;
 out vec4 v_color;
+out mat3 v_normalMatrix;
 
 void main(void) {
 	gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
 	v_normal = normalize(u_normalMatrix * a_normal);
+	v_normalMatrix = u_normalMatrix;
 	v_uv = a_uv;
 	v_color = u_color * a_color;
 }

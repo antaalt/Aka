@@ -188,6 +188,47 @@ Material convertMaterial(const tinygltf::Model& tinyModel, const tinygltf::Mater
 	}
 	tinyMat.alphaCutoff;
 	tinyMat.alphaMode; // OPAQUE, BLEND, MASK (use alphaCutOff)
+	if (tinyMat.normalTexture.index > 0)
+	{
+		const tinygltf::Texture& tinyTexture = tinyModel.textures[tinyMat.normalTexture.index];
+		const tinygltf::Image& tinyImage = tinyModel.images[tinyTexture.source];
+		ASSERT(tinyImage.bits == 8, "");
+		aka::Sampler sampler{};
+		if (tinyTexture.sampler > -1)
+		{
+			const tinygltf::Sampler& tinySampler = tinyModel.samplers[tinyTexture.sampler];
+			sampler.filterMag = samplerFilter(tinySampler.magFilter);
+			sampler.filterMin = samplerFilter(tinySampler.minFilter);
+			sampler.wrapS = samplerWrap(tinySampler.wrapS);
+			sampler.wrapT = samplerWrap(tinySampler.wrapT);
+		}
+		else
+		{
+			sampler.filterMag = aka::Sampler::Filter::Nearest;
+			sampler.filterMin = aka::Sampler::Filter::Nearest;
+			sampler.wrapS = aka::Sampler::Wrap::Repeat;
+			sampler.wrapT = aka::Sampler::Wrap::Repeat;
+		}
+		material.normalTexture = aka::Texture::create(
+			tinyImage.width,
+			tinyImage.height,
+			tinyImage.component == 4 ? aka::Texture::Format::Rgba : aka::Texture::Format::Rgb,
+			tinyImage.image.data(),
+			sampler
+		);
+	}
+	else
+	{
+		// Generate normal map ?
+		uint8_t data[4] = { 255,255,255,255 };
+		aka::Sampler sampler;
+		sampler.filterMag = aka::Sampler::Filter::Nearest;
+		sampler.filterMin = aka::Sampler::Filter::Nearest;
+		sampler.wrapS = aka::Sampler::Wrap::Repeat;
+		sampler.wrapT = aka::Sampler::Wrap::Repeat;
+		material.colorTexture = aka::Texture::create(1U, 1U, aka::Texture::Format::Rgba, data, sampler);
+		material.normalTexture = material.colorTexture;
+	}
 	return material;
 }
 
