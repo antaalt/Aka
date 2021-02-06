@@ -4,6 +4,8 @@
 #include "FileSystem.h"
 #include "../Core/Geometry.h"
 
+// D3D / Metal / Consoles origin is top left
+// OpenGL / OpenGL ES origin is bottom left
 #if defined(AKA_USE_OPENGL)
 #define ORIGIN_BOTTOM_LEFT
 #elif defined(AKA_USE_D3D11)

@@ -157,10 +157,7 @@ void Batch::draw(const mat3f& transform, Rect&& rect)
 	m_indices.push_back(offset + 2);
 	m_indices.push_back(offset + 1);
 	m_indices.push_back(offset + 3);
-	// Reversed uv because of origin :
-	// D3D / Metal / Consoles origin is top left
-	// OpenGL / OpenGL ES origin is bottom left
-#if defined(AKA_USE_D3D11)
+#if defined(ORIGIN_TOP_LEFT)
 	for (size_t i = 0; i < 4; i++)
 		rect.uv[i].v = 1.f - rect.uv[i].v;
 #endif
@@ -266,11 +263,12 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 					Attributes{ AttributeID(0), "COL" }
 				}
 			);
+			m_material = ShaderMaterial::create(m_shader);
 		}
 		if (m_mesh == nullptr)
 			m_mesh = Mesh::create();
-		m_shader->set<mat4f>("u_projection", projection);
-		m_shader->set<mat4f>("u_view", view);
+		m_material->set<mat4f>("u_projection", projection);
+		m_material->set<mat4f>("u_view", view);
 	}
 
 	{
@@ -289,7 +287,7 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 		renderPass.mesh = m_mesh;
 
-		renderPass.shader = m_shader;
+		renderPass.material = m_material;
 
 		renderPass.blend = Blending::normal();
 
@@ -312,9 +310,9 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	// Draw the batches
 	for (const DrawBatch &batch : m_batches)
 	{
+		m_material->set<Texture::Ptr>("u_texture", batch.texture);
 		renderPass.indexCount = batch.elements * 3;
 		renderPass.indexOffset = batch.elementOffset * 3;
-		renderPass.texture = batch.texture;
 		renderPass.execute();
 	}
 }

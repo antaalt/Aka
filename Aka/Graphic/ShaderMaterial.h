@@ -19,6 +19,8 @@ public:
 	template <typename T>
 	void set(const char* name, T value);
 
+	Shader::Ptr getShader();
+
 protected:
 	float* findUniformOffset(const char* name);
 	UniformID getUniformID(const char* name);

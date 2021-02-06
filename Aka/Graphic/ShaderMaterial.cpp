@@ -41,6 +41,11 @@ const Uniform* ShaderMaterial::getUniform(const char* name) const
 	return nullptr;
 }
 
+Shader::Ptr ShaderMaterial::getShader()
+{
+	return m_shader;
+}
+
 float* ShaderMaterial::findUniformOffset(const char* name)
 {
 	float* offset = m_data.data();

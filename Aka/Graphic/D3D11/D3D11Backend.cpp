@@ -591,7 +591,8 @@ public:
 		color[3] = a;
 		for (ID3D11RenderTargetView *view : m_colorViews)
 			ctx.deviceContext->ClearRenderTargetView(view, color);
-		ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		if(m_depthStencilView != nullptr)
+			ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
@@ -1192,10 +1193,9 @@ public:
 			buffer->Release();
 	}
 public:
-	void use(const VertexData &data) const
+	void apply() const
 	{
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
-		d3dShader->setLayout(data);
 		d3dShader->use();
 		GLint textureUnit = 0;
 		size_t offset = 0;
@@ -1521,6 +1521,47 @@ Framebuffer::Ptr GraphicBackend::backbuffer()
 
 void GraphicBackend::render(RenderPass& pass)
 {
+	// Set to null to avoid warning & D3D unbinding texture that is also set as rendertarget
+	ID3D11RenderTargetView* nullRenderTarget = nullptr;
+	ctx.deviceContext->OMSetRenderTargets(1, &nullRenderTarget, nullptr);
+	{
+		// Shader
+		if (pass.material == nullptr)
+		{
+			Logger::error("No material set for render pass");
+			return;
+		}
+		else
+		{
+			D3D11ShaderMaterial* d3dShaderMaterial = (D3D11ShaderMaterial*)pass.material.get();
+			Shader::Ptr shader = d3dShaderMaterial->getShader();
+			D3D11Shader* d3dShader = (D3D11Shader*)shader.get();
+			d3dShader->setLayout(pass.mesh->getVertexData());
+			d3dShaderMaterial->apply();
+		}
+	}
+
+	{
+		// Rasterizer
+		ID3D11RasterizerState* rasterState = D3D11RasterPass::get(pass.cull);
+		if (rasterState != nullptr)
+			ctx.deviceContext->RSSetState(rasterState);
+	}
+
+	{
+		// Viewport
+		D3D11_VIEWPORT viewport;
+		viewport.Width = (float)pass.viewport.w;
+		viewport.Height = (float)pass.viewport.h;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.TopLeftX = pass.viewport.x;
+		viewport.TopLeftY = pass.viewport.y;
+
+		// Create the viewport.
+		ctx.deviceContext->RSSetViewports(1, &viewport);
+	}
+
 	{
 		// Set Framebuffer
 		if (pass.framebuffer == s_backbuffer)
@@ -1535,12 +1576,6 @@ void GraphicBackend::render(RenderPass& pass)
 			ID3D11RenderTargetView* view = framebuffer->getRenderTargetView(0);
 			ctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
 		}
-	}
-	{
-		// Rasterizer
-		ID3D11RasterizerState* rasterState = D3D11RasterPass::get(pass.cull);
-		if (rasterState != nullptr)
-			ctx.deviceContext->RSSetState(rasterState);
 	}
 
 	{
@@ -1564,50 +1599,6 @@ void GraphicBackend::render(RenderPass& pass)
 		}
 	}
 
-	{
-		// Viewport
-		D3D11_VIEWPORT viewport;
-		viewport.Width = (float)pass.viewport.w;
-		viewport.Height = (float)pass.viewport.h;
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = pass.viewport.x;
-		viewport.TopLeftY = pass.viewport.y;
-
-		// Create the viewport.
-		ctx.deviceContext->RSSetViewports(1, &viewport);
-	}
-
-	{
-		// Shader
-		if (pass.material == nullptr)
-		{
-			Logger::error("No material set for render pass");
-			return;
-		}
-		else
-		{
-			((D3D11ShaderMaterial*)pass.material.get())->use(pass.mesh->getVertexData());
-			/*// Textures
-			//for (uint32_t iTex = 0; iTex < textures.size(); iTex++)
-			{
-				if (pass.texture != nullptr)
-				{
-					// Assign the Texture
-					ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->getView();
-					ctx.deviceContext->PSSetShaderResources(0, 1, &view);
-				}
-			}
-			// Fragment Shader Samplers
-			//for (int i = 0; i < samplers.size(); i++)
-			{
-				ID3D11ShaderResourceView* view = ((D3D11Texture*)pass.texture.get())->getView();
-				ID3D11SamplerState* sampler = D3D11Sampler::get(view, ((D3D11Texture*)pass.texture.get())->getSampler());
-				if (sampler != nullptr)
-					ctx.deviceContext->PSSetSamplers(0, 1, &sampler);
-			}*/
-		}
-	}
 	{
 		// Mesh
 		if (pass.mesh == nullptr)

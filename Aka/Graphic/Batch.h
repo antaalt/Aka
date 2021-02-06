@@ -92,6 +92,7 @@ private:
 	std::vector<uint32_t> m_indices;
 	std::vector<Vertex> m_vertices;
 	Shader::Ptr m_shader; // Make static as we only need one instance of shader even though multiple class exist
+	ShaderMaterial::Ptr m_material;
 	Mesh::Ptr m_mesh;
 	Texture::Ptr m_defaultTexture;
 
