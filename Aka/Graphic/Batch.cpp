@@ -282,6 +282,8 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	}
 
 	{
+		static Blending blend = Blending::normal();
+		static Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
 		// Prepare renderPass
 		renderPass.framebuffer = framebuffer;
 
@@ -289,9 +291,9 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 		renderPass.material = m_material;
 
-		renderPass.blend = Blending::normal();
+		renderPass.blend = blend;
 
-		renderPass.cull = CullMode::None;
+		renderPass.cull = cull;
 
 		renderPass.depth = DepthCompare::None;
 

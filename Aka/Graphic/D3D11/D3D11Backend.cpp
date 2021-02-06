@@ -67,9 +67,9 @@ D3D11Context ctx;
 D3D11SwapChain swapChain;
 
 struct D3D11RasterPass {
-	CullMode cull = CullMode::None;
+	Culling cull{};
 	ID3D11RasterizerState* rasterState = nullptr;
-	static ID3D11RasterizerState* get(CullMode cull)
+	static ID3D11RasterizerState* get(Culling cull)
 	{
 		for (D3D11RasterPass& pass : cache)
 			if (pass.cull == cull)
@@ -77,7 +77,7 @@ struct D3D11RasterPass {
 		D3D11_RASTERIZER_DESC rasterDesc;
 		rasterDesc.AntialiasedLineEnable = false;
 		rasterDesc.CullMode = D3D11_CULL_NONE;
-		switch (cull)
+		switch (cull.mode)
 		{
 		case CullMode::None: rasterDesc.CullMode = D3D11_CULL_NONE; break;
 		case CullMode::FrontFace: rasterDesc.CullMode = D3D11_CULL_FRONT; break;
@@ -87,7 +87,7 @@ struct D3D11RasterPass {
 		rasterDesc.DepthBiasClamp = 0.0f;
 		rasterDesc.DepthClipEnable = true;
 		rasterDesc.FillMode = D3D11_FILL_SOLID;
-		rasterDesc.FrontCounterClockwise = false;
+		rasterDesc.FrontCounterClockwise = (cull.order == CullOrder::CounterClockWise);
 		rasterDesc.MultisampleEnable = false;
 		rasterDesc.ScissorEnable = false;
 		rasterDesc.SlopeScaledDepthBias = 0.0f;

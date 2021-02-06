@@ -876,25 +876,31 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 	{
 		// Cull
-		if (pass.cull == CullMode::None)
+		if (pass.cull.mode == CullMode::None)
 		{
 			glDisable(GL_CULL_FACE);
 		}
 		else
 		{
 			glEnable(GL_CULL_FACE);
-			switch (pass.cull)
+			switch (pass.cull.mode)
 			{
 			case CullMode::FrontFace:
 				glCullFace(GL_FRONT);
-				glFrontFace(GL_CCW);
 				break;
 			case CullMode::BackFace:
 				glCullFace(GL_BACK);
-				glFrontFace(GL_CCW);
 				break;
 			case CullMode::AllFace:
 				glCullFace(GL_FRONT_AND_BACK);
+				break;
+			}
+			switch (pass.cull.order)
+			{
+			case CullOrder::ClockWise:
+				glFrontFace(GL_CW);
+				break;
+			case CullOrder::CounterClockWise:
 				glFrontFace(GL_CCW);
 				break;
 			}

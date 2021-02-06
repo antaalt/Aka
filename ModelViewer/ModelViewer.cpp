@@ -98,29 +98,31 @@ void Viewer::update(aka::Time::Unit deltaTime)
 void Viewer::render()
 {
 	static aka::RenderPass renderPass{};
+	static Culling doubleSide = Culling{ CullMode::None, CullOrder::CounterClockWise };
+	static Culling singleSide = Culling{ CullMode::BackFace, CullOrder::CounterClockWise };
 	aka::Framebuffer::Ptr backbuffer = aka::GraphicBackend::backbuffer();
 	backbuffer->clear(0.f, 0.f, 0.f, 1.f);
+	aka::mat4f perspective = aka::mat4f::perspective(aka::degreef(90.f), (float)backbuffer->width() / (float)backbuffer->height(), 0.01f, 1000.f);
+	aka::mat4f view = aka::mat4f::inverse(m_camera.transform);
 	for (size_t i = 0; i < m_model->meshes.size(); i++)
 	{
-		aka::mat4f perspective = aka::mat4f::perspective(aka::degreef(90.f), (float)backbuffer->width() / (float)backbuffer->height(), 0.001f, 100.f);
 		aka::mat4f model = m_model->transforms[i];
-		aka::mat4f view = aka::mat4f::inverse(m_camera.transform);
 		aka::mat3f normal = aka::mat3f::transpose(aka::mat3f::inverse(mat3f(view * model)));
 		aka::color4f color = m_model->materials[i].color;
 		m_material->set<mat4f>("u_projection", perspective);
 		m_material->set<mat4f>("u_model", model);
 		m_material->set<mat4f>("u_view", view);
-		m_material->set<mat3f>("u_normalMatrix", normal);
+		//m_material->set<mat3f>("u_normalMatrix", normal);
 		m_material->set<color4f>("u_color", color);
 		m_material->set<Texture::Ptr>("u_colorTexture", m_model->materials[i].colorTexture);
 		m_material->set<Texture::Ptr>("u_normalTexture", m_model->materials[i].normalTexture);
 		renderPass.framebuffer = backbuffer;
 		renderPass.mesh = m_model->meshes[i];
-		renderPass.indexCount = m_model->meshes[i]->getIndexCount();
+		renderPass.indexCount = m_model->meshes[i]->getIndexCount(); // TODO set zero means all ?
 		renderPass.indexOffset = 0;
 		renderPass.material = m_material;
 		renderPass.blend = aka::Blending::normal();
-		renderPass.cull = m_model->materials[i].doubleSided ? aka::CullMode::None : aka::CullMode::BackFace;
+		renderPass.cull = m_model->materials[i].doubleSided ? doubleSide : singleSide;
 		renderPass.depth = aka::DepthCompare::LessOrEqual;
 		renderPass.viewport = aka::Rect{
 			0.f,

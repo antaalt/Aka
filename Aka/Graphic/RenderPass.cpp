@@ -66,4 +66,14 @@ void RenderPass::execute()
 	GraphicBackend::render(*this);
 }
 
+bool Culling::operator==(const Culling& rhs) const
+{
+	return mode == rhs.mode && order == rhs.order;
+}
+
+bool Culling::operator!=(const Culling& rhs) const
+{
+	return mode != rhs.mode || order != rhs.order;
+}
+
 };

@@ -79,6 +79,19 @@ enum class CullMode {
 	AllFace
 };
 
+enum class CullOrder {
+	ClockWise,
+	CounterClockWise,
+};
+
+struct Culling {
+	CullMode mode;
+	CullOrder order;
+
+	bool operator==(const Culling& rhs) const;
+	bool operator!=(const Culling& rhs) const;
+};
+
 enum class DepthCompare {
 	None,
 	Always,
@@ -105,8 +118,8 @@ struct RenderPass
 	ShaderMaterial::Ptr material;
 	// Blending for alpha operation
 	Blending blend;
-	// Culling mode for triangle face
-	CullMode cull;
+	// Culling for triangle face
+	Culling cull;
 	// Depth mode
 	DepthCompare depth;
 	// Viewport for rendering
