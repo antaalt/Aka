@@ -56,6 +56,9 @@ struct D3D11SwapChain {
 };
 
 struct D3D11Context {
+#if defined(DEBUG)
+	ID3D11InfoQueue* debugInfoQueue = nullptr;
+#endif
 	ID3D11Device* device = nullptr;
 	ID3D11DeviceContext* deviceContext = nullptr;
 };
@@ -64,8 +67,8 @@ D3D11Context ctx;
 D3D11SwapChain swapChain;
 
 struct D3D11RasterPass {
-	CullMode cull;
-	ID3D11RasterizerState* rasterState;
+	CullMode cull = CullMode::None;
+	ID3D11RasterizerState* rasterState = nullptr;
 	static ID3D11RasterizerState* get(CullMode cull)
 	{
 		for (D3D11RasterPass& pass : cache)
@@ -113,8 +116,8 @@ private:
 
 struct D3D11Sampler
 {
-	ID3D11ShaderResourceView* texture;
-	ID3D11SamplerState* samplerState;
+	ID3D11ShaderResourceView* texture = nullptr;
+	ID3D11SamplerState* samplerState = nullptr;
 	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, Sampler sampler)
 	{
 		for (D3D11Sampler& sampler : cache)
@@ -168,8 +171,8 @@ private:
 
 struct D3D11Depth
 {
-	DepthCompare compare;
-	ID3D11DepthStencilState* depthState;
+	DepthCompare compare = DepthCompare::None;
+	ID3D11DepthStencilState* depthState = nullptr;
 	static ID3D11DepthStencilState* get(DepthCompare compare)
 	{
 		for (D3D11Depth& depth : cache)
@@ -269,8 +272,8 @@ D3D11_BLEND blendFactor(BlendMode mode)
 
 struct D3D11Blend
 {
-	Blending blend;
-	ID3D11BlendState* blendState;
+	Blending blend = Blending::none();
+	ID3D11BlendState* blendState = nullptr;
 	static ID3D11BlendState* get(Blending blending)
 	{
 		for (D3D11Blend& blend : cache)
@@ -853,38 +856,11 @@ public:
 			D3D_CHECK_RESULT(ctx.device->CreatePixelShader(m_pixelShaderBuffer->GetBufferPointer(), m_pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
 		if (compute.value() != 0)
 			D3D_CHECK_RESULT(ctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
-
-		getUniforms(m_vertexShaderBuffer, m_vertexUniformBuffers, ShaderType::Vertex);
-		getUniforms(m_pixelShaderBuffer, m_fragmentUniformBuffers, ShaderType::Fragment);
-		m_vertexUniformValues.resize(m_vertexUniformBuffers.size());
-		m_fragmentUniformValues.resize(m_fragmentUniformBuffers.size());
-		// combine uniforms that were in both
-		// TODO check for same buffer index ?
-		for (size_t i = 0; i < m_uniforms.size(); i++)
-		{
-			m_uniforms[i].id = UniformID(i);
-			for (size_t j = i + 1; j < m_uniforms.size(); j++)
-			{
-				if (m_uniforms[i].name == m_uniforms[j].name)
-				{
-					if (m_uniforms[i].type == m_uniforms[j].type)
-					{
-						m_uniforms[i].shaderType = (ShaderType)((int)m_uniforms[i].shaderType | (int)m_uniforms[j].shaderType);
-						m_uniforms.erase(m_uniforms.begin() + j);
-						j--;
-					}
-				}
-			}
-		}
 	}
 	D3D11Shader(const D3D11Shader&) = delete;
 	D3D11Shader& operator=(const D3D11Shader&) = delete;
 	~D3D11Shader()
 	{
-		for (ID3D11Buffer* buffer : m_vertexUniformBuffers)
-			buffer->Release();
-		for (ID3D11Buffer* buffer : m_fragmentUniformBuffers)
-			buffer->Release();
 		if (m_layout)
 			m_layout->Release();
 		if (m_pixelShader)
@@ -901,9 +877,18 @@ public:
 			m_computeShaderBuffer->Release();
 	}
 
-private:
-	void getUniforms(ID3D10Blob *shader, std::vector<ID3D11Buffer*> &uniformBuffers, ShaderType shaderType)
+public:
+	std::vector<Uniform> getUniformsVertexShader(std::vector<ID3D11Buffer*>& uniformBuffers)
 	{
+		return getUniforms(m_vertexShaderBuffer, uniformBuffers, ShaderType::Vertex);
+	}
+	std::vector<Uniform> getUniformsFragShader(std::vector<ID3D11Buffer*>& uniformBuffers)
+	{
+		return getUniforms(m_pixelShaderBuffer, uniformBuffers, ShaderType::Fragment);
+	}
+	std::vector<Uniform> getUniforms(ID3D10Blob *shader, std::vector<ID3D11Buffer*> &uniformBuffers, ShaderType shaderType)
+	{
+		std::vector<Uniform> uniforms;
 		ID3D11ShaderReflection* reflector = nullptr;
 		D3D_CHECK_RESULT(D3DReflect(shader->GetBufferPointer(), shader->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflector));
 
@@ -917,8 +902,8 @@ private:
 
 			if (desc.Type == D3D_SIT_TEXTURE && desc.Dimension == D3D_SRV_DIMENSION_TEXTURE2D)
 			{
-				m_uniforms.emplace_back();
-				Uniform& uniform = m_uniforms.back();
+				uniforms.emplace_back();
+				Uniform& uniform = uniforms.back();
 				uniform.id = UniformID(0);
 				uniform.name = desc.Name;
 				uniform.shaderType = shaderType;
@@ -928,8 +913,8 @@ private:
 			}
 			else if (desc.Type == D3D_SIT_SAMPLER)
 			{
-				m_uniforms.emplace_back();
-				Uniform& uniform = m_uniforms.back();
+				uniforms.emplace_back();
+				Uniform& uniform = uniforms.back();
 				uniform.id = UniformID(0);
 				uniform.name = desc.Name;
 				uniform.shaderType = shaderType;
@@ -966,8 +951,8 @@ private:
 				ID3D11ShaderReflectionType* type = var->GetType();
 				D3D_CHECK_RESULT(type->GetDesc(&typeDesc));
 
-				m_uniforms.emplace_back();
-				Uniform& uniform = m_uniforms.back();
+				uniforms.emplace_back();
+				Uniform& uniform = uniforms.back();
 				uniform.id = UniformID(0);
 				uniform.name = varDesc.Name;
 				uniform.shaderType = shaderType;
@@ -1007,41 +992,14 @@ private:
 				}
 			}
 		}
+		return uniforms;
 	}
 public:
-
-	void use() override
+	void use()
 	{
 		ctx.deviceContext->IASetInputLayout(m_layout);
-
-		// Vertex shader
 		ctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
-		if (m_vertexUniformBuffers.size() > 0)
-		{
-			for (uint32_t iBuffer = 0; iBuffer < m_vertexUniformBuffers.size(); iBuffer++)
-			{
-				ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
-				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-				memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
-				ctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
-			}
-			ctx.deviceContext->VSSetConstantBuffers(0, (UINT)m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
-		}
-		// Pixel shader
 		ctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
-		if (m_fragmentUniformBuffers.size() > 0)
-		{
-			for (uint32_t iBuffer = 0; iBuffer < m_fragmentUniformBuffers.size(); iBuffer++)
-			{
-				ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
-				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-				memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());
-				ctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
-			}
-			ctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
-		}
 	}
 
 	void setLayout(VertexData data)
@@ -1146,146 +1104,6 @@ public:
 			m_computeShaderBuffer = nullptr;
 		}
 	}
-
-	void setFloat(const Uniform* currentUniform, const float* data, size_t size)
-	{
-		// Get the offset of the currentUniform in the constant buffer.
-		const bool isVertex = (ShaderType)((int)currentUniform->shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
-		const bool isFrag = (ShaderType)((int)currentUniform->shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
-		
-		uint32_t offset = 0;
-		for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
-		{
-			Uniform& uniform = m_uniforms[iUniform];
-			if (uniform.type == UniformType::None || uniform.type == UniformType::Texture2D || uniform.type == UniformType::Sampler2D)
-				continue;
-			if (uniform.type == UniformType::Mat4)
-			{
-				uint32_t length = 16 * uniform.arrayLength;
-				if (uniform.name == currentUniform->name)
-				{
-					ASSERT(size == length, "Incorrect size");
-					size_t size = offset + length;
-					if (isVertex)
-					{
-						if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
-							m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
-						memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
-					}
-					if (isFrag)
-					{
-						if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
-							m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
-						memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
-					}
-					break;
-				}
-				offset += length;
-			}
-			else if (uniform.type == UniformType::Mat3)
-			{
-				uint32_t length = 9 * uniform.arrayLength;
-				if (uniform.name == currentUniform->name)
-				{
-					ASSERT(size == length, "Incorrect size");
-					size_t size = offset + length;
-					if (isVertex)
-					{
-						if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
-							m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
-						memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
-					}
-					if (isFrag)
-					{
-						if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
-							m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
-						memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
-					}
-					break;
-				}
-				// Packing of values.
-				// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
-				offset += 12 * uniform.arrayLength;
-			}
-			else if (uniform.type == UniformType::Vec4)
-			{
-				uint32_t length = 4 * uniform.arrayLength;
-				if (uniform.name == currentUniform->name)
-				{
-					ASSERT(size == length, "Incorrect size");
-					size_t size = offset + length;
-					if (isVertex)
-					{
-						if (m_vertexUniformValues[currentUniform->bufferIndex].size() < size)
-							m_vertexUniformValues[currentUniform->bufferIndex].resize(size);
-						memcpy(&m_vertexUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
-					}
-					if (isFrag)
-					{
-						if (m_fragmentUniformValues[currentUniform->bufferIndex].size() < size)
-							m_fragmentUniformValues[currentUniform->bufferIndex].resize(size);
-						memcpy(&m_fragmentUniformValues[currentUniform->bufferIndex][offset], data, length * sizeof(float));
-					}
-					break;
-				}
-				offset += length;
-			}
-			else
-			{
-				Logger::warn("Unsupported uniform type : ", (int)uniform.type);
-			}
-		}
-	}
-
-	void setFloat1(const char* name, float value) override
-	{
-		const Uniform* currentUniform = getUniform(name);
-		ASSERT(currentUniform->type == UniformType::Vec, "Incorrect type.");
-		setFloat(currentUniform, &value, 1);
-	}
-	void setFloat2(const char* name, float x, float y) override
-	{
-		const Uniform* currentUniform = getUniform(name);
-		ASSERT(currentUniform->type == UniformType::Vec2, "Incorrect type.");
-		float data[] = { x,y };
-		setFloat(currentUniform, data, 2);
-	}
-	void setFloat3(const char* name, float x, float y, float z) override
-	{
-		const Uniform* currentUniform = getUniform(name);
-		ASSERT(currentUniform->type == UniformType::Vec3, "Incorrect type.");
-		float data[] = { x, y, z };
-		setFloat(currentUniform, data, 3);
-	}
-	void setFloat4(const char* name, float x, float y, float z, float w) override 
-	{
-		const Uniform* currentUniform = getUniform(name);
-		ASSERT(currentUniform->type == UniformType::Vec4, "Incorrect type.");
-		float data[] = { x, y, z, w };
-		setFloat(currentUniform, data, 4);
-	}
-	void setUint1 (const char* name, uint32_t value) override { throw std::runtime_error("Not supported"); }
-	void setUint2 (const char* name, uint32_t x, uint32_t y) override { throw std::runtime_error("Not supported"); }
-	void setUint3 (const char* name, uint32_t x, uint32_t y, uint32_t z) override { throw std::runtime_error("Not supported"); }
-	void setUint4 (const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w) override { throw std::runtime_error("Not supported"); }
-	void setInt1  (const char* name, int32_t value) override { throw std::runtime_error("Not supported"); }
-	void setInt2  (const char* name, int32_t x, int32_t y) override { throw std::runtime_error("Not supported"); }
-	void setInt3  (const char* name, int32_t x, int32_t y, int32_t z) override { throw std::runtime_error("Not supported"); }
-	void setInt4  (const char* name, int32_t x, int32_t y, int32_t z, int32_t w) override { throw std::runtime_error("Not supported"); }
-	void setMatrix3(const char* name, const float* data, bool transpose = false) override
-	{
-		const Uniform* currentUniform = getUniform(name);
-		ASSERT(transpose == false, "Do not support transpose yet.");
-		ASSERT(currentUniform->type == UniformType::Mat3, "Incorrect type.");
-		setFloat(currentUniform, data, 9);
-	}
-	void setMatrix4(const char* name, const float* data, bool transpose = false) override
-	{
-		const Uniform* currentUniform = getUniform(name);
-		ASSERT(transpose == false, "Do not support transpose yet.");
-		ASSERT(currentUniform->type == UniformType::Mat4, "Incorrect type.");
-		setFloat(currentUniform, data, 16);
-	}
 private:
 	ID3D10Blob* m_vertexShaderBuffer;
 	ID3D10Blob* m_pixelShaderBuffer;
@@ -1294,11 +1112,228 @@ private:
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;
 	ID3D11ComputeShader* m_computeShader;
+};
+
+class D3D11ShaderMaterial : public ShaderMaterial
+{
+public:
+	D3D11ShaderMaterial(Shader::Ptr shader) :
+		ShaderMaterial(shader)
+	{
+		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
+		{
+			// Find and merge all uniforms
+			std::vector<Uniform> uniformsVert = d3dShader->getUniformsVertexShader(m_vertexUniformBuffers);
+			std::vector<Uniform> uniformsFrag = d3dShader->getUniformsFragShader(m_fragmentUniformBuffers);
+			m_uniforms.insert(m_uniforms.end(), uniformsVert.begin(), uniformsVert.end());
+			m_uniforms.insert(m_uniforms.end(), uniformsFrag.begin(), uniformsFrag.end());
+			for (size_t i = 0; i < m_uniforms.size(); i++)
+			{
+				m_uniforms[i].id = UniformID(i);
+				for (size_t j = i + 1; j < m_uniforms.size(); j++)
+				{
+					if (m_uniforms[i].name == m_uniforms[j].name)
+					{
+						if (m_uniforms[i].type == m_uniforms[j].type)
+						{
+							m_uniforms[i].shaderType = (ShaderType)((int)m_uniforms[i].shaderType | (int)m_uniforms[j].shaderType);
+							m_uniforms.erase(m_uniforms.begin() + j);
+							j--;
+						}
+					}
+				}
+			}
+		}
+		size_t bufferSize = 0;
+		size_t textureCount = 0;
+		for (const Uniform &uniform : m_uniforms)
+		{
+			// Create textures & data buffers
+			switch (uniform.type)
+			{
+			case UniformType::Sampler2D:
+				break;
+			case UniformType::Texture2D:
+				textureCount++;
+				break;
+			case UniformType::Vec:
+				bufferSize += 1;
+				break;
+			case UniformType::Vec2:
+				bufferSize += 2;
+				break;
+			case UniformType::Vec3:
+				bufferSize += 4;
+				break;
+			case UniformType::Vec4:
+				bufferSize += 4;
+				break;
+			case UniformType::Mat3:
+				bufferSize += 9;
+				break;
+			case UniformType::Mat4:
+				bufferSize += 16;
+				break;
+			default:
+				Logger::warn("Unsupported Uniform Type : ", uniform.name);
+				break;
+			}
+		}
+		m_data.resize(bufferSize, 0.f);
+		m_textures.resize(textureCount, nullptr);
+	}
+	D3D11ShaderMaterial(const D3D11ShaderMaterial&) = delete;
+	const D3D11ShaderMaterial& operator=(const D3D11ShaderMaterial&) = delete;
+	~D3D11ShaderMaterial()
+	{
+		for (ID3D11Buffer* buffer : m_vertexUniformBuffers)
+			buffer->Release();
+		for (ID3D11Buffer* buffer : m_fragmentUniformBuffers)
+			buffer->Release();
+	}
+public:
+	void use(const VertexData &data) const
+	{
+		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
+		d3dShader->setLayout(data);
+		d3dShader->use();
+		GLint textureUnit = 0;
+		size_t offset = 0;
+		size_t offsetFrag = 0;
+		size_t offsetVert = 0;
+		// TODO create at first and store.
+		std::vector<std::vector<float>> m_vertexUniformValues(m_vertexUniformBuffers.size());
+		std::vector<std::vector<float>> m_fragmentUniformValues(m_fragmentUniformBuffers.size());
+		for (const Uniform& uniform : m_uniforms)
+		{
+			const bool isVertex = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
+			const bool isFrag = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
+			if (uniform.type == UniformType::None)
+				continue;
+			else if (uniform.type == UniformType::Texture2D)
+			{
+				Texture::Ptr texture = m_textures[textureUnit];
+				if (texture != nullptr)
+				{
+					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
+					ID3D11ShaderResourceView* view = d3dTexture->getView();
+					ctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
+					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->getSampler());
+					if (sampler != nullptr)
+						ctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
+				}
+				else
+				{
+					ctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullptr);
+					ctx.deviceContext->PSSetSamplers(textureUnit, 1, nullptr);
+				}
+				textureUnit++;
+			}
+			else if (uniform.type == UniformType::Sampler2D)
+			{
+				// TODO store sampler
+			}
+			else if (uniform.type == UniformType::Mat4)
+			{
+				uint32_t length = 16 * uniform.arrayLength;
+				if (isVertex)
+				{
+					size_t size = offsetVert + length;
+					if (m_vertexUniformValues[uniform.bufferIndex].size() < size)
+						m_vertexUniformValues[uniform.bufferIndex].resize(size);
+					memcpy(&m_vertexUniformValues[uniform.bufferIndex][offsetVert], &m_data[offset], length * sizeof(float));
+					offsetVert += length;
+				}
+				if (isFrag)
+				{
+					size_t size = offsetFrag + length;
+					if (m_fragmentUniformValues[uniform.bufferIndex].size() < size)
+						m_fragmentUniformValues[uniform.bufferIndex].resize(size);
+					memcpy(&m_fragmentUniformValues[uniform.bufferIndex][offsetFrag], &m_data[offset], length * sizeof(float));
+					offsetFrag += length;
+				}
+				offset += length;
+			}
+			else if (uniform.type == UniformType::Mat3)
+			{
+				uint32_t length = 9 * uniform.arrayLength;
+				if (isVertex)
+				{
+					size_t size = offsetVert + length;
+					if (m_vertexUniformValues[uniform.bufferIndex].size() < size)
+						m_vertexUniformValues[uniform.bufferIndex].resize(size);
+					memcpy(&m_vertexUniformValues[uniform.bufferIndex][offsetVert], &m_data[offset], length * sizeof(float));
+					// Packing of values.
+					// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
+					offsetVert += 12 * uniform.arrayLength;
+				}
+				if (isFrag)
+				{
+					size_t size = offsetFrag + length;
+					if (m_fragmentUniformValues[uniform.bufferIndex].size() < size)
+						m_fragmentUniformValues[uniform.bufferIndex].resize(size);
+					memcpy(&m_fragmentUniformValues[uniform.bufferIndex][offsetFrag], &m_data[offset], length * sizeof(float));
+					offsetFrag += 12 * uniform.arrayLength;
+				}
+				offset += length;
+			}
+			else if (uniform.type == UniformType::Vec4)
+			{
+				uint32_t length = 4 * uniform.arrayLength;
+				if (isVertex)
+				{
+					size_t size = offsetVert + length;
+					if (m_vertexUniformValues[uniform.bufferIndex].size() < size)
+						m_vertexUniformValues[uniform.bufferIndex].resize(size);
+					memcpy(&m_vertexUniformValues[uniform.bufferIndex][offsetVert], &m_data[offset], length * sizeof(float));
+					offsetVert += length;
+				}
+				if (isFrag)
+				{
+					size_t size = offsetFrag + length;
+					if (m_fragmentUniformValues[uniform.bufferIndex].size() < size)
+						m_fragmentUniformValues[uniform.bufferIndex].resize(size);
+					memcpy(&m_fragmentUniformValues[uniform.bufferIndex][offsetFrag], &m_data[offset], length * sizeof(float));
+					offsetFrag += length;
+				}
+				offset += length;
+			}
+			else
+			{
+				Logger::error("Unsupported uniform type : ", (int)uniform.type);
+			}
+		}
+		// Fill buffers from data
+		if (m_vertexUniformBuffers.size() > 0)
+		{
+			for (uint32_t iBuffer = 0; iBuffer < m_vertexUniformBuffers.size(); iBuffer++)
+			{
+				ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
+				D3D11_MAPPED_SUBRESOURCE mappedResource{};
+				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
+				ctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
+			}
+			ctx.deviceContext->VSSetConstantBuffers(0, (UINT)m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
+		}
+		if (m_fragmentUniformBuffers.size() > 0)
+		{
+			for (uint32_t iBuffer = 0; iBuffer < m_fragmentUniformBuffers.size(); iBuffer++)
+			{
+				ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
+				D3D11_MAPPED_SUBRESOURCE mappedResource{};
+				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());
+				ctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
+			}
+			ctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
+		}
+	}
+private:
 	std::vector<ID3D11Buffer*> m_vertexUniformBuffers;
 	std::vector<ID3D11Buffer*> m_fragmentUniformBuffers;
-	std::vector<std::vector<float>> m_vertexUniformValues;
-	std::vector<std::vector<float>> m_fragmentUniformValues;
 };
+
 
 static std::shared_ptr<D3D11BackBuffer> s_backbuffer = nullptr;
 
@@ -1349,11 +1384,15 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
+	UINT flags = 0;
+#if defined(DEBUG)
+	flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 	D3D_CHECK_RESULT(D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		0,
+		flags,
 		&featureLevel, 1,
 		D3D11_SDK_VERSION,
 		&swapChainDesc,
@@ -1362,6 +1401,10 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 		nullptr,
 		&ctx.deviceContext
 	));
+#if defined(DEBUG)
+	D3D_CHECK_RESULT(ctx.device->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&ctx.debugInfoQueue));
+	D3D_CHECK_RESULT(ctx.debugInfoQueue->PushEmptyStorageFilter());
+#endif
 	s_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, swapChain.swapChain);
 }
 
@@ -1409,6 +1452,37 @@ void GraphicBackend::resize(uint32_t width, uint32_t height)
 
 void GraphicBackend::frame()
 {
+#if defined(DEBUG)
+	UINT64 messageCount = ctx.debugInfoQueue->GetNumStoredMessages();
+	for (UINT64 i = 0; i < messageCount; i++) {
+		SIZE_T messageSize = 0;
+		D3D_CHECK_RESULT(ctx.debugInfoQueue->GetMessage(i, nullptr, &messageSize));
+		if (messageSize > 0u)
+		{
+			D3D11_MESSAGE* message = (D3D11_MESSAGE*)malloc(messageSize); //allocate enough space
+			D3D_CHECK_RESULT(ctx.debugInfoQueue->GetMessage(i, message, &messageSize)); //get the actual message
+			switch (message->Severity)
+			{
+			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_CORRUPTION:
+				Logger::critical("[D3D11] ", message->pDescription);
+				break;
+			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_ERROR:
+				Logger::error("[D3D11] ", message->pDescription);
+				break;
+			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_WARNING:
+				Logger::warn("[D3D11] ", message->pDescription);
+				break;
+			default:
+			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_MESSAGE:
+			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_INFO:
+				Logger::debug("[D3D11] ", message->pDescription);
+				break;
+			}
+			free(message);
+		}
+	}
+	ctx.debugInfoQueue->ClearStoredMessages();
+#endif
 }
 
 void GraphicBackend::present()
@@ -1506,16 +1580,15 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Shader
-		if (pass.shader == nullptr)
+		if (pass.material == nullptr)
 		{
-			Logger::error("No shader set for render pass");
+			Logger::error("No material set for render pass");
 			return;
 		}
 		else
 		{
-			((D3D11Shader*)pass.shader.get())->setLayout(pass.mesh->getVertexData());
-			pass.shader->use();
-			// Textures
+			((D3D11ShaderMaterial*)pass.material.get())->use(pass.mesh->getVertexData());
+			/*// Textures
 			//for (uint32_t iTex = 0; iTex < textures.size(); iTex++)
 			{
 				if (pass.texture != nullptr)
@@ -1532,7 +1605,7 @@ void GraphicBackend::render(RenderPass& pass)
 				ID3D11SamplerState* sampler = D3D11Sampler::get(view, ((D3D11Texture*)pass.texture.get())->getSampler());
 				if (sampler != nullptr)
 					ctx.deviceContext->PSSetSamplers(0, 1, &sampler);
-			}
+			}*/
 		}
 	}
 	{
@@ -1657,7 +1730,10 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 {
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorMessage = nullptr;
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#if defined(DEBUG)
+	flags |= D3DCOMPILE_DEBUG;
+#endif
 	std::string entryPoint;
 	std::string version;
 	switch (type)
@@ -1718,6 +1794,10 @@ Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, ShaderID 
 	return std::make_shared<D3D11Shader>(vert, frag, compute, attributes);
 }
 
+ShaderMaterial::Ptr GraphicBackend::createShaderMaterial(Shader::Ptr shader)
+{
+	return std::make_shared<D3D11ShaderMaterial>(shader);
+}
 
 };
 #endif
