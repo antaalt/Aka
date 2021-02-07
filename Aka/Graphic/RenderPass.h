@@ -104,6 +104,62 @@ enum class DepthCompare {
 	GreaterOrEqual
 };
 
+struct Depth
+{
+	DepthCompare compare;
+	bool mask;
+
+	bool operator==(const Depth& rhs) const;
+	bool operator!=(const Depth& rhs) const;
+};
+
+enum class StencilMode {
+	None,
+	Never,
+	Less,
+	LessOrEqual,
+	Greater,
+	GreaterOrEqual,
+	Equal,
+	NotEqual,
+	Always,
+};
+
+enum class StencilOp {
+	Keep,
+	Zero,
+	Replace,
+	Increment,
+	IncrementWrap,
+	Decrement,
+	DecrementWrap,
+	Invert,
+};
+
+struct Stencil
+{
+	struct Face {
+		StencilOp stencilFailed;
+		StencilOp stencilDepthFailed;
+		StencilOp stencilPassed;
+
+		StencilMode mode;
+	};
+	Face front;
+	Face back;
+
+	uint32_t readMask;
+	uint32_t writeMask;
+
+	static Stencil none();
+	static Stencil equal();
+
+	bool operator==(const Stencil& rhs) const;
+	bool operator!=(const Stencil& rhs) const;
+
+	bool enabled() const;
+};
+
 struct RenderPass
 {
 	// Framebuffer to render to
@@ -120,10 +176,14 @@ struct RenderPass
 	Blending blend;
 	// Culling for triangle face
 	Culling cull;
-	// Depth mode
-	DepthCompare depth;
+	// Depth test
+	Depth depth;
+	// Stencil test
+	Stencil stencil;
 	// Viewport for rendering
 	Rect viewport;
+	// Scissor for rendering
+	Rect scissor;
 
 	// Execute the render pass
 	void execute();

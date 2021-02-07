@@ -41,10 +41,10 @@ void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* da
         }
     }
     Rect& region = m_regions[id];
-    region.x = static_cast<float>(idx * m_elementSize.x);
-    region.y = static_cast<float>(m_image.height - height - idy * m_elementSize.y);
-    region.w = static_cast<float>(width);
-    region.h = static_cast<float>(height);
+    region.x = static_cast<int32_t>(idx * m_elementSize.x);
+    region.y = static_cast<int32_t>(m_image.height - height - idy * m_elementSize.y);
+    region.w = width;
+    region.h = height;
 }
 
 const Image& Packer::pack()

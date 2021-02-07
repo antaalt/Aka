@@ -169,40 +169,93 @@ private:
 	static std::vector<D3D11Sampler> cache;
 };
 
+D3D11_STENCIL_OP stencilOp(StencilOp op)
+{
+	switch (op)
+	{
+	default:
+	case StencilOp::Keep: return D3D11_STENCIL_OP_KEEP;
+	case StencilOp::Zero: return D3D11_STENCIL_OP_ZERO;
+	case StencilOp::Replace: return D3D11_STENCIL_OP_REPLACE;
+	case StencilOp::Increment: return D3D11_STENCIL_OP_INCR_SAT;
+	case StencilOp::IncrementWrap: return D3D11_STENCIL_OP_INCR;
+	case StencilOp::Decrement: return D3D11_STENCIL_OP_DECR_SAT;
+	case StencilOp::DecrementWrap: return D3D11_STENCIL_OP_DECR;
+	case StencilOp::Invert: return D3D11_STENCIL_OP_INVERT;
+	}
+}
+
+D3D11_COMPARISON_FUNC stencilFunc(StencilMode func)
+{
+	switch (func)
+	{
+	default:
+	case StencilMode::None: return D3D11_COMPARISON_NEVER;
+	case StencilMode::Never: return D3D11_COMPARISON_NEVER;
+	case StencilMode::Less: return D3D11_COMPARISON_LESS;
+	case StencilMode::LessOrEqual: return D3D11_COMPARISON_LESS_EQUAL;
+	case StencilMode::Greater: return D3D11_COMPARISON_GREATER;
+	case StencilMode::GreaterOrEqual: return D3D11_COMPARISON_GREATER_EQUAL;
+	case StencilMode::Equal: return D3D11_COMPARISON_EQUAL;
+	case StencilMode::NotEqual: return D3D11_COMPARISON_NOT_EQUAL;
+	case StencilMode::Always: return D3D11_COMPARISON_ALWAYS;
+	}
+}
+
+D3D11_COMPARISON_FUNC depthFunc(DepthCompare func)
+{
+	switch (func)
+	{
+	default:
+	case DepthCompare::None: return D3D11_COMPARISON_NEVER;
+	case DepthCompare::Never: return D3D11_COMPARISON_NEVER;
+	case DepthCompare::Less: return D3D11_COMPARISON_LESS;
+	case DepthCompare::LessOrEqual: return D3D11_COMPARISON_LESS_EQUAL;
+	case DepthCompare::Greater: return D3D11_COMPARISON_GREATER;
+	case DepthCompare::GreaterOrEqual: return D3D11_COMPARISON_GREATER_EQUAL;
+	case DepthCompare::Equal: return D3D11_COMPARISON_EQUAL;
+	case DepthCompare::NotEqual: return D3D11_COMPARISON_NOT_EQUAL;
+	case DepthCompare::Always: return D3D11_COMPARISON_ALWAYS;
+	}
+}
+
 struct D3D11Depth
 {
-	DepthCompare compare = DepthCompare::None;
+	Depth depth = Depth{ DepthCompare::None, true };
+	Stencil stencil = Stencil::none();
 	ID3D11DepthStencilState* depthState = nullptr;
-	static ID3D11DepthStencilState* get(DepthCompare compare)
+	static ID3D11DepthStencilState* get(Depth depth, Stencil stencil)
 	{
-		for (D3D11Depth& depth : cache)
-			if (depth.compare == compare)
-				return depth.depthState;
+		for (D3D11Depth& d : cache)
+			if (d.depth == depth && d.stencil == stencil)
+				return d.depthState;
 
 		D3D11_DEPTH_STENCIL_DESC desc {};
-		desc.DepthEnable = (compare != DepthCompare::None);
-		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		desc.DepthFunc = D3D11_COMPARISON_NEVER;
-		switch (compare)
-		{
-		case DepthCompare::None: desc.DepthFunc = D3D11_COMPARISON_NEVER; break;
-		case DepthCompare::Always: desc.DepthFunc = D3D11_COMPARISON_ALWAYS; break;
-		case DepthCompare::Never: desc.DepthFunc = D3D11_COMPARISON_NEVER; break;
-		case DepthCompare::Less: desc.DepthFunc = D3D11_COMPARISON_LESS; break;
-		case DepthCompare::Equal: desc.DepthFunc = D3D11_COMPARISON_EQUAL; break;
-		case DepthCompare::LessOrEqual: desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL; break;
-		case DepthCompare::Greater: desc.DepthFunc = D3D11_COMPARISON_GREATER; break;
-		case DepthCompare::NotEqual: desc.DepthFunc = D3D11_COMPARISON_NOT_EQUAL; break;
-		case DepthCompare::GreaterOrEqual: desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL; break;
-		}
+
+		desc.DepthEnable = (depth.compare != DepthCompare::None);
+		desc.DepthWriteMask = depth.mask ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+		desc.DepthFunc = depthFunc(depth.compare);
+
+		desc.StencilEnable = stencil.enabled();
+		desc.StencilReadMask = stencil.readMask;
+		desc.StencilWriteMask = stencil.writeMask;
+		desc.FrontFace.StencilFailOp = stencilOp(stencil.front.stencilFailed);
+		desc.FrontFace.StencilDepthFailOp = stencilOp(stencil.front.stencilDepthFailed);
+		desc.FrontFace.StencilPassOp = stencilOp(stencil.front.stencilPassed);
+		desc.FrontFace.StencilFunc = stencilFunc(stencil.front.mode);
+		desc.BackFace.StencilFailOp = stencilOp(stencil.back.stencilFailed);
+		desc.BackFace.StencilDepthFailOp = stencilOp(stencil.back.stencilDepthFailed);
+		desc.BackFace.StencilPassOp = stencilOp(stencil.back.stencilPassed);
+		desc.BackFace.StencilFunc = stencilFunc(stencil.back.mode);
+
 		ID3D11DepthStencilState* result;
 		HRESULT res = ctx.device->CreateDepthStencilState(&desc, &result);
 		if (SUCCEEDED(res))
 		{
-			D3D11Depth depth;
-			depth.compare = compare;
-			depth.depthState = result;
-			cache.push_back(depth);
+			D3D11Depth d;
+			d.depth = depth;
+			d.depthState = result;
+			cache.push_back(d);
 			return cache.back().depthState;
 		}
 		return nullptr;
@@ -1566,11 +1619,26 @@ void GraphicBackend::render(RenderPass& pass)
 		viewport.Height = (float)pass.viewport.h;
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = pass.viewport.x;
-		viewport.TopLeftY = pass.viewport.y;
+		viewport.TopLeftX = (float)pass.viewport.x;
+		viewport.TopLeftY = (float)pass.viewport.y;
 
 		// Create the viewport.
 		ctx.deviceContext->RSSetViewports(1, &viewport);
+	}
+
+	{
+		// Scissor
+		if (pass.scissor.w > 0 && pass.scissor.h > 0)
+		{
+			D3D11_RECT scissor;
+			scissor.right = (float)pass.scissor.x + pass.scissor.w;
+			scissor.bottom = (float)pass.scissor.y + pass.scissor.h;
+			scissor.left = (float)pass.scissor.x;
+			scissor.top = (float)pass.scissor.y;
+
+			// Set the scissor.
+			ctx.deviceContext->RSSetScissorRects(1, &scissor);
+		}
 	}
 
 	{
@@ -1591,7 +1659,7 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Depth
-		ID3D11DepthStencilState* depthState = D3D11Depth::get(pass.depth);
+		ID3D11DepthStencilState* depthState = D3D11Depth::get(pass.depth, pass.stencil);
 		if (depthState != nullptr)
 			ctx.deviceContext->OMSetDepthStencilState(depthState, 1);
 	}

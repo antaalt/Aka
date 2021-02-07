@@ -36,8 +36,17 @@ uint32_t Texture::height() const
 
 void SubTexture::update()
 {
-	m_uv[0] = uv2f(1.f / (texture->width() / region.x), 1.f / (texture->height() / region.y));
-	m_uv[1] = m_uv[0] + uv2f(1.f / (texture->width() / region.w), 1.f / (texture->height() / region.h));
+	if (texture->width() == 0 || texture->height() == 0)
+		return;
+	if (region.x == 0 ) m_uv[0].u = 0.f;
+	else m_uv[0].u = 1.f / (texture->width() / (float)region.x);
+	if (region.y == 0) m_uv[0].v = 0.f;
+	else m_uv[0].v = 1.f / (texture->height() / (float)region.y);
+	
+	if (region.w == 0) m_uv[1].u = m_uv[0].u;
+	else m_uv[1].u = m_uv[0].u + 1.f / (texture->width() / (float)region.w);
+	if (region.h == 0) m_uv[1].v = m_uv[0].v;
+	else m_uv[1].v = m_uv[0].v + 1.f / (texture->height() / (float)region.h);
 }
 
 const uv2f& SubTexture::get(uint32_t uv) const

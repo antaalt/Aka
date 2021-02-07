@@ -100,6 +100,9 @@ void Viewer::render()
 	static aka::RenderPass renderPass{};
 	static Culling doubleSide = Culling{ CullMode::None, CullOrder::CounterClockWise };
 	static Culling singleSide = Culling{ CullMode::BackFace, CullOrder::CounterClockWise };
+	static Blending blending = Blending::normal();
+	static Depth depth = Depth{ DepthCompare::LessOrEqual, true };
+	static Stencil stencil = Stencil::none();
 	aka::Framebuffer::Ptr backbuffer = aka::GraphicBackend::backbuffer();
 	backbuffer->clear(0.f, 0.f, 0.f, 1.f);
 	aka::mat4f perspective = aka::mat4f::perspective(aka::degreef(90.f), (float)backbuffer->width() / (float)backbuffer->height(), 0.01f, 1000.f);
@@ -121,15 +124,18 @@ void Viewer::render()
 		renderPass.indexCount = m_model->meshes[i]->getIndexCount(); // TODO set zero means all ?
 		renderPass.indexOffset = 0;
 		renderPass.material = m_material;
-		renderPass.blend = aka::Blending::normal();
+		renderPass.blend = blending;
 		renderPass.cull = m_model->materials[i].doubleSided ? doubleSide : singleSide;
-		renderPass.depth = aka::DepthCompare::LessOrEqual;
+		renderPass.depth = depth;
+		renderPass.stencil = stencil;
 		renderPass.viewport = aka::Rect{
-			0.f,
-			0.f,
-			static_cast<float>(backbuffer->width()),
-			static_cast<float>(backbuffer->height())
+			0,
+			0,
+			backbuffer->width(),
+			backbuffer->height()
 		};
+		renderPass.scissor = aka::Rect{ 0 };
+
 		renderPass.execute();
 	}
 }

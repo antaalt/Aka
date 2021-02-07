@@ -284,6 +284,8 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	{
 		static Blending blend = Blending::normal();
 		static Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
+		static Depth depth = Depth{ DepthCompare::None, true };
+		static Stencil stencil = Stencil::none();
 		// Prepare renderPass
 		renderPass.framebuffer = framebuffer;
 
@@ -295,9 +297,13 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 		renderPass.cull = cull;
 
-		renderPass.depth = DepthCompare::None;
+		renderPass.depth = depth;
 
-		renderPass.viewport = aka::Rect{ 0.f, 0.f, static_cast<float>(framebuffer->width()), static_cast<float>(framebuffer->height()) };
+		renderPass.stencil = stencil;
+
+		renderPass.viewport = aka::Rect{ 0, 0, framebuffer->width(), framebuffer->height() };
+
+		renderPass.scissor = aka::Rect{ 0 };
 	}
 	
 	// Don't forget last batch if there is something

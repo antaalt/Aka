@@ -226,6 +226,7 @@ GLuint getType(ShaderType type)
 	case ShaderType::Compute:
 		return GL_COMPUTE_SHADER;
 	default:
+		Logger::error("Incorrect shader type");
 		return 0;
 	}
 }
@@ -236,6 +237,7 @@ GLenum blendMode(BlendMode mode)
 	{
 	case BlendMode::Zero:
 		return GL_ZERO;
+	default:
 	case BlendMode::One:
 		return GL_ONE;
 	case BlendMode::SrcColor:
@@ -272,14 +274,13 @@ GLenum blendMode(BlendMode mode)
 		return GL_SRC1_ALPHA;
 	case BlendMode::OneMinusSrc1Alpha:
 		return GL_ONE_MINUS_SRC1_ALPHA;
-	default:
-		return 0;
 	}
 }
 GLenum blendOp(BlendOp op)
 {
 	switch (op)
 	{
+	default:
 	case BlendOp::Add:
 		return GL_FUNC_ADD;
 	case BlendOp::Substract:
@@ -290,8 +291,55 @@ GLenum blendOp(BlendOp op)
 		return GL_MIN;
 	case BlendOp::Max:
 		return GL_MAX;
+	}
+}
+
+GLenum stencilFunc(StencilMode mode)
+{
+	switch (mode)
+	{
 	default:
-		return 0;
+	case StencilMode::None:
+	case StencilMode::Never:
+		return GL_NEVER;
+	case StencilMode::Less:
+		return GL_LESS;
+	case StencilMode::LessOrEqual:
+		return GL_LEQUAL;
+	case StencilMode::Greater:
+		return GL_GREATER;
+	case StencilMode::GreaterOrEqual:
+		return GL_GEQUAL;
+	case StencilMode::Equal:
+		return GL_EQUAL;
+	case StencilMode::NotEqual:
+		return GL_NOTEQUAL;
+	case StencilMode::Always:
+		return GL_ALWAYS;
+	}
+}
+
+GLenum stencilOp(StencilOp op)
+{
+	switch (op)
+	{
+	default:
+	case StencilOp::Keep:
+		return GL_KEEP;
+	case StencilOp::Zero:
+		return GL_ZERO;
+	case StencilOp::Replace:
+		return GL_REPLACE;
+	case StencilOp::Increment:
+		return GL_INCR;
+	case StencilOp::IncrementWrap:
+		return GL_INCR_WRAP;
+	case StencilOp::Decrement:
+		return GL_DECR;
+	case StencilOp::DecrementWrap:
+		return GL_DECR_WRAP;
+	case StencilOp::Invert:
+		return GL_INVERT;
 	}
 }
 
@@ -659,6 +707,7 @@ public:
 			Texture::Format format;
 			switch (attachments[iAtt])
 			{
+			default:
 			case AttachmentType::Color0:
 			case AttachmentType::Color1:
 			case AttachmentType::Color2:
@@ -697,7 +746,8 @@ public:
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
 		glClearColor(r, g, b, a);
 		glClearDepth(1.f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearStencil(1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
@@ -736,7 +786,8 @@ public:
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glClearColor(r, g, b, a);
 		glClearDepth(1.f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearStencil(1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
@@ -891,6 +942,7 @@ void GraphicBackend::render(RenderPass& pass)
 			case CullMode::BackFace:
 				glCullFace(GL_BACK);
 				break;
+			default:
 			case CullMode::AllFace:
 				glCullFace(GL_FRONT_AND_BACK);
 				break;
@@ -900,6 +952,7 @@ void GraphicBackend::render(RenderPass& pass)
 			case CullOrder::ClockWise:
 				glFrontFace(GL_CW);
 				break;
+			default:
 			case CullOrder::CounterClockWise:
 				glFrontFace(GL_CCW);
 				break;
@@ -909,15 +962,17 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Depth
-		if (pass.depth == DepthCompare::None)
+		if (pass.depth.compare == DepthCompare::None)
 		{
 			glDisable(GL_DEPTH_TEST);
 		}
 		else
 		{
 			glEnable(GL_DEPTH_TEST);
-			switch (pass.depth)
+			glDepthMask(pass.depth.mask);
+			switch (pass.depth.compare)
 			{
+			default:
 			case DepthCompare::Always:
 				glDepthFunc(GL_ALWAYS);
 				break;
@@ -947,17 +1002,60 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 
 	{
+		// Stencil
+		if (!pass.stencil.enabled())
+		{
+			glDisable(GL_STENCIL_TEST);
+		}
+		else
+		{
+			glEnable(GL_STENCIL_TEST);
+			glStencilMask(pass.stencil.writeMask);
+			GLenum frontFunc = gl::stencilFunc(pass.stencil.front.mode);
+			GLenum backFunc = gl::stencilFunc(pass.stencil.back.mode);
+			glStencilFuncSeparate(GL_FRONT, frontFunc, 1, pass.stencil.readMask);
+			glStencilFuncSeparate(GL_BACK, backFunc, 1, pass.stencil.readMask);
+			glStencilOpSeparate(
+				GL_FRONT,
+				gl::stencilOp(pass.stencil.front.stencilFailed),
+				gl::stencilOp(pass.stencil.front.stencilDepthFailed),
+				gl::stencilOp(pass.stencil.front.stencilPassed)
+			);
+			glStencilOpSeparate(
+				GL_BACK,
+				gl::stencilOp(pass.stencil.back.stencilFailed),
+				gl::stencilOp(pass.stencil.back.stencilDepthFailed),
+				gl::stencilOp(pass.stencil.back.stencilPassed)
+			);
+		}
+	}
+
+	{
 		// Viewport
 		glViewport(
 			static_cast<GLint>(pass.viewport.x),
 			static_cast<GLint>(pass.viewport.y),
-			static_cast<GLint>(pass.viewport.w),
-			static_cast<GLint>(pass.viewport.h)
+			static_cast<GLsizei>(pass.viewport.w),
+			static_cast<GLsizei>(pass.viewport.h)
 		);
 	}
 
 	{
-		// TODO Scissor
+		// Scissor
+		if (pass.scissor.w == 0 || pass.scissor.h == 0)
+		{
+			glDisable(GL_SCISSOR_TEST);
+		}
+		else
+		{
+			glEnable(GL_SCISSOR_TEST);
+			glScissor(
+				static_cast<GLint>(pass.scissor.x),
+				static_cast<GLint>(pass.scissor.y),
+				static_cast<GLsizei>(pass.scissor.w),
+				static_cast<GLsizei>(pass.scissor.h)
+			);
+		}
 	}
 
 	{

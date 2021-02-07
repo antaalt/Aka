@@ -76,4 +76,79 @@ bool Culling::operator!=(const Culling& rhs) const
 	return mode != rhs.mode || order != rhs.order;
 }
 
+bool Depth::operator==(const Depth& rhs) const
+{
+	return compare == rhs.compare && mask == rhs.mask;
+}
+
+bool Depth::operator!=(const Depth& rhs) const
+{
+	return compare != rhs.compare || mask != rhs.mask;
+}
+
+Stencil Stencil::none()
+{
+	Stencil stencil{};
+	stencil.front.mode = StencilMode::None;
+	stencil.front.stencilFailed = StencilOp::Keep;
+	stencil.front.stencilDepthFailed = StencilOp::Keep;
+	stencil.front.stencilPassed = StencilOp::Keep;
+	stencil.back.mode = StencilMode::None;
+	stencil.back.stencilFailed = StencilOp::Keep;
+	stencil.back.stencilDepthFailed = StencilOp::Keep;
+	stencil.back.stencilPassed = StencilOp::Keep;
+	stencil.readMask = 0xff;
+	stencil.writeMask = 0xff;
+	return stencil;
+}
+
+Stencil Stencil::equal()
+{
+	Stencil stencil{};
+	stencil.front.mode = StencilMode::Equal;
+	stencil.front.stencilFailed = StencilOp::Keep;
+	stencil.front.stencilDepthFailed = StencilOp::Keep;
+	stencil.front.stencilPassed = StencilOp::Keep;
+	stencil.back.mode = StencilMode::None;
+	stencil.back.stencilFailed = StencilOp::Keep;
+	stencil.back.stencilDepthFailed = StencilOp::Keep;
+	stencil.back.stencilPassed = StencilOp::Keep;
+	stencil.readMask = 0xff;
+	stencil.writeMask = 0xff;
+	return stencil;
+}
+
+bool Stencil::operator==(const Stencil& rhs) const
+{
+	return front.stencilFailed == rhs.front.stencilFailed &&
+		front.stencilDepthFailed == rhs.front.stencilDepthFailed &&
+		front.stencilPassed == rhs.front.stencilPassed &&
+		front.mode == rhs.front.mode &&
+		back.stencilFailed == rhs.back.stencilFailed &&
+		back.stencilDepthFailed == rhs.back.stencilDepthFailed &&
+		back.stencilPassed == rhs.back.stencilPassed &&
+		back.mode == rhs.back.mode &&
+		readMask == rhs.readMask &&
+		writeMask == rhs.writeMask;
+}
+
+bool Stencil::operator!=(const Stencil& rhs) const
+{
+	return front.stencilFailed != rhs.front.stencilFailed ||
+		front.stencilDepthFailed != rhs.front.stencilDepthFailed ||
+		front.stencilPassed != rhs.front.stencilPassed ||
+		front.mode != rhs.front.mode ||
+		back.stencilFailed != rhs.back.stencilFailed ||
+		back.stencilDepthFailed != rhs.back.stencilDepthFailed ||
+		back.stencilPassed != rhs.back.stencilPassed ||
+		back.mode != rhs.back.mode ||
+		readMask != rhs.readMask ||
+		writeMask != rhs.writeMask;
+}
+
+bool Stencil::enabled() const
+{
+	return front.mode != StencilMode::None && back.mode != StencilMode::None;
+}
+
 };
