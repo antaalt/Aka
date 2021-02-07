@@ -107,12 +107,12 @@ void Viewer::render()
 	for (size_t i = 0; i < m_model->meshes.size(); i++)
 	{
 		aka::mat4f model = m_model->transforms[i];
-		aka::mat3f normal = aka::mat3f::transpose(aka::mat3f::inverse(mat3f(view * model)));
+		aka::mat3f normal = aka::mat3f::transpose(aka::mat3f::inverse(mat3f(model)));
 		aka::color4f color = m_model->materials[i].color;
 		m_material->set<mat4f>("u_projection", perspective);
 		m_material->set<mat4f>("u_model", model);
 		m_material->set<mat4f>("u_view", view);
-		//m_material->set<mat3f>("u_normalMatrix", normal);
+		m_material->set<mat3f>("u_normalMatrix", normal);
 		m_material->set<color4f>("u_color", color);
 		m_material->set<Texture::Ptr>("u_colorTexture", m_model->materials[i].colorTexture);
 		m_material->set<Texture::Ptr>("u_normalTexture", m_model->materials[i].normalTexture);

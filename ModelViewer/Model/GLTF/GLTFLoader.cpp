@@ -219,15 +219,13 @@ Material convertMaterial(const tinygltf::Model& tinyModel, const tinygltf::Mater
 	}
 	else
 	{
-		// Generate normal map ?
-		uint8_t data[4] = { 255,255,255,255 };
+		uint8_t data[4] = { 128,255,128,255 };
 		aka::Sampler sampler;
 		sampler.filterMag = aka::Sampler::Filter::Nearest;
 		sampler.filterMin = aka::Sampler::Filter::Nearest;
 		sampler.wrapS = aka::Sampler::Wrap::Repeat;
 		sampler.wrapT = aka::Sampler::Wrap::Repeat;
-		material.colorTexture = aka::Texture::create(1U, 1U, aka::Texture::Format::Rgba, data, sampler);
-		material.normalTexture = material.colorTexture;
+		material.normalTexture = aka::Texture::create(1U, 1U, aka::Texture::Format::Rgba, data, sampler);
 	}
 	return material;
 }
@@ -470,7 +468,7 @@ Model::Ptr viewer::GLTFLoader::load(const Path& path)
 	tinygltf::TinyGLTF loader;
 	std::string err;
 	std::string warn;
-	loader.SetImageLoader([](
+	/*loader.SetImageLoader([](
 		tinygltf::Image* tinyImage, 
 		const int imageID,
 		std::string* err, 
@@ -504,7 +502,7 @@ Model::Ptr viewer::GLTFLoader::load(const Path& path)
 		tinyImage->pixel_type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
 		tinyImage->image = std::move(image.bytes);
 		return true;
-	}, nullptr);
+	}, nullptr);*/
 	bool ret = loader.LoadASCIIFromFile(&tinyModel, &err, &warn, path.str());
 	if (!warn.empty())
 		aka::Logger::warn(warn);
