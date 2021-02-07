@@ -63,8 +63,11 @@ public:
 	static ShaderID compile(const char* content, ShaderType type);
 
 	static Shader::Ptr create(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes);
+
+	bool valid() const { return m_valid; }
 protected:
 	std::vector<Attributes> m_attributes;
+	bool m_valid;
 };
 
 

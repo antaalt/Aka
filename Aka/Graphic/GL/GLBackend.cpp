@@ -105,7 +105,7 @@ GLenum attachmentType(Framebuffer::AttachmentType type)
 	switch (type)
 	{
 	default:
-		Logger::warn("Framebuffer attachment type not defined : ", (int)type);
+		Logger::warn("[GL] Framebuffer attachment type not defined : ", (int)type);
 		return GL_COLOR_ATTACHMENT0;
 	case Framebuffer::AttachmentType::Color0:
 		return GL_COLOR_ATTACHMENT0;
@@ -226,7 +226,7 @@ GLuint getType(ShaderType type)
 	case ShaderType::Compute:
 		return GL_COMPUTE_SHADER;
 	default:
-		Logger::error("Incorrect shader type");
+		Logger::error("[GL] Incorrect shader type");
 		return 0;
 	}
 }
@@ -378,25 +378,40 @@ public:
 			std::string str(errorLog.begin(), errorLog.end());
 			// Exit with failure.
 			glDeleteProgram(m_programID); // Don't leak the program.
-			throw std::runtime_error(str);
+			if (vert != 0)
+				glDeleteShader(vert);
+			if (frag != 0)
+				glDeleteShader(frag);
+			if (comp != 0)
+				glDeleteShader(comp);
+			Logger::error("[GL] ", str);
 		}
-		// Always detach shaders after a successful link.
-		if (vert != 0)
+		else
 		{
-			glDetachShader(m_programID, vert);
-			glDeleteShader(vert);
+			// Always detach shaders after a successful link.
+			if (vert != 0)
+			{
+				glDetachShader(m_programID, vert);
+				glDeleteShader(vert);
+			}
+			if (frag != 0)
+			{
+				glDetachShader(m_programID, frag);
+				glDeleteShader(frag);
+			}
+			if (comp != 0)
+			{
+				glDetachShader(m_programID, comp);
+				glDeleteShader(comp);
+			}
+			glValidateProgram(m_programID);
+			GLint status = 0;
+			glGetProgramiv(m_programID, GL_VALIDATE_STATUS, &status);
+			if (status != GL_TRUE)
+				Logger::error("[GL] Program is not valid");
+			else
+				m_valid = true;
 		}
-		if (frag != 0)
-		{
-			glDetachShader(m_programID, frag);
-			glDeleteShader(frag);
-		}
-		if (comp != 0)
-		{
-			glDetachShader(m_programID, comp);
-			glDeleteShader(comp);
-		}
-		glValidateProgram(m_programID);
 	}
 	GLShader(const GLShader&) = delete;
 	GLShader& operator=(const GLShader&) = delete;
@@ -475,7 +490,7 @@ public:
 				bufferSize += 16;
 				break;
 			default:
-				Logger::warn("Unsupported Uniform Type : ", name);
+				Logger::warn("[GL] Unsupported Uniform Type : ", name);
 				break;
 			}
 			m_uniforms.push_back(uniform);
@@ -533,7 +548,7 @@ public:
 			}
 			else
 			{
-				Logger::error("Unsupported uniform type : ", (int)uniform.type);
+				Logger::error("[GL] Unsupported uniform type : ", (int)uniform.type);
 			}
 		}
 	}
@@ -814,7 +829,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 
 #if defined(DEBUG)
 	if (glDebugMessageCallback) {
-		Logger::debug("Setting up openGL callback.");
+		Logger::debug("[GL] Setting up openGL callback.");
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(openglCallbackFunction, nullptr);
 		GLuint unused = 0;
@@ -828,7 +843,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 		);
 	}
 	else
-		Logger::warn("glDebugMessageCallback not supported");
+		Logger::warn("[GL] glDebugMessageCallback not supported");
 #endif
 	ctx.backbuffer = std::make_shared<GLBackBuffer>(width, height);
 }
@@ -1032,12 +1047,24 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Viewport
-		glViewport(
-			static_cast<GLint>(pass.viewport.x),
-			static_cast<GLint>(pass.viewport.y),
-			static_cast<GLsizei>(pass.viewport.w),
-			static_cast<GLsizei>(pass.viewport.h)
-		);
+		if (pass.viewport.w == 0 || pass.viewport.h == 0)
+		{
+			glViewport(
+				0,
+				0,
+				static_cast<GLsizei>(pass.framebuffer->width()),
+				static_cast<GLsizei>(pass.framebuffer->height())
+			);
+		}
+		else
+		{
+			glViewport(
+				static_cast<GLint>(pass.viewport.x),
+				static_cast<GLint>(pass.viewport.y),
+				static_cast<GLsizei>(pass.viewport.w),
+				static_cast<GLsizei>(pass.viewport.h)
+			);
+		}
 	}
 
 	{
@@ -1143,8 +1170,8 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 		std::string str(errorLog.begin(), errorLog.end());
 		// Exit with failure.
 		glDeleteShader(shaderID); // Don't leak the shader.
-		std::cerr << str << std::endl;
-		throw std::runtime_error(str);
+		Logger::error("[GL] ", str);
+		return ShaderID(0);
 	}
 	return ShaderID(shaderID);
 }

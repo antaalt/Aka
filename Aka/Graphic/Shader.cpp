@@ -6,7 +6,8 @@
 namespace aka {
 
 Shader::Shader(const std::vector<Attributes>& attributes) :
-	m_attributes(attributes)
+	m_attributes(attributes),
+	m_valid(false)
 {
 }
 

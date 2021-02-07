@@ -1614,16 +1614,32 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Viewport
-		D3D11_VIEWPORT viewport;
-		viewport.Width = (float)pass.viewport.w;
-		viewport.Height = (float)pass.viewport.h;
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.TopLeftX = (float)pass.viewport.x;
-		viewport.TopLeftY = (float)pass.viewport.y;
+		if (pass.viewport.w == 0 || pass.viewport.h == 0)
+		{
+			D3D11_VIEWPORT viewport;
+			viewport.Width = static_cast<float>(pass.framebuffer->width());
+			viewport.Height = static_cast<float>(pass.framebuffer->height());
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			viewport.TopLeftX = 0.f;
+			viewport.TopLeftY = 0.f;
 
-		// Create the viewport.
-		ctx.deviceContext->RSSetViewports(1, &viewport);
+			// Set the viewport.
+			ctx.deviceContext->RSSetViewports(1, &viewport);
+		}
+		else
+		{
+			D3D11_VIEWPORT viewport;
+			viewport.Width = (float)pass.viewport.w;
+			viewport.Height = (float)pass.viewport.h;
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			viewport.TopLeftX = (float)pass.viewport.x;
+			viewport.TopLeftY = (float)pass.viewport.y;
+
+			// Set the viewport.
+			ctx.deviceContext->RSSetViewports(1, &viewport);
+		}
 	}
 
 	{

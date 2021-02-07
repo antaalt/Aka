@@ -93,10 +93,7 @@ Stencil Stencil::none()
 	stencil.front.stencilFailed = StencilOp::Keep;
 	stencil.front.stencilDepthFailed = StencilOp::Keep;
 	stencil.front.stencilPassed = StencilOp::Keep;
-	stencil.back.mode = StencilMode::None;
-	stencil.back.stencilFailed = StencilOp::Keep;
-	stencil.back.stencilDepthFailed = StencilOp::Keep;
-	stencil.back.stencilPassed = StencilOp::Keep;
+	stencil.back = stencil.front;
 	stencil.readMask = 0xff;
 	stencil.writeMask = 0xff;
 	return stencil;
@@ -109,10 +106,7 @@ Stencil Stencil::equal()
 	stencil.front.stencilFailed = StencilOp::Keep;
 	stencil.front.stencilDepthFailed = StencilOp::Keep;
 	stencil.front.stencilPassed = StencilOp::Keep;
-	stencil.back.mode = StencilMode::None;
-	stencil.back.stencilFailed = StencilOp::Keep;
-	stencil.back.stencilDepthFailed = StencilOp::Keep;
-	stencil.back.stencilPassed = StencilOp::Keep;
+	stencil.back = stencil.front;
 	stencil.readMask = 0xff;
 	stencil.writeMask = 0xff;
 	return stencil;

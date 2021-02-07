@@ -6,29 +6,32 @@ namespace viewer {
 
 void Viewer::loadShader()
 {
-	try
-	{
 #if defined(AKA_USE_OPENGL)
-		aka::ShaderID vert = aka::Shader::compile(readString("./data/shaders/GL/gltf.vert"), aka::ShaderType::Vertex);
-		aka::ShaderID frag = aka::Shader::compile(readString("./data/shaders/GL/gltf.frag"), aka::ShaderType::Fragment);
-		std::vector<aka::Attributes> attributes;
+	aka::ShaderID vert = aka::Shader::compile(readString("./data/shaders/GL/gltf.vert"), aka::ShaderType::Vertex);
+	aka::ShaderID frag = aka::Shader::compile(readString("./data/shaders/GL/gltf.frag"), aka::ShaderType::Fragment);
+	std::vector<aka::Attributes> attributes;
 #else
-		std::string str = readString("./data/shaders/D3D/shader.hlsl");
-		aka::ShaderID vert = aka::Shader::compile(str, aka::ShaderType::Vertex);
-		aka::ShaderID frag = aka::Shader::compile(str, aka::ShaderType::Fragment);
-		std::vector<aka::Attributes> attributes;
-		attributes.push_back(aka::Attributes{ aka::AttributeID(0), "POS"});
-		attributes.push_back(aka::Attributes{ aka::AttributeID(0), "NORM" });
-		attributes.push_back(aka::Attributes{ aka::AttributeID(0), "TEX" });
-		attributes.push_back(aka::Attributes{ aka::AttributeID(0), "COL" });
+	std::string str = readString("./data/shaders/D3D/shader.hlsl");
+	aka::ShaderID vert = aka::Shader::compile(str, aka::ShaderType::Vertex);
+	aka::ShaderID frag = aka::Shader::compile(str, aka::ShaderType::Fragment);
+	std::vector<aka::Attributes> attributes;
+	attributes.push_back(aka::Attributes{ aka::AttributeID(0), "POS"});
+	attributes.push_back(aka::Attributes{ aka::AttributeID(0), "NORM" });
+	attributes.push_back(aka::Attributes{ aka::AttributeID(0), "TEX" });
+	attributes.push_back(aka::Attributes{ aka::AttributeID(0), "COL" });
 #endif
-		aka::Shader::Ptr shader = aka::Shader::create(vert, frag, aka::ShaderID(0), attributes);
-		m_shader = shader;
-		m_material = aka::ShaderMaterial::create(shader);
-	}
-	catch (const std::exception& e)
+	if (vert == ShaderID(0) || frag == ShaderID(0))
 	{
-		aka::Logger::error("Failed to compile shader : ", e.what());
+		aka::Logger::error("Failed to compile shader");
+	}
+	else
+	{
+		aka::Shader::Ptr shader = aka::Shader::create(vert, frag, aka::ShaderID(0), attributes);
+		if (shader->valid())
+		{
+			m_shader = shader;
+			m_material = aka::ShaderMaterial::create(shader);
+		}
 	}
 }
 
@@ -38,7 +41,8 @@ void Viewer::initialize()
 	// TODO use args
 	//m_model = loader.load("./glTF-Sample-Models-master/2.0/Sponza/glTF/Sponza.gltf");
 	//m_model = loader.load("./glTF-Sample-Models-master/2.0/AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf");
-	m_model = loader.load("./glTF-Sample-Models-master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf");
+	//m_model = loader.load("./glTF-Sample-Models-master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf");
+	m_model = loader.load("./glTF-Sample-Models-master/2.0/Lantern/glTF/Lantern.gltf");
 	if (m_model == nullptr)
 		throw std::runtime_error("Could not load model.");
 	aka::Logger::info("Scene Bounding box : ", m_model->bbox.min, " - ", m_model->bbox.max);
@@ -128,12 +132,7 @@ void Viewer::render()
 		renderPass.cull = m_model->materials[i].doubleSided ? doubleSide : singleSide;
 		renderPass.depth = depth;
 		renderPass.stencil = stencil;
-		renderPass.viewport = aka::Rect{
-			0,
-			0,
-			backbuffer->width(),
-			backbuffer->height()
-		};
+		renderPass.viewport = aka::Rect{ 0 };
 		renderPass.scissor = aka::Rect{ 0 };
 
 		renderPass.execute();
