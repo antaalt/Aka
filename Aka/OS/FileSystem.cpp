@@ -79,6 +79,16 @@ Path& Path::operator+=(const Path& rhs)
 	return *this;
 }
 
+bool Path::operator==(const Path& rhs) const
+{
+	return Path::normalize(*this).str() == Path::normalize(rhs).str();
+}
+
+bool Path::operator!=(const Path& rhs) const
+{
+	return Path::normalize(*this).str() != Path::normalize(rhs).str();
+}
+
 std::string Path::extension(const Path& path)
 {
 	return PlatformBackend::extension(path);
@@ -102,6 +112,11 @@ Path Path::executable()
 std::vector<Path> Path::enumerate(const Path& path)
 {
 	return PlatformBackend::enumerate(path);
+}
+
+Path Path::normalize(const Path& path)
+{
+	return PlatformBackend::normalize(path);
 }
 
 std::string Asset::loadString(const Path& path)

@@ -1644,10 +1644,10 @@ void GraphicBackend::render(RenderPass& pass)
 		if (pass.scissor.w > 0 && pass.scissor.h > 0)
 		{
 			D3D11_RECT scissor;
-			scissor.right = (float)pass.scissor.x + pass.scissor.w;
-			scissor.bottom = (float)pass.scissor.y + pass.scissor.h;
-			scissor.left = (float)pass.scissor.x;
-			scissor.top = (float)pass.scissor.y;
+			scissor.right = (LONG)pass.scissor.x + pass.scissor.w;
+			scissor.bottom = (LONG)pass.scissor.y + pass.scissor.h;
+			scissor.left = (LONG)pass.scissor.x;
+			scissor.top = (LONG)pass.scissor.y;
 
 			// Set the scissor.
 			ctx.deviceContext->RSSetScissorRects(1, &scissor);

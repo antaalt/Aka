@@ -17,11 +17,15 @@ struct Path
 	Path operator+(const Path& rhs) const;
 	Path &operator+=(const Path& rhs);
 
+	bool operator==(const Path& rhs) const;
+	bool operator!=(const Path& rhs) const;
+
 	static std::string extension(const Path &path);
 	static std::string name(const Path& path);
 	static Path cwd();
 	static Path executable();
 	static std::vector<Path> enumerate(const Path& path);
+	static Path normalize(const Path& path);
 
 private:
 	std::string m_string;

@@ -37,6 +37,7 @@ public:
 	static Path cwd();
 	static std::string extension(const Path& path);
 	static std::string fileName(const Path& path);
+	static void errorDialog(const std::string& message);
 
 #if defined(AKA_PLATFORM_WINDOWS)
 	static HWND getWindowsWindowHandle();

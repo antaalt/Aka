@@ -527,5 +527,23 @@ std::string PlatformBackend::fileName(const Path& path)
 	return WcharToUtf8(fileName);
 }
 
+
+void PlatformBackend::errorDialog(const std::string& message)
+{
+	std::wstring msg = Utf8ToWchar(message);
+	int msgBoxID = MessageBox(
+		getWindowsWindowHandle(), 
+		msg.data(),
+		L"Error",
+		MB_ICONERROR | MB_OK | MB_DEFBUTTON1
+	);
+	switch (msgBoxID)
+	{
+	case IDOK:
+		// TODO: add code
+		break;
+	}
+}
+
 };
 #endif
