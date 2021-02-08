@@ -315,6 +315,7 @@ std::ostream& operator<<(std::ostream& os, Logger::Color color)
 	if (color == Logger::Color::ForegroundNone)
 		return os;
 	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleOutputCP(CP_UTF8);
 	SetConsoleTextAttribute(hdl, terminalColors[(unsigned int)color]);
 	return os;
 }

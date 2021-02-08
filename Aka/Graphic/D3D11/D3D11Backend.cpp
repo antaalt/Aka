@@ -15,10 +15,6 @@
 #include <stdexcept>
 #include <array>
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -916,6 +912,7 @@ public:
 			D3D_CHECK_RESULT(ctx.device->CreatePixelShader(m_pixelShaderBuffer->GetBufferPointer(), m_pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
 		if (compute.value() != 0)
 			D3D_CHECK_RESULT(ctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
+		m_valid = true;
 	}
 	D3D11Shader(const D3D11Shader&) = delete;
 	D3D11Shader& operator=(const D3D11Shader&) = delete;
@@ -1258,7 +1255,7 @@ public:
 	{
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
 		d3dShader->use();
-		GLint textureUnit = 0;
+		uint32_t textureUnit = 0;
 		size_t offset = 0;
 		size_t offsetFrag = 0;
 		size_t offsetVert = 0;
@@ -1424,7 +1421,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	// Set the usage of the back buffer.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = glfwGetWin32Window(PlatformBackend::getGLFW3Handle());
+	swapChainDesc.OutputWindow = PlatformBackend::getWindowsWindowHandle();
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;

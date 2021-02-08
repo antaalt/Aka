@@ -6,6 +6,10 @@
 #include <stdint.h>
 
 struct GLFWwindow;
+#if defined(AKA_PLATFORM_WINDOWS)
+struct HWND__;
+typedef HWND__* HWND;
+#endif
 
 namespace aka {
 
@@ -34,6 +38,9 @@ public:
 	static std::string extension(const Path& path);
 	static std::string fileName(const Path& path);
 
+#if defined(AKA_PLATFORM_WINDOWS)
+	static HWND getWindowsWindowHandle();
+#endif
 	static GLFWwindow* getGLFW3Handle();
 };
 

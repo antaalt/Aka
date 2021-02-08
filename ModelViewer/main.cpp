@@ -1,4 +1,4 @@
-#include "ModelViewer.h"
+ï»¿#include "ModelViewer.h"
 
 struct Settings {
 	uint32_t width;
@@ -55,9 +55,7 @@ int main(int argc, char* argv[])
 	settings.height = 720;
 
 	parse(argc, argv, settings);
-
-	aka::PlatformBackend::errorDialog("hello world é@ç");
-
+	
 	viewer::Viewer viewer;
 	aka::Config cfg{};
 	cfg.app = &viewer;

@@ -1,4 +1,4 @@
-#include "Application.h"
+﻿#include "Application.h"
 
 #include "../Platform/PlatformBackend.h"
 #include "../Platform/InputBackend.h"
