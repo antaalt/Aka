@@ -3,6 +3,7 @@
 #include <map>
 #include <mutex>
 #include <memory>
+#include <cstring>
 
 #include <Aka/OS/Logger.h>
 #include <Aka/Core/Debug.h>
@@ -16,7 +17,7 @@ struct AudioContext
     std::mutex lock;
 };
 
-AudioContext ctx;
+AudioContext actx;
 std::map<AudioID, std::unique_ptr<AudioDecoder>> decoders;
 
 
@@ -41,7 +42,7 @@ AudioID AudioBackend::play(const Path& path, float volume, bool loop)
     ASSERT(AudioBackend::getFrequency() == decoder->frequency(), "Audio will need resampling");
     ASSERT(AudioBackend::getChannels() == decoder->channels(), "Audio channels does not match");
     AudioID id = generateUniqueHandle(decoder.get());
-    std::lock_guard<std::mutex> m(ctx.lock);
+    std::lock_guard<std::mutex> m(actx.lock);
     decoders.insert(std::make_pair(id, std::move(decoder)));
     return id;
 }
@@ -66,7 +67,7 @@ void AudioBackend::setVolume(AudioID id, float volume)
     auto it = decoders.find(id);
     if (it != decoders.end())
     {
-        std::lock_guard<std::mutex> m(ctx.lock);
+        std::lock_guard<std::mutex> m(actx.lock);
         it->second->volume(volume);
     }
 }
@@ -74,7 +75,7 @@ void AudioBackend::setVolume(AudioID id, float volume)
 void AudioBackend::close(AudioID id)
 {
     auto it = decoders.find(id);
-    std::lock_guard<std::mutex> m(ctx.lock);
+    std::lock_guard<std::mutex> m(actx.lock);
     decoders.erase(it);
 }
 
@@ -92,7 +93,7 @@ int16_t mix(int16_t sample1, int16_t sample2)
 
 void AudioBackend::process(int16_t* buffer, uint32_t frames)
 {
-    std::lock_guard<std::mutex> m(ctx.lock);
+    std::lock_guard<std::mutex> m(actx.lock);
     if (decoders.size() == 0)
         return; // No audio to process
     // Set buffer to zero for mixing

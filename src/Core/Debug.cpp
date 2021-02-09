@@ -13,7 +13,7 @@ RuntimeError::RuntimeError(const std::string& str) :
 {
     Logger::critical(str);
 }
-const char* RuntimeError::what() const
+const char* RuntimeError::what() const noexcept
 {
     return nullptr;
 }

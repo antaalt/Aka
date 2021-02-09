@@ -48,7 +48,7 @@ public:
 	RuntimeError(const char* str);
 	RuntimeError(const std::string& str);
 
-	const char* what() const override;
+	const char* what() const noexcept override;
 private:
 	std::string m_error;
 };
@@ -60,7 +60,7 @@ public:
 	GraphicError(const char* str);
 	GraphicError(const std::string& str);
 
-	const char* what() const override;
+	const char* what() const noexcept override;
 private:
 	std::string m_error;
 };

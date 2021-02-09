@@ -118,9 +118,12 @@ Path Path::normalize(const Path& path)
 {
 	return PlatformBackend::normalize(path);
 }
-
+// TODO fix this dirty hack
+#if defined(AKA_PLATFORM_LINUX)
+static std::string g_asset = "../asset/";
+#else
 static std::string g_asset = "../../../asset/";
-
+#endif
 std::string Asset::loadString(const Path& path)
 {
 	return readString(path);

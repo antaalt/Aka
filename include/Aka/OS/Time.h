@@ -55,7 +55,7 @@ struct Time
 	// Time elapsed since app startup in ms
 	static Time::Unit now();
 	// Get unix timestamp
-	static Time::Unit unix();
+	static Time::Unit unixtime();
 };
 
 };

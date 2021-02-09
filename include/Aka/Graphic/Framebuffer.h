@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <vector>
 
-#include "Texture.h"
-#include "Geometry.h"
+#include <Aka/Graphic/Texture.h>
+#include <Aka/Core/Geometry.h>
 
 namespace aka {
 

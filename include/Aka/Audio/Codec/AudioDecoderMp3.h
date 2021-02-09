@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <minimp3.h>
 #include <minimp3_ex.h>
 
-#include "../AudioDecoder.h"
+#include <Aka/Audio/AudioDecoder.h>
 
 namespace aka {
 

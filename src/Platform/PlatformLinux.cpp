@@ -2,6 +2,7 @@
 #include <Aka/Platform/PlatformBackend.h>
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/FileSystem.h>
+#include <Aka/OS/Logger.h>
 
 #if defined(AKA_PLATFORM_LINUX)
 
@@ -38,15 +39,6 @@ std::ostream& operator<<(std::ostream& os, Logger::Color color)
 {
 	if (color == Logger::Color::ForegroundNone)
 		return os;
-	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hdl, terminalColors[(unsigned int)color]);
-	return os;
-}
-
-std::ostream& operator<<(std::ostream& os, Logger::Color color)
-{
-	if (color == Logger::Color::ForegroundNone)
-		return os;
 	return os << "\033[" << terminalColors[(unsigned int)color] << "m";
 }
 
@@ -57,7 +49,7 @@ input::Key InputBackend::getKeyFromScancode(int scancode)
 
 input::KeyboardLayout InputBackend::getKeyboardLayout()
 {
-	return input::KeyboardLayout::Default;
+	return input::KeyboardLayout::Azerty;
 }
 
 bool PlatformBackend::directoryExist(const Path& path)
@@ -73,7 +65,7 @@ bool PlatformBackend::directoryCreate(const Path& path)
 	do
 	{
 		pos = path.str().find_first_of("\\/", pos + 1);
-		if (pos == path.size())
+		if (pos == path.str().size())
 			return true;
 		std::string p = path.str().substr(0, pos);
 		if (p == "." || p == ".." || p == "/" || p == "\\")
@@ -88,7 +80,7 @@ bool PlatformBackend::directoryCreate(const Path& path)
 	} while (pos != std::string::npos);
 	return true;
 }
-bool PlatformBackend::directoryRemove(const Path& path)
+bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
 {
 	return rmdir(path.c_str()) == 0;
 }
@@ -150,6 +142,17 @@ Path PlatformBackend::cwd()
 	return Path(path);
 }
 
-};
+std::string PlatformBackend::extension(const Path &path)
+{
+	const char *dot = strrchr(path.c_str(), '.');
+    if(!dot || dot == path.c_str()) return "";
+    return dot + 1;
+}
 
+std::string PlatformBackend::fileName(const Path &path)
+{
+	return basename(path.c_str());
+}
+
+};
 #endif

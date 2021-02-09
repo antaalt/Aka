@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Entity.h"
-#include "Component.h"
-#include "System.h"
-#include "Event.h"
-#include "Time.h"
-#include "../Debug.h"
-#include "../../Graphic/GraphicBackend.h"
+#include <Aka/Core/ECS/Entity.h>
+#include <Aka/Core/ECS/Component.h>
+#include <Aka/Core/ECS/System.h>
+#include <Aka/Core/ECS/Event.h>
+#include <Aka/OS/Time.h>
+#include <Aka/Core/Debug.h>
+#include <Aka/Graphic/GraphicBackend.h>
 
 #include <functional>
 #include <type_traits>

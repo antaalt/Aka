@@ -16,7 +16,6 @@
 	#error "Unsupported yet..."
 #elif defined(__linux__)
 	#define AKA_PLATFORM_LINUX
-	#error "Unsupported yet..."
 #else
 	#error "Unknown"
 #endif

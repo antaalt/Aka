@@ -6,9 +6,11 @@
 #include <Aka/Platform/PlatformBackend.h>
 
 #define GLEW_NO_GLU
-#include <gl/glew.h>
-#include <gl/gl.h>
+#include <GL/glew.h>
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
+
+#include <cstring>
 
 #define GL_CHECK_RESULT(result)                \
 {                                              \
@@ -816,12 +818,12 @@ struct GLContext {
 	bool vsync = true;
 };
 
-GLContext ctx;
+GLContext gctx;
 
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
 #if !defined(__APPLE__)
-	glewExperimental = true; // Nécessaire dans le profil de base
+	glewExperimental = true; // Nï¿½cessaire dans le profil de base
 	if (glewInit() != GLEW_OK) {
 		throw std::runtime_error("Could not init GLEW");
 	}
@@ -845,12 +847,12 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	else
 		Logger::warn("[GL] glDebugMessageCallback not supported");
 #endif
-	ctx.backbuffer = std::make_shared<GLBackBuffer>(width, height);
+	gctx.backbuffer = std::make_shared<GLBackBuffer>(width, height);
 }
 
 void GraphicBackend::destroy()
 {
-	ctx.backbuffer.reset();
+	gctx.backbuffer.reset();
 	glFinish();
 	glBindVertexArray(0);
 }
@@ -862,13 +864,13 @@ GraphicApi GraphicBackend::api()
 
 void GraphicBackend::resize(uint32_t width, uint32_t height)
 {
-	ctx.backbuffer->resize(width, height);
+	gctx.backbuffer->resize(width, height);
 }
 
 void GraphicBackend::getSize(uint32_t* width, uint32_t* height)
 {
-	*width = ctx.backbuffer->width();
-	*height = ctx.backbuffer->height();
+	*width = gctx.backbuffer->width();
+	*height = gctx.backbuffer->height();
 }
 
 void GraphicBackend::frame()
@@ -892,14 +894,14 @@ void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t hei
 
 Framebuffer::Ptr GraphicBackend::backbuffer()
 {
-	return ctx.backbuffer;
+	return gctx.backbuffer;
 }
 
 void GraphicBackend::render(RenderPass& pass)
 {
 	{
 		// Set framebuffer
-		if (pass.framebuffer != ctx.backbuffer)
+		if (pass.framebuffer != gctx.backbuffer)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, ((GLFramebuffer*)pass.framebuffer.get())->getFramebufferID());
 		}
@@ -1100,8 +1102,8 @@ void GraphicBackend::screenshot(const Path& path)
 {
 	glFinish();
 	Image image;
-	image.width = ctx.backbuffer->width();
-	image.height = ctx.backbuffer->height();
+	image.width = gctx.backbuffer->width();
+	image.height = gctx.backbuffer->height();
 	image.bytes.resize(image.width * image.height * 4);
 	std::vector<uint8_t> bytes(image.bytes.size());
 	glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE, bytes.data());
@@ -1117,7 +1119,7 @@ void GraphicBackend::vsync(bool enabled)
 		glfwSwapInterval(1);
 	else
 		glfwSwapInterval(0);
-	ctx.vsync = enabled;
+	gctx.vsync = enabled;
 }
 
 Device GraphicBackend::getDevice(uint32_t id)

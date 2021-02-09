@@ -59,7 +59,7 @@ struct D3D11Context {
 	ID3D11DeviceContext* deviceContext = nullptr;
 };
 
-D3D11Context ctx;
+D3D11Context dctx;
 D3D11SwapChain swapChain;
 
 struct D3D11RasterPass {
@@ -90,7 +90,7 @@ struct D3D11RasterPass {
 
 		// Create the rasterizer state from the description we just filled out.
 		ID3D11RasterizerState* rasterState;
-		HRESULT res = ctx.device->CreateRasterizerState(&rasterDesc, &rasterState);
+		HRESULT res = dctx.device->CreateRasterizerState(&rasterDesc, &rasterState);
 		if (SUCCEEDED(res))
 		{
 			D3D11RasterPass pass;
@@ -145,7 +145,7 @@ struct D3D11Sampler
 		}
 
 		ID3D11SamplerState* result;
-		HRESULT res = ctx.device->CreateSamplerState(&desc, &result);
+		HRESULT res = dctx.device->CreateSamplerState(&desc, &result);
 		if (SUCCEEDED(res))
 		{
 			D3D11Sampler sampler;
@@ -245,7 +245,7 @@ struct D3D11Depth
 		desc.BackFace.StencilFunc = stencilFunc(stencil.back.mode);
 
 		ID3D11DepthStencilState* result;
-		HRESULT res = ctx.device->CreateDepthStencilState(&desc, &result);
+		HRESULT res = dctx.device->CreateDepthStencilState(&desc, &result);
 		if (SUCCEEDED(res))
 		{
 			D3D11Depth d;
@@ -349,7 +349,7 @@ struct D3D11Blend
 			desc.RenderTarget[i] = desc.RenderTarget[0];
 
 		ID3D11BlendState* result = nullptr;
-		HRESULT res = ctx.device->CreateBlendState(&desc, &result);
+		HRESULT res = dctx.device->CreateBlendState(&desc, &result);
 		if (SUCCEEDED(res))
 		{
 			D3D11Blend blend;
@@ -433,8 +433,8 @@ public:
 		}
 		desc.Format = m_format;
 
-		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
-		D3D_CHECK_RESULT(ctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
+		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
+		D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
 		if (data != nullptr)
 			upload(data);
 	}
@@ -458,7 +458,7 @@ public:
 		box.bottom = m_height;
 		box.front = 0;
 		box.back = 1;
-		ctx.deviceContext->UpdateSubresource(
+		dctx.deviceContext->UpdateSubresource(
 			m_texture,
 			0,
 			&box,
@@ -476,7 +476,7 @@ public:
 		box.bottom = (UINT)rect.h;
 		box.front = 0;
 		box.back = 1;
-		ctx.deviceContext->UpdateSubresource(
+		dctx.deviceContext->UpdateSubresource(
 			m_texture,
 			0,
 			&box,
@@ -511,18 +511,18 @@ public:
 			desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 			desc.MiscFlags = 0;
 
-			D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&desc, nullptr, &m_staging));
+			D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, nullptr, &m_staging));
 		}
-		ctx.deviceContext->CopySubresourceRegion(
+		dctx.deviceContext->CopySubresourceRegion(
 			m_staging, 0,
 			0, 0, 0,
 			m_texture, 0,
 			&box
 		);
 		D3D11_MAPPED_SUBRESOURCE map{};
-		D3D_CHECK_RESULT(ctx.deviceContext->Map(m_staging, 0, D3D11_MAP_READ, 0, &map));
+		D3D_CHECK_RESULT(dctx.deviceContext->Map(m_staging, 0, D3D11_MAP_READ, 0, &map));
 		memcpy(data, map.pData, m_width * m_height * 4);
-		ctx.deviceContext->Unmap(m_staging, 0);
+		dctx.deviceContext->Unmap(m_staging, 0);
 	}
 	Handle handle() override
 	{
@@ -576,12 +576,12 @@ public:
 			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
 			{
 				ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
-				D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
 			}
 			else
 			{
 				ID3D11RenderTargetView* view = nullptr;
-				D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
 				m_colorViews.push_back(view);
 			}
 		}
@@ -625,12 +625,12 @@ public:
 			attachment.texture = tex;
 			if (attachment.type == AttachmentType::Depth || attachment.type == AttachmentType::Stencil || attachment.type == AttachmentType::DepthStencil)
 			{
-				D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
 			}
 			else
 			{
 				ID3D11RenderTargetView* view = nullptr;
-				D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
 				m_colorViews.push_back(view);
 			}
 		}
@@ -645,9 +645,9 @@ public:
 		color[2] = b;
 		color[3] = a;
 		for (ID3D11RenderTargetView *view : m_colorViews)
-			ctx.deviceContext->ClearRenderTargetView(view, color);
+			dctx.deviceContext->ClearRenderTargetView(view, color);
 		if(m_depthStencilView != nullptr)
-			ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
@@ -679,7 +679,7 @@ public:
 	{
 		ID3D11Texture2D* texture = nullptr;
 		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&texture));
-		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
+		D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
 		texture->Release();
 
 		// Initialize the description of the depth buffer.
@@ -697,7 +697,7 @@ public:
 		depthBufferDesc.CPUAccessFlags = 0;
 		depthBufferDesc.MiscFlags = 0;
 		// Create the texture for the depth buffer using the filled out description.
-		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
+		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
 
 		// Initailze the depth stencil view.
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
@@ -706,7 +706,7 @@ public:
 		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthStencilViewDesc.Texture2D.MipSlice = 0;
 		// Create the depth stencil view.
-		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
+		D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
 	}
 	D3D11BackBuffer(const D3D11BackBuffer&) = delete;
 	D3D11BackBuffer& operator=(const D3D11BackBuffer&) = delete;
@@ -730,7 +730,7 @@ public:
 
 		ID3D11Texture2D* texture = nullptr;
 		D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&texture));
-		D3D_CHECK_RESULT(ctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
+		D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(texture, nullptr, &m_renderTargetView));
 		texture->Release();
 		// Initialize the description of the depth buffer.
 		D3D11_TEXTURE2D_DESC depthBufferDesc{};
@@ -747,7 +747,7 @@ public:
 		depthBufferDesc.CPUAccessFlags = 0;
 		depthBufferDesc.MiscFlags = 0;
 		// Create the texture for the depth buffer using the filled out description.
-		D3D_CHECK_RESULT(ctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
+		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer));
 
 		// Initailze the depth stencil view.
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
@@ -756,7 +756,7 @@ public:
 		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthStencilViewDesc.Texture2D.MipSlice = 0;
 		// Create the depth stencil view.
-		D3D_CHECK_RESULT(ctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
+		D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView));
 
 		m_width = width;
 		m_height = height;
@@ -770,9 +770,9 @@ public:
 		color[2] = b;
 		color[3] = a;
 		// Clear the back buffer.
-		ctx.deviceContext->ClearRenderTargetView(m_renderTargetView, color);
+		dctx.deviceContext->ClearRenderTargetView(m_renderTargetView, color);
 		// Clear the depth buffer.
-		ctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
@@ -834,7 +834,7 @@ public:
 		vertexData.SysMemSlicePitch = 0;
 
 		// Now create the vertex buffer.
-		D3D_CHECK_RESULT(ctx.device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer));
+		D3D_CHECK_RESULT(dctx.device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer));
 	}
 
 	void indices(IndexFormat indexFormat, const void* indices, size_t count) override
@@ -873,19 +873,19 @@ public:
 		indexData.SysMemSlicePitch = 0;
 
 		// Create the index buffer.
-		D3D_CHECK_RESULT(ctx.device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer));
+		D3D_CHECK_RESULT(dctx.device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer));
 	}
 	void draw(uint32_t indexCount, uint32_t indexOffset) const override
 	{
 		unsigned int offset = 0;
 		// Set the vertex buffer to active in the input assembler so it can be rendered.
-		ctx.deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &offset);
+		dctx.deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &offset);
 		// Set the index buffer to active in the input assembler so it can be rendered.
-		ctx.deviceContext->IASetIndexBuffer(m_indexBuffer, m_format, 0);
+		dctx.deviceContext->IASetIndexBuffer(m_indexBuffer, m_format, 0);
 		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-		ctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		// Draw indexed primitives
-		ctx.deviceContext->DrawIndexed(indexCount, indexOffset, 0);
+		dctx.deviceContext->DrawIndexed(indexCount, indexOffset, 0);
 	}
 private:
 	DXGI_FORMAT m_format;
@@ -907,11 +907,11 @@ public:
 		m_computeShaderBuffer((ID3D10Blob*)compute.value())
 	{
 		if (vert.value() != 0)
-			D3D_CHECK_RESULT(ctx.device->CreateVertexShader(m_vertexShaderBuffer->GetBufferPointer(), m_vertexShaderBuffer->GetBufferSize(), nullptr, &m_vertexShader));
+			D3D_CHECK_RESULT(dctx.device->CreateVertexShader(m_vertexShaderBuffer->GetBufferPointer(), m_vertexShaderBuffer->GetBufferSize(), nullptr, &m_vertexShader));
 		if (frag.value() != 0)
-			D3D_CHECK_RESULT(ctx.device->CreatePixelShader(m_pixelShaderBuffer->GetBufferPointer(), m_pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
+			D3D_CHECK_RESULT(dctx.device->CreatePixelShader(m_pixelShaderBuffer->GetBufferPointer(), m_pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
 		if (compute.value() != 0)
-			D3D_CHECK_RESULT(ctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
+			D3D_CHECK_RESULT(dctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
 		m_valid = true;
 	}
 	D3D11Shader(const D3D11Shader&) = delete;
@@ -994,7 +994,7 @@ public:
 			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 			ID3D11Buffer* buffer;
-			D3D_CHECK_RESULT(ctx.device->CreateBuffer(&bufferDesc, nullptr, &buffer));
+			D3D_CHECK_RESULT(dctx.device->CreateBuffer(&bufferDesc, nullptr, &buffer));
 			uniformBuffers.push_back(buffer);
 			
 			// get the uniforms
@@ -1054,9 +1054,9 @@ public:
 public:
 	void use()
 	{
-		ctx.deviceContext->IASetInputLayout(m_layout);
-		ctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
-		ctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
+		dctx.deviceContext->IASetInputLayout(m_layout);
+		dctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
+		dctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
 	}
 
 	void setLayout(VertexData data)
@@ -1138,7 +1138,7 @@ public:
 		}
 
 		// Create the vertex input layout.
-		D3D_CHECK_RESULT(ctx.device->CreateInputLayout(
+		D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
 			polygonLayout.data(),
 			(UINT)polygonLayout.size(),
 			m_vertexShaderBuffer->GetBufferPointer(),
@@ -1272,15 +1272,15 @@ public:
 				{
 					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
 					ID3D11ShaderResourceView* view = d3dTexture->getView();
-					ctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
+					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
 					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->getSampler());
 					if (sampler != nullptr)
-						ctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
+						dctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
 				}
 				else
 				{
-					ctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullptr);
-					ctx.deviceContext->PSSetSamplers(textureUnit, 1, nullptr);
+					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullptr);
+					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullptr);
 				}
 				textureUnit++;
 			}
@@ -1365,11 +1365,11 @@ public:
 			{
 				ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
 				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 				memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
-				ctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
+				dctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
 			}
-			ctx.deviceContext->VSSetConstantBuffers(0, (UINT)m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
+			dctx.deviceContext->VSSetConstantBuffers(0, (UINT)m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
 		}
 		if (m_fragmentUniformBuffers.size() > 0)
 		{
@@ -1377,11 +1377,11 @@ public:
 			{
 				ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
 				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(ctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 				memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());
-				ctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
+				dctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
 			}
-			ctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
+			dctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
 		}
 	}
 private:
@@ -1452,13 +1452,13 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 		D3D11_SDK_VERSION,
 		&swapChainDesc,
 		&swapChain.swapChain,
-		&ctx.device,
+		&dctx.device,
 		nullptr,
-		&ctx.deviceContext
+		&dctx.deviceContext
 	));
 #if defined(DEBUG)
-	D3D_CHECK_RESULT(ctx.device->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&ctx.debugInfoQueue));
-	D3D_CHECK_RESULT(ctx.debugInfoQueue->PushEmptyStorageFilter());
+	D3D_CHECK_RESULT(dctx.device->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&dctx.debugInfoQueue));
+	D3D_CHECK_RESULT(dctx.debugInfoQueue->PushEmptyStorageFilter());
 #endif
 	s_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, swapChain.swapChain);
 }
@@ -1476,16 +1476,16 @@ void GraphicBackend::destroy()
 	D3D11Depth::clear();
 	D3D11Blend::clear();
 
-	if (ctx.deviceContext)
+	if (dctx.deviceContext)
 	{
-		ctx.deviceContext->Release();
-		ctx.deviceContext = 0;
+		dctx.deviceContext->Release();
+		dctx.deviceContext = 0;
 	}
 
-	if (ctx.device)
+	if (dctx.device)
 	{
-		ctx.device->Release();
-		ctx.device = 0;
+		dctx.device->Release();
+		dctx.device = 0;
 	}
 
 	if (swapChain.swapChain)
@@ -1514,14 +1514,14 @@ void GraphicBackend::getSize(uint32_t* width, uint32_t* height)
 void GraphicBackend::frame()
 {
 #if defined(DEBUG)
-	UINT64 messageCount = ctx.debugInfoQueue->GetNumStoredMessages();
+	UINT64 messageCount = dctx.debugInfoQueue->GetNumStoredMessages();
 	for (UINT64 i = 0; i < messageCount; i++) {
 		SIZE_T messageSize = 0;
-		D3D_CHECK_RESULT(ctx.debugInfoQueue->GetMessage(i, nullptr, &messageSize));
+		D3D_CHECK_RESULT(dctx.debugInfoQueue->GetMessage(i, nullptr, &messageSize));
 		if (messageSize > 0u)
 		{
 			D3D11_MESSAGE* message = (D3D11_MESSAGE*)malloc(messageSize); //allocate enough space
-			D3D_CHECK_RESULT(ctx.debugInfoQueue->GetMessage(i, message, &messageSize)); //get the actual message
+			D3D_CHECK_RESULT(dctx.debugInfoQueue->GetMessage(i, message, &messageSize)); //get the actual message
 			switch (message->Severity)
 			{
 			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_CORRUPTION:
@@ -1542,7 +1542,7 @@ void GraphicBackend::frame()
 			free(message);
 		}
 	}
-	ctx.debugInfoQueue->ClearStoredMessages();
+	dctx.debugInfoQueue->ClearStoredMessages();
 #endif
 }
 
@@ -1572,7 +1572,7 @@ void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t hei
 	viewport.TopLeftY = 0.0f;
 
 	// Create the viewport.
-	ctx.deviceContext->RSSetViewports(1, &viewport);
+	dctx.deviceContext->RSSetViewports(1, &viewport);
 }
 
 Framebuffer::Ptr GraphicBackend::backbuffer()
@@ -1584,7 +1584,7 @@ void GraphicBackend::render(RenderPass& pass)
 {
 	// Set to null to avoid warning & D3D unbinding texture that is also set as rendertarget
 	ID3D11RenderTargetView* nullRenderTarget = nullptr;
-	ctx.deviceContext->OMSetRenderTargets(1, &nullRenderTarget, nullptr);
+	dctx.deviceContext->OMSetRenderTargets(1, &nullRenderTarget, nullptr);
 	{
 		// Shader
 		if (pass.material == nullptr)
@@ -1606,7 +1606,7 @@ void GraphicBackend::render(RenderPass& pass)
 		// Rasterizer
 		ID3D11RasterizerState* rasterState = D3D11RasterPass::get(pass.cull);
 		if (rasterState != nullptr)
-			ctx.deviceContext->RSSetState(rasterState);
+			dctx.deviceContext->RSSetState(rasterState);
 	}
 
 	{
@@ -1622,7 +1622,7 @@ void GraphicBackend::render(RenderPass& pass)
 			viewport.TopLeftY = 0.f;
 
 			// Set the viewport.
-			ctx.deviceContext->RSSetViewports(1, &viewport);
+			dctx.deviceContext->RSSetViewports(1, &viewport);
 		}
 		else
 		{
@@ -1635,7 +1635,7 @@ void GraphicBackend::render(RenderPass& pass)
 			viewport.TopLeftY = (float)pass.viewport.y;
 
 			// Set the viewport.
-			ctx.deviceContext->RSSetViewports(1, &viewport);
+			dctx.deviceContext->RSSetViewports(1, &viewport);
 		}
 	}
 
@@ -1650,7 +1650,7 @@ void GraphicBackend::render(RenderPass& pass)
 			scissor.top = (LONG)pass.scissor.y;
 
 			// Set the scissor.
-			ctx.deviceContext->RSSetScissorRects(1, &scissor);
+			dctx.deviceContext->RSSetScissorRects(1, &scissor);
 		}
 	}
 
@@ -1660,13 +1660,13 @@ void GraphicBackend::render(RenderPass& pass)
 		{
 			D3D11BackBuffer* backbuffer = (D3D11BackBuffer*)s_backbuffer.get();
 			ID3D11RenderTargetView* view = backbuffer->getRenderTargetView();
-			ctx.deviceContext->OMSetRenderTargets(1, &view, backbuffer->getDepthStencilView());
+			dctx.deviceContext->OMSetRenderTargets(1, &view, backbuffer->getDepthStencilView());
 		}
 		else
 		{
 			D3D11Framebuffer* framebuffer = (D3D11Framebuffer*)pass.framebuffer.get();
 			ID3D11RenderTargetView* view = framebuffer->getRenderTargetView(0);
-			ctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
+			dctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
 		}
 	}
 
@@ -1674,7 +1674,7 @@ void GraphicBackend::render(RenderPass& pass)
 		// Depth
 		ID3D11DepthStencilState* depthState = D3D11Depth::get(pass.depth, pass.stencil);
 		if (depthState != nullptr)
-			ctx.deviceContext->OMSetDepthStencilState(depthState, 1);
+			dctx.deviceContext->OMSetDepthStencilState(depthState, 1);
 	}
 
 	{
@@ -1683,11 +1683,11 @@ void GraphicBackend::render(RenderPass& pass)
 		if (blendState != nullptr)
 		{
 			float blendFactor[4] = { 1.f, 1.f, 1.f, 1.f };
-			ctx.deviceContext->OMSetBlendState(blendState, blendFactor, 0xffffffff);
+			dctx.deviceContext->OMSetBlendState(blendState, blendFactor, 0xffffffff);
 		}
 		else
 		{
-			ctx.deviceContext->OMSetBlendState(nullptr, nullptr, 0);
+			dctx.deviceContext->OMSetBlendState(nullptr, nullptr, 0);
 		}
 	}
 
@@ -1716,12 +1716,12 @@ void GraphicBackend::vsync(bool enabled)
 
 ID3D11Device* GraphicBackend::getD3D11Device()
 {
-	return ctx.device;
+	return dctx.device;
 }
 
 ID3D11DeviceContext* GraphicBackend::getD3D11DeviceContext()
 {
-	return ctx.deviceContext;
+	return dctx.deviceContext;
 }
 
 Device GraphicBackend::getDevice(uint32_t id)

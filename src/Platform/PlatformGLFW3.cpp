@@ -368,7 +368,7 @@ struct GLFW3Context {
 	GLFWwindow* window = nullptr;
 };
 
-GLFW3Context ctx;
+GLFW3Context pctx;
 
 input::Key InputBackend::getKeyFromPlatformKey(int key)
 {
@@ -404,43 +404,43 @@ void PlatformBackend::initialize(const Config& config)
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	}
 
-	ctx.window = glfwCreateWindow(config.width, config.height, config.name.c_str(), NULL, NULL);
-	if (ctx.window == nullptr) {
+	pctx.window = glfwCreateWindow(config.width, config.height, config.name.c_str(), NULL, NULL);
+	if (pctx.window == nullptr) {
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
 	}
 #if defined(AKA_USE_OPENGL)
-	glfwMakeContextCurrent(ctx.window);
+	glfwMakeContextCurrent(pctx.window);
 	glfwSwapInterval(1); // default enable vsync
 #endif
 
 	// --- Callbacks ---
 	// --- Size
-	glfwSetWindowSizeCallback(ctx.window, [](GLFWwindow* window, int width, int height) {
+	glfwSetWindowSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
 		Logger::debug("[GLFW] New window size : ", width, "x", height);
 	});
-	glfwSetFramebufferSizeCallback(ctx.window, [](GLFWwindow* window, int width, int height) {
+	glfwSetFramebufferSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
 		GraphicBackend::resize(width, height);
 		Logger::debug("[GLFW] New framebuffer size : ", width, " - ", height);
 	});
-	glfwSetWindowContentScaleCallback(ctx.window, [](GLFWwindow* window, float x, float y) {
+	glfwSetWindowContentScaleCallback(pctx.window, [](GLFWwindow* window, float x, float y) {
 		Logger::debug("[GLFW] Content scaled : ", x, " - ", y);
 	});
-	glfwSetWindowMaximizeCallback(ctx.window, [](GLFWwindow* window, int maximized) {
+	glfwSetWindowMaximizeCallback(pctx.window, [](GLFWwindow* window, int maximized) {
 		// Called when window is maximized or unmaximized
 		Logger::debug("[GLFW] Maximized : ", maximized);
 	});
 	// --- Window
-	glfwSetWindowFocusCallback(ctx.window, [](GLFWwindow* window, int focus) {
+	glfwSetWindowFocusCallback(pctx.window, [](GLFWwindow* window, int focus) {
 		Logger::debug("[GLFW] Focus : ", focus);
 	});
-	glfwSetWindowRefreshCallback(ctx.window, [](GLFWwindow* window) {
+	glfwSetWindowRefreshCallback(pctx.window, [](GLFWwindow* window) {
 		Logger::debug("[GLFW] Window refresh");
 	});
-	glfwSetWindowIconifyCallback(ctx.window, [](GLFWwindow* window, int iconified) {
+	glfwSetWindowIconifyCallback(pctx.window, [](GLFWwindow* window, int iconified) {
 		Logger::debug("[GLFW] Iconify : ", iconified);
 	});
-	glfwSetWindowCloseCallback(ctx.window, [](GLFWwindow* window) {
+	glfwSetWindowCloseCallback(pctx.window, [](GLFWwindow* window) {
 		Logger::debug("[GLFW] Closing window ");
 	});
 	// --- Monitor
@@ -449,7 +449,7 @@ void PlatformBackend::initialize(const Config& config)
 		Logger::debug("[GLFW] Monitor event : ", event);
 	});
 	// --- Inputs
-	glfwSetKeyCallback(ctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
+	glfwSetKeyCallback(pctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
 		// key : glfw keycode
 		// scancode : os code
 		// action : GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT
@@ -460,21 +460,21 @@ void PlatformBackend::initialize(const Config& config)
 			InputBackend::onKeyUp(InputBackend::getKeyFromScancode(scancode));
 		// TODO manage repeat ?
 	});
-	glfwSetMouseButtonCallback(ctx.window, [](GLFWwindow* window, int button, int action, int mode) {
+	glfwSetMouseButtonCallback(pctx.window, [](GLFWwindow* window, int button, int action, int mode) {
 		if (action == GLFW_PRESS)
 			InputBackend::onMouseButtonDown(static_cast<input::Button>(button));
 		else if (action == GLFW_RELEASE)
 			InputBackend::onMouseButtonUp(static_cast<input::Button>(button));
 		// TODO manage repeat ?
 	});
-	glfwSetCursorPosCallback(ctx.window, [](GLFWwindow* window, double xpos, double ypos) {
+	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		InputBackend::onMouseMove(static_cast<float>(xpos), static_cast<float>(ypos));
 	});
-	glfwSetScrollCallback(ctx.window, [](GLFWwindow* window, double xoffset, double yoffset) {
+	glfwSetScrollCallback(pctx.window, [](GLFWwindow* window, double xoffset, double yoffset) {
 		InputBackend::onMouseScroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 	});
-	glfwSetCursorEnterCallback(ctx.window, [](GLFWwindow* window, int entered) {
+	glfwSetCursorEnterCallback(pctx.window, [](GLFWwindow* window, int entered) {
 		// GLFW_TRUE if entered, GLFW_FALSE if left
 		Logger::debug("[GLFW] Cursor enter : ", entered);
 	});
@@ -496,35 +496,35 @@ void PlatformBackend::update()
 
 bool PlatformBackend::running()
 {
-	return !glfwWindowShouldClose(ctx.window);
+	return !glfwWindowShouldClose(pctx.window);
 }
 
 void PlatformBackend::getSize(uint32_t* width, uint32_t* height)
 {
-	glfwGetWindowSize(ctx.window, reinterpret_cast<int*>(width), reinterpret_cast<int*>(height));
+	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(width), reinterpret_cast<int*>(height));
 }
 
 void PlatformBackend::setSize(uint32_t width, uint32_t height)
 {
-	glfwSetWindowSize(ctx.window, width, height);
+	glfwSetWindowSize(pctx.window, width, height);
 }
 
 void PlatformBackend::setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight)
 {
 	auto convert = [](uint32_t value) -> int { if (value == 0) return GLFW_DONT_CARE; return value; };
-	glfwSetWindowSizeLimits(ctx.window, convert(minWidth), convert(minHeight), convert(maxWidth), convert(maxHeight));
+	glfwSetWindowSizeLimits(pctx.window, convert(minWidth), convert(minHeight), convert(maxWidth), convert(maxHeight));
 }
 
 #if defined(AKA_PLATFORM_WINDOWS)
 HWND PlatformBackend::getWindowsWindowHandle()
 {
-	return glfwGetWin32Window(ctx.window);
+	return glfwGetWin32Window(pctx.window);
 }
 #endif
 
 GLFWwindow* PlatformBackend::getGLFW3Handle()
 {
-	return ctx.window;
+	return pctx.window;
 }
 
 };

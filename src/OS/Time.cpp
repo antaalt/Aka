@@ -14,7 +14,7 @@ Time::Unit Time::now()
 	return Unit(static_cast<uint64_t>(duration_cast<milliseconds>(steady_clock::now() - g_startup).count()));
 }
 
-Time::Unit Time::unix()
+Time::Unit Time::unixtime()
 {
 	using namespace std::chrono;
 	time_point<system_clock> now = system_clock::now();

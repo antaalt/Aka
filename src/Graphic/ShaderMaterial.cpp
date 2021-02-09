@@ -3,6 +3,8 @@
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/OS/Logger.h>
 
+#include <cstring>
+
 namespace aka {
 
 ShaderMaterial::ShaderMaterial(Shader::Ptr shader) :
