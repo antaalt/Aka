@@ -131,7 +131,7 @@ struct Aseprite {
 		std::vector<Cel> cels;
 
 		// Generate an image from all the cells
-		std::vector<Color32> image(const Aseprite &ase);
+		std::vector<Color32> image(const Aseprite &ase) const;
 	};
 
 	Word width;
