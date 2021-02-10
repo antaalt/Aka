@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../Graphic/Texture.h"
-#include "../OS/Time.h"
-#include "Geometry.h"
+#include <Aka/Graphic/Texture.h>
+#include <Aka/OS/Time.h>
+#include <Aka/OS/FileSystem.h>
+#include <Aka/Core/Geometry.h>
 
 #include <vector>
 #include <string>
@@ -47,6 +48,9 @@ struct Sprite {
 				return &animation;
 		return nullptr;
 	}
+
+	// Parse the sprite from an aseprite
+	static Sprite parse(const Path& path);
 };
 
 };

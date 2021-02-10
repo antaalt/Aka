@@ -14,6 +14,8 @@ add_library (Aka
 	"src/Core/Debug.cpp"
 	"src/Core/Font.cpp"
 	"src/Core/Shape2D.cpp"
+	"src/Core/Aseprite.cpp"
+	"src/Core/Sprite.cpp"
 	"src/Core/ECS/Component.cpp"
 	"src/Core/ECS/Entity.cpp"
 	"src/Core/ECS/Event.cpp"
@@ -43,7 +45,8 @@ add_library (Aka
 	"src/Platform/PlatformWindows.cpp"
 
 	"lib/rtaudio/RtAudio.cpp"
- "include/Aka/Audio/Audio.h")
+	"lib/miniz/miniz.c"
+)
 
 target_include_directories(Aka
 	PUBLIC
@@ -127,6 +130,8 @@ target_include_directories(Aka PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 # minimp3
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
+# miniz
+target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
 
 # Enable UNICODE in windows
 if(WIN32)
