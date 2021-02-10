@@ -1,37 +1,11 @@
 #include <Aka/OS/FileSystem.h>
+
+#include <Aka/OS/Logger.h>
 #include <Aka/Platform/PlatformBackend.h>
 
 #include <fstream>
 
 namespace aka {
-
-std::vector<uint8_t> readBinary(const Path& path)
-{
-	std::basic_ifstream<uint8_t> ifs(path.str(), std::ios::binary);
-	if (!ifs)
-		throw std::runtime_error("Could not load file " + path.str());
-	return std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
-}
-
-void writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
-{
-	std::basic_ofstream<uint8_t> ofs(path.str(), std::ios::binary);
-	ofs.write(bytes.data(), bytes.size());
-}
-
-std::string readString(const Path& path)
-{
-	std::ifstream ifs(path.str());
-	if (!ifs)
-		throw std::runtime_error("Could not load file " + path.str());
-	return std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-}
-
-void writeString(const Path& path, const std::string& text)
-{
-	std::ofstream ofs(path.str());
-	ofs.write(text.data(), text.size());
-}
 
 Path::Path()
 {
@@ -89,6 +63,31 @@ bool Path::operator!=(const Path& rhs) const
 	return Path::normalize(*this).str() != Path::normalize(rhs).str();
 }
 
+Path Path::up() const
+{
+	const size_t separatorCount = std::count(m_string.begin(), m_string.end(), '/');
+	const size_t lastCharacterOffset = m_string.size() - 1;
+	size_t offset = m_string.find_last_of('/');
+	if (1 == separatorCount)
+	{
+		if (offset != lastCharacterOffset)
+			return Path(m_string.substr(0, offset + 1));
+	}
+	else
+	{
+		if (offset == lastCharacterOffset)
+		{
+			offset = m_string.substr(0, offset).find_last_of('/');
+			return Path(m_string.substr(0, offset + 1));
+		}
+		else
+		{
+			return Path(m_string.substr(0, offset + 1));
+		}
+	}
+	return *this;
+}
+
 std::string Path::extension(const Path& path)
 {
 	return PlatformBackend::extension(path);
@@ -118,25 +117,46 @@ Path Path::normalize(const Path& path)
 {
 	return PlatformBackend::normalize(path);
 }
-// TODO fix this dirty hack
-#if defined(AKA_PLATFORM_LINUX)
-static std::string g_asset = "../asset/";
-#else
-static std::string g_asset = "../../../asset/";
-#endif
-std::string Asset::loadString(const Path& path)
+
+std::vector<uint8_t> BinaryFile::load(const Path& path)
 {
-	return readString(path);
+	std::vector<uint8_t> bytes;
+	if (!PlatformBackend::loadBinary(path, &bytes))
+	{
+		Logger::error("Could not load text file " + path.str());
+	}
+	return bytes;
 }
 
-std::vector<uint8_t> Asset::loadBinary(const Path& path)
+void BinaryFile::write(const Path& path, const std::vector<uint8_t>& bytes)
 {
-	return readBinary(path);
+	if (!PlatformBackend::writeBinary(path, bytes))
+	{
+		Logger::error("Could not write binary file " + path.str());
+	}
+}
+
+std::string TextFile::load(const Path& path)
+{
+	std::string str;
+	if (!PlatformBackend::loadString(path, &str))
+	{
+		Logger::error("Could not load text file " + path.str());
+	}
+	return str;
+}
+
+void TextFile::write(const Path& path, const std::string& str)
+{
+	if (!PlatformBackend::writeString(path, str))
+	{
+		Logger::error("Could not write text file " + path.str());
+	}
 }
 
 Path Asset::path(const Path& path)
 {
-	return Path(g_asset) + path;
+	return Path::normalize(Path::cwd() + Path("asset/") + path);
 }
 
 bool directory::exist(const Path& path)

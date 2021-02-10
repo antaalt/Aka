@@ -10,6 +10,8 @@
 #include <minimp3.h>
 #include <minimp3_ex.h>
 
+#include <utf8.h>
+
 #include <Aka/OS/Logger.h>
 #include <Aka/Core/Debug.h>
 
@@ -20,7 +22,9 @@ AudioDecoderMp3::AudioDecoderMp3(const Path& path, float volume, bool loop) :
     AudioDecoder(volume, loop)
 {
     memset(&m_mp3d, 0, sizeof(m_mp3d));
-    int sample = mp3dec_ex_open(&m_mp3d, path.c_str(), MP3D_SEEK_TO_SAMPLE);
+    std::wstring wstr;
+    utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(wstr));
+    int sample = mp3dec_ex_open_w(&m_mp3d, wstr.c_str(), MP3D_SEEK_TO_SAMPLE);
     if (!m_mp3d.samples)
         Logger::error("Could not load audio");
     else

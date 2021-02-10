@@ -20,6 +20,8 @@ struct Path
 	bool operator==(const Path& rhs) const;
 	bool operator!=(const Path& rhs) const;
 
+	Path up() const;
+
 	static std::string extension(const Path &path);
 	static std::string name(const Path& path);
 	static Path cwd();
@@ -45,9 +47,17 @@ bool exist(const Path& path);
 bool remove(const Path& path);
 };
 
+struct BinaryFile {
+	static std::vector<uint8_t> load(const Path& path);
+	static void write(const Path& path, const std::vector<uint8_t>& bytes);
+};
+
+struct TextFile {
+	static std::string load(const Path& path);
+	static void write(const Path& path, const std::string& str);
+};
+
 struct Asset {
-	static std::string loadString(const Path &path);
-	static std::vector<uint8_t> loadBinary(const Path& path);
 	static Path path(const Path& path);
 };
 

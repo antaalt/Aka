@@ -432,6 +432,46 @@ bool PlatformBackend::fileRemove(const Path& path)
 	return DeleteFile(str.c_str()) == TRUE;
 }
 
+bool PlatformBackend::loadString(const Path& path, std::string* str)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	std::ifstream ifs(wstr);
+	if (!ifs)
+		return false;
+	*str = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+	return true;
+}
+
+bool PlatformBackend::loadBinary(const Path& path, std::vector<uint8_t>* bytes)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	std::basic_ifstream<uint8_t> ifs(wstr, std::ios::binary);
+	if (!ifs)
+		return false;
+	*bytes = std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
+	return true;
+}
+
+bool PlatformBackend::writeString(const Path& path, const std::string& str)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	std::ofstream ofs(wstr);
+	if (!ofs)
+		return false;
+	ofs.write(str.data(), str.size());
+	return true;
+}
+
+bool PlatformBackend::writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	std::basic_ofstream<uint8_t> ofs(wstr, std::ios::binary);
+	if (!ofs)
+		return false;
+	ofs.write(bytes.data(), bytes.size());
+	return true;
+}
+
 std::vector<Path> PlatformBackend::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';

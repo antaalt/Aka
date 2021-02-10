@@ -43,7 +43,7 @@ add_library (Aka
 	"src/Platform/PlatformWindows.cpp"
 
 	"lib/rtaudio/RtAudio.cpp"
-)
+ "include/Aka/Audio/Audio.h")
 
 target_include_directories(Aka
 	PUBLIC
@@ -72,8 +72,11 @@ if (GRAPHIC_OPENGL)
 	endif(UNIX)
 	find_package(OpenGL REQUIRED)
 	# Glew
-	set(CMAKE_PREFIX_PATH "${GLEW_DIR}")
-	set(CMAKE_LIBRARY_PATH "${GLEW_DIR}/lib/")
+	if(MSVC)
+		set(GLEW_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/glew")
+		set(CMAKE_PREFIX_PATH "${GLEW_DIR}")
+		set(CMAKE_LIBRARY_PATH "${GLEW_DIR}/lib/")
+	endif()
 	find_package(GLEW 2.1 REQUIRED)
 	if (GLEW_FOUND)
 		include_directories(${GLEW_INCLUDE_DIRS})

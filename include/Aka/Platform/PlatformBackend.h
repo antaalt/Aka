@@ -31,6 +31,10 @@ public:
 	static bool fileExist(const Path& path);
 	static bool fileCreate(const Path& path);
 	static bool fileRemove(const Path& path);
+	static bool loadString(const Path& path, std::string* bytes);
+	static bool loadBinary(const Path& path, std::vector<uint8_t>* str);
+	static bool writeString(const Path& path, const std::string& bytes);
+	static bool writeBinary(const Path& path, const std::vector<uint8_t>& str);
 	static std::vector<Path> enumerate(const Path& path);
 	static Path normalize(const Path& path);
 	static Path executablePath();
