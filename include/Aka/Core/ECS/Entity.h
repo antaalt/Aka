@@ -36,6 +36,8 @@ struct Entity final
 	template <typename T, typename U, typename... Args>
 	bool has() const;
 
+	bool has(uint8_t componentID) const;
+
 private:
 	Entity(World* world);
 	~Entity() {}
@@ -73,11 +75,7 @@ template<typename T>
 inline bool Entity::has() const
 {
 	static_assert(std::is_base_of<Component, T>::value, "Type is not a component");
-	uint8_t type = Component::Type::get<T>();
-	for (const Component* component : m_components)
-		if (component->getType() == type)
-			return true;
-	return false;
+	return has(Component::Type::get<T>());
 }
 
 template <typename T, typename U, typename... Args>
