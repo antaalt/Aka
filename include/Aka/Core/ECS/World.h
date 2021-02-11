@@ -105,6 +105,8 @@ template<typename T>
 inline T* World::first()
 {
 	static_assert(std::is_base_of<Component, T>::value, "Type is not a component");
+	if (m_components[Component::Type::get<T>()].size() == 0)
+		return nullptr;
 	return reinterpret_cast<T*>(m_components[Component::Type::get<T>()].front());
 }
 

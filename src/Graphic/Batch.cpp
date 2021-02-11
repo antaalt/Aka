@@ -282,10 +282,10 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	}
 
 	{
-		static Blending blend = Blending::normal();
-		static Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
-		static Depth depth = Depth{ DepthCompare::None, true };
-		static Stencil stencil = Stencil::none();
+		static const Blending blend = Blending::normal();
+		static const Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
+		static const Depth depth = Depth{ DepthCompare::None, true };
+		static const Stencil stencil = Stencil::none();
 		// Prepare renderPass
 		renderPass.framebuffer = framebuffer;
 
