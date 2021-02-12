@@ -16,11 +16,11 @@ add_library (Aka
 	"src/Core/Shape2D.cpp"
 	"src/Core/Aseprite.cpp"
 	"src/Core/Sprite.cpp"
-	"src/Core/ECS/Component.cpp"
-	"src/Core/ECS/Entity.cpp"
-	"src/Core/ECS/Event.cpp"
-	"src/Core/ECS/System.cpp"
-	"src/Core/ECS/World.cpp"
+
+	"src/Scene/Component.cpp"
+	"src/Scene/Entity.cpp"
+	"src/Scene/System.cpp"
+	"src/Scene/World.cpp"
 
 	"src/Graphic/D3D11/D3D11Backend.cpp"
 	"src/Graphic/GL/GLBackend.cpp"
@@ -132,6 +132,8 @@ target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
 # miniz
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
+# entt
+target_include_directories(Aka PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 
 # Enable UNICODE in windows
 if(WIN32)

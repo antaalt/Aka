@@ -90,7 +90,7 @@ Aseprite Aseprite::parse(const std::vector<uint8_t>& bytes)
 			if (chunkCount == 0)
 			{
 				ASSERT(oldChunkCount != 0xFFFF, "Should be set to this value");
-				chunkCount == oldChunkCount;
+				chunkCount = oldChunkCount;
 			}
 			Aseprite::UserData* last = nullptr;
 			// Parse chunks
@@ -188,8 +188,8 @@ Aseprite Aseprite::parse(const std::vector<uint8_t>& bytes)
 						pixels.resize(cel.width * cel.height * Aseprite::depth(ase.colorDepth));
 						{
 							// Deflate data
-							mz_ulong size = pixels.size();
-							mz_ulong deflateBytes = chunkSize - (reader.offset() - chunkOffset);
+							mz_ulong size = (mz_ulong)pixels.size();
+							mz_ulong deflateBytes = (mz_ulong)(chunkSize - (reader.offset() - chunkOffset));
 							if (MZ_OK != mz_uncompress(pixels.data(), &size, reader.data(), deflateBytes))
 								throw std::runtime_error("Failed to uncompress image.");
 							reader.skim(deflateBytes);

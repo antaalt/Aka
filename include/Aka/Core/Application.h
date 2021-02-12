@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Aka/Platform/Platform.h>
-#include <Aka/Core/ECS/World.h>
+#include <Aka/Scene/World.h>
 
 namespace aka {
 

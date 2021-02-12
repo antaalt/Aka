@@ -22,11 +22,10 @@
 #include "OS/Time.h"
 #include "OS/Image.h"
 
-#include "Core/ECS/World.h"
-#include "Core/ECS/Entity.h"
-#include "Core/ECS/System.h"
-#include "Core/ECS/Component.h"
-#include "Core/ECS/Event.h"
+#include "Scene/World.h"
+#include "Scene/Entity.h"
+#include "Scene/System.h"
+#include "Scene/Component.h"
 
 #include "Core/Application.h"
 #include "Core/Debug.h"
