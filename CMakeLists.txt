@@ -8,7 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library (Aka
 	"src/Audio/AudioBackend.cpp"
 	"src/Audio/RtAudioBackend.cpp"
-	"src/Audio/Codec/AudioDecoderMp3.cpp"
+	"src/Audio/AudioStream.cpp" 
+	"src/Audio/AudioStreamMp3.cpp" 
+	"src/Audio/AudioStreamMemory.cpp"
 
 	"src/Core/Application.cpp"
 	"src/Core/Debug.cpp"

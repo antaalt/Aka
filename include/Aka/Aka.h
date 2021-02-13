@@ -14,8 +14,9 @@
 #include "Graphic/RenderPass.h"
 #include "Graphic/Shader.h"
 
+#include "Audio/Audio.h"
+#include "Audio/AudioStream.h"
 #include "Audio/AudioBackend.h"
-#include "Audio/AudioDecoder.h"
 
 #include "OS/Logger.h"
 #include "OS/FileSystem.h"

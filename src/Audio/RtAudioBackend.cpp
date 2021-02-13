@@ -41,7 +41,7 @@ void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
     // Frames is not samples
     // One frame is equivalent to samples for all the channels
     // Sample = channel * frames
-    uint32_t frames = 4096;
+    uint32_t frames = 2048;
     try
     {
         ctx.audio->openStream(
@@ -59,7 +59,7 @@ void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
                 void* userData
             )
             {
-                int16_t* out = static_cast<int16_t*>(outputBuffer);
+                AudioFrame* out = static_cast<AudioFrame*>(outputBuffer);
                 if (status) {
                     if (status & RTAUDIO_INPUT_OVERFLOW) {
                         Logger::warn("Audio stream overflow detected!");

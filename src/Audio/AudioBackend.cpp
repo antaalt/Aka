@@ -7,8 +7,9 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/Core/Debug.h>
-#include <Aka/Audio/AudioDecoder.h>
-#include <Aka/Audio/Codec/AudioDecoderMp3.h>
+#include <Aka/Audio/AudioStream.h>
+#include <Aka/Audio/AudioStreamMp3.h>
+#include <Aka/Audio/AudioStreamMemory.h>
 
 namespace aka {
 
@@ -17,72 +18,65 @@ struct AudioContext
     std::mutex lock;
 };
 
+struct AudioData {
+    float volume;
+    bool loop;
+};
+
 AudioContext actx;
-std::map<AudioID, std::unique_ptr<AudioDecoder>> decoders;
+std::map<AudioStream*, AudioData> audios;
 
-
-AudioID generateUniqueHandle(AudioDecoder* decoder)
+bool AudioBackend::play(AudioStream::Ptr stream, float volume, bool loop)
 {
-    ASSERT(sizeof(void*) == sizeof(uint64_t), "AudioDecoder::ID might not works correctly. Make a better implementation.");
-    return AudioID((uintptr_t)decoder);
-}
-
-AudioID AudioBackend::play(const Path& path, float volume, bool loop)
-{
-    std::unique_ptr<AudioDecoder> decoder;
-    if (Path::extension(path) == "mp3")
-    {
-        decoder = std::make_unique<AudioDecoderMp3>(path, volume, loop);
-    }
-    else
-    {
-        Logger::error("Audio format not supported : ", Path::extension(path));
-        return AudioID(0);
-    }
-    ASSERT(AudioBackend::getFrequency() == decoder->frequency(), "Audio will need resampling");
-    ASSERT(AudioBackend::getChannels() == decoder->channels(), "Audio channels does not match");
-    AudioID id = generateUniqueHandle(decoder.get());
+    ASSERT(AudioBackend::getFrequency() == stream->frequency(), "Audio will need resampling");
+    ASSERT(AudioBackend::getChannels() == stream->channels(), "Audio channels does not match");
+    AudioData audio;
+    audio.loop = loop;
+    audio.volume = volume;
     std::lock_guard<std::mutex> m(actx.lock);
-    decoders.insert(std::make_pair(id, std::move(decoder)));
-    return id;
+    audios.insert(std::make_pair(stream.get(), std::move(audio)));
+    return true;
 }
 
-bool AudioBackend::finished(AudioID id)
+bool AudioBackend::finished(AudioStream::Ptr stream)
 {
-    auto it = decoders.find(id);
-    if (it == decoders.end())
+    auto it = audios.find(stream.get());
+    if (it == audios.end())
         return true;
     else
-        return !it->second->playing();
+        return !stream->playing();
 }
 
-bool AudioBackend::exist(AudioID id)
+bool AudioBackend::exist(AudioStream::Ptr stream)
 {
-    auto it = decoders.find(id);
-    return (it != decoders.end());
+    auto it = audios.find(stream.get());
+    return (it != audios.end());
 }
 
-void AudioBackend::setVolume(AudioID id, float volume)
+void AudioBackend::setVolume(AudioStream::Ptr stream, float volume)
 {
-    auto it = decoders.find(id);
-    if (it != decoders.end())
+    auto it = audios.find(stream.get());
+    if (it != audios.end())
     {
         std::lock_guard<std::mutex> m(actx.lock);
-        it->second->volume(volume);
+        it->second.volume = volume;
     }
 }
 
-void AudioBackend::close(AudioID id)
+void AudioBackend::close(AudioStream::Ptr stream)
 {
-    auto it = decoders.find(id);
-    std::lock_guard<std::mutex> m(actx.lock);
-    decoders.erase(it);
+    auto it = audios.find(stream.get());
+    if (it != audios.end())
+    {
+        std::lock_guard<std::mutex> m(actx.lock);
+        audios.erase(it);
+    }
 }
 
-int16_t mix(int16_t sample1, int16_t sample2)
+AudioFrame mix(AudioFrame sample1, AudioFrame sample2)
 {
     const int32_t result(static_cast<int32_t>(sample1) + static_cast<int32_t>(sample2));
-    using range = std::numeric_limits<int16_t>;
+    using range = std::numeric_limits<AudioFrame>;
     if ((range::max)() < result)
         return (range::max)();
     else if ((range::min)() > result)
@@ -91,21 +85,23 @@ int16_t mix(int16_t sample1, int16_t sample2)
         return result;
 }
 
-void AudioBackend::process(int16_t* buffer, uint32_t frames)
+void AudioBackend::process(AudioFrame* buffer, uint32_t frames)
 {
     std::lock_guard<std::mutex> m(actx.lock);
-    if (decoders.size() == 0)
+    if (audios.size() == 0)
         return; // No audio to process
     // Set buffer to zero for mixing
-    memset(buffer, 0, frames * AudioBackend::getChannels() * sizeof(int16_t));
+    memset(buffer, 0, frames * AudioBackend::getChannels() * sizeof(AudioFrame));
     // Mix all audiodecoder
-    std::vector<int16_t> tmp(frames * AudioBackend::getChannels());
-    for (auto& decoder : decoders)
+    std::vector<AudioFrame> tmp(frames * AudioBackend::getChannels());
+    for (auto& audio : audios)
     {
-        AudioDecoder* dec = decoder.second.get();
-        dec->decode(tmp.data(), frames * AudioBackend::getChannels());
+        AudioStream* stream = audio.first;
+        if (!stream->decode(tmp.data(), frames * AudioBackend::getChannels()))
+            if (audio.second.loop)
+                stream->seek(0);
         for (unsigned int i = 0; i < frames * AudioBackend::getChannels(); i++)
-            buffer[i] = mix(buffer[i], static_cast<int16_t>(tmp[i] * dec->volume()));
+            buffer[i] = mix(buffer[i], static_cast<AudioFrame>(tmp[i] * audio.second.volume));
     }
 }
 

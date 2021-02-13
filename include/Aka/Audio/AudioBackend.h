@@ -2,12 +2,9 @@
 
 #include <stdint.h>
 
-#include "../OS/FileSystem.h"
-#include "../Core/StrictType.h"
+#include <Aka/Audio/AudioStream.h>
 
 namespace aka {
-
-using AudioID = StrictType<uintptr_t, struct AudioTagName>;
 
 class AudioBackend
 {
@@ -24,18 +21,18 @@ public:
 	static uint32_t getChannels();
 
 	// Play an audio at path.
-	static AudioID play(const Path& path, float volume, bool loop = false);
+	static bool play(AudioStream::Ptr stream, float volume, bool loop = false);
 	// Check if an audio has finished playing
-	static bool finished(AudioID id);
+	static bool finished(AudioStream::Ptr stream);
 	// Check if an audio exist
-	static bool exist(AudioID id);
+	static bool exist(AudioStream::Ptr stream);
 	// Set the volume of an audio
-	static void setVolume(AudioID id, float volume);
+	static void setVolume(AudioStream::Ptr stream, float volume);
 	// Close an audio
-	static void close(AudioID id);
+	static void close(AudioStream::Ptr stream);
 private:
 	// Process the audio
-	static void process(int16_t* buffer, uint32_t frames);
+	static void process(AudioFrame* buffer, uint32_t frames);
 };
 
 };
