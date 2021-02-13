@@ -4,8 +4,6 @@
 #include "../Graphic/Texture.h"
 #include "../OS/FileSystem.h"
 
-#define NUM_GLYPH 255
-
 namespace aka {
 
 struct Character {
@@ -26,6 +24,8 @@ struct Font {
 
 	const Character &getCharacter(uint32_t c) const;
 
+	size_t count() const;
+
 	const std::string& family() const;
 
 	const std::string& style() const;
@@ -39,7 +39,7 @@ private:
 	uint32_t m_advance;
 	std::string m_familyName;
 	std::string m_styleName;
-	Character m_characters[NUM_GLYPH];
+	std::vector<Character> m_characters;
 };
 
 

@@ -45,9 +45,9 @@ Font::Font(const Path& path, uint32_t height)
     m_styleName = face->style_name;
     m_height = (face->size->metrics.height >> 6) + 1;
     m_advance = face->size->metrics.max_advance >> 6;
-
-    Packer packer(NUM_GLYPH, m_advance, m_height);
-    for (uint32_t c = 0; c < NUM_GLYPH; c++)
+    m_characters.resize(255);
+    Packer packer(m_characters.size(), m_advance, m_height);
+    for (uint32_t c = 0; c < (uint32_t)m_characters.size(); c++)
     {
         // FT_Get_Char_Index (if zero returned, missing glyph)
         // load character glyph 
@@ -70,7 +70,7 @@ Font::Font(const Path& path, uint32_t height)
     Texture::Ptr textureAtlas = Texture::create(atlas.width, atlas.height, Texture::Format::Rgba, atlas.bytes.data(), Sampler{ Sampler::Filter::Nearest, Sampler::Filter::Nearest, Sampler::Wrap::Repeat, Sampler::Wrap::Repeat });
     textureAtlas->upload(atlas.bytes.data());
     //atlas.save("atlas.png");
-    for (unsigned char c = 0; c < NUM_GLYPH; c++)
+    for (unsigned char c = 0; c < (unsigned char)m_characters.size(); c++)
     {
         m_characters[c].texture.texture = textureAtlas;
         m_characters[c].texture.region = packer.getRegion(c);
@@ -114,8 +114,13 @@ vec2i Font::size(const std::string& text) const
 
 const Character& Font::getCharacter(uint32_t c) const
 {
-    ASSERT(c < NUM_GLYPH, "Glyph out of range");
+    ASSERT(c < m_characters.size(), "Glyph out of range");
     return m_characters[c];
+}
+
+size_t Font::count() const
+{
+    return m_characters.size();
 }
 
 const std::string& Font::family() const
