@@ -2,6 +2,7 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/Scene/Entity.h>
+#include <Aka/Scene/Serializer.h>
 
 namespace aka {
 
@@ -28,12 +29,14 @@ void World::destroySystem(System& system)
 
 void World::save(const Path& path)
 {
-
+	std::string str = Serializer::serialize(*this);
+	TextFile::write(path, str);
 }
 
 void World::load(const Path& path)
 {
-
+	std::string str = TextFile::load(path);
+	//*this = Parser::parse(str);
 }
 
 void World::create()

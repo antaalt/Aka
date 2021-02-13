@@ -46,7 +46,7 @@ Font::Font(const Path& path, uint32_t height)
     m_height = (face->size->metrics.height >> 6) + 1;
     m_advance = face->size->metrics.max_advance >> 6;
     m_characters.resize(255);
-    Packer packer(m_characters.size(), m_advance, m_height);
+    Packer packer((uint32_t)m_characters.size(), m_advance, m_height);
     for (uint32_t c = 0; c < (uint32_t)m_characters.size(); c++)
     {
         // FT_Get_Char_Index (if zero returned, missing glyph)

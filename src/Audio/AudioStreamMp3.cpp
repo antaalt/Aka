@@ -22,6 +22,10 @@ AudioStreamMp3::AudioStreamMp3() :
     m_mp3d{}
 {
 }
+AudioStreamMp3::~AudioStreamMp3()
+{
+    close();
+}
 
 bool AudioStreamMp3::load(const Path& path, Audio* audio) const
 {
@@ -56,7 +60,6 @@ bool AudioStreamMp3::open(const Path& path)
 bool AudioStreamMp3::close()
 {
     mp3dec_ex_close(&m_mp3d);
-    memset(&m_mp3d, 0, sizeof(m_mp3d));
     return true;
 }
 
@@ -70,13 +73,18 @@ bool AudioStreamMp3::decode(AudioFrame* buffer, size_t bytes)
 }
 void AudioStreamMp3::seek(uint64_t position)
 {
-    int result = mp3dec_ex_seek(&m_mp3d, position);
+    int result = mp3dec_ex_seek(&m_mp3d, position * m_mp3d.info.channels);
     ASSERT(result == 0, "Error while seeking");
 }
 
 bool AudioStreamMp3::playing() const
 {
     return m_mp3d.cur_sample < m_mp3d.samples;
+}
+
+uint32_t AudioStreamMp3::offset() const
+{
+    return m_mp3d.cur_sample / m_mp3d.info.channels;
 }
 
 uint32_t AudioStreamMp3::frequency() const
@@ -91,7 +99,7 @@ uint32_t AudioStreamMp3::channels() const
 
 uint64_t AudioStreamMp3::samples() const
 {
-    return m_mp3d.samples;
+    return m_mp3d.samples / m_mp3d.info.channels;
 }
 
 };

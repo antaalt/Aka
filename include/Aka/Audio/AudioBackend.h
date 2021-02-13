@@ -22,12 +22,6 @@ public:
 
 	// Play an audio at path.
 	static bool play(AudioStream::Ptr stream, float volume, bool loop = false);
-	// Check if an audio has finished playing
-	static bool finished(AudioStream::Ptr stream);
-	// Check if an audio exist
-	static bool exist(AudioStream::Ptr stream);
-	// Set the volume of an audio
-	static void setVolume(AudioStream::Ptr stream, float volume);
 	// Close an audio
 	static void close(AudioStream::Ptr stream);
 private:

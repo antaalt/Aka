@@ -36,7 +36,7 @@ public:
 	void emit(T&&);
 
 	template <typename Func>
-	void each(Func func);
+	void each(Func func) const;
 
 	// Create all systems
 	void create();
@@ -65,16 +65,16 @@ inline void World::attachSystem()
 }
 
 template <typename T>
-void World::emit(T&& event)
+inline void World::emit(T&& event)
 {
 	m_dispatcher.enqueue<T>(std::forward<T>(event));
 }
 
 template <typename Func>
-void World::each(Func func)
+inline void World::each(Func func) const
 {
-	m_registry.each([&](const entt::entity entity) {
-		func(Entity(entity, this));
+	m_registry.each([&](entt::entity entity) {
+		func(Entity(entity, const_cast<World*>(this)));
 	});
 }
 

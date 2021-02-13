@@ -5,6 +5,8 @@
 #include <Aka/Scene/Camera.h>
 #include <Aka/Scene/Entity.h>
 
+#include <string_view>
+
 namespace aka {
 
 enum class ComponentID : uint8_t {};
@@ -13,20 +15,32 @@ struct ComponentType
 {
 	// Get the id for the specified type
 	template <typename T>
-	static uint8_t get() {
-		ASSERT(m_typeCounter < 255, "Reach max type capacity");
-		static const uint8_t type = m_typeCounter++;
+	static ComponentID get() {
+		ASSERT(m_typeCounter < 255, "Too many components.");
+		static const ComponentID type = static_cast<ComponentID>(m_typeCounter++);
 		return type;
 	}
 	// Current number of different type
-	static uint8_t count() {
+	static std::underlying_type<ComponentID>::type count() {
 		return m_typeCounter;
 	}
 	// Maximum number of different type
-	static constexpr uint8_t size() { return 255; }
+	static constexpr std::underlying_type<ComponentID>::type size() { return 255; }
 private:
-	static uint8_t m_typeCounter;
+	static std::underlying_type<ComponentID>::type m_typeCounter;
 };
+
+template <typename T>
+struct ComponentHandle
+{
+	static const ComponentID id;
+	static const char* name;
+};
+template <typename T>
+const ComponentID ComponentHandle<T>::id = ComponentType::get<T>();
+
+// TODO in cpp file to auto instantiate
+//template class ComponentHandle<Transform2D>;
 
 // Component
 /*struct Transform2DComponent
@@ -53,10 +67,9 @@ struct CameraComponent
 	bool primary;
 };
 
+static const vec2f maxVelocity;
 struct RigidBody2DComponent
 {
-	static const vec2f maxVelocity;
-
 	vec2f acceleration; // m/s^2
 	vec2f velocity; // m/s
 	float mass; // kg
@@ -86,15 +99,21 @@ struct Collider2DComponent
 struct SpriteAnimatorComponent
 {
 	Sprite* sprite;
+	uint32_t currentAnimation;
+	uint32_t currentFrame;
 };
 
 // Render component
 struct SpriteRenderComponent
 {
+	vec2f position;
+	vec2f size;
+	Texture::Ptr texture;
 };
 
 struct Atlas
 {
+	Texture::Ptr texture;
 };
 
 struct TileLayerRenderComponent

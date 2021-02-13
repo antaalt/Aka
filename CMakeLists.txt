@@ -15,7 +15,7 @@ add_library (Aka
 	"src/Core/Application.cpp"
 	"src/Core/Debug.cpp"
 	"src/Core/Font.cpp"
-	"src/Core/Shape2D.cpp"
+	"src/Core/Physic.cpp"
 	"src/Core/Aseprite.cpp"
 	"src/Core/Sprite.cpp"
 
@@ -23,6 +23,7 @@ add_library (Aka
 	"src/Scene/Entity.cpp"
 	"src/Scene/System.cpp"
 	"src/Scene/World.cpp"
+	"src/Scene/Serializer.cpp"
 
 	"src/Graphic/D3D11/D3D11Backend.cpp"
 	"src/Graphic/GL/GLBackend.cpp"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Aka/Scene/World.h>
+#include <Aka/Scene/Component.h>
 
 namespace aka {
 
@@ -36,40 +37,18 @@ public:
 	bool operator!=(const Entity& rhs) const;
 
 	entt::entity handle() const { return m_handle; }
-	World* world() const { return m_world; }
+	const World* world() const { return m_world; }
 private:
 	entt::entity m_handle;
 	World* m_world;
 };
 
-/*template <typename T>
-struct ComponentAddedEvent
-{
-	Entity entity;
-};
-
-template <typename T>
-struct ComponentRemovedEvent
-{
-	Entity entity;
-};
-
-struct EntityCreated
-{
-	Entity entity;
-};
-
-struct EntityDestroyed
-{
-	Entity entity;
-};*/
-
 template <typename T, typename... Args>
 inline void Entity::add(Args&&... args)
 {
-	uint8_t idToRegister = ComponentType::get<T>();
+	ComponentID idToRegister = ComponentType::get<T>();
+	// TODO register this id ?
 	m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
-	//m_world->dispatcher().enqueue<ComponentAddedEvent<T>>(ComponentAddedEvent<T>{ *this });
 }
 
 template <typename T>
@@ -87,7 +66,6 @@ inline bool Entity::has() const
 template <typename T>
 inline void Entity::remove()
 {
-	//m_world->dispatcher().enqueue<ComponentRemovedEvent<T>>(ComponentRemovedEvent<T>{ *this });
 	return m_world->registry().remove<T>(m_handle);
 }
 

@@ -18,6 +18,8 @@ public:
     static AudioStream::Ptr loadMemory(const Path& path);
 
 public:
+    AudioStream() {}
+    virtual ~AudioStream() {}
     // Decode an audio file and return a memory buffer
     virtual bool load(const Path& path, Audio* audio) const = 0;
     // Open an audio file and return a stream
@@ -30,6 +32,8 @@ public:
     virtual void seek(uint64_t position) = 0;
     // Is the stream playing
     virtual bool playing() const = 0;
+    // Get current sample offset
+    virtual uint32_t offset() const = 0;
     // Get frequency
     virtual uint32_t frequency() const = 0;
     // Get channel count

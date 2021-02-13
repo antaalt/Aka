@@ -18,7 +18,8 @@ struct Sprite {
 		uint32_t width = 0;
 		uint32_t height = 0;
 
-		static Frame create(Texture::Ptr texture, Time::Unit duration) { 
+		static Frame create(Texture::Ptr texture, Time::Unit duration)
+		{ 
 			Frame frame; 
 			frame.texture = texture; 
 			frame.duration = duration; 
@@ -32,7 +33,8 @@ struct Sprite {
 		std::vector<Frame> frames;
 
 		// Whole duration of animation
-		Time::Unit duration() const {
+		Time::Unit duration() const
+		{
 			Time::Unit duration = Time::Unit();
 			for (const Frame& frame : frames)
 				duration += frame.duration;
@@ -42,11 +44,17 @@ struct Sprite {
 
 	std::vector<Animation> animations;
 
-	Animation* getAnimation(const std::string& str) {
+	Animation* getAnimation(const std::string& str)
+	{
 		for (Animation &animation : animations)
 			if (animation.name == str)
 				return &animation;
 		return nullptr;
+	}
+
+	const Sprite::Frame& getFrame(uint32_t animation, uint32_t frame) const
+	{
+		return animations[animation].frames[frame];
 	}
 
 	// Parse the sprite from an aseprite

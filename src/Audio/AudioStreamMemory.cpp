@@ -49,12 +49,17 @@ bool AudioStreamMemory::decode(AudioFrame* buffer, size_t bytes)
 }
 void AudioStreamMemory::seek(uint64_t position)
 {
-    m_offset = position;
+    m_offset = position * m_channels;
 }
 
 bool AudioStreamMemory::playing() const
 {
     return m_offset < m_frames.size();
+}
+
+uint32_t AudioStreamMemory::offset() const
+{
+    return m_offset / m_channels;
 }
 
 uint32_t AudioStreamMemory::frequency() const
