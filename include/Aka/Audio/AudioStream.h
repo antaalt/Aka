@@ -18,7 +18,6 @@ public:
     static AudioStream::Ptr loadMemory(const Path& path);
 
 public:
-    AudioStream(uint32_t frequency, uint32_t channels) : m_frequency(frequency), m_channels(channels) {}
     // Decode an audio file and return a memory buffer
     virtual bool load(const Path& path, Audio* audio) const = 0;
     // Open an audio file and return a stream
@@ -32,12 +31,11 @@ public:
     // Is the stream playing
     virtual bool playing() const = 0;
     // Get frequency
-    uint32_t frequency() const { return m_frequency; }
+    virtual uint32_t frequency() const = 0;
     // Get channel count
-    uint32_t channels() const { return m_channels; }
-protected:
-    uint32_t m_frequency;
-    uint32_t m_channels;
+    virtual uint32_t channels() const = 0;
+    // Get samples count
+    virtual uint64_t samples() const = 0;
 };
 
 };

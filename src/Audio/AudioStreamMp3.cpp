@@ -19,7 +19,6 @@
 namespace aka {
 
 AudioStreamMp3::AudioStreamMp3() :
-    AudioStream(0, 0),
     m_mp3d{}
 {
 }
@@ -49,8 +48,6 @@ bool AudioStreamMp3::open(const Path& path)
     std::wstring wstr;
     utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(wstr));
     int sample = mp3dec_ex_open_w(&m_mp3d, wstr.c_str(), MP3D_SEEK_TO_SAMPLE);
-    m_frequency = (uint32_t)m_mp3d.info.hz;
-    m_channels = (uint32_t)m_mp3d.info.channels;
     if (m_mp3d.samples > 0)
         return true;
     return false;
@@ -80,6 +77,21 @@ void AudioStreamMp3::seek(uint64_t position)
 bool AudioStreamMp3::playing() const
 {
     return m_mp3d.cur_sample < m_mp3d.samples;
+}
+
+uint32_t AudioStreamMp3::frequency() const
+{
+    return (uint32_t)m_mp3d.info.hz;
+}
+
+uint32_t AudioStreamMp3::channels() const
+{
+    return (uint32_t)m_mp3d.info.channels;
+}
+
+uint64_t AudioStreamMp3::samples() const
+{
+    return m_mp3d.samples;
 }
 
 };

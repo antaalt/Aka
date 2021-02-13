@@ -16,9 +16,14 @@ public:
     bool decode(AudioFrame* buffer, size_t bytes) override;
     void seek(uint64_t position) override;
     bool playing() const override;
+    uint32_t frequency() const override;
+    uint32_t channels() const override;
+    uint64_t samples() const override;
 private:
     std::vector<AudioFrame> m_frames;
     size_t m_offset;
+    uint32_t m_frequency;
+    uint32_t m_channels;
 };
 
 };

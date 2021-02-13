@@ -12,9 +12,10 @@ AudioStreamMemory::AudioStreamMemory(const std::vector<AudioFrame>& data, uint32
 }
 
 AudioStreamMemory::AudioStreamMemory(const AudioFrame* data, size_t length, uint32_t frequency, uint32_t channels) :
-    AudioStream(frequency, channels),
     m_frames(length),
-    m_offset(0)
+    m_offset(0),
+    m_frequency(frequency),
+    m_channels(channels)
 {
     memcpy(m_frames.data(), data, length);
 }
@@ -54,6 +55,21 @@ void AudioStreamMemory::seek(uint64_t position)
 bool AudioStreamMemory::playing() const
 {
     return m_offset < m_frames.size();
+}
+
+uint32_t AudioStreamMemory::frequency() const
+{
+    return m_frequency;
+}
+
+uint32_t AudioStreamMemory::channels() const
+{
+    return m_channels;
+}
+
+uint64_t AudioStreamMemory::samples() const
+{
+    return m_frames.size() / m_channels;
 }
 
 };
