@@ -22,8 +22,8 @@ public:
 	void destroyEntity(Entity entity);
 
 	// Attach a system to the world.
-	template <typename T>
-	void attach();
+	template <typename T, typename... Args>
+	void attach(Args&&... args);
 
 	// Save the world to a file
 	void save(const Path& path);
@@ -57,11 +57,11 @@ private:
 	entt::registry m_registry;
 };
 
-template <typename T>
-inline void World::attach()
+template <typename T, typename... Args>
+inline void World::attach(Args&&... args)
 {
 	static_assert(std::is_base_of<System, T>::value, "Type is not a system");
-	m_systems.push_back(std::make_unique<T>());
+	m_systems.push_back(std::make_unique<T>(std::forward<Args>(args)...));
 }
 
 template <typename T>
