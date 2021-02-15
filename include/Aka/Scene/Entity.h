@@ -46,9 +46,8 @@ private:
 template <typename T, typename... Args>
 inline void Entity::add(Args&&... args)
 {
-	ComponentID idToRegister = ComponentType::get<T>();
-	// TODO register this id ?
-	m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
+	//ComponentID idToRegister = ComponentType::get<T>();
+	T& component = m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
 }
 
 template <typename T>
@@ -66,7 +65,8 @@ inline bool Entity::has() const
 template <typename T>
 inline void Entity::remove()
 {
-	return m_world->registry().remove<T>(m_handle);
+	ASSERT(has<T>(), "Trying to remove component that is not owned.");
+	m_world->registry().remove<T>(m_handle);
 }
 
 }

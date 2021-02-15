@@ -15,6 +15,7 @@ class Batch
 public:
 	struct Rect {
 		Rect();
+		Rect(const vec2f& pos, const vec2f& size, const color4f& color, int32_t layer);
 		Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int32_t layer);
 		Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f &color, int32_t layer);
 		Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, int32_t layer);

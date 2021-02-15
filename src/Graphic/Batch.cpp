@@ -85,6 +85,16 @@ Batch::Rect::Rect() :
 {
 }
 
+Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const color4f& color, int32_t layer) :
+	position(pos),
+	size(size),
+	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
+	color{ color, color, color, color },
+	texture(nullptr),
+	layer(layer)
+{
+}
+
 Batch::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int32_t layer) :
 	position(pos),
 	size(size),

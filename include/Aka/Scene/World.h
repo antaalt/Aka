@@ -14,17 +14,16 @@ class Entity;
 
 class World
 {
+	friend class Entity;
 public:
 	// Create an entity
 	Entity createEntity(const std::string& name);
 	// Destroy an entity
 	void destroyEntity(Entity entity);
 
-	// Create a system in the world.
+	// Attach a system to the world.
 	template <typename T>
-	void attachSystem();
-	// Destroy a system
-	void destroySystem(System& system);
+	void attach();
 
 	// Save the world to a file
 	void save(const Path& path);
@@ -35,6 +34,7 @@ public:
 	template <typename T>
 	void emit(T&&);
 
+	// Loop through all entities
 	template <typename Func>
 	void each(Func func) const;
 
@@ -58,7 +58,7 @@ private:
 };
 
 template <typename T>
-inline void World::attachSystem()
+inline void World::attach()
 {
 	static_assert(std::is_base_of<System, T>::value, "Type is not a system");
 	m_systems.push_back(std::make_unique<T>());

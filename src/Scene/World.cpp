@@ -16,17 +16,6 @@ void World::destroyEntity(Entity entity)
 	m_registry.destroy(entity.handle());
 }
 
-void World::destroySystem(System& system)
-{
-	auto it = std::find_if(m_systems.begin(), m_systems.end(), [&system](const std::unique_ptr<System> &s) {
-		return s.get() == &system;
-	});
-	if (it == m_systems.end())
-		Logger::warn("Could not find system to destroy");
-	else
-		m_systems.erase(it);
-}
-
 void World::save(const Path& path)
 {
 	std::string str = Serializer::serialize(*this);

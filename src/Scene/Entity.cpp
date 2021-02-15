@@ -28,6 +28,7 @@ void Entity::destroy()
 
 bool Entity::valid()
 {
+	if (m_world == nullptr) return false;
 	return m_world->registry().valid(m_handle);
 }
 
