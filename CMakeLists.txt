@@ -24,6 +24,7 @@ add_library (Aka
 	"src/Scene/System.cpp"
 	"src/Scene/World.cpp"
 	"src/Scene/Serializer.cpp"
+	"src/Scene/Camera.cpp"
 
 	"src/Graphic/D3D11/D3D11Backend.cpp"
 	"src/Graphic/GL/GLBackend.cpp"

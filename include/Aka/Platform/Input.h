@@ -105,6 +105,8 @@ enum class Key {
 	F10,
 	F11,
 	F12,
+
+	Count, // Number of keys
 };
 
 enum class Button {
