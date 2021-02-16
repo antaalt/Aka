@@ -4,7 +4,10 @@
 
 namespace aka {
 
-Texture::Texture(uint32_t width, uint32_t height) :
+Texture::Texture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler) :
+	m_sampler(sampler),
+	m_format(format),
+	m_component(component),
 	m_width(width),
 	m_height(height)
 {
@@ -14,14 +17,9 @@ Texture::~Texture()
 {
 }
 
-Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, Sampler sampler)
+Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler)
 {
-	return create(width, height, format, nullptr, sampler);
-}
-
-Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler)
-{
-	return GraphicBackend::createTexture(width, height, format, data, sampler);
+	return GraphicBackend::createTexture(width, height, format, component, sampler);
 }
 
 uint32_t Texture::width() const
@@ -32,6 +30,21 @@ uint32_t Texture::width() const
 uint32_t Texture::height() const
 {
 	return m_height;
+}
+
+Texture::Format Texture::format() const
+{
+	return m_format;
+}
+
+Texture::Component Texture::component() const
+{
+	return m_component;
+}
+
+const Sampler& Texture::sampler() const
+{
+	return m_sampler;
 }
 
 void SubTexture::update()

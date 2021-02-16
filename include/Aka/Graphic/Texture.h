@@ -38,40 +38,58 @@ public:
 	using Ptr = std::shared_ptr<Texture>;
 	using Handle = StrictType<uintptr_t, struct TextureTagName>;
 	enum class Format {
+		UnsignedByte,
+		Byte,
+		UnsignedShort,
+		Short,
+		UnsignedInt,
+		Int,
+		Half,
+		Float
+	};
+	enum class Component {
 		Red,
-		Rgb,
-		Rgba,
-		Rgba8,
-		Rgba16,
-		Rgba32f,
-		Rgb8,
-		Rgb16,
+		RG,
+		RGB,
+		BGR,
+		RGBA,
+		BGRA,
+		Depth,
 		DepthStencil,
 	};
+
 protected:
-	Texture(uint32_t width, uint32_t height);
+	Texture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
 public:
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, Sampler sampler);
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler);
+	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler);
 
 	uint32_t width() const;
 
 	uint32_t height() const;
 
-	virtual void upload(const Rect& rect, const uint8_t* data) = 0;
+	Format format() const;
 
-	virtual void upload(const uint8_t* data) = 0;
+	Component component() const;
 
-	virtual void download(uint8_t *data) = 0;
+	const Sampler& sampler() const;
+
+	virtual void upload(const Rect& rect, const void* data) = 0;
+
+	virtual void upload(const void* data) = 0;
+
+	virtual void download(void* data) = 0;
 
 	virtual Handle handle() = 0;
 
 	virtual bool isFramebuffer() = 0;
 
 protected:
+	Sampler m_sampler;
+	Format m_format;
+	Component m_component;
 	uint32_t m_width, m_height;
 };
 

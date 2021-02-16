@@ -230,7 +230,8 @@ void Batch::push(Texture::Ptr texture, int32_t layer)
 		sampler.filterMin = Sampler::Filter::Nearest;
 		sampler.wrapS = Sampler::Wrap::Clamp;
 		sampler.wrapT = Sampler::Wrap::Clamp;
-		m_defaultTexture = Texture::create(1, 1, Texture::Format::Rgba, data, sampler);
+		m_defaultTexture = Texture::create(1, 1, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
+		m_defaultTexture->upload(data);
 	}
 	m_batches.push_back(m_currentBatch);
 	m_currentBatch.texture = texture ? texture : m_defaultTexture;
@@ -250,11 +251,21 @@ void Batch::clear()
 	m_currentBatch.layer = 0;
 }
 
-uint32_t Batch::count()
+size_t Batch::batchCount() const
 {
 	if (m_currentBatch.elements > 0)
-		return static_cast<uint32_t>(m_batches.size()) + 1;
-	return static_cast<uint32_t>(m_batches.size());
+		return m_batches.size() + 1;
+	return m_batches.size();
+}
+
+size_t Batch::verticesCount() const
+{
+	return m_vertices.size();
+}
+
+size_t Batch::indicesCount() const
+{
+	return m_indices.size();
 }
 
 void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)

@@ -73,16 +73,25 @@ void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
             },
             nullptr
         );
-        ctx.audio->startStream();
     }
     catch (RtAudioError& e)
     {
         Logger::error("[Rtaudio]", e.getMessage());
         throw;
     }
+    start();
 }
 
 void AudioBackend::destroy()
+{
+    stop();
+    if (ctx.audio->isStreamOpen())
+        ctx.audio->closeStream();
+    delete ctx.audio;
+    ctx.audio = nullptr;
+}
+
+void AudioBackend::stop()
 {
     try
     {
@@ -94,10 +103,18 @@ void AudioBackend::destroy()
     {
         Logger::error("[Rtaudio]", e.getMessage());
     }
-    if (ctx.audio->isStreamOpen())
-        ctx.audio->closeStream();
-    delete ctx.audio;
-    ctx.audio = nullptr;
+}
+
+void AudioBackend::start()
+{
+    try
+    {
+        ctx.audio->startStream();
+    }
+    catch (RtAudioError& e)
+    {
+        Logger::error("[Rtaudio]", e.getMessage());
+    }
 }
 
 uint32_t AudioBackend::getDeviceCount()

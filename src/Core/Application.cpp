@@ -30,7 +30,7 @@ void Application::run(const Config& config)
 			Time::Unit deltaTime = min<Time::Unit>(now - lastTick, maxUpdate);
 			lastTick = now;
 			accumulator += deltaTime;
-			while (accumulator >= timestep)
+			while (app->m_running && accumulator >= timestep)
 			{
 				InputBackend::update();
 				PlatformBackend::update();

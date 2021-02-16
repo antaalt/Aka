@@ -71,7 +71,11 @@ public:
 	void clear();
 
 	// Get number of batch
-	uint32_t count();
+	size_t batchCount() const;
+	// Get number of vertices
+	size_t verticesCount() const;
+	// Get number of indices
+	size_t indicesCount() const;
 
 	// Render to specified framebuffer
 	void render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f &projection);

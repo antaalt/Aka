@@ -13,6 +13,10 @@ public:
 	static void initialize(uint32_t frequency, uint32_t channels);
 	// Destroy the audio device
 	static void destroy();
+	// Start the audio backend
+	static void start();
+	// Stop the audio backend
+	static void stop();
 	// Get the number of audio device
 	static uint32_t getDeviceCount();
 	// Get the frequency of the backend

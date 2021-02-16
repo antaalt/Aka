@@ -381,13 +381,15 @@ void SetDebugName(ID3D11DeviceChild* child, const std::string& name)
 		child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.c_str());
 }
 
+class D3D11ShaderMaterial;
+
 class D3D11Texture : public Texture
 {
 public:
+	friend class D3D11ShaderMaterial;
 	friend class D3D11Framebuffer;
-	D3D11Texture(uint32_t width, uint32_t height, Format format, const uint8_t* data, Sampler sampler, bool isFramebuffer) :
-		Texture(width, height),
-		m_sampler(sampler),
+	D3D11Texture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler, bool isFramebuffer) :
+		Texture(width, height, format, component, sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -411,32 +413,30 @@ public:
 		else
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		switch (format)
+		if (format == Texture::Format::UnsignedByte && component == Texture::Component::Red)
 		{
-		case Texture::Format::Red:
 			m_format = DXGI_FORMAT_R8_UNORM;
 			m_component = 1;
-			break;
-		case Texture::Format::Rgba:
-		case Texture::Format::Rgba8:
+		}
+		else if (format == Texture::Format::UnsignedByte && component == Texture::Component::RGBA)
+		{
 			m_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			m_component = 4;
-			break;
-		case Texture::Format::DepthStencil:
+		}
+		else if (format == Texture::Format::Float && component == Texture::Component::DepthStencil)
+		{
 			m_format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 			m_component = 4;
-			break;
-		default:
+		}
+		else
+		{
 			Logger::error("Format not supported");
-			break;
 		}
 		desc.Format = m_format;
 
 		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
 		D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
-		if (data != nullptr)
-			upload(data);
 	}
 	D3D11Texture(D3D11Texture&) = delete;
 	D3D11Texture& operator=(D3D11Texture&) = delete;
@@ -449,7 +449,7 @@ public:
 		if (m_staging)
 			m_staging->Release();
 	}
-	void upload(const uint8_t* data) override
+	void upload(const void* data) override
 	{
 		D3D11_BOX box{};
 		box.left = 0;
@@ -467,7 +467,7 @@ public:
 			0
 		);
 	}
-	void upload(const Rect& rect, const uint8_t* data) override
+	void upload(const Rect& rect, const void* data) override
 	{
 		D3D11_BOX box{};
 		box.left = (UINT)rect.x;
@@ -485,7 +485,7 @@ public:
 			0
 		);
 	}
-	void download(uint8_t* data) override
+	void download(void* data) override
 	{
 		D3D11_BOX box{};
 		box.left = 0;
@@ -532,11 +532,7 @@ public:
 	{
 		return m_isFramebuffer;
 	}
-	const Sampler& getSampler() const { return m_sampler; }
-	ID3D11Texture2D* getTexture() const { return m_texture; }
-	ID3D11ShaderResourceView* getView() const { return m_view; }
 private:
-	Sampler m_sampler;
 	ID3D11Texture2D* m_texture;
 	ID3D11Texture2D* m_staging;
 	ID3D11ShaderResourceView* m_view;
@@ -557,21 +553,24 @@ public:
 		for (size_t i = 0; i < count; i++)
 		{
 			Texture::Format format;
+			Texture::Component component;
 			switch (attachments[i])
 			{
 			case AttachmentType::Color0:
 			case AttachmentType::Color1:
 			case AttachmentType::Color2:
 			case AttachmentType::Color3:
-				format = Texture::Format::Rgba;
+				format = Texture::Format::UnsignedByte;
+				component = Texture::Component::RGBA;
 				break;
 			case AttachmentType::Depth:
 			case AttachmentType::Stencil:
 			case AttachmentType::DepthStencil:
-				format = Texture::Format::DepthStencil;
+				format = Texture::Format::UnsignedByte;
+				component = Texture::Component::DepthStencil;
 				break;
 			}
-			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, sampler, true);
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, component, sampler, true);
 			m_attachments.push_back(Attachment{ attachments[i], tex });
 			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
 			{
@@ -607,21 +606,24 @@ public:
 		for (Attachment& attachment : m_attachments)
 		{
 			Texture::Format format;
+			Texture::Component component;
 			switch (attachment.type)
 			{
 			case AttachmentType::Color0:
 			case AttachmentType::Color1:
 			case AttachmentType::Color2:
 			case AttachmentType::Color3:
-				format = Texture::Format::Rgba;
+				format = Texture::Format::UnsignedByte;
+				component = Texture::Component::RGBA;
 				break;
 			case AttachmentType::Depth:
 			case AttachmentType::Stencil:
 			case AttachmentType::DepthStencil:
-				format = Texture::Format::DepthStencil;
+				format = Texture::Format::UnsignedByte;
+				component = Texture::Component::DepthStencil;
 				break;
 			}
-			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, nullptr, m_sampler, true);
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, component, m_sampler, true);
 			attachment.texture = tex;
 			if (attachment.type == AttachmentType::Depth || attachment.type == AttachmentType::Stencil || attachment.type == AttachmentType::DepthStencil)
 			{
@@ -1271,9 +1273,9 @@ public:
 				if (texture != nullptr)
 				{
 					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
-					ID3D11ShaderResourceView* view = d3dTexture->getView();
+					ID3D11ShaderResourceView* view = d3dTexture->m_view;
 					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
-					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->getSampler());
+					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->sampler());
 					if (sampler != nullptr)
 						dctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
 				}
@@ -1791,12 +1793,12 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler sampler)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, Texture::Component component, Sampler sampler)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, data, sampler, false);
+	return std::make_shared<D3D11Texture>(width, height, format, component, sampler, false);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler sampler)

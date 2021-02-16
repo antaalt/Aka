@@ -66,7 +66,7 @@ protected:
 	static uint32_t deviceCount();
 
 	friend class Texture;
-	static Texture::Ptr createTexture(uint32_t width, uint32_t height, Texture::Format format, const uint8_t* data, Sampler sampler);
+	static Texture::Ptr createTexture(uint32_t width, uint32_t height, Texture::Format format, Texture::Component component, Sampler sampler);
 
 	friend class Framebuffer;
 	static Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler sampler);
