@@ -64,7 +64,8 @@ struct Blending
 	color32 blendColor;
 
 	static Blending none();
-	static Blending normal();
+	static Blending nonPremultiplied();
+	static Blending premultiplied();
 
 	bool operator==(const Blending& rhs) const;
 	bool operator!=(const Blending& rhs) const;

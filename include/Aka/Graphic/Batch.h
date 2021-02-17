@@ -1,12 +1,13 @@
 #pragma once
 
-#include "../Core/Geometry.h"
-#include "../Graphic/Shader.h"
-#include "../Graphic/Framebuffer.h"
-#include "../Graphic/Texture.h"
-#include "../Graphic/Mesh.h"
-#include "../Graphic/RenderPass.h"
-#include "../Graphic/GraphicBackend.h"
+#include <Aka/Core/Geometry.h>
+#include <Aka/Core/Font.h>
+#include <Aka/Graphic/Shader.h>
+#include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Mesh.h>
+#include <Aka/Graphic/RenderPass.h>
+#include <Aka/Graphic/GraphicBackend.h>
 
 namespace aka {
 
@@ -53,6 +54,15 @@ public:
 		int32_t layer;
 	};
 
+	struct Text {
+		Text();
+		Text(const std::string &str, Font* font, const color4f& color, int32_t layer);
+		std::string text;
+		Font* font;
+		color4f color;
+		int32_t layer;
+	};
+
 	Batch();
 
 	// Draw shapes
@@ -60,6 +70,7 @@ public:
 	void draw(const mat3f& transform, Tri&& tri);
 	void draw(const mat3f& transform, Quad&& quad);
 	void draw(const mat3f& transform, Line&& line);
+	void draw(const mat3f& transform, Text&& text);
 
 	// Push the current batch to the stack and use a new one
 	void push();

@@ -18,7 +18,21 @@ Blending Blending::none()
 	return blending;
 }
 
-Blending Blending::normal()
+Blending Blending::nonPremultiplied()
+{
+	Blending blending{};
+	blending.colorModeSrc = BlendMode::SrcAlpha;
+	blending.colorModeDst = BlendMode::OneMinusSrcAlpha;
+	blending.colorOp = BlendOp::Add;
+	blending.alphaModeSrc = BlendMode::One;
+	blending.alphaModeDst = BlendMode::OneMinusSrcAlpha;
+	blending.alphaOp = BlendOp::Add;
+	blending.mask = BlendMask::Rgba;
+	blending.blendColor = color32(255);
+	return blending;
+}
+
+Blending Blending::premultiplied()
 {
 	Blending blending{};
 	blending.colorModeSrc = BlendMode::One;

@@ -1,6 +1,7 @@
 #include <Aka/Graphic/Batch.h>
 
 #include <algorithm>
+#include <utf8.h>
 
 namespace aka {
 
@@ -145,6 +146,18 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv
 {
 }
 
+Batch::Text::Text() :
+	Text("", nullptr, color4f(1.f), 0)
+{
+}
+Batch::Text::Text(const std::string& str, Font* font, const color4f& color, int32_t layer) :
+	text(str),
+	font(font),
+	color(color),
+	layer(layer)
+{
+}
+
 void Batch::draw(const mat3f& transform, Rect&& rect)
 {
 	if (m_currentBatch.layer != rect.layer) {
@@ -153,7 +166,7 @@ void Batch::draw(const mat3f& transform, Rect&& rect)
 		else
 			m_currentBatch.layer = rect.layer;
 	}
-	if (rect.texture != m_currentBatch.texture)
+	if (rect.texture != m_currentBatch.texture && rect.texture != nullptr)
 	{
 		if (m_currentBatch.elements > 0)
 			push(rect.texture, rect.layer);
@@ -186,7 +199,7 @@ void Batch::draw(const mat3f& transform, Quad&& quad)
 		else
 			m_currentBatch.layer = quad.layer;
 	}
-	if (quad.texture != m_currentBatch.texture)
+	if (quad.texture != m_currentBatch.texture && quad.texture != nullptr)
 	{
 		if (m_currentBatch.elements > 0)
 			push(quad.texture, quad.layer);
@@ -207,6 +220,25 @@ void Batch::draw(const mat3f& transform, Quad&& quad)
 	m_currentBatch.elements += 2;
 }
 
+void Batch::draw(const mat3f& transform, Text&& text)
+{
+	float scale = 1.f;
+	float advance = 0.f;
+	std::string::iterator start = text.text.begin();
+	std::string::iterator end = text.text.end();
+	while (start < end)
+	{
+		uint32_t c = utf8::next(start, end);
+		// TODO check if rendering text out of screen for culling ?
+		const Character& ch = text.font->getCharacter(c);
+		vec2f position = vec2f(advance + ch.bearing.x, -(ch.size.y - ch.bearing.y)) * scale;
+		vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
+		draw(transform, Batch::Rect(position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, text.color, text.layer));
+		// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+		advance += ch.advance * scale;
+	}
+}
+
 Batch::Batch() :
 	m_shader(nullptr),
 	m_mesh(nullptr),
@@ -222,17 +254,6 @@ void Batch::push()
 
 void Batch::push(Texture::Ptr texture, int32_t layer)
 {
-	if (m_defaultTexture == nullptr)
-	{
-		uint8_t data[4] = { 255, 255, 255, 255 };
-		Sampler sampler;
-		sampler.filterMag = Sampler::Filter::Nearest;
-		sampler.filterMin = Sampler::Filter::Nearest;
-		sampler.wrapS = Sampler::Wrap::Clamp;
-		sampler.wrapT = Sampler::Wrap::Clamp;
-		m_defaultTexture = Texture::create(1, 1, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
-		m_defaultTexture->upload(data);
-	}
 	m_batches.push_back(m_currentBatch);
 	m_currentBatch.texture = texture ? texture : m_defaultTexture;
 	m_currentBatch.elementOffset += m_currentBatch.elements;
@@ -288,6 +309,22 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 		}
 		if (m_mesh == nullptr)
 			m_mesh = Mesh::create();
+		if (m_defaultTexture == nullptr)
+		{
+			uint8_t data[4] = { 255, 255, 255, 255 };
+			Sampler sampler;
+			sampler.filterMag = Sampler::Filter::Nearest;
+			sampler.filterMin = Sampler::Filter::Nearest;
+			sampler.wrapS = Sampler::Wrap::Clamp;
+			sampler.wrapT = Sampler::Wrap::Clamp;
+			m_defaultTexture = Texture::create(1, 1, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
+			m_defaultTexture->upload(data);
+			for (DrawBatch& batch : m_batches)
+				if (batch.texture == nullptr)
+					batch.texture = m_defaultTexture;
+			if (m_currentBatch.texture == nullptr)
+				m_currentBatch.texture = m_defaultTexture;
+		}
 		m_material->set<mat4f>("u_projection", projection);
 		m_material->set<mat4f>("u_view", view);
 	}
@@ -303,7 +340,7 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	}
 
 	{
-		static const Blending blend = Blending::normal();
+		static const Blending blend = Blending::nonPremultiplied();
 		static const Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
 		static const Depth depth = Depth{ DepthCompare::None, true };
 		static const Stencil stencil = Stencil::none();

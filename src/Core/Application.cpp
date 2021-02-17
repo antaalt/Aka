@@ -4,16 +4,22 @@
 #include <Aka/Platform/InputBackend.h>
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Audio/AudioBackend.h>
+#include <Aka/OS/Logger.h>
 
 namespace aka {
 
 void Application::run(const Config& config)
 {
+	if (config.app == nullptr)
+	{
+		Logger::critical("No app set.");
+		return;
+	}
 	Application* app = config.app;
 	PlatformBackend::initialize(config);
 	GraphicBackend::initialize(config.width, config.height);
 	InputBackend::initialize();
-	AudioBackend::initialize(44100, 2);
+	AudioBackend::initialize(config.audio.frequency, config.audio.channels);
 	
 	Time::Unit timestep = Time::Unit::milliseconds(10);
 	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
@@ -30,6 +36,7 @@ void Application::run(const Config& config)
 			Time::Unit deltaTime = min<Time::Unit>(now - lastTick, maxUpdate);
 			lastTick = now;
 			accumulator += deltaTime;
+			app->start();
 			while (app->m_running && accumulator >= timestep)
 			{
 				InputBackend::update();
@@ -48,7 +55,9 @@ void Application::run(const Config& config)
 			GraphicBackend::frame();
 			app->frame();
 			app->render();
+			app->present();
 			GraphicBackend::present();
+			app->end();
 		} while (app->m_running && PlatformBackend::running());
 	}
 

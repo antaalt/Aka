@@ -36,8 +36,11 @@ void World::create()
 
 void World::destroy()
 {
+	m_dispatcher.clear();
+	m_registry.clear();
 	for (std::unique_ptr<System>& system : m_systems)
 		system->destroy(*this);
+	m_systems.clear();
 }
 
 void World::update(Time::Unit deltaTime)

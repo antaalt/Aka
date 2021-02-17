@@ -5,6 +5,14 @@
 #include "Platform/Input.h"
 #include "Platform/InputBackend.h"
 
+#include "Core/Geometry.h"
+#include "Core/Application.h"
+#include "Core/View.h"
+#include "Core/Router.h"
+#include "Core/Debug.h"
+#include "Core/Font.h"
+#include "Core/Sprite.h"
+
 #include "Graphic/GraphicBackend.h"
 #include "Graphic/Batch.h"
 #include "Graphic/Mesh.h"
@@ -27,12 +35,6 @@
 #include "Scene/Entity.h"
 #include "Scene/System.h"
 #include "Scene/Component.h"
-
-#include "Core/Application.h"
-#include "Core/Debug.h"
-#include "Core/Font.h"
-#include "Core/Geometry.h"
-#include "Core/Sprite.h"
 
 
 namespace aka {
