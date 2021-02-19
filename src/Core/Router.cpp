@@ -30,4 +30,9 @@ View& Router::get(ViewID id) {
 	return *it->second;
 }
 
+ViewID Router::current() const
+{
+	return m_current;
+}
+
 };

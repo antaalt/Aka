@@ -289,6 +289,21 @@ size_t Batch::indicesCount() const
 	return m_indices.size();
 }
 
+void Batch::render()
+{
+	render(GraphicBackend::backbuffer());
+}
+
+void Batch::render(Framebuffer::Ptr framebuffer)
+{
+	render(framebuffer, mat4f::identity());
+}
+
+void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view)
+{
+	render(framebuffer, view, mat4f::orthographic(0.f, (float)framebuffer->height(), 0.f, (float)framebuffer->width()));
+}
+
 void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)
 {
 	RenderPass renderPass {};

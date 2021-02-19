@@ -8,6 +8,11 @@ using namespace std::chrono;
 
 const time_point<steady_clock> g_startup = steady_clock::now();
 
+Time::Unit Time::zero()
+{
+	return Time::Unit(0);
+}
+
 Time::Unit Time::now()
 {
 	using namespace std::chrono;

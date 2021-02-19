@@ -42,16 +42,6 @@ std::ostream& operator<<(std::ostream& os, Logger::Color color)
 	return os << "\033[" << terminalColors[(unsigned int)color] << "m";
 }
 
-input::Key InputBackend::getKeyFromScancode(int scancode)
-{
-	return input::Key::Space;
-}
-
-input::KeyboardLayout InputBackend::getKeyboardLayout()
-{
-	return input::KeyboardLayout::Azerty;
-}
-
 bool PlatformBackend::directoryExist(const Path& path)
 {
 	struct stat st;

@@ -7,13 +7,18 @@ namespace aka {
 namespace input {
 
 enum class KeyboardLayout {
-	Unknown,
 	Azerty,
 	Qwerty,
+	Qwertz,
+	Qzerty,
+
+	Count, // Number of layout
+
+	Unknown,
 };
 
+// Key correspond to Qwerty.
 enum class Key {
-	Unknown,
 	A,
 	B,
 	C,
@@ -53,45 +58,69 @@ enum class Key {
 	Num9,
 
 	NumLock,
-	NumPad0,
-	NumPad1,
-	NumPad2,
-	NumPad3,
-	NumPad4,
-	NumPad5,
-	NumPad6,
-	NumPad7,
-	NumPad8,
-	NumPad9,
-	Divide,
-	Decimal,
-	Add,
-	Substract,
-	Separator,
-	Multiply,
+	KeyPad0,
+	KeyPad1,
+	KeyPad2,
+	KeyPad3,
+	KeyPad4,
+	KeyPad5,
+	KeyPad6,
+	KeyPad7,
+	KeyPad8,
+	KeyPad9,
+	KeyPadDivide,
+	KeyPadDecimal,
+	KeyPadAdd,
+	KeyPadSubstract,
+	KeyPadMultiply,
+	KeyPadEnter,
 
-	RightAlt,
-	LeftAlt,
-	RightCtrl,
-	LeftCtrl,
-	RightShift,
-	LeftShift,
+	AltRight,
+	AltLeft,
+	ControlRight,
+	ControlLeft,
+	ShiftRight,
+	ShiftLeft,
+
+	ArrowLeft,
+	ArrowRight,
+	ArrowUp,
+	ArrowDown,
+
 	Escape,
 	Enter,
 	Space,
 	BackSpace,
 	Tab,
-	ArrowLeft,
-	ArrowRight,
-	ArrowUp,
-	ArrowDown,
 	CapsLock,
 	PageUp,
 	PageDown,
 	PrintScreen,
+	Pause,
+	Menu,
+	Insert,
+	Delete,
+	Help,
 	Clear,
+	ScrollLock,
 	End,
 	Home,
+
+	Slash,
+	BackSlash,
+	Plus,
+	Minus,
+	Equal,
+	Comma,
+	Period,
+	Semicolon,
+	Apostrophe,
+	Grave,
+	BracketAngle,
+	BracketLeft,
+	BracketRight,
+
+	AltPrintScreen,
 
 	F1,
 	F2,
@@ -107,6 +136,8 @@ enum class Key {
 	F12,
 
 	Count, // Number of keys
+
+	Unknown,
 };
 
 enum class Button {
@@ -118,18 +149,30 @@ enum class Button {
 	Button6,
 	Button7,
 	Button8,
+
+	Count, // Number of buttons
+
+	Unknown,
+
+	ButtonLeft = Button1,
+	ButtonRight = Button2,
+	ButtonMiddle = Button3,
 };
 
+std::ostream& operator<<(std::ostream& os, const Key key);
+std::ostream& operator<<(std::ostream& os, const KeyboardLayout layout);
+std::ostream& operator<<(std::ostream& os, const Button button);
+
 // Counts
-const uint32_t g_keyboardKeyCount = 512; // should contain every glfw key code
-const uint32_t g_mouseButtonCount = 16; // should contain every glfw mouse button code
+constexpr uint32_t getKeyCount() { return static_cast<uint32_t>(Key::Count); }
+constexpr uint32_t getButtonCount() { return static_cast<uint32_t>(Button::Count); }
 
 // Structs
 struct Keyboard {
-	bool pressed[g_keyboardKeyCount];
-	bool down[g_keyboardKeyCount];
-	bool up[g_keyboardKeyCount];
-	uint64_t timestamp[g_keyboardKeyCount];
+	bool pressed[getKeyCount()];
+	bool down[getKeyCount()];
+	bool up[getKeyCount()];
+	uint64_t timestamp[getKeyCount()];
 	KeyboardLayout layout;
 };
 
@@ -138,17 +181,23 @@ struct Position {
 };
 
 struct Cursor {
-	bool pressed[g_mouseButtonCount];
-	bool down[g_mouseButtonCount];
-	bool up[g_mouseButtonCount];
-	uint64_t timestamp[g_keyboardKeyCount];
+	bool pressed[getButtonCount()];
+	bool down[getButtonCount()];
+	bool up[getButtonCount()];
+	uint64_t timestamp[getButtonCount()];
 	Position position; // raw position
 	Position delta; // relative movement
 	Position scroll;
 };
 
-// Infos
-std::string getKeyName(input::Key key);
+// Get the name of a specific key
+const char* getKeyName(Key key);
+// Get the name of a specific button
+const char* getButtonName(Button button);
+// Get the name of a specific layout
+const char* getKeyboardLayoutName(KeyboardLayout layout);
+// Get the currently used layout for the keyboard
+KeyboardLayout getKeyboardLayout();
 
 // Actions
 bool down(Key key);
@@ -157,9 +206,9 @@ bool pressed(Key key);
 bool down(Button button);
 bool up(Button button);
 bool pressed(Button button);
-Position &mouse();
-Position &delta();
-Position &scroll();
+const Position &mouse();
+const Position &delta();
+const Position &scroll();
 
 };
 };

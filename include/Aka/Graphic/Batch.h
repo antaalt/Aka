@@ -88,7 +88,13 @@ public:
 	// Get number of indices
 	size_t indicesCount() const;
 
+	// Render to backbuffer
+	void render();
 	// Render to specified framebuffer
+	void render(Framebuffer::Ptr framebuffer);
+	// Render to specified framebuffer with transform
+	void render(Framebuffer::Ptr framebuffer, const mat4f& view);
+	// Render to specified framebuffer with transform & projection
 	void render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f &projection);
 private:
 	struct Vertex {

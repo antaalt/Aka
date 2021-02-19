@@ -51,7 +51,8 @@ struct Time
 	private:
 		uint64_t m_value;
 	};
-
+	// Time initialized at zero
+	static Time::Unit zero();
 	// Time elapsed since app startup in ms
 	static Time::Unit now();
 	// Get unix timestamp

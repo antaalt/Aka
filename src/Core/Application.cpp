@@ -30,10 +30,10 @@ void Application::run(const Config& config)
 
 	{
 		Time::Unit lastTick = Time::now();
-		Time::Unit accumulator = Time::Unit::milliseconds(0);
+		Time::Unit accumulator = Time::zero();
 		do {
 			Time::Unit now = Time::now();
-			Time::Unit deltaTime = min<Time::Unit>(now - lastTick, maxUpdate);
+			Time::Unit deltaTime = min(now - lastTick, maxUpdate);
 			lastTick = now;
 			accumulator += deltaTime;
 			app->start();

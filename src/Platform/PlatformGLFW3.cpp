@@ -53,15 +53,15 @@ const input::Key glfwKeyMap[512] = {
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
-	input::Key::Unknown, // GLFW_KEY_APOSTROPHE         39
+	input::Key::Apostrophe, // GLFW_KEY_APOSTROPHE         39
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
-	input::Key::Unknown, // GLFW_KEY_COMMA              44
-	input::Key::Unknown, // GLFW_KEY_MINUS              45
-	input::Key::Unknown, // GLFW_KEY_PERIOD             46
-	input::Key::Unknown, // GLFW_KEY_SLASH              47
+	input::Key::Comma, // GLFW_KEY_COMMA              44
+	input::Key::Minus, // GLFW_KEY_MINUS              45
+	input::Key::Period, // GLFW_KEY_PERIOD             46
+	input::Key::Slash, // GLFW_KEY_SLASH              47
 	input::Key::Num0, // GLFW_KEY_0                  48
 	input::Key::Num1, // GLFW_KEY_1                  49
 	input::Key::Num2, // GLFW_KEY_2                  50
@@ -72,9 +72,10 @@ const input::Key glfwKeyMap[512] = {
 	input::Key::Num7, // GLFW_KEY_7                  55
 	input::Key::Num8, // GLFW_KEY_8                  56
 	input::Key::Num9, // GLFW_KEY_9                  57
-	input::Key::Unknown, // GLFW_KEY_SEMICOLON          59
 	input::Key::Unknown,
-	input::Key::Unknown, // GLFW_KEY_EQUAL              61
+	input::Key::Semicolon, // GLFW_KEY_SEMICOLON          59
+	input::Key::Unknown,
+	input::Key::Equal, // GLFW_KEY_EQUAL              61
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
@@ -104,12 +105,12 @@ const input::Key glfwKeyMap[512] = {
 	input::Key::X, // GLFW_KEY_X                  88
 	input::Key::Y, // GLFW_KEY_Y                  89
 	input::Key::Z, // GLFW_KEY_Z                  90
-	input::Key::Unknown, // GLFW_KEY_LEFT_BRACKET       91
-	input::Key::Unknown, // GLFW_KEY_BACKSLASH          92
-	input::Key::Unknown, // GLFW_KEY_RIGHT_BRACKET      93
+	input::Key::BracketLeft, // GLFW_KEY_LEFT_BRACKET       91
+	input::Key::BackSlash, // GLFW_KEY_BACKSLASH          92
+	input::Key::BracketRight, // GLFW_KEY_RIGHT_BRACKET      93
 	input::Key::Unknown,
 	input::Key::Unknown,
-	input::Key::Unknown, // GLFW_KEY_GRAVE_ACCENT       96
+	input::Key::Grave, // GLFW_KEY_GRAVE_ACCENT       96
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
@@ -273,8 +274,8 @@ const input::Key glfwKeyMap[512] = {
 	input::Key::Enter, // GLFW_KEY_ENTER              257
 	input::Key::Tab, // GLFW_KEY_TAB                258
 	input::Key::BackSpace, // GLFW_KEY_BACKSPACE          259
-	input::Key::Unknown, // GLFW_KEY_INSERT             260
-	input::Key::Unknown, // GLFW_KEY_DELETE             261
+	input::Key::Insert, // GLFW_KEY_INSERT             260
+	input::Key::Delete, // GLFW_KEY_DELETE             261
 	input::Key::ArrowRight, // GLFW_KEY_RIGHT              262
 	input::Key::ArrowLeft, // GLFW_KEY_LEFT               263
 	input::Key::ArrowDown, // GLFW_KEY_DOWN               264
@@ -283,11 +284,21 @@ const input::Key glfwKeyMap[512] = {
 	input::Key::PageDown, // GLFW_KEY_PAGE_DOWN          267
 	input::Key::Home, // GLFW_KEY_HOME               268
 	input::Key::End, // GLFW_KEY_END                269
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
+	input::Key::Unknown,
 	input::Key::CapsLock, // GLFW_KEY_CAPS_LOCK          280
-	input::Key::Unknown, // GLFW_KEY_SCROLL_LOCK        281
+	input::Key::ScrollLock, // GLFW_KEY_SCROLL_LOCK        281
 	input::Key::NumLock, // GLFW_KEY_NUM_LOCK           282
 	input::Key::PrintScreen, // GLFW_KEY_PRINT_SCREEN       283
-	input::Key::Unknown, // GLFW_KEY_PAUSE              284
+	input::Key::Pause, // GLFW_KEY_PAUSE              284
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
@@ -323,45 +334,35 @@ const input::Key glfwKeyMap[512] = {
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::NumPad0, // GLFW_KEY_KP_0               320
-	input::Key::NumPad1, // GLFW_KEY_KP_1               321
-	input::Key::NumPad2, // GLFW_KEY_KP_2               322
-	input::Key::NumPad3, // GLFW_KEY_KP_3               323
-	input::Key::NumPad4, // GLFW_KEY_KP_4               324
-	input::Key::NumPad5, // GLFW_KEY_KP_5               325
-	input::Key::NumPad6, // GLFW_KEY_KP_6               326
-	input::Key::NumPad7, // GLFW_KEY_KP_7               327
-	input::Key::NumPad8, // GLFW_KEY_KP_8               328
-	input::Key::NumPad9, // GLFW_KEY_KP_9               329
-	input::Key::Decimal, // GLFW_KEY_KP_DECIMAL         330
-	input::Key::Divide, // GLFW_KEY_KP_DIVIDE          331
-	input::Key::Multiply, // GLFW_KEY_KP_MULTIPLY        332
-	input::Key::Substract, // GLFW_KEY_KP_SUBTRACT        333
-	input::Key::Add, // GLFW_KEY_KP_ADD             334
-	input::Key::Enter, // GLFW_KEY_KP_ENTER           335
+	input::Key::KeyPad0, // GLFW_KEY_KP_0               320
+	input::Key::KeyPad1, // GLFW_KEY_KP_1               321
+	input::Key::KeyPad2, // GLFW_KEY_KP_2               322
+	input::Key::KeyPad3, // GLFW_KEY_KP_3               323
+	input::Key::KeyPad4, // GLFW_KEY_KP_4               324
+	input::Key::KeyPad5, // GLFW_KEY_KP_5               325
+	input::Key::KeyPad6, // GLFW_KEY_KP_6               326
+	input::Key::KeyPad7, // GLFW_KEY_KP_7               327
+	input::Key::KeyPad8, // GLFW_KEY_KP_8               328
+	input::Key::KeyPad9, // GLFW_KEY_KP_9               329
+	input::Key::KeyPadDecimal, // GLFW_KEY_KP_DECIMAL         330
+	input::Key::KeyPadDivide, // GLFW_KEY_KP_DIVIDE          331
+	input::Key::KeyPadMultiply, // GLFW_KEY_KP_MULTIPLY        332
+	input::Key::KeyPadSubstract, // GLFW_KEY_KP_SUBTRACT        333
+	input::Key::KeyPadAdd, // GLFW_KEY_KP_ADD             334
+	input::Key::KeyPadEnter, // GLFW_KEY_KP_ENTER           335
 	input::Key::Unknown, // GLFW_KEY_KP_EQUAL           336
 	input::Key::Unknown,
 	input::Key::Unknown,
 	input::Key::Unknown,
-	input::Key::LeftShift, // GLFW_KEY_LEFT_SHIFT         340
-	input::Key::LeftCtrl, // GLFW_KEY_LEFT_CONTROL       341
-	input::Key::LeftAlt, // GLFW_KEY_LEFT_ALT           342
+	input::Key::ShiftLeft, // GLFW_KEY_LEFT_SHIFT         340
+	input::Key::ControlLeft, // GLFW_KEY_LEFT_CONTROL       341
+	input::Key::AltLeft, // GLFW_KEY_LEFT_ALT           342
 	input::Key::Unknown, // GLFW_KEY_LEFT_SUPER         343
-	input::Key::RightShift, // GLFW_KEY_RIGHT_SHIFT        344
-	input::Key::RightCtrl, // GLFW_KEY_RIGHT_CONTROL      345
-	input::Key::RightAlt, // GLFW_KEY_RIGHT_ALT          346
+	input::Key::ShiftRight, // GLFW_KEY_RIGHT_SHIFT        344
+	input::Key::ControlRight, // GLFW_KEY_RIGHT_CONTROL      345
+	input::Key::AltRight, // GLFW_KEY_RIGHT_ALT          346
 	input::Key::Unknown, // GLFW_KEY_RIGHT_SUPER        347
-	input::Key::Unknown, // GLFW_KEY_MENU               348
+	input::Key::Menu, // GLFW_KEY_MENU               348
 };
 
 struct GLFW3Context {
@@ -369,11 +370,6 @@ struct GLFW3Context {
 };
 
 GLFW3Context pctx;
-
-input::Key InputBackend::getKeyFromPlatformKey(int key)
-{
-	return glfwKeyMap[key];
-}
 
 void PlatformBackend::initialize(const Config& config)
 {
@@ -450,22 +446,22 @@ void PlatformBackend::initialize(const Config& config)
 	});
 	// --- Inputs
 	glfwSetKeyCallback(pctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
-		// key : glfw keycode
-		// scancode : os code
-		// action : GLFW_PRESS, GLFW_RELEASE, GLFW_REPEAT
-		// mode : GLFW_MOD_SHIFT GLFW_MOD_CONTROL GLFW_MOD_ALT GLFW_MOD_SUPER GLFW_MOD_CAPS_LOCK GLFW_MOD_NUM_LOCK
 		if (action == GLFW_PRESS)
-			InputBackend::onKeyDown(InputBackend::getKeyFromScancode(scancode));
+			InputBackend::onKeyDown(glfwKeyMap[key]);
 		else if (action == GLFW_RELEASE)
-			InputBackend::onKeyUp(InputBackend::getKeyFromScancode(scancode));
-		// TODO manage repeat ?
+			InputBackend::onKeyUp(glfwKeyMap[key]);
+		else if (action == GLFW_REPEAT)
+		{
+		}
 	});
 	glfwSetMouseButtonCallback(pctx.window, [](GLFWwindow* window, int button, int action, int mode) {
 		if (action == GLFW_PRESS)
 			InputBackend::onMouseButtonDown(static_cast<input::Button>(button));
 		else if (action == GLFW_RELEASE)
 			InputBackend::onMouseButtonUp(static_cast<input::Button>(button));
-		// TODO manage repeat ?
+		else if (action == GLFW_REPEAT)
+		{
+		}
 	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window

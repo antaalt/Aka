@@ -26,6 +26,8 @@ public:
 	View& get();
 	// Get the specified view
 	View& get(ViewID id);
+	// Get the current id
+	ViewID current() const;
 private:
 	ViewID m_current;
 	std::map<ViewID, View::Ptr> m_views;
