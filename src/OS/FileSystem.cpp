@@ -1,6 +1,7 @@
 #include <Aka/OS/FileSystem.h>
 
 #include <Aka/OS/Logger.h>
+#include <Aka/Core/Debug.h>
 #include <Aka/Platform/PlatformBackend.h>
 
 #include <fstream>
@@ -121,6 +122,80 @@ std::string::const_iterator Path::begin() const
 std::string::const_iterator Path::end() const
 {
 	return m_string.end();
+}
+
+File::File() :
+	m_file(nullptr),
+	m_mode(FileMode::Undefined),
+	m_length(0)
+{
+}
+
+File::File(const Path& path, FileMode mode) :
+	File()
+{
+	if (!open(path, mode))
+		Logger::error("Failed to open file : ", path);
+}
+
+File::~File()
+{
+	if (m_file != nullptr)
+		close();
+}
+
+// Implementation defined fopen
+FILE* fopen(const Path& path, FileMode mode);
+
+bool File::open(const Path& path, FileMode mode)
+{
+	m_file = fopen(path, mode);
+	if (m_file == nullptr)
+		return false;
+	m_mode = mode;
+	fseek(m_file, 0L, SEEK_END);
+	m_length = ftell(m_file);
+	rewind(m_file);
+	return true;
+}
+
+bool File::close() 
+{
+	int error = fclose(m_file);
+	return error != 0;
+}
+
+bool File::opened() const
+{
+	return m_file != nullptr;
+}
+
+void File::read(void* data, size_t size)
+{
+	size_t length = fread(data, 1, size, m_file);
+	ASSERT(length == size, "Failed to read file");
+}
+
+void File::write(const void* data, size_t size)
+{
+	size_t length = fwrite(data, 1, size, m_file);
+	ASSERT(length == size, "Failed to write file");
+}
+
+void File::seek(size_t position)
+{
+	int error = fseek(m_file, position, SEEK_SET);
+	ASSERT(error == 0, "Failed to seek file");
+}
+
+size_t File::length() const
+{
+	return m_length;
+}
+
+size_t File::position()
+{
+	return ftell(m_file);
 }
 
 Path Asset::path(const Path& path)

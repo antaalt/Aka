@@ -47,8 +47,12 @@ add_library (Aka
 
 	"src/Platform/Input.cpp"
 	"src/Platform/PlatformGLFW3.cpp"
-	"src/Platform/PlatformLinux.cpp"
-	"src/Platform/PlatformWindows.cpp"
+	
+	"src/Platform/Windows/WindowsPlatform.h"
+	"src/Platform/Windows/WindowsFileSystem.cpp"
+	"src/Platform/Windows/WindowsPlatform.cpp"
+	"src/Platform/Linux/LinuxFileSystem.cpp"
+	"src/Platform/Linux/LinuxPlatform.cpp"
 
 	"lib/rtaudio/RtAudio.cpp"
 	"lib/miniz/miniz.c"

@@ -45,7 +45,33 @@ private:
 	std::string m_string;
 };
 
-std::ostream& operator<<(std::ostream& os, const Path& path);
+enum class FileMode {
+	Undefined = 0,
+	ReadOnly = 1,
+	WriteOnly = 2,
+	ReadWrite = ReadOnly | WriteOnly,
+};
+
+struct File {
+	File();
+	File(const Path& path, FileMode mode);
+	File(const File& file) = delete;
+	File& operator=(const File&) = delete;
+	~File();
+	bool open(const Path& path, FileMode mode);
+	bool close();
+	bool opened() const;
+
+	void read(void* data, size_t size);
+	void write(const void* data, size_t size);
+	void seek(size_t position);
+	size_t length() const;
+	size_t position();
+private:
+	FILE* m_file;
+	FileMode m_mode;
+	size_t m_length;
+};
 
 namespace directory {
 // Check if a directory exist
@@ -69,7 +95,12 @@ std::string extension(const Path& path);
 std::string name(const Path& path);
 };
 
-// TODO replace by reader
+
+std::ostream& operator<<(std::ostream& os, const Path& path);
+
+
+
+// TODO replace by streams
 struct BinaryFile {
 	static std::vector<uint8_t> load(const Path& path);
 	static void write(const Path& path, const std::vector<uint8_t>& bytes);

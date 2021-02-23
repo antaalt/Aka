@@ -1,79 +1,12 @@
-#include <Aka/Platform/PlatformBackend.h>
-#include <Aka/Platform/InputBackend.h>
-#include <Aka/Platform/Platform.h>
 #include <Aka/OS/FileSystem.h>
+#include <Aka/Platform/Platform.h>
 #include <Aka/OS/Logger.h>
 
+#include "WindowsPlatform.h"
+
 #if defined(AKA_PLATFORM_WINDOWS)
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <string>
-#include <fstream>
-#include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
 
 namespace aka {
-
-std::wstring Utf8ToWchar(const std::string& str) {
-	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
-	std::wstring wstr(wstr_size, 0);
-	MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], (int)wstr.size());
-	return wstr;
-}
-
-std::string WcharToUtf8(const std::wstring& wstr) {
-	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), nullptr, 0, NULL, NULL);
-	std::string str(str_size, 0);
-	WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), &str[0], (int)str.size(), NULL, NULL);
-	return str;
-}
-
-const WORD terminalColors[20] = {
-	0, // ForgeroundBlack
-	FOREGROUND_RED, // ForegroundRed
-	FOREGROUND_GREEN, // ForegroundGreen
-	FOREGROUND_RED | FOREGROUND_GREEN, // ForegroundYellow
-	FOREGROUND_BLUE, // ForegroundBlue
-	FOREGROUND_RED | FOREGROUND_BLUE, // ForegroundMagenta
-	FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundCyan
-	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundWhite
-	FOREGROUND_INTENSITY, // ForgeroundBrightBlack
-	FOREGROUND_RED | FOREGROUND_INTENSITY, // ForegroundBrightRed
-	FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightGreen
-	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightYellow
-	FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightBlue
-	FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightMagenta
-	FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightCyan
-	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightWhite
-};
-
-std::ostream& operator<<(std::ostream& os, Logger::Color color)
-{
-	if (color == Logger::Color::ForegroundNone)
-		return os;
-	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleOutputCP(CP_UTF8);
-	SetConsoleTextAttribute(hdl, terminalColors[(unsigned int)color]);
-	return os;
-}
-
-void PlatformBackend::errorDialog(const std::string& message)
-{
-	std::wstring msg = Utf8ToWchar(message);
-	int msgBoxID = MessageBox(
-		getWindowsWindowHandle(),
-		msg.data(),
-		L"Error",
-		MB_ICONERROR | MB_OK | MB_DEFBUTTON1
-	);
-	switch (msgBoxID)
-	{
-	case IDOK:
-		// TODO: add code
-		break;
-	}
-}
 
 bool directory::exist(const Path& path)
 {
@@ -172,7 +105,6 @@ std::string file::name(const Path& path)
 	LPWSTR fileName = PathFindFileName(str.c_str());
 	return WcharToUtf8(fileName);
 }
-
 
 std::vector<uint8_t> BinaryFile::load(const Path& path)
 {
@@ -310,5 +242,26 @@ Path Path::cwd()
 	return Path(str + '/');
 }
 
-};
+const wchar_t* fileMode(FileMode mode)
+{
+	switch (mode)
+	{
+	case FileMode::ReadOnly:
+		return L"r";
+	case FileMode::WriteOnly:
+		return L"w";
+	default:
+	case FileMode::ReadWrite:
+		return L"rw";
+	}
+}
+
+FILE* fopen(const Path& path, FileMode mode)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	return _wfopen(wstr.c_str(), fileMode(mode));
+}
+
+}
+
 #endif
