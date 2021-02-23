@@ -29,6 +29,21 @@ const std::string& Path::str() const
 	return m_string;
 }
 
+size_t Path::size() const
+{
+	return m_string.size();
+}
+
+Path::operator std::string& ()
+{
+	return m_string;
+}
+
+Path::operator const std::string& () const
+{
+	return m_string;
+}
+
 Path Path::operator+(const Path& rhs) const
 {
 	Path path(*this);
@@ -88,105 +103,29 @@ Path Path::up() const
 	return *this;
 }
 
-std::string Path::extension(const Path& path)
+std::string::iterator Path::begin()
 {
-	return PlatformBackend::extension(path);
+	return m_string.begin();
 }
 
-std::string Path::name(const Path& path)
+std::string::iterator Path::end()
 {
-	return PlatformBackend::fileName(path);
+	return m_string.end();
 }
 
-Path Path::cwd()
+std::string::const_iterator Path::begin() const
 {
-	return PlatformBackend::cwd();
+	return m_string.begin();
 }
 
-Path Path::executable()
+std::string::const_iterator Path::end() const
 {
-	return PlatformBackend::executablePath();
-}
-
-std::vector<Path> Path::enumerate(const Path& path)
-{
-	return PlatformBackend::enumerate(path);
-}
-
-Path Path::normalize(const Path& path)
-{
-	return PlatformBackend::normalize(path);
-}
-
-std::vector<uint8_t> BinaryFile::load(const Path& path)
-{
-	std::vector<uint8_t> bytes;
-	if (!PlatformBackend::loadBinary(path, &bytes))
-	{
-		Logger::error("Could not load text file " + path.str());
-	}
-	return bytes;
-}
-
-void BinaryFile::write(const Path& path, const std::vector<uint8_t>& bytes)
-{
-	if (!PlatformBackend::writeBinary(path, bytes))
-	{
-		Logger::error("Could not write binary file " + path.str());
-	}
-}
-
-std::string TextFile::load(const Path& path)
-{
-	std::string str;
-	if (!PlatformBackend::loadString(path, &str))
-	{
-		Logger::error("Could not load text file " + path.str());
-	}
-	return str;
-}
-
-void TextFile::write(const Path& path, const std::string& str)
-{
-	if (!PlatformBackend::writeString(path, str))
-	{
-		Logger::error("Could not write text file " + path.str());
-	}
+	return m_string.end();
 }
 
 Path Asset::path(const Path& path)
 {
 	return Path::normalize(Path::cwd() + Path("asset/") + path);
-}
-
-bool directory::exist(const Path& path)
-{
-	return PlatformBackend::directoryExist(path);
-}
-
-bool directory::create(const Path& path)
-{
-	return PlatformBackend::directoryCreate(path);
-}
-
-bool directory::remove(const Path& path)
-{
-	return PlatformBackend::directoryRemove(path);
-}
-
-bool file::create(const Path& path)
-{
-	return PlatformBackend::fileCreate(path);
-}
-
-bool file::exist(const Path& path)
-{
-	return PlatformBackend::fileExist(path);
-}
-
-bool file::remove(const Path& path)
-{
-	return PlatformBackend::fileRemove(path);
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)

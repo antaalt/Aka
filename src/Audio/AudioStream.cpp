@@ -10,7 +10,7 @@ namespace aka {
 
 AudioStream::Ptr AudioStream::openStream(const Path& path)
 {
-    if (Path::extension(path) == "mp3")
+    if (file::extension(path) == "mp3")
     {
         AudioStreamMp3::Ptr mp3 = std::make_shared<AudioStreamMp3>();
         mp3->open(path);
@@ -18,14 +18,14 @@ AudioStream::Ptr AudioStream::openStream(const Path& path)
     }
     else
     {
-        Logger::error("Audio format not supported : ", Path::extension(path));
+        Logger::error("Audio format not supported : ", file::extension(path));
         return nullptr;
     }
 }
 
 AudioStream::Ptr AudioStream::loadMemory(const Path& path)
 {
-    if (Path::extension(path) == "mp3")
+    if (file::extension(path) == "mp3")
     {
         AudioStreamMp3 mp3;
         Audio audio;
@@ -35,7 +35,7 @@ AudioStream::Ptr AudioStream::loadMemory(const Path& path)
     }
     else
     {
-        Logger::error("Audio format not supported : ", Path::extension(path));
+        Logger::error("Audio format not supported : ", file::extension(path));
         return nullptr;
     }
 }

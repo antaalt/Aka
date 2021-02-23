@@ -58,7 +58,24 @@ std::ostream& operator<<(std::ostream& os, Logger::Color color)
 	return os;
 }
 
-bool PlatformBackend::directoryExist(const Path& path)
+void PlatformBackend::errorDialog(const std::string& message)
+{
+	std::wstring msg = Utf8ToWchar(message);
+	int msgBoxID = MessageBox(
+		getWindowsWindowHandle(),
+		msg.data(),
+		L"Error",
+		MB_ICONERROR | MB_OK | MB_DEFBUTTON1
+	);
+	switch (msgBoxID)
+	{
+	case IDOK:
+		// TODO: add code
+		break;
+	}
+}
+
+bool directory::exist(const Path& path)
 {
 	std::wstring wstr = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(wstr.c_str());
@@ -68,7 +85,8 @@ bool PlatformBackend::directoryExist(const Path& path)
 		return true; // Directory
 	return false;
 }
-bool PlatformBackend::directoryCreate(const Path& path)
+
+bool directory::create(const Path& path)
 {
 	size_t pos = 0;
 	const std::string& str = path.str();
@@ -92,7 +110,8 @@ bool PlatformBackend::directoryCreate(const Path& path)
 	} while (pos != std::string::npos);
 	return true;
 }
-bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
+
+bool directory::remove(const Path& path, bool recursive)
 {
 	if (recursive)
 	{
@@ -107,7 +126,8 @@ bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
 				DeleteFile(data.cFileName);
 			else
 			{
-				// TODO delete folder recursively
+				Path p = WcharToUtf8(data.cFileName);
+				remove(p, true);
 			}
 		} while (FindNextFile(hFind, &data) != 0);
 		FindClose(hFind);
@@ -116,7 +136,8 @@ bool PlatformBackend::directoryRemove(const Path& path, bool recursive)
 	std::wstring str = Utf8ToWchar(path.str());
 	return RemoveDirectory(str.c_str()) == TRUE;
 }
-bool PlatformBackend::fileExist(const Path& path)
+
+bool file::exist(const Path& path)
 {
 	std::wstring str = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(str.c_str());
@@ -124,58 +145,94 @@ bool PlatformBackend::fileExist(const Path& path)
 		return false;  //something is wrong with your path!
 	return (!(ftyp & FILE_ATTRIBUTE_DIRECTORY));
 }
-bool PlatformBackend::fileCreate(const Path& path)
+bool file::create(const Path& path)
 {
 	std::ofstream file(path.str());
 	return file.is_open();
 }
-bool PlatformBackend::fileRemove(const Path& path)
+bool file::remove(const Path& path)
 {
 	std::wstring str = Utf8ToWchar(path.str());
 	return DeleteFile(str.c_str()) == TRUE;
 }
 
-bool PlatformBackend::loadString(const Path& path, std::string* str)
+std::string file::extension(const Path& path)
 {
 	std::wstring wstr = Utf8ToWchar(path.str());
-	std::ifstream ifs(wstr);
-	if (!ifs)
-		return false;
-	*str = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-	return true;
+	LPWSTR extension = PathFindExtension(wstr.c_str());
+	std::string out = WcharToUtf8(extension);
+	if (out.size() < 1)
+		return std::string();
+	return out.substr(1, out.size() - 1);
 }
 
-bool PlatformBackend::loadBinary(const Path& path, std::vector<uint8_t>* bytes)
+std::string file::name(const Path& path)
+{
+	std::wstring str = Utf8ToWchar(path.str());
+	LPWSTR fileName = PathFindFileName(str.c_str());
+	return WcharToUtf8(fileName);
+}
+
+
+std::vector<uint8_t> BinaryFile::load(const Path& path)
 {
 	std::wstring wstr = Utf8ToWchar(path.str());
 	std::basic_ifstream<uint8_t> ifs(wstr, std::ios::binary);
 	if (!ifs)
-		return false;
-	*bytes = std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
-	return true;
+	{
+		Logger::error("Could not load binary file ", path);
+		return std::vector<uint8_t>();
+	}
+	return std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
 }
 
-bool PlatformBackend::writeString(const Path& path, const std::string& str)
+void BinaryFile::write(const Path& path, const std::vector<uint8_t>& bytes)
 {
-	std::wstring wstr = Utf8ToWchar(path.str());
-	std::ofstream ofs(wstr);
-	if (!ofs)
-		return false;
-	ofs.write(str.data(), str.size());
-	return true;
+	write(path, bytes.data(), bytes.size());
 }
 
-bool PlatformBackend::writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
+void BinaryFile::write(const Path& path, const uint8_t* bytes, size_t size)
 {
 	std::wstring wstr = Utf8ToWchar(path.str());
 	std::basic_ofstream<uint8_t> ofs(wstr, std::ios::binary);
 	if (!ofs)
-		return false;
-	ofs.write(bytes.data(), bytes.size());
-	return true;
+	{
+		Logger::error("Could not write binary file ", path);
+		return;
+	}
+	ofs.write(bytes, size);
 }
 
-std::vector<Path> PlatformBackend::enumerate(const Path& path)
+std::string TextFile::load(const Path& path)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	std::ifstream ifs(wstr);
+	if (!ifs)
+	{
+		Logger::error("Could not load text file ", path);
+		return std::string();
+	}
+	return std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+}
+
+void TextFile::write(const Path& path, const std::string& str)
+{
+	write(path, str.c_str());
+}
+
+void TextFile::write(const Path& path, const char* str)
+{
+	std::wstring wstr = Utf8ToWchar(path.str());
+	std::ofstream ofs(wstr);
+	if (!ofs)
+	{
+		Logger::error("Could not write text file ", path);
+		return;
+	}
+	ofs << str;
+}
+
+std::vector<Path> Path::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
 	std::wstring str = Utf8ToWchar(path.str());
@@ -214,7 +271,7 @@ std::vector<Path> PlatformBackend::enumerate(const Path& path)
 	return paths;
 }
 
-Path PlatformBackend::normalize(const Path& path)
+Path Path::normalize(const Path& path)
 {
 	WCHAR canonicalizedPath[MAX_PATH];
 	std::wstring wstr = Utf8ToWchar(path.str());
@@ -229,7 +286,7 @@ Path PlatformBackend::normalize(const Path& path)
 	return path;
 }
 
-Path PlatformBackend::executablePath()
+Path Path::executable()
 {
 	WCHAR path[MAX_PATH]{};
 	if (GetModuleFileName(NULL, path, MAX_PATH) == 0)
@@ -241,7 +298,7 @@ Path PlatformBackend::executablePath()
 	return Path(str);
 }
 
-Path PlatformBackend::cwd()
+Path Path::cwd()
 {
 	WCHAR path[MAX_PATH] = { 0 };
 	if (GetCurrentDirectory(MAX_PATH, path) == 0)
@@ -251,41 +308,6 @@ Path PlatformBackend::cwd()
 		if (c == '\\')
 			c = '/';
 	return Path(str + '/');
-}
-
-std::string PlatformBackend::extension(const Path& path)
-{
-	std::wstring wstr = Utf8ToWchar(path.str());
-	LPWSTR extension = PathFindExtension(wstr.c_str());
-	std::string out = WcharToUtf8(extension);
-	if (out.size() < 1)
-		return std::string();
-	return out.substr(1, out.size() - 1);
-}
-
-std::string PlatformBackend::fileName(const Path& path)
-{
-	std::wstring str = Utf8ToWchar(path.str());
-	LPWSTR fileName = PathFindFileName(str.c_str());
-	return WcharToUtf8(fileName);
-}
-
-
-void PlatformBackend::errorDialog(const std::string& message)
-{
-	std::wstring msg = Utf8ToWchar(message);
-	int msgBoxID = MessageBox(
-		getWindowsWindowHandle(),
-		msg.data(),
-		L"Error",
-		MB_ICONERROR | MB_OK | MB_DEFBUTTON1
-	);
-	switch (msgBoxID)
-	{
-	case IDOK:
-		// TODO: add code
-		break;
-	}
 }
 
 };
