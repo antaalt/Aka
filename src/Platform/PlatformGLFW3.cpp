@@ -367,6 +367,10 @@ const input::Key glfwKeyMap[512] = {
 
 struct GLFW3Context {
 	GLFWwindow* window = nullptr;
+	int x = 0;
+	int y = 0;
+	int width = 0;
+	int height = 0;
 };
 
 GLFW3Context pctx;
@@ -401,6 +405,8 @@ void PlatformBackend::initialize(const Config& config)
 	}
 
 	pctx.window = glfwCreateWindow(config.width, config.height, config.name.c_str(), NULL, NULL);
+	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(&pctx.width), reinterpret_cast<int*>(&pctx.height));
+	glfwGetWindowPos(pctx.window, reinterpret_cast<int*>(&pctx.x), reinterpret_cast<int*>(&pctx.y));
 	if (pctx.window == nullptr) {
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
@@ -414,10 +420,12 @@ void PlatformBackend::initialize(const Config& config)
 	// --- Size
 	glfwSetWindowSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
 		Logger::debug("[GLFW] New window size : ", width, "x", height);
+		pctx.width = width;
+		pctx.height = height;
 	});
 	glfwSetFramebufferSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
 		GraphicBackend::resize(width, height);
-		Logger::debug("[GLFW] New framebuffer size : ", width, " - ", height);
+		Logger::debug("[GLFW] New framebuffer size : ", width, "x", height);
 	});
 	glfwSetWindowContentScaleCallback(pctx.window, [](GLFWwindow* window, float x, float y) {
 		Logger::debug("[GLFW] Content scaled : ", x, " - ", y);
@@ -438,6 +446,11 @@ void PlatformBackend::initialize(const Config& config)
 	});
 	glfwSetWindowCloseCallback(pctx.window, [](GLFWwindow* window) {
 		Logger::debug("[GLFW] Closing window ");
+	});
+	glfwSetWindowPosCallback(pctx.window, [](GLFWwindow* window, int x, int y) {
+		pctx.x = x;
+		pctx.y = y;
+		Logger::debug("[GLFW] New window position : ", x, " - ", y);
 	});
 	// --- Monitor
 	glfwSetMonitorCallback([](GLFWmonitor* monitor, int event) {
@@ -463,26 +476,33 @@ void PlatformBackend::initialize(const Config& config)
 		{
 		}
 	});
+	glfwSetCharCallback(pctx.window, [](GLFWwindow* window, unsigned int character) {
+		Logger::debug("[GLFW] Char event : ", character);
+	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
-		InputBackend::onMouseMove(static_cast<float>(xpos), static_cast<float>(ypos));
+		// Aka coordinates system origin is bottom left, so we convert.
+		InputBackend::onMouseMove(static_cast<float>(xpos), static_cast<float>(pctx.height) - static_cast<float>(ypos));
 	});
 	glfwSetScrollCallback(pctx.window, [](GLFWwindow* window, double xoffset, double yoffset) {
 		InputBackend::onMouseScroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
 	});
 	glfwSetCursorEnterCallback(pctx.window, [](GLFWwindow* window, int entered) {
-		// GLFW_TRUE if entered, GLFW_FALSE if left
-		Logger::debug("[GLFW] Cursor enter : ", entered);
+		if (entered == GLFW_TRUE)
+			InputBackend::onMouseEnter();
+		else if (entered == GLFW_FALSE)
+			InputBackend::onMouseLeave();
 	});
 	glfwSetJoystickCallback([](int jid, int event) {
 		// event : GLFW_CONNECTED, GLFW_DISCONNECTED
-		Logger::debug("[GLFW] Joystick event", event);
+		Logger::debug("[GLFW] Joystick event : ", event);
 	});
 }
 
 void PlatformBackend::destroy()
 {
 	glfwTerminate();
+	pctx = {};
 }
 
 void PlatformBackend::update()
@@ -509,6 +529,35 @@ void PlatformBackend::setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t 
 {
 	auto convert = [](uint32_t value) -> int { if (value == 0) return GLFW_DONT_CARE; return value; };
 	glfwSetWindowSizeLimits(pctx.window, convert(minWidth), convert(minHeight), convert(maxWidth), convert(maxHeight));
+}
+
+void PlatformBackend::setFullscreen(bool enabled)
+{
+	static uint32_t x = pctx.x;
+	static uint32_t y = pctx.y;
+	static uint32_t width = pctx.width;
+	static uint32_t height = pctx.height;
+	if (enabled)
+	{
+		if (glfwGetWindowMonitor(pctx.window) != nullptr)
+			return; // Already full screen
+		// Store windowed size for switching back from fullscreen
+		x = pctx.x;
+		y = pctx.y;
+		width = pctx.width;
+		height = pctx.height;
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		glfwSetWindowMonitor(pctx.window, monitor, 0, 0, mode->width, mode->height, 0);
+		// TODO correctly reenable vsync
+		glfwSwapInterval(1);
+	}
+	else
+	{
+		if (glfwGetWindowMonitor(pctx.window) == nullptr)
+			return; // Already not fullscreen
+		glfwSetWindowMonitor(pctx.window, nullptr, x, y, width, height, GLFW_DONT_CARE);
+	}
 }
 
 #if defined(AKA_PLATFORM_WINDOWS)

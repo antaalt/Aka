@@ -20,6 +20,11 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 
+extern "C" {
+	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
+	_declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)

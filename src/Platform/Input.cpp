@@ -189,6 +189,11 @@ bool pressed(Key key)
 	return keyboard.pressed[static_cast<int>(key)];
 }
 
+bool anyPressed()
+{
+	return keyboard.pressedCount > 0;
+}
+
 bool down(Button button)
 {
 	return cursor.down[static_cast<int>(button)];
@@ -224,6 +229,7 @@ const Position& scroll()
 void InputBackend::initialize()
 {
 	input::keyboard.layout = input::KeyboardLayout::Qwerty;
+	input::keyboard.pressedCount = 0;
 	for (uint32_t iKey = 0; iKey < input::getKeyCount(); iKey++)
 	{
 		input::keyboard.pressed[iKey] = false;
@@ -234,6 +240,7 @@ void InputBackend::initialize()
 		input::cursor.pressed[iButton] = false;
 		input::cursor.timestamp[iButton] = 0;
 	}
+	input::cursor.focus = false;
 	input::cursor.position = { 0.f };
 	input::cursor.delta = { 0.f };
 	input::cursor.scroll = { 0.f };
@@ -260,6 +267,7 @@ void InputBackend::update()
 
 void InputBackend::onKeyDown(input::Key key)
 {
+	input::keyboard.pressedCount++;
 	input::keyboard.down[static_cast<int>(key)] = true;
 	input::keyboard.pressed[static_cast<int>(key)] = true;
 	input::keyboard.timestamp[static_cast<int>(key)] = Time::unixtime().milliseconds();
@@ -267,6 +275,7 @@ void InputBackend::onKeyDown(input::Key key)
 
 void InputBackend::onKeyUp(input::Key key)
 {
+	input::keyboard.pressedCount--;
 	input::keyboard.up[static_cast<int>(key)] = true;
 	input::keyboard.pressed[static_cast<int>(key)] = false;
 	input::keyboard.timestamp[static_cast<int>(key)] = 0;
@@ -298,6 +307,15 @@ void InputBackend::onMouseScroll(float x, float y)
 {
 	input::cursor.scroll.x = x;
 	input::cursor.scroll.y = y;
+}
+void InputBackend::onMouseEnter()
+{
+	input::cursor.focus = true;
+}
+
+void InputBackend::onMouseLeave()
+{
+	input::cursor.focus = false;
 }
 
 };

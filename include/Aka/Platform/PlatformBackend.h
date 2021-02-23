@@ -25,6 +25,7 @@ public:
 	static void getSize(uint32_t* width, uint32_t* height);
 	static void setSize(uint32_t width, uint32_t height);
 	static void setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight);
+	static void setFullscreen(bool enabled);
 	static bool directoryExist(const Path &path);
 	static bool directoryCreate(const Path& path);
 	static bool directoryRemove(const Path& path, bool recursive = false);

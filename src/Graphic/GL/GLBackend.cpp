@@ -5,12 +5,22 @@
 #include <Aka/OS/Image.h>
 #include <Aka/Platform/PlatformBackend.h>
 
+#if defined(AKA_PLATFORM_WINDOWS)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
 #define GLEW_NO_GLU
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <cstring>
+
+extern "C" {
+	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
+	_declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
 #define GL_CHECK_RESULT(result)                \
 {                                              \
@@ -40,16 +50,39 @@ void APIENTRY openglCallbackFunction(
 	const GLchar* message,
 	const void* userParam
 ) {
+	std::string sourceType;
+	switch (source) {
+	case GL_DEBUG_SOURCE_API:
+		sourceType = "GL";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		sourceType = "GL-window";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		sourceType = "GL-shader";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		sourceType = "GL-third-party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		sourceType = "GL-app";
+		break;
+	case GL_DEBUG_SOURCE_OTHER:
+		sourceType = "GL-other";
+		break;
+	default:
+		return;
+	}
 	std::string errorType;
 	switch (type) {
 	case GL_DEBUG_TYPE_ERROR:
 		errorType = "error";
 		break;
 	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-		errorType = "deprecated_behaviour";
+		errorType = "deprecated-behaviour";
 		break;
 	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-		errorType = "undefined_behaviour";
+		errorType = "undefined-behaviour";
 		break;
 	case GL_DEBUG_TYPE_PORTABILITY:
 		errorType = "portability";
@@ -57,22 +90,35 @@ void APIENTRY openglCallbackFunction(
 	case GL_DEBUG_TYPE_PERFORMANCE:
 		errorType = "performance";
 		break;
-	default:
 	case GL_DEBUG_TYPE_OTHER:
 		errorType = "other";
 		break;
+	case GL_DEBUG_TYPE_MARKER:
+		errorType = "marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		errorType = "push-group";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		errorType = "pop-group";
+		break;
+	default:
+		return;
 	}
 	switch (severity) {
-	default:
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		return; // Ignore notifications
 	case GL_DEBUG_SEVERITY_LOW:
-		aka::Logger::debug("[GL][", errorType, "][low] ", message);
+		aka::Logger::debug("[", sourceType, "][", errorType, "][low] ", message);
 		break;
 	case GL_DEBUG_SEVERITY_MEDIUM:
-		aka::Logger::warn("[GL][", errorType, "][medium] ", message);
+		aka::Logger::warn("[", sourceType, "][", errorType, "][medium] ", message);
 		break;
 	case GL_DEBUG_SEVERITY_HIGH:
-		aka::Logger::error("[GL][", errorType, "][high] ", message);
+		aka::Logger::error("[", sourceType, "][", errorType, "][high] ", message);
 		break;
+	default:
+		return;
 	}
 }
 
@@ -642,7 +688,7 @@ public:
 		return m_isFramebuffer;
 	}
 	GLuint getTextureID() const
-	{ 
+	{
 		return m_textureID;
 	}
 private:
@@ -746,6 +792,7 @@ class GLFramebuffer : public Framebuffer
 public:
 	GLFramebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler sampler) :
 		Framebuffer(width, height),
+		m_sampler(sampler),
 		m_framebufferID(0)
 	{
 		glGenFramebuffers(1, &m_framebufferID);
@@ -790,7 +837,36 @@ public:
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-		throw std::runtime_error("Not implemented");
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
+		for (Attachment& attachment : m_attachments)
+		{
+			Texture::Format format;
+			Texture::Component component;
+			switch (attachment.type)
+			{
+			default:
+			case AttachmentType::Color0:
+			case AttachmentType::Color1:
+			case AttachmentType::Color2:
+			case AttachmentType::Color3:
+				component = Texture::Component::RGBA;
+				format = Texture::Format::UnsignedByte;
+				break;
+			case AttachmentType::Depth:
+			case AttachmentType::Stencil:
+			case AttachmentType::DepthStencil:
+				component = Texture::Component::DepthStencil;
+				format = Texture::Format::Float;
+				break;
+			}
+			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, component, m_sampler, true);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), GL_TEXTURE_2D, tex->getTextureID(), 0);
+			attachment.texture = tex;
+		}
+		ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		m_width = width;
+		m_height = height;
 	}
 	void clear(float r, float g, float b, float a) override
 	{
@@ -812,6 +888,7 @@ public:
 	GLuint getFramebufferID() const { return m_framebufferID; }
 private:
 	std::vector<Attachment> m_attachments;
+	Sampler m_sampler;
 	GLuint m_framebufferID;
 };
 
@@ -857,7 +934,7 @@ GLContext gctx;
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
 #if !defined(__APPLE__)
-	glewExperimental = true; // N�cessaire dans le profil de base
+	glewExperimental = true; // Nécessaire dans le profil de base
 	if (glewInit() != GLEW_OK) {
 		throw std::runtime_error("Could not init GLEW");
 	}
@@ -963,9 +1040,9 @@ void GraphicBackend::render(RenderPass& pass)
 			glBlendEquationSeparate(colorOp, alphaOp);
 			glBlendFuncSeparate(colorModeSrc, colorModeDst, alphaModeSrc, alphaModeDst);
 			glBlendColor(
-				pass.blend.blendColor.r, 
-				pass.blend.blendColor.g, 
-				pass.blend.blendColor.b, 
+				pass.blend.blendColor.r,
+				pass.blend.blendColor.g,
+				pass.blend.blendColor.b,
 				pass.blend.blendColor.a
 			);
 			glColorMask(

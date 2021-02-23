@@ -17,7 +17,7 @@ class View {
 public:
 	using Ptr = std::unique_ptr<View>;
 public:
-	View() {}
+	View() : m_running(true) {}
 	virtual ~View() {}
 	// Called on view creation
 	virtual void onCreate() {}
@@ -33,6 +33,11 @@ public:
 	virtual void onPresent() {}
 	// Called on view resize
 	virtual void onResize(uint32_t width, uint32_t height) {}
+public:
+	void quit() { m_running = false; }
+	bool running() const { return m_running; }
+private:
+	bool m_running;
 };
 
 };

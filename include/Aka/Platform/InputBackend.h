@@ -18,6 +18,8 @@ private:
 	static void onMouseButtonUp(input::Button button);
 	static void onMouseMove(float x, float y);
 	static void onMouseScroll(float x, float y);
+	static void onMouseEnter();
+	static void onMouseLeave();
 };
 
 }

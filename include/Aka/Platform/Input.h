@@ -174,6 +174,7 @@ struct Keyboard {
 	bool up[getKeyCount()];
 	uint64_t timestamp[getKeyCount()];
 	KeyboardLayout layout;
+	size_t pressedCount;
 };
 
 struct Position {
@@ -188,6 +189,7 @@ struct Cursor {
 	Position position; // raw position
 	Position delta; // relative movement
 	Position scroll;
+	bool focus;
 };
 
 // Get the name of a specific key
@@ -203,6 +205,7 @@ KeyboardLayout getKeyboardLayout();
 bool down(Key key);
 bool up(Key key);
 bool pressed(Key key);
+bool anyPressed();
 bool down(Button button);
 bool up(Button button);
 bool pressed(Button button);
