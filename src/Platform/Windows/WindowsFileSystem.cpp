@@ -106,64 +106,6 @@ std::string file::name(const Path& path)
 	return WcharToUtf8(fileName);
 }
 
-std::vector<uint8_t> BinaryFile::load(const Path& path)
-{
-	std::wstring wstr = Utf8ToWchar(path.str());
-	std::basic_ifstream<uint8_t> ifs(wstr, std::ios::binary);
-	if (!ifs)
-	{
-		Logger::error("Could not load binary file ", path);
-		return std::vector<uint8_t>();
-	}
-	return std::vector<uint8_t>((std::istreambuf_iterator<uint8_t>(ifs)), (std::istreambuf_iterator<uint8_t>()));
-}
-
-void BinaryFile::write(const Path& path, const std::vector<uint8_t>& bytes)
-{
-	write(path, bytes.data(), bytes.size());
-}
-
-void BinaryFile::write(const Path& path, const uint8_t* bytes, size_t size)
-{
-	std::wstring wstr = Utf8ToWchar(path.str());
-	std::basic_ofstream<uint8_t> ofs(wstr, std::ios::binary);
-	if (!ofs)
-	{
-		Logger::error("Could not write binary file ", path);
-		return;
-	}
-	ofs.write(bytes, size);
-}
-
-std::string TextFile::load(const Path& path)
-{
-	std::wstring wstr = Utf8ToWchar(path.str());
-	std::ifstream ifs(wstr);
-	if (!ifs)
-	{
-		Logger::error("Could not load text file ", path);
-		return std::string();
-	}
-	return std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-}
-
-void TextFile::write(const Path& path, const std::string& str)
-{
-	write(path, str.c_str());
-}
-
-void TextFile::write(const Path& path, const char* str)
-{
-	std::wstring wstr = Utf8ToWchar(path.str());
-	std::ofstream ofs(wstr);
-	if (!ofs)
-	{
-		Logger::error("Could not write text file ", path);
-		return;
-	}
-	ofs << str;
-}
-
 std::vector<Path> Path::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
@@ -247,12 +189,12 @@ const wchar_t* fileMode(FileMode mode)
 	switch (mode)
 	{
 	case FileMode::ReadOnly:
-		return L"r";
+		return L"rb";
 	case FileMode::WriteOnly:
-		return L"w";
+		return L"wb";
 	default:
 	case FileMode::ReadWrite:
-		return L"rw";
+		return L"rwb";
 	}
 }
 
@@ -262,6 +204,6 @@ FILE* fopen(const Path& path, FileMode mode)
 	return _wfopen(wstr.c_str(), fileMode(mode));
 }
 
-}
+};
 
 #endif

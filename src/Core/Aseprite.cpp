@@ -2,7 +2,6 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/Core/Debug.h>
-#include <Aka/Core/Reader.h>
 #include <Aka/Core/Geometry.h>
 
 #include <miniz.h>
@@ -35,10 +34,8 @@ std::vector<Aseprite::Color32> Aseprite::Frame::image(const Aseprite& ase) const
 	return pixels;
 }
 
-Aseprite Aseprite::parse(const std::vector<uint8_t>& bytes)
+Aseprite Aseprite::parse(Stream& reader)
 {
-	Reader reader(bytes);
-
 	Aseprite ase;
 	{
 		// Parse header
@@ -172,8 +169,7 @@ Aseprite Aseprite::parse(const std::vector<uint8_t>& bytes)
 						pixels.resize(cel.width * cel.height * Aseprite::depth(ase.colorDepth));
 						// Indexed, grayscale or rgba depending on ase.depth
 						// Stored row by row from top to bottom
-						memcpy(pixels.data(), reader.data(), pixels.size());
-						reader.skim(pixels.size());
+						reader.read(pixels.data(), pixels.size());
 					}
 					else if (celType == 1)
 					{
@@ -190,9 +186,10 @@ Aseprite Aseprite::parse(const std::vector<uint8_t>& bytes)
 							// Deflate data
 							mz_ulong size = (mz_ulong)pixels.size();
 							mz_ulong deflateBytes = (mz_ulong)(chunkSize - (reader.offset() - chunkOffset));
-							if (MZ_OK != mz_uncompress(pixels.data(), &size, reader.data(), deflateBytes))
+							std::vector<uint8_t> bytes(deflateBytes);
+							reader.read(bytes.data(), bytes.size());
+							if (MZ_OK != mz_uncompress(pixels.data(), &size, bytes.data(), deflateBytes))
 								throw std::runtime_error("Failed to uncompress image.");
-							reader.skim(deflateBytes);
 						}
 					}
 					{

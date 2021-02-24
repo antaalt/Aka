@@ -4,13 +4,15 @@
 #include <string>
 #include <functional>
 
+#include <Aka/OS/Stream/Stream.h>
+
 namespace aka {
 
 // Ase sprite parser 
 // This does not support every features of the file format
 // Complete aseprite spec
 // https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md
-// Helped by Noël Berry's work
+// Helped by NoÃ«l Berry's work
 // https://gist.github.com/NoelFB/778d190e5d17f1b86ebf39325346fcc5
 struct Aseprite {
 	using Byte = uint8_t;
@@ -151,7 +153,7 @@ struct Aseprite {
 
 	static BlendFunc blending(LayerBlendMode blendMode);
 
-	static Aseprite parse(const std::vector<uint8_t>& bytes);
+	static Aseprite parse(Stream& reader);
 };
 
 };

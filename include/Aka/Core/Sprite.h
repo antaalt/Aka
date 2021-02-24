@@ -3,6 +3,7 @@
 #include <Aka/Graphic/Texture.h>
 #include <Aka/OS/Time.h>
 #include <Aka/OS/FileSystem.h>
+#include <Aka/OS/Stream/Stream.h>
 #include <Aka/Core/Geometry.h>
 
 #include <vector>
@@ -58,7 +59,7 @@ struct Sprite {
 	}
 
 	// Parse the sprite from an aseprite
-	static Sprite parse(const Path& path);
+	static Sprite parse(Stream& stream);
 };
 
 };

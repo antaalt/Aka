@@ -4,8 +4,6 @@
 #include <Aka/Core/Debug.h>
 #include <Aka/Platform/PlatformBackend.h>
 
-#include <fstream>
-
 namespace aka {
 
 Path::Path()
@@ -126,7 +124,7 @@ std::string::const_iterator Path::end() const
 
 File::File() :
 	m_file(nullptr),
-	m_mode(FileMode::Undefined),
+	m_mode(FileMode::ReadOnly),
 	m_length(0)
 {
 }
@@ -162,6 +160,8 @@ bool File::open(const Path& path, FileMode mode)
 bool File::close() 
 {
 	int error = fclose(m_file);
+	m_file = nullptr;
+	m_length = 0;
 	return error != 0;
 }
 
@@ -170,22 +170,22 @@ bool File::opened() const
 	return m_file != nullptr;
 }
 
-void File::read(void* data, size_t size)
+bool File::read(void* data, size_t size)
 {
 	size_t length = fread(data, 1, size, m_file);
-	ASSERT(length == size, "Failed to read file");
+	return length == size;
 }
 
-void File::write(const void* data, size_t size)
+bool File::write(const void* data, size_t size)
 {
 	size_t length = fwrite(data, 1, size, m_file);
-	ASSERT(length == size, "Failed to write file");
+	return length == size;
 }
 
-void File::seek(size_t position)
+bool File::seek(size_t position)
 {
 	int error = fseek(m_file, position, SEEK_SET);
-	ASSERT(error == 0, "Failed to seek file");
+	return error == 0;
 }
 
 size_t File::length() const
@@ -196,6 +196,56 @@ size_t File::length() const
 size_t File::position()
 {
 	return ftell(m_file);
+}
+
+std::string File::readString(const Path& path)
+{
+	File file(path, FileMode::ReadOnly);
+	if (!file.opened())
+		throw std::runtime_error("Failed to load string : " + path.str());
+	std::string str;
+	str.resize(file.length());
+	if (!file.read(str.data(), str.length()))
+		throw std::runtime_error("Failed to read string : " + path.str());
+	return str;
+}
+
+std::vector<uint8_t> File::readBinary(const Path& path)
+{
+	File file(path, FileMode::ReadOnly);
+	if (!file.opened())
+		throw std::runtime_error("Failed to load binary : " + path.str());
+	std::vector<uint8_t> bytes;
+	bytes.resize(file.length());
+	if (!file.read(bytes.data(), bytes.size()))
+		throw std::runtime_error("Failed to read binary : " + path.str());
+	return bytes;
+}
+
+bool File::writeString(const Path& path, const char* str)
+{
+	File file(path, FileMode::WriteOnly);
+	if (!file.opened())
+		return false;
+	return file.write(str, strlen(str));
+}
+
+bool File::writeString(const Path& path, const std::string& str)
+{
+	return writeString(path, str.c_str());
+}
+
+bool File::writeBinary(const Path& path, const uint8_t* bytes, size_t size)
+{
+	File file(path, FileMode::WriteOnly);
+	if (!file.opened())
+		return false;
+	return file.write(bytes, size);
+}
+
+bool File::writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
+{
+	return writeBinary(path, bytes.data(), bytes.size());
 }
 
 Path Asset::path(const Path& path)

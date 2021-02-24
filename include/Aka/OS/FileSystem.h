@@ -46,10 +46,10 @@ private:
 };
 
 enum class FileMode {
-	Undefined = 0,
-	ReadOnly = 1,
-	WriteOnly = 2,
-	ReadWrite = ReadOnly | WriteOnly,
+	ReadOnly,
+	WriteOnly,
+
+	ReadWrite,
 };
 
 struct File {
@@ -62,11 +62,18 @@ struct File {
 	bool close();
 	bool opened() const;
 
-	void read(void* data, size_t size);
-	void write(const void* data, size_t size);
-	void seek(size_t position);
+	bool read(void* data, size_t size);
+	bool write(const void* data, size_t size);
+	bool seek(size_t position);
 	size_t length() const;
 	size_t position();
+
+	static std::string readString(const Path& path);
+	static std::vector<uint8_t> readBinary(const Path& path);
+	static bool writeString(const Path& path, const char* str);
+	static bool writeString(const Path& path, const std::string& str);
+	static bool writeBinary(const Path& path, const uint8_t* bytes, size_t size);
+	static bool writeBinary(const Path& path, const std::vector<uint8_t>& bytes);
 private:
 	FILE* m_file;
 	FileMode m_mode;
@@ -95,23 +102,7 @@ std::string extension(const Path& path);
 std::string name(const Path& path);
 };
 
-
 std::ostream& operator<<(std::ostream& os, const Path& path);
-
-
-
-// TODO replace by streams
-struct BinaryFile {
-	static std::vector<uint8_t> load(const Path& path);
-	static void write(const Path& path, const std::vector<uint8_t>& bytes);
-	static void write(const Path& path, const uint8_t* bytes, size_t size);
-};
-
-struct TextFile {
-	static std::string load(const Path& path);
-	static void write(const Path& path, const std::string& str);
-	static void write(const Path& path, const char* str);
-};
 
 struct Asset {
 	static Path path(const Path& path);

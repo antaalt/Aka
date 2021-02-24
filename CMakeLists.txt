@@ -44,6 +44,10 @@ add_library (Aka
 	"src/OS/ImagePacker.cpp"
 	"src/OS/Logger.cpp"
 	"src/OS/Time.cpp"
+	"src/OS/Endian.cpp"
+	
+	"src/OS/Stream/MemoryStream.cpp"
+	"src/OS/Stream/FileStream.cpp"
 
 	"src/Platform/Input.cpp"
 	"src/Platform/PlatformGLFW3.cpp"

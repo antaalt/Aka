@@ -19,12 +19,12 @@ void World::destroyEntity(Entity entity)
 void World::save(const Path& path)
 {
 	std::string str = Serializer::serialize(*this);
-	TextFile::write(path, str);
+	File::writeString(path, str);
 }
 
 void World::load(const Path& path)
 {
-	std::string str = TextFile::load(path);
+	std::string str = File::readString(path);
 	//*this = Parser::parse(str);
 }
 

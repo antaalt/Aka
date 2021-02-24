@@ -2,6 +2,7 @@
 
 #include <Aka/Core/Aseprite.h>
 #include <Aka/OS/Image.h>
+#include <Aka/OS/Stream/FileStream.h>
 
 namespace aka {
 
@@ -29,10 +30,9 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	return frame;
 }
 
-Sprite Sprite::parse(const Path& path)
+Sprite Sprite::parse(Stream& stream)
 {
-	std::vector<uint8_t> bytes = BinaryFile::load(path);
-	Aseprite ase = Aseprite::parse(bytes);
+	Aseprite ase = Aseprite::parse(stream);
 	Sprite sprite;
 	if (ase.tags.size() == 0)
 	{

@@ -7,7 +7,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <string>
-#include <fstream>
 #include <shlwapi.h>
 
 inline std::wstring Utf8ToWchar(const std::string& str)

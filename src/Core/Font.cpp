@@ -37,7 +37,7 @@ Font::Font(const Path& path, uint32_t height)
     FREETYPE_CHECK_RESULT(FT_Init_FreeType(&ft));
 
     FT_Face face;
-    std::vector<uint8_t> font = BinaryFile::load(path);
+    std::vector<uint8_t> font = File::readBinary(path);
     FREETYPE_CHECK_RESULT(FT_New_Memory_Face(ft, font.data(), (FT_Long)font.size(), 0, &face));
     FREETYPE_CHECK_RESULT(FT_Set_Pixel_Sizes(face, 0, height));
 
