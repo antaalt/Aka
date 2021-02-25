@@ -96,9 +96,9 @@ void Image::save(const Path& path) const
 
 void Image::set(uint32_t x, uint32_t y, const color24& color)
 {
-	bytes[y * width * components + x + 0] = color.x;
-	bytes[y * width * components + x + 1] = color.y;
-	bytes[y * width * components + x + 2] = color.z;
+	bytes[y * width * components + x + 0] = color.r;
+	bytes[y * width * components + x + 1] = color.g;
+	bytes[y * width * components + x + 2] = color.b;
 }
 
 void Image::set(uint32_t x, uint32_t y, const color32& color)
@@ -112,9 +112,9 @@ void Image::set(uint32_t x, uint32_t y, const color32& color)
 
 void Image::set(uint32_t x, uint32_t y, const color3f& color)
 {
-	bytes[y * width * components + x + 0] = static_cast<uint8_t>(clamp(color.x * 255.f, 0.f, 255.f));
-	bytes[y * width * components + x + 1] = static_cast<uint8_t>(clamp(color.y / 255.f, 0.f, 255.f));
-	bytes[y * width * components + x + 2] = static_cast<uint8_t>(clamp(color.z / 255.f, 0.f, 255.f));
+	bytes[y * width * components + x + 0] = static_cast<uint8_t>(clamp(color.r * 255.f, 0.f, 255.f));
+	bytes[y * width * components + x + 1] = static_cast<uint8_t>(clamp(color.g / 255.f, 0.f, 255.f));
+	bytes[y * width * components + x + 2] = static_cast<uint8_t>(clamp(color.b / 255.f, 0.f, 255.f));
 }
 
 void Image::set(uint32_t x, uint32_t y, const color4f& color)

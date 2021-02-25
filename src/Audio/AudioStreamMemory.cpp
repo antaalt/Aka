@@ -57,7 +57,7 @@ bool AudioStreamMemory::playing() const
     return m_offset < m_frames.size();
 }
 
-uint32_t AudioStreamMemory::offset() const
+uint64_t AudioStreamMemory::offset() const
 {
     return m_offset / m_channels;
 }

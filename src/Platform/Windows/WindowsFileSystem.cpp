@@ -80,8 +80,17 @@ bool file::exist(const Path& path)
 }
 bool file::create(const Path& path)
 {
-	std::ofstream file(path.str());
-	return file.is_open();
+	std::wstring wstr = Utf8ToWchar(path.str());
+	HANDLE h = CreateFile(wstr.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if (h)
+	{
+		CloseHandle(h);
+		return true;
+	}
+	else
+	{
+		return false; // GetLastError()
+	}
 }
 bool file::remove(const Path& path)
 {
@@ -201,7 +210,11 @@ const wchar_t* fileMode(FileMode mode)
 FILE* fopen(const Path& path, FileMode mode)
 {
 	std::wstring wstr = Utf8ToWchar(path.str());
-	return _wfopen(wstr.c_str(), fileMode(mode));
+	FILE* file = nullptr;
+	errno_t err = _wfopen_s(&file, wstr.c_str(), fileMode(mode));
+	if (err == 0)
+		return file;
+	return nullptr;
 }
 
 };

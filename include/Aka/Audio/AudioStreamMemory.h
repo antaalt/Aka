@@ -16,7 +16,7 @@ public:
     bool decode(AudioFrame* buffer, size_t bytes) override;
     void seek(uint64_t position) override;
     bool playing() const override;
-    uint32_t offset() const override;
+    uint64_t offset() const override;
     uint32_t frequency() const override;
     uint32_t channels() const override;
     uint64_t samples() const override;

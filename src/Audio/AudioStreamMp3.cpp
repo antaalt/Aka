@@ -82,7 +82,7 @@ bool AudioStreamMp3::playing() const
     return m_mp3d.cur_sample < m_mp3d.samples;
 }
 
-uint32_t AudioStreamMp3::offset() const
+uint64_t AudioStreamMp3::offset() const
 {
     return m_mp3d.cur_sample / m_mp3d.info.channels;
 }

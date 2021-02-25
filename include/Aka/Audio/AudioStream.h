@@ -33,7 +33,7 @@ public:
     // Is the stream playing
     virtual bool playing() const = 0;
     // Get current sample offset
-    virtual uint32_t offset() const = 0;
+    virtual uint64_t offset() const = 0;
     // Get frequency
     virtual uint32_t frequency() const = 0;
     // Get channel count

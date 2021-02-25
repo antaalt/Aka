@@ -9,7 +9,7 @@
 #else
 #endif
 
-#include <geometry.h>
+#include <geo/geometry.h>
 
 namespace aka {
 using namespace geometry;

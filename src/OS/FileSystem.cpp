@@ -184,7 +184,7 @@ bool File::write(const void* data, size_t size)
 
 bool File::seek(size_t position)
 {
-	int error = fseek(m_file, position, SEEK_SET);
+	int error = fseek(m_file, (long)position, SEEK_SET);
 	return error == 0;
 }
 
