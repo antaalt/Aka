@@ -34,16 +34,36 @@ struct Image
 
 	void save(const Path& path) const;
 
-
 	void set(uint32_t x, uint32_t y, const color24& color);
 	void set(uint32_t x, uint32_t y, const color32& color);
-	void set(uint32_t x, uint32_t y, const color3f& color);
-	void set(uint32_t x, uint32_t y, const color4f& color);
 	color32 get(uint32_t x, uint32_t y) const;
 	void clear();
 	void flip();
 
 	std::vector<uint8_t> bytes;
+	uint32_t width, height;
+	uint32_t components;
+};
+
+struct ImageHDR
+{
+	ImageHDR();
+	ImageHDR(uint32_t width, uint32_t height, uint32_t components);
+	ImageHDR(uint32_t width, uint32_t height, uint32_t components, const float* data);
+
+	static ImageHDR load(const Path& path);
+	static ImageHDR load(const uint8_t* binaries, size_t size);
+	static ImageHDR load(const std::vector<uint8_t>& binaries);
+
+	void save(const Path& path) const;
+
+	void set(uint32_t x, uint32_t y, const color3f& color);
+	void set(uint32_t x, uint32_t y, const color4f& color);
+	color4f get(uint32_t x, uint32_t y) const;
+	void clear();
+	void flip();
+
+	std::vector<float> bytes;
 	uint32_t width, height;
 	uint32_t components;
 };
