@@ -667,8 +667,8 @@ public:
 	}
 	void upload(const Rect& rect, const void* data) override
 	{
-		ASSERT(rect.x + rect.w < m_width, "");
-		ASSERT(rect.y + rect.h < m_height, "");
+		ASSERT(rect.x + rect.w <= m_width, "");
+		ASSERT(rect.y + rect.h <= m_height, "");
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
