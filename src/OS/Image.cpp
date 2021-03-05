@@ -36,7 +36,7 @@ Image::Image(ImageHDR& imageHDR) :
 	width(imageHDR.width),
 	height(imageHDR.height),
 	components(imageHDR.components),
-	bytes()
+	bytes(imageHDR.bytes.size())
 {
 	for (uint32_t i = 0; i < width * height * components; i++)
 		bytes[i] = static_cast<uint8_t>(clamp(imageHDR.bytes[i] * 255.f, 0.f, 255.f));
@@ -169,7 +169,7 @@ ImageHDR::ImageHDR(Image& image) :
 	width(image.width),
 	height(image.height),
 	components(image.components),
-	bytes()
+	bytes(image.bytes.size())
 {
 	for (uint32_t i = 0; i < width * height * components; i++)
 		bytes[i] = image.bytes[i] / 255.f;

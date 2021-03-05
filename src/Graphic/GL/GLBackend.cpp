@@ -1221,7 +1221,7 @@ void GraphicBackend::screenshot(const Path& path)
 	uint32_t stride = 4 * image.width;
 	for (uint32_t y = 0; y < image.height; y++)
 		memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
-	image.save("./output.jpg");
+	image.save("./output.png");
 }
 
 void GraphicBackend::vsync(bool enabled)
