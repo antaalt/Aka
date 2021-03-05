@@ -22,11 +22,15 @@ struct Rect {
 	uint32_t h;
 };
 
+struct Image;
+struct ImageHDR;
+
 struct Image
 {
 	Image();
 	Image(uint32_t width, uint32_t height, uint32_t components);
 	Image(uint32_t width, uint32_t height, uint32_t components, const uint8_t* data);
+	Image(ImageHDR&);
 
 	static Image load(const Path& path);
 	static Image load(const uint8_t* binaries, size_t size);
@@ -50,6 +54,7 @@ struct ImageHDR
 	ImageHDR();
 	ImageHDR(uint32_t width, uint32_t height, uint32_t components);
 	ImageHDR(uint32_t width, uint32_t height, uint32_t components, const float* data);
+	ImageHDR(Image&);
 
 	static ImageHDR load(const Path& path);
 	static ImageHDR load(const uint8_t* binaries, size_t size);

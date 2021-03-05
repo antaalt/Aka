@@ -32,6 +32,15 @@ Image::Image(uint32_t width, uint32_t height, uint32_t components, const uint8_t
 	if (data != nullptr)
 		memcpy(bytes.data(), data, bytes.size());
 }
+Image::Image(ImageHDR& imageHDR) :
+	width(imageHDR.width),
+	height(imageHDR.height),
+	components(imageHDR.components),
+	bytes()
+{
+	for (uint32_t i = 0; i < width * height * components; i++)
+		bytes[i] = static_cast<uint8_t>(clamp(imageHDR.bytes[i] * 255.f, 0.f, 255.f));
+}
 
 Image Image::load(const Path& path)
 {
@@ -89,7 +98,7 @@ void Image::save(const Path& path) const
 #if defined(ORIGIN_BOTTOM_LEFT)
 	stbi_flip_vertically_on_write(true);
 #endif
-	int error = stbi_write_png(path.c_str(), width, height, 4, bytes.data(), width * 4);
+	int error = stbi_write_png(path.c_str(), width, height, components, bytes.data(), width * components);
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());
 }
@@ -156,6 +165,15 @@ ImageHDR::ImageHDR(uint32_t width, uint32_t height, uint32_t components, const f
 	if (data != nullptr)
 		memcpy(bytes.data(), data, bytes.size());
 }
+ImageHDR::ImageHDR(Image& image) :
+	width(image.width),
+	height(image.height),
+	components(image.components),
+	bytes()
+{
+	for (uint32_t i = 0; i < width * height * components; i++)
+		bytes[i] = image.bytes[i] / 255.f;
+}
 
 ImageHDR ImageHDR::load(const Path& path)
 {
@@ -213,7 +231,7 @@ void ImageHDR::save(const Path& path) const
 #if defined(ORIGIN_BOTTOM_LEFT)
 	stbi_flip_vertically_on_write(true);
 #endif
-	int error = stbi_write_hdr(path.c_str(), width, height, 4, bytes.data());
+	int error = stbi_write_hdr(path.c_str(), width, height, components, bytes.data());
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());
 }
