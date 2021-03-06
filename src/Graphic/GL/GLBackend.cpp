@@ -517,6 +517,7 @@ public:
 		GLint activeUniforms = 0;
 		uint32_t bufferSize = 0;
 		uint32_t textureCount = 0;
+		uint32_t imageCount = 0;
 		glGetProgramiv(glShader->getProgramID(), GL_ACTIVE_UNIFORMS, &activeUniforms);
 		for (GLint iUniform = 0; iUniform < activeUniforms; iUniform++)
 		{
@@ -534,6 +535,11 @@ public:
 			uniform.arrayLength = size;
 			switch (type)
 			{
+			case GL_IMAGE_2D:
+				uniform.type = UniformType::Image2D;
+				uniform.shaderType = ShaderType::Compute;
+				imageCount++;
+				break;
 			case GL_SAMPLER_2D:
 				uniform.type = UniformType::Texture2D;
 				uniform.shaderType = ShaderType::Fragment;
@@ -541,7 +547,17 @@ public:
 				textureCount++;
 				break;
 			case GL_FLOAT:
-				uniform.type = UniformType::Vec;
+				uniform.type = UniformType::Float;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 1;
+				break;
+			case GL_INT:
+				uniform.type = UniformType::Int;
+				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+				bufferSize += 1;
+				break;
+			case GL_UNSIGNED_INT:
+				uniform.type = UniformType::UnsignedInt;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
 				bufferSize += 1;
 				break;
@@ -578,6 +594,7 @@ public:
 		}
 		m_data.resize(bufferSize, 0.f);
 		m_textures.resize(textureCount, nullptr);
+		m_images.resize(imageCount, nullptr);
 	}
 	GLShaderMaterial(const GLShaderMaterial&) = delete;
 	const GLShaderMaterial& operator=(const GLShaderMaterial&) = delete;
@@ -589,47 +606,83 @@ public:
 	{
 		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
 		GLint textureUnit = 0;
+		GLint imageUnit = 0;
 		size_t offset = 0;
 		glUseProgram(glShader->getProgramID());
 		for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
 		{
 			const Uniform& uniform = m_uniforms[iUniform];
-			if (uniform.type == UniformType::None)
-				continue;
-			else if (uniform.type == UniformType::Texture2D)
+			switch (uniform.type)
 			{
+			default:
+			case UniformType::None:
+				Logger::error("[GL] Unsupported uniform type : ", (int)uniform.type, "(", uniform.name, ")");
+				continue;
+			case UniformType::Texture2D: {
 				Texture::Ptr texture = m_textures[textureUnit];
 				glUniform1i((GLint)uniform.id.value(), textureUnit);
 				glActiveTexture(GL_TEXTURE0 + textureUnit);
-				if(texture != nullptr)
+				if (texture != nullptr)
 					glBindTexture(GL_TEXTURE_2D, (GLint)texture->handle().value());
 				else
 					glBindTexture(GL_TEXTURE_2D, 0);
 				textureUnit++;
+				break;
 			}
-			else if (uniform.type == UniformType::Sampler2D)
-			{
+			case UniformType::Image2D: {
+				Texture::Ptr image = m_images[imageUnit];
+				glUniform1i((GLint)uniform.id.value(), imageUnit);
+				if (image != nullptr)
+					glBindImageTexture(0, (GLint)image->handle().value(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);// gl::format(image->format()));
+				else
+					glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);//gl::format(image->format()));
+				imageUnit++;
+				break;
+			}
+			case UniformType::Sampler2D: {
 				// TODO store sampler
+				break;
 			}
-			else if (uniform.type == UniformType::Mat4)
-			{
+			case UniformType::Mat4: {
 				glUniformMatrix4fv((GLint)uniform.id.value(), 1, false, &m_data[offset]);
 				offset += 16 * uniform.arrayLength;
+				break;
 			}
-			else if (uniform.type == UniformType::Mat3)
-			{
+			case UniformType::Mat3: {
 				glUniformMatrix3fv((GLint)uniform.id.value(), 1, false, &m_data[offset]);
 				offset += 9 * uniform.arrayLength;
+				break;
 			}
-			else if (uniform.type == UniformType::Vec4)
-			{
-				for(uint32_t i = 0; i < uniform.arrayLength; i++)
+			case UniformType::Float: {
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+					glUniform1f((GLint)uniform.id.value(), m_data[offset + i]);
+				offset += uniform.arrayLength;
+				break;
+			}
+			case UniformType::Int: {
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+					glUniform1i((GLint)uniform.id.value(), *reinterpret_cast<const int*>(&m_data[offset + i]));
+				offset += uniform.arrayLength;
+				break;
+			}
+			case UniformType::UnsignedInt: {
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+					glUniform1ui((GLint)uniform.id.value(), *reinterpret_cast<const unsigned int*>(&m_data[offset + i]));
+				offset += uniform.arrayLength;
+				break;
+			}
+			case UniformType::Vec3: {
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+					glUniform3f((GLint)uniform.id.value(), m_data[offset + 3 * i + 0], m_data[offset + 3 * i + 1], m_data[offset + 3 * i + 2]);
+				offset += 3 * uniform.arrayLength;
+				break;
+			}
+			case UniformType::Vec4: {
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
 					glUniform4f((GLint)uniform.id.value(), m_data[offset + 4 * i + 0], m_data[offset + 4 * i + 1], m_data[offset + 4 * i + 2], m_data[offset + 4 * i + 3]);
 				offset += 4 * uniform.arrayLength;
+				break;
 			}
-			else
-			{
-				Logger::error("[GL] Unsupported uniform type : ", (int)uniform.type);
 			}
 		}
 	}
@@ -1206,6 +1259,24 @@ void GraphicBackend::render(RenderPass& pass)
 	{
 		// Mesh
 		pass.mesh->draw(pass.indexCount, pass.indexOffset);
+	}
+}
+
+void GraphicBackend::dispatch(ComputePass& pass)
+{
+	// TODO assert GL version is 4.3 at least (minimum requirement for compute)
+	{
+		// Shader
+		GLShaderMaterial* material = (GLShaderMaterial*)pass.material.get();
+		material->use();
+	}
+	{
+		glDispatchCompute(
+			pass.groupCount.x,
+			pass.groupCount.y,
+			pass.groupCount.z
+		);
+		// TODO put barrier ?
 	}
 }
 

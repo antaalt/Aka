@@ -11,6 +11,7 @@ struct Camera
 
 struct CameraPerspective : Camera
 {
+	CameraPerspective() {}
 	CameraPerspective(const vec2f& viewport, radianf hFov, float nearZ = 0.1f, float farZ = 100.f);
 
 	mat4f perspective() const override;
@@ -22,6 +23,7 @@ struct CameraPerspective : Camera
 
 struct CameraOrthographic : Camera
 {
+	CameraOrthographic() {}
 	CameraOrthographic(const vec2f& viewport);
 
 	mat4f perspective() const override;

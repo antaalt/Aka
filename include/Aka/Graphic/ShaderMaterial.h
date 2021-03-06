@@ -21,8 +21,6 @@ public:
 
 	Shader::Ptr getShader();
 
-protected:
-	float* findUniformOffset(const char* name);
 	UniformID getUniformID(const char* name);
 	const Uniform* getUniform(const char* name) const;
 	void setFloat1(const char* name, float value);
@@ -40,11 +38,16 @@ protected:
 	void setMatrix3(const char* name, const float* data, bool transpose = false);
 	void setMatrix4(const char* name, const float* data, bool transpose = false);
 	void setTexture(const char* name, Texture::Ptr texture);
+	void setImage(const char* name, Texture::Ptr texture);
+
+protected:
+	float* findUniformOffset(const char* name);
 protected:
 	Shader::Ptr m_shader;
 	std::vector<float> m_data;
 	std::vector<Uniform> m_uniforms;
 	std::vector<Texture::Ptr> m_textures;
+	std::vector<Texture::Ptr> m_images;
 };
 
 }

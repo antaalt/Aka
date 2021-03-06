@@ -190,4 +190,17 @@ struct RenderPass
 	void execute();
 };
 
+struct ComputePass
+{
+	// Material for mesh
+	ShaderMaterial::Ptr material;
+	// Number of group for dispatch
+	vec3u groupCount;
+	// Group size in shader
+	vec3u groupSize;
+
+	// Execute the compute pass
+	void execute();
+};
+
 }

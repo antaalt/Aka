@@ -49,6 +49,8 @@ public:
 	static Framebuffer::Ptr backbuffer();
 	// Render a render pass
 	static void render(RenderPass& renderPass);
+	// Dispatch a compute pass
+	static void dispatch(ComputePass& computePass);
 	// Take a screenshot
 	static void screenshot(const Path& path);
 	// Set the vsync

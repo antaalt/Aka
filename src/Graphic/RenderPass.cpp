@@ -80,6 +80,16 @@ void RenderPass::execute()
 	GraphicBackend::render(*this);
 }
 
+void ComputePass::execute()
+{
+	if (this->material == nullptr)
+	{
+		Logger::error("No Material set for render pass.");
+		return;
+	}
+	GraphicBackend::dispatch(*this);
+}
+
 bool Culling::operator==(const Culling& rhs) const
 {
 	return mode == rhs.mode && order == rhs.order;

@@ -19,12 +19,15 @@ enum class ShaderType {
 
 enum class UniformType {
 	None,
-	Vec,
+	Float,
+	Int,
+	UnsignedInt,
 	Vec2,
 	Vec3,
 	Vec4,
 	Mat3,
 	Mat4,
+	Image2D,
 	Texture2D,
 	Sampler2D,
 	SamplerBuffer

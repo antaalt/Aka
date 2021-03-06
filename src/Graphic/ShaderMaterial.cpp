@@ -53,29 +53,48 @@ float* ShaderMaterial::findUniformOffset(const char* name)
 	float* offset = m_data.data();
 	for (const Uniform& uniform : m_uniforms)
 	{
-		if (uniform.type == UniformType::None || uniform.type == UniformType::Texture2D || uniform.type == UniformType::Sampler2D)
-			continue;
-		if (uniform.type == UniformType::Mat4)
+		switch (uniform.type)
 		{
+		case UniformType::None:
+		case UniformType::Texture2D:
+		case UniformType::Sampler2D:
+		case UniformType::Image2D:
+			continue;
+		case UniformType::Mat4:
 			if (uniform.name == std::string(name))
 				return offset;
 			offset += 16 * uniform.arrayLength;
-		}
-		else if (uniform.type == UniformType::Mat3)
-		{
+			break;
+		case UniformType::Mat3:
 			if (uniform.name == std::string(name))
 				return offset;
 			offset += 9 * uniform.arrayLength;
-		}
-		else if (uniform.type == UniformType::Vec4)
-		{
+			break;
+		case UniformType::Vec2:
+			if (uniform.name == std::string(name))
+				return offset;
+			offset += 2 * uniform.arrayLength;
+			break;
+		case UniformType::Vec3:
+			if (uniform.name == std::string(name))
+				return offset;
+			offset += 3 * uniform.arrayLength;
+			break;
+		case UniformType::Vec4:
 			if (uniform.name == std::string(name))
 				return offset;
 			offset += 4 * uniform.arrayLength;
-		}
-		else
-		{
+			break;
+		case UniformType::Float:
+		case UniformType::Int:
+		case UniformType::UnsignedInt:
+			if (uniform.name == std::string(name))
+				return offset;
+			offset += uniform.arrayLength;
+			break;
+		default:
 			Logger::error("Unsupported uniform type : ", (int)uniform.type);
+			break;
 		}
 	}
 	Logger::error("Uniform not found : ", name);
@@ -189,6 +208,22 @@ void ShaderMaterial::setTexture(const char* name, Texture::Ptr texture)
 		slot++;
 	}
 	Logger::error("Texture not found : ", name);
+}
+void ShaderMaterial::setImage(const char* name, Texture::Ptr texture)
+{
+	uint32_t slot = 0;
+	for (const Uniform& uniform : m_uniforms)
+	{
+		if (uniform.type != UniformType::Image2D)
+			continue;
+		if (uniform.name == std::string(name))
+		{
+			m_images[slot] = texture;
+			return;
+		}
+		slot++;
+	}
+	Logger::error("Image not found : ", name);
 }
 
 template <>
