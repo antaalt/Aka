@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Aka/Platform/Platform.h>
+#include <Aka/Core/String.h>
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #define NOMINMAX
@@ -9,19 +10,19 @@
 #include <string>
 #include <shlwapi.h>
 
-inline std::wstring Utf8ToWchar(const std::string& str)
+inline aka::StrWide Utf8ToWchar(const aka::String& str)
 {
-	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
-	std::wstring wstr(wstr_size, 0);
-	MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], (int)wstr.size());
+	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str.cstr(), (int)str.length(), nullptr, 0);
+	aka::StrWide wstr(wstr_size);
+	MultiByteToWideChar(CP_UTF8, 0, str.cstr(), (int)str.length(), wstr.cstr(), (int)wstr.length());
 	return wstr;
 }
 
-inline std::string WcharToUtf8(const std::wstring& wstr)
+inline aka::String WcharToUtf8(const aka::StrWide& wstr)
 {
-	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), nullptr, 0, NULL, NULL);
-	std::string str(str_size, 0);
-	WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), &str[0], (int)str.size(), NULL, NULL);
+	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr.cstr(), (int)wstr.length(), nullptr, 0, NULL, NULL);
+	aka::String str(str_size, 0);
+	WideCharToMultiByte(CP_UTF8, 0, wstr.cstr(), (int)wstr.length(), str.cstr(), (int)str.length(), NULL, NULL);
 	return str;
 }
 

@@ -1,7 +1,6 @@
 #include <Aka/Core/Font.h>
 
 #include <freetype/freetype.h>
-#include <utf8.h>
 #include <stdexcept>
 
 #include <Aka/OS/Logger.h>
@@ -92,19 +91,14 @@ Font::Font(const Path& path, uint32_t height)
     stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);*/
 }
 
-Font Font::create(const Path& path, uint32_t height)
-{
-    return Font(path, height);
-}
-
-vec2i Font::size(const std::string& text) const
+vec2i Font::size(const String& text) const
 {
     vec2i size(0);
-    std::string::const_iterator start = text.begin();
-    std::string::const_iterator end = text.end();
+	const char* start = text.begin();
+	const char* end = text.end();
     while (start < end)
     {
-        uint32_t c = utf8::next(start, end);
+        uint32_t c = encoding::next(start, end);
         const Character& ch = m_characters[c];
         size.x += ch.advance;
         size.y = max(size.y, ch.size.y);
@@ -123,12 +117,12 @@ size_t Font::count() const
     return m_characters.size();
 }
 
-const std::string& Font::family() const
+const String& Font::family() const
 {
     return m_familyName;
 }
 
-const std::string& Font::style() const
+const String& Font::style() const
 {
     return m_styleName;
 }

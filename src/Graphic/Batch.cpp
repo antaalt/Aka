@@ -1,7 +1,6 @@
 #include <Aka/Graphic/Batch.h>
 
 #include <algorithm>
-#include <utf8.h>
 
 namespace aka {
 
@@ -224,11 +223,12 @@ void Batch::draw(const mat3f& transform, Text&& text)
 {
 	float scale = 1.f;
 	float advance = 0.f;
-	std::string::iterator start = text.text.begin();
-	std::string::iterator end = text.text.end();
+	String str = text.text;
+	const char* start = str.begin();
+	const char* end = str.end();
 	while (start < end)
 	{
-		uint32_t c = utf8::next(start, end);
+		uint32_t c = encoding::next(start, end);
 		// TODO check if rendering text out of screen for culling ?
 		const Character& ch = text.font->getCharacter(c);
 		vec2f position = vec2f(advance + ch.bearing.x, (float)-(ch.size.y - ch.bearing.y)) * scale;

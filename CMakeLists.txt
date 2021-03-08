@@ -20,6 +20,7 @@ add_library (Aka
 	"src/Core/Physic.cpp"
 	"src/Core/Aseprite.cpp"
 	"src/Core/Sprite.cpp"
+	"src/Core/String.cpp"
 
 	"src/Scene/Component.cpp"
 	"src/Scene/Entity.cpp"
@@ -139,7 +140,7 @@ add_subdirectory(lib/freetype)
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype/include)
 target_link_libraries(Aka PRIVATE freetype)
 # UTF8
-target_include_directories(Aka PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
+target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
 # STB
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 # minimp3
@@ -155,6 +156,7 @@ if(WIN32)
 endif()
 # Ensure UTF8 at runtime
 if (MSVC)
+	string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
 	add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 	add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()

@@ -14,31 +14,35 @@ Path::Path(const char* path) : m_string(path)
 {
 }
 
-Path::Path(const std::string& path) : m_string(path)
+Path::Path(const String& path) : m_string(path)
 {
 }
 
-const char* Path::c_str() const
+const char* Path::cstr() const
 {
-	return m_string.c_str();
+	return m_string.cstr();
 }
 
-const std::string& Path::str() const
+const String& Path::str() const
 {
 	return m_string;
 }
 
 size_t Path::size() const
 {
-	return m_string.size();
+	return m_string.length();
+}
+size_t Path::length() const
+{
+	return m_string.length();
 }
 
-Path::operator std::string& ()
+Path::operator String& ()
 {
 	return m_string;
 }
 
-Path::operator const std::string& () const
+Path::operator const String& () const
 {
 	return m_string;
 }
@@ -52,14 +56,14 @@ Path Path::operator+(const Path& rhs) const
 
 Path& Path::operator+=(const Path& rhs)
 {
-	if (m_string.size() == 0)
+	if (m_string.length() == 0)
 	{
 		m_string = rhs.m_string;
 		return *this;
 	}
 	else
 	{
-		if (m_string.back() != '\\' && m_string.back() != '/')
+		if (m_string.last() != '\\' && m_string.last() != '/')
 			m_string += '/' + rhs.m_string;
 		else
 			m_string += rhs.m_string;
@@ -80,8 +84,8 @@ bool Path::operator!=(const Path& rhs) const
 Path Path::up() const
 {
 	const size_t separatorCount = std::count(m_string.begin(), m_string.end(), '/');
-	const size_t lastCharacterOffset = m_string.size() - 1;
-	size_t offset = m_string.find_last_of('/');
+	const size_t lastCharacterOffset = m_string.length() - 1;
+	size_t offset = m_string.findLast('/');
 	if (1 == separatorCount)
 	{
 		if (offset != lastCharacterOffset)
@@ -91,7 +95,7 @@ Path Path::up() const
 	{
 		if (offset == lastCharacterOffset)
 		{
-			offset = m_string.substr(0, offset).find_last_of('/');
+			offset = m_string.substr(0, offset).findLast('/');
 			return Path(m_string.substr(0, offset + 1));
 		}
 		else
@@ -102,22 +106,22 @@ Path Path::up() const
 	return *this;
 }
 
-std::string::iterator Path::begin()
+char* Path::begin()
 {
 	return m_string.begin();
 }
 
-std::string::iterator Path::end()
+char* Path::end()
 {
 	return m_string.end();
 }
 
-std::string::const_iterator Path::begin() const
+const char* Path::begin() const
 {
 	return m_string.begin();
 }
 
-std::string::const_iterator Path::end() const
+const char* Path::end() const
 {
 	return m_string.end();
 }
@@ -202,11 +206,11 @@ std::string File::readString(const Path& path)
 {
 	File file(path, FileMode::ReadOnly);
 	if (!file.opened())
-		throw std::runtime_error("Failed to load string : " + path.str());
+		throw std::runtime_error("Failed to load string : " + std::string(path.cstr()));
 	std::string str;
 	str.resize(file.length());
 	if (!file.read(str.data(), str.length()))
-		throw std::runtime_error("Failed to read string : " + path.str());
+		throw std::runtime_error("Failed to read string : " + std::string(path.cstr()));
 	return str;
 }
 
@@ -214,11 +218,11 @@ std::vector<uint8_t> File::readBinary(const Path& path)
 {
 	File file(path, FileMode::ReadOnly);
 	if (!file.opened())
-		throw std::runtime_error("Failed to load binary : " + path.str());
+		throw std::runtime_error("Failed to load binary : " + std::string(path.cstr()));
 	std::vector<uint8_t> bytes;
 	bytes.resize(file.length());
 	if (!file.read(bytes.data(), bytes.size()))
-		throw std::runtime_error("Failed to read binary : " + path.str());
+		throw std::runtime_error("Failed to read binary : " + std::string(path.cstr()));
 	return bytes;
 }
 
@@ -255,7 +259,7 @@ Path Asset::path(const Path& path)
 
 std::ostream& operator<<(std::ostream& os, const Path& path)
 {
-	return os << path.c_str();
+	return os << path.cstr();
 }
 
 };

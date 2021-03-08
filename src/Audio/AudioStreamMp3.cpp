@@ -13,7 +13,7 @@
 #include <minimp3.h>
 #include <minimp3_ex.h>
 
-#include <utf8.h>
+#include <Aka/Core/String.h>
 
 
 namespace aka {
@@ -29,11 +29,14 @@ AudioStreamMp3::~AudioStreamMp3()
 
 bool AudioStreamMp3::load(const Path& path, Audio* audio) const
 {
-    std::wstring wstr;
-    utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(wstr));
-    mp3dec_t mp3d{};
-    mp3dec_file_info_t info{};
-    int sample = mp3dec_load_w(&mp3d, wstr.c_str(), &info, nullptr, nullptr);
+	mp3dec_t mp3d{};
+	mp3dec_file_info_t info{};
+#if defined(AKA_PLATFORM_WINDOWS)
+	Str<wchar_t> wstr = encoding::wide(path.str());
+    int sample = mp3dec_load_w(&mp3d, wstr.cstr(), &info, nullptr, nullptr);
+#else
+	int sample = mp3dec_load(&mp3d, path.cstr(), &info, nullptr, nullptr);
+#endif
     if (sample != 0)
         return false;
     ASSERT(sizeof(AudioFrame) == sizeof(mp3d_sample_t), "Incorrect size");
@@ -49,9 +52,12 @@ bool AudioStreamMp3::load(const Path& path, Audio* audio) const
 bool AudioStreamMp3::open(const Path& path)
 {
     memset(&m_mp3d, 0, sizeof(m_mp3d));
-    std::wstring wstr;
-    utf8::utf8to16(path.str().begin(), path.str().end(), std::back_inserter(wstr));
-    int sample = mp3dec_ex_open_w(&m_mp3d, wstr.c_str(), MP3D_SEEK_TO_SAMPLE);
+#if defined(AKA_PLATFORM_WINDOWS)
+    Str<wchar_t> wstr = encoding::wide(path.str());
+    int sample = mp3dec_ex_open_w(&m_mp3d, wstr.cstr(), MP3D_SEEK_TO_SAMPLE);
+#else
+	int sample = mp3dec_ex_open_w(&m_mp3d, path.cstr(), MP3D_SEEK_TO_SAMPLE);
+#endif
     if (m_mp3d.samples > 0)
         return true;
     return false;

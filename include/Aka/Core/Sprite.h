@@ -30,7 +30,7 @@ struct Sprite {
 		}
 	};
 	struct Animation {
-		std::string name;
+		String name;
 		std::vector<Frame> frames;
 
 		// Whole duration of animation
@@ -45,7 +45,7 @@ struct Sprite {
 
 	std::vector<Animation> animations;
 
-	Animation* getAnimation(const std::string& str)
+	Animation* getAnimation(const String& str)
 	{
 		for (Animation &animation : animations)
 			if (animation.name == str)

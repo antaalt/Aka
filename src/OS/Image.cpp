@@ -49,10 +49,10 @@ Image Image::load(const Path& path)
 #if defined(ORIGIN_BOTTOM_LEFT)
 	stbi_set_flip_vertically_on_load(true);
 #endif
-	stbi_uc* data = stbi_load(path.c_str(), &x, &y, &channel, STBI_rgb_alpha);
+	stbi_uc* data = stbi_load(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load image from path ", path.c_str());
+		Logger::error("Could not load image from path ", path.cstr());
 		return image;
 	}
 	size_t size = x * y * 4;
@@ -98,7 +98,7 @@ void Image::save(const Path& path) const
 #if defined(ORIGIN_BOTTOM_LEFT)
 	stbi_flip_vertically_on_write(true);
 #endif
-	int error = stbi_write_png(path.c_str(), width, height, components, bytes.data(), width * components);
+	int error = stbi_write_png(path.cstr(), width, height, components, bytes.data(), width * components);
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());
 }
@@ -182,10 +182,10 @@ ImageHDR ImageHDR::load(const Path& path)
 #if defined(ORIGIN_BOTTOM_LEFT)
 	stbi_set_flip_vertically_on_load(true);
 #endif
-	float* data = stbi_loadf(path.c_str(), &x, &y, &channel, STBI_rgb_alpha);
+	float* data = stbi_loadf(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load image from path ", path.c_str());
+		Logger::error("Could not load image from path ", path.cstr());
 		return image;
 	}
 	size_t size = x * y * 4 * sizeof(float);
@@ -231,7 +231,7 @@ void ImageHDR::save(const Path& path) const
 #if defined(ORIGIN_BOTTOM_LEFT)
 	stbi_flip_vertically_on_write(true);
 #endif
-	int error = stbi_write_hdr(path.c_str(), width, height, components, bytes.data());
+	int error = stbi_write_hdr(path.cstr(), width, height, components, bytes.data());
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());
 }

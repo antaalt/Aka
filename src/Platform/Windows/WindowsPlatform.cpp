@@ -42,10 +42,10 @@ std::ostream& operator<<(std::ostream& os, Logger::Color color)
 
 void PlatformBackend::errorDialog(const std::string& message)
 {
-	std::wstring msg = Utf8ToWchar(message);
+	StrWide msg = Utf8ToWchar(message);
 	int msgBoxID = MessageBox(
 		getWindowsWindowHandle(),
-		msg.data(),
+		msg.cstr(),
 		L"Error",
 		MB_ICONERROR | MB_OK | MB_DEFBUTTON1
 	);

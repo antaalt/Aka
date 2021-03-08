@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <string>
+#include <Aka/Core/String.h>
 
 namespace aka {
 
@@ -9,14 +9,15 @@ struct Path
 {
 	Path();
 	Path(const char* path);
-	Path(const std::string& path);
+	Path(const String& path);
 
-	const char* c_str() const;
-	const std::string &str() const;
+	const char* cstr() const;
+	const String &str() const;
 	size_t size() const;
+	size_t length() const;
 
-	explicit operator std::string& ();
-	explicit operator const std::string& () const;
+	explicit operator String& ();
+	explicit operator const String& () const;
 
 	Path operator+(const Path& rhs) const;
 	Path &operator+=(const Path& rhs);
@@ -27,10 +28,10 @@ struct Path
 	// Go to parent path
 	Path up() const;
 
-	std::string::iterator begin();
-	std::string::iterator end();
-	std::string::const_iterator begin() const;
-	std::string::const_iterator end() const;
+	char* begin();
+	char* end();
+	const char* begin() const;
+	const char* end() const;
 
 	// Get the current working directory
 	static Path cwd();
@@ -42,7 +43,7 @@ struct Path
 	static Path normalize(const Path& path);
 
 private:
-	std::string m_string;
+	String m_string;
 };
 
 enum class FileMode {
@@ -97,9 +98,9 @@ bool exist(const Path& path);
 // Remove a file from path
 bool remove(const Path& path);
 // Get the extension of the file
-std::string extension(const Path& path);
+String extension(const Path& path);
 // Get the name of the file
-std::string name(const Path& path);
+String name(const Path& path);
 };
 
 std::ostream& operator<<(std::ostream& os, const Path& path);
