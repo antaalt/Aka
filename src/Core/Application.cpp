@@ -1,4 +1,4 @@
-﻿#include <Aka/Core/Application.h>
+#include <Aka/Core/Application.h>
 
 #include <Aka/Platform/PlatformBackend.h>
 #include <Aka/Platform/InputBackend.h>
@@ -8,13 +8,77 @@
 
 namespace aka {
 
+Application::Application(View::Ptr view) :
+	m_view(view),
+	m_running(true),
+	m_width(0), 
+	m_height(0) 
+{
+	EventDispatcher<ViewChangedEvent>::emit(ViewChangedEvent{ m_view });
+}
+Application::~Application()
+{
+}
+void Application::initialize(uint32_t width, uint32_t height)
+{
+	m_width = width;
+	m_height = height;
+	EventDispatcher<QuitEvent>::subscribe(this);
+	EventDispatcher<ViewChangedEvent>::subscribe(this);
+	m_view->onCreate();
+}
+void Application::destroy()
+{
+	m_view->onDestroy();
+	EventDispatcher<QuitEvent>::unsubscribe(this);
+	EventDispatcher<ViewChangedEvent>::unsubscribe(this);
+}
+void Application::start()
+{
+	View::Ptr view = m_view;
+	EventDispatcher<ViewChangedEvent>::dispatch();
+	if (view != m_view)
+	{
+		view->onDestroy();
+		m_view->onCreate();
+	}
+}
+void Application::update(Time::Unit deltaTime)
+{
+	m_view->onUpdate(deltaTime);
+}
+void Application::frame()
+{
+	m_view->onFrame();
+}
+void Application::render()
+{
+	m_view->onRender();
+}
+void Application::present()
+{
+	m_view->onPresent();
+}
+void Application::end()
+{
+	EventDispatcher<QuitEvent>::dispatch();
+}
+void Application::resize(uint32_t width, uint32_t height)
+{
+	m_view->onResize(width, height);
+}
+void Application::onReceive(const QuitEvent& event)
+{
+	m_running = false;
+}
+void Application::onReceive(const ViewChangedEvent& event)
+{
+	m_view = event.view;
+}
 void Application::run(const Config& config)
 {
 	if (config.app == nullptr)
-	{
-		Logger::critical("No app set.");
-		return;
-	}
+		throw std::invalid_argument("No app set.");
 	Application* app = config.app;
 	PlatformBackend::initialize(config);
 	GraphicBackend::initialize(config.width, config.height);
@@ -24,9 +88,7 @@ void Application::run(const Config& config)
 	Time::Unit timestep = Time::Unit::milliseconds(10);
 	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
 
-	app->m_width = config.width;
-	app->m_height = config.height;
-	app->initialize();
+	app->initialize(config.width, config.height);
 
 	{
 		Time::Unit lastTick = Time::now();

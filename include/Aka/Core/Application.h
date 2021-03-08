@@ -3,6 +3,9 @@
 #include <Aka/Platform/Platform.h>
 #include <Aka/Scene/World.h>
 
+#include <Aka/Core/Event.h>
+#include <Aka/Core/View.h>
+
 namespace aka {
 
 class Application;
@@ -18,41 +21,49 @@ struct Config {
 	} audio;
 };
 
-class Application
+// Event to notify app to exit.
+struct QuitEvent {};
+
+// Event to notify a view change
+struct ViewChangedEvent
+{
+	View::Ptr view;
+};
+
+class Application final : EventListener<QuitEvent>, EventListener<ViewChangedEvent>
 {
 public:
-	Application() : m_running(true), m_width(0), m_height(0) {}
-	virtual ~Application() {}
+	Application(View::Ptr view);
+	~Application();
 private:
 	// Initialize the application and its resources.
-	virtual void initialize() {}
+	void initialize(uint32_t width, uint32_t height);
 	// Destroy everything related to the app.
-	virtual void destroy() {}
+	void destroy();
 	// First function called in a loop
-	virtual void start() {}
+	void start();
 	// Update the app. Might be called multiple for a single frame
-	virtual void update(Time::Unit deltaTime) {}
+	void update(Time::Unit deltaTime);
 	// Called before render for the app
-	virtual void frame() {}
+	void frame();
 	// Render the app.
-	virtual void render() {}
+	void render();
 	// Called before present of the frame
-	virtual void present() {}
+	void present();
 	// Last function called in a loop
-	virtual void end() {}
+	void end();
 	// Called on app resize
-	virtual void resize(uint32_t width, uint32_t height) {}
-public:
-	// Request to quit the app
-	void quit() { m_running = false; }
-	// Get the draw width of the app
-	uint32_t width() const { return m_width; }
-	// Get the draw height of the app
-	uint32_t height() const { return m_height; }
+	// TODO use event.
+	void resize(uint32_t width, uint32_t height);
+	// Called on app quit request
+	void onReceive(const QuitEvent& event);
+	// Called on app view change
+	void onReceive(const ViewChangedEvent& event);
 public:
 	// Entry point of the application
 	static void run(const Config& config);
 private:
+	View::Ptr m_view;
 	bool m_running; // Is the app running
 	uint32_t m_width;
 	uint32_t m_height;

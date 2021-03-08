@@ -9,10 +9,10 @@
 #include "Core/String.h"
 #include "Core/Application.h"
 #include "Core/View.h"
-#include "Core/Router.h"
 #include "Core/Debug.h"
 #include "Core/Font.h"
 #include "Core/Sprite.h"
+#include "Core/Event.h"
 
 #include "Graphic/GraphicBackend.h"
 #include "Graphic/Batch.h"

@@ -6,25 +6,23 @@
 
 namespace aka {
 
-class Router;
-
-enum class ViewID : uint32_t {};
-
-ViewID generate();
-
 // A view (aka. a scene) is a part of the game.
-class View {
+class View
+{
 public:
-	using Ptr = std::unique_ptr<View>;
+	using Ptr = std::shared_ptr<View>;
+
+	template <typename T, typename... Args>
+	static typename T::Ptr create(Args&&... args);
 public:
-	View() : m_running(true) {}
+	View() {}
 	virtual ~View() {}
 	// Called on view creation
 	virtual void onCreate() {}
 	// Called on view destruction
 	virtual void onDestroy() {}
 	// Called on every view update
-	virtual void onUpdate(Router& router, Time::Unit deltaTime) {}
+	virtual void onUpdate(Time::Unit deltaTime) {}
 	// Called on view frame beginning
 	virtual void onFrame() {}
 	// Called on view frame render
@@ -33,11 +31,12 @@ public:
 	virtual void onPresent() {}
 	// Called on view resize
 	virtual void onResize(uint32_t width, uint32_t height) {}
-public:
-	void quit() { m_running = false; }
-	bool running() const { return m_running; }
-private:
-	bool m_running;
 };
+
+template <typename T, typename... Args>
+typename T::Ptr View::create(Args&&... args) {
+	static_assert(std::is_base_of<View, T>::value, "Type is not a view");
+	return std::make_unique<T>(std::forward<Args>(args)...);
+}
 
 };

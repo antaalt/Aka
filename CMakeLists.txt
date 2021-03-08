@@ -14,7 +14,6 @@ add_library (Aka
 
 	"src/Core/Application.cpp"
 	"src/Core/View.cpp"
-	"src/Core/Router.cpp"
 	"src/Core/Debug.cpp"
 	"src/Core/Font.cpp"
 	"src/Core/Physic.cpp"
