@@ -419,13 +419,13 @@ void PlatformBackend::initialize(const Config& config)
 	// --- Callbacks ---
 	// --- Size
 	glfwSetWindowSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
-		Logger::debug("[GLFW] New window size : ", width, "x", height);
 		pctx.width = width;
 		pctx.height = height;
+		EventDispatcher<WindowResizeEvent>::emit(WindowResizeEvent{ (uint32_t)width, (uint32_t)height });
 	});
 	glfwSetFramebufferSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
 		GraphicBackend::resize(width, height);
-		Logger::debug("[GLFW] New framebuffer size : ", width, "x", height);
+		EventDispatcher<BackbufferResizeEvent>::emit(BackbufferResizeEvent{ (uint32_t)width, (uint32_t)height });
 	});
 	glfwSetWindowContentScaleCallback(pctx.window, [](GLFWwindow* window, float x, float y) {
 		Logger::debug("[GLFW] Content scaled : ", x, " - ", y);
@@ -450,7 +450,6 @@ void PlatformBackend::initialize(const Config& config)
 	glfwSetWindowPosCallback(pctx.window, [](GLFWwindow* window, int x, int y) {
 		pctx.x = x;
 		pctx.y = y;
-		Logger::debug("[GLFW] New window position : ", x, " - ", y);
 	});
 	// --- Monitor
 	glfwSetMonitorCallback([](GLFWmonitor* monitor, int event) {
@@ -477,7 +476,7 @@ void PlatformBackend::initialize(const Config& config)
 		}
 	});
 	glfwSetCharCallback(pctx.window, [](GLFWwindow* window, unsigned int character) {
-		Logger::debug("[GLFW] Char event : ", character);
+		//Logger::debug("[GLFW] Char event : ", character);
 	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window

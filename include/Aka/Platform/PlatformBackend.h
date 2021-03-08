@@ -15,6 +15,14 @@ namespace aka {
 
 struct Config;
 
+struct WindowResizeEvent {
+	uint32_t width, height;
+};
+
+struct BackbufferResizeEvent {
+	uint32_t width, height;
+};
+
 class PlatformBackend
 {
 public:

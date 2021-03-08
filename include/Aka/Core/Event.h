@@ -10,10 +10,8 @@ namespace aka {
 template <typename T>
 struct EventListener
 {
-	EventListener() {}
-	virtual ~EventListener() {}
-	virtual void onSubscribe() {};
-	virtual void onUnsubscribe() {};
+	EventListener();
+	virtual ~EventListener();
 	virtual void onReceive(const T& event) = 0;
 };
 
@@ -48,6 +46,16 @@ std::deque<T> EventDispatcher<T>::m_events;
 template<typename T>
 std::vector<EventListener<T>*> EventDispatcher<T>::m_listeners;
 
+template<typename T>
+EventListener<T>::EventListener() 
+{
+	EventDispatcher<T>::subscribe(this);
+}
+template<typename T>
+EventListener<T>::~EventListener() 
+{
+	EventDispatcher<T>::unsubscribe(this);
+}
 template <typename T>
 inline void EventDispatcher<T>::emit(T&& event)
 {
@@ -76,7 +84,6 @@ template <typename T>
 inline void EventDispatcher<T>::subscribe(EventListener<T>* listener) 
 {
 	m_listeners.push_back(listener);
-	listener->onSubscribe();
 }
 template <typename T>
 inline void EventDispatcher<T>::unsubscribe(EventListener<T>* listener)
@@ -85,7 +92,6 @@ inline void EventDispatcher<T>::unsubscribe(EventListener<T>* listener)
 	{
 		if ((*it) == listener)
 		{
-			listener->onUnsubscribe();
 			m_listeners.erase(it);
 			break;
 		}
@@ -94,8 +100,6 @@ inline void EventDispatcher<T>::unsubscribe(EventListener<T>* listener)
 template <typename T>
 inline void EventDispatcher<T>::unsubscribe()
 {
-	for (EventListener<T>* listener : m_listeners)
-		listener->onUnsubscribe();
 	m_listeners.clear();
 }
 

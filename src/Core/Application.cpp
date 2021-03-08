@@ -23,15 +23,11 @@ void Application::initialize(uint32_t width, uint32_t height)
 {
 	m_width = width;
 	m_height = height;
-	EventDispatcher<QuitEvent>::subscribe(this);
-	EventDispatcher<ViewChangedEvent>::subscribe(this);
 	m_view->onCreate();
 }
 void Application::destroy()
 {
 	m_view->onDestroy();
-	EventDispatcher<QuitEvent>::unsubscribe(this);
-	EventDispatcher<ViewChangedEvent>::unsubscribe(this);
 }
 void Application::start()
 {
@@ -45,6 +41,7 @@ void Application::start()
 }
 void Application::update(Time::Unit deltaTime)
 {
+	EventDispatcher<BackbufferResizeEvent>::dispatch();
 	m_view->onUpdate(deltaTime);
 }
 void Application::frame()
@@ -63,9 +60,9 @@ void Application::end()
 {
 	EventDispatcher<QuitEvent>::dispatch();
 }
-void Application::resize(uint32_t width, uint32_t height)
+void Application::onReceive(const BackbufferResizeEvent& event)
 {
-	m_view->onResize(width, height);
+	m_view->onResize(event.width, event.height);
 }
 void Application::onReceive(const QuitEvent& event)
 {
@@ -103,14 +100,6 @@ void Application::run(const Config& config)
 			{
 				InputBackend::update();
 				PlatformBackend::update();
-				uint32_t w, h;
-				GraphicBackend::getSize(&w, &h);
-				if (w != app->m_width || h != app->m_height)
-				{
-					app->m_width = w;
-					app->m_height = h;
-					app->resize(w, h);
-				}
 				app->update(timestep);
 				accumulator -= timestep;
 			}

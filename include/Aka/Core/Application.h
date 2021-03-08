@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Aka/Platform/Platform.h>
+#include <Aka/Platform/PlatformBackend.h>
 #include <Aka/Scene/World.h>
 
 #include <Aka/Core/Event.h>
@@ -30,7 +31,10 @@ struct ViewChangedEvent
 	View::Ptr view;
 };
 
-class Application final : EventListener<QuitEvent>, EventListener<ViewChangedEvent>
+class Application final : 
+	EventListener<QuitEvent>, 
+	EventListener<ViewChangedEvent>, 
+	EventListener<BackbufferResizeEvent>
 {
 public:
 	Application(View::Ptr view);
@@ -53,8 +57,7 @@ private:
 	// Last function called in a loop
 	void end();
 	// Called on app resize
-	// TODO use event.
-	void resize(uint32_t width, uint32_t height);
+	void onReceive(const BackbufferResizeEvent& event);
 	// Called on app quit request
 	void onReceive(const QuitEvent& event);
 	// Called on app view change
