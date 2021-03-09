@@ -5,27 +5,65 @@ Small 2D game engine, mainly built for personal educational purpose, to be easy 
 Aka stand for red in japanese (赤) and there is no particular reason for this name, we just need one !
 
 ## Features
-- Run with OpenGL 3.2 / DirectX 11 using Batch rendering
-- Basic sound support with RtAudio
+- Platform backend with GLFW 3.2
+- Graphic backend with OpenGL 3.2 / DirectX 11
+- Audio backend with RtAudio (mp3 support)
 - Easily implement new window library / platform
+- Event system for efficient communication
+- UTF8 support
+- Cross platform (not tested on apple)
+- ECS system based on entt
 
 ## How to use
+This basic example create a window and spin a square in the middle of the screen.
 ```cpp
-struct Game : public aka::Application
+struct Game :
+	aka::View,
+	aka::EventListener<aka::input::KeyboardKeyDownEvent>
 {
-	void initialize() override;
-	void destroy() override;
-	void update(aka::Time::Unit deltaTime) override;
-	void render() override;
+	aka::radian<> rotation = aka::radian(0.f);
+	aka::Batch batch;
+
+	void onCreate() override {}
+	void onDestroy() override {}
+	void onUpdate(aka::Time::Unit deltaTime) override {
+		rotation = aka::radian(rotation() + 1.f * deltaTime.seconds());
+	}
+	void onRender() override {
+		aka::Framebuffer::Ptr backbuffer = aka::GraphicBackend::backbuffer();
+		backbuffer->clear(0.f, 0.f, 1.f, 1.f);
+		aka::vec2f size = aka::vec2f(300.f);
+		aka::vec2f position = aka::vec2f(
+			backbuffer->width() / 2.f - size.x / 2.f,
+			backbuffer->height() / 2.f - size.y / 2.f
+		);
+		aka::mat3f transform = aka::mat3f::identity();
+		transform *= aka::mat3f::translate(position);
+		transform *= aka::mat3f::translate(0.5f * size);
+		transform *= aka::mat3f::rotate(rotation);
+		transform *= aka::mat3f::translate(-0.5f * size);
+		transform *= aka::mat3f::scale(size);
+		batch.draw(transform, aka::Batch::Rect(
+			aka::vec2f(0.f),
+			aka::vec2f(1.f),
+			aka::color4f(1.f, 0.f, 0.f, 1.f),
+			0
+		));
+		batch.render(backbuffer);
+		batch.clear();
+	}
+	void onReceive(const aka::input::KeyboardKeyDownEvent& event) override {
+		if (event.key == aka::input::Key::Escape)
+			aka::EventDispatcher<aka::QuitEvent>::emit();
+	}
 };
 int main()
 {
-	Game app;
 	aka::Config cfg;
 	cfg.width = 1280;
 	cfg.height = 720;
 	cfg.name = "Game";
-	cfg.app = &app;
+	cfg.app = aka::View::create<Game>();
 	aka::Application::run(cfg);
 	return 0;
 }
@@ -33,14 +71,13 @@ int main()
 
 ## Build
 -   Run --recursive with git clone or git submodule init / update to get all dependencies.
--   This project is based on C++17. Compile on Windows (VS 2019) & Linux (GCC) with CMake
+-   Build using CMake. It has been tested on Windows (VS 2019) & Linux (GCC).
 
 ## RoadMap
 -   More robust physic engine or use third party like [Box2D](https://box2d.org/)
--   Add multiple shapes for colliders
+-   Or simply add multiple shapes for colliders
 -   Use stb_true_type for less big dependencies (freetype)
--   Parse aseprite files directly
--   Project to CMake to support build for Linux
+-   Use a package manager for better dependencies management
 -   Add support for joystick
--   Save ECS state in config file
--   Let's work on a game !
+-   ECS serialization
+-   [Let's work on a game](https://github.com/antaalt/AkaGame) !

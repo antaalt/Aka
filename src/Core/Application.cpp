@@ -10,19 +10,15 @@ namespace aka {
 
 Application::Application(View::Ptr view) :
 	m_view(view),
-	m_running(true),
-	m_width(0), 
-	m_height(0) 
+	m_running(true)
 {
 	EventDispatcher<ViewChangedEvent>::emit(ViewChangedEvent{ m_view });
 }
 Application::~Application()
 {
 }
-void Application::initialize(uint32_t width, uint32_t height)
+void Application::initialize()
 {
-	m_width = width;
-	m_height = height;
 	m_view->onCreate();
 }
 void Application::destroy()
@@ -74,9 +70,8 @@ void Application::onReceive(const ViewChangedEvent& event)
 }
 void Application::run(const Config& config)
 {
-	if (config.app == nullptr)
-		throw std::invalid_argument("No app set.");
-	Application* app = config.app;
+	if (config.view == nullptr)
+		throw std::invalid_argument("No view set.");
 	PlatformBackend::initialize(config);
 	GraphicBackend::initialize(config.width, config.height);
 	InputBackend::initialize();
@@ -85,7 +80,9 @@ void Application::run(const Config& config)
 	Time::Unit timestep = Time::Unit::milliseconds(10);
 	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
 
-	app->initialize(config.width, config.height);
+	Application app(config.view);
+
+	app.initialize();
 
 	{
 		Time::Unit lastTick = Time::now();
@@ -95,24 +92,24 @@ void Application::run(const Config& config)
 			Time::Unit deltaTime = min(now - lastTick, maxUpdate);
 			lastTick = now;
 			accumulator += deltaTime;
-			app->start();
-			while (app->m_running && accumulator >= timestep)
+			app.start();
+			while (app.m_running && accumulator >= timestep)
 			{
 				InputBackend::update();
 				PlatformBackend::update();
-				app->update(timestep);
+				app.update(timestep);
 				accumulator -= timestep;
 			}
 			GraphicBackend::frame();
-			app->frame();
-			app->render();
-			app->present();
+			app.frame();
+			app.render();
+			app.present();
 			GraphicBackend::present();
-			app->end();
-		} while (app->m_running && PlatformBackend::running());
+			app.end();
+		} while (app.m_running && PlatformBackend::running());
 	}
 
-	app->destroy();
+	app.destroy();
 
 	AudioBackend::destroy();
 	InputBackend::destroy();

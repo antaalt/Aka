@@ -213,6 +213,44 @@ const Position &mouse();
 const Position &delta();
 const Position &scroll();
 
+// Events
+struct KeyboardKeyDownEvent {
+	Key key;
+};
+struct KeyboardKeyUpEvent {
+	Key key;
+};
+struct KeyboardKeyRepeatEvent {
+	Key key;
+};
+struct MouseButtonDownEvent {
+	Button button;
+};
+struct MouseButtonUpEvent {
+	Button button;
+};
+struct MouseButtonRepeatEvent {
+	Button button;
+};
+struct MouseMoveEvent {
+	float x, y;
+};
+struct MouseScrollEvent {
+	float x, y;
+};
+struct MouseEnterEvent {
+	// emtpy !
+};
+struct MouseLeaveEvent {
+	// emtpy !
+};
+struct JoystickConnectedEvent {
+	int id;
+};
+struct JoystickDisconnectedEvent {
+	int id;
+};
+
 };
 };
 

@@ -10,6 +10,7 @@ class World;
 class System
 {
 public:
+	virtual ~System() = default;
 	friend class World;
 
 	virtual void create(World &world) {}

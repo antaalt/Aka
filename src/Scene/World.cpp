@@ -56,11 +56,6 @@ void World::draw(Batch& batch)
 		system->draw(*this, batch);
 }
 
-entt::dispatcher& World::dispatcher()
-{
-	return m_dispatcher;
-}
-
 entt::registry& World::registry()
 {
 	return m_registry;

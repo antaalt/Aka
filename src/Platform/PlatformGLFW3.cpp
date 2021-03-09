@@ -424,77 +424,82 @@ void PlatformBackend::initialize(const Config& config)
 		EventDispatcher<WindowResizeEvent>::emit(WindowResizeEvent{ (uint32_t)width, (uint32_t)height });
 	});
 	glfwSetFramebufferSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
-		GraphicBackend::resize(width, height);
 		EventDispatcher<BackbufferResizeEvent>::emit(BackbufferResizeEvent{ (uint32_t)width, (uint32_t)height });
 	});
 	glfwSetWindowContentScaleCallback(pctx.window, [](GLFWwindow* window, float x, float y) {
-		Logger::debug("[GLFW] Content scaled : ", x, " - ", y);
+		EventDispatcher<WindowContentScaledEvent>::emit(WindowContentScaledEvent{ x, y });
 	});
 	glfwSetWindowMaximizeCallback(pctx.window, [](GLFWwindow* window, int maximized) {
-		// Called when window is maximized or unmaximized
-		Logger::debug("[GLFW] Maximized : ", maximized);
+		EventDispatcher<WindowMaximizedEvent>::emit(WindowMaximizedEvent{ (maximized == GLFW_TRUE) });
 	});
 	// --- Window
-	glfwSetWindowFocusCallback(pctx.window, [](GLFWwindow* window, int focus) {
-		Logger::debug("[GLFW] Focus : ", focus);
+	glfwSetWindowFocusCallback(pctx.window, [](GLFWwindow* window, int focused) {
+		EventDispatcher<WindowFocusedEvent>::emit(WindowFocusedEvent{ (focused == GLFW_TRUE) });
 	});
 	glfwSetWindowRefreshCallback(pctx.window, [](GLFWwindow* window) {
-		Logger::debug("[GLFW] Window refresh");
+		EventDispatcher<WindowRefreshedEvent>::emit(WindowRefreshedEvent{});
 	});
 	glfwSetWindowIconifyCallback(pctx.window, [](GLFWwindow* window, int iconified) {
-		Logger::debug("[GLFW] Iconify : ", iconified);
-	});
-	glfwSetWindowCloseCallback(pctx.window, [](GLFWwindow* window) {
-		Logger::debug("[GLFW] Closing window ");
+		EventDispatcher<WindowIconifiedEvent>::emit(WindowIconifiedEvent{ (iconified == GLFW_TRUE) });
 	});
 	glfwSetWindowPosCallback(pctx.window, [](GLFWwindow* window, int x, int y) {
+		EventDispatcher<WindowMovedEvent>::emit(WindowMovedEvent{ x, y });
 		pctx.x = x;
 		pctx.y = y;
 	});
 	// --- Monitor
 	glfwSetMonitorCallback([](GLFWmonitor* monitor, int event) {
-		// GLFW_CONNECTED or GLFW_DISCONNECTED
-		Logger::debug("[GLFW] Monitor event : ", event);
+		// TODO get monitor informations
+		if (event == GLFW_CONNECTED)
+			EventDispatcher<MonitorConnectedEvent>::emit(MonitorConnectedEvent{});
+		else if (event == GLFW_DISCONNECTED)
+			EventDispatcher<MonitorDisconnectedEvent>::emit(MonitorDisconnectedEvent {});
 	});
 	// --- Inputs
 	glfwSetKeyCallback(pctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
 		if (action == GLFW_PRESS)
-			InputBackend::onKeyDown(glfwKeyMap[key]);
+			EventDispatcher<input::KeyboardKeyDownEvent>::emit(input::KeyboardKeyDownEvent{ glfwKeyMap[key] });
 		else if (action == GLFW_RELEASE)
-			InputBackend::onKeyUp(glfwKeyMap[key]);
+			EventDispatcher<input::KeyboardKeyUpEvent>::emit(input::KeyboardKeyUpEvent{ glfwKeyMap[key] });
 		else if (action == GLFW_REPEAT)
-		{
-		}
+			EventDispatcher<input::KeyboardKeyRepeatEvent>::emit(input::KeyboardKeyRepeatEvent{ glfwKeyMap[key] });
 	});
 	glfwSetMouseButtonCallback(pctx.window, [](GLFWwindow* window, int button, int action, int mode) {
 		if (action == GLFW_PRESS)
-			InputBackend::onMouseButtonDown(static_cast<input::Button>(button));
+			EventDispatcher<input::MouseButtonDownEvent>::emit(input::MouseButtonDownEvent{ static_cast<input::Button>(button) });
 		else if (action == GLFW_RELEASE)
-			InputBackend::onMouseButtonUp(static_cast<input::Button>(button));
+			EventDispatcher<input::MouseButtonUpEvent>::emit(input::MouseButtonUpEvent{ static_cast<input::Button>(button) });
 		else if (action == GLFW_REPEAT)
-		{
-		}
+			EventDispatcher<input::MouseButtonRepeatEvent>::emit(input::MouseButtonRepeatEvent{ static_cast<input::Button>(button) });
 	});
 	glfwSetCharCallback(pctx.window, [](GLFWwindow* window, unsigned int character) {
-		//Logger::debug("[GLFW] Char event : ", character);
+		EventDispatcher<WindowUnicodeCharEvent>::emit(WindowUnicodeCharEvent{ character });
 	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		// Aka coordinates system origin is bottom left, so we convert.
-		InputBackend::onMouseMove(static_cast<float>(xpos), static_cast<float>(pctx.height) - static_cast<float>(ypos));
+		EventDispatcher<input::MouseMoveEvent>::emit(input::MouseMoveEvent{
+			static_cast<float>(xpos), 
+			static_cast<float>(pctx.height) - static_cast<float>(ypos) 
+		});
 	});
 	glfwSetScrollCallback(pctx.window, [](GLFWwindow* window, double xoffset, double yoffset) {
-		InputBackend::onMouseScroll(static_cast<float>(xoffset), static_cast<float>(yoffset));
+		EventDispatcher<input::MouseScrollEvent>::emit(input::MouseScrollEvent{ 
+			static_cast<float>(xoffset), 
+			static_cast<float>(yoffset) 
+		});
 	});
 	glfwSetCursorEnterCallback(pctx.window, [](GLFWwindow* window, int entered) {
 		if (entered == GLFW_TRUE)
-			InputBackend::onMouseEnter();
+			EventDispatcher<input::MouseEnterEvent>::emit();
 		else if (entered == GLFW_FALSE)
-			InputBackend::onMouseLeave();
+			EventDispatcher<input::MouseLeaveEvent>::emit();
 	});
 	glfwSetJoystickCallback([](int jid, int event) {
-		// event : GLFW_CONNECTED, GLFW_DISCONNECTED
-		Logger::debug("[GLFW] Joystick event : ", event);
+		if (event == GLFW_CONNECTED)
+			EventDispatcher<input::JoystickConnectedEvent>::emit(input::JoystickConnectedEvent {jid});
+		else if (event == GLFW_DISCONNECTED)
+			EventDispatcher<input::JoystickDisconnectedEvent>::emit(input::JoystickDisconnectedEvent {jid});
 	});
 }
 
@@ -507,6 +512,17 @@ void PlatformBackend::destroy()
 void PlatformBackend::update()
 {
 	glfwPollEvents();
+	EventDispatcher<BackbufferResizeEvent>::dispatch();
+	EventDispatcher<WindowResizeEvent>::dispatch();
+	EventDispatcher<WindowMaximizedEvent>::dispatch();
+	EventDispatcher<WindowContentScaledEvent>::dispatch();
+	EventDispatcher<WindowIconifiedEvent>::dispatch();
+	EventDispatcher<WindowFocusedEvent>::dispatch();
+	EventDispatcher<WindowMovedEvent>::dispatch();
+	EventDispatcher<WindowRefreshedEvent>::dispatch();
+	EventDispatcher<WindowUnicodeCharEvent>::dispatch();
+	EventDispatcher<MonitorConnectedEvent>::dispatch();
+	EventDispatcher<MonitorDisconnectedEvent>::dispatch();
 }
 
 bool PlatformBackend::running()

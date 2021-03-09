@@ -15,7 +15,7 @@ struct Config {
 	uint32_t width = 1280;
 	uint32_t height = 720;
 	std::string name = "Aka";
-	Application* app = nullptr;
+	View::Ptr view = nullptr;
 	struct Audio {
 		uint32_t frequency = 44100;
 		uint32_t channels = 2;
@@ -41,7 +41,7 @@ public:
 	~Application();
 private:
 	// Initialize the application and its resources.
-	void initialize(uint32_t width, uint32_t height);
+	void initialize();
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop
@@ -67,9 +67,7 @@ public:
 	static void run(const Config& config);
 private:
 	View::Ptr m_view;
-	bool m_running; // Is the app running
-	uint32_t m_width;
-	uint32_t m_height;
+	bool m_running;
 };
 
 }

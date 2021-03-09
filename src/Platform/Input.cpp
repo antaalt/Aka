@@ -2,14 +2,16 @@
 
 #include <Aka/Platform/InputBackend.h>
 #include <Aka/OS/Time.h>
+#include <Aka/OS/Logger.h>
+#include <Aka/Core/Event.h>
 
 #include <iostream>
 
 namespace aka {
 namespace input {
 
-Keyboard keyboard;
-Cursor cursor;
+static Keyboard keyboard = {};
+static Cursor cursor = {};
 
 std::ostream& operator<<(std::ostream& os, const Key key)
 {
@@ -224,35 +226,94 @@ const Position& scroll()
 	return cursor.scroll;
 }
 
+struct InputListener :
+	EventListener<KeyboardKeyDownEvent>,
+	EventListener<KeyboardKeyUpEvent>,
+	EventListener<MouseButtonDownEvent>,
+	EventListener<MouseButtonUpEvent>,
+	EventListener<MouseMoveEvent>,
+	EventListener<MouseScrollEvent>,
+	EventListener<MouseEnterEvent>,
+	EventListener<MouseLeaveEvent>,
+	EventListener<JoystickConnectedEvent>,
+	EventListener<JoystickDisconnectedEvent>
+{
+	void onReceive(const KeyboardKeyDownEvent& event)
+	{
+		keyboard.pressedCount++;
+		keyboard.down[static_cast<int>(event.key)] = true;
+		keyboard.pressed[static_cast<int>(event.key)] = true;
+		keyboard.timestamp[static_cast<int>(event.key)] = Time::unixtime().milliseconds();
+	}
+	void onReceive(const KeyboardKeyUpEvent& event)
+	{
+		keyboard.pressedCount--;
+		keyboard.up[static_cast<int>(event.key)] = true;
+		keyboard.pressed[static_cast<int>(event.key)] = false;
+		keyboard.timestamp[static_cast<int>(event.key)] = 0;
+	}
+	void onReceive(const MouseButtonDownEvent& event)
+	{
+		cursor.down[static_cast<int>(event.button)] = true;
+		cursor.pressed[static_cast<int>(event.button)] = true;
+		cursor.timestamp[static_cast<int>(event.button)] = Time::unixtime().milliseconds();
+	}
+	void onReceive(const MouseButtonUpEvent& event)
+	{
+		cursor.up[static_cast<int>(event.button)] = true;
+		cursor.pressed[static_cast<int>(event.button)] = false;
+		cursor.timestamp[static_cast<int>(event.button)] = 0;
+	}
+	void onReceive(const MouseMoveEvent& event)
+	{
+		cursor.delta.x = event.x - cursor.position.x;
+		cursor.delta.y = event.y - cursor.position.y;
+		cursor.position.x = event.x;
+		cursor.position.y = event.y;
+	}
+	void onReceive(const MouseScrollEvent& event)
+	{
+		cursor.scroll.x = event.x;
+		cursor.scroll.y = event.y;
+	}
+	void onReceive(const MouseEnterEvent& event)
+	{
+		cursor.focus = true;
+	}
+	void onReceive(const MouseLeaveEvent& event)
+	{
+		cursor.focus = false;
+	}
+	void onReceive(const JoystickConnectedEvent& event)
+	{
+		Logger::info("Joystick connected !");
+	}
+	void onReceive(const JoystickDisconnectedEvent& event)
+	{
+		Logger::info("Joystick disconnected !");
+	}
+};
+
+static InputListener* listener = nullptr;
+
 }; // namespace input
+
 
 void InputBackend::initialize()
 {
-	input::keyboard.layout = input::KeyboardLayout::Qwerty;
-	input::keyboard.pressedCount = 0;
-	for (uint32_t iKey = 0; iKey < input::getKeyCount(); iKey++)
-	{
-		input::keyboard.pressed[iKey] = false;
-		input::keyboard.timestamp[iKey] = 0;
-	}
-	for (uint32_t iButton = 0; iButton < input::getButtonCount(); iButton++)
-	{
-		input::cursor.pressed[iButton] = false;
-		input::cursor.timestamp[iButton] = 0;
-	}
-	input::cursor.focus = false;
-	input::cursor.position = { 0.f };
-	input::cursor.delta = { 0.f };
-	input::cursor.scroll = { 0.f };
+	if (input::listener == nullptr)
+		input::listener = new input::InputListener;
 }
 
 void InputBackend::destroy()
 {
-
+	delete input::listener;
+	input::listener = nullptr;
 }
 
 void InputBackend::update()
 {
+	// Reset values that will not be reset by events
 	for (uint32_t iKey = 0; iKey < input::getKeyCount(); iKey++)
 		input::keyboard.down[iKey] = false;
 	for (uint32_t iKey = 0; iKey < input::getKeyCount(); iKey++)
@@ -263,59 +324,17 @@ void InputBackend::update()
 		input::cursor.up[iButton] = false;
 	input::cursor.delta = { 0.f };
 	input::cursor.scroll = { 0.f };
-}
-
-void InputBackend::onKeyDown(input::Key key)
-{
-	input::keyboard.pressedCount++;
-	input::keyboard.down[static_cast<int>(key)] = true;
-	input::keyboard.pressed[static_cast<int>(key)] = true;
-	input::keyboard.timestamp[static_cast<int>(key)] = Time::unixtime().milliseconds();
-}
-
-void InputBackend::onKeyUp(input::Key key)
-{
-	input::keyboard.pressedCount--;
-	input::keyboard.up[static_cast<int>(key)] = true;
-	input::keyboard.pressed[static_cast<int>(key)] = false;
-	input::keyboard.timestamp[static_cast<int>(key)] = 0;
-}
-
-void InputBackend::onMouseButtonDown(input::Button button)
-{
-	input::cursor.down[static_cast<int>(button)] = true;
-	input::cursor.pressed[static_cast<int>(button)] = true;
-	input::cursor.timestamp[static_cast<int>(button)] = Time::unixtime().milliseconds();
-}
-
-void InputBackend::onMouseButtonUp(input::Button button)
-{
-	input::cursor.up[static_cast<int>(button)] = true;
-	input::cursor.pressed[static_cast<int>(button)] = false;
-	input::cursor.timestamp[static_cast<int>(button)] = 0;
-}
-
-void InputBackend::onMouseMove(float x, float y)
-{
-	input::cursor.delta.x = x - input::cursor.position.x;
-	input::cursor.delta.y = y - input::cursor.position.y;
-	input::cursor.position.x = x;
-	input::cursor.position.y = y;
-}
-
-void InputBackend::onMouseScroll(float x, float y)
-{
-	input::cursor.scroll.x = x;
-	input::cursor.scroll.y = y;
-}
-void InputBackend::onMouseEnter()
-{
-	input::cursor.focus = true;
-}
-
-void InputBackend::onMouseLeave()
-{
-	input::cursor.focus = false;
+	// Dispatch all input events
+	EventDispatcher<input::KeyboardKeyDownEvent>::dispatch();
+	EventDispatcher<input::KeyboardKeyUpEvent>::dispatch();
+	EventDispatcher<input::MouseButtonDownEvent>::dispatch();
+	EventDispatcher<input::MouseButtonUpEvent>::dispatch();
+	EventDispatcher<input::MouseMoveEvent>::dispatch();
+	EventDispatcher<input::MouseScrollEvent>::dispatch();
+	EventDispatcher<input::MouseEnterEvent>::dispatch();
+	EventDispatcher<input::MouseLeaveEvent>::dispatch();
+	EventDispatcher<input::JoystickConnectedEvent>::dispatch();
+	EventDispatcher<input::JoystickDisconnectedEvent>::dispatch();
 }
 
 };

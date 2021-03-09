@@ -11,9 +11,23 @@
 namespace aka {
 
 class Entity;
+class World;
+
+template <typename T>
+class WorldEventListener
+{
+public:
+	WorldEventListener(World& world);
+	virtual ~WorldEventListener();
+	virtual void receive(const T& event) = 0;
+private:
+	World& m_world;
+};
 
 class World
 {
+	template <typename T>
+	friend class WorldEventListener;
 	friend class Entity;
 public:
 	// Create an entity
@@ -33,6 +47,11 @@ public:
 	// Emit an event
 	template <typename T>
 	void emit(T&&);
+	// Dispatch events of type T
+	template <typename T>
+	void dispatch();
+	// Dispatch all events
+	void dispatch();
 
 	// Loop through all entities
 	template <typename Func>
@@ -47,8 +66,6 @@ public:
 	// Draw all systems
 	void draw(Batch& batch);
 
-	// Get entt dispatcher
-	entt::dispatcher& dispatcher();
 	// Get entt registry
 	entt::registry& registry();
 private:
@@ -56,6 +73,19 @@ private:
 	entt::dispatcher m_dispatcher;
 	entt::registry m_registry;
 };
+
+template <typename T>
+WorldEventListener<T>::WorldEventListener(World& world) :
+	m_world(world)
+{
+	m_world.m_dispatcher.sink<T>().connect<&WorldEventListener::receive>(*this);
+}
+
+template <typename T>
+WorldEventListener<T>::~WorldEventListener()
+{
+	m_world.m_dispatcher.sink<T>().disconnect<&WorldEventListener::receive>(*this);
+}
 
 template <typename T, typename... Args>
 inline void World::attach(Args&&... args)
@@ -68,6 +98,12 @@ template <typename T>
 inline void World::emit(T&& event)
 {
 	m_dispatcher.enqueue<T>(std::forward<T>(event));
+}
+
+template <typename T>
+inline void World::dispatch()
+{
+	m_dispatcher.update();
 }
 
 template <typename Func>

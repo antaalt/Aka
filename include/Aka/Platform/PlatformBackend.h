@@ -13,15 +13,41 @@ typedef HWND__* HWND;
 
 namespace aka {
 
-struct Config;
-
 struct WindowResizeEvent {
 	uint32_t width, height;
 };
-
 struct BackbufferResizeEvent {
 	uint32_t width, height;
 };
+struct WindowMaximizedEvent {
+	bool maximized;
+};
+struct WindowContentScaledEvent {
+	float x, y;
+};
+struct WindowIconifiedEvent {
+	bool iconified;
+};
+struct WindowFocusedEvent {
+	bool focus;
+};
+struct WindowMovedEvent {
+	int x, y;
+};
+struct WindowRefreshedEvent {
+	// empty
+};
+struct WindowUnicodeCharEvent {
+	encoding::CodePoint codepoint;
+};
+struct MonitorConnectedEvent {
+	// TODO retrieve monitor data
+};
+struct MonitorDisconnectedEvent {
+	// TODO retrieve monitor data
+};
+
+struct Config;
 
 class PlatformBackend
 {

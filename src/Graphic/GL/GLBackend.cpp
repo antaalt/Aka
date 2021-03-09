@@ -1,6 +1,7 @@
 #if defined(AKA_USE_OPENGL)
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Core/Debug.h>
+#include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Image.h>
 #include <Aka/Platform/PlatformBackend.h>
@@ -945,7 +946,9 @@ private:
 	GLuint m_framebufferID;
 };
 
-class GLBackBuffer : public Framebuffer
+class GLBackBuffer :
+	public Framebuffer,
+	EventListener<BackbufferResizeEvent>
 {
 public:
 	GLBackBuffer(uint32_t width, uint32_t height) :
@@ -962,6 +965,10 @@ public:
 		m_width = width;
 		m_height = height;
 	}
+	void onReceive(const BackbufferResizeEvent& event) override
+	{
+		resize(event.width, event.height);
+	}
 	void clear(float r, float g, float b, float a) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -977,7 +984,8 @@ public:
 	}
 };
 
-struct GLContext {
+struct GLContext
+{
 	std::shared_ptr<GLBackBuffer> backbuffer = nullptr;
 	bool vsync = true;
 };
@@ -1026,17 +1034,6 @@ GraphicApi GraphicBackend::api()
 	return GraphicApi::OpenGL;
 }
 
-void GraphicBackend::resize(uint32_t width, uint32_t height)
-{
-	gctx.backbuffer->resize(width, height);
-}
-
-void GraphicBackend::getSize(uint32_t* width, uint32_t* height)
-{
-	*width = gctx.backbuffer->width();
-	*height = gctx.backbuffer->height();
-}
-
 void GraphicBackend::frame()
 {
 }
@@ -1049,11 +1046,6 @@ void GraphicBackend::present()
 		Logger::error("[GL] Error during frame : ", glGetErrorString(errorCode));
 #endif
 	glfwSwapBuffers(PlatformBackend::getGLFW3Handle());
-}
-
-void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
-{
-	glViewport(x, y, width, height);
 }
 
 Framebuffer::Ptr GraphicBackend::backbuffer()

@@ -20,7 +20,8 @@ class EventDispatcher
 {
 public:
 	// Emit an event and queue it
-	static void emit(T&& event);
+	template <typename... Args>
+	static void emit(Args&&... args);
 	// Emit an event and dispatch it immediately
 	static void trigger(T&& event);
 
@@ -47,19 +48,20 @@ template<typename T>
 std::vector<EventListener<T>*> EventDispatcher<T>::m_listeners;
 
 template<typename T>
-EventListener<T>::EventListener() 
+inline EventListener<T>::EventListener()
 {
 	EventDispatcher<T>::subscribe(this);
 }
 template<typename T>
-EventListener<T>::~EventListener() 
+inline EventListener<T>::~EventListener()
 {
 	EventDispatcher<T>::unsubscribe(this);
 }
 template <typename T>
-inline void EventDispatcher<T>::emit(T&& event)
+template <typename... Args>
+inline void EventDispatcher<T>::emit(Args&&... args)
 {
-	m_events.push_back(std::move(event));
+	m_events.emplace_back(std::forward<Args>(args)...);
 }
 template <typename T>
 inline void EventDispatcher<T>::trigger(T&& event)

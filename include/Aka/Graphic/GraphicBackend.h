@@ -34,17 +34,11 @@ public:
 	static void initialize(uint32_t width, uint32_t height);
 	// Destroy the graphic API
 	static void destroy();
-	// Resize the graphic swapchain
-	static void resize(uint32_t width, uint32_t height);
-	// Get the size of the backbuffer
-	static void getSize(uint32_t* width, uint32_t* height);
 public:
 	// Start a new frame
 	static void frame();
 	// Present the frame
 	static void present();
-	// Set the viewport
-	static void viewport(int32_t x, int32_t y, uint32_t width, uint32_t height);
 	// Get the backbuffer
 	static Framebuffer::Ptr backbuffer();
 	// Render a render pass

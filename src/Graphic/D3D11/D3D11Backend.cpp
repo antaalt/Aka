@@ -1,6 +1,7 @@
 #if defined(AKA_USE_D3D11)
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Core/Debug.h>
+#include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Platform/Platform.h>
 #include <Aka/Platform/PlatformBackend.h>
@@ -50,13 +51,16 @@ extern "C" {
 
 namespace aka {
 
-struct D3D11SwapChain {
-	IDXGISwapChain* swapChain = nullptr;
-	bool vsync = true;
-	bool fullscreen = false;
-};
+class D3D11BackBuffer;
 
-struct D3D11Context {
+struct D3D11Context
+{
+	struct D3D11SwapChain {
+		IDXGISwapChain* swapChain = nullptr;
+		bool vsync = true;
+		bool fullscreen = false;
+	} swapchain;
+
 #if defined(DEBUG)
 	ID3D11InfoQueue* debugInfoQueue = nullptr;
 #endif
@@ -65,7 +69,6 @@ struct D3D11Context {
 };
 
 D3D11Context dctx;
-D3D11SwapChain swapChain;
 
 struct D3D11RasterPass {
 	Culling cull{};
@@ -675,7 +678,7 @@ private:
 	ID3D11DepthStencilView* m_depthStencilView;
 };
 
-class D3D11BackBuffer : public Framebuffer
+class D3D11BackBuffer : public Framebuffer,	EventListener<BackbufferResizeEvent>
 {
 public:
 	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
@@ -785,6 +788,10 @@ public:
 	{
 		// TODO create Texture as attachment
 		return nullptr;
+	}
+	void onReceive(const BackbufferResizeEvent& event) override
+	{
+		resize(event.width, event.height);
 	}
 	ID3D11RenderTargetView* getRenderTargetView() const { return m_renderTargetView; }
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
@@ -1029,7 +1036,7 @@ public:
 					if (typeDesc.Rows == 1)
 					{
 						if (typeDesc.Columns == 1)
-							uniform.type = UniformType::Vec;
+							uniform.type = UniformType::Float;
 						else if (typeDesc.Columns == 2)
 							uniform.type = UniformType::Vec2;
 						else if (typeDesc.Columns == 3)
@@ -1049,6 +1056,30 @@ public:
 					{
 						Logger::warn("Unsupported uniform size : ", typeDesc.Rows, "x", typeDesc.Columns);
 					}
+				}
+				else if (typeDesc.Type == D3D_SVT_INT)
+				{
+					if (typeDesc.Rows == 1)
+					{
+						if (typeDesc.Columns == 1)
+							uniform.type = UniformType::Int;
+						else
+							Logger::warn("Unsupported uniform type : ", typeDesc.Type);
+					}
+					else
+						Logger::warn("Unsupported uniform type : ", typeDesc.Type);
+				}
+				else if (typeDesc.Type == D3D_SVT_UINT)
+				{
+					if (typeDesc.Rows == 1)
+					{
+						if (typeDesc.Columns == 1)
+							uniform.type = UniformType::UnsignedInt;
+						else
+							Logger::warn("Unsupported uniform type : ", typeDesc.Type);
+					}
+					else
+						Logger::warn("Unsupported uniform type : ", typeDesc.Type);
 				}
 				else
 				{
@@ -1222,7 +1253,9 @@ public:
 			case UniformType::Texture2D:
 				textureCount++;
 				break;
-			case UniformType::Vec:
+			case UniformType::Int:
+			case UniformType::UnsignedInt:
+			case UniformType::Float:
 				bufferSize += 1;
 				break;
 			case UniformType::Vec2:
@@ -1415,7 +1448,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// Set the refresh rate of the back buffer.
-	if (swapChain.vsync)
+	if (dctx.swapchain.vsync)
 	{
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = device.monitors[0].numerator;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = device.monitors[0].denominator;
@@ -1433,7 +1466,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;
 	// Set to full screen or windowed mode.
-	swapChainDesc.Windowed = !swapChain.fullscreen;
+	swapChainDesc.Windowed = !dctx.swapchain.fullscreen;
 	// Set the scan line ordering and scaling to unspecified.
 	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
@@ -1458,7 +1491,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 		&featureLevel, 1,
 		D3D11_SDK_VERSION,
 		&swapChainDesc,
-		&swapChain.swapChain,
+		&dctx.swapchain.swapChain,
 		&dctx.device,
 		nullptr,
 		&dctx.deviceContext
@@ -1467,15 +1500,19 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	D3D_CHECK_RESULT(dctx.device->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&dctx.debugInfoQueue));
 	D3D_CHECK_RESULT(dctx.debugInfoQueue->PushEmptyStorageFilter());
 #endif
-	s_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, swapChain.swapChain);
+	s_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, dctx.swapchain.swapChain);
 }
 
 void GraphicBackend::destroy()
 {
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
-	if (swapChain.swapChain)
+	if (dctx.swapchain.swapChain)
 	{
-		swapChain.swapChain->SetFullscreenState(false, nullptr);
+		dctx.swapchain.swapChain->SetFullscreenState(false, nullptr);
+	}
+	if (s_backbuffer)
+	{
+		s_backbuffer.reset();
 	}
 
 	D3D11RasterPass::clear();
@@ -1495,27 +1532,16 @@ void GraphicBackend::destroy()
 		dctx.device = 0;
 	}
 
-	if (swapChain.swapChain)
+	if (dctx.swapchain.swapChain)
 	{
-		swapChain.swapChain->Release();
-		swapChain.swapChain = 0;
+		dctx.swapchain.swapChain->Release();
+		dctx.swapchain.swapChain = 0;
 	}
 }
 
 GraphicApi GraphicBackend::api()
 {
 	return GraphicApi::DirectX11;
-}
-
-void GraphicBackend::resize(uint32_t width, uint32_t height)
-{
-	s_backbuffer->resize(width, height);
-}
-
-void GraphicBackend::getSize(uint32_t* width, uint32_t* height)
-{
-	*width = s_backbuffer->width();
-	*height = s_backbuffer->height();
 }
 
 void GraphicBackend::frame()
@@ -1556,30 +1582,16 @@ void GraphicBackend::frame()
 void GraphicBackend::present()
 {
 	// Present the back buffer to the screen since rendering is complete.
-	if (swapChain.vsync)
+	if (dctx.swapchain.vsync)
 	{
 		// Lock to screen refresh rate.
-		swapChain.swapChain->Present(1, 0);
+		dctx.swapchain.swapChain->Present(1, 0);
 	}
 	else
 	{
 		// Present as fast as possible.
-		swapChain.swapChain->Present(0, 0);
+		dctx.swapchain.swapChain->Present(0, 0);
 	}
-}
-
-void GraphicBackend::viewport(int32_t x, int32_t y, uint32_t width, uint32_t height)
-{
-	D3D11_VIEWPORT viewport;
-	viewport.Width = (float)width;
-	viewport.Height = (float)height;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-
-	// Create the viewport.
-	dctx.deviceContext->RSSetViewports(1, &viewport);
 }
 
 Framebuffer::Ptr GraphicBackend::backbuffer()
@@ -1711,6 +1723,10 @@ void GraphicBackend::render(RenderPass& pass)
 		}
 	}
 }
+void GraphicBackend::dispatch(ComputePass& computePass)
+{
+	throw std::runtime_error("Not implemented");
+}
 void GraphicBackend::screenshot(const Path& path)
 {
 	throw std::runtime_error("not implemented");
@@ -1718,7 +1734,7 @@ void GraphicBackend::screenshot(const Path& path)
 
 void GraphicBackend::vsync(bool enabled)
 {
-	swapChain.vsync = enabled;
+	dctx.swapchain.vsync = enabled;
 }
 
 ID3D11Device* GraphicBackend::getD3D11Device()
