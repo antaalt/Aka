@@ -12,6 +12,7 @@
 #include "Core/Debug.h"
 #include "Core/Font.h"
 #include "Core/Sprite.h"
+#include "Core/Physic.h"
 #include "Core/Event.h"
 
 #include "Graphic/GraphicBackend.h"
