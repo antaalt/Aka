@@ -18,7 +18,7 @@ public:
     static AudioStream::Ptr loadMemory(const Path& path);
 
 public:
-    AudioStream() {}
+    AudioStream() : m_volume(1.f) {}
     virtual ~AudioStream() {}
     // Decode an audio file and return a memory buffer
     virtual bool load(const Path& path, Audio* audio) const = 0;
@@ -40,6 +40,12 @@ public:
     virtual uint32_t channels() const = 0;
     // Get samples count
     virtual uint64_t samples() const = 0;
+	// Get volume
+	float volume() const { return m_volume; }
+	// Set volume
+	void setVolume(float volume) { m_volume = volume; }
+protected:
+	float m_volume;
 };
 
 };

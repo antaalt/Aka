@@ -1,5 +1,9 @@
 #include <Aka/Audio/AudioBackend.h>
 
+#include <set>
+#include <mutex>
+#include <memory>
+#include <cstring>
 #include <RtAudio.h>
 
 #include <Aka/OS/Logger.h>
@@ -11,13 +15,15 @@
 
 namespace aka {
 
-struct RtAudioContext {
+struct AudioContext {
     uint32_t frequency = 0;
     uint32_t channels = 0;
     RtAudio *audio = nullptr;
+	std::mutex lock;
+	std::set<AudioStream::Ptr> audios;
 };
 
-RtAudioContext ctx;
+static AudioContext ctx;
 
 void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
 {
@@ -84,6 +90,7 @@ void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
 
 void AudioBackend::destroy()
 {
+	ctx.audios.clear();
     stop();
     if (ctx.audio->isStreamOpen())
         ctx.audio->closeStream();
@@ -140,6 +147,61 @@ uint32_t AudioBackend::getFrequency()
 uint32_t AudioBackend::getChannels()
 {
     return ctx.channels;
+}
+
+bool AudioBackend::play(AudioStream::Ptr stream)
+{
+	ASSERT(AudioBackend::getFrequency() == stream->frequency(), "Audio will need resampling");
+	ASSERT(AudioBackend::getChannels() == stream->channels(), "Audio channels does not match");
+	std::lock_guard<std::mutex> m(ctx.lock);
+	auto it = ctx.audios.insert(stream);
+	return it.second;
+}
+
+void AudioBackend::close(AudioStream::Ptr stream)
+{
+	std::lock_guard<std::mutex> m(ctx.lock);
+	auto it = ctx.audios.find(stream);
+	if (it != ctx.audios.end())
+		ctx.audios.erase(it);
+}
+bool AudioBackend::playing(AudioStream::Ptr stream)
+{
+	std::lock_guard<std::mutex> m(ctx.lock);
+	auto it = ctx.audios.find(stream);
+	return (it != ctx.audios.end());
+}
+
+AudioFrame mix(AudioFrame sample1, AudioFrame sample2)
+{
+	const int32_t result(static_cast<int32_t>(sample1) + static_cast<int32_t>(sample2));
+	using range = std::numeric_limits<AudioFrame>;
+	if ((range::max)() < result)
+		return (range::max)();
+	else if ((range::min)() > result)
+		return (range::min)();
+	else
+		return result;
+}
+
+void AudioBackend::process(AudioFrame* buffer, uint32_t frames)
+{
+	std::lock_guard<std::mutex> m(ctx.lock);
+	// Set buffer to zero for mixing
+	memset(buffer, 0, frames * AudioBackend::getChannels() * sizeof(AudioFrame));
+	if (ctx.audios.size() == 0)
+		return; // No audio to process
+	// Mix all audiodecoder
+	std::vector<AudioFrame> tmp(frames * AudioBackend::getChannels());
+	for (auto it = ctx.audios.begin(); it != ctx.audios.end();)
+	{
+		std::set<AudioStream::Ptr>::iterator current = it++;
+		AudioStream* stream = (*current).get();
+		if (!stream->decode(tmp.data(), frames * AudioBackend::getChannels()))
+			ctx.audios.erase(current);
+		for (unsigned int i = 0; i < frames * AudioBackend::getChannels(); i++)
+			buffer[i] = mix(buffer[i], static_cast<AudioFrame>(tmp[i] * stream->volume()));
+	}
 }
 
 };

@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Ajoutez une source à l'exécutable de ce projet.
 add_library (Aka
-	"src/Audio/AudioBackend.cpp"
 	"src/Audio/RtAudioBackend.cpp"
 	"src/Audio/AudioStream.cpp" 
 	"src/Audio/AudioStreamMp3.cpp" 

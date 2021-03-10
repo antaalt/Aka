@@ -25,9 +25,11 @@ public:
 	static uint32_t getChannels();
 
 	// Play an audio at path.
-	static bool play(AudioStream::Ptr stream, float volume, bool loop = false);
+	static bool play(AudioStream::Ptr stream);
 	// Close an audio
 	static void close(AudioStream::Ptr stream);
+	// Is an audio currently playing
+	static bool playing(AudioStream::Ptr stream);
 private:
 	// Process the audio
 	static void process(AudioFrame* buffer, uint32_t frames);
