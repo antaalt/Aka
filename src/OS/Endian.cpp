@@ -1,8 +1,6 @@
 #include <Aka/OS/Endian.h>
 #include <Aka/Platform/Platform.h>
 
-#include <stdint.h>
-
 namespace aka {
 
 bool Endianess::isBigEndian()

@@ -34,7 +34,6 @@ template <typename T>
 struct ComponentHandle
 {
 	static const ComponentID id;
-	static const char* name;
 };
 template <typename T>
 const ComponentID ComponentHandle<T>::id = ComponentType::get<T>();

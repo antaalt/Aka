@@ -4,6 +4,9 @@
 #include <Aka/Core/Debug.h>
 #include <Aka/Platform/PlatformBackend.h>
 
+#include <algorithm>
+#include <cstring>
+
 namespace aka {
 
 Path::Path()

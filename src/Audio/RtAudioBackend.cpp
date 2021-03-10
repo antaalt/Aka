@@ -32,7 +32,7 @@ void AudioBackend::initialize(uint32_t frequency, uint32_t channels)
 #if defined(AKA_PLATFORM_WINDOWS)
     ctx.audio = new RtAudio(RtAudio::Api::WINDOWS_DS);
 #else
-    ctx.audio = new RtAudio(RtAudio::Api::LINUX_ALSA);
+    ctx.audio = new RtAudio(RtAudio::Api::LINUX_PULSE);
 #endif
     // Determine the number of devices available
     unsigned int devices = ctx.audio->getDeviceCount();

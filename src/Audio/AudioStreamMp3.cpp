@@ -56,7 +56,7 @@ bool AudioStreamMp3::open(const Path& path)
     Str<wchar_t> wstr = encoding::wide(path.str());
     int sample = mp3dec_ex_open_w(&m_mp3d, wstr.cstr(), MP3D_SEEK_TO_SAMPLE);
 #else
-	int sample = mp3dec_ex_open_w(&m_mp3d, path.cstr(), MP3D_SEEK_TO_SAMPLE);
+	int sample = mp3dec_ex_open(&m_mp3d, path.cstr(), MP3D_SEEK_TO_SAMPLE);
 #endif
     if (m_mp3d.samples > 0)
         return true;

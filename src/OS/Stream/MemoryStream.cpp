@@ -1,5 +1,7 @@
 #include <Aka/OS/Stream/MemoryStream.h>
 
+#include <cstring>
+
 namespace aka {
 
 MemoryStream::MemoryStream(const uint8_t* bytes, size_t size) : 

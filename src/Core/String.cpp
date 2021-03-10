@@ -4,6 +4,7 @@
 #include <Aka/Core/Geometry.h>
 #include <utf8.h>
 #include <algorithm>
+#include <string.h>
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #define _CRT_SECURE_NO_WARNINGS

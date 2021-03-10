@@ -4,6 +4,7 @@
 
 #if defined(AKA_PLATFORM_LINUX)
 
+#include <stdio.h>
 #include <fstream>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -16,7 +17,7 @@ namespace aka {
 bool directory::exist(const Path& path)
 {
 	struct stat st;
-	if (stat(path.c_str(), &st) == 0)
+	if (stat(path.cstr(), &st) == 0)
 		return ((st.st_mode & S_IFDIR) != 0);
 	return false;
 }
@@ -26,13 +27,13 @@ bool directory::create(const Path& path)
 	size_t pos = 0;
 	do
 	{
-		pos = path.str().find_first_of("\\/", pos + 1);
-		if (pos == path.str().size())
+		pos = path.str().findFirst('/', pos + 1);
+		if (pos == path.str().length())
 			return true;
 		std::string p = path.str().substr(0, pos);
 		if (p == "." || p == ".." || p == "/" || p == "\\")
 			continue;
-		if (mkdir(path.str().substr(0, pos).c_str(), 0777) != 0)
+		if (mkdir(path.str().substr(0, pos).cstr(), 0777) != 0)
 		{
 			if (EEXIST == errno)
 				continue;
@@ -45,33 +46,33 @@ bool directory::create(const Path& path)
 
 bool directory::remove(const Path& path, bool recursive)
 {
-	return rmdir(path.c_str()) == 0;
+	return rmdir(path.cstr()) == 0;
 }
 
 bool file::exist(const Path& path)
 {
-	return access(path.c_str(), F_OK) != -1;
+	return access(path.cstr(), F_OK) != -1;
 }
 bool file::create(const Path& path)
 {
-	std::ofstream file(path.str());
+	std::ofstream file(path.cstr());
 	return file.is_open();
 }
 bool file::remove(const Path& path)
 {
-	return unlink(path.c_str()) == 0;
+	return unlink(path.cstr()) == 0;
 }
 
-std::string file::extension(const Path& path)
+String file::extension(const Path& path)
 {
-	const char* dot = strrchr(path.c_str(), '.');
-	if (!dot || dot == path.c_str()) return "";
+	const char* dot = strrchr(path.cstr(), '.');
+	if (!dot || dot == path.cstr()) return "";
 	return dot + 1;
 }
 
-std::string file::name(const Path& path)
+String file::name(const Path& path)
 {
-	return basename(path.c_str());
+	return basename(path.cstr());
 }
 
 std::vector<Path> Path::enumerate(const Path& path)
@@ -79,7 +80,7 @@ std::vector<Path> Path::enumerate(const Path& path)
 	DIR* dp;
 	struct dirent* dirp;
 	std::vector<Path> paths;
-	if ((dp = opendir(path.c_str())) != NULL)
+	if ((dp = opendir(path.cstr())) != NULL)
 	{
 		while ((dirp = readdir(dp)) != NULL)
 		{
@@ -125,30 +126,16 @@ const char* fileMode(FileMode mode)
 	case FileMode::ReadOnly:
 		return "rb";
 	case FileMode::WriteOnly:
-		return "wb";
+		return "wb" ;
 	default:
 	case FileMode::ReadWrite:
 		return "rwb";
 	}
 }
 
-const char* fileMode(FileMode mode, FileType type)
+FILE* fopen(const Path& path, FileMode mode)
 {
-	switch (mode)
-	{
-	case FileMode::ReadOnly:
-		return type == FileType::Binary ? "rb" : L"r";
-	case FileMode::WriteOnly:
-		return type == FileType::Binary ? "wb" : L"w";
-	default:
-	case FileMode::ReadWrite:
-		return type == FileType::Binary ? "rwb" : L"rw";
-	}
-}
-
-FILE* fopen(const Path& path, FileMode mode, FileType type)
-{
-	return fopen(path.c_str(), fileMode(mode, type));
+	return ::fopen(path.cstr(), fileMode(mode));
 }
 
 };

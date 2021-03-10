@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <cstddef>
+
 namespace aka {
 
 struct Endianess {

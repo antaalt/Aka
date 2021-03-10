@@ -4,6 +4,8 @@
 #include <Aka/Core/Debug.h>
 #include <Aka/Core/Geometry.h>
 
+#include <cstring>
+
 namespace aka {
 
 AudioStreamMemory::AudioStreamMemory(const std::vector<AudioFrame>& data, uint32_t frequency, uint32_t channels) :

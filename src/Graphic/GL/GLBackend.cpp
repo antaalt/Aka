@@ -10,6 +10,10 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+extern "C" {
+	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
+	_declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 #endif
 #define GLEW_NO_GLU
 #include <GL/glew.h>
@@ -17,11 +21,6 @@
 #include <GLFW/glfw3.h>
 
 #include <cstring>
-
-extern "C" {
-	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
-	_declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
 
 #define GL_CHECK_RESULT(result)                \
 {                                              \

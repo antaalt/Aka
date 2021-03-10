@@ -4,6 +4,8 @@
 #include <Aka/OS/Image.h>
 #include <Aka/OS/Stream/FileStream.h>
 
+#include <cstring>
+
 namespace aka {
 
 Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
