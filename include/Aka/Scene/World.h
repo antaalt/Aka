@@ -78,13 +78,13 @@ template <typename T>
 WorldEventListener<T>::WorldEventListener(World& world) :
 	m_world(world)
 {
-	m_world.m_dispatcher.sink<T>().connect<&WorldEventListener::receive>(*this);
+	m_world.m_dispatcher.sink<T>().template connect<&WorldEventListener::receive>(*this);
 }
 
 template <typename T>
 WorldEventListener<T>::~WorldEventListener()
 {
-	m_world.m_dispatcher.sink<T>().disconnect<&WorldEventListener::receive>(*this);
+	m_world.m_dispatcher.sink<T>().template disconnect<&WorldEventListener::receive>(*this);
 }
 
 template <typename T, typename... Args>
