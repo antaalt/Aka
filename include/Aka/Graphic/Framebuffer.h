@@ -55,6 +55,12 @@ public:
 	// Clear the framebuffer
 	virtual void clear(float r, float g, float b, float a) = 0;
 
+	// Blit a whole framebuffer into another one
+	void blit(Framebuffer::Ptr src, Sampler::Filter filter);
+
+	// Blit a framebuffer region into another one
+	virtual void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) = 0;
+
 	// Get the attachment of the framebuffer
 	virtual Texture::Ptr attachment(AttachmentType type) = 0;
 

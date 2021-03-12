@@ -1,5 +1,6 @@
 #if defined(AKA_USE_D3D11)
 #include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/Batch.h>
 #include <Aka/Core/Debug.h>
 #include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
@@ -68,7 +69,7 @@ struct D3D11Context
 	ID3D11DeviceContext* deviceContext = nullptr;
 };
 
-D3D11Context dctx;
+static D3D11Context dctx;
 
 struct D3D11RasterPass {
 	Culling cull{};
@@ -532,6 +533,29 @@ public:
 		memcpy(data, map.pData, m_width * m_height * 4);
 		dctx.deviceContext->Unmap(m_staging, 0);
 	}
+	void copy(Texture::Ptr src, const Rect& rect) override
+	{
+		ASSERT(src->format() == this->format(), "Invalid format");
+		ASSERT(src->component() == this->component(), "Invalid components");
+		ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
+		ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
+		ASSERT(rect.x > 0 && rect.y > 0, "Not supported");
+
+		D3D11_BOX box{};
+		box.left = rect.x;
+		box.right = m_width;
+		box.top = rect.y;
+		box.bottom = m_height;
+		box.front = 0;
+		box.back = 1;
+
+		dctx.deviceContext->CopySubresourceRegion(
+			m_texture, 0,
+			0, 0, 0,
+			reinterpret_cast<D3D11Texture*>(src.get())->m_texture, 0,
+			&box
+		);
+	}
 	Handle handle() override
 	{
 		return Handle((uintptr_t)m_view);
@@ -549,7 +573,7 @@ private:
 	bool m_isFramebuffer;
 };
 
-class D3D11Framebuffer : public Framebuffer
+class D3D11Framebuffer : public Framebuffer, public std::enable_shared_from_this<D3D11Framebuffer>
 {
 public:
 	D3D11Framebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler sampler) :
@@ -659,6 +683,17 @@ public:
 		if(m_depthStencilView != nullptr)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	{
+		// TODO remove batch & use simple shader for better perf.
+		static Batch batch;
+		batch.draw(
+			mat3f::identity(), 
+			Batch::Rect(vec2f(0), vec2f(this->width(), this->height()), src->attachment(Framebuffer::AttachmentType::Color0), 0)
+		);
+		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, this->height(), 0.f, this->width()));
+		batch.clear();
+	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
 		for (Attachment& attachment : m_attachments)
@@ -678,7 +713,7 @@ private:
 	ID3D11DepthStencilView* m_depthStencilView;
 };
 
-class D3D11BackBuffer : public Framebuffer,	EventListener<BackbufferResizeEvent>
+class D3D11BackBuffer : public Framebuffer, public std::enable_shared_from_this<D3D11BackBuffer>, EventListener<BackbufferResizeEvent>
 {
 public:
 	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
@@ -783,6 +818,17 @@ public:
 		dctx.deviceContext->ClearRenderTargetView(m_renderTargetView, color);
 		// Clear the depth buffer.
 		dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	{
+		// TODO remove batch & use simple shader for better perf.
+		static Batch batch;
+		batch.draw(
+			mat3f::identity(),
+			Batch::Rect(vec2f(0), vec2f(this->width(), this->height()), src->attachment(Framebuffer::AttachmentType::Color0), 0)
+		);
+		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, this->height(), 0.f, this->width()));
+		batch.clear();
 	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{

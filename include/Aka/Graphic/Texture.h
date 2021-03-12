@@ -82,6 +82,8 @@ public:
 
 	virtual void download(void* data) = 0;
 
+	virtual void copy(Texture::Ptr src, const Rect& rect) = 0;
+
 	virtual Handle handle() = 0;
 
 	virtual bool isFramebuffer() = 0;

@@ -33,5 +33,14 @@ uint32_t Framebuffer::height() const
 {
 	return m_height;
 }
+void Framebuffer::blit(Framebuffer::Ptr src, Sampler::Filter filter)
+{
+	blit(
+		src,
+		Rect{ 0,0, src->width(), src->height() },
+		Rect{ 0,0, this->width(), this->height() },
+		filter
+	);
+}
 
 };

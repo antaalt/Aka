@@ -693,6 +693,8 @@ class GLTexture : public Texture
 public:
 	GLTexture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler, bool isFramebuffer) :
 		Texture(width, height, format, component, sampler),
+		m_copyFBO(0),
+		m_textureID(0),
 		m_isFramebuffer(isFramebuffer)
 	{
 		glGenTextures(1, &m_textureID);
@@ -711,6 +713,8 @@ public:
 	{
 		if (m_textureID != 0)
 			glDeleteTextures(1, &m_textureID);
+		if (m_copyFBO != 0)
+			glDeleteFramebuffers(1, &m_copyFBO);
 	}
 	void upload(const void* data) override
 	{
@@ -732,6 +736,21 @@ public:
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glGetTexImage(GL_TEXTURE_2D, 0, gl::component(m_component), gl::format(m_format), data);
 	}
+	void copy(Texture::Ptr src, const Rect& rect) override
+	{
+		ASSERT(src->format() == this->format(), "Invalid format");
+		ASSERT(src->component() == this->component(), "Invalid components");
+		ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
+		ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
+		if (m_copyFBO == 0)
+			glGenFramebuffers(1, &m_copyFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (GLuint)src->handle()(), 0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 	Handle handle() override
 	{
 		return Handle((uintptr_t)m_textureID);
@@ -745,6 +764,7 @@ public:
 		return m_textureID;
 	}
 private:
+	GLuint m_copyFBO;
 	GLuint m_textureID;
 	bool m_isFramebuffer;
 };
@@ -929,6 +949,18 @@ public:
 		glClearStencil(1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	{
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->m_framebufferID);
+		glBlitFramebuffer(
+			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h, 
+			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
+			GL_COLOR_BUFFER_BIT, 
+			gl::filter(filter)
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
 		for (Attachment& attachment : m_attachments)
@@ -976,6 +1008,18 @@ public:
 		glClearStencil(1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	{
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->getFramebufferID());
+		glBlitFramebuffer(
+			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h,
+			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
+			GL_COLOR_BUFFER_BIT,
+			gl::filter(filter)
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 	Texture::Ptr attachment(AttachmentType type) override
 	{
 		// We do not have access to backbuffer attachment with GL.
@@ -989,7 +1033,7 @@ struct GLContext
 	bool vsync = true;
 };
 
-GLContext gctx;
+static GLContext gctx;
 
 void GraphicBackend::initialize(uint32_t width, uint32_t height)
 {
