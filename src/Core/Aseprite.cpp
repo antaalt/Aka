@@ -8,12 +8,19 @@
 
 namespace aka {
 
+bool Aseprite::Layer::hasFlag(LayerFlags flag) const
+{
+	return ((int)flag & (int)this->flags) == (int)flag;
+}
+
 std::vector<Aseprite::Color32> Aseprite::Frame::image(const Aseprite& ase) const
 {
 	std::vector<Color32> pixels(ase.width * ase.height, Color32{ 0 });
 	for (const Cel& cel : cels)
 	{
 		const Layer& layer = ase.layers[cel.layerID];
+		if (!layer.hasFlag(LayerFlags::Visible))
+			continue;
 		Word opacity = (Word)((cel.opacity / 255.f) * (layer.opacity / 255.f) * 255);
 		BlendFunc blend = Aseprite::blending(layer.blendMode);
 

@@ -126,6 +126,8 @@ struct Aseprite {
 		LayerFlags flags;
 		Word childLevel;
 		Byte opacity;
+
+		bool hasFlag(LayerFlags flag) const;
 	};
 
 	struct Frame {

@@ -46,8 +46,10 @@ private:
 template <typename T, typename... Args>
 inline void Entity::add(Args&&... args)
 {
-	//ComponentID idToRegister = ComponentType::get<T>();
-	T& component = m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
+	if constexpr (sizeof...(Args) == 0)
+		m_world->registry().emplace<T>(m_handle);
+	else
+		m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
 }
 
 template <typename T>

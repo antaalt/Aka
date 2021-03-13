@@ -90,6 +90,9 @@ public:
 	// Compare a raw string with another one
 	template <typename T>
 	static bool compare(const T* lhs, const T* rhs);
+	// Format a raw string
+	template <typename ...Args>
+	static String format(const char* string, Args ...args);
 
 	// Lowercase a single character
 	static char lowercase(char c);
@@ -197,6 +200,15 @@ template <> bool String::compare<char>(const char* lhs, const char* rhs);
 template <> bool String::compare<wchar_t>(const wchar_t* lhs, const wchar_t* rhs);
 template <> bool String::compare<char16_t>(const char16_t* lhs, const char16_t* rhs);
 template <> bool String::compare<char32_t>(const char32_t* lhs, const char32_t* rhs);
+template <typename ...Args>
+static String String::format(const char* string, Args ...args)
+{
+	const size_t fmtSize = 256;
+	char buffer[fmtSize];
+	int error = snprintf(buffer, fmtSize, string, args...);
+	ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
+	return String(buffer);
+}
 
 std::ostream& operator<<(std::ostream& os, const String& str);
 std::ostream& operator<<(std::ostream& os, const Str<>& str);
