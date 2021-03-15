@@ -19,7 +19,6 @@ public:
 	String(const std::string& string);
 	String(const String& string);
 	String(String&& string);
-	String(char character);
 	String(const char* string);
 	String(const char* string, size_t length);
 	String(size_t length, char character);
@@ -181,7 +180,7 @@ using StrWide = Str<wchar_t>;
 using Str16 = Str<char16_t>;
 using Str32 = Str<char32_t>;
 
-inline String operator+(char c, const String& str) { return String(c) + str; }
+inline String operator+(char c, const String& str) { return String().append(c) + str; }
 inline String operator+(const char* s, const String& str) { return String(s) + str; }
 
 template <> const char* String::null<char>();
@@ -206,7 +205,7 @@ static String String::format(const char* string, Args ...args)
 	const size_t fmtSize = 256;
 	char buffer[fmtSize];
 	int error = snprintf(buffer, fmtSize, string, args...);
-	ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
+	AKA_ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
 	return String(buffer);
 }
 

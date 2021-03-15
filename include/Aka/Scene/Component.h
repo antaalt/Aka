@@ -16,7 +16,7 @@ struct ComponentType
 	// Get the id for the specified type
 	template <typename T>
 	static ComponentID get() {
-		ASSERT(m_typeCounter < 255, "Too many components.");
+		AKA_ASSERT(m_typeCounter < 255, "Too many components.");
 		static const ComponentID type = static_cast<ComponentID>(m_typeCounter++);
 		return type;
 	}

@@ -39,7 +39,7 @@ bool AudioStreamMp3::load(const Path& path, Audio* audio) const
 #endif
     if (sample != 0)
         return false;
-    ASSERT(sizeof(AudioFrame) == sizeof(mp3d_sample_t), "Incorrect size");
+	AKA_ASSERT(sizeof(AudioFrame) == sizeof(mp3d_sample_t), "Incorrect size");
     audio->frames.resize(info.samples);
     audio->channels = info.channels;
     audio->duration = info.samples / (float)(info.channels * info.hz);
@@ -72,7 +72,7 @@ bool AudioStreamMp3::close()
 bool AudioStreamMp3::decode(AudioFrame* buffer, size_t bytes)
 {
     size_t readed = mp3dec_ex_read(&m_mp3d, (mp3d_sample_t*)buffer, bytes);
-    ASSERT(m_mp3d.last_error == 0, "Error while reading file");
+	AKA_ASSERT(m_mp3d.last_error == 0, "Error while reading file");
     if (readed != bytes) // Reached eof
         return false;
     return true;
@@ -80,7 +80,7 @@ bool AudioStreamMp3::decode(AudioFrame* buffer, size_t bytes)
 void AudioStreamMp3::seek(uint64_t position)
 {
     int result = mp3dec_ex_seek(&m_mp3d, position * m_mp3d.info.channels);
-    ASSERT(result == 0, "Error while seeking");
+	AKA_ASSERT(result == 0, "Error while seeking");
 }
 
 bool AudioStreamMp3::playing() const

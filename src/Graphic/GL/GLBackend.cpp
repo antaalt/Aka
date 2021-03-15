@@ -724,8 +724,8 @@ public:
 	}
 	void upload(const Rect& rect, const void* data) override
 	{
-		ASSERT(rect.x + rect.w <= m_width, "");
-		ASSERT(rect.y + rect.h <= m_height, "");
+		AKA_ASSERT(rect.x + rect.w <= m_width, "");
+		AKA_ASSERT(rect.y + rect.h <= m_height, "");
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
@@ -738,14 +738,14 @@ public:
 	}
 	void copy(Texture::Ptr src, const Rect& rect) override
 	{
-		ASSERT(src->format() == this->format(), "Invalid format");
-		ASSERT(src->component() == this->component(), "Invalid components");
-		ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
-		ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
+		AKA_ASSERT(src->format() == this->format(), "Invalid format");
+		AKA_ASSERT(src->component() == this->component(), "Invalid components");
+		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
+		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
 		if (m_copyFBO == 0)
 			glGenFramebuffers(1, &m_copyFBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (GLuint)src->handle()(), 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (GLuint)src->handle().value(), 0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -898,7 +898,7 @@ public:
 			att.type = attachments[iAtt];
 			att.texture = tex;
 		}
-		ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
+		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	GLFramebuffer(const GLFramebuffer&) = delete;
@@ -936,7 +936,7 @@ public:
 			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), GL_TEXTURE_2D, tex->getTextureID(), 0);
 			attachment.texture = tex;
 		}
-		ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
+		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		m_width = width;
 		m_height = height;
@@ -1318,16 +1318,9 @@ void GraphicBackend::dispatch(ComputePass& pass)
 void GraphicBackend::screenshot(const Path& path)
 {
 	glFinish();
-	Image image;
-	image.width = gctx.backbuffer->width();
-	image.height = gctx.backbuffer->height();
-	image.bytes.resize(image.width * image.height * 4);
-	std::vector<uint8_t> bytes(image.bytes.size());
-	glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE, bytes.data());
-	uint32_t stride = 4 * image.width;
-	for (uint32_t y = 0; y < image.height; y++)
-		memcpy(image.bytes.data() + stride * y, bytes.data() + image.bytes.size() - stride - stride * y, stride);
-	image.save("./output.png");
+	Image image(gctx.backbuffer->width(), gctx.backbuffer->height(), 4);
+	glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE, image.bytes.data());
+	image.save(path);
 }
 
 void GraphicBackend::vsync(bool enabled)

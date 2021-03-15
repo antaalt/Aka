@@ -535,11 +535,11 @@ public:
 	}
 	void copy(Texture::Ptr src, const Rect& rect) override
 	{
-		ASSERT(src->format() == this->format(), "Invalid format");
-		ASSERT(src->component() == this->component(), "Invalid components");
-		ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
-		ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
-		ASSERT(rect.x > 0 && rect.y > 0, "Not supported");
+		AKA_ASSERT(src->format() == this->format(), "Invalid format");
+		AKA_ASSERT(src->component() == this->component(), "Invalid components");
+		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
+		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
+		AKA_ASSERT(rect.x > 0 && rect.y > 0, "Not supported");
 
 		D3D11_BOX box{};
 		box.left = rect.x;
@@ -606,7 +606,7 @@ public:
 			m_attachments.push_back(Attachment{ attachments[i], tex });
 			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
 			{
-				ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
+				AKA_ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
 				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
 			}
 			else
@@ -1150,7 +1150,7 @@ public:
 		// Now setup the layout of the data that goes into the shader.
 		// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
 		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(data.attributes.size());
-		ASSERT(m_attributes.size() == data.attributes.size(), "Incorrect size");
+		AKA_ASSERT(m_attributes.size() == data.attributes.size(), "Incorrect size");
 		for (uint32_t i = 0; i < data.attributes.size(); i++)
 		{
 			polygonLayout[i].SemanticName = m_attributes[i].name.c_str();
@@ -1449,7 +1449,7 @@ public:
 		{
 			for (uint32_t iBuffer = 0; iBuffer < m_vertexUniformBuffers.size(); iBuffer++)
 			{
-				ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
+				AKA_ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
 				D3D11_MAPPED_SUBRESOURCE mappedResource{};
 				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 				memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
@@ -1461,7 +1461,7 @@ public:
 		{
 			for (uint32_t iBuffer = 0; iBuffer < m_fragmentUniformBuffers.size(); iBuffer++)
 			{
-				ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
+				AKA_ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
 				D3D11_MAPPED_SUBRESOURCE mappedResource{};
 				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
 				memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());

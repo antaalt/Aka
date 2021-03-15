@@ -151,8 +151,8 @@ uint32_t AudioBackend::getChannels()
 
 bool AudioBackend::play(AudioStream::Ptr stream)
 {
-	ASSERT(AudioBackend::getFrequency() == stream->frequency(), "Audio will need resampling");
-	ASSERT(AudioBackend::getChannels() == stream->channels(), "Audio channels does not match");
+	AKA_ASSERT(AudioBackend::getFrequency() == stream->frequency(), "Audio will need resampling");
+	AKA_ASSERT(AudioBackend::getChannels() == stream->channels(), "Audio channels does not match");
 	std::lock_guard<std::mutex> m(ctx.lock);
 	auto it = ctx.audios.insert(stream);
 	return it.second;

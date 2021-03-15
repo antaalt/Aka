@@ -155,13 +155,13 @@ inline Vector<T>::operator std::vector<T>() const
 template <typename T>
 inline T& Vector<T>::operator[](size_t index)
 {
-	ASSERT(index < m_size, "Out of range");
+	AKA_ASSERT(index < m_size, "Out of range");
 	return m_data[index];
 }
 template <typename T>
 inline const T& Vector<T>::operator[](size_t index) const
 {
-	ASSERT(index < m_size, "Out of range");
+	AKA_ASSERT(index < m_size, "Out of range");
 	return m_data[index];
 }
 template <typename T>
@@ -184,7 +184,7 @@ inline Vector<T>& Vector<T>::append(const Vector<T>& vector)
 template <typename T>
 inline Vector<T>& Vector<T>::append(const T* start, const T*end)
 {
-	ASSERT(end >= start, "Invalid range");
+	AKA_ASSERT(end >= start, "Invalid range");
 	size_t off = m_size;
 	resize(m_size + (end - start));
 	memcpy(m_data + off, start, (end - start) * sizeof(T));

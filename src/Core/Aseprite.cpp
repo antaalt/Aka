@@ -57,9 +57,9 @@ Aseprite Aseprite::parse(Stream& reader)
 		ase.flags = reader.read<Aseprite::DWord>();
 		ase.speed = reader.read<Aseprite::Word>();
 		Aseprite::DWord zero = reader.read<Aseprite::DWord>();
-		ASSERT(zero == 0, "Should be zero");
+		AKA_ASSERT(zero == 0, "Should be zero");
 		zero = reader.read<Aseprite::DWord>();
-		ASSERT(zero == 0, "Should be zero");
+		AKA_ASSERT(zero == 0, "Should be zero");
 		Aseprite::Byte paletteEntryIndex = reader.read<Aseprite::Byte>();
 		reader.skim(3); // ignore
 		Aseprite::Word colorCount = reader.read<Aseprite::Word>();
@@ -93,7 +93,7 @@ Aseprite Aseprite::parse(Stream& reader)
 			Aseprite::DWord chunkCount = reader.read<Aseprite::DWord>();
 			if (chunkCount == 0)
 			{
-				ASSERT(oldChunkCount != 0xFFFF, "Should be set to this value");
+				AKA_ASSERT(oldChunkCount != 0xFFFF, "Should be set to this value");
 				chunkCount = oldChunkCount;
 			}
 			Aseprite::UserData* last = nullptr;
@@ -309,7 +309,7 @@ Aseprite Aseprite::parse(Stream& reader)
 					Aseprite::DWord paletteSize = reader.read<Aseprite::DWord>();
 					Aseprite::DWord firstColor = reader.read<Aseprite::DWord>();
 					Aseprite::DWord lastColor = reader.read<Aseprite::DWord>();
-					ASSERT(lastColor - firstColor + 1 == paletteSize, "Incorrect palette count");
+					AKA_ASSERT(lastColor - firstColor + 1 == paletteSize, "Incorrect palette count");
 					ase.palette.resize(ase.palette.size() + paletteSize * 4);
 					reader.skim(8);
 					for (Aseprite::DWord iEntry = firstColor; iEntry <= lastColor; iEntry++)
@@ -391,9 +391,9 @@ Aseprite Aseprite::parse(Stream& reader)
 					reader.skim(chunkSize - chunkHeaderSize);
 				}
 				}
-				ASSERT(reader.offset() - chunkOffset == chunkSize, "Invalid chunk reading");
+				AKA_ASSERT(reader.offset() - chunkOffset == chunkSize, "Invalid chunk reading");
 			}
-			ASSERT(reader.offset() - frameOffset == frameSize, "Invalid frame reading");
+			AKA_ASSERT(reader.offset() - frameOffset == frameSize, "Invalid frame reading");
 		}
 	}
 	return ase;

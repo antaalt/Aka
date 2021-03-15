@@ -36,14 +36,6 @@ String::String(String&& string) :
 	std::swap(m_length, string.m_length);
 	std::swap(m_capacity, string.m_capacity);
 }
-String::String(char character) :
-	m_string(new char[defaultCapacity]),
-	m_length(1),
-	m_capacity(defaultCapacity)
-{
-	m_string[0] = character;
-	m_string[1] = '\0';
-}
 String::String(const char* str) :
 	String(str, String::length(str))
 {
@@ -101,12 +93,12 @@ String::operator std::string() const
 }
 char& String::operator[](size_t index)
 {
-	ASSERT(index < m_length, "Out of range");
+	AKA_ASSERT(index <= m_length, "Out of range");
 	return m_string[index];
 }
 const char& String::operator[](size_t index) const
 {
-	ASSERT(index < m_length, "Out of range");
+	AKA_ASSERT(index <= m_length, "Out of range");
 	return m_string[index];
 }
 bool String::operator==(const String& str) const
@@ -268,33 +260,33 @@ const char32_t* String::null<char32_t>()
 template <>
 char* String::copy<char>(char* dst, size_t dstSize, const char* src)
 {
+	AKA_ASSERT(String::length(src) < dstSize, "Buffer overflow");
 	strncpy(dst, src, dstSize);
-	dst[dstSize - 1] = '\0'; // Avoid buffer overflow
 	return dst;
 }
 template <>
 wchar_t* String::copy<wchar_t>(wchar_t* dst, size_t dstSize, const wchar_t* src)
 {
+	AKA_ASSERT(String::length(src) < dstSize, "Buffer overflow");
 	wcsncpy(dst, src, dstSize);
-	dst[dstSize - 1] = L'\0'; // Avoid buffer overflow
 	return dst;
 }
 template <>
 char16_t* String::copy<char16_t>(char16_t* dst, size_t dstSize, const char16_t* src)
 {
+	AKA_ASSERT(String::length(src) < dstSize, "Buffer overflow");
 	size_t size = 0;
 	char16_t* tmp = dst;
 	while ((*tmp++ = *src++) != 0 && size++ < dstSize);
-	dst[dstSize - 1] = L'\0'; // Avoid buffer overflow
 	return dst;
 }
 template <>
 char32_t* String::copy<char32_t>(char32_t* dst, size_t dstSize, const char32_t* src)
 {
+	AKA_ASSERT(String::length(src) < dstSize, "Buffer overflow");
 	size_t size = 0;
 	char32_t* tmp = dst;
 	while ((*tmp++ = *src++) != 0 && size++ < dstSize);
-	dst[dstSize - 1] = L'\0'; // Avoid buffer overflow
 	return dst;
 }
 template <>
@@ -425,11 +417,14 @@ std::vector<String> String::split(char c) const
 }
 String String::substr(size_t start) const
 {
-	return String(m_string + start, m_length - start);
+	return substr(start, m_length - start);
 }
 String String::substr(size_t start, size_t len) const
 {
-	return String(m_string + start, len);
+	String str(len);
+	strncpy(str.m_string, m_string + start, len);
+	str[len] = '\0';
+	return str;
 }
 
 std::ostream& operator<<(std::ostream& os, const String& str)

@@ -67,7 +67,7 @@ inline bool Entity::has() const
 template <typename T>
 inline void Entity::remove()
 {
-	ASSERT(has<T>(), "Trying to remove component that is not owned.");
+	AKA_ASSERT(has<T>(), "Trying to remove component that is not owned.");
 	m_world->registry().remove<T>(m_handle);
 }
 

@@ -10,21 +10,21 @@ Packer::Packer(uint32_t elements, uint32_t elementWidth, uint32_t elementHeight)
     m_image((m_elementCount* m_elementSize).x, (m_elementCount* m_elementSize).y, 4),
     m_regions(elements)
 {
-    ASSERT(m_image.width < 4096, "Atlas too wide.");
-    ASSERT(m_image.height < 4096, "Atlas too high.");
+	AKA_ASSERT(m_image.width < 4096, "Atlas too wide.");
+	AKA_ASSERT(m_image.height < 4096, "Atlas too high.");
 }
 void Packer::add(uint32_t id, const Image& image)
 {
     if (m_packed) return;
-    ASSERT(image.components == 4, "Does not support image with less than 4 components");
+	AKA_ASSERT(image.components == 4, "Does not support image with less than 4 components");
     add(id, image.width, image.height, image.bytes.data());
 }
 void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* data)
 {
     if (m_packed) return;
-    ASSERT(width <= m_elementSize.x, "Element too big on x");
-    ASSERT(height <= m_elementSize.y, "Element too big on y");
-    ASSERT(id < m_elements, "ID out of bound");
+	AKA_ASSERT(width <= m_elementSize.x, "Element too big on x");
+	AKA_ASSERT(height <= m_elementSize.y, "Element too big on y");
+	AKA_ASSERT(id < m_elements, "ID out of bound");
     uint32_t idx = id % m_elementCount.x;
     uint32_t idy = id / m_elementCount.x;
     for (uint32_t y = 0; y < height; y++)

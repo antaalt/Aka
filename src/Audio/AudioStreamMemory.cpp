@@ -24,19 +24,19 @@ AudioStreamMemory::AudioStreamMemory(const AudioFrame* data, size_t length, uint
 
 bool AudioStreamMemory::load(const Path& path, Audio *audio) const
 {
-    ASSERT(false, "Cannot load an memory stream directly");
+	AKA_ASSERT(false, "Cannot load an memory stream directly");
     return false;
 }
 
 bool AudioStreamMemory::open(const Path& path)
 {
-    ASSERT(false, "Cannot open an memory stream");
+	AKA_ASSERT(false, "Cannot open an memory stream");
     return false;
 }
 
 bool AudioStreamMemory::close()
 {
-    ASSERT(false, "Cannot close an memory stream");
+	AKA_ASSERT(false, "Cannot close an memory stream");
     return false;
 }
 

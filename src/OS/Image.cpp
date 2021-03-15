@@ -112,7 +112,7 @@ void Image::set(uint32_t x, uint32_t y, const color24& color)
 
 void Image::set(uint32_t x, uint32_t y, const color32& color)
 {
-	ASSERT(components == 4, "Cannot set color4 to image.");
+	AKA_ASSERT(components == 4, "Cannot set color4 to image.");
 	bytes[y * width * components + x + 0] = color.r;
 	bytes[y * width * components + x + 1] = color.g;
 	bytes[y * width * components + x + 2] = color.b;
@@ -245,7 +245,7 @@ void ImageHDR::set(uint32_t x, uint32_t y, const color3f& color)
 
 void ImageHDR::set(uint32_t x, uint32_t y, const color4f& color)
 {
-	ASSERT(components == 4, "Cannot set color4 to image.");
+	AKA_ASSERT(components == 4, "Cannot set color4 to image.");
 	bytes[y * width * components + x + 0] = color.r;
 	bytes[y * width * components + x + 1] = color.g;
 	bytes[y * width * components + x + 2] = color.b;

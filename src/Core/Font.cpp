@@ -108,7 +108,7 @@ vec2i Font::size(const String& text) const
 
 const Character& Font::getCharacter(uint32_t c) const
 {
-    ASSERT(c < m_characters.size(), "Glyph out of range");
+	AKA_ASSERT(c < m_characters.size(), "Glyph out of range");
     return m_characters[c];
 }
 

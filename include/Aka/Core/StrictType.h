@@ -17,8 +17,8 @@ public:
 
 	constexpr Type &value() { return m_value; }
 	constexpr const Type &value() const { return m_value; }
-	constexpr Type &operator()() { return m_value; }
-	constexpr const Type &operator()() const { return m_value; }
+	constexpr explicit operator Type& () { return m_value; }
+	constexpr explicit operator const Type& () const { return m_value; }
 
 	constexpr bool operator==(const ST& rhs) const { return m_value == rhs.m_value; }
 	constexpr bool operator!=(const ST& rhs) const { return m_value != rhs.m_value; }
@@ -26,17 +26,29 @@ public:
 	constexpr bool operator>(const ST& rhs) const { return m_value > rhs.m_value; }
 	constexpr bool operator<=(const ST& rhs) const { return m_value <= rhs.m_value; }
 	constexpr bool operator>=(const ST& rhs) const { return m_value >= rhs.m_value; }
-	constexpr ST operator+(const ST& rhs) const { return m_value + rhs.m_value; }
-	constexpr ST operator-(const ST& rhs) const { return m_value - rhs.m_value; }
-	constexpr ST& operator+=(const ST& rhs) const { m_value += rhs.m_value; return *this; }
-	constexpr ST& operator-=(const ST& rhs) const { m_value -= rhs.m_value; return *this; }
 
-	ST& operator+=(const ST& rhs) { m_value = m_value + rhs; return *this; }
-	ST& operator-=(const ST& rhs) { m_value = m_value - rhs; return *this; }
-	Type& operator++() { m_value++;  return *this; }
-	Type& operator--() { m_value--;  return *this; }
-	Type operator++(int) { const Type ret(m_value); m_value++; return ret; }
-	Type operator--(int) { const Type ret(m_value); m_value--; return ret; }
+	constexpr ST operator+(const ST& rhs) const { return ST(m_value + rhs.m_value); }
+	constexpr ST operator-(const ST& rhs) const { return ST(m_value - rhs.m_value); }
+	constexpr ST operator/(const ST& rhs) const { return ST(m_value / rhs.m_value); }
+	constexpr ST operator*(const ST& rhs) const { return ST(m_value * rhs.m_value); }
+	constexpr ST& operator+=(const ST& rhs) { m_value += rhs.m_value; return *this; }
+	constexpr ST& operator-=(const ST& rhs) { m_value -= rhs.m_value; return *this; }
+	constexpr ST& operator/=(const ST& rhs) { m_value /= rhs.m_value; return *this; }
+	constexpr ST& operator*=(const ST& rhs) { m_value *= rhs.m_value; return *this; }
+
+	constexpr ST operator+(const Type& rhs) const { return ST(m_value + rhs); }
+	constexpr ST operator-(const Type& rhs) const { return ST(m_value - rhs); }
+	constexpr ST operator/(const Type& rhs) const { return ST(m_value / rhs); }
+	constexpr ST operator*(const Type& rhs) const { return ST(m_value * rhs); }
+	constexpr ST& operator+=(const Type& rhs) { m_value = m_value + rhs; return *this; }
+	constexpr ST& operator-=(const Type& rhs) { m_value = m_value - rhs; return *this; }
+	constexpr ST& operator/=(const Type& rhs) { m_value = m_value / rhs; return *this; }
+	constexpr ST& operator*=(const Type& rhs) { m_value = m_value * rhs; return *this; }
+
+	constexpr ST& operator++() { ++m_value;  return *this; }
+	constexpr ST& operator--() { --m_value;  return *this; }
+	constexpr ST operator++(int) { return ST(m_value++); }
+	constexpr ST operator--(int) { return ST(m_value--); }
 
 private:
 	Type m_value;
