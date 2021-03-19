@@ -885,6 +885,9 @@ public:
 				format = Texture::Format::UnsignedByte;
 				break;
 			case AttachmentType::Depth:
+				component = Texture::Component::Depth;
+				format = Texture::Format::Float;
+				break;
 			case AttachmentType::Stencil:
 			case AttachmentType::DepthStencil:
 				component = Texture::Component::DepthStencil;
@@ -941,13 +944,28 @@ public:
 		m_width = width;
 		m_height = height;
 	}
-	void clear(float r, float g, float b, float a) override
+	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
+		if (mask == ClearMask::None)
+			return;
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
-		glClearColor(r, g, b, a);
-		glClearDepth(1.f);
-		glClearStencil(1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		GLenum glMask = 0;
+		if ((ClearMask)((int)mask & (int)ClearMask::Color) == ClearMask::Color)
+		{
+			glClearColor(color.r, color.g, color.b, color.a);
+			glMask |= GL_COLOR_BUFFER_BIT;
+		}
+		if ((ClearMask)((int)mask & (int)ClearMask::Depth) == ClearMask::Depth)
+		{
+			glClearDepth(depth);
+			glMask |= GL_DEPTH_BUFFER_BIT;
+		}
+		if ((ClearMask)((int)mask & (int)ClearMask::Stencil) == ClearMask::Stencil)
+		{
+			glClearStencil(stencil);
+			glMask |= GL_STENCIL_BUFFER_BIT;
+		}
+		glClear(glMask);
 	}
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
 	{
@@ -1000,13 +1018,28 @@ public:
 	{
 		resize(event.width, event.height);
 	}
-	void clear(float r, float g, float b, float a) override
+	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
+		if (mask == ClearMask::None)
+			return;
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glClearColor(r, g, b, a);
-		glClearDepth(1.f);
-		glClearStencil(1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		GLenum glMask = 0;
+		if ((ClearMask)((int)mask & (int)ClearMask::Color) == ClearMask::Color)
+		{
+			glClearColor(color.r, color.g, color.b, color.a);
+			glMask |= GL_COLOR_BUFFER_BIT;
+		}
+		if ((ClearMask)((int)mask & (int)ClearMask::Depth) == ClearMask::Depth)
+		{
+			glClearDepth(depth);
+			glMask |= GL_DEPTH_BUFFER_BIT;
+		}
+		if ((ClearMask)((int)mask & (int)ClearMask::Stencil) == ClearMask::Stencil)
+		{
+			glClearStencil(stencil);
+			glMask |= GL_STENCIL_BUFFER_BIT;
+		}
+		glClear(glMask);
 	}
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
 	{
@@ -1108,6 +1141,9 @@ void GraphicBackend::render(RenderPass& pass)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
+		// Clear
+		if(pass.clear.mask != ClearMask::None)
+			pass.framebuffer->clear(pass.clear.color, pass.clear.depth, pass.clear.stencil, pass.clear.mask);
 	}
 
 	{

@@ -8,6 +8,14 @@
 
 namespace aka {
 
+enum class ClearMask {
+	None = 0,
+	Color = 1,
+	Depth = 2,
+	Stencil = 4,
+	All = Color | Depth | Stencil
+};
+
 class Framebuffer
 {
 public:
@@ -53,7 +61,7 @@ public:
 	virtual void resize(uint32_t width, uint32_t height) = 0;
 
 	// Clear the framebuffer
-	virtual void clear(float r, float g, float b, float a) = 0;
+	virtual void clear(const color4f& color, float depth = 1.f, int stencil = 1, ClearMask mask = ClearMask::All) = 0;
 
 	// Blit a whole framebuffer into another one
 	void blit(Framebuffer::Ptr src, Sampler::Filter filter);

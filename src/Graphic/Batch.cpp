@@ -359,12 +359,15 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 		static const Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
 		static const Depth depth = Depth{ DepthCompare::None, true };
 		static const Stencil stencil = Stencil::none();
+		static const Clear clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };
 		// Prepare renderPass
 		renderPass.framebuffer = framebuffer;
 
 		renderPass.mesh = m_mesh;
 
 		renderPass.material = m_material;
+
+		renderPass.clear = clear;
 
 		renderPass.blend = blend;
 

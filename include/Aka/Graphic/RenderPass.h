@@ -161,6 +161,14 @@ struct Stencil
 	bool enabled() const;
 };
 
+struct Clear
+{
+	ClearMask mask;
+	color4f color;
+	float depth;
+	int stencil;
+};
+
 struct RenderPass
 {
 	// Framebuffer to render to
@@ -173,6 +181,8 @@ struct RenderPass
 	uint32_t indexCount;
 	// Material for mesh
 	ShaderMaterial::Ptr material;
+	// Clear values for framebuffer
+	Clear clear;
 	// Blending for alpha operation
 	Blending blend;
 	// Culling for triangle face
