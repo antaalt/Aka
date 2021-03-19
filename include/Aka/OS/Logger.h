@@ -2,6 +2,8 @@
 
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/Time.h>
+#include <Aka/Core/Debug.h>
+
 
 #include <iostream>
 #include <mutex>
@@ -76,22 +78,19 @@ inline void Logger::Channel::print(Args ...args)
 {
 	if (muted) return;
 	Date date = Date::localtime();
-	char buffer[26];
-	int result = snprintf(buffer, 26, "[%04d-%02d-%02d %02d:%02d:%02d]",
+	char buffer[40];
+	int result = snprintf(buffer, 40, "[%04d-%02d-%02d %02d:%02d:%02d][%s]",
 		date.year,
 		date.month,
 		date.day,
 		date.hour,
 		date.minute,
-		date.second
+		date.second,
+		this->name.c_str()
 	);
-	std::string head;
-	head += (result == 0 ? "[Unknown time]" : buffer);
-	head += "[";
-	head += this->name;
-	head += "]";
+	AKA_ASSERT(result != 0, "Failed formatting of string.");
 	std::lock_guard<std::mutex> m(this->writeLock);
-	doPrint(this->ostream, this->color, head, args...);
+	doPrint(this->ostream, this->color, buffer, args...);
 	ostream << Logger::Color::ForegroundWhite << std::endl; // Default color
 }
 

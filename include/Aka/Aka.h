@@ -33,6 +33,7 @@
 #include "OS/Time.h"
 #include "OS/Image.h"
 #include "OS/Endian.h"
+#include "OS/StopWatch.h"
 #include "OS/Stream/MemoryStream.h"
 #include "OS/Stream/FileStream.h"
 

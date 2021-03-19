@@ -13,356 +13,394 @@
 
 namespace aka {
 
-const input::Key glfwKeyMap[512] = {
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Space, // GLFW_KEY_SPACE              32
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Apostrophe, // GLFW_KEY_APOSTROPHE         39
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Comma, // GLFW_KEY_COMMA              44
-	input::Key::Minus, // GLFW_KEY_MINUS              45
-	input::Key::Period, // GLFW_KEY_PERIOD             46
-	input::Key::Slash, // GLFW_KEY_SLASH              47
-	input::Key::Num0, // GLFW_KEY_0                  48
-	input::Key::Num1, // GLFW_KEY_1                  49
-	input::Key::Num2, // GLFW_KEY_2                  50
-	input::Key::Num3, // GLFW_KEY_3                  51
-	input::Key::Num4, // GLFW_KEY_4                  52
-	input::Key::Num5, // GLFW_KEY_5                  53
-	input::Key::Num6, // GLFW_KEY_6                  54
-	input::Key::Num7, // GLFW_KEY_7                  55
-	input::Key::Num8, // GLFW_KEY_8                  56
-	input::Key::Num9, // GLFW_KEY_9                  57
-	input::Key::Unknown,
-	input::Key::Semicolon, // GLFW_KEY_SEMICOLON          59
-	input::Key::Unknown,
-	input::Key::Equal, // GLFW_KEY_EQUAL              61
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::A, // GLFW_KEY_A                  65
-	input::Key::B, // GLFW_KEY_B                  66
-	input::Key::C, // GLFW_KEY_C                  67
-	input::Key::D, // GLFW_KEY_D                  68
-	input::Key::E, // GLFW_KEY_E                  69
-	input::Key::F, // GLFW_KEY_F                  70
-	input::Key::G, // GLFW_KEY_G                  71
-	input::Key::H, // GLFW_KEY_H                  72
-	input::Key::I, // GLFW_KEY_I                  73
-	input::Key::J, // GLFW_KEY_J                  74
-	input::Key::K, // GLFW_KEY_K                  75
-	input::Key::L, // GLFW_KEY_L                  76
-	input::Key::M, // GLFW_KEY_M                  77
-	input::Key::N, // GLFW_KEY_N                  78
-	input::Key::O, // GLFW_KEY_O                  79
-	input::Key::P, // GLFW_KEY_P                  80
-	input::Key::Q, // GLFW_KEY_Q                  81
-	input::Key::R, // GLFW_KEY_R                  82
-	input::Key::S, // GLFW_KEY_S                  83
-	input::Key::T, // GLFW_KEY_T                  84
-	input::Key::U, // GLFW_KEY_U                  85
-	input::Key::V, // GLFW_KEY_V                  86
-	input::Key::W, // GLFW_KEY_W                  87
-	input::Key::X, // GLFW_KEY_X                  88
-	input::Key::Y, // GLFW_KEY_Y                  89
-	input::Key::Z, // GLFW_KEY_Z                  90
-	input::Key::BracketLeft, // GLFW_KEY_LEFT_BRACKET       91
-	input::Key::BackSlash, // GLFW_KEY_BACKSLASH          92
-	input::Key::BracketRight, // GLFW_KEY_RIGHT_BRACKET      93
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Grave, // GLFW_KEY_GRAVE_ACCENT       96
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown, // GLFW_KEY_WORLD_1            161
-	input::Key::Unknown, // GLFW_KEY_WORLD_2            162
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Escape, // GLFW_KEY_ESCAPE             256
-	input::Key::Enter, // GLFW_KEY_ENTER              257
-	input::Key::Tab, // GLFW_KEY_TAB                258
-	input::Key::BackSpace, // GLFW_KEY_BACKSPACE          259
-	input::Key::Insert, // GLFW_KEY_INSERT             260
-	input::Key::Delete, // GLFW_KEY_DELETE             261
-	input::Key::ArrowRight, // GLFW_KEY_RIGHT              262
-	input::Key::ArrowLeft, // GLFW_KEY_LEFT               263
-	input::Key::ArrowDown, // GLFW_KEY_DOWN               264
-	input::Key::ArrowUp, // GLFW_KEY_UP                 265
-	input::Key::PageUp, // GLFW_KEY_PAGE_UP            266
-	input::Key::PageDown, // GLFW_KEY_PAGE_DOWN          267
-	input::Key::Home, // GLFW_KEY_HOME               268
-	input::Key::End, // GLFW_KEY_END                269
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::CapsLock, // GLFW_KEY_CAPS_LOCK          280
-	input::Key::ScrollLock, // GLFW_KEY_SCROLL_LOCK        281
-	input::Key::NumLock, // GLFW_KEY_NUM_LOCK           282
-	input::Key::PrintScreen, // GLFW_KEY_PRINT_SCREEN       283
-	input::Key::Pause, // GLFW_KEY_PAUSE              284
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::F1, // GLFW_KEY_F1                 290
-	input::Key::F2, // GLFW_KEY_F2                 291
-	input::Key::F3, // GLFW_KEY_F3                 292
-	input::Key::F4, // GLFW_KEY_F4                 293
-	input::Key::F5, // GLFW_KEY_F5                 294
-	input::Key::F6, // GLFW_KEY_F6                 295
-	input::Key::F7, // GLFW_KEY_F7                 296
-	input::Key::F8, // GLFW_KEY_F8                 297
-	input::Key::F9, // GLFW_KEY_F9                 298
-	input::Key::F10, // GLFW_KEY_F10                299
-	input::Key::F11, // GLFW_KEY_F11                300
-	input::Key::F12, // GLFW_KEY_F12                301
-	input::Key::Unknown, // GLFW_KEY_F13                302
-	input::Key::Unknown, // GLFW_KEY_F14                303
-	input::Key::Unknown, // GLFW_KEY_F15                304
-	input::Key::Unknown, // GLFW_KEY_F16                305
-	input::Key::Unknown, // GLFW_KEY_F17                306
-	input::Key::Unknown, // GLFW_KEY_F18                307
-	input::Key::Unknown, // GLFW_KEY_F19                308
-	input::Key::Unknown, // GLFW_KEY_F20                309
-	input::Key::Unknown, // GLFW_KEY_F21                310
-	input::Key::Unknown, // GLFW_KEY_F22                311
-	input::Key::Unknown, // GLFW_KEY_F23                312
-	input::Key::Unknown, // GLFW_KEY_F24                313
-	input::Key::Unknown, // GLFW_KEY_F25                314
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::KeyPad0, // GLFW_KEY_KP_0               320
-	input::Key::KeyPad1, // GLFW_KEY_KP_1               321
-	input::Key::KeyPad2, // GLFW_KEY_KP_2               322
-	input::Key::KeyPad3, // GLFW_KEY_KP_3               323
-	input::Key::KeyPad4, // GLFW_KEY_KP_4               324
-	input::Key::KeyPad5, // GLFW_KEY_KP_5               325
-	input::Key::KeyPad6, // GLFW_KEY_KP_6               326
-	input::Key::KeyPad7, // GLFW_KEY_KP_7               327
-	input::Key::KeyPad8, // GLFW_KEY_KP_8               328
-	input::Key::KeyPad9, // GLFW_KEY_KP_9               329
-	input::Key::KeyPadDecimal, // GLFW_KEY_KP_DECIMAL         330
-	input::Key::KeyPadDivide, // GLFW_KEY_KP_DIVIDE          331
-	input::Key::KeyPadMultiply, // GLFW_KEY_KP_MULTIPLY        332
-	input::Key::KeyPadSubstract, // GLFW_KEY_KP_SUBTRACT        333
-	input::Key::KeyPadAdd, // GLFW_KEY_KP_ADD             334
-	input::Key::KeyPadEnter, // GLFW_KEY_KP_ENTER           335
-	input::Key::Unknown, // GLFW_KEY_KP_EQUAL           336
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::Unknown,
-	input::Key::ShiftLeft, // GLFW_KEY_LEFT_SHIFT         340
-	input::Key::ControlLeft, // GLFW_KEY_LEFT_CONTROL       341
-	input::Key::AltLeft, // GLFW_KEY_LEFT_ALT           342
-	input::Key::Unknown, // GLFW_KEY_LEFT_SUPER         343
-	input::Key::ShiftRight, // GLFW_KEY_RIGHT_SHIFT        344
-	input::Key::ControlRight, // GLFW_KEY_RIGHT_CONTROL      345
-	input::Key::AltRight, // GLFW_KEY_RIGHT_ALT          346
-	input::Key::Unknown, // GLFW_KEY_RIGHT_SUPER        347
-	input::Key::Menu, // GLFW_KEY_MENU               348
+const KeyboardKey glfwKeyboardKeyMap[512] = {
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Space, // GLFW_KEY_SPACE              32
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Apostrophe, // GLFW_KEY_APOSTROPHE         39
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Comma, // GLFW_KEY_COMMA              44
+	KeyboardKey::Minus, // GLFW_KEY_MINUS              45
+	KeyboardKey::Period, // GLFW_KEY_PERIOD             46
+	KeyboardKey::Slash, // GLFW_KEY_SLASH              47
+	KeyboardKey::Num0, // GLFW_KEY_0                  48
+	KeyboardKey::Num1, // GLFW_KEY_1                  49
+	KeyboardKey::Num2, // GLFW_KEY_2                  50
+	KeyboardKey::Num3, // GLFW_KEY_3                  51
+	KeyboardKey::Num4, // GLFW_KEY_4                  52
+	KeyboardKey::Num5, // GLFW_KEY_5                  53
+	KeyboardKey::Num6, // GLFW_KEY_6                  54
+	KeyboardKey::Num7, // GLFW_KEY_7                  55
+	KeyboardKey::Num8, // GLFW_KEY_8                  56
+	KeyboardKey::Num9, // GLFW_KEY_9                  57
+	KeyboardKey::Unknown,
+	KeyboardKey::Semicolon, // GLFW_KEY_SEMICOLON          59
+	KeyboardKey::Unknown,
+	KeyboardKey::Equal, // GLFW_KEY_EQUAL              61
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::A, // GLFW_KEY_A                  65
+	KeyboardKey::B, // GLFW_KEY_B                  66
+	KeyboardKey::C, // GLFW_KEY_C                  67
+	KeyboardKey::D, // GLFW_KEY_D                  68
+	KeyboardKey::E, // GLFW_KEY_E                  69
+	KeyboardKey::F, // GLFW_KEY_F                  70
+	KeyboardKey::G, // GLFW_KEY_G                  71
+	KeyboardKey::H, // GLFW_KEY_H                  72
+	KeyboardKey::I, // GLFW_KEY_I                  73
+	KeyboardKey::J, // GLFW_KEY_J                  74
+	KeyboardKey::K, // GLFW_KEY_K                  75
+	KeyboardKey::L, // GLFW_KEY_L                  76
+	KeyboardKey::M, // GLFW_KEY_M                  77
+	KeyboardKey::N, // GLFW_KEY_N                  78
+	KeyboardKey::O, // GLFW_KEY_O                  79
+	KeyboardKey::P, // GLFW_KEY_P                  80
+	KeyboardKey::Q, // GLFW_KEY_Q                  81
+	KeyboardKey::R, // GLFW_KEY_R                  82
+	KeyboardKey::S, // GLFW_KEY_S                  83
+	KeyboardKey::T, // GLFW_KEY_T                  84
+	KeyboardKey::U, // GLFW_KEY_U                  85
+	KeyboardKey::V, // GLFW_KEY_V                  86
+	KeyboardKey::W, // GLFW_KEY_W                  87
+	KeyboardKey::X, // GLFW_KEY_X                  88
+	KeyboardKey::Y, // GLFW_KEY_Y                  89
+	KeyboardKey::Z, // GLFW_KEY_Z                  90
+	KeyboardKey::BracketLeft, // GLFW_KEY_LEFT_BRACKET       91
+	KeyboardKey::BackSlash, // GLFW_KEY_BACKSLASH          92
+	KeyboardKey::BracketRight, // GLFW_KEY_RIGHT_BRACKET      93
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Grave, // GLFW_KEY_GRAVE_ACCENT       96
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown, // GLFW_KEY_WORLD_1            161
+	KeyboardKey::Unknown, // GLFW_KEY_WORLD_2            162
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Escape, // GLFW_KEY_ESCAPE             256
+	KeyboardKey::Enter, // GLFW_KEY_ENTER              257
+	KeyboardKey::Tab, // GLFW_KEY_TAB                258
+	KeyboardKey::BackSpace, // GLFW_KEY_BACKSPACE          259
+	KeyboardKey::Insert, // GLFW_KEY_INSERT             260
+	KeyboardKey::Delete, // GLFW_KEY_DELETE             261
+	KeyboardKey::ArrowRight, // GLFW_KEY_RIGHT              262
+	KeyboardKey::ArrowLeft, // GLFW_KEY_LEFT               263
+	KeyboardKey::ArrowDown, // GLFW_KEY_DOWN               264
+	KeyboardKey::ArrowUp, // GLFW_KEY_UP                 265
+	KeyboardKey::PageUp, // GLFW_KEY_PAGE_UP            266
+	KeyboardKey::PageDown, // GLFW_KEY_PAGE_DOWN          267
+	KeyboardKey::Home, // GLFW_KEY_HOME               268
+	KeyboardKey::End, // GLFW_KEY_END                269
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::CapsLock, // GLFW_KEY_CAPS_LOCK          280
+	KeyboardKey::ScrollLock, // GLFW_KEY_SCROLL_LOCK        281
+	KeyboardKey::NumLock, // GLFW_KEY_NUM_LOCK           282
+	KeyboardKey::PrintScreen, // GLFW_KEY_PRINT_SCREEN       283
+	KeyboardKey::Pause, // GLFW_KEY_PAUSE              284
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::F1, // GLFW_KEY_F1                 290
+	KeyboardKey::F2, // GLFW_KEY_F2                 291
+	KeyboardKey::F3, // GLFW_KEY_F3                 292
+	KeyboardKey::F4, // GLFW_KEY_F4                 293
+	KeyboardKey::F5, // GLFW_KEY_F5                 294
+	KeyboardKey::F6, // GLFW_KEY_F6                 295
+	KeyboardKey::F7, // GLFW_KEY_F7                 296
+	KeyboardKey::F8, // GLFW_KEY_F8                 297
+	KeyboardKey::F9, // GLFW_KEY_F9                 298
+	KeyboardKey::F10, // GLFW_KEY_F10                299
+	KeyboardKey::F11, // GLFW_KEY_F11                300
+	KeyboardKey::F12, // GLFW_KEY_F12                301
+	KeyboardKey::Unknown, // GLFW_KEY_F13                302
+	KeyboardKey::Unknown, // GLFW_KEY_F14                303
+	KeyboardKey::Unknown, // GLFW_KEY_F15                304
+	KeyboardKey::Unknown, // GLFW_KEY_F16                305
+	KeyboardKey::Unknown, // GLFW_KEY_F17                306
+	KeyboardKey::Unknown, // GLFW_KEY_F18                307
+	KeyboardKey::Unknown, // GLFW_KEY_F19                308
+	KeyboardKey::Unknown, // GLFW_KEY_F20                309
+	KeyboardKey::Unknown, // GLFW_KEY_F21                310
+	KeyboardKey::Unknown, // GLFW_KEY_F22                311
+	KeyboardKey::Unknown, // GLFW_KEY_F23                312
+	KeyboardKey::Unknown, // GLFW_KEY_F24                313
+	KeyboardKey::Unknown, // GLFW_KEY_F25                314
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::KeyPad0, // GLFW_KEY_KP_0               320
+	KeyboardKey::KeyPad1, // GLFW_KEY_KP_1               321
+	KeyboardKey::KeyPad2, // GLFW_KEY_KP_2               322
+	KeyboardKey::KeyPad3, // GLFW_KEY_KP_3               323
+	KeyboardKey::KeyPad4, // GLFW_KEY_KP_4               324
+	KeyboardKey::KeyPad5, // GLFW_KEY_KP_5               325
+	KeyboardKey::KeyPad6, // GLFW_KEY_KP_6               326
+	KeyboardKey::KeyPad7, // GLFW_KEY_KP_7               327
+	KeyboardKey::KeyPad8, // GLFW_KEY_KP_8               328
+	KeyboardKey::KeyPad9, // GLFW_KEY_KP_9               329
+	KeyboardKey::KeyPadDecimal, // GLFW_KEY_KP_DECIMAL         330
+	KeyboardKey::KeyPadDivide, // GLFW_KEY_KP_DIVIDE          331
+	KeyboardKey::KeyPadMultiply, // GLFW_KEY_KP_MULTIPLY        332
+	KeyboardKey::KeyPadSubstract, // GLFW_KEY_KP_SUBTRACT        333
+	KeyboardKey::KeyPadAdd, // GLFW_KEY_KP_ADD             334
+	KeyboardKey::KeyPadEnter, // GLFW_KEY_KP_ENTER           335
+	KeyboardKey::Unknown, // GLFW_KEY_KP_EQUAL           336
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::Unknown,
+	KeyboardKey::ShiftLeft, // GLFW_KEY_LEFT_SHIFT         340
+	KeyboardKey::ControlLeft, // GLFW_KEY_LEFT_CONTROL       341
+	KeyboardKey::AltLeft, // GLFW_KEY_LEFT_ALT           342
+	KeyboardKey::Unknown, // GLFW_KEY_LEFT_SUPER         343
+	KeyboardKey::ShiftRight, // GLFW_KEY_RIGHT_SHIFT        344
+	KeyboardKey::ControlRight, // GLFW_KEY_RIGHT_CONTROL      345
+	KeyboardKey::AltRight, // GLFW_KEY_RIGHT_ALT          346
+	KeyboardKey::Unknown, // GLFW_KEY_RIGHT_SUPER        347
+	KeyboardKey::Menu, // GLFW_KEY_MENU               348
+};
+
+const MouseButton glfwMouseButtonMap[8] = {
+	MouseButton::Button1, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button2, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button3, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button4, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button5, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button6, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button7, // GLFW_MOUSE_BUTTON_1
+	MouseButton::Button8, // GLFW_MOUSE_BUTTON_1
+};
+
+const GamepadButton glfwGamepadButtonMap[512] = {
+	GamepadButton::A, // GLFW_GAMEPAD_BUTTON_A
+	GamepadButton::B, // GLFW_GAMEPAD_BUTTON_B
+	GamepadButton::X, // GLFW_GAMEPAD_BUTTON_X
+	GamepadButton::Y, // GLFW_GAMEPAD_BUTTON_Y
+	GamepadButton::LeftStick, // GLFW_GAMEPAD_BUTTON_LEFT_BUMPER
+	GamepadButton::RightStick, // GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER
+	GamepadButton::Back, // GLFW_GAMEPAD_BUTTON_BACK
+	GamepadButton::Start, // GLFW_GAMEPAD_BUTTON_START
+	GamepadButton::Guide, // GLFW_GAMEPAD_BUTTON_GUIDE
+	GamepadButton::LeftThumb, // GLFW_GAMEPAD_BUTTON_LEFT_THUMB
+	GamepadButton::RightThumb, // GLFW_GAMEPAD_BUTTON_RIGHT_THUMB
+	GamepadButton::Up, // GLFW_GAMEPAD_BUTTON_DPAD_UP
+	GamepadButton::Right, // GLFW_GAMEPAD_BUTTON_DPAD_RIGHT
+	GamepadButton::Down, // GLFW_GAMEPAD_BUTTON_DPAD_DOWN
+	GamepadButton::Left, // GLFW_GAMEPAD_BUTTON_DPAD_LEFT
+};
+
+const GamepadAxis glfwGamepadAxisMap[6] = {
+	GamepadAxis::LeftX,// GLFW_GAMEPAD_AXIS_LEFT_X
+	GamepadAxis::LeftY,// GLFW_GAMEPAD_AXIS_LEFT_Y
+	GamepadAxis::RightX,// GLFW_GAMEPAD_AXIS_RIGHT_X
+	GamepadAxis::RightY,// GLFW_GAMEPAD_AXIS_RIGHT_Y
+	GamepadAxis::LeftTrigger,// GLFW_GAMEPAD_AXIS_LEFT_TRIGGER
+	GamepadAxis::RightTrigger,// GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER
 };
 
 struct GLFW3Context {
@@ -458,19 +496,19 @@ void PlatformBackend::initialize(const Config& config)
 	// --- Inputs
 	glfwSetKeyCallback(pctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
 		if (action == GLFW_PRESS)
-			EventDispatcher<input::KeyboardKeyDownEvent>::emit(input::KeyboardKeyDownEvent{ glfwKeyMap[key] });
+			EventDispatcher<KeyboardKeyDownEvent>::emit(KeyboardKeyDownEvent{ glfwKeyboardKeyMap[key] });
 		else if (action == GLFW_RELEASE)
-			EventDispatcher<input::KeyboardKeyUpEvent>::emit(input::KeyboardKeyUpEvent{ glfwKeyMap[key] });
+			EventDispatcher<KeyboardKeyUpEvent>::emit(KeyboardKeyUpEvent{ glfwKeyboardKeyMap[key] });
 		else if (action == GLFW_REPEAT)
-			EventDispatcher<input::KeyboardKeyRepeatEvent>::emit(input::KeyboardKeyRepeatEvent{ glfwKeyMap[key] });
+			EventDispatcher<KeyboardKeyRepeatEvent>::emit(KeyboardKeyRepeatEvent{ glfwKeyboardKeyMap[key] });
 	});
 	glfwSetMouseButtonCallback(pctx.window, [](GLFWwindow* window, int button, int action, int mode) {
 		if (action == GLFW_PRESS)
-			EventDispatcher<input::MouseButtonDownEvent>::emit(input::MouseButtonDownEvent{ static_cast<input::Button>(button) });
+			EventDispatcher<MouseButtonDownEvent>::emit(MouseButtonDownEvent{ glfwMouseButtonMap[button] });
 		else if (action == GLFW_RELEASE)
-			EventDispatcher<input::MouseButtonUpEvent>::emit(input::MouseButtonUpEvent{ static_cast<input::Button>(button) });
+			EventDispatcher<MouseButtonUpEvent>::emit(MouseButtonUpEvent{ glfwMouseButtonMap[button] });
 		else if (action == GLFW_REPEAT)
-			EventDispatcher<input::MouseButtonRepeatEvent>::emit(input::MouseButtonRepeatEvent{ static_cast<input::Button>(button) });
+			EventDispatcher<MouseButtonRepeatEvent>::emit(MouseButtonRepeatEvent{ glfwMouseButtonMap[button] });
 	});
 	glfwSetCharCallback(pctx.window, [](GLFWwindow* window, unsigned int character) {
 		EventDispatcher<WindowUnicodeCharEvent>::emit(WindowUnicodeCharEvent{ character });
@@ -478,29 +516,38 @@ void PlatformBackend::initialize(const Config& config)
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		// Aka coordinates system origin is bottom left, so we convert.
-		EventDispatcher<input::MouseMoveEvent>::emit(input::MouseMoveEvent{
+		EventDispatcher<MouseMoveEvent>::emit(MouseMoveEvent{
 			static_cast<float>(xpos), 
 			static_cast<float>(pctx.height) - static_cast<float>(ypos) 
 		});
 	});
 	glfwSetScrollCallback(pctx.window, [](GLFWwindow* window, double xoffset, double yoffset) {
-		EventDispatcher<input::MouseScrollEvent>::emit(input::MouseScrollEvent{ 
+		EventDispatcher<MouseScrollEvent>::emit(MouseScrollEvent{ 
 			static_cast<float>(xoffset), 
 			static_cast<float>(yoffset) 
 		});
 	});
 	glfwSetCursorEnterCallback(pctx.window, [](GLFWwindow* window, int entered) {
 		if (entered == GLFW_TRUE)
-			EventDispatcher<input::MouseEnterEvent>::emit();
+			EventDispatcher<MouseEnterEvent>::emit();
 		else if (entered == GLFW_FALSE)
-			EventDispatcher<input::MouseLeaveEvent>::emit();
+			EventDispatcher<MouseLeaveEvent>::emit();
 	});
 	glfwSetJoystickCallback([](int jid, int event) {
+		if (glfwJoystickIsGamepad(jid) == GLFW_FALSE)
+			return;
+		GamepadID gid = (GamepadID)jid;
 		if (event == GLFW_CONNECTED)
-			EventDispatcher<input::JoystickConnectedEvent>::emit(input::JoystickConnectedEvent {jid});
+			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent {gid, glfwGetGamepadName(jid) });
 		else if (event == GLFW_DISCONNECTED)
-			EventDispatcher<input::JoystickDisconnectedEvent>::emit(input::JoystickDisconnectedEvent {jid});
+			EventDispatcher<GamepadDisconnectedEvent>::emit(GamepadDisconnectedEvent {gid});
 	});
+	// Register all connected joystick by emitting a connected event
+	for (int jid = GLFW_JOYSTICK_1; jid <= GLFW_JOYSTICK_LAST; jid++)
+	{
+		if (glfwJoystickPresent(jid) == GLFW_TRUE && glfwJoystickIsGamepad(jid) == GLFW_TRUE)
+			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ (GamepadID)jid, glfwGetGamepadName(jid) });
+	}
 }
 
 void PlatformBackend::destroy()
@@ -512,6 +559,29 @@ void PlatformBackend::destroy()
 void PlatformBackend::update()
 {
 	glfwPollEvents();
+	// Generate joystick events as GLFW does not seem to have built in way...
+	for (int jid = GLFW_JOYSTICK_1; jid < GLFW_JOYSTICK_LAST; ++jid)
+	{
+		GamepadID gid = static_cast<GamepadID>(jid);
+		if (!Gamepad::connected(gid))
+			continue;
+		GLFWgamepadstate state;
+		if (glfwGetGamepadState(jid, &state) == GLFW_TRUE)
+		{
+			for (int iButton = 0; iButton < sizeof(state.buttons) / sizeof(state.buttons[0]); iButton++)
+			{ 
+				if (state.buttons[iButton] == GLFW_PRESS && !Gamepad::pressed(gid, glfwGamepadButtonMap[iButton]))
+					EventDispatcher<GamepadButtonDownEvent>::emit(GamepadButtonDownEvent{ gid, glfwGamepadButtonMap[iButton] });
+				else if (state.buttons[iButton] == GLFW_RELEASE && Gamepad::pressed(gid, glfwGamepadButtonMap[iButton]))
+					EventDispatcher<GamepadButtonUpEvent>::emit(GamepadButtonUpEvent{ gid, glfwGamepadButtonMap[iButton] });
+			}
+			for (int iAxis = 0; iAxis < sizeof(state.axes) / sizeof(state.axes[0]); iAxis++)
+			{
+				if (Gamepad::axis((GamepadID)gid, (GamepadAxis)iAxis) != state.axes[iAxis])
+					EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{ gid, glfwGamepadAxisMap[iAxis], state.axes[iAxis] });
+			}
+		}
+	}
 	EventDispatcher<BackbufferResizeEvent>::dispatch();
 	EventDispatcher<WindowResizeEvent>::dispatch();
 	EventDispatcher<WindowMaximizedEvent>::dispatch();
