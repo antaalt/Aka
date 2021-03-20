@@ -175,6 +175,8 @@ struct RenderPass
 	Framebuffer::Ptr framebuffer;
 	// Mesh to render
 	Mesh::Ptr mesh;
+	// Primitives
+	PrimitiveType primitive;
 	// Offset index in mesh
 	uint32_t indexOffset;
 	// Count of index in mesh

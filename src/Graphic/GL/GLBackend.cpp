@@ -424,6 +424,28 @@ GLenum stencilOp(StencilOp op)
 	}
 }
 
+GLenum primitive(PrimitiveType type)
+{
+	switch (type)
+	{
+	case PrimitiveType::Points:
+		return GL_POINTS;
+	case PrimitiveType::LineLoop:
+		return GL_LINE_LOOP;
+	case PrimitiveType::LineStrip:
+		return GL_LINE_STRIP;
+	case PrimitiveType::Lines:
+		return GL_LINES;
+	case PrimitiveType::TriangleStrip:
+		return GL_TRIANGLE_STRIP;
+	case PrimitiveType::TriangleFan:
+		return GL_TRIANGLE_FAN;
+	default:
+	case PrimitiveType::Triangles:
+		return GL_TRIANGLES;
+	}
+}
+
 };
 
 class GLShader : public Shader
@@ -831,17 +853,18 @@ public:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexSize * count, indices, GL_DYNAMIC_DRAW);
 		glBindVertexArray(0);
 	}
-	void draw(uint32_t indexCount, uint32_t indexOffset) const override
+	void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
 	{
 		glBindVertexArray(m_vao);
 		// We could use glDrawArrays for non indexed array.
 		// But using indexed allow to reduce the number of draw call for different types
 		// We can also reuse vertices with glDrawElements as they are indexed
+		GLenum primitive = gl::primitive(type);
 		if (m_indexCount > 0)
 		{
 			void* indices = (void*)(uintptr_t)(m_indexSize * indexOffset);
 			glDrawElements(
-				GL_TRIANGLES,
+				primitive,
 				static_cast<GLsizei>(indexCount),
 				gl::format(m_indexFormat),
 				indices
@@ -849,7 +872,7 @@ public:
 		}
 		else
 		{
-			glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
+			glDrawArrays(primitive, 0, m_vertexCount);
 		}
 		glBindVertexArray(0);
 	}
@@ -1329,7 +1352,7 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 	{
 		// Mesh
-		pass.mesh->draw(pass.indexCount, pass.indexOffset);
+		pass.mesh->draw(pass.primitive, pass.indexCount, pass.indexOffset);
 	}
 }
 

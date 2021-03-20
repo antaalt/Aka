@@ -33,6 +33,17 @@ enum class VertexType
 	Scalar,
 };
 
+enum class PrimitiveType
+{
+	Points,
+	LineStrip,
+	LineLoop,
+	Lines,
+	TriangleStrip,
+	TriangleFan,
+	Triangles,
+};
+
 uint32_t size(IndexFormat format);
 uint32_t size(VertexFormat format);
 uint32_t size(VertexType type);
@@ -69,8 +80,8 @@ public:
 
 	virtual void indices(IndexFormat indexFormat, const void* indices, size_t count) = 0;
 
-	void draw() const { draw(m_indexCount, 0); }
-	virtual void draw(uint32_t indexCount, uint32_t indexOffset) const = 0;
+	void draw(PrimitiveType type) const { draw(type, m_indexCount, 0); }
+	virtual void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const = 0;
 
 	uint32_t getIndexCount() const;
 	uint32_t getIndexSize() const;
