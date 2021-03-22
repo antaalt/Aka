@@ -12,12 +12,12 @@ struct Camera
 struct CameraPerspective : Camera
 {
 	CameraPerspective() {}
-	CameraPerspective(const vec2f& viewport, radianf hFov, float nearZ = 0.1f, float farZ = 100.f);
+	CameraPerspective(const vec2f& viewport, anglef hFov, float nearZ = 0.1f, float farZ = 100.f);
 
 	mat4f perspective() const override;
 
 	vec2f viewport;
-	radianf hFov;
+	anglef hFov;
 	float nearZ, farZ;
 };
 

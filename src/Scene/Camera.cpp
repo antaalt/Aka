@@ -2,7 +2,7 @@
 
 namespace aka {
 
-CameraPerspective::CameraPerspective(const vec2f& viewport, radianf hFov, float nearZ, float farZ) :
+CameraPerspective::CameraPerspective(const vec2f& viewport, anglef hFov, float nearZ, float farZ) :
 	viewport(viewport),
 	hFov(hFov),
 	nearZ(nearZ),

@@ -365,6 +365,8 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 
 		renderPass.mesh = m_mesh;
 
+		renderPass.primitive = PrimitiveType::Triangles;
+
 		renderPass.material = m_material;
 
 		renderPass.clear = clear;
