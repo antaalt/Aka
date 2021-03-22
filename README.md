@@ -19,19 +19,19 @@ This basic example create a window and spin a square in the middle of the screen
 ```cpp
 struct Game :
 	aka::View,
-	aka::EventListener<aka::input::KeyboardKeyDownEvent>
+	aka::EventListener<aka::KeyboardKeyDownEvent>
 {
-	aka::radian<> rotation = aka::radian(0.f);
+	aka::anglef rotation = aka::anglef::radian(0.f);
 	aka::Batch batch;
 
 	void onCreate() override {}
 	void onDestroy() override {}
 	void onUpdate(aka::Time::Unit deltaTime) override {
-		rotation = aka::radian(rotation() + 1.f * deltaTime.seconds());
+		rotation += aka::anglef::radian(deltaTime.seconds());
 	}
 	void onRender() override {
 		aka::Framebuffer::Ptr backbuffer = aka::GraphicBackend::backbuffer();
-		backbuffer->clear(0.f, 0.f, 1.f, 1.f);
+		backbuffer->clear(aka::color4f(0.f, 0.f, 1.f, 1.f));
 		aka::vec2f size = aka::vec2f(300.f);
 		aka::vec2f position = aka::vec2f(
 			backbuffer->width() / 2.f - size.x / 2.f,
@@ -52,8 +52,8 @@ struct Game :
 		batch.render(backbuffer);
 		batch.clear();
 	}
-	void onReceive(const aka::input::KeyboardKeyDownEvent& event) override {
-		if (event.key == aka::input::Key::Escape)
+	void onReceive(const aka::KeyboardKeyDownEvent& event) override {
+		if (event.key == aka::KeyboardKey::Escape)
 			aka::EventDispatcher<aka::QuitEvent>::emit();
 	}
 };
