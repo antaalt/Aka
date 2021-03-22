@@ -151,9 +151,10 @@ target_include_directories(Aka PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 if(WIN32)
 	target_compile_definitions(Aka PUBLIC UNICODE)
 endif()
-# Ensure UTF8 at runtime
 if (MSVC)
-	string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
-	add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
-	add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+	# Ensure __cplusplus correctly set
+	target_compile_options(Aka PUBLIC "/Zc:__cplusplus")
+	# Ensure UTF8 at runtime
+	target_compile_options(Aka PUBLIC "$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+	target_compile_options(Aka PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
