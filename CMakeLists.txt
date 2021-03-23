@@ -1,9 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 project(Aka)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Ajoutez une source à l'exécutable de ce projet.
 add_library (Aka
 	"src/Audio/RtAudioBackend.cpp"
@@ -61,6 +58,8 @@ add_library (Aka
 	"lib/miniz/miniz.c"
 )
 
+target_compile_features(Aka PUBLIC cxx_std_17)
+
 target_include_directories(Aka
 	PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -75,9 +74,6 @@ set(GRAPHIC_OPENGL true CACHE BOOL "Set OpenGL as graphic backend")
 set(GRAPHIC_D3D11 false CACHE BOOL "Set DirectX11 as graphic backend")
 # Audio Backend
 set(AUDIO_RTAUDIO true CACHE BOOL "Set RtAudio as audio backend")
-
-# Libs
-set(LIBS "")
 
 if (GRAPHIC_OPENGL)
 	# Setup OpenGL and glew
@@ -94,10 +90,8 @@ if (GRAPHIC_OPENGL)
 		set(CMAKE_LIBRARY_PATH "${GLEW_DIR}/lib/")
 	endif()
 	find_package(GLEW 2.1 REQUIRED)
-	if (GLEW_FOUND)
-		include_directories(${GLEW_INCLUDE_DIRS})
-		target_link_libraries(Aka PRIVATE OpenGL::GL GLEW::GLEW)
-	endif()
+	target_include_directories(Aka PRIVATE ${GLEW_INCLUDE_DIRS})
+	target_link_libraries(Aka PRIVATE OpenGL::GL GLEW::GLEW)
 elseif (GRAPHIC_D3D11)
 	# Setup D3D11
 	target_compile_definitions(Aka PUBLIC AKA_USE_D3D11)
@@ -113,7 +107,7 @@ elseif(UNIX)
 	target_compile_definitions(Aka PRIVATE __LINUX_PULSE__)
 	find_path(PULSEAUDIO_INCLUDE_DIR NAMES pulse/pulseaudio.h)
 	find_library(PULSEAUDIO_LIBRARY NAMES pulse)
-	include_directories(${PULSEAUDIO_INCLUDE_DIR})
+	target_include_directories(Aka PRIVATE ${PULSEAUDIO_INCLUDE_DIR})
 	target_link_libraries (Aka PRIVATE pulse-simple pulse)
 endif()
 	target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/rtaudio)
@@ -125,17 +119,17 @@ if (PLATFORM_GLFW3)
 	set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 	set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 	set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-	add_subdirectory("lib/glfw/")
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/)
 	target_link_libraries(Aka PRIVATE glfw)
 endif()
 
 # Third party libs
-# Geometry
-add_subdirectory(lib/geometry)
 # Freetype
-add_subdirectory(lib/freetype)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype/include)
 target_link_libraries(Aka PRIVATE freetype)
+# Geometry
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
 # UTF8
 target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
 # STB
