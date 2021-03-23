@@ -192,12 +192,10 @@ const char* Gamepad::name(GamepadAxis axis)
 	switch (axis)
 	{
 	default: return "Unknown";
-	case GamepadAxis::LeftX: return "LeftX";
-	case GamepadAxis::LeftY: return "LeftY";
-	case GamepadAxis::RightX: return "RightX";
-	case GamepadAxis::RightY: return "RightY";
-	case GamepadAxis::LeftTrigger: return "LeftTrigger";
-	case GamepadAxis::RightTrigger: return "RightTrigger";
+	case GamepadAxis::Left: return "Left";
+	case GamepadAxis::Right: return "Right";
+	case GamepadAxis::TriggerLeft: return "TriggerLeft";
+	case GamepadAxis::TriggerRight: return "TriggerRight";
 	}
 }
 
@@ -314,7 +312,7 @@ bool Gamepad::pressed(GamepadID gid, GamepadButton button)
 	return gamepads[gid]._pressed[static_cast<int>(button)];
 }
 
-float Gamepad::axis(GamepadID gid, GamepadAxis axis)
+const Position& Gamepad::axis(GamepadID gid, GamepadAxis axis)
 {
 	AKA_ASSERT(connected(gid), "No gamepad");
 	return gamepads[gid]._axes[static_cast<int>(axis)];

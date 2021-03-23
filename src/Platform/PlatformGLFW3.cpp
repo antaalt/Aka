@@ -394,15 +394,6 @@ const GamepadButton glfwGamepadButtonMap[512] = {
 	GamepadButton::Left, // GLFW_GAMEPAD_BUTTON_DPAD_LEFT
 };
 
-const GamepadAxis glfwGamepadAxisMap[6] = {
-	GamepadAxis::LeftX,// GLFW_GAMEPAD_AXIS_LEFT_X
-	GamepadAxis::LeftY,// GLFW_GAMEPAD_AXIS_LEFT_Y
-	GamepadAxis::RightX,// GLFW_GAMEPAD_AXIS_RIGHT_X
-	GamepadAxis::RightY,// GLFW_GAMEPAD_AXIS_RIGHT_Y
-	GamepadAxis::LeftTrigger,// GLFW_GAMEPAD_AXIS_LEFT_TRIGGER
-	GamepadAxis::RightTrigger,// GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER
-};
-
 struct GLFW3Context {
 	GLFWwindow* window = nullptr;
 	int x = 0;
@@ -575,10 +566,41 @@ void PlatformBackend::update()
 				else if (state.buttons[iButton] == GLFW_RELEASE && Gamepad::pressed(gid, glfwGamepadButtonMap[iButton]))
 					EventDispatcher<GamepadButtonUpEvent>::emit(GamepadButtonUpEvent{ gid, glfwGamepadButtonMap[iButton] });
 			}
-			for (int iAxis = 0; iAxis < sizeof(state.axes) / sizeof(state.axes[0]); iAxis++)
+			const Position& leftAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::Left);
+			if (leftAxis.x != state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] || leftAxis.y != state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y])
 			{
-				if (Gamepad::axis((GamepadID)gid, (GamepadAxis)iAxis) != state.axes[iAxis])
-					EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{ gid, glfwGamepadAxisMap[iAxis], state.axes[iAxis] });
+				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
+					gid,
+					GamepadAxis::Left,
+					Position{ state.axes[GLFW_GAMEPAD_AXIS_LEFT_X], state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] }
+				});
+			}
+			const Position& rightAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::Right);
+			if (rightAxis.x != state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] || rightAxis.y != state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y])
+			{
+				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
+					gid,
+					GamepadAxis::Right,
+					Position{ state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X], state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] }
+				});
+			}
+			const Position& triggerLeftAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::TriggerLeft);
+			if (triggerLeftAxis.x != state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER])
+			{
+				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
+					gid,
+					GamepadAxis::TriggerLeft,
+					Position{ state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER], 0.f }
+				});
+			}
+			const Position& triggerRightAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::TriggerRight);
+			if (triggerRightAxis.x != state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER])
+			{
+				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
+					gid,
+					GamepadAxis::TriggerRight,
+					Position{ state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER], 0.f }
+				});
 			}
 		}
 	}

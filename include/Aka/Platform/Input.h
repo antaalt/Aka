@@ -184,12 +184,10 @@ enum class GamepadButton {
 };
 
 enum class GamepadAxis {
-	LeftX,
-	LeftY,
-	RightX,
-	RightY,
-	LeftTrigger,
-	RightTrigger,
+	Left,
+	Right,
+	TriggerLeft,
+	TriggerRight,
 
 	Count
 };
@@ -285,7 +283,7 @@ struct Gamepad {
 	// Is gamepad button pressed
 	static bool pressed(GamepadID gid, GamepadButton button);
 	// Get the axis value of a specific gamepad axis
-	static float axis(GamepadID gid, GamepadAxis axis);
+	static const Position& axis(GamepadID gid, GamepadAxis axis);
 	// Get the name of a specific gamepad button
 	static const char* name(GamepadButton button);
 	// Get the name of a specific gamepad axis
@@ -299,7 +297,7 @@ struct Gamepad {
 	bool _down[getGamepadButtonCount()];
 	bool _up[getGamepadButtonCount()];
 	uint64_t _timestamp[getGamepadButtonCount()];
-	float _axes[getGamepadAxisCount()];
+	Position _axes[getGamepadAxisCount()];
 };
 
 // Events
@@ -351,7 +349,7 @@ struct GamepadButtonUpEvent {
 struct GamepadAxesMotionEvent {
 	GamepadID id;
 	GamepadAxis axis;
-	float value;
+	Position value;
 };
 
 };
