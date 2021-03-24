@@ -68,17 +68,20 @@ void ButtonController::update()
 		}
 	}
 	GamepadID gid = Gamepad::get();
-	for (GamepadButton button : m_gamepadButtons)
+	if (Gamepad::connected(gid))
 	{
-		if (Gamepad::down(gid, button))
+		for (GamepadButton button : m_gamepadButtons)
 		{
-			m_down++;
-			m_pressed++;
-		}
-		if (Gamepad::up(gid, button))
-		{
-			m_up++;
-			m_pressed--;
+			if (Gamepad::down(gid, button))
+			{
+				m_down++;
+				m_pressed++;
+			}
+			if (Gamepad::up(gid, button))
+			{
+				m_up++;
+				m_pressed--;
+			}
 		}
 	}
 }
@@ -113,11 +116,14 @@ void MotionController::update()
 		m_delta.y += pos.y;
 	}
 	GamepadID gid = Gamepad::get();
-	for (GamepadAxis axis : m_gamepadAxis)
+	if (Gamepad::connected(gid))
 	{
-		const Position& pos = Gamepad::axis(gid, axis);
-		m_delta.x += pos.x;
-		m_delta.y += pos.y;
+		for (GamepadAxis axis : m_gamepadAxis)
+		{
+			const Position& pos = Gamepad::axis(gid, axis);
+			m_delta.x += pos.x;
+			m_delta.y += pos.y;
+		}
 	}
 	for (const KeyboardAxis& axis : m_keyboardAxis)
 	{

@@ -279,7 +279,8 @@ void Mouse::update()
 
 GamepadID Gamepad::get()
 {
-	AKA_ASSERT(gamepads.size() > 0, "No gamepad connected");
+	if (gamepads.size() == 0)
+		return static_cast<GamepadID>(-1); // Invalid ID
 	return gamepads.begin()->first;
 }
 
