@@ -109,26 +109,30 @@ void MotionController::update()
 	if (m_mouseAxis)
 	{
 		const Position& pos = Mouse::delta();
-		m_delta.x = abs(pos.x) > abs(m_delta.x) ? pos.x : m_delta.x;
-		m_delta.y = abs(pos.y) > abs(m_delta.y) ? pos.y : m_delta.y;
+		m_delta.x += pos.x;
+		m_delta.y += pos.y;
 	}
 	GamepadID gid = Gamepad::get();
 	for (GamepadAxis axis : m_gamepadAxis)
 	{
 		const Position& pos = Gamepad::axis(gid, axis);
-		if (abs(pos.x) > 0.3f)
-			m_delta.x = abs(pos.x) > abs(m_delta.x) ? pos.x : m_delta.x;
-		if (abs(pos.y) > 0.3f)
-			m_delta.y = abs(pos.y) > abs(m_delta.y) ? pos.y : m_delta.y;
+		m_delta.x += pos.x;
+		m_delta.y += pos.y;
 	}
 	for (const KeyboardAxis& axis : m_keyboardAxis)
 	{
-		Position pos;
-		pos.x = static_cast<float>(Keyboard::pressed(axis.right) - Keyboard::pressed(axis.left));
-		pos.y = static_cast<float>(Keyboard::pressed(axis.up) - Keyboard::pressed(axis.down));
-		m_delta.x = abs(pos.x) > abs(m_delta.x) ? pos.x : m_delta.x;
-		m_delta.y = abs(pos.y) > abs(m_delta.y) ? pos.y : m_delta.y;
+		m_delta.x += static_cast<float>(Keyboard::pressed(axis.right) - Keyboard::pressed(axis.left));
+		m_delta.y += static_cast<float>(Keyboard::pressed(axis.up) - Keyboard::pressed(axis.down));
 	}
+	// threshold
+	if (abs(m_delta.x) < 0.3f)
+		m_delta.x = 0.f;
+	else
+		m_delta.x = clamp(m_delta.x, -1.f, 1.f);
+	if (abs(m_delta.y) < 0.3f)
+		m_delta.y = 0.f;
+	else
+		m_delta.y = clamp(m_delta.y, -1.f, 1.f);
 }
 
 bool MotionController::KeyboardAxis::operator<(const MotionController::KeyboardAxis& rhs) const
