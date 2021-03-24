@@ -7,8 +7,6 @@
 #include <Aka/OS/ImagePacker.h>
 #include <Aka/Core/Debug.h>
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
 #define FREETYPE_CHECK_RESULT(result)\
 {                                    \
     FT_Error res = (result);         \
@@ -19,7 +17,7 @@
             256,                     \
             "%s (%s at %s:%d)",      \
             "[freetype]",            \
-            STRINGIFY(result),       \
+            AKA_STRINGIFY(result),   \
             __FILE__,                \
             __LINE__				 \
         );							 \

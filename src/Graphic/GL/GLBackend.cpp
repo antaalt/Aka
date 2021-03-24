@@ -32,7 +32,7 @@ extern "C" {
 			256,                               \
 			"%s (%s at %s:%d)",                \
 			glewGetErrorString(res),           \
-			STRINGIFY(result),                 \
+			AKA_STRINGIFY(result),             \
 			__FILE__,                          \
 			__LINE__                           \
 		);                                     \

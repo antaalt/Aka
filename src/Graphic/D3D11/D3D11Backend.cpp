@@ -27,9 +27,6 @@ extern "C" {
 	_declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
 #define D3D_CHECK_RESULT(result)    \
 {                                   \
     HRESULT res = (result);         \
@@ -41,12 +38,12 @@ extern "C" {
             "%s (%s at %s:%d)",     \
             std::system_category(). \
 			message(res).c_str(),   \
-            STRINGIFY(result),      \
+            AKA_STRINGIFY(result),  \
             __FILE__,               \
             __LINE__				\
         );							\
-        ::aka::Logger::error(buffer);   \
-       DEBUG_BREAK;\
+        ::aka::Logger::error(buffer);\
+		AKA_DEBUG_BREAK;            \
 	}								\
 }
 
@@ -671,17 +668,18 @@ public:
 		m_width = width;
 		m_height = height;
 	}
-	void clear(float r, float g, float b, float a) override
+	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
-		float color[4];
-		color[0] = r;
-		color[1] = g;
-		color[2] = b;
-		color[3] = a;
-		for (ID3D11RenderTargetView *view : m_colorViews)
-			dctx.deviceContext->ClearRenderTargetView(view, color);
-		if(m_depthStencilView != nullptr)
-			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		if (((int)mask & (int)ClearMask::Color) == (int)ClearMask::Color)
+			for (ID3D11RenderTargetView *view : m_colorViews)
+				dctx.deviceContext->ClearRenderTargetView(view, color.data);
+		UINT flag = 0;
+		if (((int)mask & (int)ClearMask::Depth) == (int)ClearMask::Depth)
+			flag |= D3D11_CLEAR_DEPTH;
+		if (((int)mask & (int)ClearMask::Stencil) == (int)ClearMask::Stencil)
+			flag |= D3D11_CLEAR_STENCIL;
+		if (m_depthStencilView != nullptr && flag != 0)
+			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
 	{
@@ -806,18 +804,19 @@ public:
 		m_width = width;
 		m_height = height;
 	}
-	void clear(float r, float g, float b, float a) override
+	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
-		// clear
-		float color[4];
-		color[0] = r;
-		color[1] = g;
-		color[2] = b;
-		color[3] = a;
 		// Clear the back buffer.
-		dctx.deviceContext->ClearRenderTargetView(m_renderTargetView, color);
+		if (((int)mask & (int)ClearMask::Color) == (int)ClearMask::Color)
+			dctx.deviceContext->ClearRenderTargetView(m_renderTargetView, color.data);
 		// Clear the depth buffer.
-		dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		UINT flag = 0;
+		if (((int)mask & (int)ClearMask::Depth) == (int)ClearMask::Depth)
+			flag |= D3D11_CLEAR_DEPTH;
+		if (((int)mask & (int)ClearMask::Stencil) == (int)ClearMask::Stencil)
+			flag |= D3D11_CLEAR_STENCIL;
+		if (m_depthStencilView != nullptr && flag != 0)
+			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
 	{
@@ -935,16 +934,36 @@ public:
 		// Create the index buffer.
 		D3D_CHECK_RESULT(dctx.device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer));
 	}
-	void draw(uint32_t indexCount, uint32_t indexOffset) const override
+	void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
 	{
 		unsigned int offset = 0;
-		// Set the vertex buffer to active in the input assembler so it can be rendered.
 		dctx.deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &offset);
-		// Set the index buffer to active in the input assembler so it can be rendered.
 		dctx.deviceContext->IASetIndexBuffer(m_indexBuffer, m_format, 0);
-		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-		dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		// Draw indexed primitives
+		switch (type)
+		{
+		default:
+		case PrimitiveType::Triangles:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			break;
+		case PrimitiveType::TriangleStrip:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			break;
+		case PrimitiveType::Points:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+			break;
+		case PrimitiveType::Lines:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+			break;
+			break;
+		case PrimitiveType::LineStrip:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+			break;
+		case PrimitiveType::LineLoop:
+		case PrimitiveType::TriangleFan:
+			Logger::error("Primitive type not supported");
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED);
+			break;
+		}
 		dctx.deviceContext->DrawIndexed(indexCount, indexOffset, 0);
 	}
 private:
@@ -1765,7 +1784,7 @@ void GraphicBackend::render(RenderPass& pass)
 		}
 		else
 		{
-			pass.mesh->draw(pass.indexCount, pass.indexOffset);
+			pass.mesh->draw(pass.primitive, pass.indexCount, pass.indexOffset);
 		}
 	}
 }
