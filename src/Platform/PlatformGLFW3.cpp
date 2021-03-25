@@ -381,17 +381,17 @@ const GamepadButton glfwGamepadButtonMap[512] = {
 	GamepadButton::B, // GLFW_GAMEPAD_BUTTON_B
 	GamepadButton::X, // GLFW_GAMEPAD_BUTTON_X
 	GamepadButton::Y, // GLFW_GAMEPAD_BUTTON_Y
-	GamepadButton::LeftStick, // GLFW_GAMEPAD_BUTTON_LEFT_BUMPER
-	GamepadButton::RightStick, // GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER
-	GamepadButton::Back, // GLFW_GAMEPAD_BUTTON_BACK
+	GamepadButton::LeftBumper, // GLFW_GAMEPAD_BUTTON_LEFT_BUMPER
+	GamepadButton::RightBumper, // GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER
+	GamepadButton::Select, // GLFW_GAMEPAD_BUTTON_BACK
 	GamepadButton::Start, // GLFW_GAMEPAD_BUTTON_START
-	GamepadButton::Guide, // GLFW_GAMEPAD_BUTTON_GUIDE
-	GamepadButton::LeftThumb, // GLFW_GAMEPAD_BUTTON_LEFT_THUMB
-	GamepadButton::RightThumb, // GLFW_GAMEPAD_BUTTON_RIGHT_THUMB
-	GamepadButton::Up, // GLFW_GAMEPAD_BUTTON_DPAD_UP
-	GamepadButton::Right, // GLFW_GAMEPAD_BUTTON_DPAD_RIGHT
-	GamepadButton::Down, // GLFW_GAMEPAD_BUTTON_DPAD_DOWN
-	GamepadButton::Left, // GLFW_GAMEPAD_BUTTON_DPAD_LEFT
+	GamepadButton::Home, // GLFW_GAMEPAD_BUTTON_GUIDE
+	GamepadButton::LeftStick, // GLFW_GAMEPAD_BUTTON_LEFT_THUMB
+	GamepadButton::RightStick, // GLFW_GAMEPAD_BUTTON_RIGHT_THUMB
+	GamepadButton::DpadUp, // GLFW_GAMEPAD_BUTTON_DPAD_UP
+	GamepadButton::DpadRight, // GLFW_GAMEPAD_BUTTON_DPAD_RIGHT
+	GamepadButton::DpadDown, // GLFW_GAMEPAD_BUTTON_DPAD_DOWN
+	GamepadButton::DpadLeft, // GLFW_GAMEPAD_BUTTON_DPAD_LEFT
 };
 
 struct GLFW3Context {

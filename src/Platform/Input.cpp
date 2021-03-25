@@ -183,8 +183,25 @@ const char* Keyboard::layoutName(KeyboardLayout layout)
 
 const char* Gamepad::name(GamepadButton button)
 {
-	// TODO
-	return "Unknown";
+	switch (button)
+	{
+	default: return "Unknown";
+	case GamepadButton::A: return "A";
+	case GamepadButton::B: return "B";
+	case GamepadButton::X: return "X";
+	case GamepadButton::Y: return "Y";
+	case GamepadButton::LeftBumper: return "LeftBumper";
+	case GamepadButton::RightBumper: return "RightBumper";
+	case GamepadButton::Select: return "Select";
+	case GamepadButton::Start: return "Start";
+	case GamepadButton::Home: return "Home";
+	case GamepadButton::LeftStick: return "LeftStick";
+	case GamepadButton::RightStick: return "RightStick";
+	case GamepadButton::DpadUp: return "DpadUp";
+	case GamepadButton::DpadRight: return "DpadRight";
+	case GamepadButton::DpadLeft: return "DpadLeft";
+	case GamepadButton::DpadDown: return "DpadDown";
+	}
 }
 
 const char* Gamepad::name(GamepadAxis axis)

@@ -163,17 +163,17 @@ enum class GamepadButton {
 	B,
 	X,
 	Y,
+	LeftBumper,
+	RightBumper,
+	Select,
+	Start,
+	Home,
 	LeftStick,
 	RightStick,
-	Back,
-	Start,
-	Guide,
-	LeftThumb,
-	RightThumb,
-	Up,
-	Right,
-	Left,
-	Down,
+	DpadUp,
+	DpadRight,
+	DpadLeft,
+	DpadDown,
 
 	Count,
 
@@ -192,6 +192,7 @@ enum class GamepadAxis {
 	Count
 };
 
+// Logs
 std::ostream& operator<<(std::ostream& os, const KeyboardKey key);
 std::ostream& operator<<(std::ostream& os, const KeyboardLayout layout);
 std::ostream& operator<<(std::ostream& os, const MouseButton button);
