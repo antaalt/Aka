@@ -3,7 +3,7 @@
 #include <Aka/Core/String.h>
 
 #include <vector>
-#include <deque>
+#include <set>
 
 namespace aka {
 
@@ -38,14 +38,14 @@ public:
 	// Unsubscribe all listeners from event
 	static void unsubscribe();
 private:
-	static std::deque<T> m_events;
-	static std::vector<EventListener<T>*> m_listeners;
+	static std::vector<T> m_events;
+	static std::set<EventListener<T>*> m_listeners;
 };
 
 template<typename T>
-std::deque<T> EventDispatcher<T>::m_events;
+std::vector<T> EventDispatcher<T>::m_events;
 template<typename T>
-std::vector<EventListener<T>*> EventDispatcher<T>::m_listeners;
+std::set<EventListener<T>*> EventDispatcher<T>::m_listeners;
 
 template<typename T>
 inline EventListener<T>::EventListener()
@@ -85,7 +85,7 @@ inline void EventDispatcher<T>::clear()
 template <typename T>
 inline void EventDispatcher<T>::subscribe(EventListener<T>* listener) 
 {
-	m_listeners.push_back(listener);
+	m_listeners.insert(listener);
 }
 template <typename T>
 inline void EventDispatcher<T>::unsubscribe(EventListener<T>* listener)
