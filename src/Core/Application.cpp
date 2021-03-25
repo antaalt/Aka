@@ -76,6 +76,8 @@ void Application::run(const Config& config)
 	GraphicBackend::initialize(config.width, config.height);
 	InputBackend::initialize();
 	AudioBackend::initialize(config.audio.frequency, config.audio.channels);
+	Renderer2D::initialize();
+	Renderer3D::initialize();
 	
 	Time::Unit timestep = Time::Unit::milliseconds(10);
 	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
@@ -101,6 +103,8 @@ void Application::run(const Config& config)
 				accumulator -= timestep;
 			}
 			GraphicBackend::frame();
+			Renderer2D::frame();
+			Renderer3D::frame();
 			app.frame();
 			app.render();
 			app.present();
@@ -111,6 +115,8 @@ void Application::run(const Config& config)
 
 	app.destroy();
 
+	Renderer3D::destroy();
+	Renderer2D::destroy();
 	AudioBackend::destroy();
 	InputBackend::destroy();
 	GraphicBackend::destroy();

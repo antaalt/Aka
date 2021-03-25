@@ -1,4 +1,4 @@
-#include <Aka/Graphic/Batch.h>
+#include <Aka/Graphic/Batch2D.h>
 
 #include <algorithm>
 
@@ -75,7 +75,7 @@ const char* vertShader = shader;
 const char* fragShader = shader;
 #endif
 
-Batch::Rect::Rect() :
+Batch2D::Rect::Rect() :
 	position(0.f),
 	size(1.f),
 	uv{ uv2f(0.f), uv2f(0.f), uv2f(0.f), uv2f(0.f) },
@@ -85,7 +85,7 @@ Batch::Rect::Rect() :
 {
 }
 
-Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const color4f& color, int32_t layer) :
+Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const color4f& color, int32_t layer) :
 	position(pos),
 	size(size),
 	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
@@ -95,7 +95,7 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const color4f& color, int
 {
 }
 
-Batch::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int32_t layer) :
+Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int32_t layer) :
 	position(pos),
 	size(size),
 	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
@@ -105,7 +105,7 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int
 {
 }
 
-Batch::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f& color, int32_t layer) :
+Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f& color, int32_t layer) :
 	position(pos),
 	size(size),
 	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
@@ -115,7 +115,7 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, con
 {
 }
 
-Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, int32_t layer) :
+Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, int32_t layer) :
 	position(pos),
 	size(size),
 	uv{ uv0, uv2f(uv1.u, uv0.v), uv2f(uv0.u, uv1.v), uv1 },
@@ -124,7 +124,7 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv
 	layer(layer)
 {
 }
-Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, const color4f& color, int32_t layer) :
+Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, const color4f& color, int32_t layer) :
 	position(pos),
 	size(size),
 	uv{ uv0, uv2f(uv1.u, uv0.v), uv2f(uv0.u, uv1.v), uv1 },
@@ -134,7 +134,7 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv
 {
 }
 
-Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3, int32_t layer) :
+Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3, int32_t layer) :
 	position(pos),
 	size(size),
 	uv{uv0, uv2f(uv1.u, uv0.v), uv2f(uv0.u, uv1.v), uv1},
@@ -145,11 +145,11 @@ Batch::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv
 {
 }
 
-Batch::Text::Text() :
+Batch2D::Text::Text() :
 	Text("", nullptr, color4f(1.f), 0)
 {
 }
-Batch::Text::Text(const std::string& str, Font* font, const color4f& color, int32_t layer) :
+Batch2D::Text::Text(const std::string& str, Font* font, const color4f& color, int32_t layer) :
 	text(str),
 	font(font),
 	color(color),
@@ -157,21 +157,9 @@ Batch::Text::Text(const std::string& str, Font* font, const color4f& color, int3
 {
 }
 
-void Batch::draw(const mat3f& transform, Rect&& rect)
+void Batch2D::draw(const mat3f& transform, Rect&& rect)
 {
-	if (m_currentBatch.layer != rect.layer) {
-		if (m_currentBatch.elements > 0)
-			push(rect.texture, rect.layer);
-		else
-			m_currentBatch.layer = rect.layer;
-	}
-	if (rect.texture != m_currentBatch.texture && rect.texture != nullptr)
-	{
-		if (m_currentBatch.elements > 0)
-			push(rect.texture, rect.layer);
-		else
-			m_currentBatch.texture = rect.texture;
-	}
+	DrawBatch& currentBatch = get(rect.texture, rect.layer);
 	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
 	m_indices.push_back(offset + 0);
 	m_indices.push_back(offset + 1);
@@ -187,24 +175,17 @@ void Batch::draw(const mat3f& transform, Rect&& rect)
 	m_vertices.push_back(Vertex(transform.multiplyPoint(vec2f(rect.position.x + rect.size.x, rect.position.y)), rect.uv[1], rect.color[1])); // bottom right
 	m_vertices.push_back(Vertex(transform.multiplyPoint(vec2f(rect.position.x, rect.position.y + rect.size.y)), rect.uv[2], rect.color[2])); // top left
 	m_vertices.push_back(Vertex(transform.multiplyPoint(rect.position + rect.size), rect.uv[3], rect.color[3])); // top right
-	m_currentBatch.elements += 2;
+	currentBatch.elements += 2;
 }
 
-void Batch::draw(const mat3f& transform, Quad&& quad)
+void Batch2D::draw(const mat3f& transform, Tri&& tri)
 {
-	if (m_currentBatch.layer != quad.layer) {
-		if (m_currentBatch.elements > 0)
-			push(quad.texture, quad.layer);
-		else
-			m_currentBatch.layer = quad.layer;
-	}
-	if (quad.texture != m_currentBatch.texture && quad.texture != nullptr)
-	{
-		if (m_currentBatch.elements > 0)
-			push(quad.texture, quad.layer);
-		else
-			m_currentBatch.texture = quad.texture;
-	}
+	throw std::runtime_error("Not implemented");
+}
+
+void Batch2D::draw(const mat3f& transform, Quad&& quad)
+{
+	DrawBatch& currentBatch = get(quad.texture, quad.layer);
 	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
 	m_indices.push_back(offset + 0);
 	m_indices.push_back(offset + 1);
@@ -216,10 +197,15 @@ void Batch::draw(const mat3f& transform, Quad&& quad)
 	m_vertices.push_back(Vertex(transform * quad.position[1], quad.uv[3], quad.color[1]));
 	m_vertices.push_back(Vertex(transform * quad.position[2], quad.uv[0], quad.color[2]));
 	m_vertices.push_back(Vertex(transform * quad.position[3], quad.uv[1], quad.color[3]));
-	m_currentBatch.elements += 2;
+	currentBatch.elements += 2;
 }
 
-void Batch::draw(const mat3f& transform, Text&& text)
+void Batch2D::draw(const mat3f& transform, Line&& line)
+{
+	throw std::runtime_error("Not implemented");
+}
+
+void Batch2D::draw(const mat3f& transform, Text&& text)
 {
 	float scale = 1.f;
 	float advance = 0.f;
@@ -233,117 +219,130 @@ void Batch::draw(const mat3f& transform, Text&& text)
 		const Character& ch = text.font->getCharacter(c);
 		vec2f position = vec2f(advance + ch.bearing.x, (float)-(ch.size.y - ch.bearing.y)) * scale;
 		vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
-		draw(transform, Batch::Rect(position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, text.color, text.layer));
+		draw(transform, Batch2D::Rect(position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, text.color, text.layer));
 		// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
 		advance += ch.advance * scale;
 	}
 }
 
-Batch::Batch() :
+Batch2D::Batch2D() :
 	m_shader(nullptr),
 	m_mesh(nullptr),
 	m_defaultTexture(nullptr)
 {
-	clear();
 }
 
-void Batch::push()
+Batch2D::~Batch2D()
 {
-	push(m_defaultTexture, 0);
+	destroy();
 }
 
-void Batch::push(Texture::Ptr texture, int32_t layer)
+void Batch2D::initialize()
 {
-	m_batches.push_back(m_currentBatch);
-	m_currentBatch.texture = texture ? texture : m_defaultTexture;
-	m_currentBatch.elementOffset += m_currentBatch.elements;
-	m_currentBatch.elements = 0;
-	m_currentBatch.layer = layer;
+	m_shader = Shader::create(
+		Shader::compile(vertShader, ShaderType::Vertex),
+		Shader::compile(fragShader, ShaderType::Fragment),
+		ShaderID(0),
+		std::vector<Attributes>{ // HLSL only
+			Attributes{ AttributeID(0), "POS" },
+			Attributes{ AttributeID(0), "TEX" },
+			Attributes{ AttributeID(0), "COL" }
+		}
+	);
+	m_material = ShaderMaterial::create(m_shader);
+	m_mesh = Mesh::create();
+	uint8_t data[4] = { 255, 255, 255, 255 };
+	Sampler sampler;
+	sampler.filterMag = Sampler::Filter::Nearest;
+	sampler.filterMin = Sampler::Filter::Nearest;
+	sampler.wrapS = Sampler::Wrap::Clamp;
+	sampler.wrapT = Sampler::Wrap::Clamp;
+	m_defaultTexture = Texture::create(1, 1, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
+	m_defaultTexture->upload(data);
+
+	m_pass = {};
+	m_pass.clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };
+	m_pass.blend = Blending::nonPremultiplied();
+	m_pass.cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
+	m_pass.depth = Depth{ DepthCompare::None, true };
+	m_pass.stencil = Stencil::none();
+	m_pass.mesh = m_mesh;
+	m_pass.primitive = PrimitiveType::Triangles;
+	m_pass.material = m_material;
 }
 
-void Batch::clear()
+void Batch2D::destroy()
+{
+}
+
+Batch2D::DrawBatch& Batch2D::create(Texture::Ptr texture, int32_t layer)
+{
+	size_t offset = (m_batches.size() == 0) ? 0 : m_batches.back().elementOffset + m_batches.back().elements;
+	m_batches.emplace_back();
+	m_batches.back().texture = texture;
+	m_batches.back().elementOffset = static_cast<uint32_t>(offset);
+	m_batches.back().elements = 0;
+	m_batches.back().layer = layer;
+	return m_batches.back();
+}
+
+Batch2D::DrawBatch& Batch2D::get(Texture::Ptr texture, int32_t layer)
+{
+	if (m_batches.size() == 0)
+		return create(texture, layer);
+	if (m_batches.back().elements == 0)
+	{
+		m_batches.back().texture = texture;
+		m_batches.back().layer = layer;
+		return m_batches.back();
+	}
+	if (m_batches.back().layer != layer || m_batches.back().texture != texture)
+		return create(texture, layer);
+	return m_batches.back();
+}
+
+void Batch2D::clear()
 {
 	m_batches.clear();
 	m_vertices.clear();
 	m_indices.clear();
-	m_currentBatch.elementOffset = 0;
-	m_currentBatch.elements = 0;
-	m_currentBatch.texture = m_defaultTexture;
-	m_currentBatch.layer = 0;
 }
 
-size_t Batch::batchCount() const
+size_t Batch2D::batchCount() const
 {
-	if (m_currentBatch.elements > 0)
-		return m_batches.size() + 1;
 	return m_batches.size();
 }
 
-size_t Batch::verticesCount() const
+size_t Batch2D::verticesCount() const
 {
 	return m_vertices.size();
 }
 
-size_t Batch::indicesCount() const
+size_t Batch2D::indicesCount() const
 {
 	return m_indices.size();
 }
 
-void Batch::render()
+void Batch2D::render()
 {
 	render(GraphicBackend::backbuffer());
 }
 
-void Batch::render(Framebuffer::Ptr framebuffer)
+void Batch2D::render(Framebuffer::Ptr framebuffer)
 {
 	render(framebuffer, mat4f::identity());
 }
 
-void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view)
+void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view)
 {
 	render(framebuffer, view, mat4f::orthographic(0.f, (float)framebuffer->height(), 0.f, (float)framebuffer->width()));
 }
 
-void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)
+void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)
 {
-	RenderPass renderPass {};
-	{
-		if (m_shader == nullptr)
-		{
-			m_shader = Shader::create(
-				Shader::compile(vertShader, ShaderType::Vertex),
-				Shader::compile(fragShader, ShaderType::Fragment),
-				ShaderID(0),
-				std::vector<Attributes>{ // HLSL only
-					Attributes{ AttributeID(0), "POS"},
-					Attributes{ AttributeID(0), "TEX" },
-					Attributes{ AttributeID(0), "COL" }
-				}
-			);
-			m_material = ShaderMaterial::create(m_shader);
-		}
-		if (m_mesh == nullptr)
-			m_mesh = Mesh::create();
-		if (m_defaultTexture == nullptr)
-		{
-			uint8_t data[4] = { 255, 255, 255, 255 };
-			Sampler sampler;
-			sampler.filterMag = Sampler::Filter::Nearest;
-			sampler.filterMin = Sampler::Filter::Nearest;
-			sampler.wrapS = Sampler::Wrap::Clamp;
-			sampler.wrapT = Sampler::Wrap::Clamp;
-			m_defaultTexture = Texture::create(1, 1, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
-			m_defaultTexture->upload(data);
-			for (DrawBatch& batch : m_batches)
-				if (batch.texture == nullptr)
-					batch.texture = m_defaultTexture;
-			if (m_currentBatch.texture == nullptr)
-				m_currentBatch.texture = m_defaultTexture;
-		}
-		m_material->set<mat4f>("u_projection", projection);
-		m_material->set<mat4f>("u_view", view);
-	}
-
+	if (m_shader == nullptr)
+		initialize();
+	
 	{
 		// Update mesh data
 		m_mesh->indices(IndexFormat::UnsignedInt, m_indices.data(), m_indices.size());
@@ -355,40 +354,16 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	}
 
 	{
-		static const Blending blend = Blending::nonPremultiplied();
-		static const Culling cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
-		static const Depth depth = Depth{ DepthCompare::None, true };
-		static const Stencil stencil = Stencil::none();
-		static const Clear clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };
 		// Prepare renderPass
-		renderPass.framebuffer = framebuffer;
-
-		renderPass.mesh = m_mesh;
-
-		renderPass.primitive = PrimitiveType::Triangles;
-
-		renderPass.material = m_material;
-
-		renderPass.clear = clear;
-
-		renderPass.blend = blend;
-
-		renderPass.cull = cull;
-
-		renderPass.depth = depth;
-
-		renderPass.stencil = stencil;
-
-		renderPass.viewport = aka::Rect{ 0, 0, framebuffer->width(), framebuffer->height() };
-
-		renderPass.scissor = aka::Rect{ 0 };
+		m_pass.framebuffer = framebuffer;
+		m_pass.viewport = aka::Rect{ 0, 0, framebuffer->width(), framebuffer->height() };
+		m_pass.scissor = aka::Rect{ 0 };
+		m_material->set<mat4f>("u_projection", projection);
+		m_material->set<mat4f>("u_view", view);
 	}
-	
-	// Don't forget last batch if there is something
-	if(m_currentBatch.elements > 0)
-		m_batches.push_back(m_currentBatch);
 
 	// Sort batches by layer before rendering
+	// TODO use depth instead
 	std::sort(m_batches.begin(), m_batches.end(), [](const DrawBatch &lhs, const DrawBatch &rhs) {
 		return lhs.layer < rhs.layer;
 	});
@@ -396,14 +371,14 @@ void Batch::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f&
 	// Draw the batches
 	for (const DrawBatch &batch : m_batches)
 	{
-		m_material->set<Texture::Ptr>("u_texture", batch.texture);
-		renderPass.indexCount = batch.elements * 3;
-		renderPass.indexOffset = batch.elementOffset * 3;
-		renderPass.execute();
+		m_material->set<Texture::Ptr>("u_texture", batch.texture ? batch.texture : m_defaultTexture);
+		m_pass.indexCount = batch.elements * 3;
+		m_pass.indexOffset = batch.elementOffset * 3;
+		m_pass.execute();
 	}
 }
 
-Batch::Vertex::Vertex(const vec2f& position, const uv2f& uv, const color4f& color) :
+Batch2D::Vertex::Vertex(const vec2f& position, const uv2f& uv, const color4f& color) :
 	position(position),
 	uv(uv),
 	color(color)

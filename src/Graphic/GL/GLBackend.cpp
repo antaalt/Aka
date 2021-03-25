@@ -883,6 +883,11 @@ private:
 	GLuint m_indexVbo;
 };
 
+ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs)
+{
+	return static_cast<ClearMask>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
 class GLFramebuffer : public Framebuffer
 {
 public:
@@ -973,17 +978,17 @@ public:
 			return;
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
 		GLenum glMask = 0;
-		if ((ClearMask)((int)mask & (int)ClearMask::Color) == ClearMask::Color)
+		if ((mask & ClearMask::Color) == ClearMask::Color)
 		{
 			glClearColor(color.r, color.g, color.b, color.a);
 			glMask |= GL_COLOR_BUFFER_BIT;
 		}
-		if ((ClearMask)((int)mask & (int)ClearMask::Depth) == ClearMask::Depth)
+		if ((mask & ClearMask::Depth) == ClearMask::Depth)
 		{
 			glClearDepth(depth);
 			glMask |= GL_DEPTH_BUFFER_BIT;
 		}
-		if ((ClearMask)((int)mask & (int)ClearMask::Stencil) == ClearMask::Stencil)
+		if ((mask & ClearMask::Stencil) == ClearMask::Stencil)
 		{
 			glClearStencil(stencil);
 			glMask |= GL_STENCIL_BUFFER_BIT;
@@ -1047,17 +1052,17 @@ public:
 			return;
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		GLenum glMask = 0;
-		if ((ClearMask)((int)mask & (int)ClearMask::Color) == ClearMask::Color)
+		if ((mask & ClearMask::Color) == ClearMask::Color)
 		{
 			glClearColor(color.r, color.g, color.b, color.a);
 			glMask |= GL_COLOR_BUFFER_BIT;
 		}
-		if ((ClearMask)((int)mask & (int)ClearMask::Depth) == ClearMask::Depth)
+		if ((mask & ClearMask::Depth) == ClearMask::Depth)
 		{
 			glClearDepth(depth);
 			glMask |= GL_DEPTH_BUFFER_BIT;
 		}
-		if ((ClearMask)((int)mask & (int)ClearMask::Stencil) == ClearMask::Stencil)
+		if ((mask & ClearMask::Stencil) == ClearMask::Stencil)
 		{
 			glClearStencil(stencil);
 			glMask |= GL_STENCIL_BUFFER_BIT;

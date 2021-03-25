@@ -11,7 +11,7 @@
 
 namespace aka {
 
-class Batch
+class Batch2D
 {
 public:
 	struct Rect {
@@ -63,7 +63,11 @@ public:
 		int32_t layer;
 	};
 
-	Batch();
+	Batch2D();
+	~Batch2D();
+
+	void initialize();
+	void destroy();
 
 	// Draw shapes
 	void draw(const mat3f& transform, Rect&& rect);
@@ -71,12 +75,6 @@ public:
 	void draw(const mat3f& transform, Quad&& quad);
 	void draw(const mat3f& transform, Line&& line);
 	void draw(const mat3f& transform, Text&& text);
-
-	// Push the current batch to the stack and use a new one
-	void push();
-
-	// Push the current batch to the stack and use a new one with texture & layer set
-	void push(Texture::Ptr texture, int32_t layer);
 
 	// Clear all batch from stack
 	void clear();
@@ -111,14 +109,20 @@ private:
 		Texture::Ptr texture; // Texture of the batch 
 	};
 
+	// Create the batch to the stack and use a new one with texture & layer set
+	DrawBatch& create(Texture::Ptr texture, int32_t layer);
+	// Get the batch with settings
+	DrawBatch& get(Texture::Ptr texture, int32_t layer);
+
+private:
 	std::vector<uint32_t> m_indices;
 	std::vector<Vertex> m_vertices;
+	RenderPass m_pass;
 	Shader::Ptr m_shader; // Make static as we only need one instance of shader even though multiple class exist
 	ShaderMaterial::Ptr m_material;
 	Mesh::Ptr m_mesh;
 	Texture::Ptr m_defaultTexture;
 
-	DrawBatch m_currentBatch;
 	std::vector<DrawBatch> m_batches;
 };
 

@@ -16,7 +16,9 @@
 #include "Core/Event.h"
 
 #include "Graphic/GraphicBackend.h"
-#include "Graphic/Batch.h"
+#include "Graphic/Batch2D.h"
+#include "Graphic/Renderer2D.h"
+#include "Graphic/Renderer3D.h"
 #include "Graphic/Mesh.h"
 #include "Graphic/Framebuffer.h"
 #include "Graphic/Texture.h"

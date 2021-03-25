@@ -50,10 +50,10 @@ void World::update(Time::Unit deltaTime)
 	m_dispatcher.update();
 }
 
-void World::draw(Batch& batch)
+void World::draw()
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->draw(*this, batch);
+		system->draw(*this);
 }
 
 entt::registry& World::registry()

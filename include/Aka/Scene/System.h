@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Aka/Graphic/Batch.h>
+#include <Aka/Graphic/Renderer2D.h>
+#include <Aka/Graphic/Renderer3D.h>
 #include <Aka/OS/Time.h>
 
 namespace aka {
@@ -17,7 +18,7 @@ public:
 	virtual void destroy(World& world) {}
 
 	virtual void update(World& world, Time::Unit deltaTime) {}
-	virtual void draw(World& world, Batch &batch) {}
+	virtual void draw(World& world) {}
 };
 
 }

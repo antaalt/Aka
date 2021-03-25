@@ -64,7 +64,7 @@ public:
 	// Update all systems
 	void update(Time::Unit deltaTime);
 	// Draw all systems
-	void draw(Batch& batch);
+	void draw();
 
 	// Get entt registry
 	entt::registry& registry();

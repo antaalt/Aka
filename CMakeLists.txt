@@ -27,7 +27,9 @@ add_library (Aka
 
 	"src/Graphic/D3D11/D3D11Backend.cpp"
 	"src/Graphic/GL/GLBackend.cpp"
-	"src/Graphic/Batch.cpp"
+	"src/Graphic/Renderer2D.cpp" 
+	"src/Graphic/Renderer3D.cpp"
+	"src/Graphic/Batch2D.cpp"
 	"src/Graphic/Device.cpp"
 	"src/Graphic/Framebuffer.cpp"
 	"src/Graphic/Mesh.cpp"
