@@ -30,6 +30,7 @@ add_library (Aka
 	"src/Graphic/Renderer2D.cpp" 
 	"src/Graphic/Renderer3D.cpp"
 	"src/Graphic/Batch2D.cpp"
+	"src/Graphic/Batch3D.cpp"
 	"src/Graphic/Device.cpp"
 	"src/Graphic/Framebuffer.cpp"
 	"src/Graphic/Mesh.cpp"

@@ -1,14 +1,8 @@
 #pragma once
 
 #include <Aka/Core/Geometry.h>
-#include <Aka/Core/Font.h>
 #include <Aka/Graphic/Batch2D.h>
-#include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/Framebuffer.h>
-#include <Aka/Graphic/Texture.h>
-#include <Aka/Graphic/Mesh.h>
-#include <Aka/Graphic/RenderPass.h>
-#include <Aka/Graphic/GraphicBackend.h>
 
 namespace aka {
 

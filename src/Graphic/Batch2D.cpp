@@ -6,7 +6,7 @@ namespace aka {
 
 #if defined(AKA_USE_OPENGL)
 // Move somewhere else
-const char* vertShader =
+static const char* vertShader =
 "#version 330\n"
 "layout (location = 0) in vec2 a_position;\n"
 "layout (location = 1) in vec2 a_uv;\n"
@@ -21,7 +21,7 @@ const char* vertShader =
 "	v_color = a_color;\n"
 "}"
 "";
-const char* fragShader =
+static const char* fragShader =
 "#version 330\n"
 "in vec2 v_uv;\n"
 "in vec4 v_color;\n"
@@ -32,7 +32,7 @@ const char* fragShader =
 "}"
 "";
 #elif defined(AKA_USE_D3D11)
-const char* shader = ""
+static const char* shader = ""
 "cbuffer constants : register(b0)\n"
 "{\n"
 "	row_major float4x4 u_view;\n"
@@ -71,8 +71,8 @@ const char* shader = ""
 "{\n"
 "	return input.color * u_texture.Sample(u_sampler, input.texcoord);\n"
 "}\n";
-const char* vertShader = shader;
-const char* fragShader = shader;
+static const char* vertShader = shader;
+static const char* fragShader = shader;
 #endif
 
 Batch2D::Rect::Rect() :
@@ -371,6 +371,7 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	// Draw the batches
 	for (const DrawBatch &batch : m_batches)
 	{
+		// TODO draw instanced & pass model matrix, textures & offset / count.
 		m_material->set<Texture::Ptr>("u_texture", batch.texture ? batch.texture : m_defaultTexture);
 		m_pass.indexCount = batch.elements * 3;
 		m_pass.indexOffset = batch.elementOffset * 3;
