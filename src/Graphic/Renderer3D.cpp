@@ -189,7 +189,7 @@ void Renderer3D::drawAxis(const mat4f& transform)
 
 void Renderer3D::drawFrustum(const mat4f& projection)
 {
-	static Poly poly = createAxisPoly();
+	static Poly poly = createCubePoly(PrimitiveType::Lines);
 	batch.draw(mat4f::inverse(projection), poly);
 }
 
