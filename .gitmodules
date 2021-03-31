@@ -1,9 +1,6 @@
 [submodule "lib/geometry"]
 	path = lib/geometry
 	url = git@github.com:antaalt/geometry.git
-[submodule "lib/stb"]
-	path = lib/stb
-	url = git@github.com:nothings/stb.git
 [submodule "lib/freetype"]
 	path = lib/freetype
 	url = https://gitlab.freedesktop.org/freetype/freetype.git

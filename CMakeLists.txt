@@ -57,9 +57,6 @@ add_library (Aka
 	"src/Platform/Windows/WindowsPlatform.cpp"
 	"src/Platform/Linux/LinuxFileSystem.cpp"
 	"src/Platform/Linux/LinuxPlatform.cpp"
-
-	"lib/rtaudio/RtAudio.cpp"
-	"lib/miniz/miniz.c"
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)
@@ -105,16 +102,8 @@ endif()
 # Link RtAudio
 if (AUDIO_RTAUDIO)
 	target_compile_definitions(Aka PUBLIC AKA_USE_RTAUDIO)
-if(WIN32)
-	target_compile_definitions(Aka PRIVATE __WINDOWS_DS__)
-elseif(UNIX)
-	target_compile_definitions(Aka PRIVATE __LINUX_PULSE__)
-	find_path(PULSEAUDIO_INCLUDE_DIR NAMES pulse/pulseaudio.h)
-	find_library(PULSEAUDIO_LIBRARY NAMES pulse)
-	target_include_directories(Aka PRIVATE ${PULSEAUDIO_INCLUDE_DIR})
-	target_link_libraries (Aka PRIVATE pulse-simple pulse)
-endif()
-	target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/rtaudio)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/rtaudio)
+	target_link_libraries(Aka PRIVATE AkaRtAudio)
 endif()
 
 # Link GLFW3
@@ -128,22 +117,16 @@ if (PLATFORM_GLFW3)
 endif()
 
 # Third party libs
-# Freetype
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
-target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype/include)
-target_link_libraries(Aka PRIVATE freetype)
-# Geometry
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
-# UTF8
-target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
-# STB
-target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
-# minimp3
-target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
-# miniz
-target_include_directories(Aka PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
-# entt
-target_include_directories(Aka PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
+
+target_link_libraries(Aka PUBLIC Geometry AkaEntt)
+target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb freetype)
 
 # Enable UNICODE in windows
 if(WIN32)
