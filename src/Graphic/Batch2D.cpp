@@ -75,116 +75,21 @@ static const char* vertShader = shader;
 static const char* fragShader = shader;
 #endif
 
-Batch2D::Rect::Rect() :
-	position(0.f),
-	size(1.f),
-	uv{ uv2f(0.f), uv2f(0.f), uv2f(0.f), uv2f(0.f) },
-	color{ color4f(1.f), color4f(1.f), color4f(1.f), color4f(1.f) },
-	texture(nullptr),
-	layer(0)
-{
-}
-
-Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const color4f& color, int32_t layer) :
-	position(pos),
-	size(size),
-	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
-	color{ color, color, color, color },
-	texture(nullptr),
-	layer(layer)
-{
-}
-
-Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int32_t layer) :
-	position(pos),
-	size(size),
-	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
-	color{ color4f(1.f), color4f(1.f), color4f(1.f), color4f(1.f) },
-	texture(texture), 
-	layer(layer)
-{
-}
-
-Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f& color, int32_t layer) :
-	position(pos),
-	size(size),
-	uv{ uv2f(0.f), uv2f(1.f, 0.f), uv2f(0.f, 1.f), uv2f(1.f) },
-	color{ color, color, color, color },
-	texture(texture),
-	layer(layer)
-{
-}
-
-Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, int32_t layer) :
-	position(pos),
-	size(size),
-	uv{ uv0, uv2f(uv1.u, uv0.v), uv2f(uv0.u, uv1.v), uv1 },
-	color{ color4f(1.f), color4f(1.f), color4f(1.f), color4f(1.f) },
-	texture(texture),
-	layer(layer)
-{
-}
-Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, const color4f& color, int32_t layer) :
-	position(pos),
-	size(size),
-	uv{ uv0, uv2f(uv1.u, uv0.v), uv2f(uv0.u, uv1.v), uv1 },
-	color{ color, color, color, color },
-	texture(texture),
-	layer(layer)
-{
-}
-
-Batch2D::Rect::Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3, int32_t layer) :
-	position(pos),
-	size(size),
-	uv{uv0, uv2f(uv1.u, uv0.v), uv2f(uv0.u, uv1.v), uv1},
-	color{color0, color1, color2, color3},
-	texture(nullptr),
-	layer(layer)
-
-{
-}
-
-Batch2D::Text::Text() :
-	Text("", nullptr, color4f(1.f), 0)
-{
-}
-Batch2D::Text::Text(const std::string& str, Font* font, const color4f& color, int32_t layer) :
-	text(str),
-	font(font),
-	color(color),
-	layer(layer)
-{
-}
-
-void Batch2D::draw(const mat3f& transform, Rect&& rect)
-{
-	DrawBatch& currentBatch = get(rect.texture, rect.layer);
-	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
-	m_indices.push_back(offset + 0);
-	m_indices.push_back(offset + 1);
-	m_indices.push_back(offset + 2);
-	m_indices.push_back(offset + 2);
-	m_indices.push_back(offset + 1);
-	m_indices.push_back(offset + 3);
-#if defined(ORIGIN_TOP_LEFT)
-	for (size_t i = 0; i < 4; i++)
-		rect.uv[i].v = 1.f - rect.uv[i].v;
-#endif
-	m_vertices.push_back(Vertex(transform.multiplyPoint(rect.position), rect.uv[0], rect.color[0])); // bottom left
-	m_vertices.push_back(Vertex(transform.multiplyPoint(vec2f(rect.position.x + rect.size.x, rect.position.y)), rect.uv[1], rect.color[1])); // bottom right
-	m_vertices.push_back(Vertex(transform.multiplyPoint(vec2f(rect.position.x, rect.position.y + rect.size.y)), rect.uv[2], rect.color[2])); // top left
-	m_vertices.push_back(Vertex(transform.multiplyPoint(rect.position + rect.size), rect.uv[3], rect.color[3])); // top right
-	currentBatch.elements += 2;
-}
-
-void Batch2D::draw(const mat3f& transform, Tri&& tri)
+void Batch2D::draw(const mat3f& transform, const Line& line)
 {
 	throw std::runtime_error("Not implemented");
 }
 
-void Batch2D::draw(const mat3f& transform, Quad&& quad)
+void Batch2D::draw(const mat3f& transform, const Triangle& tri)
 {
+	throw std::runtime_error("Not implemented");
+}
+
+void Batch2D::draw(const mat3f& transform, const Quad& quad)
+{
+	// 	2___3
+	// 	|   |
+	//	0___1
 	DrawBatch& currentBatch = get(quad.texture, quad.layer);
 	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
 	m_indices.push_back(offset + 0);
@@ -193,36 +98,20 @@ void Batch2D::draw(const mat3f& transform, Quad&& quad)
 	m_indices.push_back(offset + 2);
 	m_indices.push_back(offset + 1);
 	m_indices.push_back(offset + 3);
-	m_vertices.push_back(Vertex(transform * quad.position[0], quad.uv[2], quad.color[0]));
-	m_vertices.push_back(Vertex(transform * quad.position[1], quad.uv[3], quad.color[1]));
-	m_vertices.push_back(Vertex(transform * quad.position[2], quad.uv[0], quad.color[2]));
-	m_vertices.push_back(Vertex(transform * quad.position[3], quad.uv[1], quad.color[3]));
+	for (const Vertex& vert : quad.vertices)
+		m_vertices.push_back(vert);
+	for (size_t iVert = offset; iVert < offset + 4; iVert++)
+		m_vertices[iVert].position = transform.multiplyPoint(m_vertices[iVert].position);
+#if defined(ORIGIN_TOP_LEFT)
+	for (size_t iVert = offset; iVert < offset + 4; iVert++)
+		m_vertices[iVert].uv.v = 1.f - m_vertices[iVert].uv.v;
+#endif
 	currentBatch.elements += 2;
 }
 
-void Batch2D::draw(const mat3f& transform, Line&& line)
+void Batch2D::draw(const mat3f& transform, const Poly& poly)
 {
 	throw std::runtime_error("Not implemented");
-}
-
-void Batch2D::draw(const mat3f& transform, Text&& text)
-{
-	float scale = 1.f;
-	float advance = 0.f;
-	String str = text.text;
-	const char* start = str.begin();
-	const char* end = str.end();
-	while (start < end)
-	{
-		uint32_t c = encoding::next(start, end);
-		// TODO check if rendering text out of screen for culling ?
-		const Character& ch = text.font->getCharacter(c);
-		vec2f position = vec2f(advance + ch.bearing.x, (float)-(ch.size.y - ch.bearing.y)) * scale;
-		vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
-		draw(transform, Batch2D::Rect(position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, text.color, text.layer));
-		// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-		advance += ch.advance * scale;
-	}
 }
 
 Batch2D::Batch2D() :
@@ -377,13 +266,6 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		m_pass.indexOffset = batch.elementOffset * 3;
 		m_pass.execute();
 	}
-}
-
-Batch2D::Vertex::Vertex(const vec2f& position, const uv2f& uv, const color4f& color) :
-	position(position),
-	uv(uv),
-	color(color)
-{
 }
 
 };

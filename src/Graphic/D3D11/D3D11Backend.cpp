@@ -1,6 +1,6 @@
 #if defined(AKA_USE_D3D11)
 #include <Aka/Graphic/GraphicBackend.h>
-#include <Aka/Graphic/Batch.h>
+#include <Aka/Graphic/Renderer2D.h>
 #include <Aka/Core/Debug.h>
 #include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
@@ -684,11 +684,15 @@ public:
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
 	{
 		// TODO remove batch & use simple shader for better perf.
-		static Batch batch;
-		batch.draw(
-			mat3f::identity(), 
-			Batch::Rect(vec2f(0), vec2f(this->width(), this->height()), src->attachment(Framebuffer::AttachmentType::Color0), 0)
-		);
+		static Batch2D batch;
+		static Batch2D::Quad quad;
+		quad.vertices[0] = Batch2D::Vertex{ vec2f(0), uv2f(0.f), color4f(1.f) };
+		quad.vertices[1] = Batch2D::Vertex{ vec2f(this->width(), 0), uv2f(1.f, 0.f), color4f(1.f) };
+		quad.vertices[2] = Batch2D::Vertex{ vec2f(0, this->height()), uv2f(0.f, 1.f), color4f(1.f) };
+		quad.vertices[3] = Batch2D::Vertex{ vec2f(this->width(), this->height()), uv2f(1.f), color4f(1.f) };
+		quad.texture = src->attachment(Framebuffer::AttachmentType::Color0);
+		quad.layer = 0;
+		batch.draw(mat3f::identity(), quad);
 		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, this->height(), 0.f, this->width()));
 		batch.clear();
 	}
@@ -821,11 +825,15 @@ public:
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
 	{
 		// TODO remove batch & use simple shader for better perf.
-		static Batch batch;
-		batch.draw(
-			mat3f::identity(),
-			Batch::Rect(vec2f(0), vec2f(this->width(), this->height()), src->attachment(Framebuffer::AttachmentType::Color0), 0)
-		);
+		static Batch2D batch;
+		static Batch2D::Quad quad;
+		quad.vertices[0] = Batch2D::Vertex{ vec2f(0), uv2f(0.f), color4f(1.f) };
+		quad.vertices[1] = Batch2D::Vertex{ vec2f(this->width(), 0), uv2f(1.f, 0.f), color4f(1.f) };
+		quad.vertices[2] = Batch2D::Vertex{ vec2f(0, this->height()), uv2f(0.f, 1.f), color4f(1.f) };
+		quad.vertices[3] = Batch2D::Vertex{ vec2f(this->width(), this->height()), uv2f(1.f), color4f(1.f) };
+		quad.texture = src->attachment(Framebuffer::AttachmentType::Color0);
+		quad.layer = 0;
+		batch.draw(mat3f::identity(), quad);
 		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, this->height(), 0.f, this->width()));
 		batch.clear();
 	}

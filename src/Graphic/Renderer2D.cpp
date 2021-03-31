@@ -19,29 +19,67 @@ void Renderer2D::frame()
 	batch.clear();
 }
 
-void Renderer2D::draw(const mat3f& transform, Batch2D::Rect&& rect)
+void Renderer2D::draw(const mat3f& transform, const Line& line)
 {
-	batch.draw(transform, std::move(rect));
+	batch.draw(transform, line);
 }
 
-void Renderer2D::draw(const mat3f& transform, Batch2D::Text&& text)
+void Renderer2D::draw(const mat3f& transform, const Quad& quad)
 {
-	batch.draw(transform, std::move(text));
+	batch.draw(transform, quad);
 }
 
-void Renderer2D::draw(const mat3f& transform, Batch2D::Line&& line)
+void Renderer2D::draw(const mat3f& transform, const Poly& poly)
 {
-	batch.draw(transform, std::move(line));
+	batch.draw(transform, poly);
 }
 
-void Renderer2D::draw(const mat3f& transform, Batch2D::Quad&& quad)
+void Renderer2D::draw(const mat3f& transform, const Triangle& tri)
 {
-	batch.draw(transform, std::move(quad));
+	batch.draw(transform, tri);
 }
 
-void Renderer2D::draw(const mat3f& transform, Batch2D::Tri&& tri)
+void Renderer2D::drawRect(const mat3f& transform, const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f& color, int32_t layer)
 {
-	batch.draw(transform, std::move(tri));
+	Quad quad;
+	quad.vertices[0] = Vertex{ vec2f(pos), uv2f(0.f), color };
+	quad.vertices[1] = Vertex{ vec2f(pos.x + size.x, pos.y), uv2f(1.f, 0.f), color };
+	quad.vertices[2] = Vertex{ vec2f(pos.x, pos.y + size.y), uv2f(0.f, 1.f), color };
+	quad.vertices[3] = Vertex{ vec2f(pos + size), uv2f(1.f), color };
+	quad.texture = texture;
+	quad.layer = layer;
+	Renderer2D::draw(transform, quad);
+}
+
+void Renderer2D::drawRect(const mat3f& transform, const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, const color4f& color, int32_t layer)
+{
+	Quad quad;
+	quad.vertices[0] = Vertex{ vec2f(pos), uv2f(uv0), color };
+	quad.vertices[1] = Vertex{ vec2f(pos.x + size.x, pos.y), uv2f(uv1.u, uv0.v), color };
+	quad.vertices[2] = Vertex{ vec2f(pos.x, pos.y + size.y), uv2f(uv0.u, uv1.v), color };
+	quad.vertices[3] = Vertex{ vec2f(pos + size), uv2f(uv1), color };
+	quad.texture = texture;
+	quad.layer = layer;
+	Renderer2D::draw(transform, quad);
+}
+
+void Renderer2D::drawText(const mat3f& transform, const String& text, const Font* font, const color4f& color, int32_t layer)
+{
+	float scale = 1.f;
+	float advance = 0.f;
+	const char* start = text.begin();
+	const char* end = text.end();
+	while (start < end)
+	{
+		uint32_t c = encoding::next(start, end);
+		// TODO check if rendering text out of screen for culling ?
+		const Character& ch = font->getCharacter(c);
+		vec2f position = vec2f(advance + ch.bearing.x, (float)-(ch.size.y - ch.bearing.y)) * scale;
+		vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
+		Renderer2D::drawRect(transform, position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, color, layer);
+		// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+		advance += ch.advance * scale;
+	}
 }
 
 void Renderer2D::render()

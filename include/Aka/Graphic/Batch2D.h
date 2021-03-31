@@ -14,67 +14,52 @@ namespace aka {
 class Batch2D
 {
 public:
-	struct Rect {
-		Rect();
-		Rect(const vec2f& pos, const vec2f& size, const color4f& color, int32_t layer);
-		Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, int32_t layer);
-		Rect(const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f &color, int32_t layer);
-		Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, int32_t layer);
-		Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, Texture::Ptr texture, const color4f& color, int32_t layer);
-		Rect(const vec2f& pos, const vec2f& size, const uv2f& uv0, const uv2f& uv1, const color4f& color0, const color4f& color1, const color4f& color2, const color4f& color3, int32_t layer);
+	struct Vertex {
 		vec2f position;
-		vec2f size;
-		uv2f uv[4];
-		color4f color[4];
-		Texture::Ptr texture;
-		int32_t layer;
-	};
-	struct Tri {
-		Tri();
-		vec2f position[3];
-		uv2f uv[3];
-		uv2f color[3];
-		Texture::Ptr texture;
-		int32_t layer;
-	};
-	struct Quad {
-		Quad();
-		Quad(Texture::Ptr t, const vec2f& p0, const vec2f& p1, const vec2f& p2, const vec2f& p3, const uv2f& u0, const uv2f& u1, const uv2f& u2, const uv2f& u3, const color4f& c0, const color4f& c1, const color4f& c2, const color4f& c3);
-		
-		vec2f position[4];
-		uv2f uv[4];
-		color4f color[4];
-		Texture::Ptr texture;
-		int32_t layer;
-	};
-	struct Line {
-		Line();
-		vec2f position[2];
-		color4f color[2];
-		int32_t layer;
-	};
-
-	struct Text {
-		Text();
-		Text(const std::string &str, Font* font, const color4f& color, int32_t layer);
-		std::string text;
-		Font* font;
+		uv2f uv;
 		color4f color;
+	};
+
+	struct Line {
+		Vertex vertices[2];
 		int32_t layer;
 	};
 
+	struct Triangle {
+		Vertex vertices[3];
+		Texture::Ptr texture;
+		int32_t layer;
+	};
+
+	struct Quad {
+		Vertex vertices[4];
+		Texture::Ptr texture;
+		int32_t layer;
+	};
+
+	struct Poly {
+		std::vector<Vertex> vertices;
+		Texture::Ptr texture;
+		int32_t layer;
+	};
+
+public:
 	Batch2D();
 	~Batch2D();
 
+	// Initialize batch 
 	void initialize();
+	// Destroy batch 
 	void destroy();
 
-	// Draw shapes
-	void draw(const mat3f& transform, Rect&& rect);
-	void draw(const mat3f& transform, Tri&& tri);
-	void draw(const mat3f& transform, Quad&& quad);
-	void draw(const mat3f& transform, Line&& line);
-	void draw(const mat3f& transform, Text&& text);
+	// Draw Line
+	void draw(const mat3f& transform, const Line& line);
+	// Draw Triangle
+	void draw(const mat3f& transform, const Triangle& tri);
+	// Draw Quad
+	void draw(const mat3f& transform, const Quad& quad);
+	// Draw Poly
+	void draw(const mat3f& transform, const Poly& poly);
 
 	// Clear all batch from stack
 	void clear();
@@ -95,12 +80,6 @@ public:
 	// Render to specified framebuffer with transform & projection
 	void render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f &projection);
 private:
-	struct Vertex {
-		vec2f position;
-		uv2f uv;
-		color4f color;
-		Vertex(const vec2f& position, const uv2f& uv, const color4f& color);
-	};
 
 	struct DrawBatch {
 		int32_t layer; // layer of the batch for reordering
