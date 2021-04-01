@@ -63,7 +63,7 @@ void Renderer2D::drawRect(const mat3f& transform, const vec2f& pos, const vec2f&
 	Renderer2D::draw(transform, quad);
 }
 
-void Renderer2D::drawText(const mat3f& transform, const String& text, const Font* font, const color4f& color, int32_t layer)
+void Renderer2D::drawText(const mat3f& transform, const String& text, const Font& font, const color4f& color, int32_t layer)
 {
 	float scale = 1.f;
 	float advance = 0.f;
@@ -73,7 +73,7 @@ void Renderer2D::drawText(const mat3f& transform, const String& text, const Font
 	{
 		uint32_t c = encoding::next(start, end);
 		// TODO check if rendering text out of screen for culling ?
-		const Character& ch = font->getCharacter(c);
+		const Character& ch = font.getCharacter(c);
 		vec2f position = vec2f(advance + ch.bearing.x, (float)-(ch.size.y - ch.bearing.y)) * scale;
 		vec2f size = vec2f((float)ch.size.x, (float)ch.size.y) * scale;
 		Renderer2D::drawRect(transform, position, size, ch.texture.get(0), ch.texture.get(1), ch.texture.texture, color, layer);
