@@ -32,47 +32,54 @@ struct Sampler
 	bool operator!=(const Sampler& rhs);
 };
 
+enum class TextureFlag : uint8_t {
+	None = 0x00,
+	RenderTarget = 0x01
+};
+
+enum class TextureFormat : uint8_t {
+	UnsignedByte,
+	Byte,
+	UnsignedShort,
+	Short,
+	UnsignedInt,
+	Int,
+	Half,
+	Float
+};
+
+enum class TextureComponent : uint8_t {
+	Red,
+	RG,
+	RGB,
+	BGR,
+	RGBA,
+	BGRA,
+	Depth,
+	DepthStencil,
+};
+
 class Texture
 {
 public:
 	using Ptr = std::shared_ptr<Texture>;
-	using Handle = StrictType<uintptr_t, struct TextureTagName>;
-	enum class Format {
-		UnsignedByte,
-		Byte,
-		UnsignedShort,
-		Short,
-		UnsignedInt,
-		Int,
-		Half,
-		Float
-	};
-	enum class Component {
-		Red,
-		RG,
-		RGB,
-		BGR,
-		RGBA,
-		BGRA,
-		Depth,
-		DepthStencil,
-	};
-
 protected:
-	Texture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler);
+	Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
 public:
-	static Texture::Ptr create(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler);
+	static Texture::Ptr create(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
 
 	uint32_t width() const;
 
 	uint32_t height() const;
 
-	Format format() const;
+	TextureFormat format() const;
 
-	Component component() const;
+	TextureComponent component() const;
+
+	TextureFlag flags() const;
 
 	const Sampler& sampler() const;
 
@@ -84,16 +91,16 @@ public:
 
 	virtual void copy(Texture::Ptr src, const Rect& rect) = 0;
 
-	virtual Handle handle() = 0;
-
-	virtual bool isFramebuffer() = 0;
-
 protected:
 	Sampler m_sampler;
-	Format m_format;
-	Component m_component;
+	TextureFormat m_format;
+	TextureFlag m_flags;
+	TextureComponent m_component;
 	uint32_t m_width, m_height;
 };
+
+TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);
+TextureFlag operator|(TextureFlag lhs, TextureFlag rhs);
 
 struct SubTexture 
 {

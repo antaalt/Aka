@@ -4,9 +4,10 @@
 
 namespace aka {
 
-Texture::Texture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler) :
+Texture::Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
 	m_sampler(sampler),
 	m_format(format),
+	m_flags(flags),
 	m_component(component),
 	m_width(width),
 	m_height(height)
@@ -17,9 +18,9 @@ Texture::~Texture()
 {
 }
 
-Texture::Ptr Texture::create(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler)
+Texture::Ptr Texture::create(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler)
 {
-	return GraphicBackend::createTexture(width, height, format, component, sampler);
+	return GraphicBackend::createTexture(width, height, format, component, flags, sampler);
 }
 
 uint32_t Texture::width() const
@@ -32,19 +33,34 @@ uint32_t Texture::height() const
 	return m_height;
 }
 
-Texture::Format Texture::format() const
+TextureFormat Texture::format() const
 {
 	return m_format;
 }
 
-Texture::Component Texture::component() const
+TextureComponent Texture::component() const
 {
 	return m_component;
+}
+
+TextureFlag Texture::flags() const
+{
+	return m_flags;
 }
 
 const Sampler& Texture::sampler() const
 {
 	return m_sampler;
+}
+
+TextureFlag aka::operator&(TextureFlag lhs, TextureFlag rhs)
+{
+	return static_cast<TextureFlag>(static_cast<std::underlying_type<TextureFlag>::type>(lhs) & static_cast<std::underlying_type<TextureFlag>::type>(rhs));
+}
+
+TextureFlag aka::operator|(TextureFlag lhs, TextureFlag rhs)
+{
+	return static_cast<TextureFlag>(static_cast<std::underlying_type<TextureFlag>::type>(lhs) | static_cast<std::underlying_type<TextureFlag>::type>(rhs));
 }
 
 void SubTexture::update()

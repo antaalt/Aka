@@ -146,7 +146,7 @@ void Batch2D::initialize()
 	sampler.filterMin = Sampler::Filter::Nearest;
 	sampler.wrapS = Sampler::Wrap::Clamp;
 	sampler.wrapT = Sampler::Wrap::Clamp;
-	m_defaultTexture = Texture::create(1, 1, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
+	m_defaultTexture = Texture::create(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, sampler);
 	m_defaultTexture->upload(data);
 
 	m_pass = {};

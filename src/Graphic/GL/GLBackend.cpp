@@ -148,37 +148,25 @@ std::string glGetErrorString(GLenum error)
 namespace aka {
 
 namespace gl {
-GLenum attachmentType(Framebuffer::AttachmentType type)
+GLenum attachmentType(FramebufferAttachmentType type)
 {
 	switch (type)
 	{
 	default:
 		Logger::warn("[GL] Framebuffer attachment type not defined : ", (int)type);
 		return GL_COLOR_ATTACHMENT0;
-	case Framebuffer::AttachmentType::Color0:
+	case FramebufferAttachmentType::Color0:
 		return GL_COLOR_ATTACHMENT0;
-	case Framebuffer::AttachmentType::Color1:
+	case FramebufferAttachmentType::Color1:
 		return GL_COLOR_ATTACHMENT1;
-	case Framebuffer::AttachmentType::Color2:
+	case FramebufferAttachmentType::Color2:
 		return GL_COLOR_ATTACHMENT2;
-	case Framebuffer::AttachmentType::Color3:
+	case FramebufferAttachmentType::Color3:
 		return GL_COLOR_ATTACHMENT3;
-	case Framebuffer::AttachmentType::Depth:
+	case FramebufferAttachmentType::Depth:
 		return GL_DEPTH_ATTACHMENT;
-	case Framebuffer::AttachmentType::Stencil:
+	case FramebufferAttachmentType::Stencil:
 		return GL_STENCIL_ATTACHMENT;
-	}
-}
-
-GLenum framebufferType(Framebuffer::Type type) {
-	switch (type) {
-	case Framebuffer::Type::Read:
-		return GL_READ_FRAMEBUFFER;
-	case Framebuffer::Type::Draw:
-		return GL_DRAW_FRAMEBUFFER;
-	default:
-	case Framebuffer::Type::Both:
-		return GL_FRAMEBUFFER;
 	}
 }
 
@@ -208,48 +196,48 @@ GLenum wrap(Sampler::Wrap wrap) {
 	}
 }
 
-GLenum component(Texture::Component component) {
+GLenum component(TextureComponent component) {
 	switch (component) {
 	default:
 		throw std::runtime_error("Not implemneted");
-	case Texture::Component::Red:
+	case TextureComponent::Red:
 		return GL_RED;
-	case Texture::Component::RG:
+	case TextureComponent::RG:
 		return GL_RG;
-	case Texture::Component::RGB:
+	case TextureComponent::RGB:
 		return GL_RGB;
-	case Texture::Component::BGR:
+	case TextureComponent::BGR:
 		return GL_BGR;
-	case Texture::Component::RGBA:
+	case TextureComponent::RGBA:
 		return GL_RGBA;
-	case Texture::Component::BGRA:
+	case TextureComponent::BGRA:
 		return GL_BGRA;
-	case Texture::Component::Depth:
+	case TextureComponent::Depth:
 		return GL_DEPTH_COMPONENT;
-	case Texture::Component::DepthStencil:
+	case TextureComponent::DepthStencil:
 		return GL_DEPTH_STENCIL;
 	}
 }
 
-GLenum format(Texture::Format format) {
+GLenum format(TextureFormat format) {
 	switch (format) {
 	default:
 		throw std::runtime_error("Not implemneted");
-	case Texture::Format::Byte:
+	case TextureFormat::Byte:
 		return GL_BYTE;
-	case Texture::Format::UnsignedByte:
+	case TextureFormat::UnsignedByte:
 		return GL_UNSIGNED_BYTE;
-	case Texture::Format::Short:
+	case TextureFormat::Short:
 		return GL_SHORT;
-	case Texture::Format::UnsignedShort:
+	case TextureFormat::UnsignedShort:
 		return GL_UNSIGNED_SHORT;
-	case Texture::Format::Int:
+	case TextureFormat::Int:
 		return GL_INT;
-	case Texture::Format::UnsignedInt:
+	case TextureFormat::UnsignedInt:
 		return GL_UNSIGNED_INT;
-	case Texture::Format::Half:
+	case TextureFormat::Half:
 		return GL_HALF_FLOAT;
-	case Texture::Format::Float:
+	case TextureFormat::Float:
 		return GL_FLOAT;
 	}
 }
@@ -448,6 +436,78 @@ GLenum primitive(PrimitiveType type)
 
 };
 
+class GLTexture : public Texture
+{
+public:
+	GLTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
+		Texture(width, height, format, component, flags, sampler),
+		m_copyFBO(0),
+		m_textureID(0)
+	{
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapS));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapT));
+		if (m_sampler.filterMin == Sampler::Filter::MipMapLinear || m_sampler.filterMin == Sampler::Filter::MipMapNearest)
+			glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	GLTexture(GLTexture&) = delete;
+	GLTexture& operator=(GLTexture&) = delete;
+	~GLTexture()
+	{
+		if (m_textureID != 0)
+			glDeleteTextures(1, &m_textureID);
+		if (m_copyFBO != 0)
+			glDeleteFramebuffers(1, &m_copyFBO);
+	}
+	void upload(const void* data) override
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), m_width, m_height, 0, gl::component(m_component), gl::format(m_format), data);
+	}
+	void upload(const Rect& rect, const void* data) override
+	{
+		AKA_ASSERT(rect.x + rect.w <= m_width, "");
+		AKA_ASSERT(rect.y + rect.h <= m_height, "");
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
+	}
+	void download(void* data) override
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glGetTexImage(GL_TEXTURE_2D, 0, gl::component(m_component), gl::format(m_format), data);
+	}
+	void copy(Texture::Ptr src, const Rect& rect) override
+	{
+		AKA_ASSERT(src->format() == this->format(), "Invalid format");
+		AKA_ASSERT(src->component() == this->component(), "Invalid components");
+		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
+		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
+		if (m_copyFBO == 0)
+			glGenFramebuffers(1, &m_copyFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	GLuint getTextureID() const
+	{
+		return m_textureID;
+	}
+private:
+	GLuint m_copyFBO;
+	GLuint m_textureID;
+};
+
+
 class GLShader : public Shader
 {
 public:
@@ -642,10 +702,11 @@ public:
 				continue;
 			case UniformType::Texture2D: {
 				Texture::Ptr texture = m_textures[textureUnit];
+				GLTexture* glTexture = reinterpret_cast<GLTexture*>(m_textures[textureUnit].get());
 				glUniform1i((GLint)uniform.id.value(), textureUnit);
 				glActiveTexture(GL_TEXTURE0 + textureUnit);
 				if (texture != nullptr)
-					glBindTexture(GL_TEXTURE_2D, (GLint)texture->handle().value());
+					glBindTexture(GL_TEXTURE_2D, glTexture->getTextureID());
 				else
 					glBindTexture(GL_TEXTURE_2D, 0);
 				textureUnit++;
@@ -653,9 +714,10 @@ public:
 			}
 			case UniformType::Image2D: {
 				Texture::Ptr image = m_images[imageUnit];
+				GLTexture* glImage = reinterpret_cast<GLTexture*>(m_textures[textureUnit].get());
 				glUniform1i((GLint)uniform.id.value(), imageUnit);
 				if (image != nullptr)
-					glBindImageTexture(0, (GLint)image->handle().value(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);// gl::format(image->format()));
+					glBindImageTexture(0, glImage->getTextureID(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);// gl::format(image->format()));
 				else
 					glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);//gl::format(image->format()));
 				imageUnit++;
@@ -708,87 +770,6 @@ public:
 			}
 		}
 	}
-};
-
-class GLTexture : public Texture
-{
-public:
-	GLTexture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler, bool isFramebuffer) :
-		Texture(width, height, format, component, sampler),
-		m_copyFBO(0),
-		m_textureID(0),
-		m_isFramebuffer(isFramebuffer)
-	{
-		glGenTextures(1, &m_textureID);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapS));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapT));
-		if (m_sampler.filterMin == Sampler::Filter::MipMapLinear || m_sampler.filterMin == Sampler::Filter::MipMapNearest)
-			glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	GLTexture(GLTexture&) = delete;
-	GLTexture& operator=(GLTexture&) = delete;
-	~GLTexture()
-	{
-		if (m_textureID != 0)
-			glDeleteTextures(1, &m_textureID);
-		if (m_copyFBO != 0)
-			glDeleteFramebuffers(1, &m_copyFBO);
-	}
-	void upload(const void* data) override
-	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), m_width, m_height, 0, gl::component(m_component), gl::format(m_format), data);
-	}
-	void upload(const Rect& rect, const void* data) override
-	{
-		AKA_ASSERT(rect.x + rect.w <= m_width, "");
-		AKA_ASSERT(rect.y + rect.h <= m_height, "");
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
-	}
-	void download(void* data) override
-	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glGetTexImage(GL_TEXTURE_2D, 0, gl::component(m_component), gl::format(m_format), data);
-	}
-	void copy(Texture::Ptr src, const Rect& rect) override
-	{
-		AKA_ASSERT(src->format() == this->format(), "Invalid format");
-		AKA_ASSERT(src->component() == this->component(), "Invalid components");
-		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
-		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
-		if (m_copyFBO == 0)
-			glGenFramebuffers(1, &m_copyFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (GLuint)src->handle().value(), 0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-	Handle handle() override
-	{
-		return Handle((uintptr_t)m_textureID);
-	}
-	bool isFramebuffer() override
-	{
-		return m_isFramebuffer;
-	}
-	GLuint getTextureID() const
-	{
-		return m_textureID;
-	}
-private:
-	GLuint m_copyFBO;
-	GLuint m_textureID;
-	bool m_isFramebuffer;
 };
 
 class GLMesh : public Mesh
@@ -891,43 +872,18 @@ ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs)
 class GLFramebuffer : public Framebuffer
 {
 public:
-	GLFramebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler sampler) :
-		Framebuffer(width, height),
-		m_sampler(sampler),
+	GLFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count) :
+		Framebuffer(width, height, attachments, count),
 		m_framebufferID(0)
 	{
 		glGenFramebuffers(1, &m_framebufferID);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
 		for (size_t iAtt = 0; iAtt < count; iAtt++)
 		{
-			Texture::Format format;
-			Texture::Component component;
-			switch (attachments[iAtt])
-			{
-			default:
-			case AttachmentType::Color0:
-			case AttachmentType::Color1:
-			case AttachmentType::Color2:
-			case AttachmentType::Color3:
-				component = Texture::Component::RGBA;
-				format = Texture::Format::UnsignedByte;
-				break;
-			case AttachmentType::Depth:
-				component = Texture::Component::Depth;
-				format = Texture::Format::Float;
-				break;
-			case AttachmentType::Stencil:
-			case AttachmentType::DepthStencil:
-				component = Texture::Component::DepthStencil;
-				format = Texture::Format::Float;
-				break;
-			}
-			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, component, sampler, true);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt]), GL_TEXTURE_2D, tex->getTextureID(), 0);
-			m_attachments.emplace_back();
-			Attachment& att = m_attachments.back();
-			att.type = attachments[iAtt];
-			att.texture = tex;
+			// TODO assert uniqueness of attachment
+			// TODO if texture nullptr, create render target instead ?
+			GLTexture* glTexture = reinterpret_cast<GLTexture*>(attachments[iAtt].texture.get());
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt].type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
 		}
 		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -941,29 +897,18 @@ public:
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
+		if (width = m_width && height == m_height)
+			return;
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-		for (Attachment& attachment : m_attachments)
+		for (FramebufferAttachment& attachment : m_attachments)
 		{
-			Texture::Format format;
-			Texture::Component component;
-			switch (attachment.type)
-			{
-			default:
-			case AttachmentType::Color0:
-			case AttachmentType::Color1:
-			case AttachmentType::Color2:
-			case AttachmentType::Color3:
-				component = Texture::Component::RGBA;
-				format = Texture::Format::UnsignedByte;
-				break;
-			case AttachmentType::Depth:
-			case AttachmentType::Stencil:
-			case AttachmentType::DepthStencil:
-				component = Texture::Component::DepthStencil;
-				format = Texture::Format::Float;
-				break;
-			}
-			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(width, height, format, component, m_sampler, true);
+			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(
+				width, height, 
+				attachment.texture->format(), 
+				attachment.texture->component(), 
+				TextureFlag::RenderTarget,
+				attachment.texture->sampler()
+			);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), GL_TEXTURE_2D, tex->getTextureID(), 0);
 			attachment.texture = tex;
 		}
@@ -1007,19 +952,31 @@ public:
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	Texture::Ptr attachment(AttachmentType type) override
+	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
-		for (Attachment& attachment : m_attachments)
+		for (FramebufferAttachment& attachment : m_attachments)
 		{
 			if (attachment.type == type)
-				return attachment.texture;
+			{
+				if (attachment.texture == texture)
+					return;
+				attachment.texture = texture;
+				GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
+				glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				return;
+			}
 		}
-		return nullptr;
+		// Key does not exist yet.
+		GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
+		m_attachments.push_back(FramebufferAttachment{ type, texture });
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	GLuint getFramebufferID() const { return m_framebufferID; }
 private:
-	std::vector<Attachment> m_attachments;
-	Sampler m_sampler;
 	GLuint m_framebufferID;
 };
 
@@ -1029,7 +986,7 @@ class GLBackBuffer :
 {
 public:
 	GLBackBuffer(uint32_t width, uint32_t height) :
-		Framebuffer(width, height)
+		Framebuffer(width, height, nullptr, 0)
 	{
 	}
 	GLBackBuffer(const GLBackBuffer&) = delete;
@@ -1081,10 +1038,9 @@ public:
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	Texture::Ptr attachment(AttachmentType type) override
+	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
-		// We do not have access to backbuffer attachment with GL.
-		return nullptr;
+		Logger::error("Trying to set backbuffer attachement.");
 	}
 };
 
@@ -1413,14 +1369,14 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, Texture::Component component, Sampler sampler)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler)
 {
-	return std::make_shared<GLTexture>(width, height, format, component, sampler, false);
+	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler sampler)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)
 {
-	return std::make_shared<GLFramebuffer>(width, height, attachment, count, sampler);
+	return std::make_shared<GLFramebuffer>(width, height, attachments, count);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()

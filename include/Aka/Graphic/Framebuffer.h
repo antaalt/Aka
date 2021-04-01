@@ -16,40 +16,36 @@ enum class ClearMask {
 	All = Color | Depth | Stencil
 };
 
+enum class FramebufferAttachmentType {
+	Color0,
+	Color1,
+	Color2,
+	Color3,
+	Depth,
+	Stencil,
+	DepthStencil
+};
+
+struct FramebufferAttachment
+{
+	FramebufferAttachmentType type;
+	Texture::Ptr texture;
+};
+
 class Framebuffer
 {
 public:
 	using Ptr = std::shared_ptr<Framebuffer>;
-	using ID = uint32_t;
 
-	enum class Type {
-		Read,
-		Draw,
-		Both
-	};
-	enum class AttachmentType {
-		Color0,
-		Color1,
-		Color2,
-		Color3,
-		Depth,
-		Stencil,
-		DepthStencil
-	};
-	struct Attachment
-	{
-		AttachmentType type;
-		Texture::Ptr texture;
-	};
 protected:
-	Framebuffer(uint32_t width, uint32_t height);
+	Framebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachment, size_t count);
 	Framebuffer(const Framebuffer&) = delete;
 	Framebuffer& operator=(const Framebuffer&) = delete;
 	virtual ~Framebuffer();
 public:
 
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height, Sampler sampler);
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height, AttachmentType* attachment, size_t count, Sampler sampler);
+	static Framebuffer::Ptr create(uint32_t width, uint32_t height);
+	static Framebuffer::Ptr create(uint32_t width, uint32_t height, FramebufferAttachment* attachment, size_t count);
 
 	// Get framebuffer width
 	uint32_t width() const;
@@ -70,11 +66,15 @@ public:
 	virtual void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) = 0;
 
 	// Get the attachment of the framebuffer
-	virtual Texture::Ptr attachment(AttachmentType type) = 0;
+	Texture::Ptr attachment(FramebufferAttachmentType type);
+
+	// Set the attachment of the framebuffer
+	virtual void attachment(FramebufferAttachmentType type, Texture::Ptr texture) = 0;
 
 protected:
 	uint32_t m_width;
 	uint32_t m_height;
+	std::vector<FramebufferAttachment> m_attachments;
 };
 
 }

@@ -27,7 +27,7 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	sampler.filterMin = aka::Sampler::Filter::Nearest;
 	sampler.wrapS = aka::Sampler::Wrap::Clamp;
 	sampler.wrapT = aka::Sampler::Wrap::Clamp;
-	frame.texture = Texture::create(ase.width, ase.height, Texture::Format::UnsignedByte, Texture::Component::RGBA, sampler);
+	frame.texture = Texture::create(ase.width, ase.height, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, sampler);
 	frame.texture->upload(image.bytes.data());
 	return frame;
 }
