@@ -1,5 +1,3 @@
-#include "..\..\include\Aka\Graphic\Framebuffer.h"
-#include "..\..\include\Aka\Graphic\Framebuffer.h"
 #include <Aka/Graphic/Framebuffer.h>
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/OS/Logger.h>

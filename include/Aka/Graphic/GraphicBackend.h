@@ -10,7 +10,8 @@
 #include "../OS/FileSystem.h"
 
 #if defined(AKA_USE_D3D11)
-#include <d3d11.h>
+struct ID3D11Device;
+struct ID3D11DeviceContext;
 #endif
 
 namespace aka {

@@ -16,6 +16,7 @@
 #include <d3dcompiler.h>
 #include <stdexcept>
 #include <array>
+#include <map>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
@@ -394,14 +395,13 @@ class D3D11Texture : public Texture
 public:
 	friend class D3D11ShaderMaterial;
 	friend class D3D11Framebuffer;
-	D3D11Texture(uint32_t width, uint32_t height, Format format, Component component, Sampler sampler, bool isFramebuffer) :
-		Texture(width, height, format, component, sampler),
+	D3D11Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
+		Texture(width, height, format, component, flags, sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
 		m_component(0),
-		m_format(DXGI_FORMAT_UNKNOWN),
-		m_isFramebuffer(isFramebuffer)
+		m_d3dFormat(DXGI_FORMAT_UNKNOWN)
 	{
 		D3D11_TEXTURE2D_DESC desc{};
 		desc.Width = width;
@@ -414,35 +414,42 @@ public:
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 
-		if (isFramebuffer)
+		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
 			desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 		else
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		if (format == Texture::Format::UnsignedByte && component == Texture::Component::Red)
+		if (format == TextureFormat::UnsignedByte && component == TextureComponent::Red)
 		{
-			m_format = DXGI_FORMAT_R8_UNORM;
+			m_d3dFormat = DXGI_FORMAT_R8_UNORM;
 			m_component = 1;
 		}
-		else if (format == Texture::Format::UnsignedByte && component == Texture::Component::RGBA)
+		else if (format == TextureFormat::UnsignedByte && component == TextureComponent::RGBA)
 		{
-			m_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			m_d3dFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 			m_component = 4;
 		}
-		else if (format == Texture::Format::Float && component == Texture::Component::DepthStencil)
+		else if (format == TextureFormat::Float && component == TextureComponent::DepthStencil)
 		{
-			m_format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			m_d3dFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-			m_component = 4;
+			m_component = 1;
+		}
+		else if (format == TextureFormat::Float && component == TextureComponent::Depth)
+		{
+			m_d3dFormat = DXGI_FORMAT_D32_FLOAT;
+			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			m_component = 1;
 		}
 		else
 		{
 			Logger::error("Format not supported");
 		}
-		desc.Format = m_format;
+		desc.Format = m_d3dFormat;
 
 		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
-		D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
+		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
+			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
 	}
 	D3D11Texture(D3D11Texture&) = delete;
 	D3D11Texture& operator=(D3D11Texture&) = delete;
@@ -509,7 +516,7 @@ public:
 			desc.Height = m_height;
 			desc.MipLevels = 1;
 			desc.ArraySize = 1;
-			desc.Format = m_format;
+			desc.Format = m_d3dFormat;
 			desc.SampleDesc.Count = 1;
 			desc.SampleDesc.Quality = 0;
 			desc.Usage = D3D11_USAGE_STAGING;
@@ -553,64 +560,35 @@ public:
 			&box
 		);
 	}
-	Handle handle() override
-	{
-		return Handle((uintptr_t)m_view);
-	}
-	bool isFramebuffer() override
-	{
-		return m_isFramebuffer;
-	}
 private:
 	ID3D11Texture2D* m_texture;
 	ID3D11Texture2D* m_staging;
 	ID3D11ShaderResourceView* m_view;
-	DXGI_FORMAT m_format;
+	DXGI_FORMAT m_d3dFormat;
 	uint32_t m_component;
-	bool m_isFramebuffer;
 };
 
 class D3D11Framebuffer : public Framebuffer, public std::enable_shared_from_this<D3D11Framebuffer>
 {
 public:
-	D3D11Framebuffer(uint32_t width, uint32_t height, AttachmentType* attachments, size_t count, Sampler sampler) :
-		Framebuffer(width, height),
-		m_sampler(sampler),
+	D3D11Framebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count) :
+		Framebuffer(width, height, attachments, count),
 		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
-		for (size_t i = 0; i < count; i++)
+		for (FramebufferAttachment& attachment : m_attachments)
 		{
-			Texture::Format format;
-			Texture::Component component;
-			switch (attachments[i])
-			{
-			case AttachmentType::Color0:
-			case AttachmentType::Color1:
-			case AttachmentType::Color2:
-			case AttachmentType::Color3:
-				format = Texture::Format::UnsignedByte;
-				component = Texture::Component::RGBA;
-				break;
-			case AttachmentType::Depth:
-			case AttachmentType::Stencil:
-			case AttachmentType::DepthStencil:
-				format = Texture::Format::UnsignedByte;
-				component = Texture::Component::DepthStencil;
-				break;
-			}
-			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, component, sampler, true);
-			m_attachments.push_back(Attachment{ attachments[i], tex });
-			if (attachments[i] == AttachmentType::Depth || attachments[i] == AttachmentType::Stencil || attachments[i] == AttachmentType::DepthStencil)
+			D3D11Texture* d3dTexture = reinterpret_cast<D3D11Texture*>(attachment.texture.get());
+			if (attachment.type == FramebufferAttachmentType::Depth || attachment.type == FramebufferAttachmentType::Stencil || attachment.type == FramebufferAttachmentType::DepthStencil)
 			{
 				AKA_ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
-				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, nullptr, &m_depthStencilView));
 			}
 			else
 			{
 				ID3D11RenderTargetView* view = nullptr;
-				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
-				m_colorViews.push_back(view);
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, nullptr, &view));
+				m_colorViews.insert(std::make_pair(attachment.type, view));
 			}
 		}
 	}
@@ -618,43 +596,31 @@ public:
 	D3D11Framebuffer& operator=(const D3D11Framebuffer&) = delete;
 	~D3D11Framebuffer()
 	{
-		for (ID3D11RenderTargetView* colorView : m_colorViews)
-			colorView->Release();
+		for (auto colorView : m_colorViews)
+			colorView.second->Release();
 
 		if (m_depthStencilView)
 			m_depthStencilView->Release();
 	}
 	void resize(uint32_t width, uint32_t height) override
 	{
-		for (ID3D11RenderTargetView* colorView : m_colorViews)
-			colorView->Release();
+		for (auto colorView : m_colorViews)
+			colorView.second->Release();
 		m_colorViews.clear();
 		if (m_depthStencilView)
 			m_depthStencilView->Release();
 
-		for (Attachment& attachment : m_attachments)
+		for (FramebufferAttachment& attachment : m_attachments)
 		{
-			Texture::Format format;
-			Texture::Component component;
-			switch (attachment.type)
-			{
-			case AttachmentType::Color0:
-			case AttachmentType::Color1:
-			case AttachmentType::Color2:
-			case AttachmentType::Color3:
-				format = Texture::Format::UnsignedByte;
-				component = Texture::Component::RGBA;
-				break;
-			case AttachmentType::Depth:
-			case AttachmentType::Stencil:
-			case AttachmentType::DepthStencil:
-				format = Texture::Format::UnsignedByte;
-				component = Texture::Component::DepthStencil;
-				break;
-			}
-			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(width, height, format, component, m_sampler, true);
+			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(
+				width, height, 
+				attachment.texture->format(), 
+				attachment.texture->component(), 
+				attachment.texture->flags(), 
+				attachment.texture->sampler()
+			);
 			attachment.texture = tex;
-			if (attachment.type == AttachmentType::Depth || attachment.type == AttachmentType::Stencil || attachment.type == AttachmentType::DepthStencil)
+			if (attachment.type == FramebufferAttachmentType::Depth || attachment.type == FramebufferAttachmentType::Stencil || attachment.type == FramebufferAttachmentType::DepthStencil)
 			{
 				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
 			}
@@ -662,7 +628,7 @@ public:
 			{
 				ID3D11RenderTargetView* view = nullptr;
 				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(tex->m_texture, nullptr, &view));
-				m_colorViews.push_back(view);
+				m_colorViews.insert(std::make_pair(attachment.type, view));
 			}
 		}
 		m_width = width;
@@ -671,8 +637,8 @@ public:
 	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
 		if (((int)mask & (int)ClearMask::Color) == (int)ClearMask::Color)
-			for (ID3D11RenderTargetView *view : m_colorViews)
-				dctx.deviceContext->ClearRenderTargetView(view, color.data);
+			for (auto view : m_colorViews)
+				dctx.deviceContext->ClearRenderTargetView(view.second, color.data);
 		UINT flag = 0;
 		if (((int)mask & (int)ClearMask::Depth) == (int)ClearMask::Depth)
 			flag |= D3D11_CLEAR_DEPTH;
@@ -686,32 +652,57 @@ public:
 		// TODO remove batch & use simple shader for better perf.
 		static Batch2D batch;
 		static Batch2D::Quad quad;
-		quad.vertices[0] = Batch2D::Vertex{ vec2f(0), uv2f(0.f), color4f(1.f) };
-		quad.vertices[1] = Batch2D::Vertex{ vec2f(this->width(), 0), uv2f(1.f, 0.f), color4f(1.f) };
-		quad.vertices[2] = Batch2D::Vertex{ vec2f(0, this->height()), uv2f(0.f, 1.f), color4f(1.f) };
-		quad.vertices[3] = Batch2D::Vertex{ vec2f(this->width(), this->height()), uv2f(1.f), color4f(1.f) };
-		quad.texture = src->attachment(Framebuffer::AttachmentType::Color0);
+		quad.vertices[0] = Batch2D::Vertex{ vec2f(0.f), uv2f(0.f), color4f(1.f) };
+		quad.vertices[1] = Batch2D::Vertex{ vec2f((float)this->width(), 0.f), uv2f(1.f, 0.f), color4f(1.f) };
+		quad.vertices[2] = Batch2D::Vertex{ vec2f(0.f, (float)this->height()), uv2f(0.f, 1.f), color4f(1.f) };
+		quad.vertices[3] = Batch2D::Vertex{ vec2f((float)this->width(), (float)this->height()), uv2f(1.f), color4f(1.f) };
+		quad.texture = src->attachment(FramebufferAttachmentType::Color0);
 		quad.layer = 0;
 		batch.draw(mat3f::identity(), quad);
-		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, this->height(), 0.f, this->width()));
+		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, (float)this->height(), 0.f, (float)this->width()));
 		batch.clear();
 	}
-	Texture::Ptr attachment(AttachmentType type) override
+	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
-		for (Attachment& attachment : m_attachments)
+		D3D11Texture* d3dTexture = reinterpret_cast<D3D11Texture*>(texture.get());
+		if (type == FramebufferAttachmentType::Depth || type == FramebufferAttachmentType::Stencil || type == FramebufferAttachmentType::DepthStencil)
 		{
-			if (attachment.type == type)
-				return attachment.texture;
+			if (m_depthStencilView != nullptr)
+			{
+				m_depthStencilView->Release();
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, nullptr, &m_depthStencilView));
+			}
+			else
+			{
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, nullptr, &m_depthStencilView));
+			}
 		}
-		return nullptr;
+		else
+		{
+			auto& it = m_colorViews.find(type);
+			if (it != m_colorViews.end())
+			{
+				it->second->Release();
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, nullptr, &it->second));
+			}
+			else
+			{
+				ID3D11RenderTargetView* view = nullptr;
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, nullptr, &view));
+				m_colorViews.insert(std::make_pair(type, view));
+			}
+		}
 	}
 	uint32_t getNumberView() const { return static_cast<uint32_t>(m_colorViews.size()); }
-	ID3D11RenderTargetView* getRenderTargetView(uint32_t index) const { return m_colorViews[index]; }
+	ID3D11RenderTargetView* getRenderTargetView(FramebufferAttachmentType index) const { 
+		auto it = m_colorViews.find(index); 
+		if (it == m_colorViews.end())
+			return nullptr;
+		return it->second;
+	}
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
 private:
-	Sampler m_sampler;
-	std::vector<Attachment> m_attachments;
-	std::vector<ID3D11RenderTargetView*> m_colorViews;
+	std::map<FramebufferAttachmentType, ID3D11RenderTargetView*> m_colorViews;
 	ID3D11DepthStencilView* m_depthStencilView;
 };
 
@@ -719,7 +710,7 @@ class D3D11BackBuffer : public Framebuffer, public std::enable_shared_from_this<
 {
 public:
 	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
-		Framebuffer(width, height),
+		Framebuffer(width, height, nullptr, 0),
 		m_swapChain(sc),
 		m_renderTargetView(nullptr),
 		m_depthStencilView(nullptr)
@@ -827,20 +818,19 @@ public:
 		// TODO remove batch & use simple shader for better perf.
 		static Batch2D batch;
 		static Batch2D::Quad quad;
-		quad.vertices[0] = Batch2D::Vertex{ vec2f(0), uv2f(0.f), color4f(1.f) };
-		quad.vertices[1] = Batch2D::Vertex{ vec2f(this->width(), 0), uv2f(1.f, 0.f), color4f(1.f) };
-		quad.vertices[2] = Batch2D::Vertex{ vec2f(0, this->height()), uv2f(0.f, 1.f), color4f(1.f) };
-		quad.vertices[3] = Batch2D::Vertex{ vec2f(this->width(), this->height()), uv2f(1.f), color4f(1.f) };
-		quad.texture = src->attachment(Framebuffer::AttachmentType::Color0);
+		quad.vertices[0] = Batch2D::Vertex{ vec2f(0.f), uv2f(0.f), color4f(1.f) };
+		quad.vertices[1] = Batch2D::Vertex{ vec2f((float)this->width(), 0.f), uv2f(1.f, 0.f), color4f(1.f) };
+		quad.vertices[2] = Batch2D::Vertex{ vec2f(0.f, (float)this->height()), uv2f(0.f, 1.f), color4f(1.f) };
+		quad.vertices[3] = Batch2D::Vertex{ vec2f((float)this->width(), (float)this->height()), uv2f(1.f), color4f(1.f) };
+		quad.texture = src->attachment(FramebufferAttachmentType::Color0);
 		quad.layer = 0;
 		batch.draw(mat3f::identity(), quad);
-		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, this->height(), 0.f, this->width()));
+		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, (float)this->height(), 0.f, (float)this->width()));
 		batch.clear();
 	}
-	Texture::Ptr attachment(AttachmentType type) override
+	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
 		// TODO create Texture as attachment
-		return nullptr;
 	}
 	void onReceive(const BackbufferResizeEvent& event) override
 	{
@@ -1052,7 +1042,7 @@ public:
 				uniform.name = desc.Name;
 				uniform.shaderType = shaderType;
 				uniform.bufferIndex = 0;
-				uniform.arrayLength = max(1, desc.BindCount);
+				uniform.arrayLength = max(1U, desc.BindCount);
 				uniform.type = UniformType::Texture2D;
 			}
 			else if (desc.Type == D3D_SIT_SAMPLER)
@@ -1063,7 +1053,7 @@ public:
 				uniform.name = desc.Name;
 				uniform.shaderType = shaderType;
 				uniform.bufferIndex = 0;
-				uniform.arrayLength = max(1, desc.BindCount);
+				uniform.arrayLength = max(1U, desc.BindCount);
 				uniform.type = UniformType::Sampler2D;
 			}
 		}
@@ -1101,7 +1091,7 @@ public:
 				uniform.name = varDesc.Name;
 				uniform.shaderType = shaderType;
 				uniform.bufferIndex = i;
-				uniform.arrayLength = max(1, typeDesc.Elements);
+				uniform.arrayLength = max(1U, typeDesc.Elements);
 				uniform.type = UniformType::None;
 
 				if (typeDesc.Type == D3D_SVT_FLOAT)
@@ -1757,8 +1747,11 @@ void GraphicBackend::render(RenderPass& pass)
 		else
 		{
 			D3D11Framebuffer* framebuffer = (D3D11Framebuffer*)pass.framebuffer.get();
-			ID3D11RenderTargetView* view = framebuffer->getRenderTargetView(0);
-			dctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
+			ID3D11RenderTargetView* view = framebuffer->getRenderTargetView(FramebufferAttachmentType::Color0);
+			if (view != nullptr)
+				dctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
+			else
+				dctx.deviceContext->OMSetRenderTargets(0, nullptr, framebuffer->getDepthStencilView());
 		}
 	}
 
@@ -1887,17 +1880,17 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Texture::Format format, Texture::Component component, Sampler sampler)
+Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, component, sampler, false);
+	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, Framebuffer::AttachmentType* attachment, size_t count, Sampler sampler)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)
 {
-	return std::make_shared<D3D11Framebuffer>(width, height, attachment, count, sampler);
+	return std::make_shared<D3D11Framebuffer>(width, height, attachments, count);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()
