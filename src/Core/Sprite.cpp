@@ -22,12 +22,13 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	frame.width = ase.width;
 	frame.height = ase.height;
 	// Generate texture
-	Sampler sampler{};
-	sampler.filterMag = aka::Sampler::Filter::Nearest;
-	sampler.filterMin = aka::Sampler::Filter::Nearest;
-	sampler.wrapS = aka::Sampler::Wrap::Clamp;
-	sampler.wrapT = aka::Sampler::Wrap::Clamp;
-	frame.texture = Texture::create(ase.width, ase.height, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, sampler);
+	frame.texture = Texture::create(
+		ase.width, ase.height, 
+		TextureFormat::UnsignedByte,
+		TextureComponent::RGBA, 
+		TextureFlag::None, 
+		Sampler::nearest()
+	);
 	frame.texture->upload(image.bytes.data());
 	return frame;
 }

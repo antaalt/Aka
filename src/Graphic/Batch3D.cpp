@@ -172,12 +172,7 @@ void Batch3D::initialize()
 	m_material = ShaderMaterial::create(m_shader);
 	m_mesh = Mesh::create();
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	Sampler sampler;
-	sampler.filterMag = Sampler::Filter::Nearest;
-	sampler.filterMin = Sampler::Filter::Nearest;
-	sampler.wrapS = Sampler::Wrap::Clamp;
-	sampler.wrapT = Sampler::Wrap::Clamp;
-	m_defaultTexture = Texture::create(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, sampler);
+	m_defaultTexture = Texture::create(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest());
 	m_defaultTexture->upload(data);
 
 	m_pass = {};

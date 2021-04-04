@@ -14,19 +14,30 @@ struct Sampler
 	enum class Filter {
 		Nearest,
 		Linear,
-		// Next are only minifying filter
-		MipMapNearest,
-		MipMapLinear,
 	};
 	enum class Wrap {
-		Clamp,
 		Repeat,
 		Mirror,
+		ClampToEdge,
+		ClampToBorder,
+	};
+	enum class MipMapMode {
+		None,
+		Nearest,
+		Linear,
 	};
 	Filter filterMin;
 	Filter filterMag;
-	Wrap wrapS;
-	Wrap wrapT;
+	MipMapMode mipmapMode;
+	Wrap wrapU;
+	Wrap wrapV;
+	Wrap wrapW;
+
+	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
+
+	static Sampler nearest();
+	static Sampler bilinear();
+	static Sampler trilinear();
 
 	bool operator==(const Sampler& rhs);
 	bool operator!=(const Sampler& rhs);

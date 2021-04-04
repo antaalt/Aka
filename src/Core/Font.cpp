@@ -64,7 +64,13 @@ Font::Font(const Path& path, uint32_t height)
     }
     // Generate the atlas and store it.
     Image atlas = packer.pack();
-    Texture::Ptr textureAtlas = Texture::create(atlas.width, atlas.height, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler{ Sampler::Filter::Nearest, Sampler::Filter::Nearest, Sampler::Wrap::Repeat, Sampler::Wrap::Repeat });
+    Texture::Ptr textureAtlas = Texture::create(
+        atlas.width, atlas.height, 
+        TextureFormat::UnsignedByte,
+        TextureComponent::RGBA, 
+        TextureFlag::None, 
+        Sampler::nearest() // TODO do not force nearest.
+    );
     textureAtlas->upload(atlas.bytes.data());
     //atlas.save("atlas.png");
     for (unsigned char c = 0; c < (unsigned char)m_characters.size(); c++)

@@ -170,29 +170,45 @@ GLenum attachmentType(FramebufferAttachmentType type)
 	}
 }
 
-GLenum filter(Sampler::Filter type) {
-	switch (type) {
+GLenum filter(Sampler::Filter type, Sampler::MipMapMode mode = Sampler::MipMapMode::None)
+{
+	switch (mode)
+	{
+	case Sampler::MipMapMode::Linear:
+		if (type == Sampler::Filter::Linear)
+			return GL_LINEAR_MIPMAP_LINEAR; // trilinear
+		else if (type == Sampler::Filter::Nearest)
+			return GL_LINEAR_MIPMAP_NEAREST;
+		break;
+	case Sampler::MipMapMode::Nearest:
+		if (type == Sampler::Filter::Linear)
+			return GL_NEAREST_MIPMAP_LINEAR; // bilinear
+		else if (type == Sampler::Filter::Nearest)
+			return GL_NEAREST_MIPMAP_NEAREST;
+		break;
 	default:
-	case Sampler::Filter::Linear:
-		return GL_LINEAR;
-	case Sampler::Filter::Nearest:
-		return GL_NEAREST;
-	case Sampler::Filter::MipMapNearest:
-		return GL_NEAREST_MIPMAP_NEAREST;
-	case Sampler::Filter::MipMapLinear:
-		return GL_LINEAR_MIPMAP_LINEAR;
+	case Sampler::MipMapMode::None:
+		if (type == Sampler::Filter::Linear)
+			return GL_LINEAR;
+		else if (type == Sampler::Filter::Nearest)
+			return GL_NEAREST;
+		break;
 	}
+	Logger::warn("[GL] Invalid filtering values : ", (int)type, " & ", (int)mode);
+	return 0;
 }
 
 GLenum wrap(Sampler::Wrap wrap) {
 	switch (wrap) {
 	default:
-	case Sampler::Wrap::Clamp:
-		return GL_CLAMP_TO_EDGE;
 	case Sampler::Wrap::Repeat:
 		return GL_REPEAT;
 	case Sampler::Wrap::Mirror:
 		return GL_MIRRORED_REPEAT;
+	case Sampler::Wrap::ClampToEdge:
+		return GL_CLAMP_TO_EDGE;
+	case Sampler::Wrap::ClampToBorder:
+		return GL_CLAMP_TO_BORDER;
 	}
 }
 
@@ -447,11 +463,11 @@ public:
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapS));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapT));
-		if (m_sampler.filterMin == Sampler::Filter::MipMapLinear || m_sampler.filterMin == Sampler::Filter::MipMapNearest)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
+		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
 			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLTexture(GLTexture&) = delete;
@@ -679,7 +695,7 @@ public:
 		m_images.resize(imageCount, nullptr);
 	}
 	GLShaderMaterial(const GLShaderMaterial&) = delete;
-	const GLShaderMaterial& operator=(const GLShaderMaterial&) = delete;
+	GLShaderMaterial& operator=(const GLShaderMaterial&) = delete;
 	~GLShaderMaterial()
 	{
 	}

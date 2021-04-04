@@ -83,14 +83,55 @@ const uv2f& SubTexture::get(uint32_t uv) const
 	return m_uv[uv];
 }
 
+uint32_t Sampler::mipLevelCount(uint32_t width, uint32_t height)
+{
+	return static_cast<uint32_t>(floor(log2(max(width, height)))) + 1;
+}
+
+Sampler Sampler::nearest()
+{
+	Sampler s{};
+	s.filterMag = Sampler::Filter::Nearest;
+	s.filterMin = Sampler::Filter::Nearest;
+	s.mipmapMode = Sampler::MipMapMode::None;
+	s.wrapU = Sampler::Wrap::Repeat;
+	s.wrapV = Sampler::Wrap::Repeat;
+	s.wrapW = Sampler::Wrap::Repeat;
+	return s;
+}
+
+Sampler Sampler::bilinear()
+{
+	Sampler s{};
+	s.filterMag = Sampler::Filter::Linear;
+	s.filterMin = Sampler::Filter::Linear;
+	s.mipmapMode = Sampler::MipMapMode::Nearest;
+	s.wrapU = Sampler::Wrap::Repeat;
+	s.wrapV = Sampler::Wrap::Repeat;
+	s.wrapW = Sampler::Wrap::Repeat;
+	return s;
+}
+
+Sampler Sampler::trilinear()
+{
+	Sampler s{};
+	s.filterMag = Sampler::Filter::Linear;
+	s.filterMin = Sampler::Filter::Linear;
+	s.mipmapMode = Sampler::MipMapMode::Linear;
+	s.wrapU = Sampler::Wrap::Repeat;
+	s.wrapV = Sampler::Wrap::Repeat;
+	s.wrapW = Sampler::Wrap::Repeat;
+	return s;
+}
+
 bool Sampler::operator==(const Sampler& rhs)
 {
-	return filterMin == rhs.filterMin && filterMag == rhs.filterMag && wrapS == rhs.wrapS && wrapT == rhs.wrapT;
+	return filterMin == rhs.filterMin && filterMag == rhs.filterMag && mipmapMode == rhs.mipmapMode && wrapU == rhs.wrapU && wrapV == rhs.wrapV && wrapW == rhs.wrapW;
 }
 
 bool Sampler::operator!=(const Sampler& rhs)
 {
-	return filterMin != rhs.filterMin || filterMag != rhs.filterMag || wrapS != rhs.wrapS || wrapT != rhs.wrapT;
+	return filterMin != rhs.filterMin || filterMag != rhs.filterMag || mipmapMode != rhs.mipmapMode || wrapU != rhs.wrapU || wrapV != rhs.wrapV || wrapW != rhs.wrapW;
 }
 
 };

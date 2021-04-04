@@ -128,27 +128,65 @@ struct D3D11Sampler
 				return sampler.samplerState;
 
 		D3D11_SAMPLER_DESC desc {};
-		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		
-		switch (sampler.wrapS)
+		switch (sampler.wrapU)
 		{
 		case Sampler::Wrap::Repeat: desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; break;
-		case Sampler::Wrap::Clamp: desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case Sampler::Wrap::ClampToEdge: desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case Sampler::Wrap::ClampToBorder: desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER; break;
 		case Sampler::Wrap::Mirror: desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
 		}
-		switch (sampler.wrapT)
+		switch (sampler.wrapV)
 		{
 		case Sampler::Wrap::Repeat: desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP; break;
-		case Sampler::Wrap::Clamp: desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP; break;
-		case Sampler::Wrap::Mirror: desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		case Sampler::Wrap::ClampToEdge: desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case Sampler::Wrap::ClampToBorder: desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER; break;
+		case Sampler::Wrap::Mirror: desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR; break;
 		}
-		desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		switch (sampler.wrapW)
+		{
+		case Sampler::Wrap::Repeat: desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; break;
+		case Sampler::Wrap::ClampToEdge: desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case Sampler::Wrap::ClampToBorder: desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER; break;
+		case Sampler::Wrap::Mirror: desc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		}
 		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
-		switch (sampler.filterMag)
+		Sampler::MipMapMode mipmapMode = (sampler.mipmapMode == Sampler::MipMapMode::None) ? Sampler::MipMapMode::Nearest : sampler.mipmapMode;
+		if (sampler.filterMin == sampler.filterMag)
 		{
-		case Sampler::Filter::Nearest: desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT; break;
-		case Sampler::Filter::Linear: desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break;
+			if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Nearest)
+				desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+			else if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Linear)
+				desc.Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+			else if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Nearest)
+				desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			else if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Linear)
+				desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			else
+				Logger::error("Invalid values for texture filter min");
+		}
+		else if (sampler.filterMin == Sampler::Filter::Nearest)
+		{
+			if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Nearest)
+				desc.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+			else if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Linear)
+				desc.Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+			else
+				Logger::error("Invalid values for texture filter min");
+		}
+		else if (sampler.filterMin == Sampler::Filter::Linear)
+		{
+			if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Nearest)
+				desc.Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+			else if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Linear)
+				desc.Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+			else
+				Logger::error("Invalid values for texture filter min");
+		}
+		else 
+		{
+			Logger::error("Invalid values for texture filter min");
 		}
 
 		ID3D11SamplerState* result;
