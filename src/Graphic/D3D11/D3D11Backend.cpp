@@ -598,6 +598,10 @@ public:
 			&box
 		);
 	}
+	Handle handle() const override
+	{
+		return Handle(static_cast<uintptr_t>(m_view));
+	}
 private:
 	ID3D11Texture2D* m_texture;
 	ID3D11Texture2D* m_staging;

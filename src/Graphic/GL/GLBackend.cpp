@@ -518,6 +518,10 @@ public:
 	{
 		return m_textureID;
 	}
+	Handle handle() const override
+	{
+		return Handle(static_cast<uintptr_t>(m_textureID));
+	}
 private:
 	GLuint m_copyFBO;
 	GLuint m_textureID;

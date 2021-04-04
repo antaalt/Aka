@@ -74,6 +74,7 @@ class Texture
 {
 public:
 	using Ptr = std::shared_ptr<Texture>;
+	using Handle = StrictType<uintptr_t, struct TextureHandleTag>;
 protected:
 	Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
 	Texture(const Texture&) = delete;
@@ -101,6 +102,8 @@ public:
 	virtual void download(void* data) = 0;
 
 	virtual void copy(Texture::Ptr src, const Rect& rect) = 0;
+
+	virtual Handle handle() const = 0;
 
 protected:
 	Sampler m_sampler;
