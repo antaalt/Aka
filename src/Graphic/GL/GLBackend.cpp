@@ -640,53 +640,53 @@ public:
 			case GL_IMAGE_2D:
 				uniform.type = UniformType::Image2D;
 				uniform.shaderType = ShaderType::Compute;
-				imageCount++;
+				imageCount += 1 * uniform.arrayLength;
 				break;
 			case GL_SAMPLER_2D:
 				uniform.type = UniformType::Texture2D;
 				uniform.shaderType = ShaderType::Fragment;
 				// TODO add sampler
-				textureCount++;
+				textureCount += 1 * uniform.arrayLength;
 				break;
 			case GL_FLOAT:
 				uniform.type = UniformType::Float;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 1;
+				bufferSize += 1 * uniform.arrayLength;
 				break;
 			case GL_INT:
 				uniform.type = UniformType::Int;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 1;
+				bufferSize += 1 * uniform.arrayLength;
 				break;
 			case GL_UNSIGNED_INT:
 				uniform.type = UniformType::UnsignedInt;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 1;
+				bufferSize += 1 * uniform.arrayLength;
 				break;
 			case GL_FLOAT_VEC2:
 				uniform.type = UniformType::Vec2;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 2;
+				bufferSize += 2 * uniform.arrayLength;
 				break;
 			case GL_FLOAT_VEC3:
 				uniform.type = UniformType::Vec3;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 4;
+				bufferSize += 3 * uniform.arrayLength;
 				break;
 			case GL_FLOAT_VEC4:
 				uniform.type = UniformType::Vec4;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 4;
+				bufferSize += 4 * uniform.arrayLength;
 				break;
 			case GL_FLOAT_MAT3:
 				uniform.type = UniformType::Mat3;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 9;
+				bufferSize += 9 * uniform.arrayLength;
 				break;
 			case GL_FLOAT_MAT4:
 				uniform.type = UniformType::Mat4;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 16;
+				bufferSize += 16 * uniform.arrayLength;
 				break;
 			default:
 				Logger::warn("[GL] Unsupported Uniform Type : ", name);
@@ -719,28 +719,42 @@ public:
 			default:
 			case UniformType::None:
 				Logger::error("[GL] Unsupported uniform type : ", (int)uniform.type, "(", uniform.name, ")");
-				continue;
+				break;
 			case UniformType::Texture2D: {
-				Texture::Ptr texture = m_textures[textureUnit];
-				GLTexture* glTexture = reinterpret_cast<GLTexture*>(m_textures[textureUnit].get());
-				glUniform1i((GLint)uniform.id.value(), textureUnit);
-				glActiveTexture(GL_TEXTURE0 + textureUnit);
-				if (texture != nullptr)
-					glBindTexture(GL_TEXTURE_2D, glTexture->getTextureID());
-				else
-					glBindTexture(GL_TEXTURE_2D, 0);
-				textureUnit++;
+				std::vector<GLint> units;
+				// Bind texture to units.
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+				{
+					GLint unit = textureUnit++;
+					Texture::Ptr texture = m_textures[unit];
+					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
+					glActiveTexture(GL_TEXTURE0 + unit);
+					if (texture != nullptr)
+						glBindTexture(GL_TEXTURE_2D, glTexture->getTextureID());
+					else
+						glBindTexture(GL_TEXTURE_2D, 0);
+					units.push_back(unit);
+				}
+				// Upload texture unit array.
+				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
 				break;
 			}
 			case UniformType::Image2D: {
-				Texture::Ptr image = m_images[imageUnit];
-				GLTexture* glImage = reinterpret_cast<GLTexture*>(m_textures[textureUnit].get());
-				glUniform1i((GLint)uniform.id.value(), imageUnit);
-				if (image != nullptr)
-					glBindImageTexture(0, glImage->getTextureID(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);// gl::format(image->format()));
-				else
-					glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);//gl::format(image->format()));
-				imageUnit++;
+				std::vector<GLint> units;
+				// Bind images to units.
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+				{
+					GLint unit = imageUnit++;
+					Texture::Ptr image = m_images[unit];
+					GLTexture* glImage = reinterpret_cast<GLTexture*>(image.get());
+					if (image != nullptr)
+						glBindImageTexture(0, glImage->getTextureID(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);// gl::format(image->format()));
+					else
+						glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);//gl::format(image->format()));
+					units.push_back(unit);
+				}
+				// Upload texture unit array.
+				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
 				break;
 			}
 			case UniformType::Sampler2D: {
@@ -748,47 +762,43 @@ public:
 				break;
 			}
 			case UniformType::Mat4: {
-				glUniformMatrix4fv((GLint)uniform.id.value(), 1, false, &m_data[offset]);
+				glUniformMatrix4fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, false, &m_data[offset]);
 				offset += 16 * uniform.arrayLength;
 				break;
 			}
 			case UniformType::Mat3: {
-				glUniformMatrix3fv((GLint)uniform.id.value(), 1, false, &m_data[offset]);
+				glUniformMatrix3fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, false, &m_data[offset]);
 				offset += 9 * uniform.arrayLength;
 				break;
 			}
 			case UniformType::Float: {
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-					glUniform1f((GLint)uniform.id.value(), m_data[offset + i]);
+				glUniform1fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
 				offset += uniform.arrayLength;
 				break;
 			}
 			case UniformType::Int: {
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-					glUniform1i((GLint)uniform.id.value(), *reinterpret_cast<const int*>(&m_data[offset + i]));
+				glUniform1iv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, reinterpret_cast<const int*>(&m_data[offset]));
 				offset += uniform.arrayLength;
 				break;
 			}
 			case UniformType::UnsignedInt: {
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-					glUniform1ui((GLint)uniform.id.value(), *reinterpret_cast<const unsigned int*>(&m_data[offset + i]));
+				glUniform1uiv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, reinterpret_cast<const unsigned int*>(&m_data[offset]));
 				offset += uniform.arrayLength;
 				break;
 			}
 			case UniformType::Vec3: {
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-					glUniform3f((GLint)uniform.id.value(), m_data[offset + 3 * i + 0], m_data[offset + 3 * i + 1], m_data[offset + 3 * i + 2]);
+				glUniform3fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
 				offset += 3 * uniform.arrayLength;
 				break;
 			}
 			case UniformType::Vec4: {
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-					glUniform4f((GLint)uniform.id.value(), m_data[offset + 4 * i + 0], m_data[offset + 4 * i + 1], m_data[offset + 4 * i + 2], m_data[offset + 4 * i + 3]);
+				glUniform4fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
 				offset += 4 * uniform.arrayLength;
 				break;
 			}
 			}
 		}
+		AKA_ASSERT(textureUnit < GL_MAX_TEXTURE_UNITS - GL_TEXTURE0, "Too much textures");
 	}
 };
 

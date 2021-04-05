@@ -90,7 +90,7 @@ float* ShaderMaterial::findUniformOffset(const char* name)
 		case UniformType::UnsignedInt:
 			if (uniform.name == std::string(name))
 				return offset;
-			offset += uniform.arrayLength;
+			offset += 1 * uniform.arrayLength;
 			break;
 		default:
 			Logger::error("Unsupported uniform type : ", (int)uniform.type);
@@ -100,116 +100,109 @@ float* ShaderMaterial::findUniformOffset(const char* name)
 	Logger::error("Uniform not found : ", name);
 	return nullptr;
 }
-void ShaderMaterial::setFloat1(const char* name, float value)
+void ShaderMaterial::setFloat1(const char* name, const float* value, size_t count)
+{
+	// TODO assert type is correct.
+	float* offset = findUniformOffset(name);
+	if (offset == nullptr) return;
+	memcpy(offset, value, sizeof(float) * count);
+}
+void ShaderMaterial::setFloat2(const char* name, const float* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	memcpy(offset, &value, sizeof(float));
+	memcpy(offset, value, sizeof(float) * 2 * count);
 }
-void ShaderMaterial::setFloat2(const char* name, float x, float y)
+void ShaderMaterial::setFloat3(const char* name, const float* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	float data[] = { x,y };
-	memcpy(offset, data, 2 * sizeof(float));
+	memcpy(offset, value, sizeof(float) * 3 * count);
 }
-void ShaderMaterial::setFloat3(const char* name, float x, float y, float z)
+void ShaderMaterial::setFloat4(const char* name, const float* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	float data[] = { x,y,z };
-	memcpy(offset, data, 3 * sizeof(float));
+	memcpy(offset, value, sizeof(float) * 4 * count);
 }
-void ShaderMaterial::setFloat4(const char* name, float x, float y, float z, float w)
+void ShaderMaterial::setUint1(const char* name, const uint32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	float data[] = { x,y,z,w };
-	memcpy(offset, data, 4 * sizeof(float));
+	memcpy(offset, value, sizeof(uint32_t) * count);
 }
-void ShaderMaterial::setUint1(const char* name, uint32_t value)
+void ShaderMaterial::setUint2(const char* name, const uint32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	memcpy(offset, &value, sizeof(float));
+	memcpy(offset, value, sizeof(uint32_t) * 2 * count);
 }
-void ShaderMaterial::setUint2(const char* name, uint32_t x, uint32_t y)
+void ShaderMaterial::setUint3(const char* name, const uint32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	uint32_t data[] = { x,y };
-	memcpy(offset, data, 2 * sizeof(float));
+	memcpy(offset, value, sizeof(uint32_t) * 3 * count);
 }
-void ShaderMaterial::setUint3(const char* name, uint32_t x, uint32_t y, uint32_t z)
+void ShaderMaterial::setUint4(const char* name, const uint32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	uint32_t data[] = { x,y,z };
-	memcpy(offset, data, 3 * sizeof(float));
+	memcpy(offset, value, sizeof(uint32_t) * 4 * count);
 }
-void ShaderMaterial::setUint4(const char* name, uint32_t x, uint32_t y, uint32_t z, uint32_t w)
+void ShaderMaterial::setInt1(const char* name, const int32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	uint32_t data[] = { x,y,z,w };
-	memcpy(offset, data, 4 * sizeof(float));
+	memcpy(offset, value, sizeof(int32_t) * count);
 }
-void ShaderMaterial::setInt1(const char* name, int32_t value)
+void ShaderMaterial::setInt2(const char* name, const int32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	memcpy(offset, &value, sizeof(float));
+	memcpy(offset, value, sizeof(int32_t) * 2 * count);
 }
-void ShaderMaterial::setInt2(const char* name, int32_t x, int32_t y)
+void ShaderMaterial::setInt3(const char* name, const int32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	int32_t data[] = { x,y };
-	memcpy(offset, data, 2 * sizeof(float));
+	memcpy(offset, value, sizeof(int32_t) * 3 * count);
 }
-void ShaderMaterial::setInt3(const char* name, int32_t x, int32_t y, int32_t z)
+void ShaderMaterial::setInt4(const char* name, const int32_t* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	int32_t data[] = { x,y,z };
-	memcpy(offset, data, 3 * sizeof(float));
+	memcpy(offset, value, sizeof(int32_t) * 4 * count);
 }
-void ShaderMaterial::setInt4(const char* name, int32_t x, int32_t y, int32_t z, int32_t w)
+void ShaderMaterial::setMatrix3(const char* name, const float* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	int32_t data[] = { x,y,z,w };
-	memcpy(offset, data, 4 * sizeof(float));
+	memcpy(offset, value, 9 * sizeof(float) * count);
 }
-void ShaderMaterial::setMatrix3(const char* name, const float* data, bool transpose)
+void ShaderMaterial::setMatrix4(const char* name, const float* value, size_t count)
 {
 	float* offset = findUniformOffset(name);
 	if (offset == nullptr) return;
-	memcpy(offset, data, 9 * sizeof(float));
+	memcpy(offset, value, 16 * sizeof(float) * count);
 }
-void ShaderMaterial::setMatrix4(const char* name, const float* data, bool transpose)
-{
-	float* offset = findUniformOffset(name);
-	if (offset == nullptr) return;
-	memcpy(offset, data, 16 * sizeof(float));
-}
-void ShaderMaterial::setTexture(const char* name, Texture::Ptr texture)
+void ShaderMaterial::setTexture(const char* name, const Texture::Ptr* textures, size_t count)
 {
 	uint32_t slot = 0;
-	for (const Uniform &uniform : m_uniforms)
+	for (const Uniform& uniform : m_uniforms)
 	{
 		if (uniform.type != UniformType::Texture2D)
 			continue;
 		if (uniform.name == std::string(name))
 		{
-			m_textures[slot] = texture;
+			for (size_t iTex = 0; iTex < count; iTex++)
+				m_textures[slot + iTex] = textures[iTex];
 			return;
 		}
-		slot++;
+		slot += 1 * uniform.arrayLength;
 	}
 	Logger::error("Texture not found : ", name);
 }
-void ShaderMaterial::setImage(const char* name, Texture::Ptr texture)
+void ShaderMaterial::setImage(const char* name, const Texture::Ptr* images, size_t count)
 {
 	uint32_t slot = 0;
 	for (const Uniform& uniform : m_uniforms)
@@ -218,61 +211,74 @@ void ShaderMaterial::setImage(const char* name, Texture::Ptr texture)
 			continue;
 		if (uniform.name == std::string(name))
 		{
-			m_images[slot] = texture;
+			for (size_t iTex = 0; iTex < count; iTex++)
+				m_images[slot + iTex] = images[iTex];
 			return;
 		}
-		slot++;
+		slot += 1 * uniform.arrayLength;
 	}
 	Logger::error("Image not found : ", name);
 }
 
 template <>
 void ShaderMaterial::set(const char* name, float value) {
-	setFloat1(name, value);
+	setFloat1(name, &value, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, vec2f value) {
-	setFloat2(name, value.x, value.y);
+	setFloat2(name, value.data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, vec3f value) {
-	setFloat3(name, value.x, value.y, value.z);
+	setFloat3(name, value.data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, vec4f value) {
-	setFloat4(name, value.x, value.y, value.z, value.w);
+	setFloat4(name, value.data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, uint32_t value) {
-	setUint1(name, value);
+	setUint1(name, &value, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, vec2u value) {
-	setUint2(name, value.x, value.y);
+	setUint2(name, value.data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, int32_t value) {
-	setInt1(name, value);
+	setInt1(name, &value, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, vec2i value) {
-	setInt2(name, value.x, value.y);
+	setInt2(name, value.data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, color4f value) {
-	setFloat4(name, value.r, value.g, value.b, value.a);
+	setFloat4(name, value.data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, mat3f value) {
-	setMatrix3(name, &value.cols[0].x, false);
+	setMatrix3(name, value.cols[0].data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, mat4f value) {
-	setMatrix4(name, &value.cols[0].x, false);
+	setMatrix4(name, value.cols[0].data, 1);
 }
 template <>
 void ShaderMaterial::set(const char* name, Texture::Ptr texture) {
-	setTexture(name, texture);
+	setTexture(name, &texture, 1);
+}
+template <>
+void ShaderMaterial::set(const char* name, const float* value, size_t count) {
+	setFloat1(name, value, count);
+}
+template <>
+void ShaderMaterial::set(const char* name, const mat4f* value, size_t count) {
+	setMatrix4(name, value[0].cols[0].data, count);
+}
+template <>
+void ShaderMaterial::set(const char* name, const Texture::Ptr* value, size_t count) {
+	setTexture(name, value, count);
 }
 
 };
