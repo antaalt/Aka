@@ -433,7 +433,7 @@ void PlatformBackend::initialize(const Config& config)
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	}
 
-	pctx.window = glfwCreateWindow(config.width, config.height, config.name.c_str(), NULL, NULL);
+	pctx.window = glfwCreateWindow(config.width, config.height, config.name.cstr(), NULL, NULL);
 	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(&pctx.width), reinterpret_cast<int*>(&pctx.height));
 	glfwGetWindowPos(pctx.window, reinterpret_cast<int*>(&pctx.x), reinterpret_cast<int*>(&pctx.y));
 	if (pctx.window == nullptr) {
