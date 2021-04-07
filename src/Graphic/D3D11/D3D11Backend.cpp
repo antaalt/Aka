@@ -689,7 +689,7 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
 	{
 		// TODO remove batch & use simple shader for better perf.
 		static Batch2D batch;
@@ -698,9 +698,10 @@ public:
 		quad.vertices[1] = Batch2D::Vertex{ vec2f((float)this->width(), 0.f), uv2f(1.f, 0.f), color4f(1.f) };
 		quad.vertices[2] = Batch2D::Vertex{ vec2f(0.f, (float)this->height()), uv2f(0.f, 1.f), color4f(1.f) };
 		quad.vertices[3] = Batch2D::Vertex{ vec2f((float)this->width(), (float)this->height()), uv2f(1.f), color4f(1.f) };
-		quad.texture = src->attachment(FramebufferAttachmentType::Color0);
+		quad.texture = src->attachment(type);
 		quad.layer = 0;
 		batch.draw(mat3f::identity(), quad);
+		// TODO this might not work correctly if we try to blit specific attachment.
 		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, (float)this->height(), 0.f, (float)this->width()));
 		batch.clear();
 	}
@@ -855,7 +856,7 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
 	{
 		// TODO remove batch & use simple shader for better perf.
 		static Batch2D batch;
@@ -864,7 +865,7 @@ public:
 		quad.vertices[1] = Batch2D::Vertex{ vec2f((float)this->width(), 0.f), uv2f(1.f, 0.f), color4f(1.f) };
 		quad.vertices[2] = Batch2D::Vertex{ vec2f(0.f, (float)this->height()), uv2f(0.f, 1.f), color4f(1.f) };
 		quad.vertices[3] = Batch2D::Vertex{ vec2f((float)this->width(), (float)this->height()), uv2f(1.f), color4f(1.f) };
-		quad.texture = src->attachment(FramebufferAttachmentType::Color0);
+		quad.texture = src->attachment(type);
 		quad.layer = 0;
 		batch.draw(mat3f::identity(), quad);
 		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, (float)this->height(), 0.f, (float)this->width()));

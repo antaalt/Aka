@@ -970,14 +970,36 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->m_framebufferID);
+		GLenum mask = 0;
+		switch (type)
+		{
+		case aka::FramebufferAttachmentType::Color0:
+		case aka::FramebufferAttachmentType::Color1:
+		case aka::FramebufferAttachmentType::Color2:
+		case aka::FramebufferAttachmentType::Color3:
+			mask |= GL_COLOR_BUFFER_BIT;
+			break;
+		case aka::FramebufferAttachmentType::Depth:
+			mask |= GL_DEPTH_BUFFER_BIT;
+			break;
+		case aka::FramebufferAttachmentType::Stencil:
+			mask |= GL_STENCIL_BUFFER_BIT;
+			break;
+		case aka::FramebufferAttachmentType::DepthStencil:
+			mask |= GL_DEPTH_BUFFER_BIT;
+			mask |= GL_STENCIL_BUFFER_BIT;
+			break;
+		default:
+			break;
+		}
 		glBlitFramebuffer(
 			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h, 
 			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
-			GL_COLOR_BUFFER_BIT, 
+			mask,
 			gl::filter(filter)
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1056,14 +1078,36 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->getFramebufferID());
+		GLenum mask = 0;
+		switch (type)
+		{
+		case aka::FramebufferAttachmentType::Color0:
+		case aka::FramebufferAttachmentType::Color1:
+		case aka::FramebufferAttachmentType::Color2:
+		case aka::FramebufferAttachmentType::Color3:
+			mask |= GL_COLOR_BUFFER_BIT;
+			break;
+		case aka::FramebufferAttachmentType::Depth:
+			mask |= GL_DEPTH_BUFFER_BIT;
+			break;
+		case aka::FramebufferAttachmentType::Stencil:
+			mask |= GL_STENCIL_BUFFER_BIT;
+			break;
+		case aka::FramebufferAttachmentType::DepthStencil:
+			mask |= GL_DEPTH_BUFFER_BIT;
+			mask |= GL_STENCIL_BUFFER_BIT;
+			break;
+		default:
+			break;
+		}
 		glBlitFramebuffer(
 			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h,
 			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
-			GL_COLOR_BUFFER_BIT,
+			mask,
 			gl::filter(filter)
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
