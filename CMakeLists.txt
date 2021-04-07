@@ -18,6 +18,8 @@ add_library (Aka
 	"src/Core/String.cpp"
 	"src/Core/Controller.cpp"
 
+	"src/Layer/ImGuiLayer.cpp"
+
 	"src/Scene/Component.cpp"
 	"src/Scene/Entity.cpp"
 	"src/Scene/System.cpp"
@@ -119,13 +121,14 @@ endif()
 # Third party libs
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 
-target_link_libraries(Aka PUBLIC Geometry AkaEntt)
+target_link_libraries(Aka PUBLIC Geometry AkaEntt AkaImGui)
 target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb freetype)
 
 # Enable UNICODE in windows

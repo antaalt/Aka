@@ -25,6 +25,9 @@ void Application::initialize(uint32_t width, uint32_t height)
 }
 void Application::destroy()
 {
+	for (Layer* layer : m_layers)
+		layer->onLayerDetach();
+	m_layers.clear();
 	onDestroy();
 }
 void Application::start()
@@ -34,17 +37,25 @@ void Application::update(Time::Unit deltaTime)
 {
 	onUpdate(deltaTime);
 	EventDispatcher<BackbufferResizeEvent>::dispatch();
+	for (Layer* layer : m_layers)
+		layer->onLayerUpdate(deltaTime);
 }
 void Application::frame()
 {
+	for (Layer* layer : m_layers)
+		layer->onLayerFrame();
 	onFrame();
 }
 void Application::render()
 {
+	for (Layer* layer : m_layers)
+		layer->onLayerRender();
 	onRender();
 }
 void Application::present()
 {
+	for (Layer* layer : m_layers)
+		layer->onLayerPresent();
 	onPresent();
 }
 void Application::end()
@@ -54,6 +65,8 @@ void Application::end()
 void Application::onReceive(const BackbufferResizeEvent& event)
 {
 	onResize(event.width, event.height);
+	for (Layer* layer : m_layers)
+		layer->onLayerResize(event.width, event.height);
 	m_width = event.width;
 	m_height = event.height;
 }

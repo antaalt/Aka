@@ -6,6 +6,7 @@
 
 #include <Aka/Core/Event.h>
 #include <Aka/Core/View.h>
+#include <Aka/Core/Layer.h>
 
 namespace aka {
 
@@ -78,12 +79,53 @@ protected:
 	uint32_t width() const;
 	// Get the current app height
 	uint32_t height() const;
+	// Attach a layer to the app
+	template <typename T> void attach();
+	// Detach a layer from the app
+	template <typename T> void detach();
+	// Get a layer from the app
+	template <typename T> T& get();
 public:
 	// Entry point of the application
 	static void run(const Config& config);
 private:
+	std::vector<Layer*> m_layers;
 	uint32_t m_width, m_height;
 	bool m_running;
 };
+
+template <typename T>
+void Application::attach() 
+{
+	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
+	for (Layer* layer : m_layers)
+		if (typeid(*layer) == typeid(T))
+			return; // already attached.
+	m_layers.push_back(new T);
+	m_layers.back()->onLayerAttach();
+}
+template <typename T>
+void Application::detach()
+{
+	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
+	for (auto it = m_layers.begin(); it != m_layers.end(); it++)
+	{
+		if (typeid(*(*it)) == typeid(T))
+		{
+			(*it)->onLayerDetach();
+			m_layers.erase(it);
+			break;
+		}
+	}
+}
+template <typename T>
+T& Application::get()
+{
+	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
+	for (Layer* layer : m_layers)
+		if (typeid(*layer) == typeid(T))
+			return reinterpret_cast<T&>(*layer);
+	throw std::runtime_error("Layer not attached");
+}
 
 }
