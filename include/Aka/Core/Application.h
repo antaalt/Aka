@@ -16,6 +16,7 @@ struct Config {
 	uint32_t width = 1280;
 	uint32_t height = 720;
 	String name = "Aka";
+	Image icon = {};
 	Application* app = nullptr;
 	struct Audio {
 		uint32_t frequency = 44100;

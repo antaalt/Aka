@@ -42,13 +42,11 @@ Image::Image(ImageHDR& imageHDR) :
 		bytes[i] = static_cast<uint8_t>(clamp(imageHDR.bytes[i] * 255.f, 0.f, 255.f));
 }
 
-Image Image::load(const Path& path)
+Image Image::load(const Path& path, bool flip)
 {
 	Image image{};
 	int x, y, channel;
-#if defined(ORIGIN_BOTTOM_LEFT)
-	stbi_set_flip_vertically_on_load(true);
-#endif
+	stbi_set_flip_vertically_on_load(flip);
 	stbi_uc* data = stbi_load(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
@@ -65,13 +63,11 @@ Image Image::load(const Path& path)
 	return image;
 }
 
-Image Image::load(const uint8_t* binaries, size_t size)
+Image Image::load(const uint8_t* binaries, size_t size, bool flip)
 {
 	Image image{};
 	int x, y, channel;
-#if defined(ORIGIN_BOTTOM_LEFT)
-	stbi_set_flip_vertically_on_load(true);
-#endif
+	stbi_set_flip_vertically_on_load(flip);
 	stbi_uc* data = stbi_load_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
@@ -88,16 +84,14 @@ Image Image::load(const uint8_t* binaries, size_t size)
 	return image;
 }
 
-Image Image::load(const std::vector<uint8_t>& binaries)
+Image Image::load(const std::vector<uint8_t>& binaries, bool flip)
 {
 	return load(binaries.data(), binaries.size());
 }
 
-void Image::save(const Path& path) const
+void Image::save(const Path& path, bool flip) const
 {
-#if defined(ORIGIN_BOTTOM_LEFT)
-	stbi_flip_vertically_on_write(true);
-#endif
+	stbi_flip_vertically_on_write(flip);
 	int error = stbi_write_png(path.cstr(), width, height, components, bytes.data(), width * components);
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());
@@ -175,13 +169,11 @@ ImageHDR::ImageHDR(Image& image) :
 		bytes[i] = image.bytes[i] / 255.f;
 }
 
-ImageHDR ImageHDR::load(const Path& path)
+ImageHDR ImageHDR::load(const Path& path, bool flip)
 {
 	ImageHDR image{};
 	int x, y, channel;
-#if defined(ORIGIN_BOTTOM_LEFT)
-	stbi_set_flip_vertically_on_load(true);
-#endif
+	stbi_set_flip_vertically_on_load(flip);
 	float* data = stbi_loadf(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
@@ -198,13 +190,11 @@ ImageHDR ImageHDR::load(const Path& path)
 	return image;
 }
 
-ImageHDR ImageHDR::load(const uint8_t* binaries, size_t size)
+ImageHDR ImageHDR::load(const uint8_t* binaries, size_t size, bool flip)
 {
 	ImageHDR image{};
 	int x, y, channel;
-#if defined(ORIGIN_BOTTOM_LEFT)
-	stbi_set_flip_vertically_on_load(true);
-#endif
+	stbi_set_flip_vertically_on_load(flip);
 	float* data = stbi_loadf_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
@@ -221,16 +211,14 @@ ImageHDR ImageHDR::load(const uint8_t* binaries, size_t size)
 	return image;
 }
 
-ImageHDR ImageHDR::load(const std::vector<uint8_t>& binaries)
+ImageHDR ImageHDR::load(const std::vector<uint8_t>& binaries, bool flip)
 {
-	return load(binaries.data(), binaries.size());
+	return load(binaries.data(), binaries.size(), flip);
 }
 
-void ImageHDR::save(const Path& path) const
+void ImageHDR::save(const Path& path, bool flip) const
 {
-#if defined(ORIGIN_BOTTOM_LEFT)
-	stbi_flip_vertically_on_write(true);
-#endif
+	stbi_flip_vertically_on_write(flip);
 	int error = stbi_write_hdr(path.cstr(), width, height, components, bytes.data());
 	if (error == 0)
 		Logger::error("Could not save image at path ", path.str());

@@ -436,6 +436,12 @@ void PlatformBackend::initialize(const Config& config)
 	pctx.window = glfwCreateWindow(config.width, config.height, config.name.cstr(), NULL, NULL);
 	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(&pctx.width), reinterpret_cast<int*>(&pctx.height));
 	glfwGetWindowPos(pctx.window, reinterpret_cast<int*>(&pctx.x), reinterpret_cast<int*>(&pctx.y));
+	if (config.icon.bytes.size() > 0)
+	{
+		Image image = config.icon;
+		GLFWimage img{ (int)config.icon.width, (int)config.icon.height, image.bytes.data() };
+		glfwSetWindowIcon(pctx.window, 1, &img);
+	}
 	if (pctx.window == nullptr) {
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");

@@ -25,6 +25,14 @@ struct Rect {
 struct Image;
 struct ImageHDR;
 
+#if defined(ORIGIN_BOTTOM_LEFT)
+constexpr const bool defaultFlipImageAtLoad = true;
+constexpr const bool defaultFlipImageAtSave = true;
+#else
+constexpr const bool defaultFlipImageAtLoad = false;
+constexpr const bool defaultFlipImageAtSave = false;
+#endif
+
 struct Image
 {
 	Image();
@@ -32,11 +40,11 @@ struct Image
 	Image(uint32_t width, uint32_t height, uint32_t components, const uint8_t* data);
 	Image(ImageHDR&);
 
-	static Image load(const Path& path);
-	static Image load(const uint8_t* binaries, size_t size);
-	static Image load(const std::vector<uint8_t>& binaries);
+	static Image load(const Path& path, bool flip = defaultFlipImageAtLoad);
+	static Image load(const uint8_t* binaries, size_t size, bool flip = defaultFlipImageAtLoad);
+	static Image load(const std::vector<uint8_t>& binaries, bool flip = defaultFlipImageAtLoad);
 
-	void save(const Path& path) const;
+	void save(const Path& path, bool flip = defaultFlipImageAtSave) const;
 
 	void set(uint32_t x, uint32_t y, const color24& color);
 	void set(uint32_t x, uint32_t y, const color32& color);
@@ -56,11 +64,11 @@ struct ImageHDR
 	ImageHDR(uint32_t width, uint32_t height, uint32_t components, const float* data);
 	ImageHDR(Image&);
 
-	static ImageHDR load(const Path& path);
-	static ImageHDR load(const uint8_t* binaries, size_t size);
-	static ImageHDR load(const std::vector<uint8_t>& binaries);
+	static ImageHDR load(const Path& path, bool flip = defaultFlipImageAtLoad);
+	static ImageHDR load(const uint8_t* binaries, size_t size, bool flip = defaultFlipImageAtLoad);
+	static ImageHDR load(const std::vector<uint8_t>& binaries, bool flip = defaultFlipImageAtLoad);
 
-	void save(const Path& path) const;
+	void save(const Path& path, bool flip = defaultFlipImageAtSave) const;
 
 	void set(uint32_t x, uint32_t y, const color3f& color);
 	void set(uint32_t x, uint32_t y, const color4f& color);
