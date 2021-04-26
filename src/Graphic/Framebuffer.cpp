@@ -28,6 +28,11 @@ Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, Framebuffe
 	// Validate attachment
 	for (size_t i = 0; i < count; ++i)
 	{
+		if (attachment[i].texture == nullptr)
+		{
+			Logger::error("No texture set for framebuffer attachment ", i);
+			return nullptr;
+		}
 		if (attachment[i].texture->width() != width || attachment[i].texture->height() != height)
 		{
 			Logger::error("Invalid texture size for framebuffer attachment ", i);
