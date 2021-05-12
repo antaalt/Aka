@@ -802,6 +802,112 @@ public:
 	}
 };
 
+class GLBuffer : public Buffer
+{
+	static GLenum type(BufferType type) {
+		switch (type) {
+		case BufferType::Array:
+			return GL_ARRAY_BUFFER;
+		case BufferType::ElementArray:
+			return GL_ELEMENT_ARRAY_BUFFER;
+		default:
+			return 0;
+		}
+	}
+	static GLenum access(BufferUsage usage, BufferAccess access) {
+		switch (usage) {
+		case BufferUsage::Static:
+			return (access == BufferAccess::ReadOnly ? GL_STATIC_READ : (access == BufferAccess::WriteOnly ? GL_STATIC_DRAW : GL_STATIC_COPY));
+		case BufferUsage::Stream:
+			return (access == BufferAccess::ReadOnly ? GL_STREAM_READ : (access == BufferAccess::WriteOnly ? GL_STREAM_DRAW : GL_STREAM_COPY));
+		case BufferUsage::Dynamic:
+			return (access == BufferAccess::ReadOnly ? GL_DYNAMIC_READ : (access == BufferAccess::WriteOnly ? GL_DYNAMIC_DRAW : GL_DYNAMIC_COPY));
+		default:
+			return 0;
+		}
+	}
+public:
+	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access) :
+		Buffer(type, size, usage, access),
+		m_bufferID(0)
+	{
+		glGenBuffers(1, &m_bufferID);
+		
+		glBindBuffer(GLBuffer::type(type), m_bufferID);
+		glBufferData(GLBuffer::type(type), size, nullptr, GLBuffer::access(usage, access));
+		glBindBuffer(GLBuffer::type(type), 0);
+	}
+	GLBuffer(const GLBuffer&) = delete;
+	GLBuffer& operator=(const GLBuffer&) = delete;
+	~GLBuffer()
+	{
+		if (m_bufferID)
+			glDeleteBuffers(1, &m_bufferID);
+	}
+
+	void upload(const void* data, size_t size, size_t offset = 0) override
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glBufferSubData(GLBuffer::type(m_type), offset, size, data);
+		glBindBuffer(GLBuffer::type(m_type), 0);
+	}
+
+	void upload(const void* data) override
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glBufferData(GLBuffer::type(m_type), m_size, data, GLBuffer::access(m_usage, m_access));
+		glBindBuffer(GLBuffer::type(m_type), 0);
+	}
+
+	void download(void* data, size_t size, size_t offset = 0) override
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glGetBufferSubData(GLBuffer::type(m_type), offset, size, data);
+		glBindBuffer(GLBuffer::type(m_type), 0);
+	}
+
+	void download(void* data) override
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glGetBufferSubData(GLBuffer::type(m_type), 0, m_size, data);
+		glBindBuffer(GLBuffer::type(m_type), 0);
+	}
+
+	void* map(BufferAccess access) override
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		GLenum glAccess = GL_READ_ONLY;
+		switch (access)
+		{
+		case BufferAccess::ReadOnly:
+			AKA_ASSERT(m_access == BufferAccess::ReadOnly || m_access == BufferAccess::ReadAndWrite, "");
+			glAccess = GL_READ_ONLY;
+			break;
+		case BufferAccess::WriteOnly:
+			AKA_ASSERT(m_access == BufferAccess::WriteOnly || m_access == BufferAccess::ReadAndWrite, "");
+			glAccess = GL_WRITE_ONLY;
+			break;
+		default:
+		case BufferAccess::ReadAndWrite:
+			AKA_ASSERT(m_access == BufferAccess::ReadAndWrite, "");
+			glAccess = GL_READ_WRITE;
+			break;
+		}
+		void* data = glMapBuffer(GLBuffer::type(m_type), glAccess);
+		glBindBuffer(GLBuffer::type(m_type), 0);
+		return data;
+	}
+
+	void unmap() override 
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glUnmapBuffer(GLBuffer::type(m_type));
+		glBindBuffer(GLBuffer::type(m_type), 0);
+	}
+private:
+	GLuint m_bufferID;
+};
+
 class GLMesh : public Mesh
 {
 public:
@@ -1451,6 +1557,11 @@ Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, Text
 Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)
 {
 	return std::make_shared<GLFramebuffer>(width, height, attachments, count);
+}
+
+Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access)
+{
+	return std::make_shared<GLBuffer>(type, size, usage, access);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()

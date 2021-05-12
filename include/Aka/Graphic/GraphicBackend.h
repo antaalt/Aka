@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "ShaderMaterial.h"
 #include "Framebuffer.h"
+#include "Buffer.h"
 #include "Mesh.h"
 #include "RenderPass.h"
 #include "../OS/FileSystem.h"
@@ -67,6 +68,9 @@ protected:
 
 	friend class Framebuffer;
 	static Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count);
+
+	friend class Buffer;
+	static Buffer::Ptr createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access);
 
 	friend class Mesh;
 	static Mesh::Ptr createMesh();

@@ -40,6 +40,7 @@ add_library (Aka
 	"src/Graphic/Shader.cpp"
 	"src/Graphic/ShaderMaterial.cpp"
 	"src/Graphic/Texture.cpp"
+	"src/Graphic/Buffer.cpp"
 
 	"src/OS/FileSystem.cpp"
 	"src/OS/Image.cpp"
