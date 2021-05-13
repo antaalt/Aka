@@ -467,8 +467,6 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
-			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLTexture(GLTexture&) = delete;
 	GLTexture& operator=(GLTexture&) = delete;
@@ -484,6 +482,8 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), m_width, m_height, 0, gl::component(m_component), gl::format(m_format), data);
+		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
+			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	void upload(const Rect& rect, const void* data) override
 	{
@@ -492,6 +492,8 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
+		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
+			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	void download(void* data) override
 	{
@@ -513,6 +515,8 @@ public:
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
+			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLuint getTextureID() const
 	{
