@@ -83,4 +83,14 @@ const VertexData& Mesh::getVertexData() const
     return m_vertexData;
 }
 
+uint32_t Mesh::getVertexCount() const
+{
+	return m_vertexCount;
+}
+
+uint32_t Mesh::getVertexStride() const
+{
+	return m_vertexStride;
+}
+
 };

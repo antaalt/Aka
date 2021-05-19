@@ -87,6 +87,9 @@ public:
 	uint32_t getIndexSize() const;
 	IndexFormat getIndexFormat() const;
 	const VertexData &getVertexData() const;
+	uint32_t getVertexCount() const;
+	uint32_t getVertexStride() const;
+
 
 protected:
 	uint32_t m_vertexStride;
