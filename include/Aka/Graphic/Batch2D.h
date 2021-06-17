@@ -85,13 +85,14 @@ private:
 		int32_t layer; // layer of the batch for reordering
 		uint32_t elementOffset; // offset of indices in global array
 		uint32_t elements; // number of triangles in the batch
+		PrimitiveType type; // Type of the primitive
 		Texture::Ptr texture; // Texture of the batch 
 	};
 
 	// Create the batch to the stack and use a new one with texture & layer set
-	DrawBatch& create(Texture::Ptr texture, int32_t layer);
+	DrawBatch& create(PrimitiveType type, Texture::Ptr texture, int32_t layer);
 	// Get the batch with settings
-	DrawBatch& get(Texture::Ptr texture, int32_t layer);
+	DrawBatch& get(PrimitiveType type, Texture::Ptr texture, int32_t layer);
 
 private:
 	std::vector<uint32_t> m_indices;

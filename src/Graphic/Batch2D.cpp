@@ -77,7 +77,19 @@ static const char* fragShader = shader;
 
 void Batch2D::draw(const mat3f& transform, const Line& line)
 {
-	throw std::runtime_error("Not implemented");
+	DrawBatch& currentBatch = get(PrimitiveType::Lines, nullptr, line.layer);
+	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
+	m_indices.push_back(offset + 0);
+	m_indices.push_back(offset + 1);
+	for (const Vertex& vert : line.vertices)
+		m_vertices.push_back(vert);
+	for (size_t iVert = offset; iVert < offset + 2; iVert++)
+		m_vertices[iVert].position = transform.multiplyPoint(m_vertices[iVert].position);
+#if defined(ORIGIN_TOP_LEFT)
+	for (size_t iVert = offset; iVert < offset + 2; iVert++)
+		m_vertices[iVert].uv.v = 1.f - m_vertices[iVert].uv.v;
+#endif
+	currentBatch.elements += 1;
 }
 
 void Batch2D::draw(const mat3f& transform, const Triangle& tri)
@@ -90,7 +102,7 @@ void Batch2D::draw(const mat3f& transform, const Quad& quad)
 	// 	2___3
 	// 	|   |
 	//	0___1
-	DrawBatch& currentBatch = get(quad.texture, quad.layer);
+	DrawBatch& currentBatch = get(PrimitiveType::Triangles, quad.texture, quad.layer);
 	uint32_t offset = static_cast<uint32_t>(m_vertices.size());
 	m_indices.push_back(offset + 0);
 	m_indices.push_back(offset + 1);
@@ -151,7 +163,6 @@ void Batch2D::initialize()
 	m_pass.depth = Depth{ DepthCompare::None, true };
 	m_pass.stencil = Stencil::none();
 	m_pass.mesh = m_mesh;
-	m_pass.primitive = PrimitiveType::Triangles;
 	m_pass.material = m_material;
 }
 
@@ -159,7 +170,7 @@ void Batch2D::destroy()
 {
 }
 
-Batch2D::DrawBatch& Batch2D::create(Texture::Ptr texture, int32_t layer)
+Batch2D::DrawBatch& Batch2D::create(PrimitiveType type, Texture::Ptr texture, int32_t layer)
 {
 	size_t offset = (m_batches.size() == 0) ? 0 : m_batches.back().elementOffset + m_batches.back().elements;
 	m_batches.emplace_back();
@@ -167,21 +178,23 @@ Batch2D::DrawBatch& Batch2D::create(Texture::Ptr texture, int32_t layer)
 	m_batches.back().elementOffset = static_cast<uint32_t>(offset);
 	m_batches.back().elements = 0;
 	m_batches.back().layer = layer;
+	m_batches.back().type = type;
 	return m_batches.back();
 }
 
-Batch2D::DrawBatch& Batch2D::get(Texture::Ptr texture, int32_t layer)
+Batch2D::DrawBatch& Batch2D::get(PrimitiveType type, Texture::Ptr texture, int32_t layer)
 {
 	if (m_batches.size() == 0)
-		return create(texture, layer);
+		return create(type, texture, layer);
 	if (m_batches.back().elements == 0)
 	{
 		m_batches.back().texture = texture;
 		m_batches.back().layer = layer;
+		m_batches.back().type = type;
 		return m_batches.back();
 	}
-	if (m_batches.back().layer != layer || m_batches.back().texture != texture)
-		return create(texture, layer);
+	if (m_batches.back().layer != layer || m_batches.back().texture != texture || m_batches.back().type != type)
+		return create(type, texture, layer);
 	return m_batches.back();
 }
 
@@ -259,6 +272,7 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		m_material->set<Texture::Ptr>("u_texture", batch.texture ? batch.texture : m_defaultTexture);
 		m_pass.indexCount = batch.elements * 3;
 		m_pass.indexOffset = batch.elementOffset * 3;
+		m_pass.primitive = batch.type;
 		m_pass.execute();
 	}
 }

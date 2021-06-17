@@ -39,6 +39,15 @@ void Renderer2D::draw(const mat3f& transform, const Triangle& tri)
 	batch.draw(transform, tri);
 }
 
+void Renderer2D::drawLine(const mat3f& transform, const vec2f& A, const vec2f& B, const color4f& color, int32_t layer)
+{
+	Line line;
+	line.vertices[0] = Vertex{ A, uv2f(0.f), color };
+	line.vertices[1] = Vertex{ B, uv2f(1.f), color };
+	line.layer = layer;
+	Renderer2D::draw(transform, line);
+}
+
 void Renderer2D::drawRect(const mat3f& transform, const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f& color, int32_t layer)
 {
 	Quad quad;
