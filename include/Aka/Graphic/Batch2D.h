@@ -40,6 +40,7 @@ public:
 	struct Poly {
 		std::vector<Vertex> vertices;
 		Texture::Ptr texture;
+		PrimitiveType primitive;
 		int32_t layer;
 	};
 
@@ -83,9 +84,9 @@ private:
 
 	struct DrawBatch {
 		int32_t layer; // layer of the batch for reordering
-		uint32_t elementOffset; // offset of indices in global array
-		uint32_t elements; // number of triangles in the batch
-		PrimitiveType type; // Type of the primitive
+		uint32_t indexOffset; // offset of indices in global array
+		uint32_t indexCount; // number of triangles in the batch
+		PrimitiveType primitive; // Type of the primitive
 		Texture::Ptr texture; // Texture of the batch 
 	};
 

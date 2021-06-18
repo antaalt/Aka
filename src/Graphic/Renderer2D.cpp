@@ -48,6 +48,30 @@ void Renderer2D::drawLine(const mat3f& transform, const vec2f& A, const vec2f& B
 	Renderer2D::draw(transform, line);
 }
 
+void Renderer2D::drawCircle(const mat3f& transform, const vec2f& position, float radius, const color4f& color, int32_t layer)
+{
+	Poly poly;
+	poly.vertices.push_back(Vertex{
+		position,
+		uv2f(0.f),
+		color
+	});
+	const uint32_t resolution = 16;
+	for (uint32_t i = 0; i <= resolution; i++)
+	{
+		anglef angle = i * 2.f * pi<float> / resolution;
+		poly.vertices.push_back(Vertex{
+			vec2f(radius * cos(angle) + position.x, radius * sin(angle) + position.y),
+			uv2f(cos(angle), sin(angle)),
+			color
+		});
+	}
+	poly.layer = layer;
+	poly.texture = nullptr;
+	poly.primitive = PrimitiveType::TriangleFan;
+	Renderer2D::draw(transform, poly);
+}
+
 void Renderer2D::drawRect(const mat3f& transform, const vec2f& pos, const vec2f& size, Texture::Ptr texture, const color4f& color, int32_t layer)
 {
 	Quad quad;
