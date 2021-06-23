@@ -479,21 +479,21 @@ public:
 	}
 	void upload(const void* data) override
 	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), m_width, m_height, 0, gl::component(m_component), gl::format(m_format), data);
+		upload(Rect{0, 0, m_width, m_height}, data);
+	}
+	void upload(const Rect& rect, const void* data) override
+	{
+		upload(0, rect, data);
 		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
 			glGenerateMipmap(GL_TEXTURE_2D);
 	}
-	void upload(const Rect& rect, const void* data) override
+	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
 	{
 		AKA_ASSERT(rect.x + rect.w <= m_width, "");
 		AKA_ASSERT(rect.y + rect.h <= m_height, "");
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
-		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
-			glGenerateMipmap(GL_TEXTURE_2D);
+		glTexSubImage2D(GL_TEXTURE_2D, mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
 	}
 	void download(void* data) override
 	{
@@ -513,10 +513,9 @@ public:
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
+		// TODO copy all mip map level
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
-			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLuint getTextureID() const
 	{

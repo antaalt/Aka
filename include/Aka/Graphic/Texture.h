@@ -99,6 +99,8 @@ public:
 
 	virtual void upload(const void* data) = 0;
 
+	virtual void upload(uint32_t mipLevel, const Rect& rect, const void* data) = 0;
+
 	virtual void download(void* data) = 0;
 
 	virtual void copy(Texture::Ptr src, const Rect& rect) = 0;
