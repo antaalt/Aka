@@ -167,6 +167,8 @@ GLenum attachmentType(FramebufferAttachmentType type)
 		return GL_DEPTH_ATTACHMENT;
 	case FramebufferAttachmentType::Stencil:
 		return GL_STENCIL_ATTACHMENT;
+	case FramebufferAttachmentType::DepthStencil:
+		return GL_DEPTH_STENCIL_ATTACHMENT;
 	}
 }
 
@@ -318,6 +320,10 @@ GLenum format(TextureFormat format) {
 		return GL_HALF_FLOAT;
 	case TextureFormat::Float:
 		return GL_FLOAT;
+	case TextureFormat::UnsignedInt248:
+		return GL_UNSIGNED_INT_24_8;
+	case TextureFormat::Float32UnsignedInt248:
+		return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
 	}
 }
 
@@ -1065,11 +1071,6 @@ private:
 	GLuint m_vertexVbo;
 	GLuint m_indexVbo;
 };
-
-ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs)
-{
-	return static_cast<ClearMask>(static_cast<int>(lhs) & static_cast<int>(rhs));
-}
 
 class GLFramebuffer : public Framebuffer
 {

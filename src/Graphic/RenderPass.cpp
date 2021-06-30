@@ -123,6 +123,19 @@ Stencil Stencil::none()
 	return stencil;
 }
 
+Stencil Stencil::always()
+{
+	Stencil stencil{};
+	stencil.front.mode = StencilMode::Always;
+	stencil.front.stencilFailed = StencilOp::Replace;
+	stencil.front.stencilDepthFailed = StencilOp::Replace;
+	stencil.front.stencilPassed = StencilOp::Replace;
+	stencil.back = stencil.front;
+	stencil.readMask = 0xff;
+	stencil.writeMask = 0xff;
+	return stencil;
+}
+
 Stencil Stencil::equal()
 {
 	Stencil stencil{};

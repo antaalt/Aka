@@ -77,4 +77,7 @@ protected:
 	std::vector<FramebufferAttachment> m_attachments;
 };
 
+ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs);
+ClearMask operator|(const ClearMask& lhs, const ClearMask& rhs);
+
 }

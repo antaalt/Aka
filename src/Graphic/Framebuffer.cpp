@@ -77,4 +77,14 @@ Texture::Ptr Framebuffer::attachment(FramebufferAttachmentType type)
 	return nullptr;
 }
 
+ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs)
+{
+	return static_cast<ClearMask>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+ClearMask operator|(const ClearMask& lhs, const ClearMask& rhs)
+{
+	return static_cast<ClearMask>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
 };

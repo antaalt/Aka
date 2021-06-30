@@ -56,7 +56,9 @@ enum class TextureFormat : uint8_t {
 	UnsignedInt,
 	Int,
 	Half,
-	Float
+	Float,
+	UnsignedInt248,
+	Float32UnsignedInt248
 };
 
 enum class TextureComponent : uint8_t {

@@ -153,6 +153,7 @@ struct Stencil
 	uint32_t writeMask;
 
 	static Stencil none();
+	static Stencil always();
 	static Stencil equal();
 
 	bool operator==(const Stencil& rhs) const;
