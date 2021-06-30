@@ -212,24 +212,87 @@ GLenum wrap(Sampler::Wrap wrap) {
 	}
 }
 
+GLenum componentInternal(TextureComponent component) {
+	switch (component) {
+	default:
+		throw std::runtime_error("Not implemneted");
+	case TextureComponent::R:
+		return GL_RED;
+	case TextureComponent::R8:
+		return GL_R8;
+	case TextureComponent::R16:
+		return GL_R16;
+	case TextureComponent::RG:
+		return GL_RG;
+	case TextureComponent::RG8:
+		return GL_RG8;
+	case TextureComponent::RG16:
+		return GL_RG16;
+	case TextureComponent::RGB:
+		return GL_RGB;
+	case TextureComponent::RGB8:
+		return GL_RGB8;
+	case TextureComponent::RGB16:
+		return GL_RGB16;
+	case TextureComponent::RGB16F:
+		return GL_RGB16F;
+	case TextureComponent::RGB32F:
+		return GL_RGB32F;
+	case TextureComponent::RGBA:
+		return GL_RGBA;
+	case TextureComponent::RGBA8:
+		return GL_RGBA8;
+	case TextureComponent::RGBA16F:
+		return GL_RGBA16F;
+	case TextureComponent::RGBA32F:
+		return GL_RGBA32F;
+	case TextureComponent::Depth:
+		return GL_DEPTH_COMPONENT;
+	case TextureComponent::Depth16:
+		return GL_DEPTH_COMPONENT16;
+	case TextureComponent::Depth32:
+		return GL_DEPTH_COMPONENT32;
+	case TextureComponent::Depth32F:
+		return GL_DEPTH_COMPONENT32F;
+	case TextureComponent::DepthStencil:
+		return GL_DEPTH_STENCIL;
+	case TextureComponent::Depth24Stencil8:
+		return GL_DEPTH24_STENCIL8;
+	case TextureComponent::Depth32FStencil8:
+		return GL_DEPTH32F_STENCIL8;
+	}
+}
+
 GLenum component(TextureComponent component) {
 	switch (component) {
 	default:
 		throw std::runtime_error("Not implemneted");
-	case TextureComponent::Red:
+	case TextureComponent::R:
+	case TextureComponent::R8:
+	case TextureComponent::R16:
 		return GL_RED;
 	case TextureComponent::RG:
+	case TextureComponent::RG8:
+	case TextureComponent::RG16:
 		return GL_RG;
 	case TextureComponent::RGB:
+	case TextureComponent::RGB8:
+	case TextureComponent::RGB16:
+	case TextureComponent::RGB16F:
+	case TextureComponent::RGB32F:
 		return GL_RGB;
-	case TextureComponent::BGR:
-		return GL_BGR;
 	case TextureComponent::RGBA:
+	case TextureComponent::RGBA8:
+	case TextureComponent::RGBA16F:
+	case TextureComponent::RGBA32F:
 		return GL_RGBA;
-	case TextureComponent::BGRA:
-		return GL_BGRA;
 	case TextureComponent::Depth:
+	case TextureComponent::Depth16:
+	case TextureComponent::Depth32:
+	case TextureComponent::Depth32F:
 		return GL_DEPTH_COMPONENT;
+	case TextureComponent::Depth24Stencil8:
+	case TextureComponent::Depth32FStencil8:
 	case TextureComponent::DepthStencil:
 		return GL_DEPTH_STENCIL;
 	}
@@ -462,7 +525,7 @@ public:
 	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
@@ -512,7 +575,7 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::component(m_component), rect.x, rect.y, rect.w, rect.h, 0);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_component), rect.x, rect.y, rect.w, rect.h, 0);
 		// TODO copy all mip map level
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1017,14 +1080,19 @@ public:
 	{
 		glGenFramebuffers(1, &m_framebufferID);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
+		std::vector<GLenum> drawBuffers;
 		for (size_t iAtt = 0; iAtt < count; iAtt++)
 		{
 			// TODO assert uniqueness of attachment
 			// TODO if texture nullptr, create render target instead ?
 			GLTexture* glTexture = reinterpret_cast<GLTexture*>(attachments[iAtt].texture.get());
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachments[iAtt].type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
+			GLenum type = gl::attachmentType(attachments[iAtt].type);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, type, GL_TEXTURE_2D, glTexture->getTextureID(), 0);
+			if (type >= GL_COLOR_ATTACHMENT0 && type <= GL_COLOR_ATTACHMENT15)
+				drawBuffers.push_back(type);
 		}
 		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
+		glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	GLFramebuffer(const GLFramebuffer&) = delete;

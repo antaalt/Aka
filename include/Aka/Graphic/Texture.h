@@ -60,14 +60,33 @@ enum class TextureFormat : uint8_t {
 };
 
 enum class TextureComponent : uint8_t {
-	Red,
+	R,
+	R8,
+	R16,
+
 	RG,
+	RG8,
+	RG16,
+
 	RGB,
-	BGR,
+	RGB8,
+	RGB16,
+	RGB16F,
+	RGB32F,
+
 	RGBA,
-	BGRA,
+	RGBA8,
+	RGBA16F,
+	RGBA32F,
+
 	Depth,
+	Depth16,
+	Depth32,
+	Depth32F,
+
 	DepthStencil,
+	Depth24Stencil8,
+	Depth32FStencil8
 };
 
 class Texture
