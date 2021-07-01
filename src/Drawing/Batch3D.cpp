@@ -1,4 +1,4 @@
-#include <Aka/Graphic/Batch3D.h>
+#include <Aka/Drawing/Batch3D.h>
 
 #include <algorithm>
 
@@ -172,8 +172,7 @@ void Batch3D::initialize()
 	m_material = ShaderMaterial::create(m_shader);
 	m_mesh = Mesh::create();
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest());
-	m_defaultTexture->upload(data);
+	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest(), data);
 
 	m_pass = {};
 	m_pass.clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };

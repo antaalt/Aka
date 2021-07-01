@@ -1,4 +1,4 @@
-#include <Aka/Graphic/Renderer3D.h>
+#include <Aka/Drawing/Renderer3D.h>
 
 namespace aka {
 

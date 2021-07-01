@@ -19,7 +19,7 @@ Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height)
 {
 	FramebufferAttachment colorAttachment;
 	colorAttachment.type = FramebufferAttachmentType::Color0;
-	colorAttachment.texture = Texture::create(width, height, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::RenderTarget, Sampler{});
+	colorAttachment.texture = Texture::create2D(width, height, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::RenderTarget, Sampler{});
 	return create(width, height, &colorAttachment, 1);
 }
 

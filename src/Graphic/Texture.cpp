@@ -4,8 +4,9 @@
 
 namespace aka {
 
-Texture::Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
+Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
 	m_sampler(sampler),
+	m_type(type),
 	m_format(format),
 	m_flags(flags),
 	m_component(component),
@@ -18,9 +19,26 @@ Texture::~Texture()
 {
 }
 
-Texture::Ptr Texture::create(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler)
+Texture::Ptr Texture::create2D(
+	uint32_t width, uint32_t height, 
+	TextureFormat format, TextureComponent component, TextureFlag flags, 
+	Sampler sampler, 
+	void* data
+)
 {
-	return GraphicBackend::createTexture(width, height, format, component, flags, sampler);
+	return GraphicBackend::createTexture2D(width, height, format, component, flags, sampler, data);
+}
+
+Texture::Ptr Texture::createCubemap(
+	uint32_t width, uint32_t height, 
+	TextureFormat format, TextureComponent component, TextureFlag flags, 
+	Sampler sampler, 
+	void* px, void* nx,
+	void* py, void* ny,
+	void* pz, void* nz
+)
+{
+	return GraphicBackend::createTextureCubeMap(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
 uint32_t Texture::width() const

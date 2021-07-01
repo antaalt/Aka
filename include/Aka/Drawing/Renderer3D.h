@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Aka/Core/Geometry.h>
-#include <Aka/Graphic/Batch3D.h>
+#include <Aka/Drawing/Batch3D.h>
 #include <Aka/Graphic/Framebuffer.h>
 
 namespace aka {

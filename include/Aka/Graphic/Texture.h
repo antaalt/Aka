@@ -91,18 +91,43 @@ enum class TextureComponent : uint8_t {
 	Depth32FStencil8
 };
 
+enum class TextureType {
+	Texture2D,
+	CubeMap,
+};
+
 class Texture
 {
 public:
 	using Ptr = std::shared_ptr<Texture>;
 	using Handle = StrictType<uintptr_t, struct TextureHandleTag>;
 protected:
-	Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
+	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
 public:
-	static Texture::Ptr create(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
+	static Texture::Ptr create2D(
+		uint32_t width, 
+		uint32_t height, 
+		TextureFormat format, 
+		TextureComponent component,
+		TextureFlag flag, 
+		Sampler sampler,
+		void* data = nullptr
+	);
+	static Texture::Ptr createCubemap(
+		uint32_t width,
+		uint32_t height,
+		TextureFormat format,
+		TextureComponent component,
+		TextureFlag flag,
+		Sampler sampler,
+		void* px, void* nx,
+		void* py, void* ny, 
+		void* pz, void* nz
+	);
+
 
 	uint32_t width() const;
 
@@ -130,6 +155,7 @@ public:
 
 protected:
 	Sampler m_sampler;
+	TextureType m_type;
 	TextureFormat m_format;
 	TextureFlag m_flags;
 	TextureComponent m_component;

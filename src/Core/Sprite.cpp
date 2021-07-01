@@ -22,14 +22,14 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	frame.width = ase.width;
 	frame.height = ase.height;
 	// Generate texture
-	frame.texture = Texture::create(
-		ase.width, ase.height, 
+	frame.texture = Texture::create2D(
+		ase.width, ase.height,
 		TextureFormat::UnsignedByte,
-		TextureComponent::RGBA, 
-		TextureFlag::None, 
-		Sampler::nearest()
+		TextureComponent::RGBA,
+		TextureFlag::None,
+		Sampler::nearest(),
+		image.bytes.data()
 	);
-	frame.texture->upload(image.bytes.data());
 	return frame;
 }
 

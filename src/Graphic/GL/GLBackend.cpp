@@ -300,6 +300,17 @@ GLenum component(TextureComponent component) {
 	}
 }
 
+GLenum type(TextureType type) {
+	switch (type) {
+	default:
+		throw std::runtime_error("Not implemneted");
+	case TextureType::Texture2D:
+		return GL_TEXTURE_2D;
+	case TextureType::CubeMap:
+		return GL_TEXTURE_CUBE_MAP;
+	}
+}
+
 GLenum format(TextureFormat format) {
 	switch (format) {
 	default:
@@ -524,18 +535,53 @@ GLenum primitive(PrimitiveType type)
 class GLTexture : public Texture
 {
 public:
-	GLTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
-		Texture(width, height, format, component, flags, sampler),
+	GLTexture(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags,
+		Sampler sampler, 
+		void* data
+	) :
+		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), data);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
+		if (m_sampler.mipmapMode != Sampler::MipMapMode::None && data != nullptr)
+			glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	GLTexture(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags,
+		Sampler sampler,
+		void* px, void* nx,
+		void* py, void* ny,
+		void* pz, void* nz
+	) :
+		Texture(width, height, TextureType::CubeMap, format, component, flags, sampler),
+		m_copyFBO(0),
+		m_textureID(0)
+	{
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), px);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nx);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), py);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), ny);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), pz);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nz);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
+		if (m_sampler.mipmapMode != Sampler::MipMapMode::None && px != nullptr)
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	}
 	GLTexture(GLTexture&) = delete;
 	GLTexture& operator=(GLTexture&) = delete;
@@ -548,27 +594,27 @@ public:
 	}
 	void upload(const void* data) override
 	{
-		upload(Rect{0, 0, m_width, m_height}, data);
+		upload(Rect{ 0, 0, m_width, m_height }, data);
 	}
 	void upload(const Rect& rect, const void* data) override
 	{
 		upload(0, rect, data);
 		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
-			glGenerateMipmap(GL_TEXTURE_2D);
+			glGenerateMipmap(gl::type(m_type));
 	}
 	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
 	{
 		AKA_ASSERT(rect.x + rect.w <= m_width, "");
 		AKA_ASSERT(rect.y + rect.h <= m_height, "");
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexSubImage2D(GL_TEXTURE_2D, mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
+		glBindTexture(gl::type(m_type), m_textureID);
+		glTexSubImage2D(gl::type(m_type), mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
 	}
 	void download(void* data) override
 	{
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glGetTexImage(GL_TEXTURE_2D, 0, gl::component(m_component), gl::format(m_format), data);
+		glBindTexture(gl::type(m_type), m_textureID);
+		glGetTexImage(gl::type(m_type), 0, gl::component(m_component), gl::format(m_format), data);
 	}
 	void copy(Texture::Ptr src, const Rect& rect) override
 	{
@@ -579,11 +625,11 @@ public:
 		if (m_copyFBO == 0)
 			glGenFramebuffers(1, &m_copyFBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
-		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_component), rect.x, rect.y, rect.w, rect.h, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl::type(m_type), reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
+		glBindTexture(gl::type(m_type), m_textureID);
+		glCopyTexImage2D(gl::type(m_type), 0, gl::componentInternal(m_component), rect.x, rect.y, rect.w, rect.h, 0);
 		// TODO copy all mip map level
-		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(gl::type(m_type), 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	GLuint getTextureID() const
@@ -598,7 +644,6 @@ private:
 	GLuint m_copyFBO;
 	GLuint m_textureID;
 };
-
 
 class GLShader : public Shader
 {
@@ -1115,7 +1160,8 @@ public:
 				attachment.texture->format(), 
 				attachment.texture->component(), 
 				TextureFlag::RenderTarget,
-				attachment.texture->sampler()
+				attachment.texture->sampler(),
+				nullptr
 			);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), GL_TEXTURE_2D, tex->getTextureID(), 0);
 			attachment.texture = tex;
@@ -1621,9 +1667,26 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler)
+Texture::Ptr GraphicBackend::createTexture2D(
+	uint32_t width, uint32_t height, 
+	TextureFormat format, TextureComponent component, TextureFlag flags, 
+	Sampler sampler, 
+	void* data
+)
 {
-	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler);
+	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, data);
+}
+
+Texture::Ptr GraphicBackend::createTextureCubeMap(
+	uint32_t width, uint32_t height, 
+	TextureFormat format, TextureComponent component, TextureFlag flags,
+	Sampler sampler, 
+	void* px, void* nx,
+	void* py, void* ny,
+	void* pz, void* nz
+)
+{
+	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)

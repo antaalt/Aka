@@ -1,4 +1,4 @@
-#include <Aka/Graphic/Renderer2D.h>
+#include <Aka/Drawing/Renderer2D.h>
 
 namespace aka {
 

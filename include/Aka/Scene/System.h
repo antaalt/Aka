@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Aka/Graphic/Renderer2D.h>
-#include <Aka/Graphic/Renderer3D.h>
+#include <Aka/Drawing/Renderer2D.h>
+#include <Aka/Drawing/Renderer3D.h>
 #include <Aka/OS/Time.h>
 
 namespace aka {

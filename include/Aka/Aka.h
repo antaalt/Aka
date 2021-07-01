@@ -17,15 +17,17 @@
 #include "Core/Event.h"
 
 #include "Graphic/GraphicBackend.h"
-#include "Graphic/Batch2D.h"
-#include "Graphic/Renderer2D.h"
-#include "Graphic/Renderer3D.h"
 #include "Graphic/Mesh.h"
 #include "Graphic/Framebuffer.h"
 #include "Graphic/Texture.h"
 #include "Graphic/Device.h"
 #include "Graphic/RenderPass.h"
 #include "Graphic/Shader.h"
+
+#include "Drawing/Batch2D.h"
+#include "Drawing/Batch3D.h"
+#include "Drawing/Renderer2D.h"
+#include "Drawing/Renderer3D.h"
 
 #include "Audio/Audio.h"
 #include "Audio/AudioStream.h"

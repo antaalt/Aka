@@ -64,7 +64,20 @@ protected:
 	static uint32_t deviceCount();
 
 	friend class Texture;
-	static Texture::Ptr createTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler);
+	static Texture::Ptr createTexture2D(
+		uint32_t width, uint32_t height, 
+		TextureFormat format, TextureComponent component, TextureFlag flags, 
+		Sampler sampler,
+		void* data
+	);
+	static Texture::Ptr createTextureCubeMap(
+		uint32_t width, uint32_t height, 
+		TextureFormat format, TextureComponent component, TextureFlag flags,
+		Sampler sampler,
+		void* px, void* nx,
+		void* py, void* ny,
+		void* pz, void* nz
+	);
 
 	friend class Framebuffer;
 	static Framebuffer::Ptr createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count);
