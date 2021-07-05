@@ -1209,6 +1209,7 @@ public:
 		}
 		if ((mask & ClearMask::Depth) == ClearMask::Depth)
 		{
+			glDepthMask(true); // Ensure we can correctly clear the depth buffer.
 			glClearDepth(depth);
 			glMask |= GL_DEPTH_BUFFER_BIT;
 		}
@@ -1316,6 +1317,7 @@ public:
 		}
 		if ((mask & ClearMask::Depth) == ClearMask::Depth)
 		{
+			glDepthMask(true);
 			glClearDepth(depth);
 			glMask |= GL_DEPTH_BUFFER_BIT;
 		}
