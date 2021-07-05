@@ -306,7 +306,7 @@ GLenum type(TextureType type) {
 		throw std::runtime_error("Not implemneted");
 	case TextureType::Texture2D:
 		return GL_TEXTURE_2D;
-	case TextureType::CubeMap:
+	case TextureType::TextureCubemap:
 		return GL_TEXTURE_CUBE_MAP;
 	}
 }
@@ -563,7 +563,7 @@ public:
 		void* py, void* ny,
 		void* pz, void* nz
 	) :
-		Texture(width, height, TextureType::CubeMap, format, component, flags, sampler),
+		Texture(width, height, TextureType::TextureCubemap, format, component, flags, sampler),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
@@ -765,6 +765,11 @@ public:
 				// TODO add sampler
 				textureCount += 1 * uniform.arrayLength;
 				break;
+			case GL_SAMPLER_CUBE:
+				uniform.type = UniformType::TextureCubemap;
+				uniform.shaderType = ShaderType::Fragment;
+				textureCount += 1 * uniform.arrayLength;
+				break;
 			case GL_FLOAT:
 				uniform.type = UniformType::Float;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
@@ -856,6 +861,25 @@ public:
 				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
 				break;
 			}
+			case UniformType::TextureCubemap: {
+				std::vector<GLint> units;
+				// Bind texture to units.
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+				{
+					GLint unit = textureUnit++;
+					Texture::Ptr texture = m_textures[unit];
+					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
+					glActiveTexture(GL_TEXTURE0 + unit);
+					if (texture != nullptr)
+						glBindTexture(GL_TEXTURE_CUBE_MAP, glTexture->getTextureID());
+					else
+						glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+					units.push_back(unit);
+				}
+				// Upload texture unit array.
+				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
+				break;
+			}
 			case UniformType::Image2D: {
 				std::vector<GLint> units;
 				// Bind images to units.
@@ -874,7 +898,8 @@ public:
 				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
 				break;
 			}
-			case UniformType::Sampler2D: {
+			case UniformType::Sampler2D: 
+			case UniformType::SamplerCube: {
 				// TODO store sampler
 				break;
 			}
@@ -1226,7 +1251,6 @@ public:
 			mask,
 			gl::filter(filter)
 		);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{

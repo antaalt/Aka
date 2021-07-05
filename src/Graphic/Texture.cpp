@@ -66,6 +66,11 @@ TextureFlag Texture::flags() const
 	return m_flags;
 }
 
+TextureType Texture::type() const
+{
+	return m_type;
+}
+
 const Sampler& Texture::sampler() const
 {
 	return m_sampler;

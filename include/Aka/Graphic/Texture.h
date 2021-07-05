@@ -93,7 +93,7 @@ enum class TextureComponent : uint8_t {
 
 enum class TextureType {
 	Texture2D,
-	CubeMap,
+	TextureCubemap,
 };
 
 class Texture
@@ -138,6 +138,8 @@ public:
 	TextureComponent component() const;
 
 	TextureFlag flags() const;
+
+	TextureType type() const;
 
 	const Sampler& sampler() const;
 
