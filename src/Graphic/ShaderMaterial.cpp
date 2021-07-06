@@ -192,9 +192,7 @@ void ShaderMaterial::setTexture(const char* name, const Texture::Ptr* textures, 
 	uint32_t slot = 0;
 	for (const Uniform& uniform : m_uniforms)
 	{
-		bool isTexture2D = textures[0]->type() == TextureType::Texture2D && uniform.type == UniformType::Texture2D;
-		bool isCubemap = textures[0]->type() == TextureType::TextureCubemap && uniform.type == UniformType::TextureCubemap;
-		if (!isTexture2D && !isCubemap)
+		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::TextureCubemap)
 			continue;
 		if (uniform.name == std::string(name))
 		{
