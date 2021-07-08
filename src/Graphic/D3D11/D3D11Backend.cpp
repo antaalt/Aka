@@ -1,6 +1,6 @@
 #if defined(AKA_USE_D3D11)
 #include <Aka/Graphic/GraphicBackend.h>
-#include <Aka/Graphic/Renderer2D.h>
+#include <Aka/Drawing/Renderer2D.h>
 #include <Aka/Core/Debug.h>
 #include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
@@ -426,6 +426,118 @@ void SetDebugName(ID3D11DeviceChild* child, const std::string& name)
 		child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.c_str());
 }
 
+DXGI_FORMAT d3dformat(TextureFormat format, TextureComponent component)
+{
+	switch (format)
+	{
+	case TextureFormat::UnsignedByte: {
+		switch (component)
+		{
+		case TextureComponent::R:
+		case TextureComponent::R8:
+			return DXGI_FORMAT_R8_UNORM;
+		case TextureComponent::R16:
+			return DXGI_FORMAT_R16_UNORM;
+
+		case TextureComponent::RG:
+		case TextureComponent::RG8:
+			return DXGI_FORMAT_R8G8_UNORM;
+
+		case TextureComponent::RGBA:
+		case TextureComponent::RGBA8:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+		break;
+	}
+	case TextureFormat::Byte: {
+		switch (component)
+		{
+		case TextureComponent::R:
+		case TextureComponent::R8:
+			return DXGI_FORMAT_R8_SNORM;
+		case TextureComponent::R16:
+			return DXGI_FORMAT_R16_SNORM;
+
+		case TextureComponent::RGBA:
+		case TextureComponent::RGBA8:
+			return DXGI_FORMAT_R8G8B8A8_SNORM;
+		}
+		break;
+	}
+	case TextureFormat::Float: {
+		switch (component)
+		{
+		case TextureComponent::RGBA16F:
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		case TextureComponent::RGBA32F:
+			return DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+		case TextureComponent::Depth24Stencil8:
+		case TextureComponent::DepthStencil:
+			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case TextureComponent::Depth16:
+			return DXGI_FORMAT_D16_UNORM;
+		case TextureComponent::Depth:
+		case TextureComponent::Depth32:
+		case TextureComponent::Depth32F:
+			return DXGI_FORMAT_D32_FLOAT;
+		}
+		break;
+	}
+	case TextureFormat::UnsignedInt248: {
+		switch (component)
+		{
+		case TextureComponent::Depth24Stencil8:
+			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		}
+		break;
+	}
+	case TextureFormat::Float32UnsignedInt248: {
+		switch (component)
+		{
+		case TextureComponent::Depth32FStencil8:
+			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		}
+		break;
+	}
+	}
+	Logger::error("Format not supported : ", (int)format, " (", (int)component, ")");
+	return DXGI_FORMAT_UNKNOWN;
+}
+size_t d3dComponent(TextureComponent component)
+{
+	switch (component)
+	{
+	case TextureComponent::R:
+	case TextureComponent::R8:
+	case TextureComponent::R16:
+		return 1;
+
+	case TextureComponent::RG:
+	case TextureComponent::RG8:
+	case TextureComponent::RG16:
+		return 2;
+
+	case TextureComponent::RGBA:
+	case TextureComponent::RGBA8:
+	case TextureComponent::RGBA16F:
+	case TextureComponent::RGBA32F:
+		return 4;
+
+	case TextureComponent::Depth:
+	case TextureComponent::Depth16:
+	case TextureComponent::Depth32:
+	case TextureComponent::Depth32F:
+	case TextureComponent::DepthStencil:
+	case TextureComponent::Depth24Stencil8:
+	case TextureComponent::Depth32FStencil8:
+		return 1;
+	default:
+		Logger::error("Component not supported : ", (int)component);
+		return 0;
+	}
+}
+
 class D3D11ShaderMaterial;
 
 class D3D11Texture : public Texture
@@ -433,8 +545,12 @@ class D3D11Texture : public Texture
 public:
 	friend class D3D11ShaderMaterial;
 	friend class D3D11Framebuffer;
-	D3D11Texture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
-		Texture(width, height, format, component, flags, sampler),
+	D3D11Texture(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+		void* data
+	) : 
+		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -451,43 +567,106 @@ public:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
-			desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		else
-			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		{
+			switch (component) {
+			case TextureComponent::Depth:
+			case TextureComponent::Depth16:
+			case TextureComponent::Depth32:
+			case TextureComponent::Depth32F:
+			case TextureComponent::DepthStencil:
+			case TextureComponent::Depth24Stencil8:
+			case TextureComponent::Depth32FStencil8:
+				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+				break;
+			default:
+				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				break;
+			}
+		}
 
-		if (format == TextureFormat::UnsignedByte && component == TextureComponent::Red)
-		{
-			m_d3dFormat = DXGI_FORMAT_R8_UNORM;
-			m_component = 1;
-		}
-		else if (format == TextureFormat::UnsignedByte && component == TextureComponent::RGBA)
-		{
-			m_d3dFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-			m_component = 4;
-		}
-		else if (format == TextureFormat::Float && component == TextureComponent::DepthStencil)
-		{
-			m_d3dFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-			m_component = 1;
-		}
-		else if (format == TextureFormat::Float && component == TextureComponent::Depth)
-		{
-			m_d3dFormat = DXGI_FORMAT_D32_FLOAT;
-			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-			m_component = 1;
-		}
-		else
-		{
-			Logger::error("Format not supported");
-		}
+		m_d3dFormat = d3dformat(format, component);
+		m_component = d3dComponent(component);
 		desc.Format = m_d3dFormat;
 
-		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, nullptr, &m_texture));
+		D3D11_SUBRESOURCE_DATA subResources{};
+		subResources.pSysMem = data;
+		subResources.SysMemPitch = width;
+		subResources.SysMemSlicePitch = 0;
+		D3D11_SUBRESOURCE_DATA* sub = nullptr;
+		if (data != nullptr)
+			sub = &subResources;
+		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, sub, &m_texture));
 		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
 			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
+	}
+	D3D11Texture(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+		void* px, void* nx,
+		void* py, void* ny,
+		void* pz, void* nz
+	) :
+		Texture(width, height, TextureType::TextureCubemap, format, component, flags, sampler),
+		m_texture(nullptr),
+		m_staging(nullptr),
+		m_view(nullptr),
+		m_component(0),
+		m_d3dFormat(DXGI_FORMAT_UNKNOWN)
+	{
+		D3D11_TEXTURE2D_DESC desc{};
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = 1;
+		desc.ArraySize = 6;
+		desc.SampleDesc.Count = 1;
+		desc.SampleDesc.Quality = 0;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
+		{
+			switch (component) {
+			case TextureComponent::Depth:
+			case TextureComponent::Depth16:
+			case TextureComponent::Depth32:
+			case TextureComponent::Depth32F:
+			case TextureComponent::DepthStencil:
+			case TextureComponent::Depth24Stencil8:
+			case TextureComponent::Depth32FStencil8:
+				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+				break;
+			default:
+				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				break;
+			}
+		}
+
+		m_d3dFormat = d3dformat(format, component);
+		m_component = d3dComponent(component);
+		desc.Format = m_d3dFormat;
+
+		D3D11_SUBRESOURCE_DATA pData[6];
+		void* datas[6] = { px, nx, py, ny, pz, nz };
+		for (size_t i = 0; i < 6; i++)
+		{
+			pData[i].pSysMem = datas[i];
+			pData[i].SysMemPitch = width;
+			pData[i].SysMemSlicePitch = 0;
+		}
+		D3D11_SHADER_RESOURCE_VIEW_DESC view;
+		view.Format = desc.Format;
+		view.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		view.TextureCube.MipLevels = desc.MipLevels;
+		view.TextureCube.MostDetailedMip = 0;
+
+		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, pData, &m_texture));
+		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
+			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &view, &m_view));
 	}
 	D3D11Texture(D3D11Texture&) = delete;
 	D3D11Texture& operator=(D3D11Texture&) = delete;
@@ -535,6 +714,11 @@ public:
 			m_width * m_component,
 			0
 		);
+	}
+
+	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
+	{
+		throw std::runtime_error("Implement mips");
 	}
 	void download(void* data) override
 	{
@@ -659,7 +843,8 @@ public:
 				attachment.texture->format(), 
 				attachment.texture->component(), 
 				attachment.texture->flags(), 
-				attachment.texture->sampler()
+				attachment.texture->sampler(),
+				nullptr
 			);
 			attachment.texture = tex;
 			if (attachment.type == FramebufferAttachmentType::Depth || attachment.type == FramebufferAttachmentType::Stencil || attachment.type == FramebufferAttachmentType::DepthStencil)
@@ -1088,6 +1273,17 @@ public:
 				uniform.arrayLength = max(1U, desc.BindCount);
 				uniform.type = UniformType::Texture2D;
 			}
+			else if (desc.Type == D3D_SIT_TEXTURE && desc.Dimension == D3D_SRV_DIMENSION_TEXTURECUBE)
+			{
+				uniforms.emplace_back();
+				Uniform& uniform = uniforms.back();
+				uniform.id = UniformID(0);
+				uniform.name = desc.Name;
+				uniform.shaderType = shaderType;
+				uniform.bufferIndex = 0;
+				uniform.arrayLength = max(1U, desc.BindCount);
+				uniform.type = UniformType::TextureCubemap;
+			}
 			else if (desc.Type == D3D_SIT_SAMPLER)
 			{
 				uniforms.emplace_back();
@@ -1356,6 +1552,7 @@ public:
 			{
 			case UniformType::Sampler2D:
 				break;
+			case UniformType::TextureCubemap:
 			case UniformType::Texture2D:
 				textureCount++;
 				break;
@@ -1412,6 +1609,25 @@ public:
 			if (uniform.type == UniformType::None)
 				continue;
 			else if (uniform.type == UniformType::Texture2D)
+			{
+				Texture::Ptr texture = m_textures[textureUnit];
+				if (texture != nullptr)
+				{
+					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
+					ID3D11ShaderResourceView* view = d3dTexture->m_view;
+					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
+					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->sampler());
+					if (sampler != nullptr)
+						dctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
+				}
+				else
+				{
+					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullptr);
+					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullptr);
+				}
+				textureUnit++;
+			}
+			else if (uniform.type == UniformType::TextureCubemap)
 			{
 				Texture::Ptr texture = m_textures[textureUnit];
 				if (texture != nullptr)
@@ -1923,12 +2139,26 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler)
+Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler, void* data)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler);
+	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, data);
+}
+
+Texture::Ptr GraphicBackend::createTextureCubeMap(
+	uint32_t width, uint32_t height, 
+	TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+	void* px, void* nx,
+	void* py, void* ny,
+	void* pz, void* nz
+)
+{
+	// DirectX do not support texture with null size (but opengl does ?).
+	if (width == 0 || height == 0)
+		return nullptr;
+	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)
