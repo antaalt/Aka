@@ -4,11 +4,25 @@
 
 namespace aka {
 
-Framebuffer::Framebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachment, size_t count) :
+Framebuffer::Framebuffer(uint32_t width, uint32_t height) :
 	m_width(width),
 	m_height(height),
+	m_attachments()
+{
+}
+
+Framebuffer::Framebuffer(FramebufferAttachment* attachment, size_t count) :
+	m_width(attachment[0].texture->width()),
+	m_height(attachment[0].texture->height()),
 	m_attachments(attachment, attachment + count)
 {
+	for (size_t i = 1; i < count; ++i)
+	{
+		if (m_width > attachment[i].texture->width())
+			m_width = attachment[i].texture->width();
+		if (m_height > attachment[i].texture->height())
+			m_height = attachment[i].texture->height();
+	}
 }
 
 Framebuffer::~Framebuffer()
@@ -20,10 +34,10 @@ Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height)
 	FramebufferAttachment colorAttachment;
 	colorAttachment.type = FramebufferAttachmentType::Color0;
 	colorAttachment.texture = Texture::create2D(width, height, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::RenderTarget, Sampler{});
-	return create(width, height, &colorAttachment, 1);
+	return create(&colorAttachment, 1);
 }
 
-Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, FramebufferAttachment* attachment, size_t count)
+Framebuffer::Ptr Framebuffer::create(FramebufferAttachment* attachment, size_t count)
 {
 	// Validate attachment
 	for (size_t i = 0; i < count; ++i)
@@ -33,18 +47,13 @@ Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height, Framebuffe
 			Logger::error("No texture set for framebuffer attachment ", i);
 			return nullptr;
 		}
-		if (attachment[i].texture->width() != width || attachment[i].texture->height() != height)
-		{
-			Logger::error("Invalid texture size for framebuffer attachment ", i);
-			return nullptr;
-		}
 		if ((attachment[i].texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
 		{
 			Logger::error("Invalid flag for framebuffer attachment ", i);
 			return nullptr;
 		}
 	}
-	return GraphicBackend::createFramebuffer(width, height, attachment, count);
+	return GraphicBackend::createFramebuffer(attachment, count);
 }
 
 uint32_t Framebuffer::width() const

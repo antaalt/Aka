@@ -38,14 +38,15 @@ public:
 	using Ptr = std::shared_ptr<Framebuffer>;
 
 protected:
-	Framebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachment, size_t count);
+	Framebuffer(uint32_t width, uint32_t height);
+	Framebuffer(FramebufferAttachment* attachment, size_t count);
 	Framebuffer(const Framebuffer&) = delete;
 	Framebuffer& operator=(const Framebuffer&) = delete;
 	virtual ~Framebuffer();
 public:
 
 	static Framebuffer::Ptr create(uint32_t width, uint32_t height);
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height, FramebufferAttachment* attachment, size_t count);
+	static Framebuffer::Ptr create(FramebufferAttachment* attachment, size_t count);
 
 	// Get framebuffer width
 	uint32_t width() const;

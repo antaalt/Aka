@@ -1145,8 +1145,8 @@ private:
 class GLFramebuffer : public Framebuffer
 {
 public:
-	GLFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count) :
-		Framebuffer(width, height, attachments, count),
+	GLFramebuffer(FramebufferAttachment* attachments, size_t count) :
+		Framebuffer(attachments, count),
 		m_framebufferID(0)
 	{
 		glGenFramebuffers(1, &m_framebufferID);
@@ -1255,6 +1255,7 @@ public:
 	}
 	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
+		bool exist = false;
 		for (FramebufferAttachment& attachment : m_attachments)
 		{
 			if (attachment.type == type)
@@ -1262,19 +1263,30 @@ public:
 				if (attachment.texture == texture)
 					return;
 				attachment.texture = texture;
-				GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
-				glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-				glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				return;
+				exist = true;
+				break;
 			}
 		}
 		// Key does not exist yet.
+		if (!exist)
+			m_attachments.push_back(FramebufferAttachment{ type, texture });
+		
 		GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
-		m_attachments.push_back(FramebufferAttachment{ type, texture });
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Recompute size
+		m_width = m_attachments[0].texture->width();
+		m_height = m_attachments[0].texture->height();
+
+		for (size_t i = 1; i < m_attachments.size(); ++i)
+		{
+			if (m_width > m_attachments[i].texture->width())
+				m_width = m_attachments[i].texture->width();
+			if (m_height > m_attachments[i].texture->height())
+				m_height = m_attachments[i].texture->height();
+		}
 	}
 	GLuint getFramebufferID() const { return m_framebufferID; }
 private:
@@ -1287,7 +1299,7 @@ class GLBackBuffer :
 {
 public:
 	GLBackBuffer(uint32_t width, uint32_t height) :
-		Framebuffer(width, height, nullptr, 0)
+		Framebuffer(width, height)
 	{
 	}
 	GLBackBuffer(const GLBackBuffer&) = delete;
@@ -1715,9 +1727,9 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)
 {
-	return std::make_shared<GLFramebuffer>(width, height, attachments, count);
+	return std::make_shared<GLFramebuffer>(attachments, count);
 }
 
 Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access)

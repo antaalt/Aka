@@ -797,8 +797,8 @@ private:
 class D3D11Framebuffer : public Framebuffer, public std::enable_shared_from_this<D3D11Framebuffer>
 {
 public:
-	D3D11Framebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count) :
-		Framebuffer(width, height, attachments, count),
+	D3D11Framebuffer(FramebufferAttachment* attachments, size_t count) :
+		Framebuffer(attachments, count),
 		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
@@ -938,7 +938,7 @@ class D3D11BackBuffer : public Framebuffer, public std::enable_shared_from_this<
 {
 public:
 	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
-		Framebuffer(width, height, nullptr, 0),
+		Framebuffer(width, height),
 		m_swapChain(sc),
 		m_renderTargetView(nullptr),
 		m_depthStencilView(nullptr)
@@ -2161,9 +2161,9 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(uint32_t width, uint32_t height, FramebufferAttachment* attachments, size_t count)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)
 {
-	return std::make_shared<D3D11Framebuffer>(width, height, attachments, count);
+	return std::make_shared<D3D11Framebuffer>(attachments, count);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()
