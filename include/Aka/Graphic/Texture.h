@@ -65,6 +65,8 @@ enum class TextureComponent : uint8_t {
 	R,
 	R8,
 	R16,
+	R16F,
+	R32F,
 
 	RG,
 	RG8,
@@ -93,6 +95,7 @@ enum class TextureComponent : uint8_t {
 
 enum class TextureType {
 	Texture2D,
+	Texture2DMultisample,
 	TextureCubemap,
 };
 
@@ -115,6 +118,16 @@ public:
 		TextureFlag flag, 
 		Sampler sampler,
 		void* data = nullptr
+	);
+	static Texture::Ptr create2DMultisampled(
+		uint32_t width,
+		uint32_t height,
+		TextureFormat format,
+		TextureComponent component,
+		TextureFlag flag,
+		Sampler sampler,
+		void* data = nullptr,
+		uint8_t samples = 4
 	);
 	static Texture::Ptr createCubemap(
 		uint32_t width,

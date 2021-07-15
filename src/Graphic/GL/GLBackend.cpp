@@ -224,6 +224,10 @@ GLenum componentInternal(TextureComponent component) {
 		return GL_R8;
 	case TextureComponent::R16:
 		return GL_R16;
+	case TextureComponent::R16F:
+		return GL_R16F;
+	case TextureComponent::R32F:
+		return GL_R32F;
 	case TextureComponent::RG:
 		return GL_RG;
 	case TextureComponent::RG8:
@@ -272,6 +276,8 @@ GLenum component(TextureComponent component) {
 	case TextureComponent::R:
 	case TextureComponent::R8:
 	case TextureComponent::R16:
+	case TextureComponent::R16F:
+	case TextureComponent::R32F:
 		return GL_RED;
 	case TextureComponent::RG:
 	case TextureComponent::RG8:
@@ -308,6 +314,8 @@ GLenum type(TextureType type) {
 		return GL_TEXTURE_2D;
 	case TextureType::TextureCubemap:
 		return GL_TEXTURE_CUBE_MAP;
+	case TextureType::Texture2DMultisample:
+		return GL_TEXTURE_2D_MULTISAMPLE;
 	}
 }
 
@@ -559,6 +567,27 @@ public:
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags,
 		Sampler sampler,
+		void* data,
+		uint8_t samples
+	) :
+		Texture(width, height, TextureType::Texture2DMultisample, format, component, flags, sampler),
+		m_copyFBO(0),
+		m_textureID(0)
+	{
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, gl::componentInternal(m_component), width, height, GL_TRUE);
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
+		//if (m_sampler.mipmapMode != Sampler::MipMapMode::None && data != nullptr)
+		//	glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE);
+	}
+	GLTexture(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags,
+		Sampler sampler,
 		void* px, void* nx,
 		void* py, void* ny,
 		void* pz, void* nz
@@ -770,6 +799,11 @@ public:
 				uniform.shaderType = ShaderType::Fragment;
 				textureCount += 1 * uniform.arrayLength;
 				break;
+			case GL_SAMPLER_2D_MULTISAMPLE:
+				uniform.type = UniformType::Texture2DMultisample;
+				uniform.shaderType = ShaderType::Fragment;
+				textureCount += 1 * uniform.arrayLength;
+				break;
 			case GL_FLOAT:
 				uniform.type = UniformType::Float;
 				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
@@ -855,6 +889,25 @@ public:
 						glBindTexture(GL_TEXTURE_2D, glTexture->getTextureID());
 					else
 						glBindTexture(GL_TEXTURE_2D, 0);
+					units.push_back(unit);
+				}
+				// Upload texture unit array.
+				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
+				break;
+			}
+			case UniformType::Texture2DMultisample: {
+				std::vector<GLint> units;
+				// Bind texture to units.
+				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+				{
+					GLint unit = textureUnit++;
+					Texture::Ptr texture = m_textures[unit];
+					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
+					glActiveTexture(GL_TEXTURE0 + unit);
+					if (texture != nullptr)
+						glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, glTexture->getTextureID());
+					else
+						glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 					units.push_back(unit);
 				}
 				// Upload texture unit array.
@@ -1713,6 +1766,17 @@ Texture::Ptr GraphicBackend::createTexture2D(
 )
 {
 	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, data);
+}
+
+Texture::Ptr GraphicBackend::createTexture2DMultisampled(
+	uint32_t width, uint32_t height,
+	TextureFormat format, TextureComponent component, TextureFlag flags,
+	Sampler sampler,
+	void* data,
+	uint8_t samples
+)
+{
+	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, data, samples);
 }
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(

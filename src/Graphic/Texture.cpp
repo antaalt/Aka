@@ -1,3 +1,4 @@
+#include "..\..\include\Aka\Graphic\Texture.h"
 #include <Aka/Graphic/Texture.h>
 
 #include <Aka/Graphic/GraphicBackend.h>
@@ -27,6 +28,15 @@ Texture::Ptr Texture::create2D(
 )
 {
 	return GraphicBackend::createTexture2D(width, height, format, component, flags, sampler, data);
+}
+
+Texture::Ptr Texture::create2DMultisampled(
+	uint32_t width, uint32_t height, 
+	TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler, 
+	void* data, uint8_t samples
+)
+{
+	return GraphicBackend::createTexture2DMultisampled(width, height, format, component, flag, sampler, data, samples);
 }
 
 Texture::Ptr Texture::createCubemap(

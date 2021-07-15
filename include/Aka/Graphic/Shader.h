@@ -29,6 +29,7 @@ enum class UniformType {
 	Mat4,
 	Image2D,
 	Texture2D,
+	Texture2DMultisample,
 	TextureCubemap,
 	Sampler2D,
 	SamplerCube,

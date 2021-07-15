@@ -70,6 +70,13 @@ protected:
 		Sampler sampler,
 		void* data
 	);
+	static Texture::Ptr createTexture2DMultisampled(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags,
+		Sampler sampler,
+		void* data,
+		uint8_t samples
+	);
 	static Texture::Ptr createTextureCubeMap(
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureComponent component, TextureFlag flags,
