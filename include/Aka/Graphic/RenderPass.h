@@ -175,7 +175,7 @@ struct RenderPass
 	// Framebuffer to render to
 	Framebuffer::Ptr framebuffer;
 	// Mesh to render
-	SubMesh mesh;
+	SubMesh submesh;
 	// Material for mesh
 	ShaderMaterial::Ptr material;
 	// Clear values for framebuffer

@@ -1702,7 +1702,7 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 	{
 		// Mesh
-		pass.mesh.draw();
+		pass.submesh.draw();
 	}
 }
 

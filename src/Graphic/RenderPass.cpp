@@ -72,7 +72,7 @@ void RenderPass::execute()
 		Logger::error("No Material set for render pass.");
 		return;
 	}
-	if (this->mesh == nullptr)
+	if (this->submesh.mesh == nullptr)
 	{
 		Logger::warn("No mesh set for render pass.");
 		return;

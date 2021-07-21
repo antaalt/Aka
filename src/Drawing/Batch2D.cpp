@@ -187,7 +187,7 @@ void Batch2D::initialize()
 	m_pass.cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
 	m_pass.depth = Depth{ DepthCompare::None, true };
 	m_pass.stencil = Stencil::none();
-	m_pass.mesh = m_mesh;
+	m_pass.submesh.mesh = m_mesh;
 	m_pass.material = m_material;
 }
 
@@ -295,9 +295,9 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	{
 		// TODO draw instanced & pass model matrix, textures & offset / count.
 		m_material->set<Texture::Ptr>("u_texture", batch.texture ? batch.texture : m_defaultTexture);
-		m_pass.indexCount = batch.indexCount;
-		m_pass.indexOffset = batch.indexOffset;
-		m_pass.primitive = batch.primitive;
+		m_pass.submesh.indexCount = batch.indexCount;
+		m_pass.submesh.indexOffset = batch.indexOffset;
+		m_pass.submesh.type = batch.primitive;
 		m_pass.execute();
 	}
 }
