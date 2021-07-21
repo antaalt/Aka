@@ -100,5 +100,14 @@ protected:
 	VertexData m_vertexData;
 };
 
+struct SubMesh {
+	Mesh::Ptr mesh;
+	PrimitiveType type;
+	uint32_t indexCount;
+	uint32_t indexOffset;
+
+	void draw();
+};
+
 };
 

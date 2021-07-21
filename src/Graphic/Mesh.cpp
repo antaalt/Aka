@@ -93,4 +93,9 @@ uint32_t Mesh::getVertexStride() const
 	return m_vertexStride;
 }
 
+void SubMesh::draw()
+{
+	mesh->draw(type, indexCount, indexOffset);
+}
+
 };
