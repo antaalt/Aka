@@ -6,9 +6,12 @@
 
 namespace aka {
 
-Entity World::createEntity(const std::string& name)
+Entity World::createEntity(const String& name)
 {
-	return Entity(m_registry.create(), this);
+	Entity e =  Entity(m_registry.create(), this);
+	e.add<TagComponent>();
+	e.get<TagComponent>().name = name;
+	return e;
 }
 
 void World::destroyEntity(Entity entity)

@@ -31,7 +31,7 @@ class World
 	friend class Entity;
 public:
 	// Create an entity
-	Entity createEntity(const std::string& name);
+	Entity createEntity(const String& name);
 	// Destroy an entity
 	void destroyEntity(Entity entity);
 

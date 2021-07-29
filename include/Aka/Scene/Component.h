@@ -38,6 +38,11 @@ struct ComponentHandle
 template <typename T>
 const ComponentID ComponentHandle<T>::id = ComponentType::get<T>();
 
+struct TagComponent
+{
+	String name;
+};
+
 // TODO in cpp file to auto instantiate
 //template class ComponentHandle<Transform2D>;
 
