@@ -255,6 +255,10 @@ void ShaderMaterial::set(const char* name, vec2i value) {
 	setInt2(name, value.data, 1);
 }
 template <>
+void ShaderMaterial::set(const char* name, color3f value) {
+	setFloat3(name, value.data, 1);
+}
+template <>
 void ShaderMaterial::set(const char* name, color4f value) {
 	setFloat4(name, value.data, 1);
 }
