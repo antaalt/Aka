@@ -4,29 +4,29 @@
 
 namespace aka {
 
-struct Camera
+struct CameraProjection
 {
-	virtual mat4f perspective() const = 0;
+	virtual mat4f projection() const = 0;
 };
 
-struct CameraPerspective : Camera
+struct CameraPerspective : CameraProjection
 {
 	CameraPerspective() {}
-	CameraPerspective(const vec2f& viewport, anglef hFov, float nearZ = 0.1f, float farZ = 100.f);
+	CameraPerspective(anglef hFov, float ratio, float nearZ = 0.1f, float farZ = 100.f);
 
-	mat4f perspective() const override;
-
-	vec2f viewport;
+	mat4f projection() const override;
+	
 	anglef hFov;
+	float ratio;
 	float nearZ, farZ;
 };
 
-struct CameraOrthographic : Camera
+struct CameraOrthographic : CameraProjection
 {
 	CameraOrthographic() {}
 	CameraOrthographic(const vec2f& viewport);
 
-	mat4f perspective() const override;
+	mat4f projection() const override;
 
 	vec2f viewport;
 };

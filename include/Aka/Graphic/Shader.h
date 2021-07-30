@@ -68,7 +68,9 @@ public:
 	static ShaderID compile(const std::string &content, ShaderType type);
 	static ShaderID compile(const char* content, ShaderType type);
 
-	static Shader::Ptr create(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes);
+	static Shader::Ptr create(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes);
+	static Shader::Ptr createGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes);
+	static Shader::Ptr createCompute(ShaderID compute, const std::vector<Attributes>& attributes);
 
 	bool valid() const { return m_valid; }
 protected:

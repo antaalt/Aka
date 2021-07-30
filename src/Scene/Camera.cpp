@@ -2,17 +2,17 @@
 
 namespace aka {
 
-CameraPerspective::CameraPerspective(const vec2f& viewport, anglef hFov, float nearZ, float farZ) :
-	viewport(viewport),
+CameraPerspective::CameraPerspective(anglef hFov, float ratio, float nearZ, float farZ) :
 	hFov(hFov),
+	ratio(ratio),
 	nearZ(nearZ),
 	farZ(farZ)
 {
 }
 
-mat4f CameraPerspective::perspective() const
+mat4f CameraPerspective::projection() const
 {
-	return mat4f::perspective(hFov, viewport.x / viewport.y, nearZ, farZ);
+	return mat4f::perspective(hFov, ratio, nearZ, farZ);
 }
 
 CameraOrthographic::CameraOrthographic(const vec2f& viewport) :
@@ -20,7 +20,7 @@ CameraOrthographic::CameraOrthographic(const vec2f& viewport) :
 {
 }
 
-mat4f CameraOrthographic::perspective() const
+mat4f CameraOrthographic::projection() const
 {
 	return mat4f::orthographic(0, viewport.y, 0, viewport.x);
 }

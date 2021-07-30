@@ -677,12 +677,13 @@ private:
 class GLShader : public Shader
 {
 public:
-	GLShader(ShaderID vertex, ShaderID fragment, ShaderID compute, const std::vector<Attributes>& attributes) :
+	GLShader(ShaderID vertex, ShaderID fragment, ShaderID geometry, ShaderID compute, const std::vector<Attributes>& attributes) :
 		Shader(attributes)
 	{
 		GLuint vert = static_cast<GLuint>(vertex.value());
 		GLuint frag = static_cast<GLuint>(fragment.value());
 		GLuint comp = static_cast<GLuint>(compute.value());
+		GLuint geo = static_cast<GLuint>(geometry.value());
 		m_programID = glCreateProgram();
 		// Attach shaders
 		if (vert != 0 && glIsShader(vert) == GL_TRUE)
@@ -691,6 +692,8 @@ public:
 			glAttachShader(m_programID, frag);
 		if (comp != 0 && glIsShader(comp) == GL_TRUE)
 			glAttachShader(m_programID, comp);
+		if (geo != 0 && glIsShader(geo) == GL_TRUE)
+			glAttachShader(m_programID, geo);
 
 		// link program
 		glLinkProgram(m_programID);
@@ -713,6 +716,8 @@ public:
 				glDeleteShader(frag);
 			if (comp != 0)
 				glDeleteShader(comp);
+			if (geo != 0)
+				glDeleteShader(geo);
 			Logger::error("[GL] ", str);
 		}
 		else
@@ -732,6 +737,11 @@ public:
 			{
 				glDetachShader(m_programID, comp);
 				glDeleteShader(comp);
+			}
+			if (geo != 0)
+			{
+				glDetachShader(m_programID, geo);
+				glDeleteShader(geo);
 			}
 			glValidateProgram(m_programID);
 			GLint status = 0;
@@ -1211,7 +1221,7 @@ public:
 			// TODO if texture nullptr, create render target instead ?
 			GLTexture* glTexture = reinterpret_cast<GLTexture*>(attachments[iAtt].texture.get());
 			GLenum type = gl::attachmentType(attachments[iAtt].type);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, type, GL_TEXTURE_2D, glTexture->getTextureID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, type, gl::type(attachments[iAtt].texture->type()), glTexture->getTextureID(), 0);
 			if (type >= GL_COLOR_ATTACHMENT0 && type <= GL_COLOR_ATTACHMENT15)
 				drawBuffers.push_back(type);
 		}
@@ -1241,7 +1251,7 @@ public:
 				attachment.texture->sampler(),
 				nullptr
 			);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), GL_TEXTURE_2D, tex->getTextureID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), gl::type(tex->type()), tex->getTextureID(), 0);
 			attachment.texture = tex;
 		}
 		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
@@ -1326,7 +1336,10 @@ public:
 		
 		GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), GL_TEXTURE_2D, glTexture->getTextureID(), 0);
+		if (texture->type() == TextureType::TextureCubemap)
+			glFramebufferTexture(GL_FRAMEBUFFER, gl::attachmentType(type), glTexture->getTextureID(), 0);
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), gl::type(texture->type()), glTexture->getTextureID(), 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// Recompute size
@@ -1830,10 +1843,21 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 	return ShaderID(shaderID);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes)
 {
-	return std::make_shared<GLShader>(vert, frag, compute, attributes);
+	return std::make_shared<GLShader>(vert, frag, ShaderID(0), ShaderID(0), attributes);
 }
+
+Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes)
+{
+	return std::make_shared<GLShader>(vert, frag, geometry, ShaderID(0), attributes);
+}
+
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const std::vector<Attributes>& attributes)
+{
+	return std::make_shared<GLShader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes);
+}
+
 
 ShaderMaterial::Ptr aka::GraphicBackend::createShaderMaterial(Shader::Ptr shader)
 {

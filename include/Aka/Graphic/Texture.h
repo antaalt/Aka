@@ -136,9 +136,9 @@ public:
 		TextureComponent component,
 		TextureFlag flag,
 		Sampler sampler,
-		void* px, void* nx,
-		void* py, void* ny, 
-		void* pz, void* nz
+		void* px = nullptr, void* nx = nullptr,
+		void* py = nullptr, void* ny = nullptr,
+		void* pz = nullptr, void* nz = nullptr
 	);
 
 

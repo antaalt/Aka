@@ -161,7 +161,6 @@ void Batch3D::initialize()
 	m_shader = Shader::create(
 		Shader::compile(vertShader, ShaderType::Vertex),
 		Shader::compile(fragShader, ShaderType::Fragment),
-		ShaderID(0),
 		std::vector<Attributes>{ // HLSL only
 			Attributes{ AttributeID(0), "POS" },
 			Attributes{ AttributeID(0), "NORM" },
