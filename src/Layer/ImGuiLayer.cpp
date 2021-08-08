@@ -6,6 +6,7 @@
 #if defined(AKA_USE_IMGUI_LAYER)
 
 #include <imgui.h>
+#include <imguizmo.h>
 #include <backends/imgui_impl_glfw.h>
 #if defined(AKA_USE_OPENGL)
 #include <GL/glew.h>

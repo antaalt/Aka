@@ -113,8 +113,8 @@ void Application::run(const Config& config)
 			app->start();
 			while (app->m_running && accumulator >= timestep)
 			{
-				InputBackend::update();
 				PlatformBackend::update();
+				InputBackend::update();
 				app->update(timestep);
 				accumulator -= timestep;
 			}

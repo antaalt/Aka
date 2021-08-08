@@ -9,7 +9,7 @@ set(COMPILES "")
 set(ENABLED FALSE)
 
 if(GRAPHIC_OPENGL)
-	set(SRC 
+	set(SRC
 		"${SRC}"
 		"src/backends/imgui_impl_opengl3.cpp"
 	)
@@ -18,7 +18,7 @@ if(GRAPHIC_OPENGL)
 	set(COMPILES "IMGUI_IMPL_OPENGL_LOADER_GLEW")
 	set(ENABLED TRUE)
 elseif(GRAPHIC_D3D11)
-	set(SRC 
+	set(SRC
 		"${SRC}"
 		"src/backends/imgui_impl_dx11.cpp"
 	)
@@ -28,7 +28,7 @@ else()
 endif()
 
 if(PLATFORM_GLFW3)
-	set(SRC 
+	set(SRC
 		"${SRC}"
 		"src/backends/imgui_impl_glfw.cpp"
 	)
@@ -36,12 +36,13 @@ if(PLATFORM_GLFW3)
 endif()
 
 if(ENABLED)
-	add_library(AkaImGui 
+	add_library(AkaImGui
 		"src/imgui.cpp"
 		"src/imgui_demo.cpp"
 		"src/imgui_draw.cpp"
 		"src/imgui_tables.cpp"
 		"src/imgui_widgets.cpp"
+		"src/imguizmo.cpp"
 		"${SRC}"
 	)
 	target_include_directories(AkaImGui PRIVATE ${INCLUDE_DIRS})
