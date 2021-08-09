@@ -14,6 +14,7 @@ public:
 	virtual void onLayerDetach() {}
 
 	virtual void onLayerUpdate(Time::Unit deltaTime) {}
+	virtual void onLayerFixedUpdate(Time::Unit deltaTime) {}
 	virtual void onLayerFrame() {}
 	virtual void onLayerRender() {}
 	virtual void onLayerPresent() {}

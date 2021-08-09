@@ -17,6 +17,7 @@ public:
 	virtual void create(World &world) {}
 	virtual void destroy(World& world) {}
 
+	virtual void fixedUpdate(World& world, Time::Unit deltaTime) {}
 	virtual void update(World& world, Time::Unit deltaTime) {}
 	virtual void draw(World& world) {}
 };

@@ -40,6 +40,12 @@ void Application::update(Time::Unit deltaTime)
 	for (Layer* layer : m_layers)
 		layer->onLayerUpdate(deltaTime);
 }
+void Application::fixedUpdate(Time::Unit deltaTime)
+{
+	onFixedUpdate(deltaTime);
+	for (Layer* layer : m_layers)
+		layer->onLayerFixedUpdate(deltaTime);
+}
 void Application::frame()
 {
 	for (Layer* layer : m_layers)
@@ -110,14 +116,18 @@ void Application::run(const Config& config)
 			Time::Unit deltaTime = min(now - lastTick, maxUpdate);
 			lastTick = now;
 			accumulator += deltaTime;
+
 			app->start();
+			// Update
 			while (app->m_running && accumulator >= timestep)
 			{
-				PlatformBackend::update();
-				InputBackend::update();
-				app->update(timestep);
+				app->fixedUpdate(timestep);
 				accumulator -= timestep;
 			}
+			PlatformBackend::update();
+			InputBackend::update();
+			app->update(deltaTime);
+			// Rendering
 			GraphicBackend::frame();
 			Renderer2D::frame();
 			Renderer3D::frame();
@@ -125,6 +135,7 @@ void Application::run(const Config& config)
 			app->render();
 			app->present();
 			GraphicBackend::present();
+
 			app->end();
 		} while (app->m_running && PlatformBackend::running());
 	}

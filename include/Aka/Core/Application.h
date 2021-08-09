@@ -47,8 +47,10 @@ private:
 	void destroy();
 	// First function called in a loop
 	void start();
-	// Update the app. Might be called multiple for a single frame
+	// Update the app. deltaTime is time elapsed since last frame
 	void update(Time::Unit deltaTime);
+	// Update the app multiple time per frame at a fixed timestep
+	void fixedUpdate(Time::Unit deltaTime);
 	// Called before render for the app.
 	void frame();
 	// Render the app.
@@ -68,6 +70,8 @@ protected:
 	virtual void onDestroy() {}
 	// Called on app update
 	virtual void onUpdate(Time::Unit deltaTime) {}
+	// Called on app update at a fixed timestep
+	virtual void onFixedUpdate(Time::Unit deltaTime) {}
 	// Called before app render
 	virtual void onFrame() {}
 	// Called on app render

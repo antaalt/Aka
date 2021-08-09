@@ -63,6 +63,8 @@ public:
 	void destroy();
 	// Update all systems
 	void update(Time::Unit deltaTime);
+	// Update all systems
+	void fixedUpdate(Time::Unit deltaTime);
 	// Draw all systems
 	void draw();
 

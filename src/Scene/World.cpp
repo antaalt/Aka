@@ -53,6 +53,12 @@ void World::update(Time::Unit deltaTime)
 	m_dispatcher.update();
 }
 
+void World::fixedUpdate(Time::Unit deltaTime)
+{
+	for (std::unique_ptr<System>& system : m_systems)
+		system->fixedUpdate(*this, deltaTime);
+}
+
 void World::draw()
 {
 	for (std::unique_ptr<System>& system : m_systems)
