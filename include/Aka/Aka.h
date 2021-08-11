@@ -6,6 +6,8 @@
 #include "Platform/InputBackend.h"
 
 #include "Core/Geometry.h"
+#include "Core/Vector.h"
+#include "Core/Array.h"
 #include "Core/String.h"
 #include "Core/Application.h"
 #include "Core/View.h"

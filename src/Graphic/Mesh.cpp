@@ -50,7 +50,8 @@ Mesh::Mesh() :
     m_vertexCount(0),
     m_indexSize(0),
     m_indexCount(0),
-    m_indexFormat(IndexFormat::UnsignedInt)
+	m_indexInfo{},
+	m_vertexInfo{}
 {
 }
 
@@ -75,12 +76,12 @@ uint32_t Mesh::getIndexSize() const
 
 IndexFormat Mesh::getIndexFormat() const
 {
-    return m_indexFormat;
+    return m_indexInfo.format;
 }
 
-const VertexData& Mesh::getVertexData() const
+const SubBuffer& Mesh::getIndexBuffer() const
 {
-    return m_vertexData;
+	return m_indexInfo.subBuffer;
 }
 
 uint32_t Mesh::getVertexCount() const
@@ -91,6 +92,21 @@ uint32_t Mesh::getVertexCount() const
 uint32_t Mesh::getVertexStride() const
 {
 	return m_vertexStride;
+}
+
+uint32_t Mesh::getVertexAttributeCount() const
+{
+	return static_cast<uint32_t>(m_vertexInfo.attributeData.size());
+}
+
+const VertexAttribute& Mesh::getVertexAttribute(uint32_t i) const
+{
+	return m_vertexInfo[i].attribute;
+}
+
+const SubBuffer& Mesh::getVertexBuffer(uint32_t i) const
+{
+	return m_vertexInfo[i].subBuffer;
 }
 
 void SubMesh::draw()

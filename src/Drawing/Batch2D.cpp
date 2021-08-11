@@ -266,12 +266,29 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	
 	{
 		// Update mesh data
-		m_mesh->indices(IndexFormat::UnsignedInt, m_indices.data(), m_indices.size());
-		VertexData data;
-		data.attributes.push_back(VertexData::Attribute{ 0, VertexFormat::Float, VertexType::Vec2 });
-		data.attributes.push_back(VertexData::Attribute{ 1, VertexFormat::Float, VertexType::Vec2 });
-		data.attributes.push_back(VertexData::Attribute{ 2, VertexFormat::Float, VertexType::Vec4 });
-		m_mesh->vertices(data, m_vertices.data(), m_vertices.size());
+		// TODO only update buffer content.
+		Buffer::Ptr vertexBuffer = Buffer::create(BufferType::Array, m_vertices.size() * sizeof(Vertex), BufferUsage::Static, BufferAccess::ReadOnly, m_vertices.data());
+		Buffer::Ptr indexBuffer = Buffer::create(BufferType::ElementArray, m_indices.size() * sizeof(uint32_t), BufferUsage::Static, BufferAccess::ReadOnly, m_indices.data());
+		VertexInfo vertexInfo{ std::vector<VertexAttributeData>{
+			VertexAttributeData{
+				VertexAttribute{ VertexFormat::Float, VertexType::Vec2, sizeof(Vertex), offsetof(Vertex, position) },
+				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+			},
+			VertexAttributeData{
+				VertexAttribute{ VertexFormat::Float, VertexType::Vec2, sizeof(Vertex), offsetof(Vertex, uv) },
+				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+			},
+			VertexAttributeData{
+				VertexAttribute{ VertexFormat::Float, VertexType::Vec4, sizeof(Vertex), offsetof(Vertex, color) },
+				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+			},
+		} };
+
+		IndexInfo indexInfo{
+			IndexFormat::UnsignedInt,
+			SubBuffer { indexBuffer, 0, static_cast<uint32_t>(indexBuffer->size()) }
+		};
+		m_mesh->upload(vertexInfo, indexInfo);
 	}
 
 	{

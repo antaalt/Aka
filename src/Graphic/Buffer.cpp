@@ -15,9 +15,9 @@ Buffer::~Buffer()
 {
 }
 
-Buffer::Ptr Buffer::create(BufferType type, size_t size, BufferUsage usage, BufferAccess access)
+Buffer::Ptr Buffer::create(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data)
 {
-	return GraphicBackend::createBuffer(type, size, usage, access);
+	return GraphicBackend::createBuffer(type, size, usage, access, data);
 }
 
 size_t Buffer::size() const

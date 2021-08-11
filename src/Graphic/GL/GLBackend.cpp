@@ -546,7 +546,7 @@ public:
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags,
-		Sampler sampler, 
+		Sampler sampler,
 		void* data
 	) :
 		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
@@ -875,7 +875,7 @@ public:
 		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
 		GLint textureUnit = 0;
 		GLint imageUnit = 0;
-		size_t offset = 0;
+		uint32_t offset = 0;
 		glUseProgram(glShader->getProgramID());
 		for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
 		{
@@ -961,7 +961,7 @@ public:
 				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
 				break;
 			}
-			case UniformType::Sampler2D: 
+			case UniformType::Sampler2D:
 			case UniformType::SamplerCube: {
 				// TODO store sampler
 				break;
@@ -1003,7 +1003,9 @@ public:
 			}
 			}
 		}
-		AKA_ASSERT(textureUnit < GL_MAX_TEXTURE_UNITS - GL_TEXTURE0, "Too much textures");
+		GLint maxTextureUnits = -1;
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
+		AKA_ASSERT(textureUnit <= maxTextureUnits, "Cannot handle so many textures in a single pass.");
 	}
 };
 
@@ -1032,14 +1034,14 @@ class GLBuffer : public Buffer
 		}
 	}
 public:
-	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access) :
+	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data) :
 		Buffer(type, size, usage, access),
 		m_bufferID(0)
 	{
 		glGenBuffers(1, &m_bufferID);
-		
+
 		glBindBuffer(GLBuffer::type(type), m_bufferID);
-		glBufferData(GLBuffer::type(type), size, nullptr, GLBuffer::access(usage, access));
+		glBufferData(GLBuffer::type(type), size, data, GLBuffer::access(usage, access));
 		glBindBuffer(GLBuffer::type(type), 0);
 	}
 	GLBuffer(const GLBuffer&) = delete;
@@ -1060,7 +1062,7 @@ public:
 	void upload(const void* data) override
 	{
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glBufferData(GLBuffer::type(m_type), m_size, data, GLBuffer::access(m_usage, m_access));
+		glBufferSubData(GLBuffer::type(m_type), 0, m_size, data);
 		glBindBuffer(GLBuffer::type(m_type), 0);
 	}
 
@@ -1103,12 +1105,14 @@ public:
 		return data;
 	}
 
-	void unmap() override 
+	void unmap() override
 	{
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
 		glUnmapBuffer(GLBuffer::type(m_type));
 		glBindBuffer(GLBuffer::type(m_type), 0);
 	}
+
+	Handle handle() const override { return Handle(m_bufferID); }
 private:
 	GLuint m_bufferID;
 };
@@ -1118,9 +1122,7 @@ class GLMesh : public Mesh
 public:
 	GLMesh() :
 		Mesh(),
-		m_vao(0),
-		m_vertexVbo(0),
-		m_indexVbo(0)
+		m_vao(0)
 	{
 		glGenVertexArrays(1, &m_vao);
 	}
@@ -1130,51 +1132,59 @@ public:
 	{
 		if (m_vao)
 			glDeleteVertexArrays(1, &m_vao);
-		if (m_vertexVbo)
-			glDeleteBuffers(1, &m_vertexVbo);
-		if (m_indexVbo)
-			glDeleteBuffers(1, &m_indexVbo);
 	}
 public:
-	void vertices(const VertexData& vertex, const void* vertices, size_t count) override
+	void upload(const VertexInfo& vertexInfo, const IndexInfo& indexInfo) override
 	{
-		m_vertexData = vertex;
-		m_vertexCount = static_cast<uint32_t>(count);
-		m_vertexStride = vertex.stride();
+		// --- Vertices
+		AKA_ASSERT(vertexInfo.attributeData[0].subBuffer.size % vertexInfo.attributeData[0].attribute.size() == 0, "Invalid vertex count");
 		glBindVertexArray(m_vao);
-		if (m_vertexVbo == 0)
-			glGenBuffers(1, &m_vertexVbo);
-		glBindBuffer(GL_ARRAY_BUFFER, m_vertexVbo);
-		size_t offset = 0;
-		for (const VertexData::Attribute& attribute : vertex.attributes)
+		// Setup correct channels
+		for (size_t i = m_vertexInfo.attributeData.size(); i < vertexInfo.attributeData.size(); i++)
+			glEnableVertexAttribArray(i);
+		for (size_t i = vertexInfo.attributeData.size(); i < m_vertexInfo.attributeData.size(); i++)
+			glDisableVertexAttribArray(i);
+		GLuint boundBufferID = 0;
+		for (size_t i = 0; i < vertexInfo.attributeData.size(); i++)
 		{
-			GLint componentSize = size(attribute.format);
-			GLint components = size(attribute.type);
-			GLenum type = gl::format(attribute.format);
+			const VertexAttributeData& a = vertexInfo[i];
+			GLint componentSize = size(a.attribute.format);
+			GLint componentCount = size(a.attribute.type);
+			GLenum componentType = gl::format(a.attribute.format);
 			GLboolean normalized = GL_FALSE;
-			glEnableVertexAttribArray(attribute.index);
-			glVertexAttribPointer(attribute.index, components, type, normalized, m_vertexStride, (void*)offset);
-			offset += components * componentSize;
+			GLuint bufferID = static_cast<GLuint>(a.subBuffer.buffer->handle().value());
+			if (boundBufferID != bufferID)
+				glBindBuffer(GL_ARRAY_BUFFER, bufferID);
+			glVertexAttribPointer(i, componentCount, componentType, normalized, a.attribute.stride, (void*)(uintptr_t)((uintptr_t)a.subBuffer.offset + (uintptr_t)a.attribute.offset));
 		}
+		m_vertexInfo = vertexInfo;
+		m_vertexCount = vertexInfo.attributeData[0].subBuffer.size / vertexInfo.attributeData[0].attribute.size();
+		m_vertexStride = vertexInfo.stride();
 
-		glBufferData(GL_ARRAY_BUFFER, m_vertexStride * count, vertices, GL_DYNAMIC_DRAW);
-		// Do not unbind buffers as they will be unbind from VAO
+		// --- Indices
+		if (indexInfo.subBuffer.buffer != nullptr)
+		{
+			AKA_ASSERT(indexInfo.subBuffer.size % size(indexInfo.format) == 0, "Invalid index count");
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(indexInfo.subBuffer.buffer->handle().value()));
+			m_indexInfo = indexInfo;
+			m_indexSize = size(indexInfo.format);
+			m_indexCount = (uint32_t)indexInfo.subBuffer.size / size(indexInfo.format);
+		}
+		else
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			m_indexInfo = {};
+			m_indexSize = 0;
+			m_indexCount = 0;
+		}
 		glBindVertexArray(0);
 	}
 
-	void indices(IndexFormat indexFormat, const void* indices, size_t count) override
+	void upload(const VertexInfo& vertexInfo) override
 	{
-		glBindVertexArray(m_vao);
-		if (m_indexVbo == 0)
-			glGenBuffers(1, &m_indexVbo);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexVbo);
-		m_indexFormat = indexFormat;
-		m_indexSize = size(indexFormat);
-		m_indexCount = (uint32_t)count;
-		// GL_DYNAMIC_DRAW so we can change buffer data
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexSize * count, indices, GL_DYNAMIC_DRAW);
-		glBindVertexArray(0);
+		upload(vertexInfo, IndexInfo{ IndexFormat::UnsignedByte, SubBuffer{ nullptr, 0, 0 } });
 	}
+
 	void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
 	{
 		glBindVertexArray(m_vao);
@@ -1184,11 +1194,11 @@ public:
 		GLenum primitive = gl::primitive(type);
 		if (m_indexCount > 0)
 		{
-			void* indices = (void*)(uintptr_t)(m_indexSize * indexOffset);
+			void* indices = (void*)((uintptr_t)m_indexSize * (uintptr_t)indexOffset);
 			glDrawElements(
 				primitive,
 				static_cast<GLsizei>(indexCount),
-				gl::format(m_indexFormat),
+				gl::format(m_indexInfo.format),
 				indices
 			);
 		}
@@ -1201,8 +1211,6 @@ public:
 
 private:
 	GLuint m_vao;
-	GLuint m_vertexVbo;
-	GLuint m_indexVbo;
 };
 
 class GLFramebuffer : public Framebuffer
@@ -1244,9 +1252,9 @@ public:
 		for (FramebufferAttachment& attachment : m_attachments)
 		{
 			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(
-				width, height, 
-				attachment.texture->format(), 
-				attachment.texture->component(), 
+				width, height,
+				attachment.texture->format(),
+				attachment.texture->component(),
 				TextureFlag::RenderTarget,
 				attachment.texture->sampler(),
 				nullptr
@@ -1310,7 +1318,7 @@ public:
 			break;
 		}
 		glBlitFramebuffer(
-			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h, 
+			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h,
 			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
 			mask,
 			gl::filter(filter)
@@ -1333,7 +1341,7 @@ public:
 		// Key does not exist yet.
 		if (!exist)
 			m_attachments.push_back(FramebufferAttachment{ type, texture });
-		
+
 		GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
 		if (texture->type() == TextureType::TextureCubemap)
@@ -1772,9 +1780,9 @@ uint32_t GraphicBackend::deviceCount()
 }
 
 Texture::Ptr GraphicBackend::createTexture2D(
-	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureComponent component, TextureFlag flags, 
-	Sampler sampler, 
+	uint32_t width, uint32_t height,
+	TextureFormat format, TextureComponent component, TextureFlag flags,
+	Sampler sampler,
 	void* data
 )
 {
@@ -1793,9 +1801,9 @@ Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 }
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(
-	uint32_t width, uint32_t height, 
+	uint32_t width, uint32_t height,
 	TextureFormat format, TextureComponent component, TextureFlag flags,
-	Sampler sampler, 
+	Sampler sampler,
 	void* px, void* nx,
 	void* py, void* ny,
 	void* pz, void* nz
@@ -1809,9 +1817,9 @@ Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attach
 	return std::make_shared<GLFramebuffer>(attachments, count);
 }
 
-Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access)
+Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data)
 {
-	return std::make_shared<GLBuffer>(type, size, usage, access);
+	return std::make_shared<GLBuffer>(type, size, usage, access, data);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()

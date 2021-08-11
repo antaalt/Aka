@@ -4,14 +4,16 @@
 #include <memory>
 #include <vector>
 
+#include <Aka/Graphic/Buffer.h>
+
 namespace aka {
-// TODO merge index format & vert format as format.
-enum class IndexFormat
-{
+
+enum class IndexFormat {
 	UnsignedByte,
 	UnsignedShort,
 	UnsignedInt
 };
+
 enum class VertexFormat {
 	Float,
 	Double,
@@ -22,8 +24,8 @@ enum class VertexFormat {
 	Int,
 	UnsignedInt
 };
-enum class VertexType
-{
+
+enum class VertexType {
 	Vec2,
 	Vec3,
 	Vec4,
@@ -33,8 +35,7 @@ enum class VertexType
 	Scalar,
 };
 
-enum class PrimitiveType
-{
+enum class PrimitiveType {
 	Points,
 	LineStrip,
 	LineLoop,
@@ -48,20 +49,35 @@ uint32_t size(IndexFormat format);
 uint32_t size(VertexFormat format);
 uint32_t size(VertexType type);
 
-struct VertexData {
-	struct Attribute {
-		uint32_t index;	   // Location of the attribute
-		VertexFormat format; // Type of the attribute
-		VertexType type;
-	};
-	std::vector<Attribute> attributes;
+struct VertexAttribute {
+	VertexFormat format; // Format of the attribute
+	VertexType type; // Type of the attribute
+	uint32_t stride; // Stride in the buffer
+	uint32_t offset; // Offset from base vertex
+	uint32_t size() const { return aka::size(format) * aka::size(type); }
+};
+
+struct VertexAttributeData {
+	VertexAttribute attribute; // Attribute information
+	SubBuffer subBuffer; // Buffer used to store the attribtue
+};
+
+struct VertexInfo {
+	VertexAttributeData& operator[](size_t index) { return attributeData[index]; }
+	const VertexAttributeData& operator[](size_t index) const { return attributeData[index]; }
 
 	uint32_t stride() const {
 		uint32_t stride = 0;
-		for (const VertexData::Attribute& attribute : attributes)
-			stride += size(attribute.format) * size(attribute.type);
+		for (const VertexAttributeData& a : attributeData)
+			stride += a.attribute.size();
 		return stride;
 	}
+	std::vector<VertexAttributeData> attributeData; // index in vector is location in shader
+};
+
+struct IndexInfo {
+	IndexFormat format;
+	SubBuffer subBuffer;
 };
 
 class Mesh
@@ -76,28 +92,31 @@ protected:
 public:
 	static Mesh::Ptr create();
 
-	virtual void vertices(const VertexData&vertex, const void *vertices, size_t count) = 0;
+	virtual void upload(const VertexInfo& vertexBuffer, const IndexInfo& indexBuffer) = 0;
+	virtual void upload(const VertexInfo& vertexBuffer) = 0;
 
-	virtual void indices(IndexFormat indexFormat, const void* indices, size_t count) = 0;
-
+	// TODO Draw elements, arrays, instanced, indirect as separated call
 	void draw(PrimitiveType type) const { draw(type, m_indexCount, 0); }
 	virtual void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const = 0;
 
 	uint32_t getIndexCount() const;
 	uint32_t getIndexSize() const;
 	IndexFormat getIndexFormat() const;
-	const VertexData &getVertexData() const;
+	const SubBuffer& getIndexBuffer() const;
+
 	uint32_t getVertexCount() const;
 	uint32_t getVertexStride() const;
-
+	uint32_t getVertexAttributeCount() const;
+	const VertexAttribute& getVertexAttribute(uint32_t i) const;
+	const SubBuffer& getVertexBuffer(uint32_t i) const;
 
 protected:
 	uint32_t m_vertexStride;
 	uint32_t m_vertexCount;
 	uint32_t m_indexSize;
 	uint32_t m_indexCount;
-	IndexFormat m_indexFormat;
-	VertexData m_vertexData;
+	IndexInfo m_indexInfo;
+	VertexInfo m_vertexInfo;
 };
 
 struct SubMesh {

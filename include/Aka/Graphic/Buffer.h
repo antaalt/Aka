@@ -41,13 +41,14 @@ class Buffer
 {
 public:
 	using Ptr = std::shared_ptr<Buffer>;
+	using Handle = StrictType<uintptr_t, struct BufferHandleTag>;
 protected:
 	Buffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access);
 	Buffer(const Buffer&) = delete;
 	Buffer& operator=(const Buffer&) = delete;
 	virtual ~Buffer();
 public:
-	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferAccess access);
+	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data = nullptr);
 
 	BufferType type() const;
 
@@ -69,11 +70,19 @@ public:
 
 	virtual void unmap() = 0;
 
+	virtual Handle handle() const = 0;
+
 protected:
 	size_t m_size;
 	BufferType m_type;
 	BufferUsage m_usage;
 	BufferAccess m_access;
+};
+
+struct SubBuffer {
+	Buffer::Ptr buffer;
+	uint32_t offset;
+	uint32_t size;
 };
 
 }
