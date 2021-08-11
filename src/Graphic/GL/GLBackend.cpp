@@ -547,7 +547,7 @@ public:
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags,
 		Sampler sampler,
-		void* data
+		const void* data
 	) :
 		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
 		m_copyFBO(0),
@@ -567,7 +567,7 @@ public:
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags,
 		Sampler sampler,
-		void* data,
+		const void* data,
 		uint8_t samples
 	) :
 		Texture(width, height, TextureType::Texture2DMultisample, format, component, flags, sampler),
@@ -588,9 +588,9 @@ public:
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags,
 		Sampler sampler,
-		void* px, void* nx,
-		void* py, void* ny,
-		void* pz, void* nz
+		const void* px, const void* nx,
+		const void* py, const void* ny,
+		const void* pz, const void* nz
 	) :
 		Texture(width, height, TextureType::TextureCubemap, format, component, flags, sampler),
 		m_copyFBO(0),
@@ -1034,7 +1034,7 @@ class GLBuffer : public Buffer
 		}
 	}
 public:
-	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data) :
+	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data) :
 		Buffer(type, size, usage, access),
 		m_bufferID(0)
 	{
@@ -1052,8 +1052,16 @@ public:
 			glDeleteBuffers(1, &m_bufferID);
 	}
 
+	void reallocate(size_t size, const void* data) override
+	{
+		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glBufferData(GLBuffer::type(m_type), size, data, GLBuffer::access(m_usage, m_access));
+		glBindBuffer(GLBuffer::type(m_type), 0);
+	}
+
 	void upload(const void* data, size_t size, size_t offset = 0) override
 	{
+		AKA_ASSERT(m_usage != BufferUsage::Static, "Cannot upload to static buffer.");
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
 		glBufferSubData(GLBuffer::type(m_type), offset, size, data);
 		glBindBuffer(GLBuffer::type(m_type), 0);
@@ -1061,6 +1069,7 @@ public:
 
 	void upload(const void* data) override
 	{
+		AKA_ASSERT(m_usage != BufferUsage::Static, "Cannot upload to static buffer.");
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
 		glBufferSubData(GLBuffer::type(m_type), 0, m_size, data);
 		glBindBuffer(GLBuffer::type(m_type), 0);
@@ -1783,7 +1792,7 @@ Texture::Ptr GraphicBackend::createTexture2D(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureComponent component, TextureFlag flags,
 	Sampler sampler,
-	void* data
+	const void* data
 )
 {
 	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, data);
@@ -1793,7 +1802,7 @@ Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureComponent component, TextureFlag flags,
 	Sampler sampler,
-	void* data,
+	const void* data,
 	uint8_t samples
 )
 {
@@ -1804,9 +1813,9 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureComponent component, TextureFlag flags,
 	Sampler sampler,
-	void* px, void* nx,
-	void* py, void* ny,
-	void* pz, void* nz
+	const void* px, const void* nx,
+	const void* py, const void* ny,
+	const void* pz, const void* nz
 )
 {
 	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
@@ -1817,7 +1826,7 @@ Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attach
 	return std::make_shared<GLFramebuffer>(attachments, count);
 }
 
-Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data)
+Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data)
 {
 	return std::make_shared<GLBuffer>(type, size, usage, access, data);
 }

@@ -83,10 +83,14 @@ private:
 private:
 	std::vector<uint32_t> m_indices;
 	std::vector<Vertex> m_vertices;
+	uint32_t m_maxVertices;
+	uint32_t m_maxIndices;
 	RenderPass m_pass;
 	Shader::Ptr m_shader; // Make static as we only need one instance of shader even though multiple class exist
 	ShaderMaterial::Ptr m_material;
 	Mesh::Ptr m_mesh;
+	Buffer::Ptr m_vertexBuffer;
+	Buffer::Ptr m_indexBuffer;
 	Texture::Ptr m_defaultTexture;
 
 	std::vector<DrawBatch> m_batches;

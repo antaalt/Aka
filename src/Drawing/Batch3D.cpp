@@ -170,6 +170,11 @@ void Batch3D::initialize()
 	);
 	m_material = ShaderMaterial::create(m_shader);
 	m_mesh = Mesh::create();
+	m_maxVertices = (1 << 9);
+	m_maxIndices = (1 << 8);
+	m_vertexBuffer = Buffer::create(BufferType::Array, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferAccess::ReadOnly);
+	m_indexBuffer = Buffer::create(BufferType::ElementArray, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferAccess::ReadOnly);
+
 	uint8_t data[4] = { 255, 255, 255, 255 };
 	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest(), data);
 
@@ -226,32 +231,44 @@ void Batch3D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		initialize();
 
 	{
+		if (m_vertices.size() > m_maxVertices)
+		{
+			while(m_vertices.size() > m_maxVertices)
+				m_maxVertices *= 2;
+			m_vertexBuffer->reallocate(m_maxVertices * sizeof(Vertex));
+		}
+		m_vertexBuffer->upload(m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+
+		if (m_indices.size() > m_maxIndices)
+		{
+			while (m_indices.size() > m_maxIndices)
+				m_maxIndices *= 2;
+			m_indexBuffer->reallocate(m_maxIndices * sizeof(uint32_t));
+		}
+		m_indexBuffer->upload(m_indices.data(), m_indices.size() * sizeof(uint32_t));
 		// Update mesh data
-		// TODO only update buffer content.
-		Buffer::Ptr vertexBuffer = Buffer::create(BufferType::Array, m_vertices.size() * sizeof(Vertex), BufferUsage::Static, BufferAccess::ReadOnly, m_vertices.data());
-		Buffer::Ptr indexBuffer = Buffer::create(BufferType::ElementArray, m_indices.size() * sizeof(uint32_t), BufferUsage::Static, BufferAccess::ReadOnly, m_indices.data());
 		VertexInfo vertexInfo{ std::vector<VertexAttributeData>{
 			VertexAttributeData{
 				VertexAttribute{ VertexFormat::Float, VertexType::Vec3, sizeof(Vertex), offsetof(Vertex, position) },
-				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
 			},
 			VertexAttributeData{
 				VertexAttribute{ VertexFormat::Float, VertexType::Vec3, sizeof(Vertex), offsetof(Vertex, normal) },
-				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
 			},
 			VertexAttributeData{
 				VertexAttribute{ VertexFormat::Float, VertexType::Vec2, sizeof(Vertex), offsetof(Vertex, uv) },
-				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
 			},
 			VertexAttributeData{
 				VertexAttribute{ VertexFormat::Float, VertexType::Vec4, sizeof(Vertex), offsetof(Vertex, color) },
-				SubBuffer { vertexBuffer, 0, static_cast<uint32_t>(vertexBuffer->size()) }
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
 			}
 		} };
 
 		IndexInfo indexInfo{
 			IndexFormat::UnsignedInt,
-			SubBuffer { indexBuffer, 0, static_cast<uint32_t>(indexBuffer->size()) }
+			SubBuffer { m_indexBuffer, 0, static_cast<uint32_t>(m_indices.size() * sizeof(uint32_t)) }
 		};
 		m_mesh->upload(vertexInfo, indexInfo);
 	}

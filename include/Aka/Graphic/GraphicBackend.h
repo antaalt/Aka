@@ -68,29 +68,29 @@ protected:
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureComponent component, TextureFlag flags, 
 		Sampler sampler,
-		void* data
+		const void* data
 	);
 	static Texture::Ptr createTexture2DMultisampled(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags,
 		Sampler sampler,
-		void* data,
+		const void* data,
 		uint8_t samples
 	);
 	static Texture::Ptr createTextureCubeMap(
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureComponent component, TextureFlag flags,
 		Sampler sampler,
-		void* px, void* nx,
-		void* py, void* ny,
-		void* pz, void* nz
+		const void* px, const void* nx,
+		const void* py, const void* ny,
+		const void* pz, const void* nz
 	);
 
 	friend class Framebuffer;
 	static Framebuffer::Ptr createFramebuffer(FramebufferAttachment* attachments, size_t count);
 
 	friend class Buffer;
-	static Buffer::Ptr createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data);
+	static Buffer::Ptr createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data);
 
 	friend class Mesh;
 	static Mesh::Ptr createMesh();

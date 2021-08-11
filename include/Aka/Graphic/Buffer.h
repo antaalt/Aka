@@ -48,7 +48,7 @@ protected:
 	Buffer& operator=(const Buffer&) = delete;
 	virtual ~Buffer();
 public:
-	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferAccess access, void* data = nullptr);
+	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data = nullptr);
 
 	BufferType type() const;
 
@@ -57,6 +57,8 @@ public:
 	BufferUsage usage() const;
 
 	BufferAccess access() const;
+
+	virtual void reallocate(size_t size, const void* data = nullptr) = 0;
 
 	virtual void upload(const void* data, size_t size, size_t offset = 0) = 0;
 

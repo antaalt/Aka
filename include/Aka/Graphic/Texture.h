@@ -117,7 +117,7 @@ public:
 		TextureComponent component,
 		TextureFlag flag, 
 		Sampler sampler,
-		void* data = nullptr
+		const void* data = nullptr
 	);
 	static Texture::Ptr create2DMultisampled(
 		uint32_t width,
@@ -126,7 +126,7 @@ public:
 		TextureComponent component,
 		TextureFlag flag,
 		Sampler sampler,
-		void* data = nullptr,
+		const void* data = nullptr,
 		uint8_t samples = 4
 	);
 	static Texture::Ptr createCubemap(
@@ -136,9 +136,9 @@ public:
 		TextureComponent component,
 		TextureFlag flag,
 		Sampler sampler,
-		void* px = nullptr, void* nx = nullptr,
-		void* py = nullptr, void* ny = nullptr,
-		void* pz = nullptr, void* nz = nullptr
+		const void* px = nullptr, const void* nx = nullptr,
+		const void* py = nullptr, const void* ny = nullptr,
+		const void* pz = nullptr, const void* nz = nullptr
 	);
 
 

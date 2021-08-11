@@ -24,7 +24,7 @@ Texture::Ptr Texture::create2D(
 	uint32_t width, uint32_t height, 
 	TextureFormat format, TextureComponent component, TextureFlag flags, 
 	Sampler sampler, 
-	void* data
+	const void* data
 )
 {
 	return GraphicBackend::createTexture2D(width, height, format, component, flags, sampler, data);
@@ -33,7 +33,7 @@ Texture::Ptr Texture::create2D(
 Texture::Ptr Texture::create2DMultisampled(
 	uint32_t width, uint32_t height, 
 	TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler, 
-	void* data, uint8_t samples
+	const void* data, uint8_t samples
 )
 {
 	return GraphicBackend::createTexture2DMultisampled(width, height, format, component, flag, sampler, data, samples);
@@ -43,9 +43,9 @@ Texture::Ptr Texture::createCubemap(
 	uint32_t width, uint32_t height, 
 	TextureFormat format, TextureComponent component, TextureFlag flags, 
 	Sampler sampler, 
-	void* px, void* nx,
-	void* py, void* ny,
-	void* pz, void* nz
+	const void* px, const void* nx,
+	const void* py, const void* ny,
+	const void* pz, const void* nz
 )
 {
 	return GraphicBackend::createTextureCubeMap(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
