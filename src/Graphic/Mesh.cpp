@@ -46,10 +46,6 @@ uint32_t size(VertexType type)
 }
 
 Mesh::Mesh() :
-    m_vertexStride(0),
-    m_vertexCount(0),
-    m_indexSize(0),
-    m_indexCount(0),
 	m_indexInfo{},
 	m_vertexInfo{}
 {
@@ -64,14 +60,57 @@ Mesh::Ptr Mesh::create()
 	return GraphicBackend::createMesh();
 }
 
-uint32_t Mesh::getIndexCount() const
+void Mesh::uploadInterleaved(const VertexAttribute* attributes, uint32_t attributeCount, void* vertices, uint32_t vertexCount)
 {
-    return m_indexCount;
+	VertexInfo info{};
+	uint32_t stride = 0;
+	for (uint32_t i = 0; i < attributeCount; i++)
+		stride += attributes[i].size();
+	SubBuffer buffer{};
+	buffer.buffer = Buffer::create(BufferType::VertexBuffer, vertexCount * stride, BufferUsage::Static, BufferAccess::ReadOnly, vertices);
+	buffer.size = vertexCount * stride;
+	buffer.offset = 0;
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < attributeCount; i++)
+	{
+		info.attributeData.emplace_back(VertexAttributeData{ attributes[i], buffer, stride, offset });
+		offset += attributes[i].size();
+	}
+	upload(info);
 }
 
-uint32_t Mesh::getIndexSize() const
+void Mesh::uploadInterleaved(const VertexAttribute* attributes, uint32_t attributeCount, void* vertices, uint32_t vertexCount, IndexFormat indexFormat, void* indices, uint32_t indexCount)
 {
-    return m_indexSize;
+	VertexInfo vertexInfo{};
+	uint32_t stride = 0;
+	for (uint32_t i = 0; i < attributeCount; i++)
+		stride += attributes[i].size();
+	SubBuffer buffer{};
+	buffer.buffer = Buffer::create(BufferType::VertexBuffer, vertexCount * stride, BufferUsage::Static, BufferAccess::ReadOnly, vertices);
+	buffer.size = vertexCount * stride;
+	buffer.offset = 0;
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < attributeCount; i++)
+	{
+		vertexInfo.attributeData.emplace_back(VertexAttributeData{ attributes[i], buffer, stride, offset });
+		offset += attributes[i].size();
+	}
+	IndexInfo indexInfo{};
+	indexInfo.format = IndexFormat::UnsignedInt;
+	indexInfo.subBuffer.buffer = Buffer::create(BufferType::IndexBuffer, indexCount * 4, BufferUsage::Static, BufferAccess::ReadOnly, indices);
+	indexInfo.subBuffer.offset = 0;
+	indexInfo.subBuffer.size = indexCount * 4;
+	upload(vertexInfo, indexInfo);
+}
+
+bool Mesh::isIndexed() const
+{
+	return m_indexInfo.subBuffer.buffer != nullptr;
+}
+
+uint32_t Mesh::getIndexCount() const
+{
+	return m_indexInfo.subBuffer.size / size(m_indexInfo.format);
 }
 
 IndexFormat Mesh::getIndexFormat() const
@@ -86,12 +125,8 @@ const SubBuffer& Mesh::getIndexBuffer() const
 
 uint32_t Mesh::getVertexCount() const
 {
-	return m_vertexCount;
-}
-
-uint32_t Mesh::getVertexStride() const
-{
-	return m_vertexStride;
+	if (m_vertexInfo.attributeData.size() == 0) return 0;
+	return m_vertexInfo.attributeData[0].subBuffer.size / m_vertexInfo.attributeData[0].attribute.size();
 }
 
 uint32_t Mesh::getVertexAttributeCount() const
@@ -99,19 +134,24 @@ uint32_t Mesh::getVertexAttributeCount() const
 	return static_cast<uint32_t>(m_vertexInfo.attributeData.size());
 }
 
-const VertexAttribute& Mesh::getVertexAttribute(uint32_t i) const
+const VertexAttribute& Mesh::getVertexAttribute(uint32_t binding) const
 {
-	return m_vertexInfo[i].attribute;
+	return m_vertexInfo[binding].attribute;
 }
 
-const SubBuffer& Mesh::getVertexBuffer(uint32_t i) const
+const SubBuffer& Mesh::getVertexBuffer(uint32_t binding) const
 {
-	return m_vertexInfo[i].subBuffer;
+	return m_vertexInfo[binding].subBuffer;
 }
 
 void SubMesh::draw()
 {
-	mesh->draw(type, indexCount, indexOffset);
+	mesh->draw(type, count, offset);
+}
+
+void SubMesh::drawIndexed()
+{
+	mesh->drawIndexed(type, count, offset);
 }
 
 };

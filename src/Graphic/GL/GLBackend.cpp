@@ -1013,9 +1013,9 @@ class GLBuffer : public Buffer
 {
 	static GLenum type(BufferType type) {
 		switch (type) {
-		case BufferType::Array:
+		case BufferType::VertexBuffer:
 			return GL_ARRAY_BUFFER;
-		case BufferType::ElementArray:
+		case BufferType::IndexBuffer:
 			return GL_ELEMENT_ARRAY_BUFFER;
 		default:
 			return 0;
@@ -1146,14 +1146,12 @@ public:
 	void upload(const VertexInfo& vertexInfo, const IndexInfo& indexInfo) override
 	{
 		// --- Vertices
-		AKA_ASSERT(vertexInfo.attributeData[0].subBuffer.size % vertexInfo.attributeData[0].attribute.size() == 0, "Invalid vertex count");
 		glBindVertexArray(m_vao);
 		// Setup correct channels
 		for (size_t i = m_vertexInfo.attributeData.size(); i < vertexInfo.attributeData.size(); i++)
 			glEnableVertexAttribArray(i);
 		for (size_t i = vertexInfo.attributeData.size(); i < m_vertexInfo.attributeData.size(); i++)
 			glDisableVertexAttribArray(i);
-		GLuint boundBufferID = 0;
 		for (size_t i = 0; i < vertexInfo.attributeData.size(); i++)
 		{
 			const VertexAttributeData& a = vertexInfo[i];
@@ -1161,30 +1159,21 @@ public:
 			GLint componentCount = size(a.attribute.type);
 			GLenum componentType = gl::format(a.attribute.format);
 			GLboolean normalized = GL_FALSE;
-			GLuint bufferID = static_cast<GLuint>(a.subBuffer.buffer->handle().value());
-			if (boundBufferID != bufferID)
-				glBindBuffer(GL_ARRAY_BUFFER, bufferID);
-			glVertexAttribPointer(i, componentCount, componentType, normalized, a.attribute.stride, (void*)(uintptr_t)((uintptr_t)a.subBuffer.offset + (uintptr_t)a.attribute.offset));
+			glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(a.subBuffer.buffer->handle().value()));
+			glVertexAttribPointer(i, componentCount, componentType, normalized, a.stride, (void*)(uintptr_t)((uintptr_t)a.subBuffer.offset + (uintptr_t)a.offset));
 		}
 		m_vertexInfo = vertexInfo;
-		m_vertexCount = vertexInfo.attributeData[0].subBuffer.size / vertexInfo.attributeData[0].attribute.size();
-		m_vertexStride = vertexInfo.stride();
 
 		// --- Indices
 		if (indexInfo.subBuffer.buffer != nullptr)
 		{
-			AKA_ASSERT(indexInfo.subBuffer.size % size(indexInfo.format) == 0, "Invalid index count");
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(indexInfo.subBuffer.buffer->handle().value()));
 			m_indexInfo = indexInfo;
-			m_indexSize = size(indexInfo.format);
-			m_indexCount = (uint32_t)indexInfo.subBuffer.size / size(indexInfo.format);
 		}
 		else
 		{
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			m_indexInfo = {};
-			m_indexSize = 0;
-			m_indexCount = 0;
 		}
 		glBindVertexArray(0);
 	}
@@ -1194,27 +1183,22 @@ public:
 		upload(vertexInfo, IndexInfo{ IndexFormat::UnsignedByte, SubBuffer{ nullptr, 0, 0 } });
 	}
 
-	void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
+	void draw(PrimitiveType type, uint32_t vertexCount, uint32_t vertexOffset) const override
 	{
 		glBindVertexArray(m_vao);
-		// We could use glDrawArrays for non indexed array.
-		// But using indexed allow to reduce the number of draw call for different types
-		// We can also reuse vertices with glDrawElements as they are indexed
-		GLenum primitive = gl::primitive(type);
-		if (m_indexCount > 0)
-		{
-			void* indices = (void*)((uintptr_t)m_indexSize * (uintptr_t)indexOffset);
-			glDrawElements(
-				primitive,
-				static_cast<GLsizei>(indexCount),
-				gl::format(m_indexInfo.format),
-				indices
-			);
-		}
-		else
-		{
-			glDrawArrays(primitive, 0, m_vertexCount);
-		}
+		glDrawArrays(gl::primitive(type), vertexOffset, vertexCount);
+		glBindVertexArray(0);
+	}
+	void drawIndexed(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
+	{
+		AKA_ASSERT(m_indexInfo.subBuffer.buffer != nullptr, "Need indices to call drawIndexed");
+		glBindVertexArray(m_vao);
+		glDrawElements(
+			gl::primitive(type),
+			static_cast<GLsizei>(indexCount),
+			gl::format(m_indexInfo.format),
+			(void*)((uintptr_t)size(m_indexInfo.format) * (uintptr_t)indexOffset)
+		);
 		glBindVertexArray(0);
 	}
 
@@ -1732,7 +1716,10 @@ void GraphicBackend::render(RenderPass& pass)
 	}
 	{
 		// Mesh
-		pass.submesh.draw();
+		if (pass.submesh.mesh->isIndexed())
+			pass.submesh.drawIndexed();
+		else
+			pass.submesh.draw();
 	}
 }
 

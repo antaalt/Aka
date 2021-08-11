@@ -9,13 +9,13 @@
 namespace aka {
 
 enum class BufferType {
-	Array, // vertices
+	VertexBuffer,
+	IndexBuffer,
 	AtomicCounter,
 	CopyRead,
 	CopyWrite,
 	DispatchIndirect,
 	DrawIndirect,
-	ElementArray,
 	PixelPack,
 	PixelUnpack,
 	Query,

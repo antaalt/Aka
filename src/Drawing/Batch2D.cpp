@@ -179,8 +179,8 @@ void Batch2D::initialize()
 	m_mesh = Mesh::create();
 	m_maxVertices = (1 << 9);
 	m_maxIndices = (1 << 8);
-	m_vertexBuffer = Buffer::create(BufferType::Array, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferAccess::ReadOnly);
-	m_indexBuffer = Buffer::create(BufferType::ElementArray, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferAccess::ReadOnly);
+	m_vertexBuffer = Buffer::create(BufferType::VertexBuffer, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferAccess::ReadOnly);
+	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferAccess::ReadOnly);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
 	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest(), data);
@@ -288,16 +288,19 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		// Update mesh data
 		VertexInfo vertexInfo{ std::vector<VertexAttributeData>{
 			VertexAttributeData{
-				VertexAttribute{ VertexFormat::Float, VertexType::Vec2, sizeof(Vertex), offsetof(Vertex, position) },
-				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
+				VertexAttribute{ VertexFormat::Float, VertexType::Vec2 },
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }, 
+				sizeof(Vertex), offsetof(Vertex, position)
 			},
 			VertexAttributeData{
-				VertexAttribute{ VertexFormat::Float, VertexType::Vec2, sizeof(Vertex), offsetof(Vertex, uv) },
-				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
+				VertexAttribute{ VertexFormat::Float, VertexType::Vec2 },
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }, 
+				sizeof(Vertex), offsetof(Vertex, uv)
 			},
 			VertexAttributeData{
-				VertexAttribute{ VertexFormat::Float, VertexType::Vec4, sizeof(Vertex), offsetof(Vertex, color) },
-				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }
+				VertexAttribute{ VertexFormat::Float, VertexType::Vec4 },
+				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }, 
+				sizeof(Vertex), offsetof(Vertex, color)
 			},
 		} };
 
@@ -328,8 +331,8 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	{
 		// TODO draw instanced & pass model matrix, textures & offset / count.
 		m_material->set<Texture::Ptr>("u_texture", batch.texture ? batch.texture : m_defaultTexture);
-		m_pass.submesh.indexCount = batch.indexCount;
-		m_pass.submesh.indexOffset = batch.indexOffset;
+		m_pass.submesh.count = batch.indexCount;
+		m_pass.submesh.offset = batch.indexOffset;
 		m_pass.submesh.type = batch.primitive;
 		m_pass.execute();
 	}
