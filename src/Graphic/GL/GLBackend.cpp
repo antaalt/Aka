@@ -884,7 +884,7 @@ public:
 			{
 			default:
 			case UniformType::None:
-				Logger::error("[GL] Unsupported uniform type : ", (int)uniform.type, "(", uniform.name, ")");
+				Logger::error("[GL] Unsupported uniform type : ", uniform.name, "(", (int)uniform.type, ")");
 				break;
 			case UniformType::Texture2D: {
 				std::vector<GLint> units;
@@ -989,6 +989,11 @@ public:
 			case UniformType::UnsignedInt: {
 				glUniform1uiv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, reinterpret_cast<const unsigned int*>(&m_data[offset]));
 				offset += uniform.arrayLength;
+				break;
+			}
+			case UniformType::Vec2: {
+				glUniform2fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
+				offset += 2 * uniform.arrayLength;
 				break;
 			}
 			case UniformType::Vec3: {
