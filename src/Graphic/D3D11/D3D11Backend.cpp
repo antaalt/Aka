@@ -44,6 +44,7 @@ extern "C" {
             __LINE__				\
         );							\
         ::aka::Logger::error(buffer);\
+		::aka::GraphicBackend::frame();\
 		AKA_DEBUG_BREAK;            \
 	}								\
 }
@@ -426,77 +427,169 @@ void SetDebugName(ID3D11DeviceChild* child, const std::string& name)
 		child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.c_str());
 }
 
-DXGI_FORMAT d3dformat(TextureFormat format, TextureComponent component)
+DXGI_FORMAT d3dShaderDataFormat(DXGI_FORMAT format)
 {
 	switch (format)
 	{
-	case TextureFormat::UnsignedByte: {
-		switch (component)
+	case DXGI_FORMAT_D16_UNORM:
+		return DXGI_FORMAT_R16_TYPELESS;
+	case DXGI_FORMAT_D32_FLOAT:
+		return DXGI_FORMAT_R32_TYPELESS;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		return DXGI_FORMAT_R24G8_TYPELESS;
+	case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+	}
+	return format;
+}
+
+DXGI_FORMAT d3dViewFormat(DXGI_FORMAT format)
+{
+	switch (format)
+	{
+	case DXGI_FORMAT_D16_UNORM:
+		return DXGI_FORMAT_R16_UNORM;
+	case DXGI_FORMAT_D32_FLOAT:
+		return DXGI_FORMAT_R32_FLOAT;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+	}
+	return format;
+}
+
+DXGI_FORMAT d3dformat(TextureFormat format, TextureComponent component)
+{
+	switch (component)
+	{
+	case TextureComponent::R:
+	case TextureComponent::R8: {
+		switch (format)
 		{
-		case TextureComponent::R:
-		case TextureComponent::R8:
-			return DXGI_FORMAT_R8_UNORM;
-		case TextureComponent::R16:
-			return DXGI_FORMAT_R16_UNORM;
-
-		case TextureComponent::RG:
-		case TextureComponent::RG8:
-			return DXGI_FORMAT_R8G8_UNORM;
-
-		case TextureComponent::RGBA:
-		case TextureComponent::RGBA8:
-			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case TextureFormat::UnsignedByte: return DXGI_FORMAT_R8_UNORM;
+		case TextureFormat::Byte: return DXGI_FORMAT_R8_SNORM;
+		default: break;
 		}
 		break;
 	}
-	case TextureFormat::Byte: {
-		switch (component)
+	case TextureComponent::R16: {
+		switch (format)
 		{
-		case TextureComponent::R:
-		case TextureComponent::R8:
-			return DXGI_FORMAT_R8_SNORM;
-		case TextureComponent::R16:
-			return DXGI_FORMAT_R16_SNORM;
-
-		case TextureComponent::RGBA:
-		case TextureComponent::RGBA8:
-			return DXGI_FORMAT_R8G8B8A8_SNORM;
+		case TextureFormat::UnsignedShort: return DXGI_FORMAT_R16_UNORM;
+		case TextureFormat::Short: return DXGI_FORMAT_R16_SNORM;
+		default: break;
 		}
 		break;
 	}
-	case TextureFormat::Float: {
-		switch (component)
+	case TextureComponent::R16F: {
+		switch (format)
 		{
-		case TextureComponent::RGBA16F:
-			return DXGI_FORMAT_R16G16B16A16_FLOAT;
-		case TextureComponent::RGBA32F:
-			return DXGI_FORMAT_R32G32B32A32_FLOAT;
-
-		case TextureComponent::Depth24Stencil8:
-		case TextureComponent::DepthStencil:
-			return DXGI_FORMAT_D24_UNORM_S8_UINT;
-		case TextureComponent::Depth16:
-			return DXGI_FORMAT_D16_UNORM;
-		case TextureComponent::Depth:
-		case TextureComponent::Depth32:
-		case TextureComponent::Depth32F:
-			return DXGI_FORMAT_D32_FLOAT;
+		case TextureFormat::Half: return DXGI_FORMAT_R16_FLOAT;
+		default: break;
 		}
 		break;
 	}
-	case TextureFormat::UnsignedInt248: {
-		switch (component)
+	case TextureComponent::R32F: {
+		switch (format)
 		{
-		case TextureComponent::Depth24Stencil8:
-			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case TextureFormat::Byte: return DXGI_FORMAT_R32_FLOAT;
+		default: break;
 		}
 		break;
 	}
-	case TextureFormat::Float32UnsignedInt248: {
-		switch (component)
+	case TextureComponent::RG:
+	case TextureComponent::RG8: {
+		switch (format)
 		{
-		case TextureComponent::Depth32FStencil8:
-			return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		case TextureFormat::Byte: return DXGI_FORMAT_R8G8_SNORM;
+		case TextureFormat::UnsignedByte: return DXGI_FORMAT_R8G8_UNORM;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::RG16: {
+		switch (format)
+		{
+		case TextureFormat::Short: return DXGI_FORMAT_R16G16_SNORM;
+		case TextureFormat::UnsignedShort: return DXGI_FORMAT_R16G16_UNORM;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::RGB:
+	case TextureComponent::RGB8:
+	case TextureComponent::RGB16:
+	case TextureComponent::RGB16F:
+		break;
+	case TextureComponent::RGB32F: {
+		switch (format)
+		{
+		case TextureFormat::Half: return DXGI_FORMAT_R32G32B32_FLOAT;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::RGBA:
+	case TextureComponent::RGBA8: {
+		switch (format)
+		{
+		case TextureFormat::UnsignedByte: return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case TextureFormat::Byte: return DXGI_FORMAT_R8G8B8A8_SNORM;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::RGBA16F: {
+		switch (format)
+		{
+		case TextureFormat::Float:
+		case TextureFormat::Half: return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::RGBA32F: {
+		switch (format)
+		{
+		case TextureFormat::Float: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::Depth16: {
+		switch (format)
+		{
+		case TextureFormat::UnsignedShort: return DXGI_FORMAT_D16_UNORM;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::Depth32:
+		break;
+	case TextureComponent::Depth:
+	case TextureComponent::Depth32F: {
+		switch (format)
+		{
+		case TextureFormat::Float: return DXGI_FORMAT_D32_FLOAT;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::DepthStencil:
+	case TextureComponent::Depth24Stencil8: {
+		switch (format)
+		{
+		case TextureFormat::UnsignedInt248: return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		default: break;
+		}
+		break;
+	}
+	case TextureComponent::Depth32FStencil8: {
+		switch (format)
+		{
+		case TextureFormat::Float32UnsignedInt248: return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		default: break;
 		}
 		break;
 	}
@@ -504,7 +597,7 @@ DXGI_FORMAT d3dformat(TextureFormat format, TextureComponent component)
 	Logger::error("Format not supported : ", (int)format, " (", (int)component, ")");
 	return DXGI_FORMAT_UNKNOWN;
 }
-size_t d3dComponent(TextureComponent component)
+uint32_t d3dComponent(TextureComponent component)
 {
 	switch (component)
 	{
@@ -548,7 +641,7 @@ public:
 	D3D11Texture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
-		void* data
+		const void* data
 	) : 
 		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
 		m_texture(nullptr),
@@ -567,7 +660,10 @@ public:
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE; // TODO add texture flag
+
+		m_d3dFormat = d3dformat(format, component);
+		m_component = d3dComponent(component);
 
 		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
 		{
@@ -586,10 +682,10 @@ public:
 				break;
 			}
 		}
-
-		m_d3dFormat = d3dformat(format, component);
-		m_component = d3dComponent(component);
-		desc.Format = m_d3dFormat;
+		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
+			desc.Format = d3dShaderDataFormat(m_d3dFormat);
+		else
+			desc.Format = m_d3dFormat;
 
 		D3D11_SUBRESOURCE_DATA subResources{};
 		subResources.pSysMem = data;
@@ -600,14 +696,90 @@ public:
 			sub = &subResources;
 		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, sub, &m_texture));
 		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
-			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, nullptr, &m_view));
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+			viewDesc.Format = d3dViewFormat(m_d3dFormat);
+			viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+			viewDesc.Texture2D.MipLevels = desc.MipLevels;
+			viewDesc.Texture2D.MostDetailedMip = 0;
+
+			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &viewDesc, &m_view));
+		}
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
-		void* px, void* nx,
-		void* py, void* ny,
-		void* pz, void* nz
+		const void* data,
+		uint8_t samples
+	) :
+		Texture(width, height, TextureType::Texture2DMultisample, format, component, flags, sampler),
+		m_texture(nullptr),
+		m_staging(nullptr),
+		m_view(nullptr),
+		m_component(0),
+		m_d3dFormat(DXGI_FORMAT_UNKNOWN)
+	{
+		D3D11_TEXTURE2D_DESC desc{};
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = 1;
+		desc.ArraySize = 1;
+		desc.SampleDesc.Count = static_cast<UINT>(samples);
+		desc.SampleDesc.Quality = 0;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = D3D11_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET | D3D11_FORMAT_SUPPORT_MULTISAMPLE_LOAD;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+		m_d3dFormat = d3dformat(format, component);
+		m_component = d3dComponent(component);
+
+		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
+		{
+			switch (component) {
+			case TextureComponent::Depth:
+			case TextureComponent::Depth16:
+			case TextureComponent::Depth32:
+			case TextureComponent::Depth32F:
+			case TextureComponent::DepthStencil:
+			case TextureComponent::Depth24Stencil8:
+			case TextureComponent::Depth32FStencil8:
+				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+				break;
+			default:
+				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				break;
+			}
+		}
+		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
+			desc.Format = d3dShaderDataFormat(m_d3dFormat);
+		else
+			desc.Format = m_d3dFormat;
+
+		D3D11_SUBRESOURCE_DATA subResources{};
+		subResources.pSysMem = data;
+		subResources.SysMemPitch = width;
+		subResources.SysMemSlicePitch = 0;
+		D3D11_SUBRESOURCE_DATA* sub = nullptr;
+		if (data != nullptr)
+			sub = &subResources;
+		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, sub, &m_texture));
+		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+			viewDesc.Format = d3dViewFormat(m_d3dFormat);
+			viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2DMS;
+			viewDesc.Texture2DMS.UnusedField_NothingToDefine;
+
+			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &viewDesc, &m_view));
+		}
+	}
+	D3D11Texture(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+		const void* px, const void* nx,
+		const void* py, const void* ny,
+		const void* pz, const void* nz
 	) :
 		Texture(width, height, TextureType::TextureCubemap, format, component, flags, sampler),
 		m_texture(nullptr),
@@ -628,6 +800,9 @@ public:
 		desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
+		m_d3dFormat = d3dformat(format, component);
+		m_component = d3dComponent(component);
+
 		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
 		{
 			switch (component) {
@@ -645,28 +820,33 @@ public:
 				break;
 			}
 		}
+		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
+			desc.Format = d3dShaderDataFormat(m_d3dFormat);
+		else
+			desc.Format = m_d3dFormat;
 
-		m_d3dFormat = d3dformat(format, component);
-		m_component = d3dComponent(component);
-		desc.Format = m_d3dFormat;
-
-		D3D11_SUBRESOURCE_DATA pData[6];
-		void* datas[6] = { px, nx, py, ny, pz, nz };
+		D3D11_SUBRESOURCE_DATA data[6];
+		const void* datas[6] = { px, nx, py, ny, pz, nz };
 		for (size_t i = 0; i < 6; i++)
 		{
-			pData[i].pSysMem = datas[i];
-			pData[i].SysMemPitch = width;
-			pData[i].SysMemSlicePitch = 0;
+			data[i].pSysMem = datas[i];
+			data[i].SysMemPitch = width;
+			data[i].SysMemSlicePitch = 0;
 		}
-		D3D11_SHADER_RESOURCE_VIEW_DESC view;
-		view.Format = desc.Format;
-		view.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		view.TextureCube.MipLevels = desc.MipLevels;
-		view.TextureCube.MostDetailedMip = 0;
-
+		D3D11_SUBRESOURCE_DATA* pData = nullptr;
+		if (px != nullptr)
+			pData = data;
 		D3D_CHECK_RESULT(dctx.device->CreateTexture2D(&desc, pData, &m_texture));
 		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
-			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &view, &m_view));
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+			viewDesc.Format = d3dViewFormat(m_d3dFormat);
+			viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURECUBE;
+			viewDesc.TextureCube.MipLevels = desc.MipLevels;
+			viewDesc.TextureCube.MostDetailedMip = 0;
+
+			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &viewDesc, &m_view));
+		}
 	}
 	D3D11Texture(D3D11Texture&) = delete;
 	D3D11Texture& operator=(D3D11Texture&) = delete;
@@ -701,9 +881,9 @@ public:
 	{
 		D3D11_BOX box{};
 		box.left = (UINT)rect.x;
-		box.right = (UINT)rect.w;
+		box.right = (UINT)(rect.x + rect.w);
 		box.top = (UINT)rect.y;
-		box.bottom = (UINT)rect.h;
+		box.bottom = (UINT)(rect.y + rect.h);
 		box.front = 0;
 		box.back = 1;
 		dctx.deviceContext->UpdateSubresource(
@@ -769,9 +949,9 @@ public:
 
 		D3D11_BOX box{};
 		box.left = rect.x;
-		box.right = m_width;
+		box.right = rect.x + m_width;
 		box.top = rect.y;
-		box.bottom = m_height;
+		box.bottom = rect.y + m_height;
 		box.front = 0;
 		box.back = 1;
 
@@ -808,7 +988,28 @@ public:
 			if (attachment.type == FramebufferAttachmentType::Depth || attachment.type == FramebufferAttachmentType::Stencil || attachment.type == FramebufferAttachmentType::DepthStencil)
 			{
 				AKA_ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
-				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, nullptr, &m_depthStencilView));
+				D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc{};
+				switch(d3dTexture->type())
+				{
+				case TextureType::Texture2D:
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+					viewDesc.Texture2D.MipSlice = 0;
+					break;
+				case TextureType::Texture2DMultisample:
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+					viewDesc.Texture2DMS.UnusedField_NothingToDefine;
+					break;
+				case TextureType::TextureCubemap:
+					// https://gamedev.net/forums/topic/659535-cubemap-texture-as-depth-buffer-shadowmapping/5171771/
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+					viewDesc.Texture2DArray.ArraySize = 6;
+					viewDesc.Texture2DArray.FirstArraySlice = 0;
+					viewDesc.Texture2DArray.MipSlice = 0; // SV_RenderTargetArrayIndex
+					break;
+				}
+				viewDesc.Format = d3dTexture->m_d3dFormat;
+				viewDesc.Flags = 0;
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, &viewDesc, &m_depthStencilView));
 			}
 			else
 			{
@@ -849,7 +1050,27 @@ public:
 			attachment.texture = tex;
 			if (attachment.type == FramebufferAttachmentType::Depth || attachment.type == FramebufferAttachmentType::Stencil || attachment.type == FramebufferAttachmentType::DepthStencil)
 			{
-				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, nullptr, &m_depthStencilView));
+				D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc{};
+				switch (tex->type())
+				{
+				case TextureType::Texture2D:
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+					viewDesc.Texture2D.MipSlice = 0;
+					break;
+				case TextureType::Texture2DMultisample:
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+					viewDesc.Texture2DMS.UnusedField_NothingToDefine;
+					break;
+				case TextureType::TextureCubemap:
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+					viewDesc.Texture2DArray.ArraySize = 6;
+					viewDesc.Texture2DArray.FirstArraySlice = 0;
+					viewDesc.Texture2DArray.MipSlice = 0; // SV_RenderTargetArrayIndex
+					break;
+				}
+				viewDesc.Format = tex->m_d3dFormat;
+				viewDesc.Flags = 0;
+				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(tex->m_texture, &viewDesc, &m_depthStencilView));
 			}
 			else
 			{
@@ -896,14 +1117,28 @@ public:
 		if (type == FramebufferAttachmentType::Depth || type == FramebufferAttachmentType::Stencil || type == FramebufferAttachmentType::DepthStencil)
 		{
 			if (m_depthStencilView != nullptr)
-			{
 				m_depthStencilView->Release();
-				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, nullptr, &m_depthStencilView));
-			}
-			else
+			D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc{};
+			switch (d3dTexture->type())
 			{
-				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, nullptr, &m_depthStencilView));
+			case TextureType::Texture2D:
+				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+				viewDesc.Texture2D.MipSlice = 0;
+				break;
+			case TextureType::Texture2DMultisample:
+				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+				viewDesc.Texture2DMS.UnusedField_NothingToDefine;
+				break;
+			case TextureType::TextureCubemap:
+				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+				viewDesc.Texture2DArray.ArraySize = 6;
+				viewDesc.Texture2DArray.FirstArraySlice = 0;
+				viewDesc.Texture2DArray.MipSlice = 0; // SV_RenderTargetArrayIndex
+				break;
 			}
+			viewDesc.Format = d3dTexture->m_d3dFormat;
+			viewDesc.Flags = 0;
+			D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, &viewDesc, &m_depthStencilView));
 		}
 		else
 		{
@@ -986,6 +1221,7 @@ public:
 			m_renderTargetView->Release();
 		// m_swapChain not owned by this class. Do not release.
 	}
+public:
 	void resize(uint32_t width, uint32_t height) override
 	{
 		m_renderTargetView->Release();
@@ -1073,14 +1309,180 @@ private:
 	ID3D11Texture2D* m_depthStencilBuffer;
 };
 
+class D3D11Buffer : public Buffer
+{
+public:
+	D3D11Buffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data) :
+		Buffer(type, size, usage, access),
+		m_buffer(nullptr)
+	{
+		reallocate(size, data);
+	}
+	D3D11Buffer(const D3D11Buffer&) = delete;
+	D3D11Buffer& operator=(const D3D11Buffer&) = delete;
+	~D3D11Buffer()
+	{
+		if(m_buffer)
+			m_buffer->Release();
+	}
+public:
+	void reallocate(size_t size, const void* data = nullptr) override
+	{
+		if (m_buffer)
+			m_buffer->Release();
+		D3D11_BUFFER_DESC bufferDesc{};
+		switch (m_usage)
+		{
+		case BufferUsage::Default:
+			bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+			break;
+		case BufferUsage::Immutable:
+			bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+			break;
+		case BufferUsage::Dynamic:
+			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			break;
+		case BufferUsage::Staging:
+			bufferDesc.Usage = D3D11_USAGE_STAGING;
+			break;
+		}
+		switch (m_type)
+		{
+		case BufferType::VertexBuffer:
+			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			break;
+		case BufferType::IndexBuffer:
+			bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			break;
+		case BufferType::ShaderStorage:
+			bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			break;
+		default:
+			// TODO implement all types
+			Logger::warn("Not implemented buffer type.");
+			bufferDesc.BindFlags = 0;
+			break;
+		}
+		if ((m_usage == BufferUsage::Staging) || (m_usage == BufferUsage::Dynamic && (m_access == BufferCPUAccess::Write || m_access == BufferCPUAccess::None)))
+		{
+			switch (m_access)
+			{
+			case BufferCPUAccess::Read:
+				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+				break;
+			case BufferCPUAccess::Write:
+				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+				break;
+			default:
+			case BufferCPUAccess::ReadWrite:
+				bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+				break;
+			}
+		}
+		else
+		{
+			if (m_access != BufferCPUAccess::None)
+				Logger::warn("Cannot set given BufferCPUAccess for given BufferUsage.");
+			bufferDesc.CPUAccessFlags = 0;
+		}
+		bufferDesc.ByteWidth = static_cast<UINT>(size);
+		bufferDesc.MiscFlags = 0;
+		bufferDesc.StructureByteStride = 0;
+
+		D3D11_SUBRESOURCE_DATA subData{};
+		subData.pSysMem = data;
+		subData.SysMemPitch = 0;
+		subData.SysMemSlicePitch = 0;
+
+		D3D11_SUBRESOURCE_DATA* pSubData = nullptr;
+		if (data != nullptr)
+			pSubData = &subData;
+		D3D_CHECK_RESULT(dctx.device->CreateBuffer(&bufferDesc, pSubData, &m_buffer));
+	}
+
+	void upload(const void* data, size_t size, size_t offset = 0) override
+	{
+		AKA_ASSERT(m_usage != BufferUsage::Dynamic, "Do not work with dynamic buffer. Use map instead.");
+		D3D11_BOX box{};
+		box.left = (UINT)offset;
+		box.right = (UINT)(offset + size);
+		box.top = 0;
+		box.bottom = 1;
+		box.front = 0;
+		box.back = 1;
+		dctx.deviceContext->UpdateSubresource(
+			m_buffer,
+			0,
+			&box,
+			data,
+			0,
+			0
+		);
+	}
+
+	void upload(const void* data) override
+	{
+		upload(data, m_size, 0);
+	}
+
+	void download(void* data, size_t size, size_t offset = 0) override
+	{
+		// TODO create staging buffer to download non dynamic buffer
+		void* d = map(BufferMap::Read);
+		memcpy(data, static_cast<char*>(d) + offset, size);
+		unmap();
+	}
+
+	void download(void* data) override
+	{
+		download(data, m_size, 0);
+	};
+
+	void* map(BufferMap bufferMap) override
+	{
+		AKA_ASSERT(m_usage == BufferUsage::Dynamic, "Only works for dynamic buffer. Use upload instead.");
+		D3D11_MAP map;
+		switch (bufferMap)
+		{
+		case BufferMap::Read:
+			map = D3D11_MAP_READ;
+			break;
+		case BufferMap::Write:
+			map = D3D11_MAP_WRITE;
+			break;
+		case BufferMap::ReadWrite:
+			map = D3D11_MAP_READ_WRITE;
+			break;
+		case BufferMap::WriteDiscard:
+			map = D3D11_MAP_READ_WRITE;
+			break;
+		case BufferMap::WriteNoOverwrite:
+			map = D3D11_MAP_READ_WRITE;
+			break;
+		}
+		D3D11_MAPPED_SUBRESOURCE mappedResource{};
+		D3D_CHECK_RESULT(dctx.deviceContext->Map(m_buffer, 0, map, 0, &mappedResource));
+		return mappedResource.pData;
+	}
+
+	void unmap()  override
+	{
+		dctx.deviceContext->Unmap(m_buffer, 0);
+	}
+
+	Handle handle() const  override
+	{
+		return Handle((uintptr_t)m_buffer);
+	}
+private:
+	ID3D11Buffer* m_buffer;
+};
+
 class D3D11Mesh : public Mesh
 {
 public:
 	D3D11Mesh() :
-		Mesh(),
-		m_format(DXGI_FORMAT_UNKNOWN),
-		m_indexBuffer(nullptr),
-		m_vertexBuffer(nullptr)
+		Mesh()
 	{
 
 	}
@@ -1088,83 +1490,53 @@ public:
 	D3D11Mesh& operator=(const D3D11Mesh&) = delete;
 	~D3D11Mesh()
 	{
-		if (m_indexBuffer)
-			m_indexBuffer->Release();
-		if (m_vertexBuffer)
-			m_vertexBuffer->Release();
 	}
 public:
-	void vertices(const VertexData& vertex, const void* vertices, size_t count) override
+	void upload(const VertexInfo& vertexInfo, const IndexInfo& indexInfo) override
 	{
-		m_vertexData = vertex;
-		m_vertexCount = static_cast<uint32_t>(count);
-		m_vertexStride = vertex.stride();
-
-		if (m_vertexBuffer)
-			m_vertexBuffer->Release();
-
-		D3D11_BUFFER_DESC vertexBufferDesc{};
-		// Set up the description of the static vertex buffer.
-		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = static_cast<uint32_t>(m_vertexStride * count);
-		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		vertexBufferDesc.CPUAccessFlags = 0;
-		vertexBufferDesc.MiscFlags = 0;
-		vertexBufferDesc.StructureByteStride = 0;
-
-		// Give the subresource structure a pointer to the vertex data.
-		D3D11_SUBRESOURCE_DATA vertexData{};
-		vertexData.pSysMem = vertices;
-		vertexData.SysMemPitch = 0;
-		vertexData.SysMemSlicePitch = 0;
-
-		// Now create the vertex buffer.
-		D3D_CHECK_RESULT(dctx.device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer));
-	}
-
-	void indices(IndexFormat indexFormat, const void* indices, size_t count) override
-	{
-		m_indexCount = static_cast<uint32_t>(count);
-
-		if (m_indexBuffer)
-			m_indexBuffer->Release();
-		m_indexFormat = indexFormat;
-		m_indexSize = size(indexFormat);
-		switch (indexFormat)
+		m_vertexInfo = vertexInfo;
+		m_indexInfo = indexInfo;
+		m_vertexBuffers.clear();
+		m_strides.clear();
+		m_offsets.clear();
+		for (const VertexAttributeData& a : m_vertexInfo.attributeData)
+		{
+			m_vertexBuffers.push_back((ID3D11Buffer*)a.subBuffer.buffer->handle().value());
+			m_strides.push_back(a.stride);
+			m_offsets.push_back(a.subBuffer.offset + a.offset);
+		}
+		switch (indexInfo.format)
 		{
 		case IndexFormat::UnsignedByte:
-			m_format = DXGI_FORMAT_R8_UINT;
+			m_indexFormat = DXGI_FORMAT_R8_UINT;
 			break;
 		case IndexFormat::UnsignedShort:
-			m_format = DXGI_FORMAT_R16_UINT;
+			m_indexFormat = DXGI_FORMAT_R16_UINT;
 			break;
 		case IndexFormat::UnsignedInt:
-			m_format = DXGI_FORMAT_R32_UINT;
+			m_indexFormat = DXGI_FORMAT_R32_UINT;
 			break;
 		}
-		// Set up the description of the static index buffer.
-		D3D11_BUFFER_DESC indexBufferDesc{};
-		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		indexBufferDesc.ByteWidth = static_cast<uint32_t>(m_indexSize * count);
-		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		indexBufferDesc.CPUAccessFlags = 0;
-		indexBufferDesc.MiscFlags = 0;
-		indexBufferDesc.StructureByteStride = 0;
-
-		// Give the subresource structure a pointer to the index data.
-		D3D11_SUBRESOURCE_DATA indexData{};
-		indexData.pSysMem = indices;
-		indexData.SysMemPitch = 0;
-		indexData.SysMemSlicePitch = 0;
-
-		// Create the index buffer.
-		D3D_CHECK_RESULT(dctx.device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer));
 	}
-	void draw(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
+	void upload(const VertexInfo& vertexInfo) override
+	{
+		m_vertexInfo = vertexInfo;
+		m_indexInfo = {};
+		m_vertexBuffers.clear();
+		m_strides.clear();
+		m_offsets.clear();
+		for (const VertexAttributeData& a : m_vertexInfo.attributeData)
+		{
+			m_vertexBuffers.push_back((ID3D11Buffer*)a.subBuffer.buffer->handle().value());
+			m_strides.push_back(a.stride);
+			m_offsets.push_back(a.subBuffer.offset + a.offset);
+		}
+	}
+	void draw(PrimitiveType type, uint32_t vertexCount, uint32_t vertexOffset) const override
 	{
 		unsigned int offset = 0;
-		dctx.deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &offset);
-		dctx.deviceContext->IASetIndexBuffer(m_indexBuffer, m_format, 0);
+		dctx.deviceContext->IASetVertexBuffers(0, static_cast<UINT>(m_vertexBuffers.size()), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
+		dctx.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 		switch (type)
 		{
 		default:
@@ -1180,6 +1552,36 @@ public:
 		case PrimitiveType::Lines:
 			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 			break;
+		case PrimitiveType::LineStrip:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+			break;
+		case PrimitiveType::LineLoop:
+		case PrimitiveType::TriangleFan:
+			Logger::error("Primitive type not supported");
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED);
+			break;
+		}
+		dctx.deviceContext->Draw(vertexCount, vertexOffset);
+	}
+	void drawIndexed(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
+	{
+		unsigned int offset = 0;
+		dctx.deviceContext->IASetVertexBuffers(0, static_cast<UINT>(m_vertexBuffers.size()), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
+		dctx.deviceContext->IASetIndexBuffer((ID3D11Buffer*)m_indexInfo.subBuffer.buffer->handle().value(), m_indexFormat, 0);
+		switch (type)
+		{
+		default:
+		case PrimitiveType::Triangles:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			break;
+		case PrimitiveType::TriangleStrip:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			break;
+		case PrimitiveType::Points:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+			break;
+		case PrimitiveType::Lines:
+			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 			break;
 		case PrimitiveType::LineStrip:
 			dctx.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
@@ -1193,22 +1595,25 @@ public:
 		dctx.deviceContext->DrawIndexed(indexCount, indexOffset, 0);
 	}
 private:
-	DXGI_FORMAT m_format;
-	ID3D11Buffer* m_indexBuffer;
-	ID3D11Buffer* m_vertexBuffer;
+	DXGI_FORMAT m_indexFormat;
+	std::vector<ID3D11Buffer*> m_vertexBuffers;
+	std::vector<UINT> m_strides;
+	std::vector<UINT> m_offsets;
 };
 
 class D3D11Shader : public Shader
 {
 public:
-	D3D11Shader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes) :
+	D3D11Shader(ShaderID vert, ShaderID frag, ShaderID geometry, ShaderID compute, const std::vector<Attributes>& attributes) :
 		Shader(attributes),
 		m_layout(nullptr),
 		m_vertexShader(nullptr),
 		m_pixelShader(nullptr),
+		m_geometryShader(nullptr),
 		m_computeShader(nullptr),
 		m_vertexShaderBuffer((ID3D10Blob*)vert.value()),
 		m_pixelShaderBuffer((ID3D10Blob*)frag.value()),
+		m_geometryShaderBuffer((ID3D10Blob*)geometry.value()),
 		m_computeShaderBuffer((ID3D10Blob*)compute.value())
 	{
 		if (vert.value() != 0)
@@ -1217,6 +1622,9 @@ public:
 			D3D_CHECK_RESULT(dctx.device->CreatePixelShader(m_pixelShaderBuffer->GetBufferPointer(), m_pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
 		if (compute.value() != 0)
 			D3D_CHECK_RESULT(dctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
+		if (geometry.value() != 0)
+			D3D_CHECK_RESULT(dctx.device->CreateGeometryShader(m_geometryShaderBuffer->GetBufferPointer(), m_geometryShaderBuffer->GetBufferSize(), nullptr, &m_geometryShader));
+
 		m_valid = true;
 	}
 	D3D11Shader(const D3D11Shader&) = delete;
@@ -1229,12 +1637,16 @@ public:
 			m_pixelShader->Release();
 		if (m_vertexShader)
 			m_vertexShader->Release();
+		if (m_geometryShader)
+			m_geometryShader->Release();
 		if (m_computeShader)
 			m_computeShader->Release();
 		if (m_vertexShaderBuffer)
 			m_vertexShaderBuffer->Release();
 		if (m_pixelShaderBuffer)
 			m_pixelShaderBuffer->Release();
+		if (m_geometryShaderBuffer)
+			m_geometryShaderBuffer->Release();
 		if (m_computeShaderBuffer)
 			m_computeShaderBuffer->Release();
 	}
@@ -1395,23 +1807,29 @@ public:
 	void use()
 	{
 		dctx.deviceContext->IASetInputLayout(m_layout);
-		dctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
-		dctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
+		if (m_vertexShader)
+			dctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
+		if (m_geometryShader)
+			dctx.deviceContext->GSSetShader(m_geometryShader, nullptr, 0);
+		if (m_pixelShader)
+			dctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
+		if (m_computeShader)
+			dctx.deviceContext->CSSetShader(m_computeShader, nullptr, 0);
 	}
 
-	void setLayout(VertexData data)
+	void setLayout(VertexAttribute* attributes, size_t count)
 	{
 		if (m_layout != nullptr)
 			return;
 		// Now setup the layout of the data that goes into the shader.
 		// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
-		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(data.attributes.size());
-		AKA_ASSERT(m_attributes.size() == data.attributes.size(), "Incorrect size");
-		for (uint32_t i = 0; i < data.attributes.size(); i++)
+		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
+		AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
+		for (uint32_t i = 0; i < count; i++)
 		{
 			polygonLayout[i].SemanticName = m_attributes[i].name.c_str();
 			polygonLayout[i].SemanticIndex = m_attributes[i].id.value();
-			const VertexData::Attribute& a = data.attributes[i];
+			const VertexAttribute& a = attributes[i];
 			if (a.format == VertexFormat::Float)
 			{
 				switch (a.type)
@@ -1495,6 +1913,11 @@ public:
 			m_pixelShaderBuffer->Release();
 			m_pixelShaderBuffer = nullptr;
 		}
+		if (m_geometryShaderBuffer)
+		{
+			m_geometryShaderBuffer->Release();
+			m_geometryShaderBuffer = nullptr;
+		}
 		if (m_computeShaderBuffer)
 		{
 			m_computeShaderBuffer->Release();
@@ -1504,10 +1927,12 @@ public:
 private:
 	ID3D10Blob* m_vertexShaderBuffer;
 	ID3D10Blob* m_pixelShaderBuffer;
+	ID3D10Blob* m_geometryShaderBuffer;
 	ID3D10Blob* m_computeShaderBuffer;
 	ID3D11InputLayout* m_layout;
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;
+	ID3D11GeometryShader* m_geometryShader;
 	ID3D11ComputeShader* m_computeShader;
 };
 
@@ -1938,7 +2363,10 @@ void GraphicBackend::render(RenderPass& pass)
 			D3D11ShaderMaterial* d3dShaderMaterial = (D3D11ShaderMaterial*)pass.material.get();
 			Shader::Ptr shader = d3dShaderMaterial->getShader();
 			D3D11Shader* d3dShader = (D3D11Shader*)shader.get();
-			d3dShader->setLayout(pass.mesh->getVertexData());
+			std::vector<VertexAttribute> attributes;
+			for (uint32_t i = 0; i < pass.submesh.mesh->getVertexAttributeCount(); i++)
+				attributes.push_back(pass.submesh.mesh->getVertexAttribute(i));
+			d3dShader->setLayout(attributes.data(), attributes.size());
 			d3dShaderMaterial->apply();
 		}
 	}
@@ -2037,14 +2465,17 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Mesh
-		if (pass.mesh == nullptr)
+		if (pass.submesh.mesh == nullptr)
 		{
 			Logger::error("No mesh set for render pass");
 			return;
 		}
 		else
 		{
-			pass.mesh->draw(pass.primitive, pass.indexCount, pass.indexOffset);
+			if (pass.submesh.mesh->isIndexed())
+				pass.submesh.drawIndexed();
+			else
+				pass.submesh.draw();
 		}
 	}
 }
@@ -2139,7 +2570,7 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler, void* data)
+Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler, const void* data)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
@@ -2150,9 +2581,9 @@ Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, Te
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height, 
 	TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
-	void* px, void* nx,
-	void* py, void* ny,
-	void* pz, void* nz
+	const void* px, const void* nx,
+	const void* py, const void* ny,
+	const void* pz, const void* nz
 )
 {
 	// DirectX do not support texture with null size (but opengl does ?).
@@ -2161,9 +2592,27 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
+Texture::Ptr GraphicBackend::createTexture2DMultisampled(
+	uint32_t width, uint32_t height,
+	TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+	const void* data,
+	uint8_t samples
+)
+{
+	// DirectX do not support texture with null size (but opengl does ?).
+	if (width == 0 || height == 0)
+		return nullptr;
+	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, data, samples);
+}
+
 Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)
 {
 	return std::make_shared<D3D11Framebuffer>(attachments, count);
+}
+
+Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+{
+	return std::make_shared<D3D11Buffer>(type, size, usage, access, data);
 }
 
 Mesh::Ptr GraphicBackend::createMesh()
@@ -2191,9 +2640,16 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 		entryPoint = "ps_main";
 		version = "ps_5_0";
 		break;
+	case ShaderType::Geometry:
+		entryPoint = "gs_main";
+		version = "gs_5_0";
+		break;
 	case ShaderType::Compute:
-		entryPoint = "";
-		version = "";
+		entryPoint = "cs_main";
+		version = "cs_5_0";
+		break;
+	default:
+		Logger::error("Shader type not supported");
 		break;
 	}
 	// Compile from command line instead
@@ -2234,9 +2690,19 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 	return ShaderID((uintptr_t)shaderBuffer);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, ShaderID compute, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, compute, attributes);
+	return std::make_shared<D3D11Shader>(vert, frag, ShaderID(0), ShaderID(0), attributes);
+}
+
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const std::vector<Attributes>& attributes)
+{
+	return std::make_shared<D3D11Shader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes);
+}
+
+Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes)
+{
+	return std::make_shared<D3D11Shader>(vert, frag, geometry, ShaderID(0), attributes);
 }
 
 ShaderMaterial::Ptr GraphicBackend::createShaderMaterial(Shader::Ptr shader)
