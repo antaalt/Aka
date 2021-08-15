@@ -26,15 +26,25 @@ enum class BufferType {
 };
 
 enum class BufferUsage {
-	Stream,
-	Static,
-	Dynamic,
+	Default, // Read & write access GPU
+	Immutable, // GPU Read only, no CPU access
+	Dynamic, // GPU Read only CPU write only
+	Staging, // Support data transfer
 };
 
-enum class BufferAccess {
-	ReadOnly,
-	WriteOnly,
-	ReadAndWrite,
+enum class BufferCPUAccess {
+	None = 0,
+	Read = (1 << 0),
+	Write = (1 << 1),
+	ReadWrite = Read | Write
+};
+
+enum class BufferMap {
+	Read,
+	Write,
+	ReadWrite,
+	WriteDiscard,
+	WriteNoOverwrite
 };
 
 class Buffer
@@ -43,12 +53,12 @@ public:
 	using Ptr = std::shared_ptr<Buffer>;
 	using Handle = StrictType<uintptr_t, struct BufferHandleTag>;
 protected:
-	Buffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access);
+	Buffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access);
 	Buffer(const Buffer&) = delete;
 	Buffer& operator=(const Buffer&) = delete;
 	virtual ~Buffer();
 public:
-	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data = nullptr);
+	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
 
 	BufferType type() const;
 
@@ -56,7 +66,7 @@ public:
 
 	BufferUsage usage() const;
 
-	BufferAccess access() const;
+	BufferCPUAccess access() const;
 
 	virtual void reallocate(size_t size, const void* data = nullptr) = 0;
 
@@ -68,7 +78,7 @@ public:
 
 	virtual void download(void* data) = 0;
 
-	virtual void* map(BufferAccess access) = 0;
+	virtual void* map(BufferMap map) = 0;
 
 	virtual void unmap() = 0;
 
@@ -78,7 +88,7 @@ protected:
 	size_t m_size;
 	BufferType m_type;
 	BufferUsage m_usage;
-	BufferAccess m_access;
+	BufferCPUAccess m_access;
 };
 
 struct SubBuffer {

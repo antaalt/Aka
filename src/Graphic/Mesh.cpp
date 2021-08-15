@@ -67,7 +67,7 @@ void Mesh::uploadInterleaved(const VertexAttribute* attributes, uint32_t attribu
 	for (uint32_t i = 0; i < attributeCount; i++)
 		stride += attributes[i].size();
 	SubBuffer buffer{};
-	buffer.buffer = Buffer::create(BufferType::VertexBuffer, vertexCount * stride, BufferUsage::Static, BufferAccess::ReadOnly, vertices);
+	buffer.buffer = Buffer::create(BufferType::VertexBuffer, vertexCount * stride, BufferUsage::Immutable, BufferCPUAccess::None, vertices);
 	buffer.size = vertexCount * stride;
 	buffer.offset = 0;
 	uint32_t offset = 0;
@@ -86,7 +86,7 @@ void Mesh::uploadInterleaved(const VertexAttribute* attributes, uint32_t attribu
 	for (uint32_t i = 0; i < attributeCount; i++)
 		stride += attributes[i].size();
 	SubBuffer buffer{};
-	buffer.buffer = Buffer::create(BufferType::VertexBuffer, vertexCount * stride, BufferUsage::Static, BufferAccess::ReadOnly, vertices);
+	buffer.buffer = Buffer::create(BufferType::VertexBuffer, vertexCount * stride, BufferUsage::Immutable, BufferCPUAccess::None, vertices);
 	buffer.size = vertexCount * stride;
 	buffer.offset = 0;
 	uint32_t offset = 0;
@@ -97,7 +97,7 @@ void Mesh::uploadInterleaved(const VertexAttribute* attributes, uint32_t attribu
 	}
 	IndexInfo indexInfo{};
 	indexInfo.format = IndexFormat::UnsignedInt;
-	indexInfo.subBuffer.buffer = Buffer::create(BufferType::IndexBuffer, indexCount * 4, BufferUsage::Static, BufferAccess::ReadOnly, indices);
+	indexInfo.subBuffer.buffer = Buffer::create(BufferType::IndexBuffer, indexCount * 4, BufferUsage::Immutable, BufferCPUAccess::None, indices);
 	indexInfo.subBuffer.offset = 0;
 	indexInfo.subBuffer.size = indexCount * 4;
 	upload(vertexInfo, indexInfo);

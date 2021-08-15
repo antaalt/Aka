@@ -635,13 +635,11 @@ public:
 	{
 		AKA_ASSERT(rect.x + rect.w <= m_width, "");
 		AKA_ASSERT(rect.y + rect.h <= m_height, "");
-		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(gl::type(m_type), m_textureID);
 		glTexSubImage2D(gl::type(m_type), mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
 	}
 	void download(void* data) override
 	{
-		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(gl::type(m_type), m_textureID);
 		glGetTexImage(gl::type(m_type), 0, gl::component(m_component), gl::format(m_format), data);
 	}
@@ -886,44 +884,8 @@ public:
 			case UniformType::None:
 				Logger::error("[GL] Unsupported uniform type : ", uniform.name, "(", (int)uniform.type, ")");
 				break;
-			case UniformType::Texture2D: {
-				std::vector<GLint> units;
-				// Bind texture to units.
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-				{
-					GLint unit = textureUnit++;
-					Texture::Ptr texture = m_textures[unit];
-					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
-					glActiveTexture(GL_TEXTURE0 + unit);
-					if (texture != nullptr)
-						glBindTexture(GL_TEXTURE_2D, glTexture->getTextureID());
-					else
-						glBindTexture(GL_TEXTURE_2D, 0);
-					units.push_back(unit);
-				}
-				// Upload texture unit array.
-				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
-				break;
-			}
-			case UniformType::Texture2DMultisample: {
-				std::vector<GLint> units;
-				// Bind texture to units.
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
-				{
-					GLint unit = textureUnit++;
-					Texture::Ptr texture = m_textures[unit];
-					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
-					glActiveTexture(GL_TEXTURE0 + unit);
-					if (texture != nullptr)
-						glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, glTexture->getTextureID());
-					else
-						glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-					units.push_back(unit);
-				}
-				// Upload texture unit array.
-				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
-				break;
-			}
+			case UniformType::Texture2D:
+			case UniformType::Texture2DMultisample:
 			case UniformType::TextureCubemap: {
 				std::vector<GLint> units;
 				// Bind texture to units.
@@ -934,9 +896,9 @@ public:
 					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
 					glActiveTexture(GL_TEXTURE0 + unit);
 					if (texture != nullptr)
-						glBindTexture(GL_TEXTURE_CUBE_MAP, glTexture->getTextureID());
+						glBindTexture(gl::type(texture->type()), glTexture->getTextureID());
 					else
-						glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+						glBindTexture(gl::type(texture->type()), 0);
 					units.push_back(unit);
 				}
 				// Upload texture unit array.
@@ -1026,20 +988,23 @@ class GLBuffer : public Buffer
 			return 0;
 		}
 	}
-	static GLenum access(BufferUsage usage, BufferAccess access) {
+	static GLenum access(BufferUsage usage, BufferCPUAccess access) {
 		switch (usage) {
-		case BufferUsage::Static:
-			return (access == BufferAccess::ReadOnly ? GL_STATIC_READ : (access == BufferAccess::WriteOnly ? GL_STATIC_DRAW : GL_STATIC_COPY));
-		case BufferUsage::Stream:
-			return (access == BufferAccess::ReadOnly ? GL_STREAM_READ : (access == BufferAccess::WriteOnly ? GL_STREAM_DRAW : GL_STREAM_COPY));
+		case BufferUsage::Default:
+			return GL_STATIC_DRAW;
+		case BufferUsage::Immutable:
+			return GL_STATIC_DRAW;
+		case BufferUsage::Staging:
+			return (access == BufferCPUAccess::Read ? GL_STREAM_READ : (access == BufferCPUAccess::Write ? GL_STREAM_DRAW : GL_STREAM_COPY));
 		case BufferUsage::Dynamic:
-			return (access == BufferAccess::ReadOnly ? GL_DYNAMIC_READ : (access == BufferAccess::WriteOnly ? GL_DYNAMIC_DRAW : GL_DYNAMIC_COPY));
+			AKA_ASSERT(access == BufferCPUAccess::Write || access == BufferCPUAccess::None, "Invalid access");
+			return GL_DYNAMIC_DRAW;
 		default:
 			return 0;
 		}
 	}
 public:
-	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data) :
+	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data) :
 		Buffer(type, size, usage, access),
 		m_bufferID(0)
 	{
@@ -1066,7 +1031,7 @@ public:
 
 	void upload(const void* data, size_t size, size_t offset = 0) override
 	{
-		AKA_ASSERT(m_usage != BufferUsage::Static, "Cannot upload to static buffer.");
+		AKA_ASSERT(m_usage != BufferUsage::Immutable, "Cannot upload to static buffer.");
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
 		glBufferSubData(GLBuffer::type(m_type), offset, size, data);
 		glBindBuffer(GLBuffer::type(m_type), 0);
@@ -1074,7 +1039,7 @@ public:
 
 	void upload(const void* data) override
 	{
-		AKA_ASSERT(m_usage != BufferUsage::Static, "Cannot upload to static buffer.");
+		AKA_ASSERT(m_usage != BufferUsage::Immutable, "Cannot upload to static buffer.");
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
 		glBufferSubData(GLBuffer::type(m_type), 0, m_size, data);
 		glBindBuffer(GLBuffer::type(m_type), 0);
@@ -1094,23 +1059,23 @@ public:
 		glBindBuffer(GLBuffer::type(m_type), 0);
 	}
 
-	void* map(BufferAccess access) override
+	void* map(BufferMap access) override
 	{
 		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
 		GLenum glAccess = GL_READ_ONLY;
 		switch (access)
 		{
-		case BufferAccess::ReadOnly:
-			AKA_ASSERT(m_access == BufferAccess::ReadOnly || m_access == BufferAccess::ReadAndWrite, "");
+		case BufferMap::Read:
+			AKA_ASSERT(m_access == BufferCPUAccess::Read || m_access == BufferCPUAccess::ReadWrite, "");
 			glAccess = GL_READ_ONLY;
 			break;
-		case BufferAccess::WriteOnly:
-			AKA_ASSERT(m_access == BufferAccess::WriteOnly || m_access == BufferAccess::ReadAndWrite, "");
+		case BufferMap::Write:
+			AKA_ASSERT(m_access == BufferCPUAccess::Write || m_access == BufferCPUAccess::ReadWrite, "");
 			glAccess = GL_WRITE_ONLY;
 			break;
 		default:
-		case BufferAccess::ReadAndWrite:
-			AKA_ASSERT(m_access == BufferAccess::ReadAndWrite, "");
+		case BufferMap::ReadWrite:
+			AKA_ASSERT(m_access == BufferCPUAccess::ReadWrite, "");
 			glAccess = GL_READ_WRITE;
 			break;
 		}
@@ -1154,9 +1119,9 @@ public:
 		glBindVertexArray(m_vao);
 		// Setup correct channels
 		for (size_t i = m_vertexInfo.attributeData.size(); i < vertexInfo.attributeData.size(); i++)
-			glEnableVertexAttribArray(i);
+			glEnableVertexAttribArray((GLuint)i);
 		for (size_t i = vertexInfo.attributeData.size(); i < m_vertexInfo.attributeData.size(); i++)
-			glDisableVertexAttribArray(i);
+			glDisableVertexAttribArray((GLuint)i);
 		for (size_t i = 0; i < vertexInfo.attributeData.size(); i++)
 		{
 			const VertexAttributeData& a = vertexInfo[i];
@@ -1534,8 +1499,27 @@ void GraphicBackend::render(RenderPass& pass)
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		// Clear
-		if(pass.clear.mask != ClearMask::None)
-			pass.framebuffer->clear(pass.clear.color, pass.clear.depth, pass.clear.stencil, pass.clear.mask);
+		if (pass.clear.mask != ClearMask::None)
+		{
+			GLenum glMask = 0;
+			if ((pass.clear.mask & ClearMask::Color) == ClearMask::Color)
+			{
+				glClearColor(pass.clear.color.r, pass.clear.color.g, pass.clear.color.b, pass.clear.color.a);
+				glMask |= GL_COLOR_BUFFER_BIT;
+			}
+			if ((pass.clear.mask & ClearMask::Depth) == ClearMask::Depth)
+			{
+				glDepthMask(true); // Ensure we can correctly clear the depth buffer.
+				glClearDepth(pass.clear.depth);
+				glMask |= GL_DEPTH_BUFFER_BIT;
+			}
+			if ((pass.clear.mask & ClearMask::Stencil) == ClearMask::Stencil)
+			{
+				glClearStencil(pass.clear.stencil);
+				glMask |= GL_STENCIL_BUFFER_BIT;
+			}
+			glClear(glMask);
+		}
 	}
 
 	{
@@ -1818,7 +1802,7 @@ Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attach
 	return std::make_shared<GLFramebuffer>(attachments, count);
 }
 
-Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data)
+Buffer::Ptr GraphicBackend::createBuffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
 	return std::make_shared<GLBuffer>(type, size, usage, access, data);
 }

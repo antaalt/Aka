@@ -3,7 +3,7 @@
 
 namespace aka {
 
-Buffer::Buffer(BufferType type, size_t size, BufferUsage usage, BufferAccess access) :
+Buffer::Buffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access) :
 	m_size(size),
 	m_type(type),
 	m_usage(usage),
@@ -15,7 +15,7 @@ Buffer::~Buffer()
 {
 }
 
-Buffer::Ptr Buffer::create(BufferType type, size_t size, BufferUsage usage, BufferAccess access, const void* data)
+Buffer::Ptr Buffer::create(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
 	return GraphicBackend::createBuffer(type, size, usage, access, data);
 }
@@ -35,7 +35,7 @@ BufferUsage Buffer::usage() const
 	return m_usage;
 }
 
-BufferAccess Buffer::access() const
+BufferCPUAccess Buffer::access() const
 {
 	return m_access;
 }

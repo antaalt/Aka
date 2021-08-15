@@ -172,8 +172,8 @@ void Batch3D::initialize()
 	m_mesh = Mesh::create();
 	m_maxVertices = (1 << 9);
 	m_maxIndices = (1 << 8);
-	m_vertexBuffer = Buffer::create(BufferType::VertexBuffer, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferAccess::ReadOnly);
-	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferAccess::ReadOnly);
+	m_vertexBuffer = Buffer::create(BufferType::VertexBuffer, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferCPUAccess::Write);
+	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
 	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest(), data);
