@@ -50,7 +50,7 @@ void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* da
 const Image& Packer::pack()
 {
     if (m_packed) return m_image;
-#if defined(ORIGIN_BOTTOM_LEFT)
+#if defined(AKA_ORIGIN_BOTTOM_LEFT)
     m_image.flip();
 #endif
     m_packed = true;

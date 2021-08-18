@@ -8,9 +8,9 @@
 // D3D / Metal / Consoles origin is top left
 // OpenGL / OpenGL ES origin is bottom left
 #if defined(AKA_USE_OPENGL)
-#define ORIGIN_BOTTOM_LEFT
+#define AKA_ORIGIN_BOTTOM_LEFT
 #elif defined(AKA_USE_D3D11)
-#define ORIGIN_TOP_LEFT
+#define AKA_ORIGIN_TOP_LEFT
 #endif
 
 namespace aka {
@@ -25,7 +25,7 @@ struct Rect {
 struct Image;
 struct ImageHDR;
 
-#if defined(ORIGIN_BOTTOM_LEFT)
+#if defined(AKA_ORIGIN_BOTTOM_LEFT)
 constexpr const bool defaultFlipImageAtLoad = true;
 constexpr const bool defaultFlipImageAtSave = true;
 #else

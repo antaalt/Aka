@@ -85,7 +85,7 @@ void Batch2D::draw(const mat3f& transform, const Line& line)
 		m_vertices.push_back(vert);
 	for (size_t iVert = offset; iVert < offset + 2; iVert++)
 		m_vertices[iVert].position = transform.multiplyPoint(m_vertices[iVert].position);
-#if defined(ORIGIN_TOP_LEFT)
+#if defined(AKA_ORIGIN_TOP_LEFT)
 	for (size_t iVert = offset; iVert < offset + 2; iVert++)
 		m_vertices[iVert].uv.v = 1.f - m_vertices[iVert].uv.v;
 #endif
@@ -103,7 +103,7 @@ void Batch2D::draw(const mat3f& transform, const Triangle& tri)
 		m_vertices.push_back(vert);
 	for (size_t iVert = offset; iVert < offset + 3; iVert++)
 		m_vertices[iVert].position = transform.multiplyPoint(m_vertices[iVert].position);
-#if defined(ORIGIN_TOP_LEFT)
+#if defined(AKA_ORIGIN_TOP_LEFT)
 	for (size_t iVert = offset; iVert < offset + 3; iVert++)
 		m_vertices[iVert].uv.v = 1.f - m_vertices[iVert].uv.v;
 #endif
@@ -127,7 +127,7 @@ void Batch2D::draw(const mat3f& transform, const Quad& quad)
 		m_vertices.push_back(vert);
 	for (size_t iVert = offset; iVert < offset + 4; iVert++)
 		m_vertices[iVert].position = transform.multiplyPoint(m_vertices[iVert].position);
-#if defined(ORIGIN_TOP_LEFT)
+#if defined(AKA_ORIGIN_TOP_LEFT)
 	for (size_t iVert = offset; iVert < offset + 4; iVert++)
 		m_vertices[iVert].uv.v = 1.f - m_vertices[iVert].uv.v;
 #endif
@@ -145,7 +145,7 @@ void Batch2D::draw(const mat3f& transform, const Poly& poly)
 		m_vertices.push_back(vertex);
 	for (size_t iVert = offset; iVert < offset + poly.vertices.size(); iVert++)
 		m_vertices[iVert].position = transform.multiplyPoint(m_vertices[iVert].position);
-#if defined(ORIGIN_TOP_LEFT)
+#if defined(AKA_ORIGIN_TOP_LEFT)
 	for (size_t iVert = offset; iVert < offset + poly.vertices.size(); iVert++)
 		m_vertices[iVert].uv.v = 1.f - m_vertices[iVert].uv.v;
 #endif
@@ -183,7 +183,7 @@ void Batch2D::initialize()
 	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest(), data);
+	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, Sampler::nearest(), data);
 
 	m_pass = {};
 	m_pass.clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };
@@ -276,7 +276,9 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 				m_maxVertices *= 2;
 			m_vertexBuffer->reallocate(m_maxVertices * sizeof(Vertex));
 		}
-		m_vertexBuffer->upload(m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+		void* data = m_vertexBuffer->map(BufferMap::WriteDiscard);
+		memcpy(data, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+		m_vertexBuffer->unmap();
 
 		if (m_indices.size() > m_maxIndices)
 		{
@@ -284,7 +286,10 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 				m_maxIndices *= 2;
 			m_indexBuffer->reallocate(m_maxIndices * sizeof(uint32_t));
 		}
-		m_indexBuffer->upload(m_indices.data(), m_indices.size() * sizeof(uint32_t));
+		data = m_indexBuffer->map(BufferMap::WriteDiscard);
+		memcpy(data, m_indices.data(), m_indices.size() * sizeof(uint32_t));
+		m_indexBuffer->unmap();
+
 		// Update mesh data
 		VertexInfo vertexInfo{ std::vector<VertexAttributeData>{
 			VertexAttributeData{

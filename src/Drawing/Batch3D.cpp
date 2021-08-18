@@ -176,7 +176,7 @@ void Batch3D::initialize()
 	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::UnsignedByte, TextureComponent::RGBA, TextureFlag::None, Sampler::nearest(), data);
+	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, Sampler::nearest(), data);
 
 	m_pass = {};
 	m_pass.clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };
@@ -237,7 +237,9 @@ void Batch3D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 				m_maxVertices *= 2;
 			m_vertexBuffer->reallocate(m_maxVertices * sizeof(Vertex));
 		}
-		m_vertexBuffer->upload(m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+		void* data = m_vertexBuffer->map(BufferMap::WriteDiscard);
+		memcpy(data, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
+		m_vertexBuffer->unmap();
 
 		if (m_indices.size() > m_maxIndices)
 		{
@@ -245,7 +247,10 @@ void Batch3D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 				m_maxIndices *= 2;
 			m_indexBuffer->reallocate(m_maxIndices * sizeof(uint32_t));
 		}
-		m_indexBuffer->upload(m_indices.data(), m_indices.size() * sizeof(uint32_t));
+		data = m_indexBuffer->map(BufferMap::WriteDiscard);
+		memcpy(data, m_indices.data(), m_indices.size() * sizeof(uint32_t));
+		m_indexBuffer->unmap();
+
 		// Update mesh data
 		VertexInfo vertexInfo{ std::vector<VertexAttributeData>{
 			VertexAttributeData{

@@ -1,16 +1,80 @@
-#include "..\..\include\Aka\Graphic\Texture.h"
 #include <Aka/Graphic/Texture.h>
 
 #include <Aka/Graphic/GraphicBackend.h>
 
 namespace aka {
 
-Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler) :
+
+uint32_t size(TextureFormat format)
+{
+	switch (format)
+	{
+	case TextureFormat::R8: return 1;
+	case TextureFormat::R8U: return 1;
+	case TextureFormat::R16: return 2;
+	case TextureFormat::R16U: return 2;
+	case TextureFormat::R16F: return 2;
+	case TextureFormat::R32F: return 4;
+
+	case TextureFormat::RG8: return 2;
+	case TextureFormat::RG8U: return 2;
+	case TextureFormat::RG16: return 4;
+	case TextureFormat::RG16U: return 4;
+	case TextureFormat::RG16F: return 4;
+	case TextureFormat::RG32F: return 8;
+
+	case TextureFormat::RGB8: return 3;
+	case TextureFormat::RGB8U: return 3;
+	case TextureFormat::RGB16: return 6;
+	case TextureFormat::RGB16U: return 6;
+	case TextureFormat::RGB16F: return 6;
+	case TextureFormat::RGB32F: return 12;
+
+	case TextureFormat::RGBA8: return 4;
+	case TextureFormat::RGBA8U: return 4;
+	case TextureFormat::RGBA16: return 8;
+	case TextureFormat::RGBA16U: return 8;
+	case TextureFormat::RGBA16F: return 8;
+	case TextureFormat::RGBA32F: return 16;
+
+	case TextureFormat::Depth: return 4; // ?
+	case TextureFormat::Depth16: return 2; // ?
+	case TextureFormat::Depth24: return 3; // ?
+	case TextureFormat::Depth32: return 4; // ?
+	case TextureFormat::Depth32F: return 4; // ?
+	case TextureFormat::DepthStencil: return 4; // ?
+	case TextureFormat::Depth0Stencil8: return 1; // ?
+	case TextureFormat::Depth24Stencil8: return 4; // ?
+	case TextureFormat::Depth32FStencil8: return 4; // ?
+		
+	default: return 0;
+	}
+}
+
+bool isDepth(TextureFormat format)
+{
+	switch (format)
+	{
+	case TextureFormat::Depth:
+	case TextureFormat::Depth16:
+	case TextureFormat::Depth24:
+	case TextureFormat::Depth32:
+	case TextureFormat::Depth32F:
+	case TextureFormat::DepthStencil:
+	case TextureFormat::Depth0Stencil8:
+	case TextureFormat::Depth24Stencil8:
+	case TextureFormat::Depth32FStencil8:
+		return true;
+	default:
+		return false;
+	}
+}
+
+Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flags, Sampler sampler) :
 	m_sampler(sampler),
 	m_type(type),
 	m_format(format),
 	m_flags(flags),
-	m_component(component),
 	m_width(width),
 	m_height(height)
 {
@@ -22,33 +86,33 @@ Texture::~Texture()
 
 Texture::Ptr Texture::create2D(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureComponent component, TextureFlag flags, 
+	TextureFormat format, TextureFlag flags, 
 	Sampler sampler, 
 	const void* data
 )
 {
-	return GraphicBackend::createTexture2D(width, height, format, component, flags, sampler, data);
+	return GraphicBackend::createTexture2D(width, height, format, flags, sampler, data);
 }
 
 Texture::Ptr Texture::create2DMultisampled(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler, 
+	TextureFormat format, TextureFlag flag, Sampler sampler, 
 	const void* data, uint8_t samples
 )
 {
-	return GraphicBackend::createTexture2DMultisampled(width, height, format, component, flag, sampler, data, samples);
+	return GraphicBackend::createTexture2DMultisampled(width, height, format, flag, sampler, data, samples);
 }
 
 Texture::Ptr Texture::createCubemap(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureComponent component, TextureFlag flags, 
+	TextureFormat format, TextureFlag flags, 
 	Sampler sampler, 
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
 )
 {
-	return GraphicBackend::createTextureCubeMap(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
+	return GraphicBackend::createTextureCubeMap(width, height, format, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
 uint32_t Texture::width() const
@@ -64,11 +128,6 @@ uint32_t Texture::height() const
 TextureFormat Texture::format() const
 {
 	return m_format;
-}
-
-TextureComponent Texture::component() const
-{
-	return m_component;
 }
 
 TextureFlag Texture::flags() const

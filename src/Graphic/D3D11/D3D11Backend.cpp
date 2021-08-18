@@ -459,174 +459,99 @@ DXGI_FORMAT d3dViewFormat(DXGI_FORMAT format)
 	return format;
 }
 
-DXGI_FORMAT d3dformat(TextureFormat format, TextureComponent component)
+DXGI_FORMAT d3dformat(TextureFormat format)
 {
-	switch (component)
+	switch (format)
 	{
-	case TextureComponent::R:
-	case TextureComponent::R8: {
-		switch (format)
-		{
-		case TextureFormat::UnsignedByte: return DXGI_FORMAT_R8_UNORM;
-		case TextureFormat::Byte: return DXGI_FORMAT_R8_SNORM;
-		default: break;
-		}
-		break;
+	case TextureFormat::R8:
+	case TextureFormat::R8U: return DXGI_FORMAT_R8_UNORM;
+	case TextureFormat::R16:
+	case TextureFormat::R16U: return DXGI_FORMAT_R16_UNORM;
+	case TextureFormat::R16F: return DXGI_FORMAT_R16_FLOAT;
+	case TextureFormat::R32F: return DXGI_FORMAT_R32_FLOAT;
+
+	case TextureFormat::RG8:
+	case TextureFormat::RG8U: return DXGI_FORMAT_R8G8_UNORM;
+	case TextureFormat::RG16:
+	case TextureFormat::RG16U: return DXGI_FORMAT_R16G16_UNORM;
+	case TextureFormat::RG16F: return DXGI_FORMAT_R16G16_FLOAT;
+	case TextureFormat::RG32F: return DXGI_FORMAT_R32G32_FLOAT;
+
+	case TextureFormat::RGB8:
+	case TextureFormat::RGB8U: break; //return DXGI_FORMAT_R8G8B8_UNORM;
+	case TextureFormat::RGB16:
+	case TextureFormat::RGB16U: break; //return DXGI_FORMAT_R16G16B16_UNORM;
+	case TextureFormat::RGB16F: break; //return DXGI_FORMAT_R16G16B16_FLOAT;
+	case TextureFormat::RGB32F: return DXGI_FORMAT_R32G32B32_FLOAT;
+
+	case TextureFormat::RGBA8:
+	case TextureFormat::RGBA8U: return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case TextureFormat::RGBA16:
+	case TextureFormat::RGBA16U: return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case TextureFormat::RGBA16F: return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case TextureFormat::RGBA32F: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+
+	case TextureFormat::Depth: return DXGI_FORMAT_D32_FLOAT;
+	case TextureFormat::Depth16: return DXGI_FORMAT_D16_UNORM;
+	case TextureFormat::Depth24: break; //return DXGI_FORMAT_D24_UNORM;
+	case TextureFormat::Depth32: break; //return DXGI_FORMAT_D32_UNORM;
+	case TextureFormat::Depth32F: return DXGI_FORMAT_D32_FLOAT;
+	case TextureFormat::DepthStencil: return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	case TextureFormat::Depth24Stencil8: return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	case TextureFormat::Depth32FStencil8: return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+	default: break;
 	}
-	case TextureComponent::R16: {
-		switch (format)
-		{
-		case TextureFormat::UnsignedShort: return DXGI_FORMAT_R16_UNORM;
-		case TextureFormat::Short: return DXGI_FORMAT_R16_SNORM;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::R16F: {
-		switch (format)
-		{
-		case TextureFormat::Half: return DXGI_FORMAT_R16_FLOAT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::R32F: {
-		switch (format)
-		{
-		case TextureFormat::Byte: return DXGI_FORMAT_R32_FLOAT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::RG:
-	case TextureComponent::RG8: {
-		switch (format)
-		{
-		case TextureFormat::Byte: return DXGI_FORMAT_R8G8_SNORM;
-		case TextureFormat::UnsignedByte: return DXGI_FORMAT_R8G8_UNORM;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::RG16: {
-		switch (format)
-		{
-		case TextureFormat::Short: return DXGI_FORMAT_R16G16_SNORM;
-		case TextureFormat::UnsignedShort: return DXGI_FORMAT_R16G16_UNORM;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::RGB:
-	case TextureComponent::RGB8:
-	case TextureComponent::RGB16:
-	case TextureComponent::RGB16F:
-		break;
-	case TextureComponent::RGB32F: {
-		switch (format)
-		{
-		case TextureFormat::Half: return DXGI_FORMAT_R32G32B32_FLOAT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::RGBA:
-	case TextureComponent::RGBA8: {
-		switch (format)
-		{
-		case TextureFormat::UnsignedByte: return DXGI_FORMAT_R8G8B8A8_UNORM;
-		case TextureFormat::Byte: return DXGI_FORMAT_R8G8B8A8_SNORM;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::RGBA16F: {
-		switch (format)
-		{
-		case TextureFormat::Float:
-		case TextureFormat::Half: return DXGI_FORMAT_R16G16B16A16_FLOAT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::RGBA32F: {
-		switch (format)
-		{
-		case TextureFormat::Float: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::Depth16: {
-		switch (format)
-		{
-		case TextureFormat::UnsignedShort: return DXGI_FORMAT_D16_UNORM;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::Depth32:
-		break;
-	case TextureComponent::Depth:
-	case TextureComponent::Depth32F: {
-		switch (format)
-		{
-		case TextureFormat::Float: return DXGI_FORMAT_D32_FLOAT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::DepthStencil:
-	case TextureComponent::Depth24Stencil8: {
-		switch (format)
-		{
-		case TextureFormat::UnsignedInt248: return DXGI_FORMAT_D24_UNORM_S8_UINT;
-		default: break;
-		}
-		break;
-	}
-	case TextureComponent::Depth32FStencil8: {
-		switch (format)
-		{
-		case TextureFormat::Float32UnsignedInt248: return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		default: break;
-		}
-		break;
-	}
-	}
-	Logger::error("Format not supported : ", (int)format, " (", (int)component, ")");
+	Logger::error("Format not supported : ", (int)format);
 	return DXGI_FORMAT_UNKNOWN;
 }
-uint32_t d3dComponent(TextureComponent component)
+uint32_t d3dComponent(TextureFormat format)
 {
-	switch (component)
+	switch (format)
 	{
-	case TextureComponent::R:
-	case TextureComponent::R8:
-	case TextureComponent::R16:
+	case TextureFormat::R8:
+	case TextureFormat::R16:
+	case TextureFormat::R8U:
+	case TextureFormat::R16U:
+	case TextureFormat::R16F:
+	case TextureFormat::R32F:
 		return 1;
 
-	case TextureComponent::RG:
-	case TextureComponent::RG8:
-	case TextureComponent::RG16:
+	case TextureFormat::RG8:
+	case TextureFormat::RG16:
+	case TextureFormat::RG8U:
+	case TextureFormat::RG16U:
+	case TextureFormat::RG16F:
+	case TextureFormat::RG32F:
 		return 2;
 
-	case TextureComponent::RGBA:
-	case TextureComponent::RGBA8:
-	case TextureComponent::RGBA16F:
-	case TextureComponent::RGBA32F:
+	case TextureFormat::RGB8:
+	case TextureFormat::RGB16:
+	case TextureFormat::RGB8U:
+	case TextureFormat::RGB16U:
+	case TextureFormat::RGB16F:
+	case TextureFormat::RGB32F:
+		return 3;
+
+	case TextureFormat::RGBA8:
+	case TextureFormat::RGBA16:
+	case TextureFormat::RGBA8U:
+	case TextureFormat::RGBA16U:
+	case TextureFormat::RGBA16F:
+	case TextureFormat::RGBA32F:
 		return 4;
 
-	case TextureComponent::Depth:
-	case TextureComponent::Depth16:
-	case TextureComponent::Depth32:
-	case TextureComponent::Depth32F:
-	case TextureComponent::DepthStencil:
-	case TextureComponent::Depth24Stencil8:
-	case TextureComponent::Depth32FStencil8:
+	case TextureFormat::Depth:
+	case TextureFormat::Depth16:
+	case TextureFormat::Depth24:
+	case TextureFormat::Depth32:
+	case TextureFormat::Depth32F:
+	case TextureFormat::DepthStencil:
+	case TextureFormat::Depth0Stencil8:
+	case TextureFormat::Depth24Stencil8:
+	case TextureFormat::Depth32FStencil8:
 		return 1;
 	default:
-		Logger::error("Component not supported : ", (int)component);
+		Logger::error("Format not supported : ", (int)format);
 		return 0;
 	}
 }
@@ -638,12 +563,13 @@ class D3D11Texture : public Texture
 public:
 	friend class D3D11ShaderMaterial;
 	friend class D3D11Framebuffer;
+	friend class D3D11BackBuffer;
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+		TextureFormat format, TextureFlag flags, Sampler sampler,
 		const void* data
 	) : 
-		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
+		Texture(width, height, TextureType::Texture2D, format, flags, sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -662,25 +588,15 @@ public:
 		desc.MiscFlags = 0;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE; // TODO add texture flag
 
-		m_d3dFormat = d3dformat(format, component);
-		m_component = d3dComponent(component);
+		m_d3dFormat = d3dformat(format);
+		m_component = d3dComponent(format);
 
 		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
 		{
-			switch (component) {
-			case TextureComponent::Depth:
-			case TextureComponent::Depth16:
-			case TextureComponent::Depth32:
-			case TextureComponent::Depth32F:
-			case TextureComponent::DepthStencil:
-			case TextureComponent::Depth24Stencil8:
-			case TextureComponent::Depth32FStencil8:
+			if (isDepth(format))
 				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
-				break;
-			default:
+			else
 				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-				break;
-			}
 		}
 		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
 			desc.Format = d3dShaderDataFormat(m_d3dFormat);
@@ -689,7 +605,7 @@ public:
 
 		D3D11_SUBRESOURCE_DATA subResources{};
 		subResources.pSysMem = data;
-		subResources.SysMemPitch = width;
+		subResources.SysMemPitch = width * size(format);
 		subResources.SysMemSlicePitch = 0;
 		D3D11_SUBRESOURCE_DATA* sub = nullptr;
 		if (data != nullptr)
@@ -708,11 +624,11 @@ public:
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+		TextureFormat format, TextureFlag flags, Sampler sampler,
 		const void* data,
 		uint8_t samples
 	) :
-		Texture(width, height, TextureType::Texture2DMultisample, format, component, flags, sampler),
+		Texture(width, height, TextureType::Texture2DMultisample, format, flags, sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -731,25 +647,15 @@ public:
 		desc.MiscFlags = D3D11_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET | D3D11_FORMAT_SUPPORT_MULTISAMPLE_LOAD;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		m_d3dFormat = d3dformat(format, component);
-		m_component = d3dComponent(component);
+		m_d3dFormat = d3dformat(format);
+		m_component = d3dComponent(format);
 
 		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
 		{
-			switch (component) {
-			case TextureComponent::Depth:
-			case TextureComponent::Depth16:
-			case TextureComponent::Depth32:
-			case TextureComponent::Depth32F:
-			case TextureComponent::DepthStencil:
-			case TextureComponent::Depth24Stencil8:
-			case TextureComponent::Depth32FStencil8:
+			if (isDepth(format))
 				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
-				break;
-			default:
+			else
 				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-				break;
-			}
 		}
 		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
 			desc.Format = d3dShaderDataFormat(m_d3dFormat);
@@ -758,7 +664,7 @@ public:
 
 		D3D11_SUBRESOURCE_DATA subResources{};
 		subResources.pSysMem = data;
-		subResources.SysMemPitch = width;
+		subResources.SysMemPitch = width * size(format);
 		subResources.SysMemSlicePitch = 0;
 		D3D11_SUBRESOURCE_DATA* sub = nullptr;
 		if (data != nullptr)
@@ -776,12 +682,12 @@ public:
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+		TextureFormat format, TextureFlag flags, Sampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz
 	) :
-		Texture(width, height, TextureType::TextureCubemap, format, component, flags, sampler),
+		Texture(width, height, TextureType::TextureCubemap, format, flags, sampler),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -800,25 +706,15 @@ public:
 		desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-		m_d3dFormat = d3dformat(format, component);
-		m_component = d3dComponent(component);
+		m_d3dFormat = d3dformat(format);
+		m_component = d3dComponent(format);
 
 		if ((TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget)
 		{
-			switch (component) {
-			case TextureComponent::Depth:
-			case TextureComponent::Depth16:
-			case TextureComponent::Depth32:
-			case TextureComponent::Depth32F:
-			case TextureComponent::DepthStencil:
-			case TextureComponent::Depth24Stencil8:
-			case TextureComponent::Depth32FStencil8:
+			if (isDepth(format))
 				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
-				break;
-			default:
+			else
 				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-				break;
-			}
 		}
 		if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) == D3D11_BIND_SHADER_RESOURCE)
 			desc.Format = d3dShaderDataFormat(m_d3dFormat);
@@ -830,7 +726,7 @@ public:
 		for (size_t i = 0; i < 6; i++)
 		{
 			data[i].pSysMem = datas[i];
-			data[i].SysMemPitch = width;
+			data[i].SysMemPitch = width * size(format);
 			data[i].SysMemSlicePitch = 0;
 		}
 		D3D11_SUBRESOURCE_DATA* pData = nullptr;
@@ -942,7 +838,6 @@ public:
 	void copy(Texture::Ptr src, const Rect& rect) override
 	{
 		AKA_ASSERT(src->format() == this->format(), "Invalid format");
-		AKA_ASSERT(src->component() == this->component(), "Invalid components");
 		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
 		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
 		AKA_ASSERT(rect.x > 0 && rect.y > 0, "Not supported");
@@ -974,7 +869,7 @@ private:
 	uint32_t m_component;
 };
 
-class D3D11Framebuffer : public Framebuffer, public std::enable_shared_from_this<D3D11Framebuffer>
+class D3D11Framebuffer : public Framebuffer
 {
 public:
 	D3D11Framebuffer(FramebufferAttachment* attachments, size_t count) :
@@ -982,6 +877,7 @@ public:
 		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
+
 		for (FramebufferAttachment& attachment : m_attachments)
 		{
 			D3D11Texture* d3dTexture = reinterpret_cast<D3D11Texture*>(attachment.texture.get());
@@ -1008,8 +904,9 @@ public:
 					break;
 				}
 				viewDesc.Format = d3dTexture->m_d3dFormat;
-				viewDesc.Flags = 0;
+				viewDesc.Flags = 0; // D3D11_DSV_READ_ONLY_DEPTH, D3D11_DSV_READ_ONLY_STENCIL
 				D3D_CHECK_RESULT(dctx.device->CreateDepthStencilView(d3dTexture->m_texture, &viewDesc, &m_depthStencilView));
+				SetDebugName(d3dTexture->m_texture, "FramebufferAttachment");
 			}
 			else
 			{
@@ -1041,8 +938,7 @@ public:
 		{
 			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(
 				width, height, 
-				attachment.texture->format(), 
-				attachment.texture->component(), 
+				attachment.texture->format(),
 				attachment.texture->flags(), 
 				attachment.texture->sampler(),
 				nullptr
@@ -1097,19 +993,24 @@ public:
 	}
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
 	{
-		// TODO remove batch & use simple shader for better perf.
-		static Batch2D batch;
-		static Batch2D::Quad quad;
-		quad.vertices[0] = Batch2D::Vertex{ vec2f(0.f), uv2f(0.f), color4f(1.f) };
-		quad.vertices[1] = Batch2D::Vertex{ vec2f((float)this->width(), 0.f), uv2f(1.f, 0.f), color4f(1.f) };
-		quad.vertices[2] = Batch2D::Vertex{ vec2f(0.f, (float)this->height()), uv2f(0.f, 1.f), color4f(1.f) };
-		quad.vertices[3] = Batch2D::Vertex{ vec2f((float)this->width(), (float)this->height()), uv2f(1.f), color4f(1.f) };
-		quad.texture = src->attachment(type);
-		quad.layer = 0;
-		batch.draw(mat3f::identity(), quad);
-		// TODO this might not work correctly if we try to blit specific attachment.
-		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, (float)this->height(), 0.f, (float)this->width()));
-		batch.clear();
+		ID3D11Texture2D* srcResource = nullptr;
+		ID3D11Texture2D* dstResource = nullptr;
+		Texture::Ptr srcTexture = src->attachment(type);
+		Texture::Ptr dstTexture = ((Framebuffer*)this)->attachment(type);
+		if (srcTexture == nullptr || dstTexture == nullptr)
+		{
+			Logger::error("Missing attachment type.");
+			return;
+		}
+		if (srcTexture->format() != dstTexture->format())
+		{
+			// TODO write a shader to handle this
+			Logger::error("Different format blitting not supported");
+			return;
+		}
+		srcResource = ((D3D11Texture*)srcTexture.get())->m_texture;
+		dstResource = ((D3D11Texture*)dstTexture.get())->m_texture;
+		dctx.deviceContext->CopyResource(dstResource, srcResource);
 	}
 	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
@@ -1169,7 +1070,7 @@ private:
 	ID3D11DepthStencilView* m_depthStencilView;
 };
 
-class D3D11BackBuffer : public Framebuffer, public std::enable_shared_from_this<D3D11BackBuffer>, EventListener<BackbufferResizeEvent>
+class D3D11BackBuffer : public Framebuffer, EventListener<BackbufferResizeEvent>
 {
 public:
 	D3D11BackBuffer(uint32_t width, uint32_t height, IDXGISwapChain* sc) :
@@ -1245,7 +1146,7 @@ public:
 		depthBufferDesc.SampleDesc.Count = 1;
 		depthBufferDesc.SampleDesc.Quality = 0;
 		depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 		depthBufferDesc.CPUAccessFlags = 0;
 		depthBufferDesc.MiscFlags = 0;
 		// Create the texture for the depth buffer using the filled out description.
@@ -1279,18 +1180,50 @@ public:
 	}
 	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
 	{
-		// TODO remove batch & use simple shader for better perf.
-		static Batch2D batch;
-		static Batch2D::Quad quad;
-		quad.vertices[0] = Batch2D::Vertex{ vec2f(0.f), uv2f(0.f), color4f(1.f) };
-		quad.vertices[1] = Batch2D::Vertex{ vec2f((float)this->width(), 0.f), uv2f(1.f, 0.f), color4f(1.f) };
-		quad.vertices[2] = Batch2D::Vertex{ vec2f(0.f, (float)this->height()), uv2f(0.f, 1.f), color4f(1.f) };
-		quad.vertices[3] = Batch2D::Vertex{ vec2f((float)this->width(), (float)this->height()), uv2f(1.f), color4f(1.f) };
-		quad.texture = src->attachment(type);
-		quad.layer = 0;
-		batch.draw(mat3f::identity(), quad);
-		batch.render(shared_from_this(), mat4f::identity(), mat4f::orthographic(0.f, (float)this->height(), 0.f, (float)this->width()));
-		batch.clear();
+		ID3D11Texture2D* srcResource = nullptr;
+		ID3D11Texture2D* dstResource = nullptr;
+		ID3D11Texture2D* swapChainBuffer = nullptr;
+		Texture::Ptr srcTexture = src->attachment(type);
+		if (srcTexture == nullptr)
+		{
+			Logger::error("Missing attachment type.");
+			return;
+		}
+		srcResource = ((D3D11Texture*)srcTexture.get())->m_texture;
+		switch (type)
+		{
+		case FramebufferAttachmentType::Color0:
+		case FramebufferAttachmentType::Color1:
+		case FramebufferAttachmentType::Color2:
+		case FramebufferAttachmentType::Color3:
+			if (srcTexture->format() != TextureFormat::RGBA8U)
+			{
+				// TODO write a shader to handle this
+				Logger::error("Different format blitting not supported.");
+				return;
+			}
+			D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapChainBuffer));
+			dstResource = swapChainBuffer;
+			break;
+		case FramebufferAttachmentType::Depth:
+		case FramebufferAttachmentType::Stencil:
+		case FramebufferAttachmentType::DepthStencil:
+			if (srcTexture->format() != TextureFormat::Depth24Stencil8 && srcTexture->format() != TextureFormat::DepthStencil)
+			{
+				Logger::error("Different depth format blitting not supported.");
+				return;
+			}
+			dstResource = m_depthStencilBuffer;
+			break;
+		}
+		if (dstResource == nullptr)
+		{
+			Logger::error("Swapchain target is null.");
+			return;
+		}
+		dctx.deviceContext->CopyResource(dstResource, srcResource);
+		if (swapChainBuffer)
+			swapChainBuffer->Release();
 	}
 	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
@@ -1298,7 +1231,8 @@ public:
 	}
 	void onReceive(const BackbufferResizeEvent& event) override
 	{
-		resize(event.width, event.height);
+		if (event.width != 0 && event.height != 0)
+			resize(event.width, event.height);
 	}
 	ID3D11RenderTargetView* getRenderTargetView() const { return m_renderTargetView; }
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
@@ -1454,10 +1388,10 @@ public:
 			map = D3D11_MAP_READ_WRITE;
 			break;
 		case BufferMap::WriteDiscard:
-			map = D3D11_MAP_READ_WRITE;
+			map = D3D11_MAP_WRITE_DISCARD;
 			break;
 		case BufferMap::WriteNoOverwrite:
-			map = D3D11_MAP_READ_WRITE;
+			map = D3D11_MAP_WRITE_NO_OVERWRITE;
 			break;
 		}
 		D3D11_MAPPED_SUBRESOURCE mappedResource{};
@@ -1508,6 +1442,7 @@ public:
 		switch (indexInfo.format)
 		{
 		case IndexFormat::UnsignedByte:
+			Logger::error("Unsigned byte format not supported as index buffer.");
 			m_indexFormat = DXGI_FORMAT_R8_UINT;
 			break;
 		case IndexFormat::UnsignedShort:
@@ -1567,7 +1502,7 @@ public:
 	{
 		unsigned int offset = 0;
 		dctx.deviceContext->IASetVertexBuffers(0, static_cast<UINT>(m_vertexBuffers.size()), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
-		dctx.deviceContext->IASetIndexBuffer((ID3D11Buffer*)m_indexInfo.subBuffer.buffer->handle().value(), m_indexFormat, 0);
+		dctx.deviceContext->IASetIndexBuffer((ID3D11Buffer*)m_indexInfo.subBuffer.buffer->handle().value(), m_indexFormat, m_indexInfo.subBuffer.offset);
 		switch (type)
 		{
 		default:
@@ -1745,8 +1680,9 @@ public:
 				uniform.arrayLength = max(1U, typeDesc.Elements);
 				uniform.type = UniformType::None;
 
-				if (typeDesc.Type == D3D_SVT_FLOAT)
+				switch (typeDesc.Type)
 				{
+				case D3D_SVT_FLOAT: {
 					if (typeDesc.Rows == 1)
 					{
 						if (typeDesc.Columns == 1)
@@ -1770,9 +1706,9 @@ public:
 					{
 						Logger::warn("Unsupported uniform size : ", typeDesc.Rows, "x", typeDesc.Columns);
 					}
+					break;
 				}
-				else if (typeDesc.Type == D3D_SVT_INT)
-				{
+				case D3D_SVT_INT: {
 					if (typeDesc.Rows == 1)
 					{
 						if (typeDesc.Columns == 1)
@@ -1782,9 +1718,9 @@ public:
 					}
 					else
 						Logger::warn("Unsupported uniform type : ", typeDesc.Type);
+					break;
 				}
-				else if (typeDesc.Type == D3D_SVT_UINT)
-				{
+				case D3D_SVT_UINT: {
 					if (typeDesc.Rows == 1)
 					{
 						if (typeDesc.Columns == 1)
@@ -1794,10 +1730,11 @@ public:
 					}
 					else
 						Logger::warn("Unsupported uniform type : ", typeDesc.Type);
+					break;
 				}
-				else
-				{
+				default:
 					Logger::warn("Unsupported uniform type : ", typeDesc.Type);
+					break;				
 				}
 			}
 		}
@@ -1807,14 +1744,10 @@ public:
 	void use()
 	{
 		dctx.deviceContext->IASetInputLayout(m_layout);
-		if (m_vertexShader)
-			dctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
-		if (m_geometryShader)
-			dctx.deviceContext->GSSetShader(m_geometryShader, nullptr, 0);
-		if (m_pixelShader)
-			dctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
-		if (m_computeShader)
-			dctx.deviceContext->CSSetShader(m_computeShader, nullptr, 0);
+		dctx.deviceContext->VSSetShader(m_vertexShader, nullptr, 0);
+		dctx.deviceContext->GSSetShader(m_geometryShader, nullptr, 0);
+		dctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
+		dctx.deviceContext->CSSetShader(m_computeShader, nullptr, 0);
 	}
 
 	void setLayout(VertexAttribute* attributes, size_t count)
@@ -1889,6 +1822,10 @@ public:
 				default: Logger::error("Format not supported for layout");
 				}
 			}
+			else
+			{
+				Logger::error("Format not supported for layout");
+			}
 			polygonLayout[i].InputSlot = 0;
 			polygonLayout[i].AlignedByteOffset = (i == 0 ? 0 : D3D11_APPEND_ALIGNED_ELEMENT);
 			polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -1947,8 +1884,10 @@ public:
 			// Find and merge all uniforms
 			std::vector<Uniform> uniformsVert = d3dShader->getUniformsVertexShader(m_vertexUniformBuffers);
 			std::vector<Uniform> uniformsFrag = d3dShader->getUniformsFragShader(m_fragmentUniformBuffers);
+			std::vector<Uniform> uniformsGeo = d3dShader->getUniformsFragShader(m_geometryUniformBuffers);
 			m_uniforms.insert(m_uniforms.end(), uniformsVert.begin(), uniformsVert.end());
 			m_uniforms.insert(m_uniforms.end(), uniformsFrag.begin(), uniformsFrag.end());
+			m_uniforms.insert(m_uniforms.end(), uniformsGeo.begin(), uniformsGeo.end());
 			for (size_t i = 0; i < m_uniforms.size(); i++)
 			{
 				m_uniforms[i].id = UniformID(i);
@@ -1967,6 +1906,7 @@ public:
 			}
 			m_vertexUniformValues.resize(m_vertexUniformBuffers.size());
 			m_fragmentUniformValues.resize(m_fragmentUniformBuffers.size());
+			m_geometryUniformValues.resize(m_geometryUniformBuffers.size());
 		}
 		size_t bufferSize = 0;
 		size_t textureCount = 0;
@@ -1977,29 +1917,30 @@ public:
 			{
 			case UniformType::Sampler2D:
 				break;
-			case UniformType::TextureCubemap:
 			case UniformType::Texture2D:
+			case UniformType::TextureCubemap:
+			case UniformType::Texture2DMultisample :
 				textureCount++;
 				break;
 			case UniformType::Int:
 			case UniformType::UnsignedInt:
 			case UniformType::Float:
-				bufferSize += 1;
+				bufferSize += 1 * uniform.arrayLength;
 				break;
 			case UniformType::Vec2:
-				bufferSize += 2;
+				bufferSize += 2 * uniform.arrayLength;
 				break;
 			case UniformType::Vec3:
-				bufferSize += 4;
+				bufferSize += 4 * uniform.arrayLength;
 				break;
 			case UniformType::Vec4:
-				bufferSize += 4;
+				bufferSize += 4 * uniform.arrayLength;
 				break;
 			case UniformType::Mat3:
-				bufferSize += 9;
+				bufferSize += 9 * uniform.arrayLength;
 				break;
 			case UniformType::Mat4:
-				bufferSize += 16;
+				bufferSize += 16 * uniform.arrayLength;
 				break;
 			default:
 				Logger::warn("Unsupported Uniform Type : ", uniform.name);
@@ -2024,20 +1965,40 @@ public:
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
 		d3dShader->use();
 		uint32_t textureUnit = 0;
-		size_t offset = 0;
-		size_t offsetFrag = 0;
-		size_t offsetVert = 0;
+		uint32_t offset = 0;
+		uint32_t offsetFrag = 0;
+		uint32_t offsetVert = 0;
+		uint32_t offsetGeo = 0;
+		auto updateData = [](std::vector<float>& buffer, const float* data, uint32_t offset, uint32_t length) -> uint32_t {
+			// We need to align the offset on gpu memory
+			// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
+			uint32_t padding = offset % 4;
+			if (length + padding <= 4)
+				padding = 0;
+			uint32_t size = offset + padding + length;
+			if (buffer.size() < size)
+				buffer.resize(size);
+			memcpy(&buffer[offset + padding], data, length * sizeof(float));
+			return offset + padding + length; // return new gpu offset
+		};
 		for (const Uniform& uniform : m_uniforms)
 		{
 			const bool isVertex = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
 			const bool isFrag = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
-			if (uniform.type == UniformType::None)
-				continue;
-			else if (uniform.type == UniformType::Texture2D)
+			const bool isGeo = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Geometry) == ShaderType::Geometry;
+			switch(uniform.type)
 			{
+			case UniformType::None:
+			case UniformType::Sampler2D:
+			case UniformType::SamplerCube:
+				break;
+			case UniformType::Texture2D:
+			case UniformType::Texture2DMultisample:
+			case UniformType::TextureCubemap: {
 				Texture::Ptr texture = m_textures[textureUnit];
 				if (texture != nullptr)
 				{
+					// TODO single call for all textures ?
 					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
 					ID3D11ShaderResourceView* view = d3dTexture->m_view;
 					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
@@ -2047,102 +2008,74 @@ public:
 				}
 				else
 				{
-					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullptr);
-					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullptr);
+					ID3D11ShaderResourceView* nullResources[] = { nullptr };
+					ID3D11SamplerState* nullSamplers[] = { nullptr };
+					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullResources);
+					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullSamplers);
 				}
 				textureUnit++;
+				break;
 			}
-			else if (uniform.type == UniformType::TextureCubemap)
-			{
-				Texture::Ptr texture = m_textures[textureUnit];
-				if (texture != nullptr)
-				{
-					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
-					ID3D11ShaderResourceView* view = d3dTexture->m_view;
-					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
-					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->sampler());
-					if (sampler != nullptr)
-						dctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
-				}
-				else
-				{
-					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullptr);
-					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullptr);
-				}
-				textureUnit++;
-			}
-			else if (uniform.type == UniformType::Sampler2D)
-			{
-				// TODO store sampler
-			}
-			else if (uniform.type == UniformType::Mat4)
-			{
+			case UniformType::Mat4: {
 				uint32_t length = 16 * uniform.arrayLength;
 				if (isVertex)
-				{
-					size_t size = offsetVert + length;
-					if (m_vertexUniformValues[uniform.bufferIndex].size() < size)
-						m_vertexUniformValues[uniform.bufferIndex].resize(size);
-					memcpy(&m_vertexUniformValues[uniform.bufferIndex][offsetVert], &m_data[offset], length * sizeof(float));
-					offsetVert += length;
-				}
+					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
+				if (isGeo)
+					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
 				if (isFrag)
-				{
-					size_t size = offsetFrag + length;
-					if (m_fragmentUniformValues[uniform.bufferIndex].size() < size)
-						m_fragmentUniformValues[uniform.bufferIndex].resize(size);
-					memcpy(&m_fragmentUniformValues[uniform.bufferIndex][offsetFrag], &m_data[offset], length * sizeof(float));
-					offsetFrag += length;
-				}
+					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
 				offset += length;
+				break;
 			}
-			else if (uniform.type == UniformType::Mat3)
-			{
+			case UniformType::Mat3: {
 				uint32_t length = 9 * uniform.arrayLength;
 				if (isVertex)
-				{
-					size_t size = offsetVert + length;
-					if (m_vertexUniformValues[uniform.bufferIndex].size() < size)
-						m_vertexUniformValues[uniform.bufferIndex].resize(size);
-					memcpy(&m_vertexUniformValues[uniform.bufferIndex][offsetVert], &m_data[offset], length * sizeof(float));
-					// Packing of values.
-					// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
-					offsetVert += 12 * uniform.arrayLength;
-				}
+					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
+				if (isGeo)
+					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
 				if (isFrag)
-				{
-					size_t size = offsetFrag + length;
-					if (m_fragmentUniformValues[uniform.bufferIndex].size() < size)
-						m_fragmentUniformValues[uniform.bufferIndex].resize(size);
-					memcpy(&m_fragmentUniformValues[uniform.bufferIndex][offsetFrag], &m_data[offset], length * sizeof(float));
-					offsetFrag += 12 * uniform.arrayLength;
-				}
+					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
 				offset += length;
+				break;
 			}
-			else if (uniform.type == UniformType::Vec4)
+			case UniformType::Vec3: {
+				uint32_t length = 3 * uniform.arrayLength;
+				if (isVertex)
+					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
+				if (isGeo)
+					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
+				if (isFrag)
+					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
+				offset += length;
+				break;
+			}
+			case UniformType::Vec4:
 			{
 				uint32_t length = 4 * uniform.arrayLength;
 				if (isVertex)
-				{
-					size_t size = offsetVert + length;
-					if (m_vertexUniformValues[uniform.bufferIndex].size() < size)
-						m_vertexUniformValues[uniform.bufferIndex].resize(size);
-					memcpy(&m_vertexUniformValues[uniform.bufferIndex][offsetVert], &m_data[offset], length * sizeof(float));
-					offsetVert += length;
-				}
+					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
+				if (isGeo)
+					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
 				if (isFrag)
-				{
-					size_t size = offsetFrag + length;
-					if (m_fragmentUniformValues[uniform.bufferIndex].size() < size)
-						m_fragmentUniformValues[uniform.bufferIndex].resize(size);
-					memcpy(&m_fragmentUniformValues[uniform.bufferIndex][offsetFrag], &m_data[offset], length * sizeof(float));
-					offsetFrag += length;
-				}
+					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
 				offset += length;
+				break;
 			}
-			else
+			case UniformType::Float:
 			{
+				uint32_t length = 1 * uniform.arrayLength;
+				if (isVertex)
+					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
+				if (isGeo)
+					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
+				if (isFrag)
+					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
+				offset += length;
+				break;
+			}
+			default:
 				Logger::error("Unsupported uniform type : ", (int)uniform.type);
+				break;
 			}
 		}
 		// Fill buffers from data
@@ -2170,12 +2103,26 @@ public:
 			}
 			dctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
 		}
+		if (m_geometryUniformBuffers.size() > 0)
+		{
+			for (uint32_t iBuffer = 0; iBuffer < m_geometryUniformBuffers.size(); iBuffer++)
+			{
+				AKA_ASSERT(m_geometryUniformValues.size() > 0, "No data for uniform buffer");
+				D3D11_MAPPED_SUBRESOURCE mappedResource{};
+				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_geometryUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
+				memcpy(mappedResource.pData, m_geometryUniformValues[iBuffer].data(), sizeof(float) * m_geometryUniformValues[iBuffer].size());
+				dctx.deviceContext->Unmap(m_geometryUniformBuffers[iBuffer], 0);
+			}
+			dctx.deviceContext->GSSetConstantBuffers(0, (UINT)m_geometryUniformBuffers.size(), m_geometryUniformBuffers.data());
+		}
 	}
 private:
 	std::vector<ID3D11Buffer*> m_vertexUniformBuffers;
 	std::vector<ID3D11Buffer*> m_fragmentUniformBuffers;
+	std::vector<ID3D11Buffer*> m_geometryUniformBuffers;
 	std::vector<std::vector<float>> m_vertexUniformValues;
 	std::vector<std::vector<float>> m_fragmentUniformValues;
+	std::vector<std::vector<float>> m_geometryUniformValues;
 };
 
 
@@ -2376,6 +2323,8 @@ void GraphicBackend::render(RenderPass& pass)
 		ID3D11RasterizerState* rasterState = D3D11RasterPass::get(pass.cull);
 		if (rasterState != nullptr)
 			dctx.deviceContext->RSSetState(rasterState);
+		else
+			dctx.deviceContext->RSSetState(nullptr);
 	}
 
 	{
@@ -2434,12 +2383,18 @@ void GraphicBackend::render(RenderPass& pass)
 		else
 		{
 			D3D11Framebuffer* framebuffer = (D3D11Framebuffer*)pass.framebuffer.get();
-			ID3D11RenderTargetView* view = framebuffer->getRenderTargetView(FramebufferAttachmentType::Color0);
-			if (view != nullptr)
-				dctx.deviceContext->OMSetRenderTargets((UINT)framebuffer->getNumberView(), &view, framebuffer->getDepthStencilView());
+			std::vector<ID3D11RenderTargetView*> views;
+			for (uint32_t i = 0; i < framebuffer->getNumberView(); i++)
+				views.push_back(framebuffer->getRenderTargetView((FramebufferAttachmentType)((int)FramebufferAttachmentType::Color0 + i)));
+			if (views.size() != 0)
+				dctx.deviceContext->OMSetRenderTargets((UINT)views.size(), views.data(), framebuffer->getDepthStencilView());
 			else
 				dctx.deviceContext->OMSetRenderTargets(0, nullptr, framebuffer->getDepthStencilView());
 		}
+	}
+
+	{
+		// TODO clear
 	}
 
 	{
@@ -2447,6 +2402,9 @@ void GraphicBackend::render(RenderPass& pass)
 		ID3D11DepthStencilState* depthState = D3D11Depth::get(pass.depth, pass.stencil);
 		if (depthState != nullptr)
 			dctx.deviceContext->OMSetDepthStencilState(depthState, 1);
+		else
+			dctx.deviceContext->OMSetDepthStencilState(nullptr, 0);
+
 	}
 
 	{
@@ -2570,17 +2528,17 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler, const void* data)
+Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, Sampler sampler, const void* data)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, data);
+	return std::make_shared<D3D11Texture>(width, height, format, flags, sampler, data);
 }
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+	TextureFormat format, TextureFlag flags, Sampler sampler,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
@@ -2589,12 +2547,12 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
+	return std::make_shared<D3D11Texture>(width, height, format, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
 Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
-	TextureFormat format, TextureComponent component, TextureFlag flags, Sampler sampler,
+	TextureFormat format, TextureFlag flags, Sampler sampler,
 	const void* data,
 	uint8_t samples
 )
@@ -2602,7 +2560,7 @@ Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, component, flags, sampler, data, samples);
+	return std::make_shared<D3D11Texture>(width, height, format, flags, sampler, data, samples);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)

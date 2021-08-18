@@ -9,12 +9,12 @@
 namespace aka {
 
 enum class ShaderType {
-	Vertex,
-	Fragment,
-	Compute,
-	Geometry,
-	TesselationControl,
-	TesselationEvaluation,
+	Vertex          = (1 << 0),
+	Fragment        = (1 << 1),
+	Compute         = (1 << 2),
+	Geometry        = (1 << 3),
+	TessControl    = (1 << 4),
+	TessEvaluation = (1 << 5),
 };
 
 enum class UniformType {

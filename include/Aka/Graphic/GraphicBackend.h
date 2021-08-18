@@ -66,20 +66,20 @@ protected:
 	friend class Texture;
 	static Texture::Ptr createTexture2D(
 		uint32_t width, uint32_t height, 
-		TextureFormat format, TextureComponent component, TextureFlag flags, 
+		TextureFormat format, TextureFlag flags, 
 		Sampler sampler,
 		const void* data
 	);
 	static Texture::Ptr createTexture2DMultisampled(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags,
+		TextureFormat format, TextureFlag flags,
 		Sampler sampler,
 		const void* data,
 		uint8_t samples
 	);
 	static Texture::Ptr createTextureCubeMap(
 		uint32_t width, uint32_t height, 
-		TextureFormat format, TextureComponent component, TextureFlag flags,
+		TextureFormat format, TextureFlag flags,
 		Sampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,

@@ -214,135 +214,149 @@ GLenum wrap(Sampler::Wrap wrap) {
 	}
 }
 
-GLenum componentInternal(TextureComponent component) {
-	switch (component) {
-	default:
-		throw std::runtime_error("Not implemneted");
-	case TextureComponent::R:
-		return GL_RED;
-	case TextureComponent::R8:
-		return GL_R8;
-	case TextureComponent::R16:
-		return GL_R16;
-	case TextureComponent::R16F:
-		return GL_R16F;
-	case TextureComponent::R32F:
-		return GL_R32F;
-	case TextureComponent::RG:
-		return GL_RG;
-	case TextureComponent::RG8:
-		return GL_RG8;
-	case TextureComponent::RG16:
-		return GL_RG16;
-	case TextureComponent::RGB:
-		return GL_RGB;
-	case TextureComponent::RGB8:
-		return GL_RGB8;
-	case TextureComponent::RGB16:
-		return GL_RGB16;
-	case TextureComponent::RGB16F:
-		return GL_RGB16F;
-	case TextureComponent::RGB32F:
-		return GL_RGB32F;
-	case TextureComponent::RGBA:
-		return GL_RGBA;
-	case TextureComponent::RGBA8:
-		return GL_RGBA8;
-	case TextureComponent::RGBA16F:
-		return GL_RGBA16F;
-	case TextureComponent::RGBA32F:
-		return GL_RGBA32F;
-	case TextureComponent::Depth:
-		return GL_DEPTH_COMPONENT;
-	case TextureComponent::Depth16:
-		return GL_DEPTH_COMPONENT16;
-	case TextureComponent::Depth32:
-		return GL_DEPTH_COMPONENT32;
-	case TextureComponent::Depth32F:
-		return GL_DEPTH_COMPONENT32F;
-	case TextureComponent::DepthStencil:
-		return GL_DEPTH_STENCIL;
-	case TextureComponent::Depth24Stencil8:
-		return GL_DEPTH24_STENCIL8;
-	case TextureComponent::Depth32FStencil8:
-		return GL_DEPTH32F_STENCIL8;
+GLenum componentInternal(TextureFormat format) {
+	switch (format) {
+	default: throw std::runtime_error("Not implemneted");
+	case TextureFormat::R8: return GL_R8;
+	case TextureFormat::R8U: return GL_R8UI;
+	case TextureFormat::R16: return GL_R16;
+	case TextureFormat::R16U: return GL_R16UI;
+	case TextureFormat::R16F: return GL_R16F;
+	case TextureFormat::R32F: return GL_R32F;
+
+	case TextureFormat::RG8: return GL_RG8;
+	case TextureFormat::RG8U: return GL_RG8UI;
+	case TextureFormat::RG16: return GL_RG16;
+	case TextureFormat::RG16U: return GL_RG16UI;
+	case TextureFormat::RG16F: return GL_RG16F;
+	case TextureFormat::RG32F: return GL_RG32F;
+
+	case TextureFormat::RGB8: return GL_RGB8;
+	case TextureFormat::RGB8U: return GL_RGB8UI;
+	case TextureFormat::RGB16: return GL_RGB16;
+	case TextureFormat::RGB16U: return GL_RGB16UI;
+	case TextureFormat::RGB16F: return GL_RGB16F;
+	case TextureFormat::RGB32F: return GL_RGB32F;
+
+	case TextureFormat::RGBA8: return GL_RGBA8;
+	case TextureFormat::RGBA8U: return GL_RGBA8UI;
+	case TextureFormat::RGBA16: return GL_RGBA16;
+	case TextureFormat::RGBA16U: return GL_RGBA16UI;
+	case TextureFormat::RGBA16F: return GL_RGBA16F;
+	case TextureFormat::RGBA32F: return GL_RGBA32F;
+
+	case TextureFormat::Depth: return GL_DEPTH_COMPONENT;
+	case TextureFormat::Depth16: return GL_DEPTH_COMPONENT16;
+	case TextureFormat::Depth24: return GL_DEPTH_COMPONENT24;
+	case TextureFormat::Depth32: return GL_DEPTH_COMPONENT32;
+	case TextureFormat::Depth32F: return GL_DEPTH_COMPONENT32F;
+	case TextureFormat::DepthStencil: return GL_DEPTH_STENCIL;
+	case TextureFormat::Depth0Stencil8: return GL_STENCIL_INDEX8;
+	case TextureFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
+	case TextureFormat::Depth32FStencil8: return GL_DEPTH32F_STENCIL8;
 	}
 }
 
-GLenum component(TextureComponent component) {
+GLenum component(TextureFormat component) {
 	switch (component) {
 	default:
 		throw std::runtime_error("Not implemneted");
-	case TextureComponent::R:
-	case TextureComponent::R8:
-	case TextureComponent::R16:
-	case TextureComponent::R16F:
-	case TextureComponent::R32F:
+	case TextureFormat::R8U:
+	case TextureFormat::R16U:
+		return GL_RED_INTEGER;
+	case TextureFormat::R8:
+	case TextureFormat::R16:
+	case TextureFormat::R16F:
+	case TextureFormat::R32F:
 		return GL_RED;
-	case TextureComponent::RG:
-	case TextureComponent::RG8:
-	case TextureComponent::RG16:
+	case TextureFormat::RG8U:
+	case TextureFormat::RG16U:
+		return GL_RG_INTEGER;
+	case TextureFormat::RG8:
+	case TextureFormat::RG16:
+	case TextureFormat::RG16F:
+	case TextureFormat::RG32F:
 		return GL_RG;
-	case TextureComponent::RGB:
-	case TextureComponent::RGB8:
-	case TextureComponent::RGB16:
-	case TextureComponent::RGB16F:
-	case TextureComponent::RGB32F:
+	case TextureFormat::RGB8U:
+	case TextureFormat::RGB16U:
+		return GL_RGB_INTEGER;
+	case TextureFormat::RGB8:
+	case TextureFormat::RGB16:
+	case TextureFormat::RGB16F:
+	case TextureFormat::RGB32F:
 		return GL_RGB;
-	case TextureComponent::RGBA:
-	case TextureComponent::RGBA8:
-	case TextureComponent::RGBA16F:
-	case TextureComponent::RGBA32F:
+	case TextureFormat::RGBA8U:
+	case TextureFormat::RGBA16U:
+		return GL_RGBA_INTEGER;
+	case TextureFormat::RGBA8:
+	case TextureFormat::RGBA16:
+	case TextureFormat::RGBA16F:
+	case TextureFormat::RGBA32F:
 		return GL_RGBA;
-	case TextureComponent::Depth:
-	case TextureComponent::Depth16:
-	case TextureComponent::Depth32:
-	case TextureComponent::Depth32F:
+	case TextureFormat::Depth:
+	case TextureFormat::Depth16:
+	case TextureFormat::Depth24:
+	case TextureFormat::Depth32:
+	case TextureFormat::Depth32F:
 		return GL_DEPTH_COMPONENT;
-	case TextureComponent::Depth24Stencil8:
-	case TextureComponent::Depth32FStencil8:
-	case TextureComponent::DepthStencil:
+	case TextureFormat::DepthStencil:
+	case TextureFormat::Depth24Stencil8:
+	case TextureFormat::Depth32FStencil8:
+	case TextureFormat::Depth0Stencil8:
 		return GL_DEPTH_STENCIL;
 	}
 }
 
 GLenum type(TextureType type) {
 	switch (type) {
-	default:
-		throw std::runtime_error("Not implemneted");
-	case TextureType::Texture2D:
-		return GL_TEXTURE_2D;
-	case TextureType::TextureCubemap:
-		return GL_TEXTURE_CUBE_MAP;
-	case TextureType::Texture2DMultisample:
-		return GL_TEXTURE_2D_MULTISAMPLE;
+	default: throw std::runtime_error("Not implemneted");
+	case TextureType::Texture2D: return GL_TEXTURE_2D;
+	case TextureType::TextureCubemap: return GL_TEXTURE_CUBE_MAP;
+	case TextureType::Texture2DMultisample: return GL_TEXTURE_2D_MULTISAMPLE;
 	}
 }
 
 GLenum format(TextureFormat format) {
 	switch (format) {
-	default:
-		throw std::runtime_error("Not implemneted");
-	case TextureFormat::Byte:
-		return GL_BYTE;
-	case TextureFormat::UnsignedByte:
-		return GL_UNSIGNED_BYTE;
-	case TextureFormat::Short:
-		return GL_SHORT;
-	case TextureFormat::UnsignedShort:
-		return GL_UNSIGNED_SHORT;
-	case TextureFormat::Int:
-		return GL_INT;
-	case TextureFormat::UnsignedInt:
-		return GL_UNSIGNED_INT;
-	case TextureFormat::Half:
-		return GL_HALF_FLOAT;
-	case TextureFormat::Float:
-		return GL_FLOAT;
-	case TextureFormat::UnsignedInt248:
-		return GL_UNSIGNED_INT_24_8;
-	case TextureFormat::Float32UnsignedInt248:
-		return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+	default: throw std::runtime_error("Not implemneted");
+	case TextureFormat::R8: return GL_UNSIGNED_BYTE;
+	case TextureFormat::R8U: return GL_UNSIGNED_BYTE;
+	case TextureFormat::R16: return GL_UNSIGNED_SHORT;
+	case TextureFormat::R16U: return GL_UNSIGNED_SHORT;
+	case TextureFormat::R16F: return GL_HALF_FLOAT;
+	case TextureFormat::R32F: return GL_FLOAT;
+
+	case TextureFormat::RG8:return GL_UNSIGNED_BYTE;
+	case TextureFormat::RG16:return GL_UNSIGNED_SHORT;
+	case TextureFormat::RG8U: return GL_UNSIGNED_BYTE;
+	case TextureFormat::RG16U: return GL_UNSIGNED_SHORT;
+	case TextureFormat::RG16F: return GL_HALF_FLOAT;
+	case TextureFormat::RG32F: return GL_FLOAT;
+
+	case TextureFormat::RGB8:return GL_UNSIGNED_BYTE;
+	case TextureFormat::RGB8U: return GL_UNSIGNED_BYTE;
+	case TextureFormat::RGB16:return GL_UNSIGNED_SHORT;
+	case TextureFormat::RGB16U: return GL_UNSIGNED_SHORT;
+	case TextureFormat::RGB16F: return GL_HALF_FLOAT;
+	case TextureFormat::RGB32F: return GL_FLOAT;
+
+	case TextureFormat::RGBA8:return GL_UNSIGNED_BYTE;
+	case TextureFormat::RGBA8U: return GL_UNSIGNED_BYTE;
+	case TextureFormat::RGBA16:return GL_UNSIGNED_SHORT;
+	case TextureFormat::RGBA16U: return GL_UNSIGNED_SHORT;
+	case TextureFormat::RGBA16F: return GL_HALF_FLOAT;
+	case TextureFormat::RGBA32F: return GL_FLOAT;
+
+	case TextureFormat::Depth: return GL_FLOAT;
+	case TextureFormat::Depth16: return GL_FLOAT; // ?
+	case TextureFormat::Depth24: return GL_FLOAT; // ?
+	case TextureFormat::Depth32: return GL_FLOAT; // ?
+	case TextureFormat::Depth32F: return GL_FLOAT;
+
+	case TextureFormat::DepthStencil: return GL_UNSIGNED_INT_24_8;
+	case TextureFormat::Depth24Stencil8: return GL_UNSIGNED_INT_24_8;
+	case TextureFormat::Depth32FStencil8: return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+	case TextureFormat::Depth0Stencil8: return GL_UNSIGNED_BYTE;
 	}
 }
 
@@ -388,9 +402,9 @@ GLuint getType(ShaderType type)
 	{
 	case ShaderType::Vertex:
 		return GL_VERTEX_SHADER;
-	case ShaderType::TesselationControl:
+	case ShaderType::TessControl:
 		return GL_TESS_CONTROL_SHADER;
-	case ShaderType::TesselationEvaluation:
+	case ShaderType::TessEvaluation:
 		return GL_TESS_EVALUATION_SHADER;
 	case ShaderType::Fragment:
 		return GL_FRAGMENT_SHADER;
@@ -545,17 +559,17 @@ class GLTexture : public Texture
 public:
 	GLTexture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags,
+		TextureFormat format, TextureFlag flags,
 		Sampler sampler,
 		const void* data
 	) :
-		Texture(width, height, TextureType::Texture2D, format, component, flags, sampler),
+		Texture(width, height, TextureType::Texture2D, format, flags, sampler),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), data);
+		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), data);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
@@ -565,18 +579,18 @@ public:
 	}
 	GLTexture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags,
+		TextureFormat format, TextureFlag flags,
 		Sampler sampler,
 		const void* data,
 		uint8_t samples
 	) :
-		Texture(width, height, TextureType::Texture2DMultisample, format, component, flags, sampler),
+		Texture(width, height, TextureType::Texture2DMultisample, format, flags, sampler),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, gl::componentInternal(m_component), width, height, GL_TRUE);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, gl::componentInternal(m_format), width, height, GL_TRUE);
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
@@ -586,24 +600,24 @@ public:
 	}
 	GLTexture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureComponent component, TextureFlag flags,
+		TextureFormat format, TextureFlag flags,
 		Sampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz
 	) :
-		Texture(width, height, TextureType::TextureCubemap, format, component, flags, sampler),
+		Texture(width, height, TextureType::TextureCubemap, format, flags, sampler),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), px);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nx);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), py);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), ny);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), pz);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl::componentInternal(m_component), width, height, 0, gl::component(m_component), gl::format(m_format), nz);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), px);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), nx);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), py);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), ny);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), pz);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), nz);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
@@ -636,17 +650,16 @@ public:
 		AKA_ASSERT(rect.x + rect.w <= m_width, "");
 		AKA_ASSERT(rect.y + rect.h <= m_height, "");
 		glBindTexture(gl::type(m_type), m_textureID);
-		glTexSubImage2D(gl::type(m_type), mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_component), gl::format(m_format), data);
+		glTexSubImage2D(gl::type(m_type), mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
 	}
 	void download(void* data) override
 	{
 		glBindTexture(gl::type(m_type), m_textureID);
-		glGetTexImage(gl::type(m_type), 0, gl::component(m_component), gl::format(m_format), data);
+		glGetTexImage(gl::type(m_type), 0, gl::component(m_format), gl::format(m_format), data);
 	}
 	void copy(Texture::Ptr src, const Rect& rect) override
 	{
 		AKA_ASSERT(src->format() == this->format(), "Invalid format");
-		AKA_ASSERT(src->component() == this->component(), "Invalid components");
 		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
 		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
 		if (m_copyFBO == 0)
@@ -654,7 +667,7 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl::type(m_type), reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
 		glBindTexture(gl::type(m_type), m_textureID);
-		glCopyTexImage2D(gl::type(m_type), 0, gl::componentInternal(m_component), rect.x, rect.y, rect.w, rect.h, 0);
+		glCopyTexImage2D(gl::type(m_type), 0, gl::componentInternal(m_format), rect.x, rect.y, rect.w, rect.h, 0);
 		// TODO copy all mip map level
 		glBindTexture(gl::type(m_type), 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -786,6 +799,8 @@ public:
 
 			Uniform uniform;
 			uniform.id = UniformID(glGetUniformLocation(glShader->getProgramID(), name));
+			if (size > 1) // Remove [0] for compat with D3D11 (and simplicity)
+				name[String::length(name) - 3] = '\0';
 			uniform.name = name;
 			uniform.bufferIndex = 0;
 			uniform.arrayLength = size;
@@ -898,7 +913,24 @@ public:
 					if (texture != nullptr)
 						glBindTexture(gl::type(texture->type()), glTexture->getTextureID());
 					else
-						glBindTexture(gl::type(texture->type()), 0);
+					{
+						GLenum glType;
+						switch (uniform.type)
+						{
+						case UniformType::Texture2D:
+							glType = gl::type(TextureType::Texture2D);
+							break;
+						case UniformType::Texture2DMultisample:
+							glType = gl::type(TextureType::Texture2DMultisample);
+							break;
+						case UniformType::TextureCubemap:
+							glType = gl::type(TextureType::TextureCubemap);
+							break;
+						default:
+							glType = GL_TEXTURE_2D;
+						}
+						glBindTexture(glType, 0);
+					}
 					units.push_back(unit);
 				}
 				// Upload texture unit array.
@@ -1217,7 +1249,6 @@ public:
 			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(
 				width, height,
 				attachment.texture->format(),
-				attachment.texture->component(),
 				TextureFlag::RenderTarget,
 				attachment.texture->sampler(),
 				nullptr
@@ -1766,35 +1797,35 @@ uint32_t GraphicBackend::deviceCount()
 
 Texture::Ptr GraphicBackend::createTexture2D(
 	uint32_t width, uint32_t height,
-	TextureFormat format, TextureComponent component, TextureFlag flags,
+	TextureFormat format, TextureFlag flags,
 	Sampler sampler,
 	const void* data
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, data);
+	return std::make_shared<GLTexture>(width, height, format, flags, sampler, data);
 }
 
 Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
-	TextureFormat format, TextureComponent component, TextureFlag flags,
+	TextureFormat format, TextureFlag flags,
 	Sampler sampler,
 	const void* data,
 	uint8_t samples
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, data, samples);
+	return std::make_shared<GLTexture>(width, height, format, flags, sampler, data, samples);
 }
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height,
-	TextureFormat format, TextureComponent component, TextureFlag flags,
+	TextureFormat format, TextureFlag flags,
 	Sampler sampler,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, component, flags, sampler, px, nx, py, ny, pz, nz);
+	return std::make_shared<GLTexture>(width, height, format, flags, sampler, px, nx, py, ny, pz, nz);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)

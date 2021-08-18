@@ -44,51 +44,48 @@ struct Sampler
 };
 
 enum class TextureFlag : uint8_t {
-	None = 0x00,
-	RenderTarget = 0x01
+	None = (1 << 0),
+	RenderTarget = (1 << 1),
+	//ShaderStorage = (1 << 2),
 };
 
 enum class TextureFormat : uint8_t {
-	UnsignedByte,
-	Byte,
-	UnsignedShort,
-	Short,
-	UnsignedInt,
-	Int,
-	Half,
-	Float,
-	UnsignedInt248,
-	Float32UnsignedInt248
-};
-
-enum class TextureComponent : uint8_t {
-	R,
 	R8,
+	R8U,
 	R16,
+	R16U,
 	R16F,
 	R32F,
 
-	RG,
 	RG8,
+	RG8U,
+	RG16U,
 	RG16,
+	RG16F,
+	RG32F,
 
-	RGB,
 	RGB8,
+	RGB8U,
 	RGB16,
+	RGB16U,
 	RGB16F,
 	RGB32F,
 
-	RGBA,
 	RGBA8,
+	RGBA8U,
+	RGBA16,
+	RGBA16U,
 	RGBA16F,
 	RGBA32F,
 
 	Depth,
 	Depth16,
+	Depth24,
 	Depth32,
 	Depth32F,
 
 	DepthStencil,
+	Depth0Stencil8,
 	Depth24Stencil8,
 	Depth32FStencil8
 };
@@ -99,13 +96,18 @@ enum class TextureType {
 	TextureCubemap,
 };
 
+// Get the size in bytes of given format
+uint32_t size(TextureFormat format);
+// Return true if given type is a depth or a depth stencil format
+bool isDepth(TextureFormat format);
+
 class Texture
 {
 public:
 	using Ptr = std::shared_ptr<Texture>;
 	using Handle = StrictType<uintptr_t, struct TextureHandleTag>;
 protected:
-	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureComponent component, TextureFlag flag, Sampler sampler);
+	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flag, Sampler sampler);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
@@ -113,8 +115,7 @@ public:
 	static Texture::Ptr create2D(
 		uint32_t width, 
 		uint32_t height, 
-		TextureFormat format, 
-		TextureComponent component,
+		TextureFormat format,
 		TextureFlag flag, 
 		Sampler sampler,
 		const void* data = nullptr
@@ -123,7 +124,6 @@ public:
 		uint32_t width,
 		uint32_t height,
 		TextureFormat format,
-		TextureComponent component,
 		TextureFlag flag,
 		Sampler sampler,
 		const void* data = nullptr,
@@ -133,7 +133,6 @@ public:
 		uint32_t width,
 		uint32_t height,
 		TextureFormat format,
-		TextureComponent component,
 		TextureFlag flag,
 		Sampler sampler,
 		const void* px = nullptr, const void* nx = nullptr,
@@ -147,8 +146,6 @@ public:
 	uint32_t height() const;
 
 	TextureFormat format() const;
-
-	TextureComponent component() const;
 
 	TextureFlag flags() const;
 
@@ -173,7 +170,6 @@ protected:
 	TextureType m_type;
 	TextureFormat m_format;
 	TextureFlag m_flags;
-	TextureComponent m_component;
 	uint32_t m_width, m_height;
 };
 

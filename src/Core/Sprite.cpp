@@ -13,7 +13,7 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	std::vector<Aseprite::Color32> aseImage = aseFrame.image(ase);
 	Image image(ase.width, ase.height, 4);
 	memcpy(image.bytes.data(), aseImage[0].data, image.bytes.size());
-#if defined(ORIGIN_BOTTOM_LEFT)
+#if defined(AKA_ORIGIN_BOTTOM_LEFT)
 	image.flip();
 #endif
 	// Set frame
@@ -24,8 +24,7 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	// Generate texture
 	frame.texture = Texture::create2D(
 		ase.width, ase.height,
-		TextureFormat::UnsignedByte,
-		TextureComponent::RGBA,
+		TextureFormat::RGBA8,
 		TextureFlag::None,
 		Sampler::nearest(),
 		image.bytes.data()
