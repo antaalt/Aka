@@ -1101,14 +1101,18 @@ public:
 			AKA_ASSERT(m_access == BufferCPUAccess::Read || m_access == BufferCPUAccess::ReadWrite, "");
 			glAccess = GL_READ_ONLY;
 			break;
+		case BufferMap::WriteDiscard:
+		case BufferMap::WriteNoOverwrite:
 		case BufferMap::Write:
 			AKA_ASSERT(m_access == BufferCPUAccess::Write || m_access == BufferCPUAccess::ReadWrite, "");
 			glAccess = GL_WRITE_ONLY;
 			break;
-		default:
 		case BufferMap::ReadWrite:
 			AKA_ASSERT(m_access == BufferCPUAccess::ReadWrite, "");
 			glAccess = GL_READ_WRITE;
+			break;
+		default:
+			Logger::error("Buffer map type not supported");
 			break;
 		}
 		void* data = glMapBuffer(GLBuffer::type(m_type), glAccess);
