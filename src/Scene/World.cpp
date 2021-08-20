@@ -34,7 +34,7 @@ void World::load(const Path& path)
 void World::create()
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->create(*this);
+		system->onCreate(*this);
 }
 
 void World::destroy()
@@ -42,27 +42,27 @@ void World::destroy()
 	m_dispatcher.clear();
 	m_registry.clear();
 	for (std::unique_ptr<System>& system : m_systems)
-		system->destroy(*this);
+		system->onDestroy(*this);
 	m_systems.clear();
 }
 
 void World::update(Time::Unit deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->update(*this, deltaTime);
+		system->onUpdate(*this, deltaTime);
 	m_dispatcher.update();
 }
 
 void World::fixedUpdate(Time::Unit deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->fixedUpdate(*this, deltaTime);
+		system->onFixedUpdate(*this, deltaTime);
 }
 
-void World::draw()
+void World::render()
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->draw(*this);
+		system->onRender(*this);
 }
 
 entt::registry& World::registry()

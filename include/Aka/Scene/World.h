@@ -65,8 +65,8 @@ public:
 	void update(Time::Unit deltaTime);
 	// Update all systems
 	void fixedUpdate(Time::Unit deltaTime);
-	// Draw all systems
-	void draw();
+	// Render all systems
+	void render();
 
 	// Get entt registry
 	entt::registry& registry();
@@ -105,7 +105,7 @@ inline void World::emit(T&& event)
 template <typename T>
 inline void World::dispatch()
 {
-	m_dispatcher.update();
+	m_dispatcher.update<T>();
 }
 
 template <typename Func>

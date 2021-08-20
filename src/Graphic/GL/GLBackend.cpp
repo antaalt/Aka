@@ -1331,6 +1331,12 @@ public:
 			{
 				if (attachment.texture == texture)
 					return;
+
+				if ((texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
+				{
+					Logger::error("Incompatible texture set as attachment");
+					return;
+				}
 				attachment.texture = texture;
 				exist = true;
 				break;
@@ -1338,7 +1344,10 @@ public:
 		}
 		// Key does not exist yet.
 		if (!exist)
+		{
+			Logger::warn("Draw buffer not set");
 			m_attachments.push_back(FramebufferAttachment{ type, texture });
+		}
 
 		GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);

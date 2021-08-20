@@ -11,15 +11,17 @@ class World;
 class System
 {
 public:
-	virtual ~System() = default;
+	System() {}
+	virtual ~System() {}
 	friend class World;
 
-	virtual void create(World &world) {}
-	virtual void destroy(World& world) {}
+protected:
+	virtual void onCreate(World &world) {}
+	virtual void onDestroy(World& world) {}
 
-	virtual void fixedUpdate(World& world, Time::Unit deltaTime) {}
-	virtual void update(World& world, Time::Unit deltaTime) {}
-	virtual void draw(World& world) {}
+	virtual void onFixedUpdate(World& world, Time::Unit deltaTime) {}
+	virtual void onUpdate(World& world, Time::Unit deltaTime) {}
+	virtual void onRender(World& world) {}
 };
 
 }
