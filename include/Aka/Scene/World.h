@@ -70,6 +70,7 @@ public:
 
 	// Get entt registry
 	entt::registry& registry();
+	const entt::registry& registry() const;
 private:
 	std::vector<std::unique_ptr<System>> m_systems;
 	entt::dispatcher m_dispatcher;

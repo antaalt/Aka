@@ -1149,44 +1149,47 @@ public:
 			glDeleteVertexArrays(1, &m_vao);
 	}
 public:
-	void upload(const VertexInfo& vertexInfo, const IndexInfo& indexInfo) override
+	void upload(const VertexAccessor* vertexAccessor, size_t accessorCount, const IndexAccessor& indexAccessor) override
 	{
 		// --- Vertices
 		glBindVertexArray(m_vao);
 		// Setup correct channels
-		for (size_t i = m_vertexInfo.attributeData.size(); i < vertexInfo.attributeData.size(); i++)
+		for (size_t i = m_vertexAccessors.size(); i < accessorCount; i++)
 			glEnableVertexAttribArray((GLuint)i);
-		for (size_t i = vertexInfo.attributeData.size(); i < m_vertexInfo.attributeData.size(); i++)
+		for (size_t i = accessorCount; i < m_vertexAccessors.size(); i++)
 			glDisableVertexAttribArray((GLuint)i);
-		for (size_t i = 0; i < vertexInfo.attributeData.size(); i++)
+		for (size_t i = 0; i < accessorCount; i++)
 		{
-			const VertexAttributeData& a = vertexInfo[i];
-			GLint componentSize = size(a.attribute.format);
+			const VertexAccessor& a = vertexAccessor[i];
+			//GLint componentSize = size(a.attribute.format);
 			GLint componentCount = size(a.attribute.type);
 			GLenum componentType = gl::format(a.attribute.format);
 			GLboolean normalized = GL_FALSE;
-			glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(a.subBuffer.buffer->handle().value()));
-			glVertexAttribPointer(i, componentCount, componentType, normalized, a.stride, (void*)(uintptr_t)((uintptr_t)a.subBuffer.offset + (uintptr_t)a.offset));
+			GLsizei stride = a.bufferView.stride;
+			size_t offset = a.bufferView.offset + a.offset;
+			glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(a.bufferView.buffer->handle().value()));
+			glVertexAttribPointer((GLuint)i, componentCount, componentType, normalized, stride, (void*)(uintptr_t)offset);
 		}
-		m_vertexInfo = vertexInfo;
+		m_vertexAccessors.clear();
+		m_vertexAccessors.insert(m_vertexAccessors.end(), vertexAccessor, vertexAccessor + accessorCount);
 
 		// --- Indices
-		if (indexInfo.subBuffer.buffer != nullptr)
+		if (indexAccessor.bufferView.buffer != nullptr)
 		{
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(indexInfo.subBuffer.buffer->handle().value()));
-			m_indexInfo = indexInfo;
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(indexAccessor.bufferView.buffer->handle().value()));
+			m_indexAccessor = indexAccessor;
 		}
 		else
 		{
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-			m_indexInfo = {};
+			m_indexAccessor = {};
 		}
 		glBindVertexArray(0);
 	}
 
-	void upload(const VertexInfo& vertexInfo) override
+	void upload(const VertexAccessor* vertexAccessor, size_t accessorCount) override
 	{
-		upload(vertexInfo, IndexInfo{ IndexFormat::UnsignedByte, SubBuffer{ nullptr, 0, 0 } });
+		upload(vertexAccessor, accessorCount, IndexAccessor{ IndexBufferView{ nullptr, 0, 0 }, IndexFormat::UnsignedByte });
 	}
 
 	void draw(PrimitiveType type, uint32_t vertexCount, uint32_t vertexOffset) const override
@@ -1197,13 +1200,13 @@ public:
 	}
 	void drawIndexed(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
 	{
-		AKA_ASSERT(m_indexInfo.subBuffer.buffer != nullptr, "Need indices to call drawIndexed");
+		AKA_ASSERT(m_indexAccessor.bufferView.buffer != nullptr, "Need indices to call drawIndexed");
 		glBindVertexArray(m_vao);
 		glDrawElements(
 			gl::primitive(type),
 			static_cast<GLsizei>(indexCount),
-			gl::format(m_indexInfo.format),
-			(void*)((uintptr_t)size(m_indexInfo.format) * (uintptr_t)indexOffset)
+			gl::format(m_indexAccessor.format),
+			(void*)((uintptr_t)size(m_indexAccessor.format) * (uintptr_t)indexOffset)
 		);
 		glBindVertexArray(0);
 	}

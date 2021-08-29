@@ -291,29 +291,29 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		m_indexBuffer->unmap();
 
 		// Update mesh data
-		VertexInfo vertexInfo{ std::vector<VertexAttributeData>{
-			VertexAttributeData{
-				VertexAttribute{ VertexFormat::Float, VertexType::Vec2 },
-				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }, 
-				sizeof(Vertex), offsetof(Vertex, position)
+		std::vector<VertexAccessor> vertexInfo{ {
+			VertexAccessor{
+				VertexAttribute{ VertexSemantic::Position, VertexFormat::Float, VertexType::Vec2 },
+				VertexBufferView { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)), sizeof(Vertex) },
+				offsetof(Vertex, position), static_cast<uint32_t>(m_vertices.size())
 			},
-			VertexAttributeData{
-				VertexAttribute{ VertexFormat::Float, VertexType::Vec2 },
-				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }, 
-				sizeof(Vertex), offsetof(Vertex, uv)
+			VertexAccessor{
+				VertexAttribute{ VertexSemantic::TexCoord0, VertexFormat::Float, VertexType::Vec2 },
+				VertexBufferView { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)), sizeof(Vertex) },
+				offsetof(Vertex, uv), static_cast<uint32_t>(m_vertices.size())
 			},
-			VertexAttributeData{
-				VertexAttribute{ VertexFormat::Float, VertexType::Vec4 },
-				SubBuffer { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) }, 
-				sizeof(Vertex), offsetof(Vertex, color)
+			VertexAccessor{
+				VertexAttribute{ VertexSemantic::Color0, VertexFormat::Float, VertexType::Vec4 },
+				VertexBufferView { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) },
+				offsetof(Vertex, color), static_cast<uint32_t>(m_vertices.size())
 			},
 		} };
 
-		IndexInfo indexInfo{
-			IndexFormat::UnsignedInt,
-			SubBuffer { m_indexBuffer, 0, static_cast<uint32_t>(m_indices.size() * sizeof(uint32_t)) }
+		IndexAccessor indexInfo{
+			IndexBufferView { m_indexBuffer, 0, static_cast<uint32_t>(m_indices.size() * sizeof(uint32_t)) },
+			IndexFormat::UnsignedInt
 		};
-		m_mesh->upload(vertexInfo, indexInfo);
+		m_mesh->upload(vertexInfo.data(), vertexInfo.size(), indexInfo);
 	}
 
 	{

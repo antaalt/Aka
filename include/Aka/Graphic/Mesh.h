@@ -9,7 +9,7 @@
 namespace aka {
 
 enum class IndexFormat {
-	UnsignedByte,
+	UnsignedByte, // D3D11 do not support it
 	UnsignedShort,
 	UnsignedInt
 };
@@ -34,6 +34,19 @@ enum class VertexType {
 	Mat4,
 	Scalar,
 };
+enum class VertexSemantic {
+	Position,
+	Normal,
+	Tangent,
+	TexCoord0,
+	TexCoord1,
+	TexCoord2,
+	TexCoord3,
+	Color0,
+	Color1,
+	Color2,
+	Color3,
+};
 
 enum class PrimitiveType {
 	Points,
@@ -50,29 +63,37 @@ uint32_t size(VertexFormat format);
 uint32_t size(VertexType type);
 
 struct VertexAttribute {
+	VertexSemantic semantic; // Semantic of the attribute
 	VertexFormat format; // Format of the attribute
 	VertexType type; // Type of the attribute
 
 	uint32_t size() const { return aka::size(format) * aka::size(type); }
 };
 
-struct VertexAttributeData {
+struct VertexBufferView {
+	Buffer::Ptr buffer; // Buffer for vertices
+	uint32_t offset; // Offset within buffer
+	uint32_t size; // Size within buffer
+	uint32_t stride; // Stride within buffer for interleaved data.
+};
+
+struct IndexBufferView {
+	Buffer::Ptr buffer; // Buffer for indices
+	uint32_t offset; // Offset within buffer
+	uint32_t size; // Size within buffer
+};
+
+struct IndexAccessor {
+	IndexBufferView bufferView; // Buffer view for indices
+	IndexFormat format; // Format of indices
+	uint32_t count; // Number of elements
+};
+
+struct VertexAccessor {
 	VertexAttribute attribute; // Attribute information
-	SubBuffer subBuffer; // Buffer used to store the attribute
-	uint32_t stride; // Stride in the buffer
-	uint32_t offset; // Offset from base vertex
-};
-
-struct VertexInfo {
-	VertexAttributeData& operator[](size_t index) { return attributeData[index]; }
-	const VertexAttributeData& operator[](size_t index) const { return attributeData[index]; }
-
-	std::vector<VertexAttributeData> attributeData; // index in vector is location in shader
-};
-
-struct IndexInfo {
-	IndexFormat format;
-	SubBuffer subBuffer;
+	VertexBufferView bufferView; // Buffer view
+	uint32_t offset; // Offset from buffer view in bytes
+	uint32_t count; // Number of elements
 };
 
 class Mesh
@@ -88,13 +109,13 @@ public:
 	static Mesh::Ptr create();
 
 	// Upload interleaved buffer fast
-	void uploadInterleaved(const VertexAttribute* attributes, uint32_t attributeCount, void* vertices, uint32_t vertexCount);
+	void uploadInterleaved(const VertexAttribute* attributes, size_t attributeCount, void* vertices, uint32_t vertexCount);
 	// Upload interleaved indexed buffer fast
-	void uploadInterleaved(const VertexAttribute* attributes, uint32_t attributeCount, void* vertices, uint32_t vertexCount, IndexFormat indexFormat, void* indices, uint32_t indexCount);
+	void uploadInterleaved(const VertexAttribute* attributes, size_t attributeCount, void* vertices, uint32_t vertexCount, IndexFormat indexFormat, void* indices, uint32_t indexCount);
 	// Upload the vertex and index buffer to the mesh
-	virtual void upload(const VertexInfo& vertexBuffer, const IndexInfo& indexBuffer) = 0;
+	virtual void upload(const VertexAccessor* vertexAccessor, size_t accessorCount, const IndexAccessor& indexAccessor) = 0;
 	// Upload the vertex buffer to the mesh without indices
-	virtual void upload(const VertexInfo& vertexBuffer) = 0;
+	virtual void upload(const VertexAccessor* vertexAccessor, size_t accessorCount) = 0;
 
 	// Draw a mesh with only vertices
 	virtual void draw(PrimitiveType type, uint32_t vertexCount, uint32_t vertexOffset) const = 0;
@@ -108,7 +129,7 @@ public:
 	// Get the format used by the indices
 	IndexFormat getIndexFormat() const;
 	// Get the index buffer
-	const SubBuffer& getIndexBuffer() const;
+	const IndexBufferView& getIndexBuffer() const;
 
 	// Get the number of vertices
 	uint32_t getVertexCount() const;
@@ -117,11 +138,11 @@ public:
 	// Get a single vertex attribute for given binding
 	const VertexAttribute& getVertexAttribute(uint32_t binding) const;
 	// Get a single vertex buffer for given binding
-	const SubBuffer& getVertexBuffer(uint32_t binding) const;
+	const VertexBufferView& getVertexBuffer(uint32_t binding) const;
 
 protected:
-	IndexInfo m_indexInfo;
-	VertexInfo m_vertexInfo;
+	IndexAccessor m_indexAccessor;
+	std::vector<VertexAccessor> m_vertexAccessors;
 };
 
 struct SubMesh {

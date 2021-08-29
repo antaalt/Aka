@@ -70,4 +70,9 @@ entt::registry& World::registry()
 	return m_registry;
 }
 
+const entt::registry& World::registry() const
+{
+	return m_registry;
+}
+
 };
