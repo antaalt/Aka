@@ -97,9 +97,9 @@ protected:
 
 	friend class Shader;
 	static ShaderID compile(const char* content, ShaderType type);
-	static Shader::Ptr createShader(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes);
-	static Shader::Ptr createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes);
-	static Shader::Ptr createShaderCompute(ShaderID compute, const std::vector<Attributes>& attributes);
+	static Shader::Ptr createShader(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createShaderCompute(ShaderID compute, const VertexAttribute* attributes, size_t count);
 
 	friend class ShaderMaterial;
 	static ShaderMaterial::Ptr createShaderMaterial(Shader::Ptr shader);

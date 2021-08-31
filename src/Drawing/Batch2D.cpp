@@ -166,14 +166,15 @@ Batch2D::~Batch2D()
 
 void Batch2D::initialize()
 {
+	std::vector<VertexAttribute> att {
+		VertexAttribute{ VertexSemantic::Position, VertexFormat::Float, VertexType::Vec2 },
+		VertexAttribute{ VertexSemantic::TexCoord0, VertexFormat::Float, VertexType::Vec2 },
+		VertexAttribute{ VertexSemantic::Color0, VertexFormat::Float, VertexType::Vec4 }
+	};
 	m_shader = Shader::create(
 		Shader::compile(vertShader, ShaderType::Vertex),
 		Shader::compile(fragShader, ShaderType::Fragment),
-		std::vector<Attributes>{ // HLSL only
-			Attributes{ AttributeID(0), "POS" },
-			Attributes{ AttributeID(0), "TEX" },
-			Attributes{ AttributeID(0), "COL" }
-		}
+		att.data(), att.size()
 	);
 	m_material = ShaderMaterial::create(m_shader);
 	m_mesh = Mesh::create();

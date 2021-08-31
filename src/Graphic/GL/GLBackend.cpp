@@ -688,8 +688,8 @@ private:
 class GLShader : public Shader
 {
 public:
-	GLShader(ShaderID vertex, ShaderID fragment, ShaderID geometry, ShaderID compute, const std::vector<Attributes>& attributes) :
-		Shader(attributes)
+	GLShader(ShaderID vertex, ShaderID fragment, ShaderID geometry, ShaderID compute, const VertexAttribute* attributes, size_t count) :
+		Shader(attributes, count)
 	{
 		GLuint vert = static_cast<GLuint>(vertex.value());
 		GLuint frag = static_cast<GLuint>(fragment.value());
@@ -1883,27 +1883,25 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 	return ShaderID(shaderID);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<GLShader>(vert, frag, ShaderID(0), ShaderID(0), attributes);
+	return std::make_shared<GLShader>(vert, frag, ShaderID(0), ShaderID(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<GLShader>(vert, frag, geometry, ShaderID(0), attributes);
+	return std::make_shared<GLShader>(vert, frag, geometry, ShaderID(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<GLShader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes);
+	return std::make_shared<GLShader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes, count);
 }
-
 
 ShaderMaterial::Ptr aka::GraphicBackend::createShaderMaterial(Shader::Ptr shader)
 {
 	return std::make_shared<GLShaderMaterial>(shader);
 }
-
 
 };
 #endif

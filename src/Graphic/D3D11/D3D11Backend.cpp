@@ -1426,20 +1426,21 @@ public:
 	{
 	}
 public:
-	void upload(const VertexInfo& vertexInfo, const IndexInfo& indexInfo) override
+	void upload(const VertexAccessor* vertexAccessor, size_t count, const IndexAccessor& indexAccessor) override
 	{
-		m_vertexInfo = vertexInfo;
-		m_indexInfo = indexInfo;
+		m_vertexAccessors = std::vector<VertexAccessor>(vertexAccessor, vertexAccessor + count);
+		m_indexAccessor = indexAccessor;
 		m_vertexBuffers.clear();
 		m_strides.clear();
 		m_offsets.clear();
-		for (const VertexAttributeData& a : m_vertexInfo.attributeData)
+		for (size_t i = 0; i < count; i++)
 		{
-			m_vertexBuffers.push_back((ID3D11Buffer*)a.subBuffer.buffer->handle().value());
-			m_strides.push_back(a.stride);
-			m_offsets.push_back(a.subBuffer.offset + a.offset);
+			const VertexAccessor& a = vertexAccessor[i];
+			m_vertexBuffers.push_back((ID3D11Buffer*)a.bufferView.buffer->handle().value());
+			m_strides.push_back(a.bufferView.stride);
+			m_offsets.push_back(a.bufferView.offset + a.offset);
 		}
-		switch (indexInfo.format)
+		switch (m_indexAccessor.format)
 		{
 		case IndexFormat::UnsignedByte:
 			Logger::error("Unsigned byte format not supported as index buffer.");
@@ -1453,18 +1454,19 @@ public:
 			break;
 		}
 	}
-	void upload(const VertexInfo& vertexInfo) override
+	void upload(const VertexAccessor* vertexAccessor, size_t count) override
 	{
-		m_vertexInfo = vertexInfo;
-		m_indexInfo = {};
+		m_vertexAccessors = std::vector<VertexAccessor>(vertexAccessor, vertexAccessor + count);
+		m_indexAccessor = {};
 		m_vertexBuffers.clear();
 		m_strides.clear();
 		m_offsets.clear();
-		for (const VertexAttributeData& a : m_vertexInfo.attributeData)
+		for (size_t i = 0; i < count; i++)
 		{
-			m_vertexBuffers.push_back((ID3D11Buffer*)a.subBuffer.buffer->handle().value());
-			m_strides.push_back(a.stride);
-			m_offsets.push_back(a.subBuffer.offset + a.offset);
+			const VertexAccessor& a = vertexAccessor[i];
+			m_vertexBuffers.push_back((ID3D11Buffer*)a.bufferView.buffer->handle().value());
+			m_strides.push_back(a.bufferView.stride);
+			m_offsets.push_back(a.bufferView.offset + a.offset);
 		}
 	}
 	void draw(PrimitiveType type, uint32_t vertexCount, uint32_t vertexOffset) const override
@@ -1502,7 +1504,7 @@ public:
 	{
 		unsigned int offset = 0;
 		dctx.deviceContext->IASetVertexBuffers(0, static_cast<UINT>(m_vertexBuffers.size()), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
-		dctx.deviceContext->IASetIndexBuffer((ID3D11Buffer*)m_indexInfo.subBuffer.buffer->handle().value(), m_indexFormat, m_indexInfo.subBuffer.offset);
+		dctx.deviceContext->IASetIndexBuffer((ID3D11Buffer*)m_indexAccessor.bufferView.buffer->handle().value(), m_indexFormat, m_indexAccessor.bufferView.offset);
 		switch (type)
 		{
 		default:
@@ -1539,8 +1541,8 @@ private:
 class D3D11Shader : public Shader
 {
 public:
-	D3D11Shader(ShaderID vert, ShaderID frag, ShaderID geometry, ShaderID compute, const std::vector<Attributes>& attributes) :
-		Shader(attributes),
+	D3D11Shader(ShaderID vert, ShaderID frag, ShaderID geometry, ShaderID compute, const VertexAttribute* attributes, size_t count) :
+		Shader(attributes, count),
 		m_layout(nullptr),
 		m_vertexShader(nullptr),
 		m_pixelShader(nullptr),
@@ -1559,6 +1561,108 @@ public:
 			D3D_CHECK_RESULT(dctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
 		if (geometry.value() != 0)
 			D3D_CHECK_RESULT(dctx.device->CreateGeometryShader(m_geometryShaderBuffer->GetBufferPointer(), m_geometryShaderBuffer->GetBufferSize(), nullptr, &m_geometryShader));
+
+		// Now setup the layout of the data that goes into the shader.
+		// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
+		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
+		AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
+		for (uint32_t i = 0; i < count; i++)
+		{
+			const VertexAttribute& a = attributes[i];
+			switch (a.semantic)
+			{
+			case VertexSemantic::Position: polygonLayout[i].SemanticName = "POS"; break;
+			case VertexSemantic::Normal: polygonLayout[i].SemanticName = "NORM"; break;
+			case VertexSemantic::Tangent: polygonLayout[i].SemanticName = "TAN"; break;
+			case VertexSemantic::TexCoord0: polygonLayout[i].SemanticName = "TEX"; break;
+			case VertexSemantic::TexCoord1: polygonLayout[i].SemanticName = "TEX"; break;
+			case VertexSemantic::TexCoord2: polygonLayout[i].SemanticName = "TEX"; break;
+			case VertexSemantic::TexCoord3: polygonLayout[i].SemanticName = "TEX"; break;
+			case VertexSemantic::Color0: polygonLayout[i].SemanticName = "COL"; break;
+			case VertexSemantic::Color1: polygonLayout[i].SemanticName = "COL"; break;
+			case VertexSemantic::Color2: polygonLayout[i].SemanticName = "COL"; break;
+			case VertexSemantic::Color3: polygonLayout[i].SemanticName = "COL"; break;
+			default: Logger::error("Semantic not supported");
+				break;
+			}
+			polygonLayout[i].SemanticIndex = 0; // TODO if mat4, set different index
+			if (a.format == VertexFormat::Float)
+			{
+				switch (a.type)
+				{
+				case VertexType::Scalar: polygonLayout[i].Format = DXGI_FORMAT_R32_FLOAT;  break;
+				case VertexType::Vec2: polygonLayout[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
+				case VertexType::Vec3: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::Byte)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::UnsignedByte)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::Short)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::UnsignedShort)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::Int)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_SINT; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else if (a.format == VertexFormat::UnsignedInt)
+			{
+				switch (a.type)
+				{
+				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_UINT; break;
+				default: Logger::error("Format not supported for layout");
+				}
+			}
+			else
+			{
+				Logger::error("Format not supported for layout");
+			}
+			polygonLayout[i].InputSlot = 0;
+			polygonLayout[i].AlignedByteOffset = (i == 0 ? 0 : D3D11_APPEND_ALIGNED_ELEMENT);
+			polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+			polygonLayout[i].InstanceDataStepRate = 0;
+		}
+
+		// Create the vertex input layout.
+		D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
+			polygonLayout.data(),
+			(UINT)polygonLayout.size(),
+			m_vertexShaderBuffer->GetBufferPointer(),
+			m_vertexShaderBuffer->GetBufferSize(),
+			&m_layout
+		));
 
 		m_valid = true;
 	}
@@ -1595,8 +1699,14 @@ public:
 	{
 		return getUniforms(m_pixelShaderBuffer, uniformBuffers, ShaderType::Fragment);
 	}
+	std::vector<Uniform> getUniformsGeoShader(std::vector<ID3D11Buffer*>& uniformBuffers)
+	{
+		return getUniforms(m_geometryShaderBuffer, uniformBuffers, ShaderType::Geometry);
+	}
 	std::vector<Uniform> getUniforms(ID3D10Blob *shader, std::vector<ID3D11Buffer*> &uniformBuffers, ShaderType shaderType)
 	{
+		if (shader == nullptr)
+			return std::vector<Uniform>();
 		std::vector<Uniform> uniforms;
 		ID3D11ShaderReflection* reflector = nullptr;
 		D3D_CHECK_RESULT(D3DReflect(shader->GetBufferPointer(), shader->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflector));
@@ -1749,118 +1859,6 @@ public:
 		dctx.deviceContext->PSSetShader(m_pixelShader, nullptr, 0);
 		dctx.deviceContext->CSSetShader(m_computeShader, nullptr, 0);
 	}
-
-	void setLayout(VertexAttribute* attributes, size_t count)
-	{
-		if (m_layout != nullptr)
-			return;
-		// Now setup the layout of the data that goes into the shader.
-		// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
-		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
-		AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
-		for (uint32_t i = 0; i < count; i++)
-		{
-			polygonLayout[i].SemanticName = m_attributes[i].name.c_str();
-			polygonLayout[i].SemanticIndex = m_attributes[i].id.value();
-			const VertexAttribute& a = attributes[i];
-			if (a.format == VertexFormat::Float)
-			{
-				switch (a.type)
-				{
-				case VertexType::Scalar: polygonLayout[i].Format = DXGI_FORMAT_R32_FLOAT;  break;
-				case VertexType::Vec2: polygonLayout[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
-				case VertexType::Vec3: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else if (a.format == VertexFormat::Byte)
-			{
-				switch (a.type)
-				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else if (a.format == VertexFormat::UnsignedByte)
-			{
-				switch (a.type)
-				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else if (a.format == VertexFormat::Short)
-			{
-				switch (a.type)
-				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else if (a.format == VertexFormat::UnsignedShort)
-			{
-				switch (a.type)
-				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else if (a.format == VertexFormat::Int)
-			{
-				switch (a.type)
-				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_SINT; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else if (a.format == VertexFormat::UnsignedInt)
-			{
-				switch (a.type)
-				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_UINT; break;
-				default: Logger::error("Format not supported for layout");
-				}
-			}
-			else
-			{
-				Logger::error("Format not supported for layout");
-			}
-			polygonLayout[i].InputSlot = 0;
-			polygonLayout[i].AlignedByteOffset = (i == 0 ? 0 : D3D11_APPEND_ALIGNED_ELEMENT);
-			polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-			polygonLayout[i].InstanceDataStepRate = 0;
-		}
-
-		// Create the vertex input layout.
-		D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
-			polygonLayout.data(),
-			(UINT)polygonLayout.size(),
-			m_vertexShaderBuffer->GetBufferPointer(),
-			m_vertexShaderBuffer->GetBufferSize(),
-			&m_layout
-		));
-		if (m_vertexShaderBuffer)
-		{
-			m_vertexShaderBuffer->Release();
-			m_vertexShaderBuffer = nullptr;
-		}
-		if (m_pixelShaderBuffer)
-		{
-			m_pixelShaderBuffer->Release();
-			m_pixelShaderBuffer = nullptr;
-		}
-		if (m_geometryShaderBuffer)
-		{
-			m_geometryShaderBuffer->Release();
-			m_geometryShaderBuffer = nullptr;
-		}
-		if (m_computeShaderBuffer)
-		{
-			m_computeShaderBuffer->Release();
-			m_computeShaderBuffer = nullptr;
-		}
-	}
 private:
 	ID3D10Blob* m_vertexShaderBuffer;
 	ID3D10Blob* m_pixelShaderBuffer;
@@ -1884,7 +1882,7 @@ public:
 			// Find and merge all uniforms
 			std::vector<Uniform> uniformsVert = d3dShader->getUniformsVertexShader(m_vertexUniformBuffers);
 			std::vector<Uniform> uniformsFrag = d3dShader->getUniformsFragShader(m_fragmentUniformBuffers);
-			std::vector<Uniform> uniformsGeo = d3dShader->getUniformsFragShader(m_geometryUniformBuffers);
+			std::vector<Uniform> uniformsGeo = d3dShader->getUniformsGeoShader(m_geometryUniformBuffers);
 			m_uniforms.insert(m_uniforms.end(), uniformsVert.begin(), uniformsVert.end());
 			m_uniforms.insert(m_uniforms.end(), uniformsFrag.begin(), uniformsFrag.end());
 			m_uniforms.insert(m_uniforms.end(), uniformsGeo.begin(), uniformsGeo.end());
@@ -2310,10 +2308,6 @@ void GraphicBackend::render(RenderPass& pass)
 			D3D11ShaderMaterial* d3dShaderMaterial = (D3D11ShaderMaterial*)pass.material.get();
 			Shader::Ptr shader = d3dShaderMaterial->getShader();
 			D3D11Shader* d3dShader = (D3D11Shader*)shader.get();
-			std::vector<VertexAttribute> attributes;
-			for (uint32_t i = 0; i < pass.submesh.mesh->getVertexAttributeCount(); i++)
-				attributes.push_back(pass.submesh.mesh->getVertexAttribute(i));
-			d3dShader->setLayout(attributes.data(), attributes.size());
 			d3dShaderMaterial->apply();
 		}
 	}
@@ -2648,19 +2642,19 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 	return ShaderID((uintptr_t)shaderBuffer);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, ShaderID(0), ShaderID(0), attributes);
+	return std::make_shared<D3D11Shader>(vert, frag, ShaderID(0), ShaderID(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes);
+	return std::make_shared<D3D11Shader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes)
+Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, geometry, ShaderID(0), attributes);
+	return std::make_shared<D3D11Shader>(vert, frag, geometry, ShaderID(0), attributes, count);
 }
 
 ShaderMaterial::Ptr GraphicBackend::createShaderMaterial(Shader::Ptr shader)

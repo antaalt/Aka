@@ -2,9 +2,10 @@
 
 #include <vector>
 
-#include "../Core/Geometry.h"
-#include "../Core/StrictType.h"
-#include "Texture.h"
+#include <Aka/Core/Geometry.h>
+#include <Aka/Core/StrictType.h>
+#include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Mesh.h>
 
 namespace aka {
 
@@ -50,17 +51,12 @@ struct Uniform {
 	std::string name; // name of uniform
 };
 
-struct Attributes {
-	AttributeID id;
-	std::string name;
-};
-
 class Shader
 {
 public:
 	using Ptr = std::shared_ptr<Shader>;
 protected:
-	Shader(const std::vector<Attributes>& attributes);
+	Shader(const VertexAttribute* attributes, size_t count);
 	Shader(const Shader&) = delete;
 	const Shader& operator=(const Shader&) = delete;
 	virtual ~Shader();
@@ -68,13 +64,15 @@ public:
 	static ShaderID compile(const std::string &content, ShaderType type);
 	static ShaderID compile(const char* content, ShaderType type);
 
-	static Shader::Ptr create(ShaderID vert, ShaderID frag, const std::vector<Attributes>& attributes);
-	static Shader::Ptr createGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const std::vector<Attributes>& attributes);
-	static Shader::Ptr createCompute(ShaderID compute, const std::vector<Attributes>& attributes);
+	static Shader::Ptr create(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createCompute(ShaderID compute, const VertexAttribute* attributes, size_t count);
 
+	uint32_t getAttributeCount() const;
+	const VertexAttribute& getAttribute(uint32_t iBinding) const;
 	bool valid() const { return m_valid; }
 protected:
-	std::vector<Attributes> m_attributes;
+	std::vector<VertexAttribute> m_attributes;
 	bool m_valid;
 };
 
