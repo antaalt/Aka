@@ -31,7 +31,7 @@ public:
 
 	void destroy();
 
-	bool valid();
+	bool valid() const;
 
 	bool operator==(const Entity& rhs) const;
 	bool operator!=(const Entity& rhs) const;

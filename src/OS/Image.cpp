@@ -97,6 +97,21 @@ void Image::save(const Path& path, bool flip) const
 		Logger::error("Could not save image at path ", path.str());
 }
 
+std::vector<uint8_t> Image::save(bool flip) const
+{
+	stbi_flip_vertically_on_write(flip);
+	int outLength = 0;
+	unsigned char* data = stbi_write_png_to_mem(bytes.data(), width * components, width, height, components, &outLength);
+	if (data == nullptr || outLength == 0)
+	{
+		Logger::error("Could not encode image");
+		return std::vector<uint8_t>();
+	}
+	std::vector<uint8_t> bytes(data, data + outLength);
+	free(data);
+	return bytes;
+}
+
 void Image::set(uint32_t x, uint32_t y, const color24& color)
 {
 	bytes[y * width * components + x + 0] = color.r;

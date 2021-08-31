@@ -131,10 +131,12 @@ public:
 	// Get the index buffer
 	const IndexBufferView& getIndexBuffer() const;
 
-	// Get the number of vertices
-	uint32_t getVertexCount() const;
 	// Get the number of vertex attribute
 	uint32_t getVertexAttributeCount() const;
+	// Get the number of vertices
+	uint32_t getVertexCount(uint32_t binding) const;
+	// Get the number of vertices
+	uint32_t getVertexOffset(uint32_t binding) const;
 	// Get a single vertex attribute for given binding
 	const VertexAttribute& getVertexAttribute(uint32_t binding) const;
 	// Get a single vertex buffer for given binding

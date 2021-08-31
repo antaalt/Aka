@@ -125,15 +125,19 @@ const IndexBufferView& Mesh::getIndexBuffer() const
 	return m_indexAccessor.bufferView;
 }
 
-uint32_t Mesh::getVertexCount() const
-{
-	if (m_vertexAccessors.size() == 0) return 0;
-	return m_vertexAccessors[0].count;
-}
-
 uint32_t Mesh::getVertexAttributeCount() const
 {
 	return static_cast<uint32_t>(m_vertexAccessors.size());
+}
+
+uint32_t Mesh::getVertexCount(uint32_t binding) const
+{
+	return m_vertexAccessors[binding].count;
+}
+
+uint32_t Mesh::getVertexOffset(uint32_t binding) const
+{
+	return m_vertexAccessors[binding].offset;
 }
 
 const VertexAttribute& Mesh::getVertexAttribute(uint32_t binding) const

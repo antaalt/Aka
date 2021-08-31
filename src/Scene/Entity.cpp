@@ -26,7 +26,7 @@ void Entity::destroy()
 	m_world->registry().destroy(m_handle); 
 }
 
-bool Entity::valid()
+bool Entity::valid() const
 {
 	if (m_world == nullptr) return false;
 	return m_world->registry().valid(m_handle);
