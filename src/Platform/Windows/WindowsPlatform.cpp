@@ -42,7 +42,7 @@ std::ostream& operator<<(std::ostream& os, Logger::Color color)
 
 void PlatformBackend::errorDialog(const std::string& message)
 {
-	StrWide msg = Utf8ToWchar(message);
+	StringWide msg = Utf8ToWchar(message);
 	int msgBoxID = MessageBox(
 		getWindowsWindowHandle(),
 		msg.cstr(),

@@ -14,6 +14,7 @@
 #include <minimp3_ex.h>
 
 #include <Aka/Core/String.h>
+#include <Aka/Core/Encoding.h>
 
 
 namespace aka {
@@ -32,7 +33,7 @@ bool AudioStreamMp3::load(const Path& path, Audio* audio) const
 	mp3dec_t mp3d{};
 	mp3dec_file_info_t info{};
 #if defined(AKA_PLATFORM_WINDOWS)
-	Str<wchar_t> wstr = encoding::wide(path.str());
+	StringWide wstr = encoding::wide(path.str());
     int sample = mp3dec_load_w(&mp3d, wstr.cstr(), &info, nullptr, nullptr);
 #else
 	int sample = mp3dec_load(&mp3d, path.cstr(), &info, nullptr, nullptr);

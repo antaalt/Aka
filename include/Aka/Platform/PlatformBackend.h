@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Platform.h"
-#include "../OS/FileSystem.h"
+#include <Aka/Platform/Platform.h>
+#include <Aka/OS/FileSystem.h>
+#include <Aka/Core/Encoding.h>
 
 #include <stdint.h>
 

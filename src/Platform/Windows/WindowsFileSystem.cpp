@@ -10,7 +10,7 @@ namespace aka {
 
 bool directory::exist(const Path& path)
 {
-	StrWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(wstr.cstr());
 	if (ftyp == INVALID_FILE_ATTRIBUTES)
 		return false; // Incorrect path
@@ -31,7 +31,7 @@ bool directory::create(const Path& path)
 		String p = str.substr(0, pos);
 		if (p == "." || p == ".." || p == "/" || p == "\\")
 			continue;
-		StrWide wstr = Utf8ToWchar(p);
+		StringWide wstr = Utf8ToWchar(p);
 		if (!CreateDirectory(wstr.cstr(), NULL))
 		{
 			DWORD error = GetLastError();
@@ -48,7 +48,7 @@ bool directory::remove(const Path& path, bool recursive)
 {
 	if (recursive)
 	{
-		StrWide wstr = Utf8ToWchar(path.str());
+		StringWide wstr = Utf8ToWchar(path.str());
 		WIN32_FIND_DATA data;
 		wchar_t cwd[512];
 		GetCurrentDirectory(512, cwd);
@@ -66,13 +66,13 @@ bool directory::remove(const Path& path, bool recursive)
 		FindClose(hFind);
 		SetCurrentDirectory(cwd);
 	}
-	StrWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.str());
 	return RemoveDirectory(str.cstr()) == TRUE;
 }
 
 bool file::exist(const Path& path)
 {
-	StrWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(str.cstr());
 	if (ftyp == INVALID_FILE_ATTRIBUTES)
 		return false;  //something is wrong with your path!
@@ -80,7 +80,7 @@ bool file::exist(const Path& path)
 }
 bool file::create(const Path& path)
 {
-	StrWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.str());
 	HANDLE h = CreateFile(wstr.cstr(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (h)
 	{
@@ -94,13 +94,13 @@ bool file::create(const Path& path)
 }
 bool file::remove(const Path& path)
 {
-	StrWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.str());
 	return DeleteFile(str.cstr()) == TRUE;
 }
 
 String file::extension(const Path& path)
 {
-	StrWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.str());
 	LPWSTR extension = PathFindExtension(wstr.cstr());
 	String out = WcharToUtf8(extension);
 	if (out.length() < 1)
@@ -110,7 +110,7 @@ String file::extension(const Path& path)
 
 String file::name(const Path& path)
 {
-	StrWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.str());
 	LPWSTR fileName = PathFindFileName(str.cstr());
 	return WcharToUtf8(fileName);
 }
@@ -118,9 +118,9 @@ String file::name(const Path& path)
 std::vector<Path> Path::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
-	StrWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.str());
 	WIN32_FIND_DATA data;
-	StrWide searchString;
+	StringWide searchString;
 	if (wstr.last() == separator)
 		searchString = wstr.append(L'*');
 	else
@@ -157,7 +157,7 @@ std::vector<Path> Path::enumerate(const Path& path)
 Path Path::normalize(const Path& path)
 {
 	WCHAR canonicalizedPath[MAX_PATH];
-	StrWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.str());
 	if (PathCanonicalize(canonicalizedPath, wstr.cstr()) == TRUE)
 	{
 		String str = WcharToUtf8(canonicalizedPath);
@@ -209,7 +209,7 @@ const wchar_t* fileMode(FileMode mode)
 
 FILE* fopen(const Path& path, FileMode mode)
 {
-	StrWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.str());
 	FILE* file = nullptr;
 	errno_t err = _wfopen_s(&file, wstr.cstr(), fileMode(mode));
 	if (err == 0)

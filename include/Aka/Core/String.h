@@ -6,49 +6,53 @@
 #include <iostream>
 
 #include <Aka/Core/Debug.h>
+#include <Aka/Core/Geometry.h>
 
 namespace aka {
 
-class String final
+template <typename T = char>
+class Str final
 {
 public:
-	using Char = char;
+	using Char = T;
 	static const size_t invalid = -1;
+private:
+	static const size_t defaultCapacity = 16;
 public:
-	String();
-	String(const std::string& string);
-	String(const String& string);
-	String(String&& string);
-	String(const char* string);
-	String(const char* string, size_t length);
-	String(size_t length, char character);
-	explicit String(size_t length);
-	String& operator=(const String& string);
-	String& operator=(String&& string);
-	String& operator=(const char* string);
-	~String();
+	Str();
+	Str(const std::basic_string<T>& string);
+	Str(const Str& string);
+	Str(Str&& string);
+	Str(const T* string);
+	Str(const T* string, size_t length);
+	Str(size_t length, T character);
+	explicit Str(size_t length);
+	Str& operator=(const Str& string);
+	Str& operator=(Str&& string);
+	Str& operator=(const T* string);
+	~Str();
 
-	operator std::string() const;
+	operator std::basic_string<T>() const;
 
-	char& operator[](size_t index);
-	const char& operator[](size_t index) const;
+	T& operator[](size_t index);
+	const T& operator[](size_t index) const;
 
-	bool operator==(const String& string) const;
-	bool operator!=(const String& string) const;
-	bool operator<(const String& string) const;
-	bool operator==(const char* string) const;
-	bool operator!=(const char* string) const;
+	bool operator==(const Str& string) const;
+	bool operator!=(const Str& string) const;
+	bool operator<(const Str& string) const;
+	bool operator==(const T* string) const;
+	bool operator!=(const T* string) const;
 
-	String& operator+=(const String& string);
-	String& operator+=(const char* string);
-	String& operator+=(char character);
-	String operator+(const String& string) const;
-	String operator+(const char* string) const;
-	String operator+(char character) const;
+	Str& operator+=(const Str& string);
+	Str& operator+=(const T* string);
+	Str& operator+=(T character);
+	Str operator+(const Str& string) const;
+	Str operator+(const T* string) const;
+	Str operator+(T character) const;
 
-	String& append(const String& string);
-	String& append(const char* string);
-	String& append(char character);
+	Str& append(const Str& string);
+	Str& append(const T* string);
+	Str& append(T character);
 
 	// Get the size of the string
 	size_t length() const;
@@ -63,144 +67,346 @@ public:
 	// Check if string empty
 	bool empty() const;
 	// Pointer to the string
-	char* cstr();
+	T* cstr();
 	// Pointer to the string
-	const char* cstr() const;
+	const T* cstr() const;
 	// Last character of string
-	char last() const;
+	T last() const;
 	// Pointer to beginning of string
-	char* begin();
+	T* begin();
 	// Pointer to ending of string
-	char* end();
+	T* end();
 	// Pointer to beginning of string
-	const char* begin() const;
+	const T* begin() const;
 	// Pointer to ending of string
-	const char* end() const;
+	const T* end() const;
 	
 	// Get a null raw string
-	template <typename T>
 	static const T* null();
 	// Copy a raw string in another one
-	template <typename T>
 	static T* copy(T* dst, size_t dstSize, const T* src);
 	// Get the length of a raw string
-	template <typename T>
 	static size_t length(const T* string);
 	// Compare a raw string with another one
-	template <typename T>
 	static bool compare(const T* lhs, const T* rhs);
 	// Format a raw string
 	template <typename ...Args>
-	static String format(const char* string, Args ...args);
+	static Str format(const T* string, Args ...args);
 
-	// Lowercase a single character
-	static char lowercase(char c);
-	// Uppercase a single character
-	static char uppercase(char c);
-
-	// Lowercase a string
-	static String& lowercase(String& string);
-	// Uppercase a string
-	static String& uppercase(String& string);
-
-	// charrim whitespace at beginning and end
-	void trim();
 	// Find a character and return its position
-	size_t find(char character, size_t offset = 0) const;
+	size_t find(T character, size_t offset = 0) const;
 	// Find the first occurence of the character and return its position
-	size_t findFirst(char character, size_t offset = 0) const;
+	size_t findFirst(T character, size_t offset = 0) const;
 	// Find the last occurence of the character and return its position
-	size_t findLast(char character, size_t offset = 0) const;
+	size_t findLast(T character, size_t offset = 0) const;
 	// Find a character and split the string
-	std::vector<String> split(char c) const;
+	std::vector<Str> split(T c) const;
 	// Create a new string from start to end of string
-	String substr(size_t start) const;
+	Str substr(size_t start) const;
 	// Create a new string from start to end
-	String substr(size_t start, size_t len) const;
+	Str substr(size_t start, size_t len) const;
 
-private:
-	char* m_string;
-	size_t m_length;
-	size_t m_capacity;
-};
-
-// Basic wrapper that support wide string
-template <typename T = char>
-class Str final
-{
-public:
-	using Type = T;
-public:
-	Str() : Str(String::null<T>(), 0) {}
-	Str(const Str& string) : Str(string.m_string, string.m_length) {}
-	Str(const T* string) : Str(string, String::length<T>(string)) {}
-	Str(size_t length) : Str(String::null<T>(), length) {}
-	Str(const T* string, size_t length) : 
-		m_string(new T[length + 1]), m_length(length), m_capacity(length + 1) { String::copy(m_string, length + 1, string); }
-	~Str() { delete[] m_string; }
-	void resize(size_t length)
-	{
-		if (length < m_capacity)
-			m_length = length;
-		else
-		{
-			m_length = length;
-			while (m_capacity <= m_length)
-				m_capacity *= 2;
-			T* buffer = new T[m_capacity];
-			String::copy<T>(buffer, m_capacity, m_string);
-			delete[] m_string;
-			m_string = buffer;
-		}
-	}
-	Str<T>& append(T c)
-	{
-		resize(m_length + 1);
-		m_string[m_length - 1] = c;
-		m_string[m_length] = String::null<T>()[0];
-		return *this;
-	}
-	T& operator[](size_t index) { return m_string[index]; }
-	const T& operator[](size_t index) const { return m_string[index]; }
-	T* cstr() { return m_string; }
-	const T* cstr() const { return m_string; }
-	T last() const { return m_string[m_length - 1]; }
-	size_t length() const { return m_length; }
-	T* begin() { return m_string; }
-	T* end() { return m_string + m_length; }
-	const T* begin() const { return m_string; }
-	const T* end() const { return m_string + m_length; }
 private:
 	T* m_string;
 	size_t m_length;
 	size_t m_capacity;
 };
 
-using StrWide = Str<wchar_t>;
-using Str16 = Str<char16_t>;
-using Str32 = Str<char32_t>;
+using String = Str<char>;
+using StringWide = Str<wchar_t>;
+using String16 = Str<char16_t>;
+using String32 = Str<char32_t>;
 
-inline String operator+(char c, const String& str) { return String().append(c) + str; }
-inline String operator+(const char* s, const String& str) { return String(s) + str; }
-
-template <> const char* String::null<char>();
-template <> const wchar_t* String::null<wchar_t>();
-template <> const char16_t* String::null<char16_t>();
-template <> const char32_t* String::null<char32_t>();
-template <> char* String::copy<char>(char* dst, size_t dstSize, const char* src);
-template <> wchar_t* String::copy<wchar_t>(wchar_t* dst, size_t dstSize, const wchar_t* src);
-template <> char16_t* String::copy<char16_t>(char16_t* dst, size_t dstSize, const char16_t* src);
-template <> char32_t* String::copy<char32_t>(char32_t* dst, size_t dstSize, const char32_t* src);
-template <> size_t String::length<char>(const char* string);
-template <> size_t String::length<wchar_t>(const wchar_t* string);
-template <> size_t String::length<char16_t>(const char16_t* string);
-template <> size_t String::length<char32_t>(const char32_t* string);
-template <> bool String::compare<char>(const char* lhs, const char* rhs);
-template <> bool String::compare<wchar_t>(const wchar_t* lhs, const wchar_t* rhs);
-template <> bool String::compare<char16_t>(const char16_t* lhs, const char16_t* rhs);
-template <> bool String::compare<char32_t>(const char32_t* lhs, const char32_t* rhs);
+template<typename T>
+inline Str<T>::Str() :
+	Str<T>(Str<T>::null(), 0)
+{
+}
+template<typename T>
+inline Str<T>::Str(const std::basic_string<T>& string) :
+	Str<T>(string.c_str(), string.length())
+{
+}
+template<typename T>
+inline Str<T>::Str(const Str<T>& str) :
+	Str<T>(str.m_string, str.m_length)
+{
+}
+template<typename T>
+inline Str<T>::Str(Str<T>&& string) :
+	m_string(nullptr),
+	m_length(0),
+	m_capacity(0)
+{
+	std::swap(m_string, string.m_string);
+	std::swap(m_length, string.m_length);
+	std::swap(m_capacity, string.m_capacity);
+}
+template<typename T>
+inline Str<T>::Str(const T* str) :
+	Str<T>(str, Str<T>::length(str))
+{
+}
+template<typename T>
+inline Str<T>::Str(const T* str, size_t length) :
+	m_string(new T[max(length + 1, defaultCapacity)]),
+	m_length(length),
+	m_capacity(max(length + 1, defaultCapacity))
+{
+	Str<T>::copy(m_string, m_capacity, str);
+	m_string[length] = '\0';
+}
+template<typename T>
+inline Str<T>::Str(size_t length, T character) :
+	m_string(new T[max(length + 1, defaultCapacity)]),
+	m_length(length),
+	m_capacity(max(length + 1, defaultCapacity))
+{
+	for (size_t i = 0; i < length; i++)
+		m_string[i] = character;
+	m_string[length] = '\0';
+}
+template<typename T>
+inline Str<T>::Str(size_t length) :
+	m_string(new T[max(length + 1, defaultCapacity)]()),
+	m_length(length),
+	m_capacity(max(length + 1, defaultCapacity))
+{
+}
+template<typename T>
+inline Str<T>& Str<T>::operator=(const Str<T>& str)
+{
+	resize(str.m_length);
+	Str<T>::copy(m_string, str.m_capacity, str.m_string);
+	return *this;
+}
+template<typename T>
+inline Str<T>& Str<T>::operator=(Str<T>&& str)
+{
+	std::swap(m_string, str.m_string);
+	std::swap(m_length, str.m_length);
+	std::swap(m_capacity, str.m_capacity);
+	return *this;
+}
+template<typename T>
+inline Str<T>& Str<T>::operator=(const T* str)
+{
+	size_t length = Str<T>::length(str);
+	resize(length);
+	Str<T>::copy(m_string, length + 1, str);
+	return *this;
+}
+template<typename T>
+inline Str<T>::~Str()
+{
+	delete[] m_string;
+}
+template<typename T>
+inline Str<T>::operator std::basic_string<T>() const
+{
+	return std::basic_string<T>(m_string);
+}
+template<typename T>
+inline T& Str<T>::operator[](size_t index)
+{
+	AKA_ASSERT(index <= m_length, "Out of range");
+	return m_string[index];
+}
+template<typename T>
+inline const T& Str<T>::operator[](size_t index) const
+{
+	AKA_ASSERT(index <= m_length, "Out of range");
+	return m_string[index];
+}
+template<typename T>
+inline bool Str<T>::operator==(const Str<T>& str) const
+{
+	return Str<T>::compare(m_string, str.m_string);
+}
+template<typename T>
+inline bool Str<T>::operator!=(const Str<T>& str) const
+{
+	return !Str<T>::compare(m_string, str.m_string);
+}
+template<typename T>
+inline bool Str<T>::operator<(const Str<T>& str) const
+{
+	return std::lexicographical_compare(begin(), end(), str.begin(), str.end());
+}
+template<typename T>
+inline bool Str<T>::operator==(const T* str) const
+{
+	return Str<T>::compare(m_string, str);
+}
+template<typename T>
+inline bool Str<T>::operator!=(const T* str) const
+{
+	return !Str<T>::compare(m_string, str);
+}
+template<typename T>
+inline Str<T>& Str<T>::operator+=(const Str<T>& str)
+{
+	return append(str);
+}
+template<typename T>
+inline Str<T>& Str<T>::operator+=(const T* str)
+{
+	return append(str);
+}
+template<typename T>
+inline Str<T>& Str<T>::operator+=(T c)
+{
+	return append(c);
+}
+template<typename T>
+inline Str<T> Str<T>::operator+(const Str<T>& str) const
+{
+	Str<T> out(*this);
+	out.append(str);
+	return out;
+}
+template<typename T>
+inline Str<T> Str<T>::operator+(const T* str) const
+{
+	Str<T> out(*this);
+	out.append(str);
+	return out;
+}
+template<typename T>
+inline Str<T> Str<T>::operator+(T c) const
+{
+	Str<T> out(*this);
+	out.append(c);
+	return out;
+}
+template<typename T>
+inline Str<T>& Str<T>::append(const Str<T>& str)
+{
+	size_t off = m_length;
+	size_t len = str.length();
+	resize(off + len);
+	Str<T>::copy(m_string + off, len + 1, str.cstr());
+	return *this;
+}
+template<typename T>
+inline Str<T>& Str<T>::append(const T* str)
+{
+	size_t off = m_length;
+	size_t len = Str<T>::length(str);
+	resize(off + len);
+	Str<T>::copy(m_string + off, len + 1, str);
+	return *this;
+}
+template<typename T>
+inline Str<T>& Str<T>::append(T c)
+{
+	size_t len = m_length + 1;
+	resize(len);
+	m_string[len - 1] = c;
+	m_string[len] = '\0';
+	return *this;
+}
+template<typename T>
+inline size_t Str<T>::length() const
+{
+	return m_length;
+}
+template<typename T>
+inline size_t Str<T>::capacity() const
+{
+	return m_capacity;
+}
+template<typename T>
+inline void Str<T>::resize(size_t length)
+{
+	if (m_length == length)
+		return;
+	reserve(length + 1);
+	m_length = length;
+}
+template<typename T>
+inline void Str<T>::reserve(size_t size)
+{
+	if (size <= m_capacity)
+		return;
+	while (m_capacity < size)
+		m_capacity *= 2;
+	T* buffer = new T[m_capacity];
+	Str<T>::copy(buffer, m_capacity, m_string);
+	delete[] m_string;
+	m_string = buffer;
+}
+template<typename T>
+inline void Str<T>::clear()
+{
+	*this = Str<T>(Str<T>::null());
+}
+template<typename T>
+inline bool Str<T>::empty() const
+{
+	return m_length == 0;
+}
+template<typename T>
+inline T* Str<T>::cstr()
+{
+	return m_string;
+}
+template<typename T>
+inline const T* Str<T>::cstr() const
+{
+	return m_string;
+}
+template<typename T>
+inline T Str<T>::last() const
+{
+	return m_string[m_length - 1];
+}
+template<typename T>
+inline T* Str<T>::begin()
+{
+	return m_string;
+}
+template<typename T>
+inline T* Str<T>::end()
+{
+	return m_string + m_length;
+}
+template<typename T>
+inline const T* Str<T>::begin() const
+{
+	return m_string;
+}
+template<typename T>
+inline const T* Str<T>::end() const
+{
+	return m_string + m_length;
+}
+template <typename T>
+inline T* Str<T>::copy(T* dst, size_t count, const T* src)
+{
+	size_t size = 0;
+	T* tmp = dst;
+	while ((*tmp++ = *src++) != 0 && size++ < count);
+	return dst;
+}
+template <typename T>
+inline size_t Str<T>::length(const T* string)
+{
+	if (string == nullptr) return 0;
+	size_t size = 0;
+	const T* tmp = string;
+	for (; (*tmp) != 0; ++tmp);
+	return tmp - string;
+}
+template <typename T>
+inline bool Str<T>::compare(const T* lhs, const T* rhs)
+{
+	for (; *lhs && (*lhs == *rhs); lhs++, rhs++) {}
+	return (*lhs == *rhs);// (unsigned char)(*lhs) - (unsigned char)(*rhs);
+}
+template <>
 template <typename ...Args>
-static String String::format(const char* string, Args ...args)
+inline Str<char> Str<char>::format(const char* string, Args ...args)
 {
 	const size_t fmtSize = 256;
 	char buffer[fmtSize];
@@ -208,41 +414,97 @@ static String String::format(const char* string, Args ...args)
 	AKA_ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
 	return String(buffer);
 }
-
-std::ostream& operator<<(std::ostream& os, const String& str);
-std::ostream& operator<<(std::ostream& os, const Str<>& str);
-std::ostream& operator<<(std::ostream& os, const StrWide& str);
-std::ostream& operator<<(std::ostream& os, const Str16& str);
-std::ostream& operator<<(std::ostream& os, const Str32& str);
-
-namespace encoding {
-
-using CodePoint = uint32_t;
-
-// Read utf32 character from utf8 string, character by character.
-CodePoint next(const char*& start, const char* end);
-
-// Get the correct length of an utf8 encoded string.
-size_t length(const String& utf8String);
-
-// convert uf8 to ascii.
-String ascii(const String& utf8String);
-// convert ascii to utf8.
-String utf8(const String& asciiString);
-// convert wchar to utf8
-String utf8(const StrWide& wcharString);
-// convert utf16 to utf8
-String utf8(const Str16& utf16String);
-// convert utf32 to utf8
-String utf8(const Str32& utf32String);
-// convert utf8 to wchar.
-StrWide wide(const String& utf8String);
-// convert utf8 to utf16.
-Str16 utf16(const String& utf8String);
-// convert utf8 to utf32.
-Str32 utf32(const String& utf8String);
-
+template <>
+template <typename ...Args>
+inline Str<wchar_t> Str<wchar_t>::format(const wchar_t* string, Args ...args)
+{
+	const size_t fmtSize = 256;
+	wchar_t buffer[fmtSize];
+	int error = swprintf(buffer, fmtSize, string, args...);
+	AKA_ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
+	return StringWide(buffer);
+}
+template <>
+template <typename ...Args>
+inline Str<char16_t> Str<char16_t>::format(const char16_t* string, Args ...args)
+{
+	return String16();
+}
+template <>
+template <typename ...Args>
+inline Str<char32_t> Str<char32_t>::format(const char32_t* string, Args ...args)
+{
+	return String32();
+}
+template <typename T>
+inline size_t Str<T>::find(T character, size_t offset) const
+{
+	return findFirst(character, offset);
+}
+template <typename T>
+inline size_t Str<T>::findFirst(T character, size_t offset) const
+{
+	for (size_t i = offset; i < m_length; ++i)
+		if (character == m_string[i])
+			return i;
+	return invalid;
+}
+template <typename T>
+inline size_t Str<T>::findLast(T character, size_t offset) const
+{
+	for (size_t i = m_length - 1; i >= 1; --i)
+		if (character == m_string[i])
+			return i;
+	return invalid;
+}
+template <typename T>
+inline std::vector<Str<T>> Str<T>::split(T c) const
+{
+	size_t offset = 0;
+	std::vector<Str<T>> strings;
+	for (size_t i = 0; i < m_length; ++i)
+	{
+		if (m_string[i] == c && offset != i)
+		{
+			strings.push_back(substr(offset, i - offset));
+			offset = i + 1;
+		}
+	}
+	return strings;
+}
+template <typename T>
+inline Str<T> Str<T>::substr(size_t start) const
+{
+	return substr(start, m_length - start);
+}
+template <typename T>
+inline Str<T> Str<T>::substr(size_t start, size_t len) const
+{
+	Str<T> str(len);
+	Str<T>::copy(str.m_string, len, m_string + start);
+	str[len] = '\0';
+	return str;
+}
+template <typename T>
+inline Str<T> operator+(T c, const Str<T>& str)
+{
+	return Str<T>().append(c) + str;
+}
+template <typename T>
+inline Str<T> operator+(const T* s, const Str<T>& str)
+{ 
+	return Str<T>(s) + str;
+}
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Str<T>& str)
+{
+	os << str.cstr();
+	return os;
 }
 
+template <> const char* Str<char>::null();
+template <> const wchar_t* Str<wchar_t>::null();
+template <> const char16_t* Str<char16_t>::null();
+template <> const char32_t* Str<char32_t>::null();
 
 };

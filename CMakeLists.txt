@@ -16,6 +16,7 @@ add_library (Aka
 	"src/Core/Aseprite.cpp"
 	"src/Core/Sprite.cpp"
 	"src/Core/String.cpp"
+	"src/Core/Encoding.cpp"
 	"src/Core/Controller.cpp"
 
 	"src/Layer/ImGuiLayer.cpp"
