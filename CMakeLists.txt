@@ -27,10 +27,12 @@ add_library (Aka
 	"src/Scene/World.cpp"
 	"src/Scene/Serializer.cpp"
 	"src/Scene/Camera.cpp"
+	"src/Scene/ResourceManager.cpp"
+	"src/Scene/ResourceAllocator.cpp"
 
 	"src/Graphic/D3D11/D3D11Backend.cpp"
 	"src/Graphic/GL/GLBackend.cpp"
-	"src/Drawing/Renderer2D.cpp" 
+	"src/Drawing/Renderer2D.cpp"
 	"src/Drawing/Renderer3D.cpp"
 	"src/Drawing/Batch2D.cpp"
 	"src/Drawing/Batch3D.cpp"
@@ -49,13 +51,13 @@ add_library (Aka
 	"src/OS/Logger.cpp"
 	"src/OS/Time.cpp"
 	"src/OS/Endian.cpp"
-	
+
 	"src/OS/Stream/MemoryStream.cpp"
 	"src/OS/Stream/FileStream.cpp"
 
 	"src/Platform/Input.cpp"
 	"src/Platform/PlatformGLFW3.cpp"
-	
+
 	"src/Platform/Windows/WindowsPlatform.h"
 	"src/Platform/Windows/WindowsFileSystem.cpp"
 	"src/Platform/Windows/WindowsPlatform.cpp"
@@ -129,9 +131,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
 
 target_link_libraries(Aka PUBLIC Geometry AkaEntt AkaImGui)
-target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb freetype)
+target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb freetype AkaJson)
 
 # Enable UNICODE in windows
 if(WIN32)

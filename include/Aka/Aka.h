@@ -49,6 +49,8 @@
 #include "Scene/Entity.h"
 #include "Scene/System.h"
 #include "Scene/Component.h"
+#include "Scene/ResourceAllocator.h"
+#include "Scene/ResourceManager.h"
 
 
 namespace aka {
