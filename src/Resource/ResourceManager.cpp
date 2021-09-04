@@ -13,73 +13,73 @@ ResourceAllocator<Buffer> ResourceManager::buffers;
 void ResourceManager::parse(const Path& path)
 {
 	std::string content = File::readString(path);
-	nlohmann::json json = nlohmann::json::parse(content);
-	for (auto& textureKV : json["images"].items())
+	try
 	{
-		Resource<Texture> tex;
-		nlohmann::json content = textureKV.value();
-		TextureType type = (TextureType)content["type"].get<uint32_t>();
-		switch (type)
+		nlohmann::json json = nlohmann::json::parse(content);
+		for (auto& buffer : json["buffers"].items())
 		{
-		case TextureType::Texture2D: {
-			uint32_t width = content["width"].get<uint32_t>();
-			uint32_t height = content["height"].get<uint32_t>();
-			textures.load(textureKV.key(), Path(content["path"].get<std::string>()));
-			break;
+			buffers.load(String(buffer.key()), Path(buffer.value().get<std::string>()));
 		}
-		case TextureType::TextureCubemap: {
-			uint32_t width = content["width"].get<uint32_t>();
-			uint32_t height = content["height"].get<uint32_t>();
-			Image faces[6];
-			for (int i = 0; i < 6; i++)
-				faces[i] = Image::load(content["paths"][i]);
-			textures.load(
-				textureKV.key(),
-				Texture::createCubemap(
-					width, height,
-					TextureFormat::RGBA8,
-					TextureFlag::None,
-					Sampler{},
-					faces[0].bytes.data(),
-					faces[1].bytes.data(),
-					faces[2].bytes.data(),
-					faces[3].bytes.data(),
-					faces[4].bytes.data(),
-					faces[5].bytes.data()
-				)
-			);
-			break;
+		for (auto& mesh : json["meshes"].items())
+		{
+			meshes.load(String(mesh.key()), Path(mesh.value().get<std::string>()));
 		}
-		default:
-			Logger::error("Texture format not supported");
-			break;
+		for (auto& texture : json["images"].items())
+		{
+			textures.load(String(texture.key()), Path(texture.value().get<std::string>()));
 		}
+		for (auto& audio : json["audios"].items())
+		{
+			audios.load(String(audio.key()), Path(audio.value().get<std::string>()));
+		}
+		for (auto& font : json["fonts"].items())
+		{
+			fonts.load(String(font.key()), Path(font.value().get<std::string>()));
+		}
+	}
+	catch (const nlohmann::json::exception& e)
+	{
+		Logger::error("Failed to parse " + file::name(path) + " : ", e.what());
 	}
 }
 
 void ResourceManager::serialize(const Path& path)
 {
-	nlohmann::json json = nlohmann::json();
-	json["images"] = nlohmann::json::object();
-	for (auto& texture : textures)
+	std::string str;
+	try
 	{
-		nlohmann::json node = nlohmann::json::object();
-		node["path"] = texture.second.path.cstr();
-		json["images"][texture.first.cstr()] = node;
-		if (texture.second.loaded != texture.second.updated)
-			Resource<Texture>::save(texture.second);
+		nlohmann::json json = nlohmann::json();
+		json["images"] = nlohmann::json::object();
+		for (auto& texture : textures)
+		{
+			json["images"][texture.first.cstr()] = texture.second.path.cstr();
+		}
+		json["meshes"] = nlohmann::json::object();
+		for (auto& mesh : meshes)
+		{
+			json["meshes"][mesh.first.cstr()] = mesh.second.path.cstr();
+		}
+		json["audios"] = nlohmann::json::object();
+		for (auto& audio : audios)
+		{
+			json["audios"][audio.first.cstr()] = audio.second.path.cstr();
+		}
+		json["fonts"] = nlohmann::json::object();
+		for (auto& font : fonts)
+		{
+			json["fonts"][font.first.cstr()] = font.second.path.cstr();
+		}
+		json["buffers"] = nlohmann::json::object();
+		for (auto& buffer : buffers)
+		{
+			json["buffers"][buffer.first.cstr()] = buffer.second.path.cstr();
+		}
+		str = json.dump(4);
 	}
-	json["audios"] = nlohmann::json::object();
-	for (auto& audio : audios)
+	catch (const nlohmann::json::exception& e)
 	{
-		nlohmann::json node = nlohmann::json::object();
-		node["path"] = audio.second.path.cstr();
-		json["audios"][audio.first.cstr()] = node;
-		if (audio.second.loaded != audio.second.updated)
-			Resource<AudioStream>::save(audio.second);
+		Logger::error("Failed to serialize " + file::name(path) + " : ", e.what());
 	}
-	// ...
-	std::string str = json.dump(4);
 	File::writeString(path.str(), str);
 }
 
