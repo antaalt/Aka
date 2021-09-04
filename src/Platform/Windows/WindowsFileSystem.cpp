@@ -197,9 +197,9 @@ const wchar_t* fileMode(FileMode mode)
 {
 	switch (mode)
 	{
-	case FileMode::ReadOnly:
+	case FileMode::Read:
 		return L"rb";
-	case FileMode::WriteOnly:
+	case FileMode::Write:
 		return L"wb";
 	default:
 	case FileMode::ReadWrite:

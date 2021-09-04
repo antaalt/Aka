@@ -89,12 +89,11 @@ Image Image::load(const std::vector<uint8_t>& binaries, bool flip)
 	return load(binaries.data(), binaries.size());
 }
 
-void Image::save(const Path& path, bool flip) const
+bool Image::save(const Path& path, bool flip) const
 {
 	stbi_flip_vertically_on_write(flip);
 	int error = stbi_write_png(path.cstr(), width, height, components, bytes.data(), width * components);
-	if (error == 0)
-		Logger::error("Could not save image at path ", path.str());
+	return error != 0;
 }
 
 std::vector<uint8_t> Image::save(bool flip) const

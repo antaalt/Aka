@@ -18,7 +18,11 @@ struct Character {
 class Font
 {
 public:
+	using Ptr = std::shared_ptr<Font>;
+
 	Font(const Path& path, uint32_t height);
+
+	static Font::Ptr create(const Path& path, uint32_t height);
 
 	// Get the size of the given string depending on the font
 	vec2i size(const String& text) const;

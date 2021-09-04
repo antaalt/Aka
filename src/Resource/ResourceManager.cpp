@@ -1,4 +1,4 @@
-#include <Aka/Scene/ResourceManager.h>
+#include <Aka/Resource/ResourceManager.h>
 
 #include <nlohmann/json.hpp>
 
@@ -7,6 +7,8 @@ namespace aka {
 ResourceAllocator<Texture> ResourceManager::textures;
 ResourceAllocator<Mesh> ResourceManager::meshes;
 ResourceAllocator<AudioStream> ResourceManager::audios;
+ResourceAllocator<Font> ResourceManager::fonts;
+ResourceAllocator<Buffer> ResourceManager::buffers;
 
 void ResourceManager::parse(const Path& path)
 {
@@ -65,7 +67,7 @@ void ResourceManager::serialize(const Path& path)
 		node["path"] = texture.second.path.cstr();
 		json["images"][texture.first.cstr()] = node;
 		if (texture.second.loaded != texture.second.updated)
-			Resource<Texture>::save(texture.second.path, texture.second);
+			Resource<Texture>::save(texture.second);
 	}
 	json["audios"] = nlohmann::json::object();
 	for (auto& audio : audios)
@@ -74,7 +76,7 @@ void ResourceManager::serialize(const Path& path)
 		node["path"] = audio.second.path.cstr();
 		json["audios"][audio.first.cstr()] = node;
 		if (audio.second.loaded != audio.second.updated)
-			Resource<AudioStream>::save(audio.second.path, audio.second);
+			Resource<AudioStream>::save(audio.second);
 	}
 	// ...
 	std::string str = json.dump(4);

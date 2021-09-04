@@ -47,11 +47,14 @@ private:
 };
 
 enum class FileMode {
-	ReadOnly,
-	WriteOnly,
+	Read = (1 << 0),
+	Write = (1 << 1),
 
-	ReadWrite,
+	ReadWrite = Read | Write,
 };
+
+FileMode operator&(FileMode lhs, FileMode rhs);
+FileMode operator|(FileMode lhs, FileMode rhs);
 
 struct File {
 	File();
@@ -68,6 +71,7 @@ struct File {
 	bool seek(size_t position);
 	size_t length() const;
 	size_t position();
+	FileMode mode() const;
 
 	static std::string readString(const Path& path);
 	static std::vector<uint8_t> readBinary(const Path& path);

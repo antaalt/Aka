@@ -94,6 +94,11 @@ Font::Font(const Path& path, uint32_t height)
     stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);*/
 }
 
+Font::Ptr Font::create(const Path& path, uint32_t height)
+{
+    return std::make_shared<Font>(path, height);
+}
+
 vec2i Font::size(const String& text) const
 {
     vec2i size(0);
@@ -109,7 +114,7 @@ vec2i Font::size(const String& text) const
     return size;
 }
 
-const Character& Font::getCharacter(uint32_t c) const
+const Character& Font::getCharacter(encoding::CodePoint c) const
 {
 	AKA_ASSERT(c < m_characters.size(), "Glyph out of range");
     return m_characters[c];

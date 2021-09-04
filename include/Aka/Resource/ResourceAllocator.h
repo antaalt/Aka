@@ -7,10 +7,7 @@
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/FileSystem.h>
 #include <Aka/Core/String.h>
-
-#include <Aka/Graphic/Texture.h>
-#include <Aka/Graphic/Mesh.h>
-#include <Aka/Audio/AudioStream.h>	
+#include <Aka/Resource/Storage.h>
 
 namespace std { template <> struct hash<aka::String> { size_t operator()(const aka::String& k) const { return hash<string>()(k); } }; }
 
@@ -28,7 +25,7 @@ struct Resource
 	// Load a resource from library folder
 	static Resource<T> load(const Path& path);
 	// Save a resource to library folder
-	static void save(const Path& path, const Resource<T>& resource);
+	static bool save(const Resource<T>& resource);
 };
 
 
@@ -40,7 +37,7 @@ public:
 	// Load a resource from the given path
 	Resource<T> load(const String& name, const Path& path);
 	// Load a resource from an object built internally
-	Resource<T> load(const String& name, std::shared_ptr<T>&& data);
+	Resource<T> load(const String& name, const std::shared_ptr<T>& data);
 	
 	// Unload a resource from the database
 	void unload(const String& name);
@@ -48,6 +45,8 @@ public:
 	bool has(const String& name) const;
 	// Get the number of allocated resources
 	size_t count() const;
+	// Get a resource name
+	String name(const std::shared_ptr<T>& resource) const;
 	// Get a resource directly
 	std::shared_ptr<T> get(const String& name);
 	// Get a resource with its informations
@@ -60,13 +59,31 @@ public:
 	typename map::const_iterator end() const { return m_resources.end(); }
 private:
 	mutable std::mutex m_lock;
-	std::unordered_map<String, Resource<T>> m_resources;
+	map m_resources;
 };
 
-using TextureAllocator = ResourceAllocator<Texture>;
-using AudioAllocator = ResourceAllocator<AudioStream>;
-using MeshAllocator = ResourceAllocator<Mesh>;
-
+template<typename T>
+inline Resource<T> Resource<T>::load(const Path& path)
+{
+	auto storage = IStorage<T>::create();
+	if (storage->load(path))
+	{
+		Resource<T> res;
+		res.resource = storage->to();
+		res.path = path;
+		res.size = storage->size(res.resource);
+		res.loaded = Time::now();
+		return res;
+	}
+	return Resource<T>{};
+}
+template<typename T>
+inline bool Resource<T>::save(const Resource<T>& resource)
+{
+	auto storage = IStorage<T>::create();
+	storage->from(resource.resource);
+	return storage->save(resource.path);
+}
 
 template<typename T>
 inline Resource<T> ResourceAllocator<T>::load(const String& name, const Path& path)
@@ -89,13 +106,13 @@ inline Resource<T> ResourceAllocator<T>::load(const String& name, const Path& pa
 	}
 	else
 	{
-		Logger::error("Resource already loaded : ", name);
-		return Resource<T>{};
+		Logger::warn("Resource already loaded : ", name);
+		return it->second;
 	}
 }
 
 template<typename T>
-inline Resource<T> ResourceAllocator<T>::load(const String& name, std::shared_ptr<T>&& data)
+inline Resource<T> ResourceAllocator<T>::load(const String& name, const std::shared_ptr<T>& data)
 {
 	std::lock_guard<std::mutex> m(m_lock);
 	auto it = m_resources.find(name);
@@ -106,7 +123,7 @@ inline Resource<T> ResourceAllocator<T>::load(const String& name, std::shared_pt
 		res.updated = Time::now();
 		res.path = "";
 		res.size = 0;
-		res.resource = std::move(data);
+		res.resource = data;
 		if (res.resource == nullptr)
 		{
 			Logger::error("Resource failed to load : ", name);
@@ -120,8 +137,8 @@ inline Resource<T> ResourceAllocator<T>::load(const String& name, std::shared_pt
 	}
 	else
 	{
-		Logger::error("Resource already loaded : ", name);
-		return Resource<T>{};
+		Logger::warn("Resource already loaded : ", name);
+		return it->second;
 	}
 }
 
@@ -147,6 +164,17 @@ inline size_t ResourceAllocator<T>::count() const
 {
 	std::lock_guard<std::mutex> m(m_lock);
 	return m_resources.size();
+}
+
+template<typename T>
+inline String ResourceAllocator<T>::name(const std::shared_ptr<T>& resource) const
+{
+	// TODO use inverse map for better perf
+	std::lock_guard<std::mutex> m(m_lock);
+	for (const auto& res : m_resources)
+		if (resource == res.second.resource)
+			return res.first;
+	return "";
 }
 
 template<typename T>

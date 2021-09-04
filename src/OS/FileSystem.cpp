@@ -131,7 +131,7 @@ const char* Path::end() const
 
 File::File() :
 	m_file(nullptr),
-	m_mode(FileMode::ReadOnly),
+	m_mode(FileMode::Read),
 	m_length(0)
 {
 }
@@ -205,9 +205,14 @@ size_t File::position()
 	return ftell(m_file);
 }
 
+FileMode File::mode() const
+{
+	return m_mode;
+}
+
 std::string File::readString(const Path& path)
 {
-	File file(path, FileMode::ReadOnly);
+	File file(path, FileMode::Read);
 	if (!file.opened())
 		throw std::runtime_error("Failed to load string : " + std::string(path.cstr()));
 	std::string str;
@@ -219,7 +224,7 @@ std::string File::readString(const Path& path)
 
 std::vector<uint8_t> File::readBinary(const Path& path)
 {
-	File file(path, FileMode::ReadOnly);
+	File file(path, FileMode::Read);
 	if (!file.opened())
 		throw std::runtime_error("Failed to load binary : " + std::string(path.cstr()));
 	std::vector<uint8_t> bytes;
@@ -231,7 +236,7 @@ std::vector<uint8_t> File::readBinary(const Path& path)
 
 bool File::writeString(const Path& path, const char* str)
 {
-	File file(path, FileMode::WriteOnly);
+	File file(path, FileMode::Write);
 	if (!file.opened())
 		return false;
 	return file.write(str, strlen(str));
@@ -244,7 +249,7 @@ bool File::writeString(const Path& path, const std::string& str)
 
 bool File::writeBinary(const Path& path, const uint8_t* bytes, size_t size)
 {
-	File file(path, FileMode::WriteOnly);
+	File file(path, FileMode::Write);
 	if (!file.opened())
 		return false;
 	return file.write(bytes, size);
@@ -258,6 +263,16 @@ bool File::writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
 Path Asset::path(const Path& path)
 {
 	return Path::normalize(Path::cwd() + Path("asset/") + path);
+}
+
+FileMode operator&(FileMode lhs, FileMode rhs)
+{
+	return (FileMode)((int)lhs & (int)rhs);
+}
+
+FileMode operator|(FileMode lhs, FileMode rhs)
+{
+	return (FileMode)((int)lhs | (int)rhs);
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)

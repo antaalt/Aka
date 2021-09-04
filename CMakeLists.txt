@@ -27,8 +27,13 @@ add_library (Aka
 	"src/Scene/World.cpp"
 	"src/Scene/Serializer.cpp"
 	"src/Scene/Camera.cpp"
-	"src/Scene/ResourceManager.cpp"
-	"src/Scene/ResourceAllocator.cpp"
+
+	"src/Resource/ResourceManager.cpp"
+	"src/Resource/MeshStorage.cpp"
+	"src/Resource/FontStorage.cpp" 
+	"src/Resource/AudioStorage.cpp" 
+	"src/Resource/TextureStorage.cpp"
+	"src/Resource/BufferStorage.cpp"
 
 	"src/Graphic/D3D11/D3D11Backend.cpp"
 	"src/Graphic/GL/GLBackend.cpp"

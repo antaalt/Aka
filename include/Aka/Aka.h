@@ -49,8 +49,17 @@
 #include "Scene/Entity.h"
 #include "Scene/System.h"
 #include "Scene/Component.h"
-#include "Scene/ResourceAllocator.h"
-#include "Scene/ResourceManager.h"
+
+#include "Resource/Storage.h"
+#include "Resource/TextureStorage.h"
+#include "Resource/BufferStorage.h"
+#include "Resource/MeshStorage.h"
+#include "Resource/FontStorage.h"
+#include "Resource/AudioStorage.h"
+#include "Resource/ResourceManager.h"
+#include "Resource/ResourceManager.h"
+#include "Resource/ResourceAllocator.h"
+#include "Resource/ResourceManager.h"
 
 
 namespace aka {

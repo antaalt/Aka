@@ -13,8 +13,10 @@ AudioStream::Ptr AudioStream::openStream(const Path& path)
     if (file::extension(path) == "mp3")
     {
         AudioStreamMp3::Ptr mp3 = std::make_shared<AudioStreamMp3>();
-        mp3->open(path);
-        return mp3;
+        if (mp3->open(path))
+            return mp3;
+        Logger::error("Failed to load audio file : ", file::name(path));
+        return nullptr;
     }
     else
     {

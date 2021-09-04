@@ -44,7 +44,7 @@ struct Image
 	static Image load(const uint8_t* binaries, size_t size, bool flip = defaultFlipImageAtLoad);
 	static Image load(const std::vector<uint8_t>& binaries, bool flip = defaultFlipImageAtLoad);
 
-	void save(const Path& path, bool flip = defaultFlipImageAtSave) const;
+	bool save(const Path& path, bool flip = defaultFlipImageAtSave) const;
 	std::vector<uint8_t> save(bool flip = defaultFlipImageAtSave) const;
 
 	void set(uint32_t x, uint32_t y, const color24& color);
