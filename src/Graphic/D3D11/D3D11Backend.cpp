@@ -122,7 +122,7 @@ struct D3D11Sampler
 {
 	ID3D11ShaderResourceView* texture = nullptr;
 	ID3D11SamplerState* samplerState = nullptr;
-	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, Sampler sampler)
+	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, TextureSampler sampler)
 	{
 		for (D3D11Sampler& sampler : cache)
 			if (sampler.texture == texture)
@@ -132,55 +132,55 @@ struct D3D11Sampler
 		
 		switch (sampler.wrapU)
 		{
-		case Sampler::Wrap::Repeat: desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; break;
-		case Sampler::Wrap::ClampToEdge: desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP; break;
-		case Sampler::Wrap::ClampToBorder: desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER; break;
-		case Sampler::Wrap::Mirror: desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		case TextureWrap::Repeat: desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; break;
+		case TextureWrap::ClampToEdge: desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case TextureWrap::ClampToBorder: desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER; break;
+		case TextureWrap::Mirror: desc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
 		}
 		switch (sampler.wrapV)
 		{
-		case Sampler::Wrap::Repeat: desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP; break;
-		case Sampler::Wrap::ClampToEdge: desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP; break;
-		case Sampler::Wrap::ClampToBorder: desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER; break;
-		case Sampler::Wrap::Mirror: desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		case TextureWrap::Repeat: desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP; break;
+		case TextureWrap::ClampToEdge: desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case TextureWrap::ClampToBorder: desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER; break;
+		case TextureWrap::Mirror: desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR; break;
 		}
 		switch (sampler.wrapW)
 		{
-		case Sampler::Wrap::Repeat: desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; break;
-		case Sampler::Wrap::ClampToEdge: desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; break;
-		case Sampler::Wrap::ClampToBorder: desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER; break;
-		case Sampler::Wrap::Mirror: desc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+		case TextureWrap::Repeat: desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; break;
+		case TextureWrap::ClampToEdge: desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+		case TextureWrap::ClampToBorder: desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER; break;
+		case TextureWrap::Mirror: desc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR; break;
 		}
 		desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
-		Sampler::MipMapMode mipmapMode = (sampler.mipmapMode == Sampler::MipMapMode::None) ? Sampler::MipMapMode::Nearest : sampler.mipmapMode;
+		TextureMipMapMode mipmapMode = (sampler.mipmapMode == TextureMipMapMode::None) ? TextureMipMapMode::Nearest : sampler.mipmapMode;
 		if (sampler.filterMin == sampler.filterMag)
 		{
-			if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Nearest)
+			if (sampler.filterMag == TextureFilter::Nearest && mipmapMode == TextureMipMapMode::Nearest)
 				desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-			else if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Linear)
+			else if (sampler.filterMag == TextureFilter::Nearest && mipmapMode == TextureMipMapMode::Linear)
 				desc.Filter = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR;
-			else if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Nearest)
+			else if (sampler.filterMag == TextureFilter::Linear && mipmapMode == TextureMipMapMode::Nearest)
 				desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-			else if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Linear)
+			else if (sampler.filterMag == TextureFilter::Linear && mipmapMode == TextureMipMapMode::Linear)
 				desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 			else
 				Logger::error("Invalid values for texture filter min");
 		}
-		else if (sampler.filterMin == Sampler::Filter::Nearest)
+		else if (sampler.filterMin == TextureFilter::Nearest)
 		{
-			if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Nearest)
+			if (sampler.filterMag == TextureFilter::Linear && mipmapMode == TextureMipMapMode::Nearest)
 				desc.Filter = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
-			else if (sampler.filterMag == Sampler::Filter::Linear && mipmapMode == Sampler::MipMapMode::Linear)
+			else if (sampler.filterMag == TextureFilter::Linear && mipmapMode == TextureMipMapMode::Linear)
 				desc.Filter = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR;
 			else
 				Logger::error("Invalid values for texture filter min");
 		}
-		else if (sampler.filterMin == Sampler::Filter::Linear)
+		else if (sampler.filterMin == TextureFilter::Linear)
 		{
-			if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Nearest)
+			if (sampler.filterMag == TextureFilter::Nearest && mipmapMode == TextureMipMapMode::Nearest)
 				desc.Filter = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT;
-			else if (sampler.filterMag == Sampler::Filter::Nearest && mipmapMode == Sampler::MipMapMode::Linear)
+			else if (sampler.filterMag == TextureFilter::Nearest && mipmapMode == TextureMipMapMode::Linear)
 				desc.Filter = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
 			else
 				Logger::error("Invalid values for texture filter min");
@@ -211,36 +211,36 @@ private:
 	static std::vector<D3D11Sampler> cache;
 };
 
-D3D11_STENCIL_OP stencilOp(StencilOp op)
+D3D11_STENCIL_OP stencilMode(StencilMode op)
 {
 	switch (op)
 	{
 	default:
-	case StencilOp::Keep: return D3D11_STENCIL_OP_KEEP;
-	case StencilOp::Zero: return D3D11_STENCIL_OP_ZERO;
-	case StencilOp::Replace: return D3D11_STENCIL_OP_REPLACE;
-	case StencilOp::Increment: return D3D11_STENCIL_OP_INCR_SAT;
-	case StencilOp::IncrementWrap: return D3D11_STENCIL_OP_INCR;
-	case StencilOp::Decrement: return D3D11_STENCIL_OP_DECR_SAT;
-	case StencilOp::DecrementWrap: return D3D11_STENCIL_OP_DECR;
-	case StencilOp::Invert: return D3D11_STENCIL_OP_INVERT;
+	case StencilMode::Keep: return D3D11_STENCIL_OP_KEEP;
+	case StencilMode::Zero: return D3D11_STENCIL_OP_ZERO;
+	case StencilMode::Replace: return D3D11_STENCIL_OP_REPLACE;
+	case StencilMode::Increment: return D3D11_STENCIL_OP_INCR_SAT;
+	case StencilMode::IncrementWrap: return D3D11_STENCIL_OP_INCR;
+	case StencilMode::Decrement: return D3D11_STENCIL_OP_DECR_SAT;
+	case StencilMode::DecrementWrap: return D3D11_STENCIL_OP_DECR;
+	case StencilMode::Invert: return D3D11_STENCIL_OP_INVERT;
 	}
 }
 
-D3D11_COMPARISON_FUNC stencilFunc(StencilMode func)
+D3D11_COMPARISON_FUNC stencilCompare(StencilCompare func)
 {
 	switch (func)
 	{
 	default:
-	case StencilMode::None: return D3D11_COMPARISON_NEVER;
-	case StencilMode::Never: return D3D11_COMPARISON_NEVER;
-	case StencilMode::Less: return D3D11_COMPARISON_LESS;
-	case StencilMode::LessOrEqual: return D3D11_COMPARISON_LESS_EQUAL;
-	case StencilMode::Greater: return D3D11_COMPARISON_GREATER;
-	case StencilMode::GreaterOrEqual: return D3D11_COMPARISON_GREATER_EQUAL;
-	case StencilMode::Equal: return D3D11_COMPARISON_EQUAL;
-	case StencilMode::NotEqual: return D3D11_COMPARISON_NOT_EQUAL;
-	case StencilMode::Always: return D3D11_COMPARISON_ALWAYS;
+	case StencilCompare::None: return D3D11_COMPARISON_NEVER;
+	case StencilCompare::Never: return D3D11_COMPARISON_NEVER;
+	case StencilCompare::Less: return D3D11_COMPARISON_LESS;
+	case StencilCompare::LessOrEqual: return D3D11_COMPARISON_LESS_EQUAL;
+	case StencilCompare::Greater: return D3D11_COMPARISON_GREATER;
+	case StencilCompare::GreaterOrEqual: return D3D11_COMPARISON_GREATER_EQUAL;
+	case StencilCompare::Equal: return D3D11_COMPARISON_EQUAL;
+	case StencilCompare::NotEqual: return D3D11_COMPARISON_NOT_EQUAL;
+	case StencilCompare::Always: return D3D11_COMPARISON_ALWAYS;
 	}
 }
 
@@ -263,8 +263,8 @@ D3D11_COMPARISON_FUNC depthFunc(DepthCompare func)
 
 struct D3D11Depth
 {
-	Depth depth = Depth{ DepthCompare::None, true };
-	Stencil stencil = Stencil::none();
+	Depth depth = Depth::none;
+	Stencil stencil = Stencil::none;
 	ID3D11DepthStencilState* depthState = nullptr;
 	static ID3D11DepthStencilState* get(Depth depth, Stencil stencil)
 	{
@@ -281,14 +281,14 @@ struct D3D11Depth
 		desc.StencilEnable = stencil.enabled();
 		desc.StencilReadMask = stencil.readMask;
 		desc.StencilWriteMask = stencil.writeMask;
-		desc.FrontFace.StencilFailOp = stencilOp(stencil.front.stencilFailed);
-		desc.FrontFace.StencilDepthFailOp = stencilOp(stencil.front.stencilDepthFailed);
-		desc.FrontFace.StencilPassOp = stencilOp(stencil.front.stencilPassed);
-		desc.FrontFace.StencilFunc = stencilFunc(stencil.front.mode);
-		desc.BackFace.StencilFailOp = stencilOp(stencil.back.stencilFailed);
-		desc.BackFace.StencilDepthFailOp = stencilOp(stencil.back.stencilDepthFailed);
-		desc.BackFace.StencilPassOp = stencilOp(stencil.back.stencilPassed);
-		desc.BackFace.StencilFunc = stencilFunc(stencil.back.mode);
+		desc.FrontFace.StencilFailOp = stencilMode(stencil.front.stencilFailed);
+		desc.FrontFace.StencilDepthFailOp = stencilMode(stencil.front.stencilDepthFailed);
+		desc.FrontFace.StencilPassOp = stencilMode(stencil.front.stencilPassed);
+		desc.FrontFace.StencilFunc = stencilCompare(stencil.front.mode);
+		desc.BackFace.StencilFailOp = stencilMode(stencil.back.stencilFailed);
+		desc.BackFace.StencilDepthFailOp = stencilMode(stencil.back.stencilDepthFailed);
+		desc.BackFace.StencilPassOp = stencilMode(stencil.back.stencilPassed);
+		desc.BackFace.StencilFunc = stencilCompare(stencil.back.mode);
 
 		ID3D11DepthStencilState* result;
 		HRESULT res = dctx.device->CreateDepthStencilState(&desc, &result);
@@ -367,7 +367,7 @@ D3D11_BLEND blendFactor(BlendMode mode)
 
 struct D3D11Blend
 {
-	Blending blend = Blending::none();
+	Blending blend = Blending::none;
 	ID3D11BlendState* blendState = nullptr;
 	static ID3D11BlendState* get(Blending blending)
 	{
@@ -566,7 +566,7 @@ public:
 	friend class D3D11BackBuffer;
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags, Sampler sampler,
+		TextureFormat format, TextureFlag flags, TextureSampler sampler,
 		const void* data
 	) : 
 		Texture(width, height, TextureType::Texture2D, format, flags, sampler),
@@ -624,7 +624,7 @@ public:
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags, Sampler sampler,
+		TextureFormat format, TextureFlag flags, TextureSampler sampler,
 		const void* data,
 		uint8_t samples
 	) :
@@ -682,7 +682,7 @@ public:
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags, Sampler sampler,
+		TextureFormat format, TextureFlag flags, TextureSampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz
@@ -755,6 +755,10 @@ public:
 		if (m_staging)
 			m_staging->Release();
 	}
+	void sampler(const TextureSampler& sampler) override
+	{
+		// ???
+	}
 	void upload(const void* data) override
 	{
 		D3D11_BOX box{};
@@ -791,7 +795,6 @@ public:
 			0
 		);
 	}
-
 	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
 	{
 		throw std::runtime_error("Implement mips");
@@ -991,7 +994,7 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
 	{
 		ID3D11Texture2D* srcResource = nullptr;
 		ID3D11Texture2D* dstResource = nullptr;
@@ -1178,7 +1181,7 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
 	{
 		ID3D11Texture2D* srcResource = nullptr;
 		ID3D11Texture2D* dstResource = nullptr;
@@ -2000,16 +2003,16 @@ public:
 					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
 					ID3D11ShaderResourceView* view = d3dTexture->m_view;
 					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
-					ID3D11SamplerState* sampler = D3D11Sampler::get(view, d3dTexture->sampler());
+					ID3D11SamplerState* sampler = D3D11Sampler::get(view, texture->sampler());
 					if (sampler != nullptr)
 						dctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
 				}
 				else
 				{
 					ID3D11ShaderResourceView* nullResources[] = { nullptr };
-					ID3D11SamplerState* nullSamplers[] = { nullptr };
+					ID3D11SamplerState* nullTextureSamplers[] = { nullptr };
 					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullResources);
-					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullSamplers);
+					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullTextureSamplers);
 				}
 				textureUnit++;
 				break;
@@ -2522,7 +2525,7 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, Sampler sampler, const void* data)
+Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, TextureSampler sampler, const void* data)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
@@ -2532,7 +2535,7 @@ Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, Te
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flags, Sampler sampler,
+	TextureFormat format, TextureFlag flags, TextureSampler sampler,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
@@ -2546,7 +2549,7 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 
 Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
-	TextureFormat format, TextureFlag flags, Sampler sampler,
+	TextureFormat format, TextureFlag flags, TextureSampler sampler,
 	const void* data,
 	uint8_t samples
 )
