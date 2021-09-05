@@ -4,8 +4,8 @@ project(Aka)
 # Ajoutez une source à l'exécutable de ce projet.
 add_library (Aka
 	"src/Audio/RtAudioBackend.cpp"
-	"src/Audio/AudioStream.cpp" 
-	"src/Audio/AudioStreamMp3.cpp" 
+	"src/Audio/AudioStream.cpp"
+	"src/Audio/AudioStreamMp3.cpp"
 	"src/Audio/AudioStreamMemory.cpp"
 
 	"src/Core/Application.cpp"
@@ -30,8 +30,8 @@ add_library (Aka
 
 	"src/Resource/ResourceManager.cpp"
 	"src/Resource/MeshStorage.cpp"
-	"src/Resource/FontStorage.cpp" 
-	"src/Resource/AudioStorage.cpp" 
+	"src/Resource/FontStorage.cpp"
+	"src/Resource/AudioStorage.cpp"
 	"src/Resource/TextureStorage.cpp"
 	"src/Resource/BufferStorage.cpp"
 

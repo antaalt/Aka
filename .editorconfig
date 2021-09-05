@@ -1,0 +1,7 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Set default charset
+[*.{cpp,h}]
+charset = utf-8
+
+indent_style = tab
