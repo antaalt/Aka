@@ -22,6 +22,10 @@ struct Config {
 		uint32_t frequency = 44100;
 		uint32_t channels = 2;
 	} audio;
+	struct Arguments {
+		int count;
+		char** values;
+	} arguments;
 };
 
 // Event to notify app to exit.
@@ -42,7 +46,7 @@ public:
 	virtual ~Application();
 private:
 	// Initialize the application and its resources.
-	void initialize(uint32_t width, uint32_t height);
+	void initialize(uint32_t width, uint32_t height, int argc, char* argv[]);
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop
@@ -65,7 +69,7 @@ private:
 	void onReceive(const QuitEvent& event) override;
 protected:
 	// Called on app creation.
-	virtual void onCreate() {}
+	virtual void onCreate(int argc, char* argv[]) {}
 	// Called on app destruction.
 	virtual void onDestroy() {}
 	// Called on app update

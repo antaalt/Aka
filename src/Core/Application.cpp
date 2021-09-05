@@ -17,11 +17,11 @@ Application::Application() :
 Application::~Application()
 {
 }
-void Application::initialize(uint32_t width, uint32_t height)
+void Application::initialize(uint32_t width, uint32_t height, int argc, char* argv[])
 {
 	m_width = width;
 	m_height = height;
-	onCreate();
+	onCreate(argc, argv);
 }
 void Application::destroy()
 {
@@ -106,7 +106,7 @@ void Application::run(const Config& config)
 	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
 
 	Application* app = config.app;
-	app->initialize(config.width, config.height);
+	app->initialize(config.width, config.height, config.arguments.count, config.arguments.values);
 
 	{
 		Time::Unit lastTick = Time::now();
