@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Framebuffer.h"
-#include "Mesh.h"
-#include "Shader.h"
-#include "ShaderMaterial.h"
+#include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/Mesh.h>
+#include <Aka/Graphic/Shader.h>
+#include <Aka/Graphic/ShaderMaterial.h>
 
 namespace aka {
 
-enum class BlendMode {
+enum class BlendMode 
+{
 	Zero,
 	One,
 	SrcColor,
@@ -63,9 +64,8 @@ struct Blending
 
 	color32 blendColor;
 
-	static Blending none();
-	static Blending nonPremultiplied();
-	static Blending premultiplied();
+	static const Blending none;
+	static const Blending premultiplied;
 
 	bool operator==(const Blending& rhs) const;
 	bool operator!=(const Blending& rhs) const;
@@ -73,27 +73,33 @@ struct Blending
 	bool enabled() const;
 };
 
-enum class CullMode {
+enum class CullMode
+{
 	None,
 	FrontFace,
 	BackFace,
 	AllFace
 };
 
-enum class CullOrder {
+enum class CullOrder 
+{
 	ClockWise,
 	CounterClockWise,
 };
 
-struct Culling {
+struct Culling 
+{
 	CullMode mode;
 	CullOrder order;
+
+	static const Culling none;
 
 	bool operator==(const Culling& rhs) const;
 	bool operator!=(const Culling& rhs) const;
 };
 
-enum class DepthCompare {
+enum class DepthCompare 
+{
 	None,
 	Always,
 	Never,
@@ -105,16 +111,19 @@ enum class DepthCompare {
 	GreaterOrEqual
 };
 
-struct Depth
+struct Depth 
 {
 	DepthCompare compare;
 	bool mask;
+
+	static const Depth none;
 
 	bool operator==(const Depth& rhs) const;
 	bool operator!=(const Depth& rhs) const;
 };
 
-enum class StencilMode {
+enum class StencilCompare 
+{
 	None,
 	Never,
 	Less,
@@ -126,7 +135,8 @@ enum class StencilMode {
 	Always,
 };
 
-enum class StencilOp {
+enum class StencilMode 
+{
 	Keep,
 	Zero,
 	Replace,
@@ -139,12 +149,13 @@ enum class StencilOp {
 
 struct Stencil
 {
-	struct Face {
-		StencilOp stencilFailed;
-		StencilOp stencilDepthFailed;
-		StencilOp stencilPassed;
+	struct Face
+	{
+		StencilMode stencilFailed;
+		StencilMode stencilDepthFailed;
+		StencilMode stencilPassed;
 
-		StencilMode mode;
+		StencilCompare mode;
 	};
 	Face front;
 	Face back;
@@ -152,9 +163,9 @@ struct Stencil
 	uint32_t readMask;
 	uint32_t writeMask;
 
-	static Stencil none();
-	static Stencil always();
-	static Stencil equal();
+	static const Stencil none;
+	static const Stencil always;
+	static const Stencil equal;
 
 	bool operator==(const Stencil& rhs) const;
 	bool operator!=(const Stencil& rhs) const;
@@ -168,6 +179,8 @@ struct Clear
 	color4f color;
 	float depth;
 	int stencil;
+
+	static const Clear none;
 };
 
 struct RenderPass

@@ -4,47 +4,27 @@
 
 namespace aka {
 
-Blending Blending::none()
-{
-	Blending blending{};
-	blending.colorModeSrc = BlendMode::One;
-	blending.colorModeDst = BlendMode::Zero;
-	blending.colorOp = BlendOp::Add;
-	blending.alphaModeSrc = BlendMode::One;
-	blending.alphaModeDst = BlendMode::Zero;
-	blending.alphaOp = BlendOp::Add;
-	blending.mask = BlendMask::Rgba;
-	blending.blendColor = color32(255);
-	return blending;
-}
+const Blending Blending::none = {
+	BlendMode::One,
+	BlendMode::Zero,
+	BlendOp::Add,
+	BlendMode::One,
+	BlendMode::Zero,
+	BlendOp::Add,
+	BlendMask::Rgba,
+	color32(255)
+};
 
-Blending Blending::nonPremultiplied()
-{
-	Blending blending{};
-	blending.colorModeSrc = BlendMode::SrcAlpha;
-	blending.colorModeDst = BlendMode::OneMinusSrcAlpha;
-	blending.colorOp = BlendOp::Add;
-	blending.alphaModeSrc = BlendMode::One;
-	blending.alphaModeDst = BlendMode::OneMinusSrcAlpha;
-	blending.alphaOp = BlendOp::Add;
-	blending.mask = BlendMask::Rgba;
-	blending.blendColor = color32(255);
-	return blending;
-}
-
-Blending Blending::premultiplied()
-{
-	Blending blending{};
-	blending.colorModeSrc = BlendMode::One;
-	blending.colorModeDst = BlendMode::OneMinusSrcAlpha;
-	blending.colorOp = BlendOp::Add;
-	blending.alphaModeSrc = BlendMode::One;
-	blending.alphaModeDst = BlendMode::OneMinusSrcAlpha;
-	blending.alphaOp = BlendOp::Add;
-	blending.mask = BlendMask::Rgba;
-	blending.blendColor = color32(255);
-	return blending;
-}
+const Blending Blending::premultiplied = {
+	BlendMode::One,
+	BlendMode::OneMinusSrcAlpha,
+	BlendOp::Add,
+	BlendMode::One,
+	BlendMode::OneMinusSrcAlpha,
+	BlendOp::Add,
+	BlendMask::Rgba,
+	color32(255)
+};
 
 bool Blending::operator==(const Blending& rhs) const
 {
@@ -65,30 +45,10 @@ bool Blending::enabled() const
 	return !(colorModeSrc == BlendMode::One && colorModeDst == BlendMode::Zero && alphaModeSrc == BlendMode::One && alphaModeDst == BlendMode::Zero);
 }
 
-void RenderPass::execute()
-{
-	if (this->material == nullptr)
-	{
-		Logger::error("No Material set for render pass.");
-		return;
-	}
-	if (this->submesh.mesh == nullptr)
-	{
-		Logger::warn("No mesh set for render pass.");
-		return;
-	}
-	GraphicBackend::render(*this);
-}
-
-void ComputePass::execute()
-{
-	if (this->material == nullptr)
-	{
-		Logger::error("No Material set for render pass.");
-		return;
-	}
-	GraphicBackend::dispatch(*this);
-}
+const Culling Culling::none = {
+	CullMode::None,
+	CullOrder::CounterClockWise
+};
 
 bool Culling::operator==(const Culling& rhs) const
 {
@@ -100,6 +60,11 @@ bool Culling::operator!=(const Culling& rhs) const
 	return mode != rhs.mode || order != rhs.order;
 }
 
+const Depth Depth::none = {
+	DepthCompare::None,
+	true
+};
+
 bool Depth::operator==(const Depth& rhs) const
 {
 	return compare == rhs.compare && mask == rhs.mask;
@@ -110,44 +75,56 @@ bool Depth::operator!=(const Depth& rhs) const
 	return compare != rhs.compare || mask != rhs.mask;
 }
 
-Stencil Stencil::none()
-{
-	Stencil stencil{};
-	stencil.front.mode = StencilMode::None;
-	stencil.front.stencilFailed = StencilOp::Keep;
-	stencil.front.stencilDepthFailed = StencilOp::Keep;
-	stencil.front.stencilPassed = StencilOp::Keep;
-	stencil.back = stencil.front;
-	stencil.readMask = 0xff;
-	stencil.writeMask = 0xff;
-	return stencil;
-}
+const Stencil Stencil::none = {
+	Face {
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilCompare::None
+	},
+	Face {
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilCompare::None
+	},
+	0xff,
+	0xff
+};
 
-Stencil Stencil::always()
-{
-	Stencil stencil{};
-	stencil.front.mode = StencilMode::Always;
-	stencil.front.stencilFailed = StencilOp::Replace;
-	stencil.front.stencilDepthFailed = StencilOp::Replace;
-	stencil.front.stencilPassed = StencilOp::Replace;
-	stencil.back = stencil.front;
-	stencil.readMask = 0xff;
-	stencil.writeMask = 0xff;
-	return stencil;
-}
+const Stencil Stencil::always = {
+	Face {
+		StencilMode::Replace,
+		StencilMode::Replace,
+		StencilMode::Replace,
+		StencilCompare::Always
+	},
+	Face {
+		StencilMode::Replace,
+		StencilMode::Replace,
+		StencilMode::Replace,
+		StencilCompare::Always
+	},
+	0xff,
+	0xff
+};
 
-Stencil Stencil::equal()
-{
-	Stencil stencil{};
-	stencil.front.mode = StencilMode::Equal;
-	stencil.front.stencilFailed = StencilOp::Keep;
-	stencil.front.stencilDepthFailed = StencilOp::Keep;
-	stencil.front.stencilPassed = StencilOp::Keep;
-	stencil.back = stencil.front;
-	stencil.readMask = 0xff;
-	stencil.writeMask = 0xff;
-	return stencil;
-}
+const Stencil Stencil::equal = {
+	Face {
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilCompare::Equal
+	},
+	Face {
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilMode::Keep,
+		StencilCompare::Equal
+	},
+	0xff,
+	0xff
+};
 
 bool Stencil::operator==(const Stencil& rhs) const
 {
@@ -179,7 +156,58 @@ bool Stencil::operator!=(const Stencil& rhs) const
 
 bool Stencil::enabled() const
 {
-	return front.mode != StencilMode::None && back.mode != StencilMode::None;
+	return front.mode != StencilCompare::None && back.mode != StencilCompare::None;
+}
+
+
+const Clear Clear::none = {
+	ClearMask::None,
+	color4f(1.f),
+	1.f,
+	1
+};
+
+void RenderPass::execute()
+{
+	if (this->material == nullptr)
+	{
+		Logger::error("No Material set for render pass.");
+		return;
+	}
+	if (this->submesh.mesh == nullptr)
+	{
+		Logger::warn("No mesh set for render pass.");
+		return;
+	}
+	if (this->submesh.mesh->getVertexAttributeCount() >= this->material->getShader()->getAttributeCount())
+	{
+		for (uint32_t i = 0; i < this->material->getShader()->getAttributeCount(); i++)
+		{
+			const VertexAttribute& mesh = this->submesh.mesh->getVertexAttribute(i);
+			const VertexAttribute& shader = this->material->getShader()->getAttribute(i);
+			if (mesh.semantic != shader.semantic || mesh.format != shader.format || mesh.type != shader.type)
+			{
+				Logger::warn("Shader and mesh non compatible");
+				return;
+			}
+		}
+	}
+	else
+	{
+		Logger::warn("Shader and mesh non compatible");
+		return;
+	}
+	GraphicBackend::render(*this);
+}
+
+void ComputePass::execute()
+{
+	if (this->material == nullptr)
+	{
+		Logger::error("No Material set for render pass.");
+		return;
+	}
+	GraphicBackend::dispatch(*this);
 }
 
 };

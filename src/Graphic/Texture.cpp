@@ -70,7 +70,7 @@ bool isDepth(TextureFormat format)
 	}
 }
 
-Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flags, Sampler sampler) :
+Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flags, TextureSampler sampler) :
 	m_sampler(sampler),
 	m_type(type),
 	m_format(format),
@@ -87,7 +87,7 @@ Texture::~Texture()
 Texture::Ptr Texture::create2D(
 	uint32_t width, uint32_t height, 
 	TextureFormat format, TextureFlag flags, 
-	Sampler sampler, 
+	TextureSampler sampler,
 	const void* data
 )
 {
@@ -96,7 +96,7 @@ Texture::Ptr Texture::create2D(
 
 Texture::Ptr Texture::create2DMultisampled(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flag, Sampler sampler, 
+	TextureFormat format, TextureFlag flag, TextureSampler sampler,
 	const void* data, uint8_t samples
 )
 {
@@ -106,7 +106,7 @@ Texture::Ptr Texture::create2DMultisampled(
 Texture::Ptr Texture::createCubemap(
 	uint32_t width, uint32_t height, 
 	TextureFormat format, TextureFlag flags, 
-	Sampler sampler, 
+	TextureSampler sampler,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
@@ -140,7 +140,7 @@ TextureType Texture::type() const
 	return m_type;
 }
 
-const Sampler& Texture::sampler() const
+const TextureSampler& Texture::sampler() const
 {
 	return m_sampler;
 }
@@ -175,7 +175,7 @@ const uv2f& SubTexture::get(uint32_t uv) const
 	return m_uv[uv];
 }
 
-uint32_t Sampler::mipLevelCount(uint32_t width, uint32_t height)
+/*uint32_t Sampler::mipLevelCount(uint32_t width, uint32_t height)
 {
 	return static_cast<uint32_t>(floor(log2(max(width, height)))) + 1;
 }
@@ -224,6 +224,6 @@ bool Sampler::operator==(const Sampler& rhs)
 bool Sampler::operator!=(const Sampler& rhs)
 {
 	return filterMin != rhs.filterMin || filterMag != rhs.filterMag || mipmapMode != rhs.mipmapMode || wrapU != rhs.wrapU || wrapV != rhs.wrapV || wrapW != rhs.wrapW;
-}
+}*/
 
 };

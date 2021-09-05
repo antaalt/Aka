@@ -172,27 +172,27 @@ GLenum attachmentType(FramebufferAttachmentType type)
 	}
 }
 
-GLenum filter(Sampler::Filter type, Sampler::MipMapMode mode = Sampler::MipMapMode::None)
+GLenum filter(TextureFilter type, TextureMipMapMode mode = TextureMipMapMode::None)
 {
 	switch (mode)
 	{
-	case Sampler::MipMapMode::Linear:
-		if (type == Sampler::Filter::Linear)
+	case TextureMipMapMode::Linear:
+		if (type == TextureFilter::Linear)
 			return GL_LINEAR_MIPMAP_LINEAR; // trilinear
-		else if (type == Sampler::Filter::Nearest)
+		else if (type == TextureFilter::Nearest)
 			return GL_LINEAR_MIPMAP_NEAREST;
 		break;
-	case Sampler::MipMapMode::Nearest:
-		if (type == Sampler::Filter::Linear)
+	case TextureMipMapMode::Nearest:
+		if (type == TextureFilter::Linear)
 			return GL_NEAREST_MIPMAP_LINEAR; // bilinear
-		else if (type == Sampler::Filter::Nearest)
+		else if (type == TextureFilter::Nearest)
 			return GL_NEAREST_MIPMAP_NEAREST;
 		break;
 	default:
-	case Sampler::MipMapMode::None:
-		if (type == Sampler::Filter::Linear)
+	case TextureMipMapMode::None:
+		if (type == TextureFilter::Linear)
 			return GL_LINEAR;
-		else if (type == Sampler::Filter::Nearest)
+		else if (type == TextureFilter::Nearest)
 			return GL_NEAREST;
 		break;
 	}
@@ -200,16 +200,16 @@ GLenum filter(Sampler::Filter type, Sampler::MipMapMode mode = Sampler::MipMapMo
 	return 0;
 }
 
-GLenum wrap(Sampler::Wrap wrap) {
+GLenum wrap(TextureWrap wrap) {
 	switch (wrap) {
 	default:
-	case Sampler::Wrap::Repeat:
+	case TextureWrap::Repeat:
 		return GL_REPEAT;
-	case Sampler::Wrap::Mirror:
+	case TextureWrap::Mirror:
 		return GL_MIRRORED_REPEAT;
-	case Sampler::Wrap::ClampToEdge:
+	case TextureWrap::ClampToEdge:
 		return GL_CLAMP_TO_EDGE;
-	case Sampler::Wrap::ClampToBorder:
+	case TextureWrap::ClampToBorder:
 		return GL_CLAMP_TO_BORDER;
 	}
 }
@@ -481,51 +481,51 @@ GLenum blendOp(BlendOp op)
 	}
 }
 
-GLenum stencilFunc(StencilMode mode)
+GLenum stencilCompare(StencilCompare mode)
 {
 	switch (mode)
 	{
 	default:
-	case StencilMode::None:
-	case StencilMode::Never:
+	case StencilCompare::None:
+	case StencilCompare::Never:
 		return GL_NEVER;
-	case StencilMode::Less:
+	case StencilCompare::Less:
 		return GL_LESS;
-	case StencilMode::LessOrEqual:
+	case StencilCompare::LessOrEqual:
 		return GL_LEQUAL;
-	case StencilMode::Greater:
+	case StencilCompare::Greater:
 		return GL_GREATER;
-	case StencilMode::GreaterOrEqual:
+	case StencilCompare::GreaterOrEqual:
 		return GL_GEQUAL;
-	case StencilMode::Equal:
+	case StencilCompare::Equal:
 		return GL_EQUAL;
-	case StencilMode::NotEqual:
+	case StencilCompare::NotEqual:
 		return GL_NOTEQUAL;
-	case StencilMode::Always:
+	case StencilCompare::Always:
 		return GL_ALWAYS;
 	}
 }
 
-GLenum stencilOp(StencilOp op)
+GLenum stencilMode(StencilMode op)
 {
 	switch (op)
 	{
 	default:
-	case StencilOp::Keep:
+	case StencilMode::Keep:
 		return GL_KEEP;
-	case StencilOp::Zero:
+	case StencilMode::Zero:
 		return GL_ZERO;
-	case StencilOp::Replace:
+	case StencilMode::Replace:
 		return GL_REPLACE;
-	case StencilOp::Increment:
+	case StencilMode::Increment:
 		return GL_INCR;
-	case StencilOp::IncrementWrap:
+	case StencilMode::IncrementWrap:
 		return GL_INCR_WRAP;
-	case StencilOp::Decrement:
+	case StencilMode::Decrement:
 		return GL_DECR;
-	case StencilOp::DecrementWrap:
+	case StencilMode::DecrementWrap:
 		return GL_DECR_WRAP;
-	case StencilOp::Invert:
+	case StencilMode::Invert:
 		return GL_INVERT;
 	}
 }
@@ -560,7 +560,7 @@ public:
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		Sampler sampler,
+		TextureSampler sampler,
 		const void* data
 	) :
 		Texture(width, height, TextureType::Texture2D, format, flags, sampler),
@@ -570,17 +570,19 @@ public:
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		if (m_sampler.mipmapMode != Sampler::MipMapMode::None && data != nullptr)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+		if (m_sampler.mipmapMode != TextureMipMapMode::None && data != nullptr)
 			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		Sampler sampler,
+		TextureSampler sampler,
 		const void* data,
 		uint8_t samples
 	) :
@@ -591,17 +593,19 @@ public:
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
 		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, gl::componentInternal(m_format), width, height, GL_TRUE);
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		//if (m_sampler.mipmapMode != Sampler::MipMapMode::None && data != nullptr)
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
+		glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+		//if (m_sampler.mipmapMode != TextureMipMapMode::None && data != nullptr)
 		//	glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE);
 	}
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		Sampler sampler,
+		TextureSampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz
@@ -618,12 +622,13 @@ public:
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), ny);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), pz);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), nz);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, Sampler::MipMapMode::None));
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
-		if (m_sampler.mipmapMode != Sampler::MipMapMode::None && px != nullptr)
+		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+		if (m_sampler.mipmapMode != TextureMipMapMode::None && px != nullptr)
 			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	}
 	GLTexture(GLTexture&) = delete;
@@ -635,6 +640,19 @@ public:
 		if (m_copyFBO != 0)
 			glDeleteFramebuffers(1, &m_copyFBO);
 	}
+	void sampler(const TextureSampler& sampler) override
+	{
+		if (sampler == m_sampler)
+			return;
+		m_sampler = sampler;
+		glBindTexture(gl::type(m_type), m_textureID);
+		glTexParameteri(gl::type(m_type), GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
+		glTexParameteri(gl::type(m_type), GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
+		glTexParameteri(gl::type(m_type), GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
+		glTexParameteri(gl::type(m_type), GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
+		glTexParameteri(gl::type(m_type), GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
+		glTexParameterf(gl::type(m_type), GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+	}
 	void upload(const void* data) override
 	{
 		upload(Rect{ 0, 0, m_width, m_height }, data);
@@ -642,7 +660,7 @@ public:
 	void upload(const Rect& rect, const void* data) override
 	{
 		upload(0, rect, data);
-		if (m_sampler.mipmapMode != Sampler::MipMapMode::None)
+		if (m_sampler.mipmapMode != TextureMipMapMode::None)
 			glGenerateMipmap(gl::type(m_type));
 	}
 	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
@@ -917,17 +935,16 @@ public:
 						GLenum glType;
 						switch (uniform.type)
 						{
+						default:
 						case UniformType::Texture2D:
-							glType = gl::type(TextureType::Texture2D);
+							glType = GL_TEXTURE_2D;
 							break;
 						case UniformType::Texture2DMultisample:
-							glType = gl::type(TextureType::Texture2DMultisample);
+							glType = GL_TEXTURE_2D_MULTISAMPLE;
 							break;
 						case UniformType::TextureCubemap:
-							glType = gl::type(TextureType::TextureCubemap);
+							glType = GL_TEXTURE_CUBE_MAP;
 							break;
-						default:
-							glType = GL_TEXTURE_2D;
 						}
 						glBindTexture(glType, 0);
 					}
@@ -1292,7 +1309,7 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->m_framebufferID);
@@ -1424,7 +1441,7 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, Sampler::Filter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->getFramebufferID());
@@ -1686,21 +1703,21 @@ void GraphicBackend::render(RenderPass& pass)
 		{
 			glEnable(GL_STENCIL_TEST);
 			glStencilMask(pass.stencil.writeMask);
-			GLenum frontFunc = gl::stencilFunc(pass.stencil.front.mode);
-			GLenum backFunc = gl::stencilFunc(pass.stencil.back.mode);
+			GLenum frontFunc = gl::stencilCompare(pass.stencil.front.mode);
+			GLenum backFunc = gl::stencilCompare(pass.stencil.back.mode);
 			glStencilFuncSeparate(GL_FRONT, frontFunc, 1, pass.stencil.readMask);
 			glStencilFuncSeparate(GL_BACK, backFunc, 1, pass.stencil.readMask);
 			glStencilOpSeparate(
 				GL_FRONT,
-				gl::stencilOp(pass.stencil.front.stencilFailed),
-				gl::stencilOp(pass.stencil.front.stencilDepthFailed),
-				gl::stencilOp(pass.stencil.front.stencilPassed)
+				gl::stencilMode(pass.stencil.front.stencilFailed),
+				gl::stencilMode(pass.stencil.front.stencilDepthFailed),
+				gl::stencilMode(pass.stencil.front.stencilPassed)
 			);
 			glStencilOpSeparate(
 				GL_BACK,
-				gl::stencilOp(pass.stencil.back.stencilFailed),
-				gl::stencilOp(pass.stencil.back.stencilDepthFailed),
-				gl::stencilOp(pass.stencil.back.stencilPassed)
+				gl::stencilMode(pass.stencil.back.stencilFailed),
+				gl::stencilMode(pass.stencil.back.stencilDepthFailed),
+				gl::stencilMode(pass.stencil.back.stencilPassed)
 			);
 		}
 	}
@@ -1814,7 +1831,7 @@ uint32_t GraphicBackend::deviceCount()
 Texture::Ptr GraphicBackend::createTexture2D(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	Sampler sampler,
+	TextureSampler sampler,
 	const void* data
 )
 {
@@ -1824,7 +1841,7 @@ Texture::Ptr GraphicBackend::createTexture2D(
 Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	Sampler sampler,
+	TextureSampler sampler,
 	const void* data,
 	uint8_t samples
 )
@@ -1835,7 +1852,7 @@ Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	Sampler sampler,
+	TextureSampler sampler,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz

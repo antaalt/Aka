@@ -35,12 +35,13 @@ add_library (Aka
 	"src/Resource/TextureStorage.cpp"
 	"src/Resource/BufferStorage.cpp"
 
-	"src/Graphic/D3D11/D3D11Backend.cpp"
-	"src/Graphic/GL/GLBackend.cpp"
 	"src/Drawing/Renderer2D.cpp"
 	"src/Drawing/Renderer3D.cpp"
 	"src/Drawing/Batch2D.cpp"
 	"src/Drawing/Batch3D.cpp"
+	
+	"src/Graphic/D3D11/D3D11Backend.cpp"
+	"src/Graphic/GL/GLBackend.cpp"
 	"src/Graphic/Device.cpp"
 	"src/Graphic/Framebuffer.cpp"
 	"src/Graphic/Mesh.cpp"
@@ -48,6 +49,7 @@ add_library (Aka
 	"src/Graphic/Shader.cpp"
 	"src/Graphic/ShaderMaterial.cpp"
 	"src/Graphic/Texture.cpp"
+	"src/Graphic/Sampler.cpp"
 	"src/Graphic/Buffer.cpp"
 
 	"src/OS/FileSystem.cpp"

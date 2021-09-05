@@ -33,7 +33,7 @@ Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height)
 {
 	FramebufferAttachment colorAttachment;
 	colorAttachment.type = FramebufferAttachmentType::Color0;
-	colorAttachment.texture = Texture::create2D(width, height, TextureFormat::RGBA8, TextureFlag::RenderTarget, Sampler{});
+	colorAttachment.texture = Texture::create2D(width, height, TextureFormat::RGBA8, TextureFlag::RenderTarget, TextureSampler::nearest);
 	return create(&colorAttachment, 1);
 }
 
@@ -65,7 +65,7 @@ uint32_t Framebuffer::height() const
 {
 	return m_height;
 }
-void Framebuffer::blit(Framebuffer::Ptr src, FramebufferAttachmentType type, Sampler::Filter filter)
+void Framebuffer::blit(Framebuffer::Ptr src, FramebufferAttachmentType type, TextureFilter filter)
 {
 	blit(
 		src,

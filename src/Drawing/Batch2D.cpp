@@ -184,14 +184,14 @@ void Batch2D::initialize()
 	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, Sampler::nearest(), data);
+	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, TextureSampler::nearest, data);
 
 	m_pass = {};
-	m_pass.clear = Clear{ ClearMask::None, color4f(1.f), 1.f, 0 };
-	m_pass.blend = Blending::nonPremultiplied();
-	m_pass.cull = Culling{ CullMode::None, CullOrder::CounterClockWise };
-	m_pass.depth = Depth{ DepthCompare::None, true };
-	m_pass.stencil = Stencil::none();
+	m_pass.clear = Clear::none;
+	m_pass.blend = Blending::premultiplied;
+	m_pass.cull = Culling::none;
+	m_pass.depth = Depth::none;
+	m_pass.stencil = Stencil::none;
 	m_pass.submesh.mesh = m_mesh;
 	m_pass.material = m_material;
 }

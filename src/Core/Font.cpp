@@ -68,7 +68,7 @@ Font::Font(const Path& path, uint32_t height)
         atlas.width, atlas.height, 
         TextureFormat::RGBA8,
         TextureFlag::None, 
-        Sampler::nearest(), // TODO do not force nearest.
+        TextureSampler::nearest, // TODO do not force nearest.
         atlas.bytes.data()
     );
     //atlas.save("atlas.png");

@@ -23,6 +23,7 @@
 #include "Graphic/Mesh.h"
 #include "Graphic/Framebuffer.h"
 #include "Graphic/Texture.h"
+#include "Graphic/Sampler.h"
 #include "Graphic/Device.h"
 #include "Graphic/RenderPass.h"
 #include "Graphic/Shader.h"

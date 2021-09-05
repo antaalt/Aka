@@ -3,45 +3,12 @@
 #include <stdint.h>
 #include <memory>
 
-#include "../Core/StrictType.h"
-#include "../Core/Geometry.h"
-#include "../OS/Image.h"
+#include <Aka/Core/StrictType.h>
+#include <Aka/Core/Geometry.h>
+#include <Aka/OS/Image.h>
+#include <Aka/Graphic/Sampler.h>
 
 namespace aka {
-
-struct Sampler
-{
-	enum class Filter {
-		Nearest,
-		Linear,
-	};
-	enum class Wrap {
-		Repeat,
-		Mirror,
-		ClampToEdge,
-		ClampToBorder,
-	};
-	enum class MipMapMode {
-		None,
-		Nearest,
-		Linear,
-	};
-	Filter filterMin;
-	Filter filterMag;
-	MipMapMode mipmapMode;
-	Wrap wrapU;
-	Wrap wrapV;
-	Wrap wrapW;
-
-	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
-
-	static Sampler nearest();
-	static Sampler bilinear();
-	static Sampler trilinear();
-
-	bool operator==(const Sampler& rhs);
-	bool operator!=(const Sampler& rhs);
-};
 
 enum class TextureFlag : uint8_t {
 	None = (1 << 0),
@@ -107,17 +74,17 @@ public:
 	using Ptr = std::shared_ptr<Texture>;
 	using Handle = StrictType<uintptr_t, struct TextureHandleTag>;
 protected:
-	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flag, Sampler sampler);
+	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flag, TextureSampler sampler);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
 public:
 	static Texture::Ptr create2D(
-		uint32_t width, 
-		uint32_t height, 
+		uint32_t width,
+		uint32_t height,
 		TextureFormat format,
-		TextureFlag flag, 
-		Sampler sampler,
+		TextureFlag flag,
+		TextureSampler sampler,
 		const void* data = nullptr
 	);
 	static Texture::Ptr create2DMultisampled(
@@ -125,7 +92,7 @@ public:
 		uint32_t height,
 		TextureFormat format,
 		TextureFlag flag,
-		Sampler sampler,
+		TextureSampler sampler,
 		const void* data = nullptr,
 		uint8_t samples = 4
 	);
@@ -134,12 +101,11 @@ public:
 		uint32_t height,
 		TextureFormat format,
 		TextureFlag flag,
-		Sampler sampler,
+		TextureSampler sampler,
 		const void* px = nullptr, const void* nx = nullptr,
 		const void* py = nullptr, const void* ny = nullptr,
 		const void* pz = nullptr, const void* nz = nullptr
 	);
-
 
 	uint32_t width() const;
 
@@ -151,7 +117,9 @@ public:
 
 	TextureType type() const;
 
-	const Sampler& sampler() const;
+	const TextureSampler& sampler() const;
+
+	virtual void sampler(const TextureSampler& sampler) = 0;
 
 	virtual void upload(const Rect& rect, const void* data) = 0;
 
@@ -166,7 +134,7 @@ public:
 	virtual Handle handle() const = 0;
 
 protected:
-	Sampler m_sampler;
+	TextureSampler m_sampler;
 	TextureType m_type;
 	TextureFormat m_format;
 	TextureFlag m_flags;
@@ -176,7 +144,7 @@ protected:
 TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);
 TextureFlag operator|(TextureFlag lhs, TextureFlag rhs);
 
-struct SubTexture 
+struct SubTexture
 {
 	Rect region;
 	Texture::Ptr texture;

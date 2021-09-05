@@ -96,13 +96,13 @@ std::shared_ptr<Texture> TextureStorage::to() const
 	{
 	case TextureType::Texture2D:
 		AKA_ASSERT(images.size() == 1, "");
-		return Texture::create2D(images[0].width, images[0].height, format, flags, Sampler{}, images[0].bytes.data());
+		return Texture::create2D(images[0].width, images[0].height, format, flags, TextureSampler::nearest, images[0].bytes.data());
 	case TextureType::TextureCubemap:
 		AKA_ASSERT(images.size() == 6, "");
 		return Texture::createCubemap(
 			images[0].width, images[0].height,
 			format, flags,
-			Sampler{}, 
+			TextureSampler::nearest,
 			images[0].bytes.data(),
 			images[1].bytes.data(),
 			images[2].bytes.data(),
