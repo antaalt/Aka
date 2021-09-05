@@ -99,6 +99,7 @@ void Mesh::uploadInterleaved(const VertexAttribute* attributes, size_t attribute
 	}
 	IndexAccessor indexInfo{};
 	indexInfo.format = IndexFormat::UnsignedInt;
+	indexInfo.count = indexCount;
 	indexInfo.bufferView.buffer = Buffer::create(BufferType::IndexBuffer, indexCount * 4, BufferUsage::Immutable, BufferCPUAccess::None, indices);
 	indexInfo.bufferView.offset = 0;
 	indexInfo.bufferView.size = indexCount * 4;
