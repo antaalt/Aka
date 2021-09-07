@@ -26,7 +26,6 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 		ase.width, ase.height,
 		TextureFormat::RGBA8,
 		TextureFlag::None,
-		TextureSampler::nearest,
 		image.bytes.data()
 	);
 	return frame;

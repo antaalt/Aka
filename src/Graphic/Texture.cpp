@@ -70,8 +70,7 @@ bool isDepth(TextureFormat format)
 	}
 }
 
-Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flags, TextureSampler sampler) :
-	m_sampler(sampler),
+Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flags) :
 	m_type(type),
 	m_format(format),
 	m_flags(flags),
@@ -86,33 +85,31 @@ Texture::~Texture()
 
 Texture::Ptr Texture::create2D(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flags, 
-	TextureSampler sampler,
+	TextureFormat format, TextureFlag flags,
 	const void* data
 )
 {
-	return GraphicBackend::createTexture2D(width, height, format, flags, sampler, data);
+	return GraphicBackend::createTexture2D(width, height, format, flags, data);
 }
 
 Texture::Ptr Texture::create2DMultisampled(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flag, TextureSampler sampler,
+	TextureFormat format, TextureFlag flag,
 	const void* data, uint8_t samples
 )
 {
-	return GraphicBackend::createTexture2DMultisampled(width, height, format, flag, sampler, data, samples);
+	return GraphicBackend::createTexture2DMultisampled(width, height, format, flag, data, samples);
 }
 
 Texture::Ptr Texture::createCubemap(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flags, 
-	TextureSampler sampler,
+	TextureFormat format, TextureFlag flags,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
 )
 {
-	return GraphicBackend::createTextureCubeMap(width, height, format, flags, sampler, px, nx, py, ny, pz, nz);
+	return GraphicBackend::createTextureCubeMap(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 uint32_t Texture::width() const
@@ -138,11 +135,6 @@ TextureFlag Texture::flags() const
 TextureType Texture::type() const
 {
 	return m_type;
-}
-
-const TextureSampler& Texture::sampler() const
-{
-	return m_sampler;
 }
 
 TextureFlag aka::operator&(TextureFlag lhs, TextureFlag rhs)

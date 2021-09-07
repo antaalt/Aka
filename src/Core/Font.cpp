@@ -67,8 +67,7 @@ Font::Font(const Path& path, uint32_t height)
     Texture::Ptr textureAtlas = Texture::create2D(
         atlas.width, atlas.height, 
         TextureFormat::RGBA8,
-        TextureFlag::None, 
-        TextureSampler::nearest, // TODO do not force nearest.
+        TextureFlag::None,
         atlas.bytes.data()
     );
     //atlas.save("atlas.png");

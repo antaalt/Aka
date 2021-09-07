@@ -214,11 +214,11 @@ std::string File::readString(const Path& path)
 {
 	File file(path, FileMode::Read);
 	if (!file.opened())
-		throw std::runtime_error("Failed to load string : " + std::string(path.cstr()));
+		return std::string();
 	std::string str;
 	str.resize(file.length());
 	if (!file.read(str.data(), str.length()))
-		throw std::runtime_error("Failed to read string : " + std::string(path.cstr()));
+		return std::string();
 	return str;
 }
 
@@ -226,11 +226,11 @@ std::vector<uint8_t> File::readBinary(const Path& path)
 {
 	File file(path, FileMode::Read);
 	if (!file.opened())
-		throw std::runtime_error("Failed to load binary : " + std::string(path.cstr()));
+		return std::vector<uint8_t>();
 	std::vector<uint8_t> bytes;
 	bytes.resize(file.length());
 	if (!file.read(bytes.data(), bytes.size()))
-		throw std::runtime_error("Failed to read binary : " + std::string(path.cstr()));
+		return std::vector<uint8_t>();
 	return bytes;
 }
 

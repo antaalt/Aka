@@ -60,7 +60,7 @@ void ShaderMaterial::set(const char* name, const Texture::Ptr* textures, size_t 
 	uint32_t slot = 0;
 	for (const Uniform& uniform : *m_shader)
 	{
-		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::TextureCubemap)
+		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::Texture2DMultisample && uniform.type != UniformType::TextureCubemap)
 			continue;
 		if (uniform.name == name)
 		{
@@ -83,7 +83,7 @@ void ShaderMaterial::set(const char* name, const TextureSampler* samplers, size_
 	uint32_t slot = 0;
 	for (const Uniform& uniform : *m_shader)
 	{
-		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::TextureCubemap)
+		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::Texture2DMultisample && uniform.type != UniformType::TextureCubemap)
 			continue;
 		if (uniform.name == name)
 		{
@@ -93,7 +93,7 @@ void ShaderMaterial::set(const char* name, const TextureSampler* samplers, size_
 		}
 		slot += 1 * uniform.count;
 	}
-	Logger::error("Texture not found : ", name);
+	Logger::error("Sampler not found : ", name);
 }
 
 };

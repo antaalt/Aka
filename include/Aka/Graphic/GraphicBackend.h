@@ -67,20 +67,17 @@ protected:
 	static Texture::Ptr createTexture2D(
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureFlag flags, 
-		TextureSampler sampler,
 		const void* data
 	);
 	static Texture::Ptr createTexture2DMultisampled(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		TextureSampler sampler,
 		const void* data,
 		uint8_t samples
 	);
 	static Texture::Ptr createTextureCubeMap(
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureFlag flags,
-		TextureSampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz

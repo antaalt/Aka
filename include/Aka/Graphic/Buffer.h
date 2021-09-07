@@ -47,11 +47,12 @@ enum class BufferMap {
 	WriteNoOverwrite
 };
 
+using BufferHandle = StrictType<uintptr_t, struct BufferHandleTag>;
+
 class Buffer
 {
 public:
 	using Ptr = std::shared_ptr<Buffer>;
-	using Handle = StrictType<uintptr_t, struct BufferHandleTag>;
 protected:
 	Buffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access);
 	Buffer(const Buffer&) = delete;
@@ -82,7 +83,7 @@ public:
 
 	virtual void unmap() = 0;
 
-	virtual Handle handle() const = 0;
+	virtual BufferHandle handle() const = 0;
 
 protected:
 	size_t m_size;

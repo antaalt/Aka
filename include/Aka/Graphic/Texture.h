@@ -68,13 +68,14 @@ uint32_t size(TextureFormat format);
 // Return true if given type is a depth or a depth stencil format
 bool isDepth(TextureFormat format);
 
+using TextureHandle = StrictType<uintptr_t, struct TextureHandleTag>;
+
 class Texture
 {
 public:
 	using Ptr = std::shared_ptr<Texture>;
-	using Handle = StrictType<uintptr_t, struct TextureHandleTag>;
 protected:
-	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flag, TextureSampler sampler);
+	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flag);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
@@ -84,7 +85,6 @@ public:
 		uint32_t height,
 		TextureFormat format,
 		TextureFlag flag,
-		TextureSampler sampler,
 		const void* data = nullptr
 	);
 	static Texture::Ptr create2DMultisampled(
@@ -92,7 +92,6 @@ public:
 		uint32_t height,
 		TextureFormat format,
 		TextureFlag flag,
-		TextureSampler sampler,
 		const void* data = nullptr,
 		uint8_t samples = 4
 	);
@@ -101,7 +100,6 @@ public:
 		uint32_t height,
 		TextureFormat format,
 		TextureFlag flag,
-		TextureSampler sampler,
 		const void* px = nullptr, const void* nx = nullptr,
 		const void* py = nullptr, const void* ny = nullptr,
 		const void* pz = nullptr, const void* nz = nullptr
@@ -117,10 +115,6 @@ public:
 
 	TextureType type() const;
 
-	const TextureSampler& sampler() const;
-
-	virtual void sampler(const TextureSampler& sampler) = 0;
-
 	virtual void upload(const Rect& rect, const void* data) = 0;
 
 	virtual void upload(const void* data) = 0;
@@ -131,10 +125,9 @@ public:
 
 	virtual void copy(Texture::Ptr src, const Rect& rect) = 0;
 
-	virtual Handle handle() const = 0;
+	virtual TextureHandle handle() const = 0;
 
 protected:
-	TextureSampler m_sampler;
 	TextureType m_type;
 	TextureFormat m_format;
 	TextureFlag m_flags;

@@ -180,7 +180,7 @@ void Batch3D::initialize()
 	m_indexBuffer = Buffer::create(BufferType::Index, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, TextureSampler::nearest, data);
+	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, data);
 
 	m_pass = {};
 	m_pass.clear = Clear::none;
@@ -299,6 +299,7 @@ void Batch3D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	size_t iTransform = 0;
 	for (const DrawBatch& batch : m_batches)
 	{
+		m_material->set("u_texture", TextureSampler::nearest); // TODO do not force nearest
 		m_material->set("u_texture", batch.texture ? batch.texture : m_defaultTexture);
 		m_pass.submesh.type = batch.primitive;
 		m_pass.submesh.count = batch.indexCount;

@@ -156,13 +156,13 @@ private:
 
 struct D3D11Sampler
 {
-	ID3D11ShaderResourceView* texture = nullptr;
+	TextureSampler sampler = {};
 	ID3D11SamplerState* samplerState = nullptr;
-	static ID3D11SamplerState* get(ID3D11ShaderResourceView* texture, TextureSampler sampler)
+	static ID3D11SamplerState* get(TextureSampler sampler)
 	{
-		for (D3D11Sampler& sampler : cache)
-			if (sampler.texture == texture)
-				return sampler.samplerState;
+		for (D3D11Sampler& s : cache)
+			if (s.sampler == sampler)
+				return s.samplerState;
 
 		D3D11_SAMPLER_DESC desc {};
 		
@@ -230,10 +230,10 @@ struct D3D11Sampler
 		HRESULT res = dctx.device->CreateSamplerState(&desc, &result);
 		if (SUCCEEDED(res))
 		{
-			D3D11Sampler sampler;
-			sampler.texture = texture;
-			sampler.samplerState = result;
-			cache.push_back(sampler);
+			D3D11Sampler s;
+			s.sampler = sampler;
+			s.samplerState = result;
+			cache.push_back(s);
 			return cache.back().samplerState;
 		}
 		return nullptr;
@@ -602,10 +602,10 @@ public:
 	friend class D3D11BackBuffer;
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags, TextureSampler sampler,
+		TextureFormat format, TextureFlag flags,
 		const void* data
 	) : 
-		Texture(width, height, TextureType::Texture2D, format, flags, sampler),
+		Texture(width, height, TextureType::Texture2D, format, flags),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -660,11 +660,11 @@ public:
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags, TextureSampler sampler,
+		TextureFormat format, TextureFlag flags,
 		const void* data,
 		uint8_t samples
 	) :
-		Texture(width, height, TextureType::Texture2DMultisample, format, flags, sampler),
+		Texture(width, height, TextureType::Texture2DMultisample, format, flags),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -718,12 +718,12 @@ public:
 	}
 	D3D11Texture(
 		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags, TextureSampler sampler,
+		TextureFormat format, TextureFlag flags,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz
 	) :
-		Texture(width, height, TextureType::TextureCubemap, format, flags, sampler),
+		Texture(width, height, TextureType::TextureCubemap, format, flags),
 		m_texture(nullptr),
 		m_staging(nullptr),
 		m_view(nullptr),
@@ -790,10 +790,6 @@ public:
 			m_texture->Release();
 		if (m_staging)
 			m_staging->Release();
-	}
-	void sampler(const TextureSampler& sampler) override
-	{
-		// ???
 	}
 	void upload(const void* data) override
 	{
@@ -896,9 +892,9 @@ public:
 			&box
 		);
 	}
-	Handle handle() const override
+	TextureHandle handle() const override
 	{
-		return Handle((uintptr_t)m_view);
+		return TextureHandle((uintptr_t)m_view);
 	}
 private:
 	ID3D11Texture2D* m_texture;
@@ -978,8 +974,7 @@ public:
 			std::shared_ptr<D3D11Texture> tex = std::make_shared<D3D11Texture>(
 				width, height, 
 				attachment.texture->format(),
-				attachment.texture->flags(), 
-				attachment.texture->sampler(),
+				attachment.texture->flags(),
 				nullptr
 			);
 			attachment.texture = tex;
@@ -1452,9 +1447,9 @@ public:
 		dctx.deviceContext->Unmap(m_buffer, 0);
 	}
 
-	Handle handle() const  override
+	BufferHandle handle() const  override
 	{
-		return Handle((uintptr_t)m_buffer);
+		return BufferHandle((uintptr_t)m_buffer);
 	}
 private:
 	ID3D11Buffer* m_buffer;
@@ -1966,6 +1961,7 @@ public:
 			}
 		}
 		m_textures.resize(textureCount, nullptr);
+		m_samplers.resize(textureCount, TextureSampler::nearest);
 		m_buffers.resize(bufferCount, nullptr);
 	}
 	D3D11ShaderMaterial(const D3D11ShaderMaterial&) = delete;
@@ -1987,6 +1983,8 @@ public:
 		std::vector<ID3D11Buffer*> fragmentUniformBuffers;
 		std::vector<ID3D11Buffer*> geometryUniformBuffers;
 		std::vector<ID3D11Buffer*> computeUniformBuffers;
+		std::vector<ID3D11ShaderResourceView*> fragmentShaderResourceViews;
+		std::vector<ID3D11SamplerState*> fragmentSamplerStates;
 		for (const Uniform& uniform : *m_shader)
 		{
 			const bool isVertex = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
@@ -1996,70 +1994,76 @@ public:
 			switch (uniform.type)
 			{
 			case UniformType::Buffer: {
-				uint32_t unit = bufferUnit++;
-				Buffer::Ptr buffer = m_buffers[unit];
-				if (buffer != nullptr)
+				for (uint32_t i = 0; i < uniform.count; i++)
 				{
-					if (isVertex)
+					uint32_t unit = bufferUnit++;
+					Buffer::Ptr buffer = m_buffers[unit];
+					if (buffer != nullptr)
 					{
-						vertexUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+						if (isVertex)
+						{
+							vertexUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+						}
+						if (isFragment)
+						{
+							fragmentUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+						}
+						if (isGeometry)
+						{
+							geometryUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+						}
+						if (isCompute)
+						{
+							computeUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+						}
 					}
-					if (isFragment)
+					else
 					{
-						fragmentUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+						if (isVertex)
+							vertexUniformBuffers.push_back(nullptr);
+						if (isFragment)
+							fragmentUniformBuffers.push_back(nullptr);
+						if (isGeometry)
+							geometryUniformBuffers.push_back(nullptr);
+						if (isCompute)
+							computeUniformBuffers.push_back(nullptr);
 					}
-					if (isGeometry)
-					{
-						geometryUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
-					}
-					if (isCompute)
-					{
-						computeUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
-					}
-				}
-				else
-				{
-					if (isVertex)
-						vertexUniformBuffers.push_back(nullptr);
-					if (isFragment)
-						fragmentUniformBuffers.push_back(nullptr);
-					if (isGeometry)
-						geometryUniformBuffers.push_back(nullptr);
-					if (isCompute)
-						computeUniformBuffers.push_back(nullptr);
 				}
 				break;
 			}
 			case UniformType::Texture2D:
 			case UniformType::Texture2DMultisample:
 			case UniformType::TextureCubemap: {
-				uint32_t unit = textureUnit++;
-				Texture::Ptr texture = m_textures[unit];
-				if (texture != nullptr)
+				for (uint32_t i = 0; i < uniform.count; i++)
 				{
-					// TODO single call for all textures ?
-					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
-					ID3D11ShaderResourceView* view = d3dTexture->m_view;
-					dctx.deviceContext->PSSetShaderResources(unit, 1, &view);
-					ID3D11SamplerState* sampler = D3D11Sampler::get(view, texture->sampler());
-					if (sampler != nullptr)
-						dctx.deviceContext->PSSetSamplers(unit, 1, &sampler);
-				}
-				else
-				{
-					ID3D11ShaderResourceView* nullResources[] = { nullptr };
-					ID3D11SamplerState* nullTextureSamplers[] = { nullptr };
-					dctx.deviceContext->PSSetShaderResources(unit, 1, nullResources);
-					dctx.deviceContext->PSSetSamplers(unit, 1, nullTextureSamplers);
+					uint32_t unit = textureUnit++;
+					Texture::Ptr texture = m_textures[unit];
+					TextureSampler sampler = m_samplers[unit];
+					if (texture != nullptr)
+					{
+						fragmentShaderResourceViews.push_back((ID3D11ShaderResourceView*)texture->handle().value());
+						fragmentSamplerStates.push_back(D3D11Sampler::get(sampler));
+					}
+					else
+					{
+						fragmentShaderResourceViews.push_back(nullptr);
+						fragmentSamplerStates.push_back(nullptr);
+					}
 				}
 				break;
 			}
 			default:
-				//Logger::warn("Uniform ignored :", uniform.name);
 				break;
 			}
 		}
-		// Fill buffers from data
+		// Fill textures units from data
+		AKA_ASSERT(fragmentShaderResourceViews.size() == fragmentSamplerStates.size(), "");
+		if (fragmentShaderResourceViews.size() > 0)
+		{
+			dctx.deviceContext->PSSetShaderResources(0, (UINT)fragmentShaderResourceViews.size(), fragmentShaderResourceViews.data());
+			dctx.deviceContext->PSSetSamplers(0, (UINT)fragmentSamplerStates.size(), fragmentSamplerStates.data());
+		}
+		// Fill buffer slot from buffers
 		if (vertexUniformBuffers.size() > 0)
 			dctx.deviceContext->VSSetConstantBuffers(0, (UINT)vertexUniformBuffers.size(), vertexUniformBuffers.data());
 		if (fragmentUniformBuffers.size() > 0)
@@ -2442,17 +2446,17 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, TextureSampler sampler, const void* data)
+Texture::Ptr GraphicBackend::createTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data)
 {
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, flags, sampler, data);
+	return std::make_shared<D3D11Texture>(width, height, format, flags, data);
 }
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flags, TextureSampler sampler,
+	TextureFormat format, TextureFlag flags,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
@@ -2461,12 +2465,12 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, flags, sampler, px, nx, py, ny, pz, nz);
+	return std::make_shared<D3D11Texture>(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
-	TextureFormat format, TextureFlag flags, TextureSampler sampler,
+	TextureFormat format, TextureFlag flags,
 	const void* data,
 	uint8_t samples
 )
@@ -2474,7 +2478,7 @@ Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	// DirectX do not support texture with null size (but opengl does ?).
 	if (width == 0 || height == 0)
 		return nullptr;
-	return std::make_shared<D3D11Texture>(width, height, format, flags, sampler, data, samples);
+	return std::make_shared<D3D11Texture>(width, height, format, flags, data, samples);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)

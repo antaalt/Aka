@@ -560,10 +560,10 @@ public:
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		TextureSampler sampler,
 		const void* data
 	) :
-		Texture(width, height, TextureType::Texture2D, format, flags, sampler),
+		Texture(width, height, TextureType::Texture2D, format, flags),
+		m_sampler(TextureSampler::nearest),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
@@ -576,17 +576,15 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
-		if (m_sampler.mipmapMode != TextureMipMapMode::None && data != nullptr)
-			glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		TextureSampler sampler,
 		const void* data,
 		uint8_t samples
 	) :
-		Texture(width, height, TextureType::Texture2DMultisample, format, flags, sampler),
+		Texture(width, height, TextureType::Texture2DMultisample, format, flags),
+		m_sampler(TextureSampler::nearest),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
@@ -599,18 +597,16 @@ public:
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
 		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
 		glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
-		//if (m_sampler.mipmapMode != TextureMipMapMode::None && data != nullptr)
-		//	glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE);
 	}
 	GLTexture(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		TextureSampler sampler,
 		const void* px, const void* nx,
 		const void* py, const void* ny,
 		const void* pz, const void* nz
 	) :
-		Texture(width, height, TextureType::TextureCubemap, format, flags, sampler),
+		Texture(width, height, TextureType::TextureCubemap, format, flags),
+		m_sampler(TextureSampler::nearest),
 		m_copyFBO(0),
 		m_textureID(0)
 	{
@@ -628,8 +624,7 @@ public:
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
 		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
-		if (m_sampler.mipmapMode != TextureMipMapMode::None && px != nullptr)
-			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
 	}
 	GLTexture(GLTexture&) = delete;
 	GLTexture& operator=(GLTexture&) = delete;
@@ -640,18 +635,21 @@ public:
 		if (m_copyFBO != 0)
 			glDeleteFramebuffers(1, &m_copyFBO);
 	}
-	void sampler(const TextureSampler& sampler) override
+	void sampler(const TextureSampler& sampler)
 	{
 		if (sampler == m_sampler)
 			return;
+		GLenum type = gl::type(m_type);
+		glBindTexture(type, m_textureID);
+		glTexParameteri(type, GL_TEXTURE_MAG_FILTER, gl::filter(sampler.filterMag, TextureMipMapMode::None));
+		glTexParameteri(type, GL_TEXTURE_MIN_FILTER, gl::filter(sampler.filterMin, sampler.mipmapMode));
+		glTexParameteri(type, GL_TEXTURE_WRAP_S, gl::wrap(sampler.wrapU));
+		glTexParameteri(type, GL_TEXTURE_WRAP_T, gl::wrap(sampler.wrapV));
+		glTexParameteri(type, GL_TEXTURE_WRAP_R, gl::wrap(sampler.wrapW));
+		glTexParameterf(type, GL_TEXTURE_MAX_ANISOTROPY_EXT, sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+		if (sampler.mipmapMode != TextureMipMapMode::None && m_sampler.mipmapMode == TextureMipMapMode::None)
+			glGenerateMipmap(type);
 		m_sampler = sampler;
-		glBindTexture(gl::type(m_type), m_textureID);
-		glTexParameteri(gl::type(m_type), GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
-		glTexParameteri(gl::type(m_type), GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
-		glTexParameteri(gl::type(m_type), GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
-		glTexParameteri(gl::type(m_type), GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		glTexParameteri(gl::type(m_type), GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
-		glTexParameterf(gl::type(m_type), GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
 	}
 	void upload(const void* data) override
 	{
@@ -660,8 +658,6 @@ public:
 	void upload(const Rect& rect, const void* data) override
 	{
 		upload(0, rect, data);
-		if (m_sampler.mipmapMode != TextureMipMapMode::None)
-			glGenerateMipmap(gl::type(m_type));
 	}
 	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
 	{
@@ -694,11 +690,12 @@ public:
 	{
 		return m_textureID;
 	}
-	Handle handle() const override
+	TextureHandle handle() const override
 	{
-		return Handle(static_cast<uintptr_t>(m_textureID));
+		return TextureHandle(static_cast<uintptr_t>(m_textureID));
 	}
 private:
+	TextureSampler m_sampler;
 	GLuint m_copyFBO;
 	GLuint m_textureID;
 };
@@ -974,10 +971,16 @@ public:
 				{
 					GLint unit = textureUnit++;
 					Texture::Ptr texture = m_textures[unit];
-					GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
+					TextureSampler sampler = m_samplers[unit];
 					glActiveTexture(GL_TEXTURE0 + unit);
 					if (texture != nullptr)
-						glBindTexture(gl::type(texture->type()), glTexture->getTextureID());
+					{
+						// Bind and set sampler
+
+						GLenum type = gl::type(texture->type());
+						glBindTexture(type, (GLuint)texture->handle().value());
+						reinterpret_cast<GLTexture*>(texture.get())->sampler(sampler);
+					}
 					else
 					{
 						GLenum glType;
@@ -1018,11 +1021,6 @@ public:
 				}
 				// Upload texture unit array.
 				glUniform1iv(location, (GLsizei)units.size(), units.data());
-				break;
-			}
-			case UniformType::Sampler2D:
-			case UniformType::SamplerCube: {
-				// TODO store sampler
 				break;
 			}*/
 			}
@@ -1156,7 +1154,7 @@ public:
 		glBindBuffer(GLBuffer::type(m_type), 0);
 	}
 
-	Handle handle() const override { return Handle(m_bufferID); }
+	BufferHandle handle() const override { return BufferHandle(m_bufferID); }
 private:
 	GLuint m_bufferID;
 };
@@ -1286,7 +1284,6 @@ public:
 				width, height,
 				attachment.texture->format(),
 				TextureFlag::RenderTarget,
-				attachment.texture->sampler(),
 				nullptr
 			);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), gl::type(tex->type()), tex->getTextureID(), 0);
@@ -1843,34 +1840,31 @@ uint32_t GraphicBackend::deviceCount()
 Texture::Ptr GraphicBackend::createTexture2D(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	TextureSampler sampler,
 	const void* data
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, flags, sampler, data);
+	return std::make_shared<GLTexture>(width, height, format, flags, data);
 }
 
 Texture::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	TextureSampler sampler,
 	const void* data,
 	uint8_t samples
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, flags, sampler, data, samples);
+	return std::make_shared<GLTexture>(width, height, format, flags, data, samples);
 }
 
 Texture::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	TextureSampler sampler,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
 	const void* pz, const void* nz
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, flags, sampler, px, nx, py, ny, pz, nz);
+	return std::make_shared<GLTexture>(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)
