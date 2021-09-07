@@ -1,11 +1,18 @@
 #pragma once
 
-#if defined(AKA_USE_OPENGL)
+// D3D / Metal / Consoles coordinate system convention left handed
+// OpenGL / OpenGL ES coordinate system convention is right handed
+// Aka use top right handed as default for everything because its easier.
+#if !defined(GEOMETRY_RIGHT_HANDED) && !defined(GEOMETRY_LEFT_HANDED)
 #define GEOMETRY_RIGHT_HANDED
-#define GEOMETRY_CLIP_SPACE_NEGATIVE
+#endif
+
+// Clip space range differ from GL & D3D11. 
+// This affect the perspective matrix for clip space transformation.
+#if defined(AKA_USE_OPENGL)
+#define GEOMETRY_CLIP_SPACE_NEGATIVE // [-1, 1]
 #elif defined(AKA_USE_D3D11)
-#define GEOMETRY_LEFT_HANDED
-#define GEOMETRY_CLIP_SPACE_POSITIVE
+#define GEOMETRY_CLIP_SPACE_POSITIVE // [0, 1]
 #else
 #endif
 

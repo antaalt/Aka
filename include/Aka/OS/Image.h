@@ -5,11 +5,10 @@
 #include <Aka/OS/FileSystem.h>
 #include <Aka/Core/Geometry.h>
 
-// D3D / Metal / Consoles origin is top left
-// OpenGL / OpenGL ES origin is bottom left
-#if defined(AKA_USE_OPENGL)
-#define AKA_ORIGIN_BOTTOM_LEFT
-#elif defined(AKA_USE_D3D11)
+// D3D / Metal / Consoles origin convention is top left
+// OpenGL / OpenGL ES origin convention is bottom left
+// Aka use top left as default for everything because its easier.
+#if !defined(AKA_ORIGIN_TOP_LEFT) && !defined(AKA_ORIGIN_BOTTOM_LEFT)
 #define AKA_ORIGIN_TOP_LEFT
 #endif
 
