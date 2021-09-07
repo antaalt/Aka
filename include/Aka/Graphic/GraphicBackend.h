@@ -96,10 +96,11 @@ protected:
 	static Mesh::Ptr createMesh();
 
 	friend class Shader;
-	static ShaderID compile(const char* content, ShaderType type);
-	static Shader::Ptr createShader(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createShaderCompute(ShaderID compute, const VertexAttribute* attributes, size_t count);
+	static ShaderHandle compile(const char* content, ShaderType type);
+	static void destroy(ShaderHandle handle);
+	static Shader::Ptr createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createShaderCompute(ShaderHandle compute, const VertexAttribute* attributes, size_t count);
 
 	friend class ShaderMaterial;
 	static ShaderMaterial::Ptr createShaderMaterial(Shader::Ptr shader);

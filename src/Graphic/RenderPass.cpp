@@ -179,12 +179,12 @@ void RenderPass::execute()
 		Logger::warn("No mesh set for render pass.");
 		return;
 	}
-	if (this->submesh.mesh->getVertexAttributeCount() >= this->material->getShader()->getAttributeCount())
+	if (this->submesh.mesh->getVertexAttributeCount() >= this->material->shader()->getAttributeCount())
 	{
-		for (uint32_t i = 0; i < this->material->getShader()->getAttributeCount(); i++)
+		for (uint32_t i = 0; i < this->material->shader()->getAttributeCount(); i++)
 		{
 			const VertexAttribute& mesh = this->submesh.mesh->getVertexAttribute(i);
-			const VertexAttribute& shader = this->material->getShader()->getAttribute(i);
+			const VertexAttribute& shader = this->material->shader()->getAttribute(i);
 			if (mesh.semantic != shader.semantic || mesh.format != shader.format || mesh.type != shader.type)
 			{
 				Logger::warn("Shader and mesh non compatible");

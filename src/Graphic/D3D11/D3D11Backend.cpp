@@ -44,7 +44,7 @@ extern "C" {
             __LINE__				\
         );							\
         ::aka::Logger::error(buffer);\
-		::aka::GraphicBackend::frame();\
+		dctx.log();                 \
 		AKA_DEBUG_BREAK;            \
 	}								\
 }
@@ -66,6 +66,42 @@ struct D3D11Context
 #endif
 	ID3D11Device* device = nullptr;
 	ID3D11DeviceContext* deviceContext = nullptr;
+
+	void log()
+	{
+		UINT64 messageCount = debugInfoQueue->GetNumStoredMessages();
+		for (UINT64 i = 0; i < messageCount; i++) {
+			SIZE_T messageSize = 0;
+			HRESULT res = debugInfoQueue->GetMessage(i, nullptr, &messageSize);
+			if (SUCCEEDED(res) || messageSize > 0u)
+			{
+				D3D11_MESSAGE* message = (D3D11_MESSAGE*)malloc(messageSize); // Allocate enough space
+				res = debugInfoQueue->GetMessage(i, message, &messageSize); // Get the actual message
+				if (SUCCEEDED(res))
+				{
+					switch (message->Severity)
+					{
+					case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_CORRUPTION:
+						Logger::critical("[D3D11] ", message->pDescription);
+							break;
+					case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_ERROR:
+						Logger::error("[D3D11] ", message->pDescription);
+							break;
+					case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_WARNING:
+						Logger::warn("[D3D11] ", message->pDescription);
+						break;
+					default:
+					case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_MESSAGE:
+					case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_INFO:
+						Logger::debug("[D3D11] ", message->pDescription);
+						break;
+					}
+				}
+				free(message);
+			}
+		}
+		debugInfoQueue->ClearStoredMessages();
+	}
 };
 
 static D3D11Context dctx;
@@ -1285,18 +1321,20 @@ public:
 		}
 		switch (m_type)
 		{
-		case BufferType::VertexBuffer:
+		case BufferType::Vertex:
 			bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 			break;
-		case BufferType::IndexBuffer:
+		case BufferType::Index:
 			bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			break;
+		case BufferType::Uniform:
+			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 			break;
 		case BufferType::ShaderStorage:
 			bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			break;
 		default:
-			// TODO implement all types
-			Logger::warn("Not implemented buffer type.");
+			Logger::warn("Unkwnown buffer type.");
 			bufferDesc.BindFlags = 0;
 			break;
 		}
@@ -1319,7 +1357,7 @@ public:
 		else
 		{
 			if (m_access != BufferCPUAccess::None)
-				Logger::warn("Cannot set given BufferCPUAccess for given BufferUsage.");
+				Logger::error("Cannot set given BufferCPUAccess for given BufferUsage.");
 			bufferDesc.CPUAccessFlags = 0;
 		}
 		bufferDesc.ByteWidth = static_cast<UINT>(size);
@@ -1359,7 +1397,14 @@ public:
 
 	void upload(const void* data) override
 	{
-		upload(data, m_size, 0);
+		dctx.deviceContext->UpdateSubresource(
+			m_buffer,
+			0,
+			nullptr,
+			data,
+			0,
+			0
+		);
 	}
 
 	void download(void* data, size_t size, size_t offset = 0) override
@@ -1474,7 +1519,6 @@ public:
 	}
 	void draw(PrimitiveType type, uint32_t vertexCount, uint32_t vertexOffset) const override
 	{
-		unsigned int offset = 0;
 		dctx.deviceContext->IASetVertexBuffers(0, static_cast<UINT>(m_vertexBuffers.size()), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
 		dctx.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 		switch (type)
@@ -1505,7 +1549,6 @@ public:
 	}
 	void drawIndexed(PrimitiveType type, uint32_t indexCount, uint32_t indexOffset) const override
 	{
-		unsigned int offset = 0;
 		dctx.deviceContext->IASetVertexBuffers(0, static_cast<UINT>(m_vertexBuffers.size()), m_vertexBuffers.data(), m_strides.data(), m_offsets.data());
 		dctx.deviceContext->IASetIndexBuffer((ID3D11Buffer*)m_indexAccessor.bufferView.buffer->handle().value(), m_indexFormat, m_indexAccessor.bufferView.offset);
 		switch (type)
@@ -1544,29 +1587,29 @@ private:
 class D3D11Shader : public Shader
 {
 public:
-	D3D11Shader(ShaderID vert, ShaderID frag, ShaderID geometry, ShaderID compute, const VertexAttribute* attributes, size_t count) :
+	D3D11Shader(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, ShaderHandle compute, const VertexAttribute* attributes, size_t count) :
 		Shader(attributes, count),
 		m_layout(nullptr),
 		m_vertexShader(nullptr),
 		m_pixelShader(nullptr),
 		m_geometryShader(nullptr),
-		m_computeShader(nullptr),
-		m_vertexShaderBuffer((ID3D10Blob*)vert.value()),
-		m_pixelShaderBuffer((ID3D10Blob*)frag.value()),
-		m_geometryShaderBuffer((ID3D10Blob*)geometry.value()),
-		m_computeShaderBuffer((ID3D10Blob*)compute.value())
+		m_computeShader(nullptr)
 	{
+		ID3D10Blob* vertexShaderBuffer = ((ID3D10Blob*)vert.value());
+		ID3D10Blob* pixelShaderBuffer = ((ID3D10Blob*)frag.value());
+		ID3D10Blob* geometryShaderBuffer = ((ID3D10Blob*)geometry.value());
+		ID3D10Blob* computeShaderBuffer = ((ID3D10Blob*)compute.value());
+		// --- Create shaders
 		if (vert.value() != 0)
-			D3D_CHECK_RESULT(dctx.device->CreateVertexShader(m_vertexShaderBuffer->GetBufferPointer(), m_vertexShaderBuffer->GetBufferSize(), nullptr, &m_vertexShader));
+			D3D_CHECK_RESULT(dctx.device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), nullptr, &m_vertexShader));
 		if (frag.value() != 0)
-			D3D_CHECK_RESULT(dctx.device->CreatePixelShader(m_pixelShaderBuffer->GetBufferPointer(), m_pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
+			D3D_CHECK_RESULT(dctx.device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
 		if (compute.value() != 0)
-			D3D_CHECK_RESULT(dctx.device->CreateComputeShader(m_computeShaderBuffer->GetBufferPointer(), m_computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
+			D3D_CHECK_RESULT(dctx.device->CreateComputeShader(computeShaderBuffer->GetBufferPointer(), computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
 		if (geometry.value() != 0)
-			D3D_CHECK_RESULT(dctx.device->CreateGeometryShader(m_geometryShaderBuffer->GetBufferPointer(), m_geometryShaderBuffer->GetBufferSize(), nullptr, &m_geometryShader));
+			D3D_CHECK_RESULT(dctx.device->CreateGeometryShader(geometryShaderBuffer->GetBufferPointer(), geometryShaderBuffer->GetBufferSize(), nullptr, &m_geometryShader));
 
-		// Now setup the layout of the data that goes into the shader.
-		// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
+		// --- Layout
 		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
 		AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
 		for (uint32_t i = 0; i < count; i++)
@@ -1657,17 +1700,40 @@ public:
 			polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 			polygonLayout[i].InstanceDataStepRate = 0;
 		}
-
-		// Create the vertex input layout.
 		D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
 			polygonLayout.data(),
 			(UINT)polygonLayout.size(),
-			m_vertexShaderBuffer->GetBufferPointer(),
-			m_vertexShaderBuffer->GetBufferSize(),
+			vertexShaderBuffer->GetBufferPointer(),
+			vertexShaderBuffer->GetBufferSize(),
 			&m_layout
 		));
 
-		m_valid = true;
+		// --- Uniforms
+		// Find and merge all uniforms
+		std::vector<Uniform> uniformsVert = getUniforms((ID3D10Blob*)vert.value(), ShaderType::Vertex);
+		std::vector<Uniform> uniformsFrag = getUniforms((ID3D10Blob*)frag.value(), ShaderType::Fragment);
+		std::vector<Uniform> uniformsGeo = getUniforms((ID3D10Blob*)geometry.value(), ShaderType::Geometry);
+		std::vector<Uniform> uniformsComp = getUniforms((ID3D10Blob*)compute.value(), ShaderType::Compute);
+		m_uniforms.insert(m_uniforms.end(), uniformsVert.begin(), uniformsVert.end());
+		m_uniforms.insert(m_uniforms.end(), uniformsFrag.begin(), uniformsFrag.end());
+		m_uniforms.insert(m_uniforms.end(), uniformsGeo.begin(), uniformsGeo.end());
+		m_uniforms.insert(m_uniforms.end(), uniformsComp.begin(), uniformsComp.end());
+		// Remove duplicates
+		for (size_t i = 0; i < m_uniforms.size(); i++)
+		{
+			for (size_t j = i + 1; j < m_uniforms.size(); j++)
+			{
+				if (m_uniforms[i].name == m_uniforms[j].name)
+				{
+					if (m_uniforms[i].type == m_uniforms[j].type)
+					{
+						m_uniforms[i].shaderType = (ShaderType)((int)m_uniforms[i].shaderType | (int)m_uniforms[j].shaderType);
+						m_uniforms.erase(m_uniforms.begin() + j);
+						j--;
+					}
+				}
+			}
+		}
 	}
 	D3D11Shader(const D3D11Shader&) = delete;
 	D3D11Shader& operator=(const D3D11Shader&) = delete;
@@ -1683,30 +1749,10 @@ public:
 			m_geometryShader->Release();
 		if (m_computeShader)
 			m_computeShader->Release();
-		if (m_vertexShaderBuffer)
-			m_vertexShaderBuffer->Release();
-		if (m_pixelShaderBuffer)
-			m_pixelShaderBuffer->Release();
-		if (m_geometryShaderBuffer)
-			m_geometryShaderBuffer->Release();
-		if (m_computeShaderBuffer)
-			m_computeShaderBuffer->Release();
 	}
 
 public:
-	std::vector<Uniform> getUniformsVertexShader(std::vector<ID3D11Buffer*>& uniformBuffers)
-	{
-		return getUniforms(m_vertexShaderBuffer, uniformBuffers, ShaderType::Vertex);
-	}
-	std::vector<Uniform> getUniformsFragShader(std::vector<ID3D11Buffer*>& uniformBuffers)
-	{
-		return getUniforms(m_pixelShaderBuffer, uniformBuffers, ShaderType::Fragment);
-	}
-	std::vector<Uniform> getUniformsGeoShader(std::vector<ID3D11Buffer*>& uniformBuffers)
-	{
-		return getUniforms(m_geometryShaderBuffer, uniformBuffers, ShaderType::Geometry);
-	}
-	std::vector<Uniform> getUniforms(ID3D10Blob *shader, std::vector<ID3D11Buffer*> &uniformBuffers, ShaderType shaderType)
+	std::vector<Uniform> getUniforms(ID3D10Blob *shader, ShaderType shaderType)
 	{
 		if (shader == nullptr)
 			return std::vector<Uniform>();
@@ -1717,61 +1763,77 @@ public:
 		D3D11_SHADER_DESC shader_desc{};
 		D3D_CHECK_RESULT(reflector->GetDesc(&shader_desc));
 
+		// --- Textures
 		for (uint32_t i = 0; i < shader_desc.BoundResources; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC desc{};
 			D3D_CHECK_RESULT(reflector->GetResourceBindingDesc(i, &desc));
 
-			if (desc.Type == D3D_SIT_TEXTURE && desc.Dimension == D3D_SRV_DIMENSION_TEXTURE2D)
+			if (desc.Type == D3D_SIT_TEXTURE)
 			{
-				uniforms.emplace_back();
-				Uniform& uniform = uniforms.back();
-				uniform.id = UniformID(0);
-				uniform.name = desc.Name;
-				uniform.shaderType = shaderType;
-				uniform.bufferIndex = 0;
-				uniform.arrayLength = max(1U, desc.BindCount);
-				uniform.type = UniformType::Texture2D;
+				// TODO add support for texture array instead of this ugly hack
+				String name = desc.Name;
+				uint32_t count = 1;
+				if (name[name.length() - 1] == ']' && name[name.length() - 3] == '[')
+				{
+					uint32_t id = name[name.length() - 2] - '0';
+					name = name.substr(0, name.length() - 3);
+					if (id > 0)
+					{
+						for (Uniform& uniform : uniforms)
+						{
+							if (uniform.name == name)
+							{
+								uniform.count++;
+								break;
+							}
+						}
+						continue;
+					}
+				}
+				if (desc.Dimension == D3D_SRV_DIMENSION_TEXTURE2D)
+				{
+					uniforms.emplace_back();
+					Uniform& uniform = uniforms.back();
+					uniform.name = name;
+					uniform.shaderType = shaderType;
+					uniform.count = max(count, desc.BindCount);
+					uniform.type = UniformType::Texture2D;
+				}
+				else if (desc.Dimension == D3D_SRV_DIMENSION_TEXTURECUBE)
+				{
+					uniforms.emplace_back();
+					Uniform& uniform = uniforms.back();
+					uniform.name = name;
+					uniform.shaderType = shaderType;
+					uniform.count = max(count, desc.BindCount);
+					uniform.type = UniformType::TextureCubemap;
+				}
 			}
-			else if (desc.Type == D3D_SIT_TEXTURE && desc.Dimension == D3D_SRV_DIMENSION_TEXTURECUBE)
+			// TODO remove sampler from uniforms ?
+			/*else if (desc.Type == D3D_SIT_SAMPLER)
 			{
 				uniforms.emplace_back();
 				Uniform& uniform = uniforms.back();
-				uniform.id = UniformID(0);
 				uniform.name = desc.Name;
 				uniform.shaderType = shaderType;
-				uniform.bufferIndex = 0;
-				uniform.arrayLength = max(1U, desc.BindCount);
-				uniform.type = UniformType::TextureCubemap;
-			}
-			else if (desc.Type == D3D_SIT_SAMPLER)
-			{
-				uniforms.emplace_back();
-				Uniform& uniform = uniforms.back();
-				uniform.id = UniformID(0);
-				uniform.name = desc.Name;
-				uniform.shaderType = shaderType;
-				uniform.bufferIndex = 0;
-				uniform.arrayLength = max(1U, desc.BindCount);
+				uniform.count = max(1U, desc.BindCount);
 				uniform.type = UniformType::Sampler2D;
-			}
+			}*/
 		}
-
+		// Store number of uniform buffer, size, bufferIDX of variables
 		for (uint32_t i = 0; i < shader_desc.ConstantBuffers; i++)
 		{
 			D3D11_SHADER_BUFFER_DESC desc {};
 			ID3D11ShaderReflectionConstantBuffer *cb = reflector->GetConstantBufferByIndex(i);
 			D3D_CHECK_RESULT(cb->GetDesc(&desc));
 
-			D3D11_BUFFER_DESC bufferDesc {};
-			bufferDesc.ByteWidth = desc.Size;
-			bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-			ID3D11Buffer* buffer;
-			D3D_CHECK_RESULT(dctx.device->CreateBuffer(&bufferDesc, nullptr, &buffer));
-			uniformBuffers.push_back(buffer);
+			uniforms.emplace_back();
+			Uniform& uniform = uniforms.back();
+			uniform.name = desc.Name;
+			uniform.shaderType = shaderType;
+			uniform.count = 1;
+			uniform.type = UniformType::Buffer;
 			
 			// get the uniforms
 			for (uint32_t j = 0; j < desc.Variables; j++)
@@ -1786,11 +1848,9 @@ public:
 
 				uniforms.emplace_back();
 				Uniform& uniform = uniforms.back();
-				uniform.id = UniformID(0);
 				uniform.name = varDesc.Name;
 				uniform.shaderType = shaderType;
-				uniform.bufferIndex = i;
-				uniform.arrayLength = max(1U, typeDesc.Elements);
+				uniform.count = max(1U, typeDesc.Elements);
 				uniform.type = UniformType::None;
 
 				switch (typeDesc.Type)
@@ -1863,10 +1923,6 @@ public:
 		dctx.deviceContext->CSSetShader(m_computeShader, nullptr, 0);
 	}
 private:
-	ID3D10Blob* m_vertexShaderBuffer;
-	ID3D10Blob* m_pixelShaderBuffer;
-	ID3D10Blob* m_geometryShaderBuffer;
-	ID3D10Blob* m_computeShaderBuffer;
 	ID3D11InputLayout* m_layout;
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;
@@ -1881,84 +1937,41 @@ public:
 		ShaderMaterial(shader)
 	{
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
-		{
-			// Find and merge all uniforms
-			std::vector<Uniform> uniformsVert = d3dShader->getUniformsVertexShader(m_vertexUniformBuffers);
-			std::vector<Uniform> uniformsFrag = d3dShader->getUniformsFragShader(m_fragmentUniformBuffers);
-			std::vector<Uniform> uniformsGeo = d3dShader->getUniformsGeoShader(m_geometryUniformBuffers);
-			m_uniforms.insert(m_uniforms.end(), uniformsVert.begin(), uniformsVert.end());
-			m_uniforms.insert(m_uniforms.end(), uniformsFrag.begin(), uniformsFrag.end());
-			m_uniforms.insert(m_uniforms.end(), uniformsGeo.begin(), uniformsGeo.end());
-			for (size_t i = 0; i < m_uniforms.size(); i++)
-			{
-				m_uniforms[i].id = UniformID(i);
-				for (size_t j = i + 1; j < m_uniforms.size(); j++)
-				{
-					if (m_uniforms[i].name == m_uniforms[j].name)
-					{
-						if (m_uniforms[i].type == m_uniforms[j].type)
-						{
-							m_uniforms[i].shaderType = (ShaderType)((int)m_uniforms[i].shaderType | (int)m_uniforms[j].shaderType);
-							m_uniforms.erase(m_uniforms.begin() + j);
-							j--;
-						}
-					}
-				}
-			}
-			m_vertexUniformValues.resize(m_vertexUniformBuffers.size());
-			m_fragmentUniformValues.resize(m_fragmentUniformBuffers.size());
-			m_geometryUniformValues.resize(m_geometryUniformBuffers.size());
-		}
-		size_t bufferSize = 0;
+
 		size_t textureCount = 0;
-		for (const Uniform &uniform : m_uniforms)
+		size_t bufferCount = 0;
+		for (const Uniform &uniform : *m_shader)
 		{
 			// Create textures & data buffers
 			switch (uniform.type)
 			{
-			case UniformType::Sampler2D:
+			case UniformType::Buffer:
+				bufferCount += uniform.count;
 				break;
 			case UniformType::Texture2D:
 			case UniformType::TextureCubemap:
 			case UniformType::Texture2DMultisample :
-				textureCount++;
+				textureCount += uniform.count;
 				break;
 			case UniformType::Int:
 			case UniformType::UnsignedInt:
 			case UniformType::Float:
-				bufferSize += 1 * uniform.arrayLength;
-				break;
 			case UniformType::Vec2:
-				bufferSize += 2 * uniform.arrayLength;
-				break;
 			case UniformType::Vec3:
-				bufferSize += 4 * uniform.arrayLength;
-				break;
 			case UniformType::Vec4:
-				bufferSize += 4 * uniform.arrayLength;
-				break;
 			case UniformType::Mat3:
-				bufferSize += 9 * uniform.arrayLength;
-				break;
 			case UniformType::Mat4:
-				bufferSize += 16 * uniform.arrayLength;
-				break;
 			default:
-				Logger::warn("Unsupported Uniform Type : ", uniform.name);
 				break;
 			}
 		}
-		m_data.resize(bufferSize, 0.f);
 		m_textures.resize(textureCount, nullptr);
+		m_buffers.resize(bufferCount, nullptr);
 	}
 	D3D11ShaderMaterial(const D3D11ShaderMaterial&) = delete;
 	const D3D11ShaderMaterial& operator=(const D3D11ShaderMaterial&) = delete;
 	~D3D11ShaderMaterial()
 	{
-		for (ID3D11Buffer* buffer : m_vertexUniformBuffers)
-			buffer->Release();
-		for (ID3D11Buffer* buffer : m_fragmentUniformBuffers)
-			buffer->Release();
 	}
 public:
 	void apply()
@@ -1966,164 +1979,96 @@ public:
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
 		d3dShader->use();
 		uint32_t textureUnit = 0;
-		uint32_t offset = 0;
-		uint32_t offsetFrag = 0;
-		uint32_t offsetVert = 0;
-		uint32_t offsetGeo = 0;
-		auto updateData = [](std::vector<float>& buffer, const float* data, uint32_t offset, uint32_t length) -> uint32_t {
-			// We need to align the offset on gpu memory
-			// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
-			uint32_t padding = offset % 4;
-			if (length + padding <= 4)
-				padding = 0;
-			uint32_t size = offset + padding + length;
-			if (buffer.size() < size)
-				buffer.resize(size);
-			memcpy(&buffer[offset + padding], data, length * sizeof(float));
-			return offset + padding + length; // return new gpu offset
-		};
-		for (const Uniform& uniform : m_uniforms)
+		uint32_t bufferUnit = 0;
+		// Alignement hlsl :
+		// Close to std140 GLSL
+		// https://docs.microsoft.com/fr-fr/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules?redirectedfrom=MSDN
+		std::vector<ID3D11Buffer*> vertexUniformBuffers;
+		std::vector<ID3D11Buffer*> fragmentUniformBuffers;
+		std::vector<ID3D11Buffer*> geometryUniformBuffers;
+		std::vector<ID3D11Buffer*> computeUniformBuffers;
+		for (const Uniform& uniform : *m_shader)
 		{
 			const bool isVertex = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex;
-			const bool isFrag = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
-			const bool isGeo = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Geometry) == ShaderType::Geometry;
-			switch(uniform.type)
+			const bool isFragment = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Fragment) == ShaderType::Fragment;
+			const bool isGeometry = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Geometry) == ShaderType::Geometry;
+			const bool isCompute = (ShaderType)((int)uniform.shaderType & (int)ShaderType::Compute) == ShaderType::Compute;
+			switch (uniform.type)
 			{
-			case UniformType::None:
-			case UniformType::Sampler2D:
-			case UniformType::SamplerCube:
+			case UniformType::Buffer: {
+				uint32_t unit = bufferUnit++;
+				Buffer::Ptr buffer = m_buffers[unit];
+				if (buffer != nullptr)
+				{
+					if (isVertex)
+					{
+						vertexUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+					}
+					if (isFragment)
+					{
+						fragmentUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+					}
+					if (isGeometry)
+					{
+						geometryUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+					}
+					if (isCompute)
+					{
+						computeUniformBuffers.push_back((ID3D11Buffer*)buffer->handle().value());
+					}
+				}
+				else
+				{
+					if (isVertex)
+						vertexUniformBuffers.push_back(nullptr);
+					if (isFragment)
+						fragmentUniformBuffers.push_back(nullptr);
+					if (isGeometry)
+						geometryUniformBuffers.push_back(nullptr);
+					if (isCompute)
+						computeUniformBuffers.push_back(nullptr);
+				}
 				break;
+			}
 			case UniformType::Texture2D:
 			case UniformType::Texture2DMultisample:
 			case UniformType::TextureCubemap: {
-				Texture::Ptr texture = m_textures[textureUnit];
+				uint32_t unit = textureUnit++;
+				Texture::Ptr texture = m_textures[unit];
 				if (texture != nullptr)
 				{
 					// TODO single call for all textures ?
 					D3D11Texture* d3dTexture = (D3D11Texture*)texture.get();
 					ID3D11ShaderResourceView* view = d3dTexture->m_view;
-					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, &view);
+					dctx.deviceContext->PSSetShaderResources(unit, 1, &view);
 					ID3D11SamplerState* sampler = D3D11Sampler::get(view, texture->sampler());
 					if (sampler != nullptr)
-						dctx.deviceContext->PSSetSamplers(textureUnit, 1, &sampler);
+						dctx.deviceContext->PSSetSamplers(unit, 1, &sampler);
 				}
 				else
 				{
 					ID3D11ShaderResourceView* nullResources[] = { nullptr };
 					ID3D11SamplerState* nullTextureSamplers[] = { nullptr };
-					dctx.deviceContext->PSSetShaderResources(textureUnit, 1, nullResources);
-					dctx.deviceContext->PSSetSamplers(textureUnit, 1, nullTextureSamplers);
+					dctx.deviceContext->PSSetShaderResources(unit, 1, nullResources);
+					dctx.deviceContext->PSSetSamplers(unit, 1, nullTextureSamplers);
 				}
-				textureUnit++;
-				break;
-			}
-			case UniformType::Mat4: {
-				uint32_t length = 16 * uniform.arrayLength;
-				if (isVertex)
-					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
-				if (isGeo)
-					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
-				if (isFrag)
-					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
-				offset += length;
-				break;
-			}
-			case UniformType::Mat3: {
-				uint32_t length = 9 * uniform.arrayLength;
-				if (isVertex)
-					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
-				if (isGeo)
-					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
-				if (isFrag)
-					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
-				offset += length;
-				break;
-			}
-			case UniformType::Vec3: {
-				uint32_t length = 3 * uniform.arrayLength;
-				if (isVertex)
-					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
-				if (isGeo)
-					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
-				if (isFrag)
-					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
-				offset += length;
-				break;
-			}
-			case UniformType::Vec4:
-			{
-				uint32_t length = 4 * uniform.arrayLength;
-				if (isVertex)
-					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
-				if (isGeo)
-					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
-				if (isFrag)
-					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
-				offset += length;
-				break;
-			}
-			case UniformType::Float:
-			{
-				uint32_t length = 1 * uniform.arrayLength;
-				if (isVertex)
-					offsetVert = updateData(m_vertexUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetVert, length);
-				if (isGeo)
-					offsetGeo = updateData(m_geometryUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetGeo, length);
-				if (isFrag)
-					offsetFrag = updateData(m_fragmentUniformValues[uniform.bufferIndex], m_data.data() + offset, offsetFrag, length);
-				offset += length;
 				break;
 			}
 			default:
-				Logger::error("Unsupported uniform type : ", (int)uniform.type);
+				//Logger::warn("Uniform ignored :", uniform.name);
 				break;
 			}
 		}
 		// Fill buffers from data
-		if (m_vertexUniformBuffers.size() > 0)
-		{
-			for (uint32_t iBuffer = 0; iBuffer < m_vertexUniformBuffers.size(); iBuffer++)
-			{
-				AKA_ASSERT(m_vertexUniformValues.size() > 0, "No data for uniform buffer");
-				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_vertexUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-				memcpy(mappedResource.pData, m_vertexUniformValues[iBuffer].data(), sizeof(float) * m_vertexUniformValues[iBuffer].size());
-				dctx.deviceContext->Unmap(m_vertexUniformBuffers[iBuffer], 0);
-			}
-			dctx.deviceContext->VSSetConstantBuffers(0, (UINT)m_vertexUniformBuffers.size(), m_vertexUniformBuffers.data());
-		}
-		if (m_fragmentUniformBuffers.size() > 0)
-		{
-			for (uint32_t iBuffer = 0; iBuffer < m_fragmentUniformBuffers.size(); iBuffer++)
-			{
-				AKA_ASSERT(m_fragmentUniformValues.size() > 0, "No data for uniform buffer");
-				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_fragmentUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-				memcpy(mappedResource.pData, m_fragmentUniformValues[iBuffer].data(), sizeof(float) * m_fragmentUniformValues[iBuffer].size());
-				dctx.deviceContext->Unmap(m_fragmentUniformBuffers[iBuffer], 0);
-			}
-			dctx.deviceContext->PSSetConstantBuffers(0, (UINT)m_fragmentUniformBuffers.size(), m_fragmentUniformBuffers.data());
-		}
-		if (m_geometryUniformBuffers.size() > 0)
-		{
-			for (uint32_t iBuffer = 0; iBuffer < m_geometryUniformBuffers.size(); iBuffer++)
-			{
-				AKA_ASSERT(m_geometryUniformValues.size() > 0, "No data for uniform buffer");
-				D3D11_MAPPED_SUBRESOURCE mappedResource{};
-				D3D_CHECK_RESULT(dctx.deviceContext->Map(m_geometryUniformBuffers[iBuffer], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource));
-				memcpy(mappedResource.pData, m_geometryUniformValues[iBuffer].data(), sizeof(float) * m_geometryUniformValues[iBuffer].size());
-				dctx.deviceContext->Unmap(m_geometryUniformBuffers[iBuffer], 0);
-			}
-			dctx.deviceContext->GSSetConstantBuffers(0, (UINT)m_geometryUniformBuffers.size(), m_geometryUniformBuffers.data());
-		}
+		if (vertexUniformBuffers.size() > 0)
+			dctx.deviceContext->VSSetConstantBuffers(0, (UINT)vertexUniformBuffers.size(), vertexUniformBuffers.data());
+		if (fragmentUniformBuffers.size() > 0)
+			dctx.deviceContext->PSSetConstantBuffers(0, (UINT)fragmentUniformBuffers.size(), fragmentUniformBuffers.data());
+		if (geometryUniformBuffers.size() > 0)
+			dctx.deviceContext->GSSetConstantBuffers(0, (UINT)geometryUniformBuffers.size(), geometryUniformBuffers.data());
+		if (computeUniformBuffers.size() > 0)
+			dctx.deviceContext->GSSetConstantBuffers(0, (UINT)computeUniformBuffers.size(), computeUniformBuffers.data());
 	}
-private:
-	std::vector<ID3D11Buffer*> m_vertexUniformBuffers;
-	std::vector<ID3D11Buffer*> m_fragmentUniformBuffers;
-	std::vector<ID3D11Buffer*> m_geometryUniformBuffers;
-	std::vector<std::vector<float>> m_vertexUniformValues;
-	std::vector<std::vector<float>> m_fragmentUniformValues;
-	std::vector<std::vector<float>> m_geometryUniformValues;
 };
 
 
@@ -2242,35 +2187,7 @@ GraphicApi GraphicBackend::api()
 void GraphicBackend::frame()
 {
 #if defined(DEBUG)
-	UINT64 messageCount = dctx.debugInfoQueue->GetNumStoredMessages();
-	for (UINT64 i = 0; i < messageCount; i++) {
-		SIZE_T messageSize = 0;
-		D3D_CHECK_RESULT(dctx.debugInfoQueue->GetMessage(i, nullptr, &messageSize));
-		if (messageSize > 0u)
-		{
-			D3D11_MESSAGE* message = (D3D11_MESSAGE*)malloc(messageSize); //allocate enough space
-			D3D_CHECK_RESULT(dctx.debugInfoQueue->GetMessage(i, message, &messageSize)); //get the actual message
-			switch (message->Severity)
-			{
-			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_CORRUPTION:
-				Logger::critical("[D3D11] ", message->pDescription);
-				break;
-			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_ERROR:
-				Logger::error("[D3D11] ", message->pDescription);
-				break;
-			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_WARNING:
-				Logger::warn("[D3D11] ", message->pDescription);
-				break;
-			default:
-			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_MESSAGE:
-			case D3D11_MESSAGE_SEVERITY::D3D11_MESSAGE_SEVERITY_INFO:
-				Logger::debug("[D3D11] ", message->pDescription);
-				break;
-			}
-			free(message);
-		}
-	}
-	dctx.debugInfoQueue->ClearStoredMessages();
+	dctx.log();
 #endif
 }
 
@@ -2309,7 +2226,7 @@ void GraphicBackend::render(RenderPass& pass)
 		else
 		{
 			D3D11ShaderMaterial* d3dShaderMaterial = (D3D11ShaderMaterial*)pass.material.get();
-			Shader::Ptr shader = d3dShaderMaterial->getShader();
+			Shader::Ptr shader = d3dShaderMaterial->shader();
 			D3D11Shader* d3dShader = (D3D11Shader*)shader.get();
 			d3dShaderMaterial->apply();
 		}
@@ -2575,7 +2492,7 @@ Mesh::Ptr GraphicBackend::createMesh()
 	return std::make_shared<D3D11Mesh>();
 }
 
-ShaderID GraphicBackend::compile(const char* content, ShaderType type)
+ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
 {
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorMessage = nullptr;
@@ -2634,30 +2551,36 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 			// Release the error message.
 			errorMessage->Release();
 			errorMessage = 0;
-			return ShaderID(0);
+			return ShaderHandle(0);
 		}
 		else
 		{
 			Logger::error("[compilation] Missing shader file");
-			return ShaderID(0);
+			return ShaderHandle(0);
 		}
 	}
-	return ShaderID((uintptr_t)shaderBuffer);
+	return ShaderHandle((uintptr_t)shaderBuffer);
+}
+void GraphicBackend::destroy(ShaderHandle handle)
+{
+	ID3DBlob* blob = (ID3DBlob*)handle.value();
+	if (blob != nullptr)
+		blob->Release();
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, ShaderID(0), ShaderID(0), attributes, count);
+	return std::make_shared<D3D11Shader>(vert, frag, ShaderHandle(0), ShaderHandle(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes, count);
+	return std::make_shared<D3D11Shader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, geometry, ShaderID(0), attributes, count);
+	return std::make_shared<D3D11Shader>(vert, frag, geometry, ShaderHandle(0), attributes, count);
 }
 
 ShaderMaterial::Ptr GraphicBackend::createShaderMaterial(Shader::Ptr shader)

@@ -6,8 +6,7 @@
 namespace aka {
 
 Shader::Shader(const VertexAttribute* attributes, size_t count) :
-	m_attributes(attributes, attributes + count),
-	m_valid(false)
+	m_attributes(attributes, attributes + count)
 {
 }
 
@@ -15,29 +14,59 @@ Shader::~Shader()
 {
 }
 
-ShaderID Shader::compile(const std::string& content, ShaderType type)
-{
-	return GraphicBackend::compile(content.c_str(), type);
-}
-
-ShaderID Shader::compile(const char* content, ShaderType type)
+ShaderHandle Shader::compile(const char* content, ShaderType type)
 {
 	return GraphicBackend::compile(content, type);
 }
 
-Shader::Ptr Shader::create(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count)
+void Shader::destroy(ShaderHandle shader)
+{
+	return GraphicBackend::destroy(shader);
+}
+
+Shader::Ptr Shader::createVertexProgram(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count)
 {
 	return GraphicBackend::createShader(vert, frag, attributes, count);
 }
 
-Shader::Ptr Shader::createGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count)
+Shader::Ptr Shader::createGeometryProgram(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count)
 {
 	return GraphicBackend::createShaderGeometry(vert, frag, geometry, attributes, count);
 }
 
-Shader::Ptr Shader::createCompute(ShaderID compute, const VertexAttribute* attributes, size_t count)
+Shader::Ptr Shader::createComputeProgram(ShaderHandle compute, const VertexAttribute* attributes, size_t count)
 {
 	return GraphicBackend::createShaderCompute(compute, attributes, count);
+}
+
+const Uniform* Shader::getUniform(const char* name) const
+{
+	for (const Uniform& uniform : m_uniforms)
+	{
+		if (uniform.name == name)
+			return &uniform;
+	}
+	return nullptr;
+}
+
+std::vector<Uniform>::iterator Shader::begin()
+{
+	return m_uniforms.begin();
+}
+
+std::vector<Uniform>::iterator Shader::end()
+{
+	return m_uniforms.end();
+}
+
+std::vector<Uniform>::const_iterator Shader::begin() const
+{
+	return m_uniforms.begin();
+}
+
+std::vector<Uniform>::const_iterator Shader::end() const
+{
+	return m_uniforms.end();
 }
 
 uint32_t Shader::getAttributeCount() const

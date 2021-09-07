@@ -103,6 +103,7 @@ private:
 	RenderPass m_pass;
 	Shader::Ptr m_shader; // Make static as we only need one instance of shader even though multiple class exist
 	ShaderMaterial::Ptr m_material;
+	Buffer::Ptr m_uniformBuffer;
 	Mesh::Ptr m_mesh;
 	Buffer::Ptr m_vertexBuffer;
 	Buffer::Ptr m_indexBuffer;

@@ -9,16 +9,18 @@
 
 namespace aka {
 
-enum class ShaderType {
+enum class ShaderType
+{
 	Vertex          = (1 << 0),
 	Fragment        = (1 << 1),
 	Compute         = (1 << 2),
 	Geometry        = (1 << 3),
-	TessControl    = (1 << 4),
-	TessEvaluation = (1 << 5),
+	//TessControl     = (1 << 4),
+	//TessEvaluation  = (1 << 5),
 };
 
-enum class UniformType {
+enum class UniformType 
+{
 	None,
 	Float,
 	Int,
@@ -32,24 +34,18 @@ enum class UniformType {
 	Texture2D,
 	Texture2DMultisample,
 	TextureCubemap,
-	Sampler2D,
-	SamplerCube,
-	SamplerBuffer
+	Buffer,
 };
 
-using ShaderID = StrictType<uintptr_t, struct ShaderStrictType>;
-using ProgramID = StrictType<uintptr_t, struct ProgramStrictType>;
-using UniformID = StrictType<uintptr_t, struct UniformStrictType>;
-using AttributeID = StrictType<uint32_t, struct UniformStrictType>;
-
-struct Uniform {
-	UniformID id;
-	UniformType type; // type of uniform
-	ShaderType shaderType; // attached shader
-	uint32_t bufferIndex;
-	uint32_t arrayLength;
-	std::string name; // name of uniform
+struct Uniform
+{
+	String name; // Name of uniform
+	UniformType type; // Type of uniform
+	ShaderType shaderType; // Shader used
+	uint32_t count; // Number of element for this uniform
 };
+
+using ShaderHandle = StrictType<uintptr_t, struct ShaderStrictType>;
 
 class Shader
 {
@@ -61,19 +57,31 @@ protected:
 	const Shader& operator=(const Shader&) = delete;
 	virtual ~Shader();
 public:
-	static ShaderID compile(const std::string &content, ShaderType type);
-	static ShaderID compile(const char* content, ShaderType type);
-
-	static Shader::Ptr create(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createCompute(ShaderID compute, const VertexAttribute* attributes, size_t count);
-
+	// Compile a shader
+	static ShaderHandle compile(const char* content, ShaderType type);
+	// Destroy a shader
+	static void destroy(ShaderHandle shader);
+public:
+	// Create a vertex program
+	static Shader::Ptr createVertexProgram(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count);
+	// Create a vertex program with geometry stage
+	static Shader::Ptr createGeometryProgram(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count);
+	// Create a compute program
+	static Shader::Ptr createComputeProgram(ShaderHandle compute, const VertexAttribute* attributes, size_t count);
+public:
+	// Get uniform
+	const Uniform* getUniform(const char* name) const;
+	// Iterate uniforms
+	std::vector<Uniform>::iterator begin();
+	std::vector<Uniform>::iterator end();
+	std::vector<Uniform>::const_iterator begin() const;
+	std::vector<Uniform>::const_iterator end() const;
+public:
 	uint32_t getAttributeCount() const;
 	const VertexAttribute& getAttribute(uint32_t iBinding) const;
-	bool valid() const { return m_valid; }
 protected:
+	std::vector<Uniform> m_uniforms;
 	std::vector<VertexAttribute> m_attributes;
-	bool m_valid;
 };
 
 

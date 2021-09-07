@@ -9,9 +9,11 @@
 namespace aka {
 
 enum class BufferType {
-	VertexBuffer,
-	IndexBuffer,
-	AtomicCounter,
+	Vertex,
+	Index,
+	Uniform,
+	ShaderStorage,
+	/*AtomicCounter,
 	CopyRead,
 	CopyWrite,
 	DispatchIndirect,
@@ -19,10 +21,8 @@ enum class BufferType {
 	PixelPack,
 	PixelUnpack,
 	Query,
-	ShaderStorage,
 	Texture,
-	TransformFeedback,
-	Uniform
+	TransformFeedback,*/
 };
 
 enum class BufferUsage {

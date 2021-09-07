@@ -11,12 +11,11 @@ static const char* vertShader =
 "layout (location = 0) in vec2 a_position;\n"
 "layout (location = 1) in vec2 a_uv;\n"
 "layout (location = 2) in vec4 a_color;\n"
-"uniform mat4 u_projection;\n"
-"uniform mat4 u_view;\n"
+"layout (std140) uniform ModelUniformBuffer { mat4 u_mvp; };\n"
 "out vec2 v_uv;\n"
 "out vec4 v_color;\n"
 "void main(void) {\n"
-"	gl_Position = u_projection * u_view * vec4(a_position.xy, 0.0, 1.0);\n"
+"	gl_Position = u_mvp * vec4(a_position.xy, 0.0, 1.0);\n"
 "	v_uv = a_uv;\n"
 "	v_color = a_color;\n"
 "}"
@@ -33,10 +32,9 @@ static const char* fragShader =
 "";
 #elif defined(AKA_USE_D3D11)
 static const char* shader = ""
-"cbuffer constants : register(b0)\n"
+"cbuffer ModelUniformBuffer : register(b0)\n"
 "{\n"
-"	row_major float4x4 u_view;\n"
-"	row_major float4x4 u_projection;\n"
+"	row_major float4x4 u_mvp;\n"
 "}\n"
 
 "struct vs_in\n"
@@ -60,7 +58,7 @@ static const char* shader = ""
 "{\n"
 "	vs_out output;\n"
 
-"	output.position = mul(mul(float4(input.position, 0.0f, 1.0f), u_view), u_projection);\n"
+"	output.position = mul(float4(input.position, 0.0f, 1.0f), u_mvp);\n"
 "	output.texcoord = input.texcoord;\n"
 "	output.color = input.color;\n"
 
@@ -171,17 +169,25 @@ void Batch2D::initialize()
 		VertexAttribute{ VertexSemantic::TexCoord0, VertexFormat::Float, VertexType::Vec2 },
 		VertexAttribute{ VertexSemantic::Color0, VertexFormat::Float, VertexType::Vec4 }
 	};
-	m_shader = Shader::create(
+	ShaderHandle vert = Shader::compile(vertShader, ShaderType::Vertex);
+	ShaderHandle frag = Shader::compile(fragShader, ShaderType::Fragment);
+	m_shader = Shader::createVertexProgram(
 		Shader::compile(vertShader, ShaderType::Vertex),
 		Shader::compile(fragShader, ShaderType::Fragment),
 		att.data(), att.size()
 	);
 	m_material = ShaderMaterial::create(m_shader);
+	Shader::destroy(vert);
+	Shader::destroy(frag);
+
+	m_uniformBuffer = Buffer::create(BufferType::Uniform, sizeof(mat4f), BufferUsage::Default, BufferCPUAccess::None);
+	m_material->set("ModelUniformBuffer", m_uniformBuffer);
+
 	m_mesh = Mesh::create();
 	m_maxVertices = (1 << 9);
 	m_maxIndices = (1 << 8);
-	m_vertexBuffer = Buffer::create(BufferType::VertexBuffer, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferCPUAccess::Write);
-	m_indexBuffer = Buffer::create(BufferType::IndexBuffer, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
+	m_vertexBuffer = Buffer::create(BufferType::Vertex, m_maxVertices * sizeof(Vertex), BufferUsage::Dynamic, BufferCPUAccess::Write);
+	m_indexBuffer = Buffer::create(BufferType::Index, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
 	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, TextureSampler::nearest, data);
@@ -322,8 +328,8 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		m_pass.framebuffer = framebuffer;
 		m_pass.viewport = aka::Rect{ 0, 0, framebuffer->width(), framebuffer->height() };
 		m_pass.scissor = aka::Rect{ 0 };
-		m_material->set<mat4f>("u_projection", projection);
-		m_material->set<mat4f>("u_view", view);
+		mat4f mvp = projection * view;
+		m_uniformBuffer->upload(&mvp);
 	}
 
 	// Sort batches by layer before rendering
@@ -336,7 +342,7 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	for (const DrawBatch &batch : m_batches)
 	{
 		// TODO draw instanced & pass model matrix, textures & offset / count.
-		m_material->set<Texture::Ptr>("u_texture", batch.texture ? batch.texture : m_defaultTexture);
+		m_material->set("u_texture", batch.texture ? batch.texture : m_defaultTexture);
 		m_pass.submesh.count = batch.indexCount;
 		m_pass.submesh.offset = batch.indexOffset;
 		m_pass.submesh.type = batch.primitive;

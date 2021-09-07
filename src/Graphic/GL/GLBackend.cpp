@@ -402,10 +402,10 @@ GLuint getType(ShaderType type)
 	{
 	case ShaderType::Vertex:
 		return GL_VERTEX_SHADER;
-	case ShaderType::TessControl:
+	/*case ShaderType::TessControl:
 		return GL_TESS_CONTROL_SHADER;
 	case ShaderType::TessEvaluation:
-		return GL_TESS_EVALUATION_SHADER;
+		return GL_TESS_EVALUATION_SHADER;*/
 	case ShaderType::Fragment:
 		return GL_FRAGMENT_SHADER;
 	case ShaderType::Geometry:
@@ -706,7 +706,7 @@ private:
 class GLShader : public Shader
 {
 public:
-	GLShader(ShaderID vertex, ShaderID fragment, ShaderID geometry, ShaderID compute, const VertexAttribute* attributes, size_t count) :
+	GLShader(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, ShaderHandle compute, const VertexAttribute* attributes, size_t count) :
 		Shader(attributes, count)
 	{
 		GLuint vert = static_cast<GLuint>(vertex.value());
@@ -739,14 +739,7 @@ public:
 			std::string str(errorLog.begin(), errorLog.end());
 			// Exit with failure.
 			glDeleteProgram(m_programID); // Don't leak the program.
-			if (vert != 0)
-				glDeleteShader(vert);
-			if (frag != 0)
-				glDeleteShader(frag);
-			if (comp != 0)
-				glDeleteShader(comp);
-			if (geo != 0)
-				glDeleteShader(geo);
+			
 			Logger::error("[GL] ", str);
 		}
 		else
@@ -755,22 +748,18 @@ public:
 			if (vert != 0)
 			{
 				glDetachShader(m_programID, vert);
-				glDeleteShader(vert);
 			}
 			if (frag != 0)
 			{
 				glDetachShader(m_programID, frag);
-				glDeleteShader(frag);
 			}
 			if (comp != 0)
 			{
 				glDetachShader(m_programID, comp);
-				glDeleteShader(comp);
 			}
 			if (geo != 0)
 			{
 				glDetachShader(m_programID, geo);
-				glDeleteShader(geo);
 			}
 			glValidateProgram(m_programID);
 			GLint status = 0;
@@ -778,7 +767,102 @@ public:
 			if (status != GL_TRUE)
 				Logger::error("[GL] Program is not valid");
 			else
-				m_valid = true;
+			{
+				GLint activeUniforms = 0;
+				glGetProgramiv(m_programID, GL_ACTIVE_UNIFORMS, &activeUniforms);
+				// Uniforms
+				for (GLint iUniform = 0; iUniform < activeUniforms; iUniform++)
+				{
+					GLsizei length;
+					GLsizei size;
+					GLenum type;
+					GLchar name[257];
+					glGetActiveUniform(m_programID, iUniform, 256, &length, &size, &type, name);
+					name[length] = '\0';
+
+					Uniform uniform;
+					if (size > 1) // Remove [0] for compat with D3D11 (and simplicity)
+						name[String::length(name) - 3] = '\0';
+					uniform.name = name;
+					uniform.count = size;
+					switch (type)
+					{
+					case GL_IMAGE_2D:
+						uniform.type = UniformType::Image2D;
+						uniform.shaderType = ShaderType::Compute;
+						break;
+					case GL_SAMPLER_2D:
+						uniform.type = UniformType::Texture2D;
+						uniform.shaderType = ShaderType::Fragment;
+						// TODO add sampler
+						break;
+					case GL_SAMPLER_CUBE:
+						uniform.type = UniformType::TextureCubemap;
+						uniform.shaderType = ShaderType::Fragment;
+						break;
+					case GL_SAMPLER_2D_MULTISAMPLE:
+						uniform.type = UniformType::Texture2DMultisample;
+						uniform.shaderType = ShaderType::Fragment;
+						break;
+					case GL_FLOAT:
+						uniform.type = UniformType::Float;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_INT:
+						uniform.type = UniformType::Int;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_UNSIGNED_INT:
+						uniform.type = UniformType::UnsignedInt;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_FLOAT_VEC2:
+						uniform.type = UniformType::Vec2;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_FLOAT_VEC3:
+						uniform.type = UniformType::Vec3;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_FLOAT_VEC4:
+						uniform.type = UniformType::Vec4;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_FLOAT_MAT3:
+						uniform.type = UniformType::Mat3;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					case GL_FLOAT_MAT4:
+						uniform.type = UniformType::Mat4;
+						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+						break;
+					default:
+						Logger::warn("[GL] Unsupported Uniform Type : ", name);
+						break;
+					}
+					m_uniforms.push_back(uniform);
+				}
+				// UBO
+				GLint activeUniformBlocks = 0;
+				glGetProgramiv(m_programID, GL_ACTIVE_UNIFORM_BLOCKS, &activeUniformBlocks);
+				for (GLint iUniform = 0; iUniform < activeUniformBlocks; iUniform++)
+				{
+					GLsizei length;
+					GLchar name[257];
+					glGetActiveUniformBlockName(m_programID, iUniform, 257, &length, name);
+					GLint param = 0;
+					glGetActiveUniformBlockiv(m_programID, iUniform, GL_UNIFORM_BLOCK_DATA_SIZE, &param);
+
+					name[length] = '\0';
+
+					Uniform uniform;
+					uniform.name = name;
+					uniform.count = 1;
+					uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
+					uniform.type = UniformType::Buffer;
+					m_uniforms.push_back(uniform);
+				};
+			}
 		}
 	}
 	GLShader(const GLShader&) = delete;
@@ -802,98 +886,38 @@ public:
 	{
 		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
 		GLint activeUniforms = 0;
-		uint32_t bufferSize = 0;
 		uint32_t textureCount = 0;
 		uint32_t imageCount = 0;
-		glGetProgramiv(glShader->getProgramID(), GL_ACTIVE_UNIFORMS, &activeUniforms);
-		for (GLint iUniform = 0; iUniform < activeUniforms; iUniform++)
+		uint32_t bufferCount = 0;
+		for (const Uniform& uniform : *m_shader)
 		{
-			GLsizei length;
-			GLsizei size;
-			GLenum type;
-			GLchar name[257];
-			glGetActiveUniform(glShader->getProgramID(), iUniform, 256, &length, &size, &type, name);
-			name[length] = '\0';
-
-			Uniform uniform;
-			uniform.id = UniformID(glGetUniformLocation(glShader->getProgramID(), name));
-			if (size > 1) // Remove [0] for compat with D3D11 (and simplicity)
-				name[String::length(name) - 3] = '\0';
-			uniform.name = name;
-			uniform.bufferIndex = 0;
-			uniform.arrayLength = size;
-			switch (type)
+			switch (uniform.type)
 			{
-			case GL_IMAGE_2D:
-				uniform.type = UniformType::Image2D;
-				uniform.shaderType = ShaderType::Compute;
-				imageCount += 1 * uniform.arrayLength;
+			case UniformType::Buffer:
+				bufferCount += 1 * uniform.count;
 				break;
-			case GL_SAMPLER_2D:
-				uniform.type = UniformType::Texture2D;
-				uniform.shaderType = ShaderType::Fragment;
-				// TODO add sampler
-				textureCount += 1 * uniform.arrayLength;
+			case UniformType::TextureCubemap:
+			case UniformType::Texture2D:
+			case UniformType::Texture2DMultisample:
+				textureCount += 1 * uniform.count;
 				break;
-			case GL_SAMPLER_CUBE:
-				uniform.type = UniformType::TextureCubemap;
-				uniform.shaderType = ShaderType::Fragment;
-				textureCount += 1 * uniform.arrayLength;
-				break;
-			case GL_SAMPLER_2D_MULTISAMPLE:
-				uniform.type = UniformType::Texture2DMultisample;
-				uniform.shaderType = ShaderType::Fragment;
-				textureCount += 1 * uniform.arrayLength;
-				break;
-			case GL_FLOAT:
-				uniform.type = UniformType::Float;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 1 * uniform.arrayLength;
-				break;
-			case GL_INT:
-				uniform.type = UniformType::Int;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 1 * uniform.arrayLength;
-				break;
-			case GL_UNSIGNED_INT:
-				uniform.type = UniformType::UnsignedInt;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 1 * uniform.arrayLength;
-				break;
-			case GL_FLOAT_VEC2:
-				uniform.type = UniformType::Vec2;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 2 * uniform.arrayLength;
-				break;
-			case GL_FLOAT_VEC3:
-				uniform.type = UniformType::Vec3;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 3 * uniform.arrayLength;
-				break;
-			case GL_FLOAT_VEC4:
-				uniform.type = UniformType::Vec4;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 4 * uniform.arrayLength;
-				break;
-			case GL_FLOAT_MAT3:
-				uniform.type = UniformType::Mat3;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 9 * uniform.arrayLength;
-				break;
-			case GL_FLOAT_MAT4:
-				uniform.type = UniformType::Mat4;
-				uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-				bufferSize += 16 * uniform.arrayLength;
+			case UniformType::Float:
+			case UniformType::Int:
+			case UniformType::UnsignedInt:
+			case UniformType::Vec2:
+			case UniformType::Vec3:
+			case UniformType::Vec4:
+			case UniformType::Mat3:
+			case UniformType::Mat4:
 				break;
 			default:
-				Logger::warn("[GL] Unsupported Uniform Type : ", name);
+				Logger::warn("[GL] Unsupported Uniform Type : ", uniform.name);
 				break;
 			}
-			m_uniforms.push_back(uniform);
 		}
-		m_data.resize(bufferSize, 0.f);
+		m_buffers.resize(bufferCount, nullptr);
 		m_textures.resize(textureCount, nullptr);
-		m_images.resize(imageCount, nullptr);
+		m_samplers.resize(textureCount, TextureSampler::nearest);
 	}
 	GLShaderMaterial(const GLShaderMaterial&) = delete;
 	GLShaderMaterial& operator=(const GLShaderMaterial&) = delete;
@@ -906,23 +930,47 @@ public:
 		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
 		GLint textureUnit = 0;
 		GLint imageUnit = 0;
+		GLint bufferUnit = 0;
 		uint32_t offset = 0;
 		glUseProgram(glShader->getProgramID());
-		for (uint32_t iUniform = 0; iUniform < m_uniforms.size(); iUniform++)
+		for (const Uniform& uniform : *m_shader)
 		{
-			const Uniform& uniform = m_uniforms[iUniform];
+			// TODO map this for performance
+			GLuint programID = reinterpret_cast<GLShader*>(m_shader.get())->getProgramID();
+			GLint location = glGetUniformLocation(programID, uniform.name.cstr());
 			switch (uniform.type)
 			{
 			default:
 			case UniformType::None:
 				Logger::error("[GL] Unsupported uniform type : ", uniform.name, "(", (int)uniform.type, ")");
 				break;
+			case UniformType::Mat4:
+			case UniformType::Mat3:
+			case UniformType::Float:
+			case UniformType::Int:
+			case UniformType::UnsignedInt:
+			case UniformType::Vec2:
+			case UniformType::Vec3:
+			case UniformType::Vec4:
+				break;
+			case UniformType::Buffer: {
+				for (uint32_t i = 0; i < uniform.count; i++)
+				{
+					GLint unit = bufferUnit++;
+					Buffer::Ptr buffer = m_buffers[unit];
+					GLuint blockID = glGetUniformBlockIndex(programID, uniform.name.cstr());
+					glUniformBlockBinding(programID, blockID, unit);
+					glBindBufferBase(GL_UNIFORM_BUFFER, unit, (GLuint)buffer->handle().value());
+					//glBindBufferRange
+				}
+				break;
+			}
 			case UniformType::Texture2D:
 			case UniformType::Texture2DMultisample:
 			case UniformType::TextureCubemap: {
 				std::vector<GLint> units;
 				// Bind texture to units.
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+				for (uint32_t i = 0; i < uniform.count; i++)
 				{
 					GLint unit = textureUnit++;
 					Texture::Ptr texture = m_textures[unit];
@@ -951,13 +999,13 @@ public:
 					units.push_back(unit);
 				}
 				// Upload texture unit array.
-				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
+				glUniform1iv(location, (GLsizei)units.size(), units.data());
 				break;
 			}
-			case UniformType::Image2D: {
+			/*case UniformType::Image2D: {
 				std::vector<GLint> units;
 				// Bind images to units.
-				for (uint32_t i = 0; i < uniform.arrayLength; i++)
+				for (uint32_t i = 0; i < uniform.count; i++)
 				{
 					GLint unit = imageUnit++;
 					Texture::Ptr image = m_images[unit];
@@ -969,54 +1017,14 @@ public:
 					units.push_back(unit);
 				}
 				// Upload texture unit array.
-				glUniform1iv((GLint)uniform.id.value(), (GLsizei)units.size(), units.data());
+				glUniform1iv(location, (GLsizei)units.size(), units.data());
 				break;
 			}
 			case UniformType::Sampler2D:
 			case UniformType::SamplerCube: {
 				// TODO store sampler
 				break;
-			}
-			case UniformType::Mat4: {
-				glUniformMatrix4fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, false, &m_data[offset]);
-				offset += 16 * uniform.arrayLength;
-				break;
-			}
-			case UniformType::Mat3: {
-				glUniformMatrix3fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, false, &m_data[offset]);
-				offset += 9 * uniform.arrayLength;
-				break;
-			}
-			case UniformType::Float: {
-				glUniform1fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
-				offset += uniform.arrayLength;
-				break;
-			}
-			case UniformType::Int: {
-				glUniform1iv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, reinterpret_cast<const int*>(&m_data[offset]));
-				offset += uniform.arrayLength;
-				break;
-			}
-			case UniformType::UnsignedInt: {
-				glUniform1uiv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, reinterpret_cast<const unsigned int*>(&m_data[offset]));
-				offset += uniform.arrayLength;
-				break;
-			}
-			case UniformType::Vec2: {
-				glUniform2fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
-				offset += 2 * uniform.arrayLength;
-				break;
-			}
-			case UniformType::Vec3: {
-				glUniform3fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
-				offset += 3 * uniform.arrayLength;
-				break;
-			}
-			case UniformType::Vec4: {
-				glUniform4fv((GLint)uniform.id.value(), (GLsizei)uniform.arrayLength, &m_data[offset]);
-				offset += 4 * uniform.arrayLength;
-				break;
-			}
+			}*/
 			}
 		}
 		GLint maxTextureUnits = -1;
@@ -1029,10 +1037,14 @@ class GLBuffer : public Buffer
 {
 	static GLenum type(BufferType type) {
 		switch (type) {
-		case BufferType::VertexBuffer:
+		case BufferType::Vertex:
 			return GL_ARRAY_BUFFER;
-		case BufferType::IndexBuffer:
+		case BufferType::Index:
 			return GL_ELEMENT_ARRAY_BUFFER;
+		case BufferType::Uniform:
+			return GL_UNIFORM_BUFFER;
+		case BufferType::ShaderStorage:
+			return GL_SHADER_STORAGE_BUFFER;
 		default:
 			return 0;
 		}
@@ -1876,7 +1888,7 @@ Mesh::Ptr GraphicBackend::createMesh()
 	return std::make_shared<GLMesh>();
 }
 
-ShaderID GraphicBackend::compile(const char* content, ShaderType type)
+ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
 {
 	GLuint shaderID = glCreateShader(gl::getType(type));
 	glShaderSource(shaderID, 1, &content, NULL);
@@ -1895,24 +1907,29 @@ ShaderID GraphicBackend::compile(const char* content, ShaderType type)
 		// Exit with failure.
 		glDeleteShader(shaderID); // Don't leak the shader.
 		Logger::error("[GL] ", str);
-		return ShaderID(0);
+		return ShaderHandle(0);
 	}
-	return ShaderID(shaderID);
+	return ShaderHandle(shaderID);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderID vert, ShaderID frag, const VertexAttribute* attributes, size_t count)
+void GraphicBackend::destroy(ShaderHandle handle)
 {
-	return std::make_shared<GLShader>(vert, frag, ShaderID(0), ShaderID(0), attributes, count);
+	glDeleteShader((GLuint)handle.value());
 }
 
-Shader::Ptr GraphicBackend::createShaderGeometry(ShaderID vert, ShaderID frag, ShaderID geometry, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<GLShader>(vert, frag, geometry, ShaderID(0), attributes, count);
+	return std::make_shared<GLShader>(vert, frag, ShaderHandle(0), ShaderHandle(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderID compute, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<GLShader>(ShaderID(0), ShaderID(0), ShaderID(0), compute, attributes, count);
+	return std::make_shared<GLShader>(vert, frag, geometry, ShaderHandle(0), attributes, count);
+}
+
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute, const VertexAttribute* attributes, size_t count)
+{
+	return std::make_shared<GLShader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, attributes, count);
 }
 
 ShaderMaterial::Ptr aka::GraphicBackend::createShaderMaterial(Shader::Ptr shader)
