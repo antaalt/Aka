@@ -22,10 +22,10 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	frame.width = ase.width;
 	frame.height = ase.height;
 	// Generate texture
-	frame.texture = Texture::create2D(
+	frame.texture = Texture2D::create(
 		ase.width, ase.height,
 		TextureFormat::RGBA8,
-		TextureFlag::None,
+		TextureFlag::ShaderResource,
 		image.bytes.data()
 	);
 	return frame;

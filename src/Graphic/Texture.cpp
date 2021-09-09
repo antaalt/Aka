@@ -70,46 +70,18 @@ bool isDepth(TextureFormat format)
 	}
 }
 
-Texture::Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flags) :
+Texture::Texture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, TextureFormat format, TextureFlag flags) :
 	m_type(type),
 	m_format(format),
 	m_flags(flags),
 	m_width(width),
-	m_height(height)
+	m_height(height),
+	m_depth(depth)
 {
 }
 
 Texture::~Texture()
 {
-}
-
-Texture::Ptr Texture::create2D(
-	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flags,
-	const void* data
-)
-{
-	return GraphicBackend::createTexture2D(width, height, format, flags, data);
-}
-
-Texture::Ptr Texture::create2DMultisampled(
-	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flag,
-	const void* data, uint8_t samples
-)
-{
-	return GraphicBackend::createTexture2DMultisampled(width, height, format, flag, data, samples);
-}
-
-Texture::Ptr Texture::createCubemap(
-	uint32_t width, uint32_t height, 
-	TextureFormat format, TextureFlag flags,
-	const void* px, const void* nx,
-	const void* py, const void* ny,
-	const void* pz, const void* nz
-)
-{
-	return GraphicBackend::createTextureCubeMap(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 uint32_t Texture::width() const
@@ -120,6 +92,11 @@ uint32_t Texture::width() const
 uint32_t Texture::height() const
 {
 	return m_height;
+}
+
+uint32_t Texture::depth() const
+{
+	return m_depth;
 }
 
 TextureFormat Texture::format() const
@@ -137,12 +114,12 @@ TextureType Texture::type() const
 	return m_type;
 }
 
-TextureFlag aka::operator&(TextureFlag lhs, TextureFlag rhs)
+TextureFlag operator&(TextureFlag lhs, TextureFlag rhs)
 {
 	return static_cast<TextureFlag>(static_cast<std::underlying_type<TextureFlag>::type>(lhs) & static_cast<std::underlying_type<TextureFlag>::type>(rhs));
 }
 
-TextureFlag aka::operator|(TextureFlag lhs, TextureFlag rhs)
+TextureFlag operator|(TextureFlag lhs, TextureFlag rhs)
 {
 	return static_cast<TextureFlag>(static_cast<std::underlying_type<TextureFlag>::type>(lhs) | static_cast<std::underlying_type<TextureFlag>::type>(rhs));
 }
@@ -166,56 +143,5 @@ const uv2f& SubTexture::get(uint32_t uv) const
 {
 	return m_uv[uv];
 }
-
-/*uint32_t Sampler::mipLevelCount(uint32_t width, uint32_t height)
-{
-	return static_cast<uint32_t>(floor(log2(max(width, height)))) + 1;
-}
-
-Sampler Sampler::nearest()
-{
-	Sampler s{};
-	s.filterMag = Sampler::Filter::Nearest;
-	s.filterMin = Sampler::Filter::Nearest;
-	s.mipmapMode = Sampler::MipMapMode::None;
-	s.wrapU = Sampler::Wrap::Repeat;
-	s.wrapV = Sampler::Wrap::Repeat;
-	s.wrapW = Sampler::Wrap::Repeat;
-	return s;
-}
-
-Sampler Sampler::bilinear()
-{
-	Sampler s{};
-	s.filterMag = Sampler::Filter::Linear;
-	s.filterMin = Sampler::Filter::Linear;
-	s.mipmapMode = Sampler::MipMapMode::Nearest;
-	s.wrapU = Sampler::Wrap::Repeat;
-	s.wrapV = Sampler::Wrap::Repeat;
-	s.wrapW = Sampler::Wrap::Repeat;
-	return s;
-}
-
-Sampler Sampler::trilinear()
-{
-	Sampler s{};
-	s.filterMag = Sampler::Filter::Linear;
-	s.filterMin = Sampler::Filter::Linear;
-	s.mipmapMode = Sampler::MipMapMode::Linear;
-	s.wrapU = Sampler::Wrap::Repeat;
-	s.wrapV = Sampler::Wrap::Repeat;
-	s.wrapW = Sampler::Wrap::Repeat;
-	return s;
-}
-
-bool Sampler::operator==(const Sampler& rhs)
-{
-	return filterMin == rhs.filterMin && filterMag == rhs.filterMag && mipmapMode == rhs.mipmapMode && wrapU == rhs.wrapU && wrapV == rhs.wrapV && wrapW == rhs.wrapW;
-}
-
-bool Sampler::operator!=(const Sampler& rhs)
-{
-	return filterMin != rhs.filterMin || filterMag != rhs.filterMag || mipmapMode != rhs.mipmapMode || wrapU != rhs.wrapU || wrapV != rhs.wrapV || wrapW != rhs.wrapW;
-}*/
 
 };

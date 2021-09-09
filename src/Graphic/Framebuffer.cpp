@@ -29,14 +29,6 @@ Framebuffer::~Framebuffer()
 {
 }
 
-Framebuffer::Ptr Framebuffer::create(uint32_t width, uint32_t height)
-{
-	FramebufferAttachment colorAttachment;
-	colorAttachment.type = FramebufferAttachmentType::Color0;
-	colorAttachment.texture = Texture::create2D(width, height, TextureFormat::RGBA8, TextureFlag::RenderTarget);
-	return create(&colorAttachment, 1);
-}
-
 Framebuffer::Ptr Framebuffer::create(FramebufferAttachment* attachment, size_t count)
 {
 	// Validate attachment
@@ -76,7 +68,7 @@ void Framebuffer::blit(Framebuffer::Ptr src, FramebufferAttachmentType type, Tex
 	);
 }
 
-Texture::Ptr Framebuffer::attachment(FramebufferAttachmentType type)
+Texture::Ptr Framebuffer::get(FramebufferAttachmentType type)
 {
 	for (FramebufferAttachment& attachment : m_attachments)
 	{

@@ -190,7 +190,7 @@ void Batch2D::initialize()
 	m_indexBuffer = Buffer::create(BufferType::Index, m_maxIndices * sizeof(uint32_t), BufferUsage::Dynamic, BufferCPUAccess::Write);
 
 	uint8_t data[4] = { 255, 255, 255, 255 };
-	m_defaultTexture = Texture::create2D(1, 1, TextureFormat::RGBA8, TextureFlag::None, data);
+	m_defaultTexture = Texture2D::create(1, 1, TextureFormat::RGBA8, TextureFlag::ShaderResource, data);
 
 	m_pass = {};
 	m_pass.clear = Clear::none;

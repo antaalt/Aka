@@ -13,7 +13,8 @@ namespace aka {
 enum class TextureFlag : uint8_t {
 	None = (1 << 0),
 	RenderTarget = (1 << 1),
-	//ShaderStorage = (1 << 2),
+	ShaderResource = (1 << 2),
+	GenerateMips = (1 << 3),
 };
 
 enum class TextureFormat : uint8_t {
@@ -58,9 +59,15 @@ enum class TextureFormat : uint8_t {
 };
 
 enum class TextureType {
+	Texture1D,
 	Texture2D,
-	Texture2DMultisample,
-	TextureCubemap,
+	Texture3D,
+	TextureCubeMap,
+	Texture1DArray,
+	Texture2DArray,
+	TextureCubeMapArray,
+	Texture2DMultisample, // no mip map
+	Texture2DMultisampleArray, // no mip map
 };
 
 // Get the size in bytes of given format
@@ -75,63 +82,34 @@ class Texture
 public:
 	using Ptr = std::shared_ptr<Texture>;
 protected:
-	Texture(uint32_t width, uint32_t height, TextureType type, TextureFormat format, TextureFlag flag);
+	Texture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, TextureFormat format, TextureFlag flag);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	virtual ~Texture();
 public:
-	static Texture::Ptr create2D(
-		uint32_t width,
-		uint32_t height,
-		TextureFormat format,
-		TextureFlag flag,
-		const void* data = nullptr
-	);
-	static Texture::Ptr create2DMultisampled(
-		uint32_t width,
-		uint32_t height,
-		TextureFormat format,
-		TextureFlag flag,
-		const void* data = nullptr,
-		uint8_t samples = 4
-	);
-	static Texture::Ptr createCubemap(
-		uint32_t width,
-		uint32_t height,
-		TextureFormat format,
-		TextureFlag flag,
-		const void* px = nullptr, const void* nx = nullptr,
-		const void* py = nullptr, const void* ny = nullptr,
-		const void* pz = nullptr, const void* nz = nullptr
-	);
-
+	// Get width of the texture
 	uint32_t width() const;
-
+	// Get height of the texture
 	uint32_t height() const;
-
+	// Get depth of the texture
+	uint32_t depth() const;
+	// Get levels of the texture
+	uint32_t levels() const;
+	// Get format of the texture
 	TextureFormat format() const;
-
+	// Get creation flags of the texture
 	TextureFlag flags() const;
-
+	// Get type of the texture
 	TextureType type() const;
-
-	virtual void upload(const Rect& rect, const void* data) = 0;
-
-	virtual void upload(const void* data) = 0;
-
-	virtual void upload(uint32_t mipLevel, const Rect& rect, const void* data) = 0;
-
-	virtual void download(void* data) = 0;
-
-	virtual void copy(Texture::Ptr src, const Rect& rect) = 0;
-
+	// Get handle of the texture
 	virtual TextureHandle handle() const = 0;
-
+	// Generate mip maps for the texture.
+	virtual void generateMips() = 0;
 protected:
 	TextureType m_type;
 	TextureFormat m_format;
 	TextureFlag m_flags;
-	uint32_t m_width, m_height;
+	uint32_t m_width, m_height, m_depth;
 };
 
 TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);

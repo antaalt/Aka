@@ -311,8 +311,20 @@ GLenum type(TextureType type) {
 	switch (type) {
 	default: throw std::runtime_error("Not implemneted");
 	case TextureType::Texture2D: return GL_TEXTURE_2D;
-	case TextureType::TextureCubemap: return GL_TEXTURE_CUBE_MAP;
+	case TextureType::TextureCubeMap: return GL_TEXTURE_CUBE_MAP;
 	case TextureType::Texture2DMultisample: return GL_TEXTURE_2D_MULTISAMPLE;
+	}
+}
+
+GLenum type(TextureCubeFace face) {
+	switch (face) {
+	default: throw std::invalid_argument("Incorrect face");
+	case TextureCubeFace::PositiveX: return GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+	case TextureCubeFace::PositiveY: return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+	case TextureCubeFace::PositiveZ: return GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+	case TextureCubeFace::NegativeX: return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+	case TextureCubeFace::NegativeY: return GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+	case TextureCubeFace::NegativeZ: return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
 	}
 }
 
@@ -554,60 +566,74 @@ GLenum primitive(PrimitiveType type)
 
 };
 
-class GLTexture : public Texture
+class GLTexture2D : public Texture2D
 {
 public:
-	GLTexture(
-		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags,
-		const void* data
-	) :
-		Texture(width, height, TextureType::Texture2D, format, flags),
-		m_sampler(TextureSampler::nearest),
-		m_copyFBO(0),
+	GLTexture2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data) :
+		Texture2D(width, height, format, flags),
 		m_textureID(0)
 	{
 		glGenTextures(1, &m_textureID);
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.f);
+		if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			glGenerateMipmap(GL_TEXTURE_2D);
 	}
-	GLTexture(
-		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags,
-		const void* data,
-		uint8_t samples
-	) :
-		Texture(width, height, TextureType::Texture2DMultisample, format, flags),
-		m_sampler(TextureSampler::nearest),
-		m_copyFBO(0),
-		m_textureID(0)
+	~GLTexture2D()
 	{
-		glGenTextures(1, &m_textureID);
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, gl::componentInternal(m_format), width, height, GL_TRUE);
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
-		glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+		if (m_textureID != 0)
+			glDeleteTextures(1, &m_textureID);
 	}
-	GLTexture(
-		uint32_t width, uint32_t height,
+	void upload(const void* data, uint32_t level) override
+	{
+		upload(Rect{ 0, 0, m_width, m_height }, data, level);
+	}
+	void upload(const Rect& rect, const void* data, uint32_t level) override
+	{
+		AKA_ASSERT(rect.x + rect.w <= m_width, "");
+		AKA_ASSERT(rect.y + rect.h <= m_height, "");
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glTexSubImage2D(GL_TEXTURE_2D, level, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
+		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
+			glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	void download(void* data, uint32_t level) override
+	{
+		glBindTexture(GL_TEXTURE_2D, m_textureID);
+		glGetTexImage(GL_TEXTURE_2D, level, gl::component(m_format), gl::format(m_format), data);
+	}
+	TextureHandle handle() const override
+	{
+		return TextureHandle(static_cast<uintptr_t>(m_textureID));
+	}
+	void generateMips() override
+	{
+		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
+			return;
+		glGenerateMipmap(GL_TEXTURE_2D);
+		m_flags = m_flags | TextureFlag::GenerateMips;
+	}
+private:
+	GLuint m_textureID;
+};
+
+class GLTextureCubeMap : public TextureCubeMap
+{
+public:
+	GLTextureCubeMap(
+		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureFlag flags,
-		const void* px, const void* nx,
-		const void* py, const void* ny,
-		const void* pz, const void* nz
+		const void* px = nullptr, const void* nx = nullptr,
+		const void* py = nullptr, const void* ny = nullptr,
+		const void* pz = nullptr, const void* nz = nullptr
 	) :
-		Texture(width, height, TextureType::TextureCubemap, format, flags),
-		m_sampler(TextureSampler::nearest),
-		m_copyFBO(0),
+		TextureCubeMap(width, height, format, flags),
 		m_textureID(0)
 	{
 		glGenTextures(1, &m_textureID);
@@ -618,38 +644,82 @@ public:
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), ny);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), pz);
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl::componentInternal(m_format), width, height, 0, gl::component(m_format), gl::format(m_format), nz);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, gl::filter(m_sampler.filterMag, TextureMipMapMode::None));
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, gl::filter(m_sampler.filterMin, m_sampler.mipmapMode));
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, gl::wrap(m_sampler.wrapU));
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, gl::wrap(m_sampler.wrapV));
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gl::wrap(m_sampler.wrapW));
-		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
-
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.f);
+		if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	}
-	GLTexture(GLTexture&) = delete;
-	GLTexture& operator=(GLTexture&) = delete;
-	~GLTexture()
+	~GLTextureCubeMap()
 	{
 		if (m_textureID != 0)
 			glDeleteTextures(1, &m_textureID);
-		if (m_copyFBO != 0)
-			glDeleteFramebuffers(1, &m_copyFBO);
 	}
-	void sampler(const TextureSampler& sampler)
+	void upload(TextureCubeFace face, const void* data, uint32_t level) override
 	{
-		if (sampler == m_sampler)
+		upload(face, Rect{ 0, 0, m_width, m_height }, data, level);
+	}
+	void upload(TextureCubeFace face, const Rect& rect, const void* data, uint32_t level) override
+	{
+		AKA_ASSERT(rect.x + rect.w <= m_width, "");
+		AKA_ASSERT(rect.y + rect.h <= m_height, "");
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+		glTexSubImage2D(gl::type(face), level, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
+		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
+			glGenerateMipmap(gl::type(m_type));
+	}
+	void download(TextureCubeFace face, void* data, uint32_t level) override
+	{
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+		glGetTexImage(gl::type(face), level, gl::component(m_format), gl::format(m_format), data);
+	}
+	TextureHandle handle() const override
+	{
+		return TextureHandle(static_cast<uintptr_t>(m_textureID));
+	}
+	void generateMips() override
+	{
+		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
 			return;
-		GLenum type = gl::type(m_type);
-		glBindTexture(type, m_textureID);
-		glTexParameteri(type, GL_TEXTURE_MAG_FILTER, gl::filter(sampler.filterMag, TextureMipMapMode::None));
-		glTexParameteri(type, GL_TEXTURE_MIN_FILTER, gl::filter(sampler.filterMin, sampler.mipmapMode));
-		glTexParameteri(type, GL_TEXTURE_WRAP_S, gl::wrap(sampler.wrapU));
-		glTexParameteri(type, GL_TEXTURE_WRAP_T, gl::wrap(sampler.wrapV));
-		glTexParameteri(type, GL_TEXTURE_WRAP_R, gl::wrap(sampler.wrapW));
-		glTexParameterf(type, GL_TEXTURE_MAX_ANISOTROPY_EXT, sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
-		if (sampler.mipmapMode != TextureMipMapMode::None && m_sampler.mipmapMode == TextureMipMapMode::None)
-			glGenerateMipmap(type);
-		m_sampler = sampler;
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		m_flags = m_flags | TextureFlag::GenerateMips;
+	}
+private:
+	GLuint m_textureID;
+};
+
+
+class GLTexture2DMultisample : public Texture2DMultisample
+{
+public:
+	GLTexture2DMultisample(
+		uint32_t width, uint32_t height,
+		TextureFormat format, TextureFlag flags,
+		uint8_t samples,
+		const void* data = nullptr
+	) :
+		Texture2DMultisample(width, height, format, flags),
+		m_textureID(0)
+	{
+		glGenTextures(1, &m_textureID);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, gl::componentInternal(m_format), width, height, GL_TRUE);
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_R, GL_REPEAT);
+		glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.f);
+		if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE);
+	}
+	~GLTexture2DMultisample()
+	{
+		if (m_textureID != 0)
+			glDeleteTextures(1, &m_textureID);
 	}
 	void upload(const void* data) override
 	{
@@ -657,48 +727,50 @@ public:
 	}
 	void upload(const Rect& rect, const void* data) override
 	{
-		upload(0, rect, data);
-	}
-	void upload(uint32_t mipLevel, const Rect& rect, const void* data) override
-	{
 		AKA_ASSERT(rect.x + rect.w <= m_width, "");
 		AKA_ASSERT(rect.y + rect.h <= m_height, "");
-		glBindTexture(gl::type(m_type), m_textureID);
-		glTexSubImage2D(gl::type(m_type), mipLevel, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
+		glTexSubImage2D(GL_TEXTURE_2D_MULTISAMPLE, 0, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
+		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
+			glGenerateMipmap(gl::type(m_type));
 	}
 	void download(void* data) override
 	{
-		glBindTexture(gl::type(m_type), m_textureID);
-		glGetTexImage(gl::type(m_type), 0, gl::component(m_format), gl::format(m_format), data);
-	}
-	void copy(Texture::Ptr src, const Rect& rect) override
-	{
-		AKA_ASSERT(src->format() == this->format(), "Invalid format");
-		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
-		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
-		if (m_copyFBO == 0)
-			glGenFramebuffers(1, &m_copyFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl::type(m_type), reinterpret_cast<GLTexture*>(src.get())->getTextureID(), 0);
-		glBindTexture(gl::type(m_type), m_textureID);
-		glCopyTexImage2D(gl::type(m_type), 0, gl::componentInternal(m_format), rect.x, rect.y, rect.w, rect.h, 0);
-		// TODO copy all mip map level
-		glBindTexture(gl::type(m_type), 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-	GLuint getTextureID() const
-	{
-		return m_textureID;
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_textureID);
+		glGetTexImage(GL_TEXTURE_2D_MULTISAMPLE, 0, gl::component(m_format), gl::format(m_format), data);
 	}
 	TextureHandle handle() const override
 	{
 		return TextureHandle(static_cast<uintptr_t>(m_textureID));
 	}
+	void generateMips() override
+	{
+		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
+			return;
+		glGenerateMipmap(GL_TEXTURE_2D_MULTISAMPLE);
+		m_flags = m_flags | TextureFlag::GenerateMips;
+	}
 private:
-	TextureSampler m_sampler;
-	GLuint m_copyFBO;
 	GLuint m_textureID;
 };
+
+/*void copy(Texture::Ptr src, Texture::Ptr dst, const Rect& rect)
+{
+	GLuint m_copyFBO;
+	AKA_ASSERT(src->format() == this->format(), "Invalid format");
+	AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
+	AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
+	if (m_copyFBO == 0)
+		glGenFramebuffers(1, &m_copyFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_copyFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl::type(m_type), reinterpret_cast<GLTexture*>(src.get())->m_textureID, 0);
+	glBindTexture(gl::type(m_type), m_textureID);
+	glCopyTexImage2D(gl::type(m_type), 0, gl::componentInternal(m_format), rect.x, rect.y, rect.w, rect.h, 0);
+	// TODO copy all mip map level
+	glBindTexture(gl::type(m_type), 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &m_copyFBO);
+}*/
 
 class GLShader : public Shader
 {
@@ -881,7 +953,6 @@ public:
 	GLShaderMaterial(Shader::Ptr shader) :
 		ShaderMaterial(shader)
 	{
-		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
 		GLint activeUniforms = 0;
 		uint32_t textureCount = 0;
 		uint32_t imageCount = 0;
@@ -976,10 +1047,16 @@ public:
 					if (texture != nullptr)
 					{
 						// Bind and set sampler
-
 						GLenum type = gl::type(texture->type());
 						glBindTexture(type, (GLuint)texture->handle().value());
-						reinterpret_cast<GLTexture*>(texture.get())->sampler(sampler);
+						glTexParameteri(type, GL_TEXTURE_MAG_FILTER, gl::filter(sampler.filterMag, TextureMipMapMode::None));
+						glTexParameteri(type, GL_TEXTURE_MIN_FILTER, gl::filter(sampler.filterMin, sampler.mipmapMode));
+						glTexParameteri(type, GL_TEXTURE_WRAP_S, gl::wrap(sampler.wrapU));
+						glTexParameteri(type, GL_TEXTURE_WRAP_T, gl::wrap(sampler.wrapV));
+						glTexParameteri(type, GL_TEXTURE_WRAP_R, gl::wrap(sampler.wrapW));
+						glTexParameterf(type, GL_TEXTURE_MAX_ANISOTROPY_EXT, sampler.anisotropy); // GL_MAX_TEXTURE_MAX_ANISOTROPY
+						if ((sampler.mipmapMode != TextureMipMapMode::None) && ((texture->flags() & TextureFlag::GenerateMips) != TextureFlag::GenerateMips))
+							texture->generateMips();
 					}
 					else
 					{
@@ -1065,13 +1142,14 @@ class GLBuffer : public Buffer
 public:
 	GLBuffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data) :
 		Buffer(type, size, usage, access),
+		m_glType(GLBuffer::type(type)),
 		m_bufferID(0)
 	{
 		glGenBuffers(1, &m_bufferID);
 
-		glBindBuffer(GLBuffer::type(type), m_bufferID);
-		glBufferData(GLBuffer::type(type), size, data, GLBuffer::access(usage, access));
-		glBindBuffer(GLBuffer::type(type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glBufferData(m_glType, size, data, GLBuffer::access(usage, access));
+		glBindBuffer(m_glType, 0);
 	}
 	GLBuffer(const GLBuffer&) = delete;
 	GLBuffer& operator=(const GLBuffer&) = delete;
@@ -1083,44 +1161,44 @@ public:
 
 	void reallocate(size_t size, const void* data) override
 	{
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glBufferData(GLBuffer::type(m_type), size, data, GLBuffer::access(m_usage, m_access));
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glBufferData(m_glType, size, data, GLBuffer::access(m_usage, m_access));
+		glBindBuffer(m_glType, 0);
 	}
 
 	void upload(const void* data, size_t size, size_t offset = 0) override
 	{
 		AKA_ASSERT(m_usage != BufferUsage::Immutable, "Cannot upload to static buffer.");
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glBufferSubData(GLBuffer::type(m_type), offset, size, data);
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glBufferSubData(m_glType, offset, size, data);
+		glBindBuffer(m_glType, 0);
 	}
 
 	void upload(const void* data) override
 	{
 		AKA_ASSERT(m_usage != BufferUsage::Immutable, "Cannot upload to static buffer.");
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glBufferSubData(GLBuffer::type(m_type), 0, m_size, data);
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glBufferSubData(m_glType, 0, m_size, data);
+		glBindBuffer(m_glType, 0);
 	}
 
 	void download(void* data, size_t size, size_t offset = 0) override
 	{
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glGetBufferSubData(GLBuffer::type(m_type), offset, size, data);
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glGetBufferSubData(m_glType, offset, size, data);
+		glBindBuffer(m_glType, 0);
 	}
 
 	void download(void* data) override
 	{
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glGetBufferSubData(GLBuffer::type(m_type), 0, m_size, data);
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glGetBufferSubData(m_glType, 0, m_size, data);
+		glBindBuffer(m_glType, 0);
 	}
 
 	void* map(BufferMap access) override
 	{
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
+		glBindBuffer(m_glType, m_bufferID);
 		GLenum glAccess = GL_READ_ONLY;
 		switch (access)
 		{
@@ -1142,20 +1220,21 @@ public:
 			Logger::error("Buffer map type not supported");
 			break;
 		}
-		void* data = glMapBuffer(GLBuffer::type(m_type), glAccess);
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		void* data = glMapBuffer(m_glType, glAccess);
+		glBindBuffer(m_glType, 0);
 		return data;
 	}
 
 	void unmap() override
 	{
-		glBindBuffer(GLBuffer::type(m_type), m_bufferID);
-		glUnmapBuffer(GLBuffer::type(m_type));
-		glBindBuffer(GLBuffer::type(m_type), 0);
+		glBindBuffer(m_glType, m_bufferID);
+		glUnmapBuffer(m_glType);
+		glBindBuffer(m_glType, 0);
 	}
 
 	BufferHandle handle() const override { return BufferHandle(m_bufferID); }
 private:
+	GLenum m_glType;
 	GLuint m_bufferID;
 };
 
@@ -1254,11 +1333,9 @@ public:
 		std::vector<GLenum> drawBuffers;
 		for (size_t iAtt = 0; iAtt < count; iAtt++)
 		{
-			// TODO assert uniqueness of attachment
 			// TODO if texture nullptr, create render target instead ?
-			GLTexture* glTexture = reinterpret_cast<GLTexture*>(attachments[iAtt].texture.get());
 			GLenum type = gl::attachmentType(attachments[iAtt].type);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, type, gl::type(attachments[iAtt].texture->type()), glTexture->getTextureID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, type, gl::type(attachments[iAtt].texture->type()), (GLuint)attachments[iAtt].texture->handle().value(), 0);
 			if (type >= GL_COLOR_ATTACHMENT0 && type <= GL_COLOR_ATTACHMENT15)
 				drawBuffers.push_back(type);
 		}
@@ -1272,27 +1349,6 @@ public:
 	{
 		if (m_framebufferID != 0)
 			glDeleteFramebuffers(1, &m_framebufferID);
-	}
-	void resize(uint32_t width, uint32_t height) override
-	{
-		if (width = m_width && height == m_height)
-			return;
-		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-		for (FramebufferAttachment& attachment : m_attachments)
-		{
-			std::shared_ptr<GLTexture> tex = std::make_shared<GLTexture>(
-				width, height,
-				attachment.texture->format(),
-				TextureFlag::RenderTarget,
-				nullptr
-			);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(attachment.type), gl::type(tex->type()), tex->getTextureID(), 0);
-			attachment.texture = tex;
-		}
-		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		m_width = width;
-		m_height = height;
 	}
 	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
@@ -1351,8 +1407,13 @@ public:
 			gl::filter(filter)
 		);
 	}
-	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
+	void set(FramebufferAttachmentType type, Texture::Ptr texture) override
 	{
+		if ((texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
+		{
+			Logger::error("Incompatible texture set as attachment");
+			return;
+		}
 		bool exist = false;
 		for (FramebufferAttachment& attachment : m_attachments)
 		{
@@ -1360,33 +1421,57 @@ public:
 			{
 				if (attachment.texture == texture)
 					return;
-
-				if ((texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
-				{
-					Logger::error("Incompatible texture set as attachment");
-					return;
-				}
 				attachment.texture = texture;
 				exist = true;
 				break;
 			}
 		}
-		// Key does not exist yet.
 		if (!exist)
 		{
-			Logger::warn("Draw buffer not set");
-			m_attachments.push_back(FramebufferAttachment{ type, texture });
+			Logger::warn("Attachment do not exist.");
+			return;
 		}
 
-		GLTexture* glTexture = reinterpret_cast<GLTexture*>(texture.get());
 		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-		if (texture->type() == TextureType::TextureCubemap)
-			glFramebufferTexture(GL_FRAMEBUFFER, gl::attachmentType(type), glTexture->getTextureID(), 0);
+		// We want to attach all face of cubemap here.
+		if (texture->type() == TextureType::TextureCubeMap)
+			glFramebufferTexture(GL_FRAMEBUFFER, gl::attachmentType(type), (GLuint)texture->handle().value(), 0);
 		else
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), gl::type(texture->type()), glTexture->getTextureID(), 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), gl::type(texture->type()), (GLuint)texture->handle().value(), 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// Recompute size
+		computeSize();
+	}
+	void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) override
+	{
+		if ((texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget )
+		{
+			Logger::error("Incompatible texture set as attachment");
+			return;
+		}
+		bool exist = false;
+		for (FramebufferAttachment& attachment : m_attachments)
+		{
+			if (attachment.type == type)
+			{
+				if (attachment.texture == texture)
+					return;
+				attachment.texture = texture;
+				exist = true;
+				break;
+			}
+		}
+		if (!exist)
+		{
+			Logger::warn("Attachment do not exist.");
+			return;
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), gl::type(face), (GLuint)texture->handle().value(), 0);
+	}
+	void computeSize()
+	{
 		m_width = m_attachments[0].texture->width();
 		m_height = m_attachments[0].texture->height();
 
@@ -1417,14 +1502,10 @@ public:
 	~GLBackBuffer()
 	{
 	}
-	void resize(uint32_t width, uint32_t height) override
-	{
-		m_width = width;
-		m_height = height;
-	}
 	void onReceive(const BackbufferResizeEvent& event) override
 	{
-		resize(event.width, event.height);
+		m_width = event.width;
+		m_height = event.height;
 	}
 	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
@@ -1484,7 +1565,11 @@ public:
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	void attachment(FramebufferAttachmentType type, Texture::Ptr texture) override
+	void set(FramebufferAttachmentType type, Texture::Ptr texture) override
+	{
+		Logger::error("Trying to set backbuffer attachement.");
+	}
+	void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) override
 	{
 		Logger::error("Trying to set backbuffer attachement.");
 	}
@@ -1837,26 +1922,26 @@ uint32_t GraphicBackend::deviceCount()
 	return 0;
 }
 
-Texture::Ptr GraphicBackend::createTexture2D(
+Texture2D::Ptr GraphicBackend::createTexture2D(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
 	const void* data
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, flags, data);
+	return std::make_shared<GLTexture2D>(width, height, format, flags, data);
 }
 
-Texture::Ptr GraphicBackend::createTexture2DMultisampled(
+Texture2DMultisample::Ptr GraphicBackend::createTexture2DMultisampled(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
-	const void* data,
-	uint8_t samples
+	uint8_t samples,
+	const void* data
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, flags, data, samples);
+	return std::make_shared<GLTexture2DMultisample>(width, height, format, flags, samples, data);
 }
 
-Texture::Ptr GraphicBackend::createTextureCubeMap(
+TextureCubeMap::Ptr GraphicBackend::createTextureCubeMap(
 	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
 	const void* px, const void* nx,
@@ -1864,7 +1949,7 @@ Texture::Ptr GraphicBackend::createTextureCubeMap(
 	const void* pz, const void* nz
 )
 {
-	return std::make_shared<GLTexture>(width, height, format, flags, px, nx, py, ny, pz, nz);
+	return std::make_shared<GLTextureCubeMap>(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)

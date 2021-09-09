@@ -49,6 +49,10 @@ add_library (Aka
 	"src/Graphic/Shader.cpp"
 	"src/Graphic/ShaderMaterial.cpp"
 	"src/Graphic/Texture.cpp"
+	"src/Graphic/Texture2D.cpp" 
+	"src/Graphic/Texture2DMultisample.cpp" 
+	"src/Graphic/TextureCubeMap.cpp" 
+	"src/Graphic/Texture2DArray.cpp"
 	"src/Graphic/Sampler.cpp"
 	"src/Graphic/Buffer.cpp"
 

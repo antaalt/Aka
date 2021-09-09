@@ -38,7 +38,7 @@ bool TextureStorage::load(const Path& path)
 		images.push_back(Image::load(bytes));
 		break;
 	}
-	case TextureType::TextureCubemap: {
+	case TextureType::TextureCubeMap: {
 		std::vector<uint8_t> bytes;
 		for (size_t i = 0; i < 6; i++)
 		{
@@ -74,7 +74,7 @@ bool TextureStorage::save(const Path& path) const
 		stream.write<uint8_t>(data.data(), data.size());
 		break;
 	}
-	case TextureType::TextureCubemap:
+	case TextureType::TextureCubeMap:
 		for (size_t i = 0; i < 6; i++)
 		{
 			// encode to png.
@@ -96,10 +96,10 @@ std::shared_ptr<Texture> TextureStorage::to() const
 	{
 	case TextureType::Texture2D:
 		AKA_ASSERT(images.size() == 1, "");
-		return Texture::create2D(images[0].width, images[0].height, format, flags, images[0].bytes.data());
-	case TextureType::TextureCubemap:
+		return Texture2D::create(images[0].width, images[0].height, format, flags, images[0].bytes.data());
+	case TextureType::TextureCubeMap:
 		AKA_ASSERT(images.size() == 6, "");
-		return Texture::createCubemap(
+		return TextureCubeMap::create(
 			images[0].width, images[0].height,
 			format, flags,
 			images[0].bytes.data(),
@@ -127,20 +127,21 @@ void TextureStorage::from(const std::shared_ptr<Texture>& texture)
 		img.width = texture->width();
 		img.height = texture->height();
 		img.bytes.resize(img.width * img.height * aka::size(format));
-		texture->download(img.bytes.data());
+		reinterpret_cast<Texture2D*>(texture.get())->download(img.bytes.data());
 		break;
 	}
-	case TextureType::TextureCubemap: {
+	case TextureType::TextureCubeMap: {
 		images.resize(6);
+		TextureCubeFace face{};
 		for (size_t i = 0; i < 6; i++)
 		{
 			Image& img = images[i];
 			img.width = texture->width();
 			img.height = texture->height();
 			img.bytes.resize(img.width * img.height * aka::size(format));
-			// TODO download each face separately
-			texture->download(img.bytes.data());
+			reinterpret_cast<TextureCubeMap*>(texture.get())->download(face, img.bytes.data());
 			images.push_back(img);
+			face = (TextureCubeFace)((int)face + 1);
 		}
 		break;
 	}

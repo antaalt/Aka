@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/TextureCubeMap.h>
 #include <Aka/Core/Geometry.h>
 
 namespace aka {
@@ -44,33 +45,25 @@ protected:
 	Framebuffer& operator=(const Framebuffer&) = delete;
 	virtual ~Framebuffer();
 public:
-
-	static Framebuffer::Ptr create(uint32_t width, uint32_t height);
 	static Framebuffer::Ptr create(FramebufferAttachment* attachment, size_t count);
 
 	// Get framebuffer width
 	uint32_t width() const;
-
 	// Get framebuffer height
 	uint32_t height() const;
 
-	// Resize the framebuffer
-	virtual void resize(uint32_t width, uint32_t height) = 0;
-
 	// Clear the framebuffer
 	virtual void clear(const color4f& color, float depth = 1.f, int stencil = 1, ClearMask mask = ClearMask::All) = 0;
-
 	// Blit a whole framebuffer into another one
 	void blit(Framebuffer::Ptr src, FramebufferAttachmentType type, TextureFilter filter);
-
 	// Blit a framebuffer region into another one
 	virtual void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) = 0;
-
 	// Get the attachment of the framebuffer
-	Texture::Ptr attachment(FramebufferAttachmentType type);
-
+	Texture::Ptr get(FramebufferAttachmentType type);
 	// Set the attachment of the framebuffer
-	virtual void attachment(FramebufferAttachmentType type, Texture::Ptr texture) = 0;
+	virtual void set(FramebufferAttachmentType type, Texture::Ptr texture) = 0;
+	// Set the attachment of the framebuffer for a single face of a cubemap
+	virtual void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) = 0;
 
 protected:
 	uint32_t m_width;

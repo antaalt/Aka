@@ -1,14 +1,16 @@
 #pragma once
 
-#include "Texture.h"
-#include "Device.h"
-#include "Shader.h"
-#include "ShaderMaterial.h"
-#include "Framebuffer.h"
-#include "Buffer.h"
-#include "Mesh.h"
-#include "RenderPass.h"
-#include "../OS/FileSystem.h"
+#include <Aka/Graphic/Texture2D.h>
+#include <Aka/Graphic/Texture2DMultisample.h>
+#include <Aka/Graphic/TextureCubeMap.h>
+#include <Aka/Graphic/Device.h>
+#include <Aka/Graphic/Shader.h>
+#include <Aka/Graphic/ShaderMaterial.h>
+#include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/Buffer.h>
+#include <Aka/Graphic/Mesh.h>
+#include <Aka/Graphic/RenderPass.h>
+#include <Aka/OS/FileSystem.h>
 
 #if defined(AKA_USE_D3D11)
 struct ID3D11Device;
@@ -63,19 +65,21 @@ protected:
 	static Device getDevice(uint32_t id);
 	static uint32_t deviceCount();
 
-	friend class Texture;
-	static Texture::Ptr createTexture2D(
+	friend class Texture2D;
+	static Texture2D::Ptr createTexture2D(
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureFlag flags, 
 		const void* data
 	);
-	static Texture::Ptr createTexture2DMultisampled(
+	friend class Texture2DMultisample;
+	static Texture2DMultisample::Ptr createTexture2DMultisampled(
 		uint32_t width, uint32_t height,
 		TextureFormat format, TextureFlag flags,
-		const void* data,
-		uint8_t samples
+		uint8_t samples,
+		const void* data
 	);
-	static Texture::Ptr createTextureCubeMap(
+	friend class TextureCubeMap;
+	static TextureCubeMap::Ptr createTextureCubeMap(
 		uint32_t width, uint32_t height, 
 		TextureFormat format, TextureFlag flags,
 		const void* px, const void* nx,

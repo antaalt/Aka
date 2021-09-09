@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Texture2D.h>
 #include <Aka/OS/Time.h>
 #include <Aka/OS/FileSystem.h>
 #include <Aka/OS/Stream/Stream.h>

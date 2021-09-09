@@ -3,7 +3,8 @@
 #include <Aka/Resource/Storage.h>
 #include <Aka/Resource/ResourceAllocator.h>
 
-#include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Texture2D.h>
+#include <Aka/Graphic/TextureCubeMap.h>
 
 namespace aka {
 
