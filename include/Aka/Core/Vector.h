@@ -12,11 +12,11 @@ class Vector final
 public:
 	Vector();
 	Vector(const std::vector<T>& vector);
-	Vector(T* data, size_t size);
-	Vector(size_t size, T&& value);
+	Vector(const T* data, size_t size);
+	Vector(size_t size, const T& value);
+	explicit Vector(size_t size);
 	Vector(const Vector& vector);
 	Vector(Vector&& vector);
-	explicit Vector(size_t size);
 	Vector& operator=(const Vector& vector);
 	Vector& operator=(Vector&& vector);
 	~Vector();
@@ -34,7 +34,6 @@ public:
 	Vector<T>& append(const T* start, const T* end);
 	Vector<T>& append(const T& value);
 	Vector<T>& append(T&& value);
-	Vector<T>& append();
 
 	void remove(T* start, T* end);
 	void remove(T* value);
@@ -93,7 +92,7 @@ inline Vector<T>::Vector(const std::vector<T>& vector) :
 {
 }
 template <typename T>
-inline Vector<T>::Vector(T* data, size_t size) :
+inline Vector<T>::Vector(const T* data, size_t size) :
 	m_data(new T[size]),
 	m_size(size),
 	m_capacity(size)
@@ -101,13 +100,13 @@ inline Vector<T>::Vector(T* data, size_t size) :
 	memcpy(m_data, data, sizeof(T) * size);
 }
 template <typename T>
-inline Vector<T>::Vector(size_t size, T&& value) :
+inline Vector<T>::Vector(size_t size, const T& value) :
 	m_data(new T[size]),
 	m_size(size),
 	m_capacity(size)
 {
 	for (T& data : m_data)
-		data = std::move(value);
+		data = value;
 }
 template <typename T>
 inline Vector<T>::Vector(const Vector& vector) :

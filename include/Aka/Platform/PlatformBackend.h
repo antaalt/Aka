@@ -3,6 +3,7 @@
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/FileSystem.h>
 #include <Aka/Core/Encoding.h>
+#include <Aka/Core/Vector.h>
 
 #include <stdint.h>
 
@@ -40,6 +41,9 @@ struct WindowRefreshedEvent {
 };
 struct WindowUnicodeCharEvent {
 	encoding::CodePoint codepoint;
+};
+struct WindowDropEvent {
+	Vector<Path> paths;
 };
 struct MonitorConnectedEvent {
 	// TODO retrieve monitor data

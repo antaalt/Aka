@@ -510,6 +510,12 @@ void PlatformBackend::initialize(const Config& config)
 	glfwSetCharCallback(pctx.window, [](GLFWwindow* window, unsigned int character) {
 		EventDispatcher<WindowUnicodeCharEvent>::emit(WindowUnicodeCharEvent{ character });
 	});
+	glfwSetDropCallback(pctx.window, [](GLFWwindow* window, int count, const char** paths) {
+		WindowDropEvent e;
+		for (int i = 0; i < count; i++)
+			e.paths.append(Path::normalize(paths[i]));
+		EventDispatcher<WindowDropEvent>::emit(e);
+	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		// Aka coordinates system origin is bottom left, so we convert.
