@@ -109,9 +109,19 @@ inline Vector<T>::Vector(size_t size, const T& value) :
 		data = value;
 }
 template <typename T>
-inline Vector<T>::Vector(const Vector& vector) :
-	Vector(vector.data(), vector.size())
+inline Vector<T>::Vector(size_t size) :
+	Vector(size, T())
 {
+}
+template <typename T>
+inline Vector<T>::Vector(const Vector& vector) :
+	m_data(new T[vector.m_capacity]),
+	m_size(vector.m_size),
+	m_capacity(vector.m_capacity)
+{
+	// Can't memcpy for type that need a constructor.
+	for (size_t i = 0; i < m_size; i++)
+		m_data[i] = vector[i];
 }
 template <typename T>
 inline Vector<T>::Vector(Vector&& vector) :
@@ -124,15 +134,12 @@ inline Vector<T>::Vector(Vector&& vector) :
 	std::swap(m_capacity, vector.m_capacity);
 }
 template <typename T>
-inline Vector<T>::Vector(size_t size) :
-	Vector(size, T())
-{
-}
-template <typename T>
 inline Vector<T>& Vector<T>::operator=(const Vector& vector)
 {
 	resize(vector.size());
-	memcpy(m_data, vector.m_data, m_size * sizeof(T));
+	// Can't memcpy for type that need a constructor.
+	for (size_t i = 0; i < m_size; i++)
+		m_data[i] = vector[i];
 }
 template <typename T>
 inline Vector<T>& Vector<T>::operator=(Vector&& vector)
@@ -184,9 +191,12 @@ template <typename T>
 inline Vector<T>& Vector<T>::append(const T* start, const T*end)
 {
 	AKA_ASSERT(end >= start, "Invalid range");
-	size_t off = m_size;
-	resize(m_size + (end - start));
-	memcpy(m_data + off, start, (end - start) * sizeof(T));
+	size_t size = m_size;
+	size_t range = (end - start);
+	resize(m_size + range);
+	// Can't memcpy for type that need a constructor.
+	for (size_t i = size; i < range; i++)
+		m_data[i] = start[i];
 	return *this;
 }
 template <typename T>
@@ -250,7 +260,7 @@ inline void Vector<T>::reserve(size_t size)
 	while (m_capacity < size)
 		m_capacity *= 2;
 	T* buffer = new T[m_capacity]();
-	memcpy(buffer, m_data, oldCapacity);
+	memcpy(buffer, m_data, oldCapacity * sizeof(T));
 	delete[] m_data;
 	m_data = buffer;
 }

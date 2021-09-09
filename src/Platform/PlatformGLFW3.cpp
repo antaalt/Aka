@@ -514,7 +514,7 @@ void PlatformBackend::initialize(const Config& config)
 		WindowDropEvent e;
 		for (int i = 0; i < count; i++)
 			e.paths.append(Path::normalize(paths[i]));
-		EventDispatcher<WindowDropEvent>::emit(e);
+		EventDispatcher<WindowDropEvent>::emit(std::move(e));
 	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
@@ -625,6 +625,7 @@ void PlatformBackend::update()
 	EventDispatcher<WindowMovedEvent>::dispatch();
 	EventDispatcher<WindowRefreshedEvent>::dispatch();
 	EventDispatcher<WindowUnicodeCharEvent>::dispatch();
+	EventDispatcher<WindowDropEvent>::dispatch();
 	EventDispatcher<MonitorConnectedEvent>::dispatch();
 	EventDispatcher<MonitorDisconnectedEvent>::dispatch();
 }
