@@ -78,7 +78,7 @@ public:
 	// Get the texture of the framebuffer attachment
 	Texture::Ptr get(AttachmentType type);
 	// Set the attachment of the framebuffer
-	virtual void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer = 0, uint32_t level = 0) = 0;
+	virtual void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag = AttachmentFlag::None, uint32_t layer = 0, uint32_t level = 0) = 0;
 
 protected:
 	uint32_t m_width;
