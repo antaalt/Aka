@@ -11,11 +11,8 @@ namespace aka {
 Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 {
 	std::vector<Aseprite::Color32> aseImage = aseFrame.image(ase);
-	Image image(ase.width, ase.height, 4);
-	memcpy(image.bytes.data(), aseImage[0].data, image.bytes.size());
-#if defined(AKA_ORIGIN_BOTTOM_LEFT)
-	image.flip();
-#endif
+	Image image(ase.width, ase.height, 4, ImageFormat::UnsignedByte);
+	memcpy(image.data(), aseImage[0].data, image.size());
 	// Set frame
 	Sprite::Frame frame;
 	frame.duration = Time::Unit::milliseconds(aseFrame.duration);
@@ -26,7 +23,7 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 		ase.width, ase.height,
 		TextureFormat::RGBA8,
 		TextureFlag::ShaderResource,
-		image.bytes.data()
+		image.data()
 	);
 	return frame;
 }

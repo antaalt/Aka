@@ -2,6 +2,7 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
+#include <Aka/OS/Stream/MemoryStream.h>
 #include <Aka/Resource/ResourceManager.h>
 
 namespace aka {
@@ -30,21 +31,28 @@ bool TextureStorage::load(const Path& path)
 	type = (TextureType)stream.read<uint8_t>();
 	format = (TextureFormat)stream.read<uint8_t>();
 	flags = (TextureFlag)stream.read<uint8_t>();
+	bool isHDR = stream.read<bool>();
 	switch (type)
 	{
 	case TextureType::Texture2D: {
 		std::vector<uint8_t> bytes(stream.read<uint32_t>());
 		stream.read<uint8_t>(bytes.data(), bytes.size());
-		images.push_back(Image::load(bytes));
+		if (isHDR)
+			images.push_back(Image::loadHDR(bytes.data(), bytes.size()));
+		else
+			images.push_back(Image::load(bytes.data(), bytes.size()));
 		break;
 	}
 	case TextureType::TextureCubeMap: {
 		std::vector<uint8_t> bytes;
 		for (size_t i = 0; i < 6; i++)
 		{
-			bytes.resize(stream.read<uint32_t>());
+			std::vector<uint8_t> bytes(stream.read<uint32_t>());
 			stream.read<uint8_t>(bytes.data(), bytes.size());
-			images.push_back(Image::load(bytes));
+			if (isHDR)
+				images.push_back(Image::loadHDR(bytes.data(), bytes.size()));
+			else
+				images.push_back(Image::load(bytes.data(), bytes.size()));
 		}
 		break;
 	}
@@ -59,28 +67,50 @@ bool TextureStorage::save(const Path& path) const
 	FileStream stream(path, FileMode::Write);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 't' };
+	bool isHDR = images[0].format() == ImageFormat::Float;
 	stream.write<char>(signature, 4);
 	stream.write<uint16_t>((major << 8) | minor);
 	// Write texture
 	stream.write<uint8_t>((uint8_t)type);
 	stream.write<uint8_t>((uint8_t)format);
 	stream.write<uint8_t>((uint8_t)flags);
+	stream.write<bool>(isHDR);
 	switch (type)
 	{
 	case TextureType::Texture2D: {
-		// encode to png.
-		std::vector<uint8_t> data = images[0].save();
-		stream.write<uint32_t>((uint32_t)data.size());
-		stream.write<uint8_t>(data.data(), data.size());
+		if (isHDR)
+		{
+			// encode to .hdr
+			std::vector<uint8_t> data = images[0].encodeHDR();
+			stream.write<uint32_t>((uint32_t)data.size());
+			stream.write<uint8_t>(data.data(), data.size());
+		}
+		else
+		{
+			// encode to .png
+			std::vector<uint8_t> data = images[0].encodePNG();
+			stream.write<uint32_t>((uint32_t)data.size());
+			stream.write<uint8_t>(data.data(), data.size());
+		}
 		break;
 	}
 	case TextureType::TextureCubeMap:
 		for (size_t i = 0; i < 6; i++)
 		{
-			// encode to png.
-			std::vector<uint8_t> data = images[i].save();
-			stream.write<uint32_t>((uint32_t)data.size());
-			stream.write<uint8_t>(data.data(), data.size());
+			if (isHDR)
+			{
+				// encode to .hdr
+				std::vector<uint8_t> data = images[i].encodeHDR();
+				stream.write<uint32_t>((uint32_t)data.size());
+				stream.write<uint8_t>(data.data(), data.size());
+			}
+			else
+			{
+				// encode to png.
+				std::vector<uint8_t> data = images[i].encodePNG();
+				stream.write<uint32_t>((uint32_t)data.size());
+				stream.write<uint8_t>(data.data(), data.size());
+			}
 		}
 		break;
 	default:
@@ -95,21 +125,22 @@ std::shared_ptr<Texture> TextureStorage::to() const
 	switch (type)
 	{
 	case TextureType::Texture2D:
-		AKA_ASSERT(images.size() == 1, "");
-		return Texture2D::create(images[0].width, images[0].height, format, flags, images[0].bytes.data());
+		if (images.size() != 1)
+			return nullptr;
+		return Texture2D::create(images[0].width(), images[0].height(), format, flags, images[0].data());
 	case TextureType::TextureCubeMap:
-		AKA_ASSERT(images.size() == 6, "");
+		if (images.size() != 6)
+			return nullptr;
 		return TextureCubeMap::create(
-			images[0].width, images[0].height,
+			images[0].width(), images[0].height(),
 			format, flags,
-			images[0].bytes.data(),
-			images[1].bytes.data(),
-			images[2].bytes.data(),
-			images[3].bytes.data(),
-			images[4].bytes.data(),
-			images[5].bytes.data()
+			images[0].data(),
+			images[1].data(),
+			images[2].data(),
+			images[3].data(),
+			images[4].data(),
+			images[5].data()
 		);
-	case TextureType::Texture2DMultisample:
 	default:
 		return nullptr;
 	}
@@ -123,30 +154,51 @@ void TextureStorage::from(const std::shared_ptr<Texture>& texture)
 	{
 	case TextureType::Texture2D: {
 		images.resize(1);
-		Image& img = images[0];
-		img.width = texture->width();
-		img.height = texture->height();
-		img.bytes.resize(img.width * img.height * aka::size(format));
-		reinterpret_cast<Texture2D*>(texture.get())->download(img.bytes.data());
+		ImageFormat format = ImageFormat::None;
+		switch (texture->format())
+		{
+		case TextureFormat::RGBA32F:
+			format = ImageFormat::Float;
+			break;
+		case TextureFormat::RGBA8:
+		case TextureFormat::RGBA8U:
+			format = ImageFormat::UnsignedByte;
+			break;
+		default:
+			// TODO add conversion to support more formats
+			Logger::error("Texture format not supported.");
+			return;
+		}
+		images[0] = Image(texture->width(), texture->height(), 4, format);
+		reinterpret_cast<Texture2D*>(texture.get())->download(images[0].data());
 		break;
 	}
 	case TextureType::TextureCubeMap: {
 		images.resize(6);
-		TextureCubeFace face{};
+		ImageFormat format = ImageFormat::None;
+		switch (texture->format())
+		{
+		case TextureFormat::RGBA32F:
+			format = ImageFormat::Float;
+			break;
+		case TextureFormat::RGBA8:
+		case TextureFormat::RGBA8U:
+			format = ImageFormat::UnsignedByte;
+			break;
+		default:
+			// TODO add conversion to support more formats
+			Logger::error("Texture format not supported.");
+			return;
+		}
 		for (size_t i = 0; i < 6; i++)
 		{
-			Image& img = images[i];
-			img.width = texture->width();
-			img.height = texture->height();
-			img.bytes.resize(img.width * img.height * aka::size(format));
-			reinterpret_cast<TextureCubeMap*>(texture.get())->download(face, img.bytes.data());
-			images.push_back(img);
-			face = (TextureCubeFace)((int)face + 1);
+			images[i] = Image(texture->width(), texture->height(), 4, format);
+			reinterpret_cast<TextureCubeMap*>(texture.get())->download(images[i].data(), (uint32_t)i);
 		}
 		break;
 	}
-	case TextureType::Texture2DMultisample:
 	default:
+		Logger::error("Texture type not supported");
 		break;
 	}
 	

@@ -65,10 +65,10 @@ Font::Font(const Path& path, uint32_t height)
     // Generate the atlas and store it.
     Image atlas = packer.pack();
 	Texture2D::Ptr textureAtlas = Texture2D::create(
-        atlas.width, atlas.height, 
+        atlas.width(), atlas.height(),
         TextureFormat::RGBA8,
         TextureFlag::ShaderResource,
-        atlas.bytes.data()
+        atlas.data()
     );
     //atlas.save("atlas.png");
     for (unsigned char c = 0; c < (unsigned char)m_characters.size(); c++)

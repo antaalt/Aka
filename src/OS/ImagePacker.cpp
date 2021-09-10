@@ -7,17 +7,17 @@ Packer::Packer(uint32_t elements, uint32_t elementWidth, uint32_t elementHeight)
     m_elements(elements),
     m_elementCount((uint32_t)ceil<float>(sqrt<float>((float)elements)), (uint32_t)floor<float>(sqrt<float>((float)elements) + 0.5f)),
     m_elementSize(elementWidth, elementHeight),
-    m_image((m_elementCount* m_elementSize).x, (m_elementCount* m_elementSize).y, 4),
+    m_image((m_elementCount* m_elementSize).x, (m_elementCount* m_elementSize).y, 4, ImageFormat::UnsignedByte),
     m_regions(elements)
 {
-	AKA_ASSERT(m_image.width < 4096, "Atlas too wide.");
-	AKA_ASSERT(m_image.height < 4096, "Atlas too high.");
+	AKA_ASSERT(m_image.width() < 4096, "Atlas too wide.");
+	AKA_ASSERT(m_image.height() < 4096, "Atlas too high.");
 }
 void Packer::add(uint32_t id, const Image& image)
 {
     if (m_packed) return;
-	AKA_ASSERT(image.components == 4, "Does not support image with less than 4 components");
-    add(id, image.width, image.height, image.bytes.data());
+	AKA_ASSERT(image.components() == 4, "Does not support image with less than 4 components");
+    add(id, image.width(), image.height(), static_cast<const uint8_t*>(image.data()));
 }
 void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* data)
 {
@@ -28,21 +28,11 @@ void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* da
     uint32_t idx = id % m_elementCount.x;
     uint32_t idy = id / m_elementCount.x;
     for (uint32_t y = 0; y < height; y++)
-    {
-        uint32_t yy = idy * m_elementSize.y + y;
         for (uint32_t x = 0; x < width; x++)
-        {
-            uint32_t xx = idx * m_elementSize.x + x;
-            uint32_t index = xx + yy * m_image.width;
-            m_image.bytes[index * 4 + 0] = data[y * width + x];
-            m_image.bytes[index * 4 + 1] = data[y * width + x];
-            m_image.bytes[index * 4 + 2] = data[y * width + x];
-            m_image.bytes[index * 4 + 3] = data[y * width + x];
-        }
-    }
+			m_image.set(x, y, color32(data[y * width + x]));
     Rect& region = m_regions[id];
     region.x = static_cast<int32_t>(idx * m_elementSize.x);
-    region.y = static_cast<int32_t>(m_image.height - height - idy * m_elementSize.y);
+    region.y = static_cast<int32_t>(m_image.height() - height - idy * m_elementSize.y);
     region.w = width;
     region.h = height;
 }

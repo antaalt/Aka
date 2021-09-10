@@ -13,11 +13,12 @@ using TextureAllocator = ResourceAllocator<Texture>;
 struct TextureStorage : IStorage<Texture>
 {
 	static constexpr uint16_t major = 0;
-	static constexpr uint16_t minor = 1;
+	static constexpr uint16_t minor = 2;
 
 	TextureType type;
 	TextureFormat format;
 	TextureFlag flags;
+	
 	std::vector<Image> images;
 
 	bool load(const Path& path) override;

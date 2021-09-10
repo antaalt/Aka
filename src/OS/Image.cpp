@@ -13,271 +13,305 @@
 
 namespace aka {
 
+size_t size(ImageFormat format)
+{
+	switch (format)
+	{
+	default:
+	case aka::ImageFormat::None:
+		return 0;
+	case aka::ImageFormat::UnsignedByte:
+		return 1;
+	case aka::ImageFormat::Float:
+		return 4;
+	}
+}
+
 Image::Image() :
-	Image(0,0,0)
+	Image(0, 0, 0, ImageFormat::None)
 {
 }
 
-Image::Image(uint32_t width, uint32_t height, uint32_t components) :
-	Image(width, height, components, nullptr)
+Image::Image(uint32_t width, uint32_t height, uint32_t components, ImageFormat format) :
+	m_width(width),
+	m_height(height),
+	m_components(components),
+	m_format(format),
+	m_bytes(width * height * components * ((format == ImageFormat::Float) ? sizeof(float) : 1))
+{
+}
+
+Image::Image(uint32_t width, uint32_t height, uint32_t components, const float* data) :
+	m_width(width),
+	m_height(height),
+	m_components(components),
+	m_format(ImageFormat::Float),
+	m_bytes((uint8_t*)data, (uint8_t*)data + width * height * components * sizeof(float))
 {
 }
 
 Image::Image(uint32_t width, uint32_t height, uint32_t components, const uint8_t* data) :
-	width(width),
-	height(height),
-	components(components),
-	bytes(width * height* components)
+	m_width(width),
+	m_height(height),
+	m_components(components),
+	m_format(ImageFormat::UnsignedByte),
+	m_bytes(data, data + width * height * components)
 {
-	if (data != nullptr)
-		memcpy(bytes.data(), data, bytes.size());
-}
-Image::Image(ImageHDR& imageHDR) :
-	width(imageHDR.width),
-	height(imageHDR.height),
-	components(imageHDR.components),
-	bytes(imageHDR.bytes.size())
-{
-	for (uint32_t i = 0; i < width * height * components; i++)
-		bytes[i] = static_cast<uint8_t>(clamp(imageHDR.bytes[i] * 255.f, 0.f, 255.f));
 }
 
-Image Image::load(const Path& path, bool flip)
+Image Image::load(const Path& path)
+{
+	Image image;
+	image.decode(path);
+	return image;
+}
+
+Image Image::load(const uint8_t* binaries, size_t size)
+{
+	Image image;
+	image.decode(binaries, size);
+	return image;
+}
+
+Image Image::loadHDR(const Path& path)
+{
+	Image image;
+	image.decodeHDR(path);
+	return image;
+}
+
+Image Image::loadHDR(const uint8_t* binaries, size_t size)
+{
+	Image image;
+	image.decodeHDR(binaries, size);
+	return image;
+}
+
+bool Image::decode(const Path& path)
 {
 	Image image{};
 	int x, y, channel;
-	stbi_set_flip_vertically_on_load(flip);
+	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
 	stbi_uc* data = stbi_load(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
 		Logger::error("Could not load image from path ", path.cstr());
-		return image;
+		return false;
 	}
-	size_t size = x * y * 4;
-	image.bytes.resize(size);
-	memcpy(image.bytes.data(), data, size);
-	image.width = static_cast<uint32_t>(x);
-	image.height = static_cast<uint32_t>(y);
-	image.components = 4;
-	stbi_image_free(data);
-	return image;
+	else
+	{
+		size_t size = x * y * 4;
+		m_bytes.resize(size);
+		memcpy(m_bytes.data(), data, size);
+		m_width = static_cast<uint32_t>(x);
+		m_height = static_cast<uint32_t>(y);
+		m_components = 4;
+		m_format = ImageFormat::UnsignedByte;
+		stbi_image_free(data);
+		return true;
+	}
 }
 
-Image Image::load(const uint8_t* binaries, size_t size, bool flip)
+bool Image::decode(const uint8_t* binaries, size_t size)
 {
 	Image image{};
 	int x, y, channel;
-	stbi_set_flip_vertically_on_load(flip);
+	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
 	stbi_uc* data = stbi_load_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load image from binary");
-		return image;
+		Logger::error("Could not load image from binaries");
+		return false;
 	}
-	size_t sizeTexture = x * y * 4;
-	image.bytes.resize(sizeTexture);
-	memcpy(image.bytes.data(), data, sizeTexture);
-	image.width = static_cast<uint32_t>(x);
-	image.height = static_cast<uint32_t>(y);
-	image.components = 4;
-	stbi_image_free(data);
-	return image;
+	else
+	{
+		size_t size = x * y * 4;
+		m_bytes.resize(size);
+		memcpy(m_bytes.data(), data, size);
+		m_width = static_cast<uint32_t>(x);
+		m_height = static_cast<uint32_t>(y);
+		m_components = 4;
+		m_format = ImageFormat::UnsignedByte;
+		stbi_image_free(data);
+		return true;
+	}
 }
 
-Image Image::load(const std::vector<uint8_t>& binaries, bool flip)
+bool Image::decodeHDR(const Path& path)
 {
-	return load(binaries.data(), binaries.size());
+	Image image{};
+	int x, y, channel;
+	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
+	float* data = stbi_loadf(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
+	if (data == nullptr)
+	{
+		Logger::error("Could not load hdr image from path ", path.cstr());
+		return false;
+	}
+	else
+	{
+		size_t size = x * y * 4 * sizeof(float);
+		m_bytes.resize(size);
+		memcpy(m_bytes.data(), data, size);
+		m_width = static_cast<uint32_t>(x);
+		m_height = static_cast<uint32_t>(y);
+		m_components = 4;
+		m_format = ImageFormat::Float;
+		stbi_image_free(data);
+		return true;
+	}
 }
 
-bool Image::save(const Path& path, bool flip) const
+bool Image::decodeHDR(const uint8_t* binaries, size_t size)
 {
-	stbi_flip_vertically_on_write(flip);
-	int error = stbi_write_png(path.cstr(), width, height, components, bytes.data(), width * components);
+	Image image{};
+	int x, y, channel;
+	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
+	float* data = stbi_loadf_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
+	if (data == nullptr)
+	{
+		Logger::error("Could not load hdr image from binaries");
+		return false;
+	}
+	else
+	{
+		size_t size = x * y * 4 * sizeof(float);
+		m_bytes.resize(size);
+		memcpy(m_bytes.data(), data, size);
+		m_width = static_cast<uint32_t>(x);
+		m_height = static_cast<uint32_t>(y);
+		m_components = 4;
+		m_format = ImageFormat::Float;
+		stbi_image_free(data);
+		return true;
+	}
+}
+
+bool Image::encodeJPG(const Path& path, uint32_t quality) const
+{
+	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
+	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
+	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
+	int error = stbi_write_jpg(path.cstr(), m_width, m_height, m_components, m_bytes.data(), quality);
 	return error != 0;
 }
 
-std::vector<uint8_t> Image::save(bool flip) const
+std::vector<uint8_t> Image::encodeJPG(uint32_t quality) const
 {
-	stbi_flip_vertically_on_write(flip);
-	int outLength = 0;
-	unsigned char* data = stbi_write_png_to_mem(bytes.data(), width * components, width, height, components, &outLength);
-	if (data == nullptr || outLength == 0)
-	{
-		Logger::error("Could not encode image");
+	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
+	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
+	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
+	std::vector<uint8_t> data;
+	int outLength = stbi_write_jpg_to_func([](void* context, void* data, int size) {
+		std::vector<uint8_t>* bytes = reinterpret_cast<std::vector<uint8_t>*>(context);
+		uint8_t* binaryData = static_cast<uint8_t*>(data);
+		bytes->insert(bytes->end(), binaryData, binaryData + size);
+	}, &data, m_width, m_height, m_components, m_bytes.data(), quality);
+	if (data.size() == 0 || outLength == 0)
 		return std::vector<uint8_t>();
-	}
+	return data;
+}
+
+bool Image::encodePNG(const Path& path) const
+{
+	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
+	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
+	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
+	int error = stbi_write_png(path.cstr(), m_width, m_height, m_components, m_bytes.data(), m_width * m_components);
+	return error != 0;
+}
+
+std::vector<uint8_t> Image::encodePNG() const
+{
+	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
+	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
+	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
+	int outLength = 0;
+	unsigned char* data = stbi_write_png_to_mem(m_bytes.data(), m_width * m_components, m_width, m_height, m_components, &outLength);
+	if (data == nullptr || outLength == 0)
+		return std::vector<uint8_t>();
 	std::vector<uint8_t> bytes(data, data + outLength);
 	free(data);
 	return bytes;
 }
 
-void Image::set(uint32_t x, uint32_t y, const color24& color)
+bool Image::encodeHDR(const Path& path) const
 {
-	bytes[y * width * components + x + 0] = color.r;
-	bytes[y * width * components + x + 1] = color.g;
-	bytes[y * width * components + x + 2] = color.b;
+	AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
+	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components * sizeof(float), "Invalid size");
+	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
+	int error = stbi_write_hdr(path.cstr(), m_width, m_height, m_components, reinterpret_cast<const float*>(m_bytes.data()));
+	return (error != 0);
 }
 
-void Image::set(uint32_t x, uint32_t y, const color32& color)
+std::vector<uint8_t> Image::encodeHDR() const
 {
-	AKA_ASSERT(components == 4, "Cannot set color4 to image.");
-	bytes[y * width * components + x + 0] = color.r;
-	bytes[y * width * components + x + 1] = color.g;
-	bytes[y * width * components + x + 2] = color.b;
-	bytes[y * width * components + x + 3] = color.a;
-}
-
-color32 Image::get(uint32_t x, uint32_t y) const
-{
-	return color32(
-		bytes[y * width * components + x + 0],
-		bytes[y * width * components + x + 1],
-		bytes[y * width * components + x + 2],
-		components == 4 ? bytes[y * width * components + x + 0] : 255
-	);
+	AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
+	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components * sizeof(float), "Invalid size");
+	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
+	std::vector<uint8_t> data;
+	int outLength = stbi_write_hdr_to_func([](void* context, void* data, int size) {
+		std::vector<uint8_t>* bytes = reinterpret_cast<std::vector<uint8_t>*>(context);
+		uint8_t* binaryData = static_cast<uint8_t*>(data);
+		bytes->insert(bytes->end(), binaryData, binaryData + size);
+	}, &data, m_width, m_height, m_components, reinterpret_cast<const float*>(m_bytes.data()));
+	if (data.size() == 0 || outLength == 0)
+		return std::vector<uint8_t>();
+	return data;
 }
 
 void Image::clear()
 {
-	width = 0;
-	height = 0;
-	components = 0;
-	bytes.clear();
+	m_width = 0;
+	m_height = 0;
+	m_components = 0;
+	m_format = ImageFormat::None;
+	m_bytes.clear();
 }
 
 void Image::flip()
 {
-	std::vector<uint8_t> tmp(bytes.size());
-	for (uint32_t i = 0; i < height; i++)
-		memcpy(tmp.data() + (height - 1 - i) * width * components, bytes.data() + i * width * components, width * components);
-	bytes = tmp;
+	std::vector<uint8_t> tmp(m_bytes.size());
+	size_t componentSize = aka::size(m_format);
+	size_t stride = componentSize * m_width * m_components;
+	for (uint32_t i = 0; i < m_height; i++)
+		memcpy(tmp.data() + (m_height - 1 - i) * stride, m_bytes.data() + i * stride, stride);
+	m_bytes = tmp;
 }
 
-
-ImageHDR::ImageHDR() :
-	ImageHDR(0, 0, 0)
+uint32_t Image::width() const
 {
+	return m_width;
 }
 
-ImageHDR::ImageHDR(uint32_t width, uint32_t height, uint32_t components) :
-	ImageHDR(width, height, components, nullptr)
+uint32_t Image::height() const
 {
+	return m_height;
 }
 
-ImageHDR::ImageHDR(uint32_t width, uint32_t height, uint32_t components, const float* data) :
-	width(width),
-	height(height),
-	components(components),
-	bytes(width* height* components)
+uint32_t Image::components() const
 {
-	if (data != nullptr)
-		memcpy(bytes.data(), data, bytes.size());
-}
-ImageHDR::ImageHDR(Image& image) :
-	width(image.width),
-	height(image.height),
-	components(image.components),
-	bytes(image.bytes.size())
-{
-	for (uint32_t i = 0; i < width * height * components; i++)
-		bytes[i] = image.bytes[i] / 255.f;
+	return m_components;
 }
 
-ImageHDR ImageHDR::load(const Path& path, bool flip)
+ImageFormat Image::format() const
 {
-	ImageHDR image{};
-	int x, y, channel;
-	stbi_set_flip_vertically_on_load(flip);
-	float* data = stbi_loadf(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
-	if (data == nullptr)
-	{
-		Logger::error("Could not load image from path ", path.cstr());
-		return image;
-	}
-	size_t size = x * y * 4 * sizeof(float);
-	image.bytes.resize(size);
-	memcpy(image.bytes.data(), data, size);
-	image.width = static_cast<uint32_t>(x);
-	image.height = static_cast<uint32_t>(y);
-	image.components = 4;
-	stbi_image_free(data);
-	return image;
+	return m_format;
 }
 
-ImageHDR ImageHDR::load(const uint8_t* binaries, size_t size, bool flip)
+void* Image::data()
 {
-	ImageHDR image{};
-	int x, y, channel;
-	stbi_set_flip_vertically_on_load(flip);
-	float* data = stbi_loadf_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
-	if (data == nullptr)
-	{
-		Logger::error("Could not load image from binary");
-		return image;
-	}
-	size_t sizeTexture = x * y * 4 * sizeof(float);
-	image.bytes.resize(sizeTexture);
-	memcpy(image.bytes.data(), data, sizeTexture);
-	image.width = static_cast<uint32_t>(x);
-	image.height = static_cast<uint32_t>(y);
-	image.components = 4;
-	stbi_image_free(data);
-	return image;
+	return m_bytes.data();
 }
 
-ImageHDR ImageHDR::load(const std::vector<uint8_t>& binaries, bool flip)
+const void* Image::data() const
 {
-	return load(binaries.data(), binaries.size(), flip);
+	return m_bytes.data();
 }
 
-void ImageHDR::save(const Path& path, bool flip) const
+size_t Image::size() const
 {
-	stbi_flip_vertically_on_write(flip);
-	int error = stbi_write_hdr(path.cstr(), width, height, components, bytes.data());
-	if (error == 0)
-		Logger::error("Could not save image at path ", path.str());
+	return m_bytes.size();
 }
 
-void ImageHDR::set(uint32_t x, uint32_t y, const color3f& color)
-{
-	bytes[y * width * components + x + 0] = color.r;
-	bytes[y * width * components + x + 1] = color.g;
-	bytes[y * width * components + x + 2] = color.b;
-}
-
-void ImageHDR::set(uint32_t x, uint32_t y, const color4f& color)
-{
-	AKA_ASSERT(components == 4, "Cannot set color4 to image.");
-	bytes[y * width * components + x + 0] = color.r;
-	bytes[y * width * components + x + 1] = color.g;
-	bytes[y * width * components + x + 2] = color.b;
-	bytes[y * width * components + x + 3] = color.a;
-}
-
-color4f ImageHDR::get(uint32_t x, uint32_t y) const
-{
-	return color4f(
-		bytes[y * width * components + x + 0],
-		bytes[y * width * components + x + 1],
-		bytes[y * width * components + x + 2],
-		components == 4 ? bytes[y * width * components + x + 0] : 1.f
-	);
-}
-
-void ImageHDR::clear()
-{
-	width = 0;
-	height = 0;
-	components = 0;
-	bytes.clear();
-}
-
-void ImageHDR::flip()
-{
-	std::vector<float> tmp(bytes.size());
-	for (uint32_t i = 0; i < height; i++)
-		memcpy(tmp.data() + (height - 1 - i) * width * components, bytes.data() + i * width * components, width * components);
-	bytes = tmp;
-}
-
-}
+};
