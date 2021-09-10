@@ -9,7 +9,8 @@
 
 namespace aka {
 
-enum class ClearMask {
+enum class ClearMask
+{
 	None = 0,
 	Color = 1,
 	Depth = 2,
@@ -17,7 +18,8 @@ enum class ClearMask {
 	All = Color | Depth | Stencil
 };
 
-enum class FramebufferAttachmentType {
+enum class AttachmentType
+{
 	Color0,
 	Color1,
 	Color2,
@@ -27,10 +29,12 @@ enum class FramebufferAttachmentType {
 	DepthStencil
 };
 
-struct FramebufferAttachment
+struct Attachment
 {
-	FramebufferAttachmentType type;
-	Texture::Ptr texture;
+	AttachmentType type; // Type of the attachment
+	Texture::Ptr texture; // Texture used as attachment
+	int32_t layer; // Layer of the texture used as attachment. If attaching whole texture and not a single layer, set to -1.
+	uint32_t level; // Level of the mips used as attachment
 };
 
 class Framebuffer
@@ -40,12 +44,15 @@ public:
 
 protected:
 	Framebuffer(uint32_t width, uint32_t height);
-	Framebuffer(FramebufferAttachment* attachment, size_t count);
+	Framebuffer(Attachment* attachment, size_t count);
 	Framebuffer(const Framebuffer&) = delete;
 	Framebuffer& operator=(const Framebuffer&) = delete;
 	virtual ~Framebuffer();
 public:
-	static Framebuffer::Ptr create(FramebufferAttachment* attachment, size_t count);
+	// Create a framebuffer from attachment
+	static Framebuffer::Ptr create(Attachment* attachment, size_t count);
+	// Check if an attachment is valid
+	static bool valid(Attachment attachment);
 
 	// Get framebuffer width
 	uint32_t width() const;
@@ -55,20 +62,21 @@ public:
 	// Clear the framebuffer
 	virtual void clear(const color4f& color, float depth = 1.f, int stencil = 1, ClearMask mask = ClearMask::All) = 0;
 	// Blit a whole framebuffer into another one
-	void blit(Framebuffer::Ptr src, FramebufferAttachmentType type, TextureFilter filter);
+	void blit(Framebuffer::Ptr src, AttachmentType type, TextureFilter filter);
 	// Blit a framebuffer region into another one
-	virtual void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) = 0;
-	// Get the attachment of the framebuffer
-	Texture::Ptr get(FramebufferAttachmentType type);
+	virtual void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) = 0;
+
+	// Get the framebuffer attachment
+	Attachment* getAttachment(AttachmentType type);
+	// Get the texture of the framebuffer attachment
+	Texture::Ptr get(AttachmentType type);
 	// Set the attachment of the framebuffer
-	virtual void set(FramebufferAttachmentType type, Texture::Ptr texture) = 0;
-	// Set the attachment of the framebuffer for a single face of a cubemap
-	virtual void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) = 0;
+	virtual void set(AttachmentType type, Texture::Ptr texture, int32_t layer = 0, uint32_t level = 0) = 0;
 
 protected:
 	uint32_t m_width;
 	uint32_t m_height;
-	std::vector<FramebufferAttachment> m_attachments;
+	std::vector<Attachment> m_attachments;
 };
 
 ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs);

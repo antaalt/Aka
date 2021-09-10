@@ -148,26 +148,26 @@ std::string glGetErrorString(GLenum error)
 namespace aka {
 
 namespace gl {
-GLenum attachmentType(FramebufferAttachmentType type)
+GLenum attachmentType(AttachmentType type)
 {
 	switch (type)
 	{
 	default:
 		Logger::warn("[GL] Framebuffer attachment type not defined : ", (int)type);
 		return GL_COLOR_ATTACHMENT0;
-	case FramebufferAttachmentType::Color0:
+	case AttachmentType::Color0:
 		return GL_COLOR_ATTACHMENT0;
-	case FramebufferAttachmentType::Color1:
+	case AttachmentType::Color1:
 		return GL_COLOR_ATTACHMENT1;
-	case FramebufferAttachmentType::Color2:
+	case AttachmentType::Color2:
 		return GL_COLOR_ATTACHMENT2;
-	case FramebufferAttachmentType::Color3:
+	case AttachmentType::Color3:
 		return GL_COLOR_ATTACHMENT3;
-	case FramebufferAttachmentType::Depth:
+	case AttachmentType::Depth:
 		return GL_DEPTH_ATTACHMENT;
-	case FramebufferAttachmentType::Stencil:
+	case AttachmentType::Stencil:
 		return GL_STENCIL_ATTACHMENT;
-	case FramebufferAttachmentType::DepthStencil:
+	case AttachmentType::DepthStencil:
 		return GL_DEPTH_STENCIL_ATTACHMENT;
 	}
 }
@@ -313,18 +313,6 @@ GLenum type(TextureType type) {
 	case TextureType::Texture2D: return GL_TEXTURE_2D;
 	case TextureType::TextureCubeMap: return GL_TEXTURE_CUBE_MAP;
 	case TextureType::Texture2DMultisample: return GL_TEXTURE_2D_MULTISAMPLE;
-	}
-}
-
-GLenum type(TextureCubeFace face) {
-	switch (face) {
-	default: throw std::invalid_argument("Incorrect face");
-	case TextureCubeFace::PositiveX: return GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-	case TextureCubeFace::PositiveY: return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-	case TextureCubeFace::PositiveZ: return GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
-	case TextureCubeFace::NegativeX: return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
-	case TextureCubeFace::NegativeY: return GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-	case TextureCubeFace::NegativeZ: return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
 	}
 }
 
@@ -658,23 +646,23 @@ public:
 		if (m_textureID != 0)
 			glDeleteTextures(1, &m_textureID);
 	}
-	void upload(TextureCubeFace face, const void* data, uint32_t level) override
+	void upload(const void* data, uint32_t layer, uint32_t level) override
 	{
-		upload(face, Rect{ 0, 0, m_width, m_height }, data, level);
+		upload(Rect{ 0, 0, m_width, m_height }, data, layer, level);
 	}
-	void upload(TextureCubeFace face, const Rect& rect, const void* data, uint32_t level) override
+	void upload(const Rect& rect, const void* data, uint32_t layer, uint32_t level) override
 	{
 		AKA_ASSERT(rect.x + rect.w <= m_width, "");
 		AKA_ASSERT(rect.y + rect.h <= m_height, "");
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		glTexSubImage2D(gl::type(face), level, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
+		glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, level, (GLint)rect.x, (GLint)rect.y, (GLsizei)rect.w, (GLsizei)rect.h, gl::component(m_format), gl::format(m_format), data);
 		if ((TextureFlag::GenerateMips & m_flags) == TextureFlag::GenerateMips)
 			glGenerateMipmap(gl::type(m_type));
 	}
-	void download(TextureCubeFace face, void* data, uint32_t level) override
+	void download(void* data, uint32_t layer, uint32_t level) override
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
-		glGetTexImage(gl::type(face), level, gl::component(m_format), gl::format(m_format), data);
+		glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer, level, gl::component(m_format), gl::format(m_format), data);
 	}
 	TextureHandle handle() const override
 	{
@@ -1324,7 +1312,7 @@ private:
 class GLFramebuffer : public Framebuffer
 {
 public:
-	GLFramebuffer(FramebufferAttachment* attachments, size_t count) :
+	GLFramebuffer(Attachment* attachments, size_t count) :
 		Framebuffer(attachments, count),
 		m_framebufferID(0)
 	{
@@ -1333,18 +1321,14 @@ public:
 		std::vector<GLenum> drawBuffers;
 		for (size_t iAtt = 0; iAtt < count; iAtt++)
 		{
-			// TODO if texture nullptr, create render target instead ?
-			GLenum type = gl::attachmentType(attachments[iAtt].type);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, type, gl::type(attachments[iAtt].texture->type()), (GLuint)attachments[iAtt].texture->handle().value(), 0);
-			if (type >= GL_COLOR_ATTACHMENT0 && type <= GL_COLOR_ATTACHMENT15)
-				drawBuffers.push_back(type);
+			attach(attachments[iAtt]);
+			GLenum attachmentType = gl::attachmentType(attachments[iAtt].type);
+			if (attachmentType >= GL_COLOR_ATTACHMENT0 && attachmentType <= GL_COLOR_ATTACHMENT15)
+				drawBuffers.push_back(attachmentType);
 		}
 		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not created");
 		glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	GLFramebuffer(const GLFramebuffer&) = delete;
-	GLFramebuffer& operator=(const GLFramebuffer&) = delete;
 	~GLFramebuffer()
 	{
 		if (m_framebufferID != 0)
@@ -1374,26 +1358,26 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->m_framebufferID);
 		GLenum mask = 0;
 		switch (type)
 		{
-		case aka::FramebufferAttachmentType::Color0:
-		case aka::FramebufferAttachmentType::Color1:
-		case aka::FramebufferAttachmentType::Color2:
-		case aka::FramebufferAttachmentType::Color3:
+		case AttachmentType::Color0:
+		case AttachmentType::Color1:
+		case AttachmentType::Color2:
+		case AttachmentType::Color3:
 			mask |= GL_COLOR_BUFFER_BIT;
 			break;
-		case aka::FramebufferAttachmentType::Depth:
+		case AttachmentType::Depth:
 			mask |= GL_DEPTH_BUFFER_BIT;
 			break;
-		case aka::FramebufferAttachmentType::Stencil:
+		case AttachmentType::Stencil:
 			mask |= GL_STENCIL_BUFFER_BIT;
 			break;
-		case aka::FramebufferAttachmentType::DepthStencil:
+		case AttachmentType::DepthStencil:
 			mask |= GL_DEPTH_BUFFER_BIT;
 			mask |= GL_STENCIL_BUFFER_BIT;
 			break;
@@ -1407,68 +1391,79 @@ public:
 			gl::filter(filter)
 		);
 	}
-	void set(FramebufferAttachmentType type, Texture::Ptr texture) override
+	void set(AttachmentType type, Texture::Ptr texture, int32_t layer, uint32_t level) override
 	{
-		if ((texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
+		// Check attachment
+		Attachment newAttachment = Attachment{ type, texture, layer, level };
+		if (!valid(newAttachment))
 		{
-			Logger::error("Incompatible texture set as attachment");
+			Logger::error("Incompatible attachment set for framebuffer");
 			return;
 		}
-		bool exist = false;
-		for (FramebufferAttachment& attachment : m_attachments)
+		Attachment* attachment = getAttachment(type);
+		if (attachment == nullptr)
 		{
-			if (attachment.type == type)
+			// Set correct draw buffers to support new attachment
+			std::vector<GLenum> drawBuffers;
+			for (Attachment& attachment : m_attachments)
 			{
-				if (attachment.texture == texture)
-					return;
-				attachment.texture = texture;
-				exist = true;
-				break;
+				GLenum attachmentType = gl::attachmentType(attachment.type);
+				if (attachmentType >= GL_COLOR_ATTACHMENT0 && attachmentType <= GL_COLOR_ATTACHMENT15)
+					drawBuffers.push_back(attachmentType);
 			}
+			glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
+			m_attachments.push_back(newAttachment);
+			attachment = &m_attachments.back();
 		}
-		if (!exist)
-		{
-			Logger::warn("Attachment do not exist.");
-			return;
-		}
-
-		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-		// We want to attach all face of cubemap here.
-		if (texture->type() == TextureType::TextureCubeMap)
-			glFramebufferTexture(GL_FRAMEBUFFER, gl::attachmentType(type), (GLuint)texture->handle().value(), 0);
 		else
-			glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), gl::type(texture->type()), (GLuint)texture->handle().value(), 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		{
+			if (attachment->texture == texture && attachment->layer == layer && attachment->level == level)
+				return; // Everything already set.
+			attachment->texture = texture;
+			attachment->layer = layer;
+			attachment->level = level;
+		}
+		// Attach new attachment to framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
+		attach(*attachment);
+		AKA_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer not valid");
 
 		// Recompute size
 		computeSize();
 	}
-	void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) override
+	void attach(const Attachment& attachment)
 	{
-		if ((texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget )
+		GLenum attachmentType = gl::attachmentType(attachment.type);
+		GLuint textureID = (GLuint)attachment.texture->handle().value();
+		switch (attachment.texture->type())
 		{
-			Logger::error("Incompatible texture set as attachment");
-			return;
+		case TextureType::Texture1D:
+			glFramebufferTexture1D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_1D, textureID, attachment.level);
+			break;
+		case TextureType::Texture2D:
+			glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_2D, textureID, attachment.level);
+			break;
+		case TextureType::Texture3D:
+			glFramebufferTexture3D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_3D, textureID, attachment.level, attachment.layer);
+			break;
+		case TextureType::TextureCubeMap:
+			if (attachment.layer < 0)
+				glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level);
+			else
+				glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + attachment.layer, textureID, attachment.level);
+			break;
+		case TextureType::Texture1DArray:
+		case TextureType::Texture2DArray:
+			if (attachment.layer < 0)
+				glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level);
+			else
+				glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level, attachment.layer);
+			break;
+		case TextureType::TextureCubeMapArray:
+			// TODO allow to attach single face ?
+			glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level, attachment.layer);
+			break;
 		}
-		bool exist = false;
-		for (FramebufferAttachment& attachment : m_attachments)
-		{
-			if (attachment.type == type)
-			{
-				if (attachment.texture == texture)
-					return;
-				attachment.texture = texture;
-				exist = true;
-				break;
-			}
-		}
-		if (!exist)
-		{
-			Logger::warn("Attachment do not exist.");
-			return;
-		}
-		glBindFramebuffer(GL_FRAMEBUFFER, m_framebufferID);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, gl::attachmentType(type), gl::type(face), (GLuint)texture->handle().value(), 0);
 	}
 	void computeSize()
 	{
@@ -1531,26 +1526,26 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->getFramebufferID());
 		GLenum mask = 0;
 		switch (type)
 		{
-		case aka::FramebufferAttachmentType::Color0:
-		case aka::FramebufferAttachmentType::Color1:
-		case aka::FramebufferAttachmentType::Color2:
-		case aka::FramebufferAttachmentType::Color3:
+		case AttachmentType::Color0:
+		case AttachmentType::Color1:
+		case AttachmentType::Color2:
+		case AttachmentType::Color3:
 			mask |= GL_COLOR_BUFFER_BIT;
 			break;
-		case aka::FramebufferAttachmentType::Depth:
+		case AttachmentType::Depth:
 			mask |= GL_DEPTH_BUFFER_BIT;
 			break;
-		case aka::FramebufferAttachmentType::Stencil:
+		case AttachmentType::Stencil:
 			mask |= GL_STENCIL_BUFFER_BIT;
 			break;
-		case aka::FramebufferAttachmentType::DepthStencil:
+		case AttachmentType::DepthStencil:
 			mask |= GL_DEPTH_BUFFER_BIT;
 			mask |= GL_STENCIL_BUFFER_BIT;
 			break;
@@ -1565,11 +1560,7 @@ public:
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	void set(FramebufferAttachmentType type, Texture::Ptr texture) override
-	{
-		Logger::error("Trying to set backbuffer attachement.");
-	}
-	void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) override
+	void set(AttachmentType type, Texture::Ptr texture, int32_t layer, uint32_t level) override
 	{
 		Logger::error("Trying to set backbuffer attachement.");
 	}
@@ -1891,9 +1882,9 @@ void GraphicBackend::dispatch(ComputePass& pass)
 void GraphicBackend::screenshot(const Path& path)
 {
 	glFinish();
-	Image image(gctx.backbuffer->width(), gctx.backbuffer->height(), 4);
-	glReadPixels(0, 0, image.width, image.height, GL_RGBA, GL_UNSIGNED_BYTE, image.bytes.data());
-	image.save(path);
+	Image image(gctx.backbuffer->width(), gctx.backbuffer->height(), 4, ImageFormat::UnsignedByte);
+	glReadPixels(0, 0, image.width(), image.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+	image.encodePNG(path);
 }
 
 void GraphicBackend::vsync(bool enabled)
@@ -1952,7 +1943,7 @@ TextureCubeMap::Ptr GraphicBackend::createTextureCubeMap(
 	return std::make_shared<GLTextureCubeMap>(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(Attachment* attachments, size_t count)
 {
 	return std::make_shared<GLFramebuffer>(attachments, count);
 }

@@ -4,19 +4,6 @@
 
 namespace aka {
 
-enum class TextureCubeFace {
-	PositiveX = 0,
-	NegativeX = 1,
-	PositiveY = 2,
-	NegativeY = 3,
-	PositiveZ = 4,
-	NegativeZ = 5,
-	First = PositiveX,
-	Last = NegativeZ
-};
-
-TextureCubeFace operator+(TextureCubeFace lhs, int count);
-
 class TextureCubeMap : public Texture
 {
 public:
@@ -35,11 +22,11 @@ public:
 		const void* pz = nullptr, const void* nz = nullptr
 	);
 	// Upload a region of the TextureCubeFace
-	virtual void upload(TextureCubeFace face, const Rect& rect, const void* data, uint32_t level = 0) = 0;
+	virtual void upload(const Rect& rect, const void* data, uint32_t layer, uint32_t level = 0) = 0;
 	// Upload the TextureCubeFace
-	virtual void upload(TextureCubeFace face, const void* data, uint32_t level = 0) = 0;
+	virtual void upload(const void* data, uint32_t layer, uint32_t level = 0) = 0;
 	// Download the TextureCubeFace
-	virtual void download(TextureCubeFace face, void* data, uint32_t level = 0) = 0;
+	virtual void download(void* data, uint32_t layer, uint32_t level = 0) = 0;
 	// Copy the texture to dst texture
 	//virtual void copy(TextureCubeMap::Ptr dst, const Rect& rect) = 0;
 };

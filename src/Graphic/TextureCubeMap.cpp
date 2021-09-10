@@ -4,11 +4,6 @@
 
 namespace aka {
 
-TextureCubeFace operator+(TextureCubeFace lhs, int count)
-{
-	return (TextureCubeFace)((int)lhs + count);
-}
-
 TextureCubeMap::TextureCubeMap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags) :
 	Texture(width, height, 1, TextureType::TextureCubeMap, format, flags)
 {

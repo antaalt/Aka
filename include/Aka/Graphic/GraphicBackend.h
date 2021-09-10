@@ -88,7 +88,7 @@ protected:
 	);
 
 	friend class Framebuffer;
-	static Framebuffer::Ptr createFramebuffer(FramebufferAttachment* attachments, size_t count);
+	static Framebuffer::Ptr createFramebuffer(Attachment* attachments, size_t count);
 
 	friend class Buffer;
 	static Buffer::Ptr createBuffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data);

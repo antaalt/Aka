@@ -11,7 +11,7 @@ Framebuffer::Framebuffer(uint32_t width, uint32_t height) :
 {
 }
 
-Framebuffer::Framebuffer(FramebufferAttachment* attachment, size_t count) :
+Framebuffer::Framebuffer(Attachment* attachment, size_t count) :
 	m_width(attachment[0].texture->width()),
 	m_height(attachment[0].texture->height()),
 	m_attachments(attachment, attachment + count)
@@ -29,23 +29,27 @@ Framebuffer::~Framebuffer()
 {
 }
 
-Framebuffer::Ptr Framebuffer::create(FramebufferAttachment* attachment, size_t count)
+Framebuffer::Ptr Framebuffer::create(Attachment* attachment, size_t count)
 {
 	// Validate attachment
 	for (size_t i = 0; i < count; ++i)
 	{
-		if (attachment[i].texture == nullptr)
+		if (!valid(attachment[i]))
 		{
-			Logger::error("No texture set for framebuffer attachment ", i);
-			return nullptr;
-		}
-		if ((attachment[i].texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
-		{
-			Logger::error("Invalid flag for framebuffer attachment ", i);
+			Logger::error("Attachment not valid : ", i);
 			return nullptr;
 		}
 	}
 	return GraphicBackend::createFramebuffer(attachment, count);
+}
+
+bool Framebuffer::valid(Attachment attachment)
+{
+	if (attachment.texture == nullptr)
+		return false;
+	if ((attachment.texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
+		return false;
+	return true;
 }
 
 uint32_t Framebuffer::width() const
@@ -57,7 +61,16 @@ uint32_t Framebuffer::height() const
 {
 	return m_height;
 }
-void Framebuffer::blit(Framebuffer::Ptr src, FramebufferAttachmentType type, TextureFilter filter)
+
+Attachment* Framebuffer::getAttachment(AttachmentType type)
+{
+	for (Attachment& attachment : m_attachments)
+		if (attachment.type == type)
+			return &attachment;
+	return nullptr;
+}
+
+void Framebuffer::blit(Framebuffer::Ptr src, AttachmentType type, TextureFilter filter)
 {
 	blit(
 		src,
@@ -68,9 +81,9 @@ void Framebuffer::blit(Framebuffer::Ptr src, FramebufferAttachmentType type, Tex
 	);
 }
 
-Texture::Ptr Framebuffer::get(FramebufferAttachmentType type)
+Texture::Ptr Framebuffer::get(AttachmentType type)
 {
-	for (FramebufferAttachment& attachment : m_attachments)
+	for (Attachment& attachment : m_attachments)
 	{
 		if (attachment.type == type)
 			return attachment.texture;

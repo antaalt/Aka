@@ -85,6 +85,8 @@ protected:
 	Texture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, TextureFormat format, TextureFlag flag);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
+	Texture(Texture&&) = delete;
+	Texture& operator=(Texture&&) = delete;
 	virtual ~Texture();
 public:
 	// Get width of the texture
