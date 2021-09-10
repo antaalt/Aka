@@ -29,11 +29,18 @@ enum class AttachmentType
 	DepthStencil
 };
 
+enum class AttachmentFlag
+{
+	None = 0,
+	AttachTextureObject = (1 << 0), // Attach the object instead of the layer
+};
+
 struct Attachment
 {
 	AttachmentType type; // Type of the attachment
 	Texture::Ptr texture; // Texture used as attachment
-	int32_t layer; // Layer of the texture used as attachment. If attaching whole texture and not a single layer, set to -1.
+	AttachmentFlag flag; // Attachment flag
+	uint32_t layer; // Layer of the texture used as attachment (if AttachmentFlag::AttachTextureLayer set)
 	uint32_t level; // Level of the mips used as attachment
 };
 
@@ -71,13 +78,16 @@ public:
 	// Get the texture of the framebuffer attachment
 	Texture::Ptr get(AttachmentType type);
 	// Set the attachment of the framebuffer
-	virtual void set(AttachmentType type, Texture::Ptr texture, int32_t layer = 0, uint32_t level = 0) = 0;
+	virtual void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer = 0, uint32_t level = 0) = 0;
 
 protected:
 	uint32_t m_width;
 	uint32_t m_height;
 	std::vector<Attachment> m_attachments;
 };
+
+AttachmentFlag operator&(const AttachmentFlag& lhs, const AttachmentFlag& rhs);
+AttachmentFlag operator|(const AttachmentFlag& lhs, const AttachmentFlag& rhs);
 
 ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs);
 ClearMask operator|(const ClearMask& lhs, const ClearMask& rhs);

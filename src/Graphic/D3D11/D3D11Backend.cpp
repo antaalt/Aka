@@ -1042,7 +1042,7 @@ public:
 		if (m_texture)
 			m_texture->Release();
 	}
-	void upload(TextureCubeFace face, const void* data, uint32_t level) override
+	void upload(const void* data, uint32_t layer, uint32_t level) override
 	{
 		D3D11_BOX box{};
 		box.left = 0;
@@ -1053,14 +1053,14 @@ public:
 		box.back = 1;
 		dctx.deviceContext->UpdateSubresource(
 			m_texture,
-			D3D11CalcSubresource(level, (UINT)face, TextureSampler::mipLevelCount(m_width, m_height)),
+			D3D11CalcSubresource(level, layer, TextureSampler::mipLevelCount(m_width, m_height)),
 			&box,
 			data,
 			m_width * m_component,
 			0
 		);
 	}
-	void upload(TextureCubeFace face, const Rect& rect, const void* data, uint32_t level) override
+	void upload(const Rect& rect, const void* data, uint32_t layer, uint32_t level) override
 	{
 		D3D11_BOX box{};
 		box.left = (UINT)rect.x;
@@ -1071,14 +1071,14 @@ public:
 		box.back = 1;
 		dctx.deviceContext->UpdateSubresource(
 			m_texture,
-			D3D11CalcSubresource(level, (UINT)face, TextureSampler::mipLevelCount(m_width, m_height)),
+			D3D11CalcSubresource(level, layer, TextureSampler::mipLevelCount(m_width, m_height)),
 			&box,
 			data,
 			m_width * m_component,
 			0
 		);
 	}
-	void download(TextureCubeFace face, void* data, uint32_t level) override
+	void download(void* data, uint32_t layer, uint32_t level) override
 	{
 		/*D3D11_BOX box{};
 		box.left = 0;
@@ -1133,16 +1133,16 @@ public:
 class D3D11Framebuffer : public Framebuffer
 {
 public:
-	D3D11Framebuffer(FramebufferAttachment* attachments, size_t count) :
+	D3D11Framebuffer(Attachment* attachments, size_t count) :
 		Framebuffer(attachments, count),
 		m_colorViews(),
 		m_depthStencilView(nullptr)
 	{
 
-		for (FramebufferAttachment& attachment : m_attachments)
+		for (Attachment& attachment : m_attachments)
 		{
 			D3D11Texture* d3dTexture = reinterpret_cast<D3D11Texture2D*>(attachment.texture.get());
-			if (attachment.type == FramebufferAttachmentType::Depth || attachment.type == FramebufferAttachmentType::Stencil || attachment.type == FramebufferAttachmentType::DepthStencil)
+			if (attachment.type == AttachmentType::Depth || attachment.type == AttachmentType::Stencil || attachment.type == AttachmentType::DepthStencil)
 			{
 				AKA_ASSERT(m_depthStencilView == nullptr, "Already a depth buffer");
 				D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc{};
@@ -1199,7 +1199,7 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
 	{
 		Texture::Ptr srcTexture = src->get(type);
 		Texture::Ptr dstTexture = this->get(type);
@@ -1218,10 +1218,10 @@ public:
 		D3D11Texture* dstD3DTexture = reinterpret_cast<D3D11Texture2D*>(dstTexture.get());
 		dctx.deviceContext->CopyResource(dstD3DTexture->m_texture, srcD3DTexture->m_texture);
 	}
-	void set(FramebufferAttachmentType type, Texture::Ptr texture) override
+	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
 		D3D11Texture* d3dTexture = reinterpret_cast<D3D11Texture2D*>(texture.get());
-		if (type == FramebufferAttachmentType::Depth || type == FramebufferAttachmentType::Stencil || type == FramebufferAttachmentType::DepthStencil)
+		if (type == AttachmentType::Depth || type == AttachmentType::Stencil || type == AttachmentType::DepthStencil)
 		{
 			if (m_depthStencilView != nullptr)
 				m_depthStencilView->Release();
@@ -1230,7 +1230,7 @@ public:
 			{
 			case TextureType::Texture2D:
 				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-				viewDesc.Texture2D.MipSlice = 0;
+				viewDesc.Texture2D.MipSlice = level;
 				break;
 			case TextureType::Texture2DMultisample:
 				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
@@ -1238,9 +1238,18 @@ public:
 				break;
 			case TextureType::TextureCubeMap:
 				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-				viewDesc.Texture2DArray.ArraySize = 6;
-				viewDesc.Texture2DArray.FirstArraySlice = 0;
-				viewDesc.Texture2DArray.MipSlice = 0; // SV_RenderTargetArrayIndex
+				if ((AttachmentFlag::AttachTextureObject & flag) == AttachmentFlag::AttachTextureObject)
+				{
+					// use SV_RenderTargetArrayIndex
+					viewDesc.Texture2DArray.ArraySize = 6;
+					viewDesc.Texture2DArray.FirstArraySlice = 0;
+				}
+				else
+				{
+					viewDesc.Texture2DArray.ArraySize = 1;
+					viewDesc.Texture2DArray.FirstArraySlice = layer;
+				}
+				viewDesc.Texture2DArray.MipSlice = level;
 				break;
 			}
 			viewDesc.Format = d3dTexture->m_d3dFormat;
@@ -1263,11 +1272,8 @@ public:
 			}
 		}
 	}
-	void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) override
-	{
-	}
 	uint32_t getNumberView() const { return static_cast<uint32_t>(m_colorViews.size()); }
-	ID3D11RenderTargetView* getRenderTargetView(FramebufferAttachmentType index) const { 
+	ID3D11RenderTargetView* getRenderTargetView(AttachmentType index) const {
 		auto it = m_colorViews.find(index); 
 		if (it == m_colorViews.end())
 			return nullptr;
@@ -1275,7 +1281,7 @@ public:
 	}
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
 private:
-	std::map<FramebufferAttachmentType, ID3D11RenderTargetView*> m_colorViews;
+	std::map<AttachmentType, ID3D11RenderTargetView*> m_colorViews;
 	ID3D11DepthStencilView* m_depthStencilView;
 };
 
@@ -1387,7 +1393,7 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, FramebufferAttachmentType type, TextureFilter filter) override
+	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
 	{
 		ID3D11Texture2D* srcResource = nullptr;
 		ID3D11Texture2D* dstResource = nullptr;
@@ -1402,10 +1408,10 @@ public:
 		srcResource = srcD3DTexture->m_texture;
 		switch (type)
 		{
-		case FramebufferAttachmentType::Color0:
-		case FramebufferAttachmentType::Color1:
-		case FramebufferAttachmentType::Color2:
-		case FramebufferAttachmentType::Color3:
+		case AttachmentType::Color0:
+		case AttachmentType::Color1:
+		case AttachmentType::Color2:
+		case AttachmentType::Color3:
 			if (srcTexture->format() != TextureFormat::RGBA8U)
 			{
 				// TODO write a shader to handle this
@@ -1415,9 +1421,9 @@ public:
 			D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapChainBuffer));
 			dstResource = swapChainBuffer;
 			break;
-		case FramebufferAttachmentType::Depth:
-		case FramebufferAttachmentType::Stencil:
-		case FramebufferAttachmentType::DepthStencil:
+		case AttachmentType::Depth:
+		case AttachmentType::Stencil:
+		case AttachmentType::DepthStencil:
 			if (srcTexture->format() != TextureFormat::Depth24Stencil8 && srcTexture->format() != TextureFormat::DepthStencil)
 			{
 				Logger::error("Different depth format blitting not supported.");
@@ -1435,12 +1441,9 @@ public:
 		if (swapChainBuffer)
 			swapChainBuffer->Release();
 	}
-	void set(FramebufferAttachmentType type, Texture::Ptr texture) override
+	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
-		// TODO create Texture as attachment
-	}
-	void set(FramebufferAttachmentType type, TextureCubeMap::Ptr texture, TextureCubeFace face) override
-	{
+		Logger::error("Cannot set attachment of backbuffer");
 		// TODO create Texture as attachment
 	}
 	void onReceive(const BackbufferResizeEvent& event) override
@@ -2495,7 +2498,7 @@ void GraphicBackend::render(RenderPass& pass)
 			D3D11Framebuffer* framebuffer = (D3D11Framebuffer*)pass.framebuffer.get();
 			std::vector<ID3D11RenderTargetView*> views;
 			for (uint32_t i = 0; i < framebuffer->getNumberView(); i++)
-				views.push_back(framebuffer->getRenderTargetView((FramebufferAttachmentType)((int)FramebufferAttachmentType::Color0 + i)));
+				views.push_back(framebuffer->getRenderTargetView((AttachmentType)((int)AttachmentType::Color0 + i)));
 			if (views.size() != 0)
 				dctx.deviceContext->OMSetRenderTargets((UINT)views.size(), views.data(), framebuffer->getDepthStencilView());
 			else
@@ -2673,7 +2676,7 @@ Texture2DMultisample::Ptr GraphicBackend::createTexture2DMultisampled(
 	return std::make_shared<D3D11Texture2DMultisample>(width, height, format, flags, samples, data);
 }
 
-Framebuffer::Ptr GraphicBackend::createFramebuffer(FramebufferAttachment* attachments, size_t count)
+Framebuffer::Ptr GraphicBackend::createFramebuffer(Attachment* attachments, size_t count)
 {
 	return std::make_shared<D3D11Framebuffer>(attachments, count);
 }

@@ -1391,10 +1391,10 @@ public:
 			gl::filter(filter)
 		);
 	}
-	void set(AttachmentType type, Texture::Ptr texture, int32_t layer, uint32_t level) override
+	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
 		// Check attachment
-		Attachment newAttachment = Attachment{ type, texture, layer, level };
+		Attachment newAttachment = Attachment{ type, texture, flag, layer, level };
 		if (!valid(newAttachment))
 		{
 			Logger::error("Incompatible attachment set for framebuffer");
@@ -1417,9 +1417,10 @@ public:
 		}
 		else
 		{
-			if (attachment->texture == texture && attachment->layer == layer && attachment->level == level)
+			if (attachment->texture == texture && attachment->flag == flag && attachment->layer == layer && attachment->level == level)
 				return; // Everything already set.
 			attachment->texture = texture;
+			attachment->flag = flag;
 			attachment->layer = layer;
 			attachment->level = level;
 		}
@@ -1447,21 +1448,25 @@ public:
 			glFramebufferTexture3D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_3D, textureID, attachment.level, attachment.layer);
 			break;
 		case TextureType::TextureCubeMap:
-			if (attachment.layer < 0)
+			if ((AttachmentFlag::AttachTextureObject & attachment.flag) == AttachmentFlag::AttachTextureObject)
 				glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level);
 			else
 				glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + attachment.layer, textureID, attachment.level);
 			break;
 		case TextureType::Texture1DArray:
 		case TextureType::Texture2DArray:
-			if (attachment.layer < 0)
+			if ((AttachmentFlag::AttachTextureObject & attachment.flag) == AttachmentFlag::AttachTextureObject)
 				glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level);
 			else
 				glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level, attachment.layer);
 			break;
 		case TextureType::TextureCubeMapArray:
-			// TODO allow to attach single face ?
-			glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level, attachment.layer);
+			if ((AttachmentFlag::AttachTextureObject & attachment.flag) == AttachmentFlag::AttachTextureObject)
+				glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentType, textureID, attachment.level, attachment.layer);
+			else
+			{
+				// TODO allow to attach single face ?
+			}
 			break;
 		}
 	}
@@ -1560,7 +1565,7 @@ public:
 		);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	void set(AttachmentType type, Texture::Ptr texture, int32_t layer, uint32_t level) override
+	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
 		Logger::error("Trying to set backbuffer attachement.");
 	}

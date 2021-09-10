@@ -91,6 +91,16 @@ Texture::Ptr Framebuffer::get(AttachmentType type)
 	return nullptr;
 }
 
+AttachmentFlag operator&(const AttachmentFlag& lhs, const AttachmentFlag& rhs)
+{
+	return static_cast<AttachmentFlag>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
+AttachmentFlag operator|(const AttachmentFlag& lhs, const AttachmentFlag& rhs)
+{
+	return static_cast<AttachmentFlag>(static_cast<int>(lhs) & static_cast<int>(rhs));
+}
+
 ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs)
 {
 	return static_cast<ClearMask>(static_cast<int>(lhs) & static_cast<int>(rhs));
