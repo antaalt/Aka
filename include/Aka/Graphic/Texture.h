@@ -74,6 +74,8 @@ enum class TextureType {
 uint32_t size(TextureFormat format);
 // Return true if given type is a depth or a depth stencil format
 bool isDepth(TextureFormat format);
+// Return true if given type is a depth stencil format
+bool isStencil(TextureFormat format);
 
 using TextureHandle = StrictType<uintptr_t, struct TextureHandleTag>;
 

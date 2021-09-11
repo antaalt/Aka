@@ -70,6 +70,20 @@ bool isDepth(TextureFormat format)
 	}
 }
 
+bool isStencil(TextureFormat format)
+{
+	switch (format)
+	{
+	case TextureFormat::DepthStencil:
+	case TextureFormat::Depth0Stencil8:
+	case TextureFormat::Depth24Stencil8:
+	case TextureFormat::Depth32FStencil8:
+		return true;
+	default:
+		return false;
+	}
+}
+
 Texture::Texture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, TextureFormat format, TextureFlag flags) :
 	m_type(type),
 	m_format(format),

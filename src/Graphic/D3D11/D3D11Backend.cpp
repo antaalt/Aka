@@ -760,28 +760,41 @@ public:
 		memcpy(data, map.pData, m_width * m_height * 4);
 		dctx.deviceContext->Unmap(m_staging, 0);*/
 	}
-	/*void copy(Texture::Ptr src, const Rect& rect) override
+
+	void copy(const Texture2D::Ptr& dst, const Rect& rectSRC, const Rect& rectDST, uint32_t level) override
 	{
-		AKA_ASSERT(src->format() == this->format(), "Invalid format");
-		AKA_ASSERT(rect.x + rect.w < src->width() || rect.y + rect.h < src->height(), "Rect not in range");
-		AKA_ASSERT(rect.x + rect.w < this->width() || rect.y + rect.h < this->height(), "Rect not in range");
-		AKA_ASSERT(rect.x > 0 && rect.y > 0, "Not supported");
+		AKA_ASSERT(dst->format() == this->format(), "Invalid format");
+		AKA_ASSERT(rectDST.x + rectDST.w <= dst->width() && rectDST.y + rectDST.h <= dst->height(), "Rect not in range");
+		AKA_ASSERT(rectSRC.x + rectSRC.w <= this->width() && rectSRC.y + rectSRC.h <= this->height(), "Rect not in range");
+		AKA_ASSERT(rectSRC.w == rectDST.w && rectSRC.h == rectDST.h, "Rect size invalid.");
 
 		D3D11_BOX box{};
-		box.left = rect.x;
-		box.right = rect.x + m_width;
-		box.top = rect.y;
-		box.bottom = rect.y + m_height;
+		box.left = rectSRC.x;
+		box.right = rectSRC.x + rectSRC.w;
+		box.top = rectSRC.y;
+		box.bottom = rectSRC.y + rectSRC.h;
 		box.front = 0;
 		box.back = 1;
 
+		D3D11_BOX* pBox = nullptr;
+		if (rectSRC.w != m_width || rectSRC.h != m_height)
+			pBox = &box;
+
 		dctx.deviceContext->CopySubresourceRegion(
-			m_texture, 0,
-			0, 0, 0,
-			reinterpret_cast<D3D11Texture2D*>(src.get())->m_texture, 0,
-			&box
+			reinterpret_cast<D3D11Texture2D*>(dst.get())->m_texture, level,
+			rectDST.x, rectDST.y, 0,
+			m_texture, level,
+			pBox
 		);
-	}*/
+		if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
+			dst->generateMips();
+	}
+	void blit(const Texture2D::Ptr& dst, const Rect& rectSRC, const Rect& rectDST, TextureFilter filter, uint32_t level) override
+	{
+		// For now, simply copy.
+		// TODO Write a shader pass to blit the texture.
+		this->copy(dst, rectSRC, rectDST, level);
+	}
 	TextureHandle handle() const override
 	{
 		return TextureHandle((uintptr_t)m_view);
