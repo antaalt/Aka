@@ -11,7 +11,7 @@ namespace aka {
 
 bool Directory::exist(const Path& path)
 {
-	StringWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	DWORD ftyp = GetFileAttributes(wstr.cstr());
 	if (ftyp == INVALID_FILE_ATTRIBUTES)
 		return false; // Incorrect path
@@ -23,7 +23,7 @@ bool Directory::exist(const Path& path)
 bool Directory::create(const Path& path)
 {
 	size_t pos = 0;
-	const String& str = path.str();
+	String str = path.cstr();
 	do
 	{
 		pos = str.findFirst('/', pos + 1);
@@ -32,7 +32,7 @@ bool Directory::create(const Path& path)
 		String p = str.substr(0, pos);
 		if (p == "." || p == ".." || p == "/" || p == "\\")
 			continue;
-		StringWide wstr = Utf8ToWchar(p);
+		StringWide wstr = Utf8ToWchar(p.cstr());
 		if (!CreateDirectory(wstr.cstr(), NULL))
 		{
 			DWORD error = GetLastError();
@@ -49,7 +49,7 @@ bool Directory::remove(const Path& path, bool recursive)
 {
 	if (recursive)
 	{
-		StringWide wstr = Utf8ToWchar(path.str());
+		StringWide wstr = Utf8ToWchar(path.cstr());
 		WIN32_FIND_DATA data;
 		wchar_t cwd[512];
 		GetCurrentDirectory(512, cwd);
@@ -67,13 +67,13 @@ bool Directory::remove(const Path& path, bool recursive)
 		FindClose(hFind);
 		SetCurrentDirectory(cwd);
 	}
-	StringWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.cstr());
 	return RemoveDirectory(str.cstr()) == TRUE;
 }
 
 bool File::exist(const Path& path)
 {
-	StringWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.cstr());
 	DWORD ftyp = GetFileAttributes(str.cstr());
 	if (ftyp == INVALID_FILE_ATTRIBUTES)
 		return false;  //something is wrong with your path!
@@ -81,7 +81,7 @@ bool File::exist(const Path& path)
 }
 bool File::create(const Path& path)
 {
-	StringWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	HANDLE h = CreateFile(wstr.cstr(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (h)
 	{
@@ -95,13 +95,13 @@ bool File::create(const Path& path)
 }
 bool File::remove(const Path& path)
 {
-	StringWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.cstr());
 	return DeleteFile(str.cstr()) == TRUE;
 }
 
 String File::extension(const Path& path)
 {
-	StringWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	LPWSTR extension = PathFindExtension(wstr.cstr());
 	String out = WcharToUtf8(extension);
 	if (out.length() < 1)
@@ -111,13 +111,13 @@ String File::extension(const Path& path)
 
 String File::name(const Path& path)
 {
-	StringWide str = Utf8ToWchar(path.str());
+	StringWide str = Utf8ToWchar(path.cstr());
 	LPWSTR FileName = PathFindFileName(str.cstr());
 	return WcharToUtf8(FileName);
 }
 size_t File::size(const Path& path)
 {
-	StringWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	HANDLE h = CreateFile(wstr.cstr(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (h)
 	{
@@ -139,7 +139,7 @@ size_t File::size(const Path& path)
 std::vector<Path> Path::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
-	StringWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	WIN32_FIND_DATA data;
 	StringWide searchString;
 	if (wstr.last() == separator)
@@ -178,7 +178,7 @@ std::vector<Path> Path::enumerate(const Path& path)
 Path Path::normalize(const Path& path)
 {
 	WCHAR canonicalizedPath[MAX_PATH];
-	StringWide wstr = Utf8ToWchar(path.str());
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	if (PathCanonicalize(canonicalizedPath, wstr.cstr()) == TRUE)
 	{
 		String str = WcharToUtf8(canonicalizedPath);
@@ -242,11 +242,11 @@ const wchar_t* fileMode(FileMode mode, FileType type)
 
 FILE* fopen(const Path& path, FileMode mode, FileType type)
 {
-	StringWide wstr = Utf8ToWchar(path.str());
-	FILE* File = nullptr;
-	errno_t err = _wfopen_s(&File, wstr.cstr(), fileMode(mode, type));
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	FILE* file = nullptr;
+	errno_t err = _wfopen_s(&file, wstr.cstr(), fileMode(mode, type));
 	if (err == 0)
-		return File;
+		return file;
 	return nullptr;
 }
 

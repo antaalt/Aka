@@ -33,7 +33,7 @@ bool AudioStreamMp3::load(const Path& path, Audio* audio) const
 	mp3dec_t mp3d{};
 	mp3dec_file_info_t info{};
 #if defined(AKA_PLATFORM_WINDOWS)
-	StringWide wstr = encoding::wide(path.str());
+	StringWide wstr = encoding::wide(path.cstr());
     int sample = mp3dec_load_w(&mp3d, wstr.cstr(), &info, nullptr, nullptr);
 #else
 	int sample = mp3dec_load(&mp3d, path.cstr(), &info, nullptr, nullptr);
@@ -54,7 +54,7 @@ bool AudioStreamMp3::open(const Path& path)
 {
     memset(&m_mp3d, 0, sizeof(m_mp3d));
 #if defined(AKA_PLATFORM_WINDOWS)
-    Str<wchar_t> wstr = encoding::wide(path.str());
+    Str<wchar_t> wstr = encoding::wide(path.cstr());
     int sample = mp3dec_ex_open_w(&m_mp3d, wstr.cstr(), MP3D_SEEK_TO_SAMPLE);
 #else
 	int sample = mp3dec_ex_open(&m_mp3d, path.cstr(), MP3D_SEEK_TO_SAMPLE);

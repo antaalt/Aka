@@ -1,6 +1,7 @@
 #include <Aka/OS/FileSystem.h>
 
 #include <Aka/OS/Logger.h>
+#include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Core/Debug.h>
 #include <Aka/Platform/PlatformBackend.h>
 
@@ -26,11 +27,6 @@ const char* Path::cstr() const
 	return m_string.cstr();
 }
 
-const String& Path::str() const
-{
-	return m_string;
-}
-
 size_t Path::size() const
 {
 	return m_string.length();
@@ -38,16 +34,6 @@ size_t Path::size() const
 size_t Path::length() const
 {
 	return m_string.length();
-}
-
-Path::operator String& ()
-{
-	return m_string;
-}
-
-Path::operator const String& () const
-{
-	return m_string;
 }
 
 Path Path::operator+(const Path& rhs) const
@@ -76,12 +62,12 @@ Path& Path::operator+=(const Path& rhs)
 
 bool Path::operator==(const Path& rhs) const
 {
-	return Path::normalize(*this).str() == Path::normalize(rhs).str();
+	return Path::normalize(*this).m_string == Path::normalize(rhs).m_string;
 }
 
 bool Path::operator!=(const Path& rhs) const
 {
-	return Path::normalize(*this).str() != Path::normalize(rhs).str();
+	return Path::normalize(*this).m_string != Path::normalize(rhs).m_string;
 }
 
 Path Path::up() const
@@ -131,7 +117,9 @@ const char* Path::end() const
 
 bool File::read(const Path& path, String* str)
 {
-	FILE* file = ::fopen(path.cstr(), "r");
+	FILE* file = fopen(path, FileMode::Read, FileType::String);
+	if (file == nullptr)
+		return false;
 	int error = fseek(file, 0L, SEEK_END);
 	size_t size = ftell(file);
 	rewind(file);
@@ -144,7 +132,9 @@ bool File::read(const Path& path, String* str)
 
 bool File::read(const Path& path, Blob* blob)
 {
-	FILE* file = ::fopen(path.cstr(), "rb");
+	FILE* file = fopen(path, FileMode::Read, FileType::Binary);
+	if (file == nullptr)
+		return false;
 	int error = fseek(file, 0L, SEEK_END);
 	size_t size = ftell(file);
 	rewind(file);
@@ -157,7 +147,7 @@ bool File::read(const Path& path, Blob* blob)
 
 bool File::write(const Path& path, const char* str)
 {
-	FILE* file = ::fopen(path.cstr(), "w");
+	FILE* file = fopen(path, FileMode::Write, FileType::String);
 	if (file == nullptr)
 		return false;
 	size_t length = strlen(str);
@@ -174,7 +164,7 @@ bool File::write(const Path& path, const String& str)
 
 bool File::write(const Path& path, const uint8_t* bytes, size_t size)
 {
-	FILE* file = ::fopen(path.cstr(), "wb");
+	FILE* file = fopen(path, FileMode::Write, FileType::Binary);
 	if (file == nullptr)
 		return false;
 	if (size != fwrite(bytes, 1, size, file))

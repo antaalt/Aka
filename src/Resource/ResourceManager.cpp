@@ -83,7 +83,7 @@ void ResourceManager::serialize(const Path& path)
 	{
 		Logger::error("Failed to serialize " + File::name(path) + " : ", e.what());
 	}
-	File::write(path.str(), str);
+	File::write(path, str);
 }
 
 

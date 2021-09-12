@@ -13,12 +13,8 @@ struct Path
 	Path(const String& path);
 
 	const char* cstr() const;
-	const String &str() const;
 	size_t size() const;
 	size_t length() const;
-
-	explicit operator String& ();
-	explicit operator const String& () const;
 
 	Path operator+(const Path& rhs) const;
 	Path &operator+=(const Path& rhs);

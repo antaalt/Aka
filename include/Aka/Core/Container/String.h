@@ -88,7 +88,7 @@ public:
 	// Get the length of a raw string
 	static size_t length(const T* string);
 	// Compare a raw string with another one
-	static bool compare(const T* lhs, const T* rhs);
+	static int compare(const T* lhs, const T* rhs);
 	// Format a raw string
 	template <typename ...Args>
 	static Str format(const T* string, Args ...args);
@@ -221,12 +221,12 @@ inline const T& Str<T>::operator[](size_t index) const
 template<typename T>
 inline bool Str<T>::operator==(const Str<T>& str) const
 {
-	return Str<T>::compare(m_string, str.m_string);
+	return Str<T>::compare(m_string, str.m_string) == 0;
 }
 template<typename T>
 inline bool Str<T>::operator!=(const Str<T>& str) const
 {
-	return !Str<T>::compare(m_string, str.m_string);
+	return Str<T>::compare(m_string, str.m_string) != 0;
 }
 template<typename T>
 inline bool Str<T>::operator<(const Str<T>& str) const
@@ -236,12 +236,12 @@ inline bool Str<T>::operator<(const Str<T>& str) const
 template<typename T>
 inline bool Str<T>::operator==(const T* str) const
 {
-	return Str<T>::compare(m_string, str);
+	return Str<T>::compare(m_string, str) == 0;
 }
 template<typename T>
 inline bool Str<T>::operator!=(const T* str) const
 {
-	return !Str<T>::compare(m_string, str);
+	return Str<T>::compare(m_string, str) != 0;
 }
 template<typename T>
 inline Str<T>& Str<T>::operator+=(const Str<T>& str)
@@ -399,10 +399,10 @@ inline size_t Str<T>::length(const T* string)
 	return tmp - string;
 }
 template <typename T>
-inline bool Str<T>::compare(const T* lhs, const T* rhs)
+inline int Str<T>::compare(const T* lhs, const T* rhs)
 {
 	for (; *lhs && (*lhs == *rhs); lhs++, rhs++) {}
-	return (*lhs == *rhs);// (unsigned char)(*lhs) - (unsigned char)(*rhs);
+	return (unsigned char)(*lhs) - (unsigned char)(*rhs);
 }
 template <>
 template <typename ...Args>
