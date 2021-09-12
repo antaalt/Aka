@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <Aka/Core/String.h>
+#include <Aka/Core/Container/String.h>
+#include <Aka/Core/Container/Blob.h>
 
 namespace aka {
 

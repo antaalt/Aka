@@ -13,7 +13,7 @@
 #include <minimp3.h>
 #include <minimp3_ex.h>
 
-#include <Aka/Core/String.h>
+#include <Aka/Core/Container/String.h>
 #include <Aka/Core/Encoding.h>
 
 

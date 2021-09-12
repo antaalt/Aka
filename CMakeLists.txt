@@ -7,7 +7,9 @@ add_library (Aka
 	"src/Audio/AudioStream.cpp"
 	"src/Audio/AudioStreamMp3.cpp"
 	"src/Audio/AudioStreamMemory.cpp"
-
+	
+	"src/Core/Container/Blob.cpp"
+	"src/Core/Container/String.cpp"
 	"src/Core/Application.cpp"
 	"src/Core/View.cpp"
 	"src/Core/Debug.cpp"
@@ -15,7 +17,6 @@ add_library (Aka
 	"src/Core/Physic.cpp"
 	"src/Core/Aseprite.cpp"
 	"src/Core/Sprite.cpp"
-	"src/Core/String.cpp"
 	"src/Core/Encoding.cpp"
 	"src/Core/Controller.cpp"
 

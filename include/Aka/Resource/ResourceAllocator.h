@@ -6,7 +6,7 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/FileSystem.h>
-#include <Aka/Core/String.h>
+#include <Aka/Core/Container/String.h>
 #include <Aka/Resource/Storage.h>
 
 namespace std { template <> struct hash<aka::String> { size_t operator()(const aka::String& k) const { return hash<string>()(k); } }; }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Aka/Platform/Platform.h>
-#include <Aka/Core/String.h>
+#include <Aka/Core/Container/String.h>
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #define NOMINMAX

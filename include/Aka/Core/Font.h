@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Aka/Core/Geometry.h>
-#include <Aka/Core/String.h>
+#include <Aka/Core/Container/String.h>
 #include <Aka/Core/Encoding.h>
 #include <Aka/Graphic/Texture2D.h>
 #include <Aka/OS/FileSystem.h>

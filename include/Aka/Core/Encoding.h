@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Core/String.h>
+#include <Aka/Core/Container/String.h>
 
 namespace aka {
 namespace encoding {
