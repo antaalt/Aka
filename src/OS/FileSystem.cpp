@@ -129,150 +129,63 @@ const char* Path::end() const
 	return m_string.end();
 }
 
-File::File() :
-	m_file(nullptr),
-	m_mode(FileMode::Read),
-	m_length(0)
+bool File::read(const Path& path, String* str)
 {
-}
-
-File::File(const Path& path, FileMode mode) :
-	File()
-{
-	if (!open(path, mode))
-		Logger::error("Failed to open file : ", path);
-}
-
-File::~File()
-{
-	if (m_file != nullptr)
-		close();
-}
-
-// Implementation defined fopen
-FILE* fopen(const Path& path, FileMode mode);
-
-bool File::open(const Path& path, FileMode mode)
-{
-	m_file = fopen(path, mode);
-	if (m_file == nullptr)
+	FILE* file = ::fopen(path.cstr(), "r");
+	int error = fseek(file, 0L, SEEK_END);
+	size_t size = ftell(file);
+	rewind(file);
+	*str = String(size);
+	if (fread(str->cstr(), 1, str->length(), file) != str->length())
 		return false;
-	m_mode = mode;
-	fseek(m_file, 0L, SEEK_END);
-	m_length = ftell(m_file);
-	rewind(m_file);
+	fclose(file);
 	return true;
 }
 
-bool File::close() 
+bool File::read(const Path& path, Blob* blob)
 {
-	int error = fclose(m_file);
-	m_file = nullptr;
-	m_length = 0;
-	return error != 0;
-}
-
-bool File::opened() const
-{
-	return m_file != nullptr;
-}
-
-bool File::read(void* data, size_t size)
-{
-	size_t length = fread(data, 1, size, m_file);
-	return length == size;
-}
-
-bool File::write(const void* data, size_t size)
-{
-	size_t length = fwrite(data, 1, size, m_file);
-	return length == size;
-}
-
-bool File::seek(size_t position)
-{
-	int error = fseek(m_file, (long)position, SEEK_SET);
-	return error == 0;
-}
-
-size_t File::length() const
-{
-	return m_length;
-}
-
-size_t File::position()
-{
-	return ftell(m_file);
-}
-
-FileMode File::mode() const
-{
-	return m_mode;
-}
-
-std::string File::readString(const Path& path)
-{
-	File file(path, FileMode::Read);
-	if (!file.opened())
-		return std::string();
-	std::string str;
-	str.resize(file.length());
-	if (!file.read(str.data(), str.length()))
-		return std::string();
-	return str;
-}
-
-std::vector<uint8_t> File::readBinary(const Path& path)
-{
-	File file(path, FileMode::Read);
-	if (!file.opened())
-		return std::vector<uint8_t>();
-	std::vector<uint8_t> bytes;
-	bytes.resize(file.length());
-	if (!file.read(bytes.data(), bytes.size()))
-		return std::vector<uint8_t>();
-	return bytes;
-}
-
-bool File::writeString(const Path& path, const char* str)
-{
-	File file(path, FileMode::Write);
-	if (!file.opened())
+	FILE* file = ::fopen(path.cstr(), "rb");
+	int error = fseek(file, 0L, SEEK_END);
+	size_t size = ftell(file);
+	rewind(file);
+	*blob = Blob(size);
+	if (fread(blob->data(), 1, blob->size(), file) != blob->size())
 		return false;
-	return file.write(str, strlen(str));
+	fclose(file);
+	return true;
 }
 
-bool File::writeString(const Path& path, const std::string& str)
+bool File::write(const Path& path, const char* str)
 {
-	return writeString(path, str.c_str());
-}
-
-bool File::writeBinary(const Path& path, const uint8_t* bytes, size_t size)
-{
-	File file(path, FileMode::Write);
-	if (!file.opened())
+	FILE* file = ::fopen(path.cstr(), "w");
+	if (file == nullptr)
 		return false;
-	return file.write(bytes, size);
+	size_t length = strlen(str);
+	if (length != fwrite(str, 1, length, file))
+		return false;
+	fclose(file);
+	return true;
 }
 
-bool File::writeBinary(const Path& path, const std::vector<uint8_t>& bytes)
+bool File::write(const Path& path, const String& str)
 {
-	return writeBinary(path, bytes.data(), bytes.size());
+	return write(path, str.cstr());
 }
 
-Path Asset::path(const Path& path)
+bool File::write(const Path& path, const uint8_t* bytes, size_t size)
 {
-	return Path::normalize(Path::cwd() + Path("asset/") + path);
+	FILE* file = ::fopen(path.cstr(), "wb");
+	if (file == nullptr)
+		return false;
+	if (size != fwrite(bytes, 1, size, file))
+		return false;
+	fclose(file);
+	return true;
 }
 
-FileMode operator&(FileMode lhs, FileMode rhs)
+bool File::write(const Path& path, const Blob& blob)
 {
-	return (FileMode)((int)lhs & (int)rhs);
-}
-
-FileMode operator|(FileMode lhs, FileMode rhs)
-{
-	return (FileMode)((int)lhs | (int)rhs);
+	return write(path, blob.data(), blob.size());
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)

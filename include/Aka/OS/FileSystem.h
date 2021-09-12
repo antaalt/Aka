@@ -47,73 +47,46 @@ private:
 	String m_string;
 };
 
-enum class FileMode {
-	Read = (1 << 0),
-	Write = (1 << 1),
-
-	ReadWrite = Read | Write,
+struct Directory
+{
+	// Check if a directory exist
+	static bool exist(const Path &path);
+	// Create a directory
+	static bool create(const Path& path);
+	// Remove a directory, recurse if asked
+	static bool remove(const Path& path, bool recursive = false);
 };
 
-FileMode operator&(FileMode lhs, FileMode rhs);
-FileMode operator|(FileMode lhs, FileMode rhs);
+struct File
+{
+	// Create a file at the given path
+	static bool create(const Path& path);
+	// Check if a file exist at path
+	static bool exist(const Path& path);
+	// Remove a file from path
+	static bool remove(const Path& path);
+	// Get the extension of the file
+	static String extension(const Path& path);
+	// Get the name of the file
+	static String name(const Path& path);
+	// Get the size of the file
+	static size_t size(const Path& path);
 
-struct File {
-	File();
-	File(const Path& path, FileMode mode);
-	File(const File& file) = delete;
-	File& operator=(const File&) = delete;
-	~File();
-	bool open(const Path& path, FileMode mode);
-	bool close();
-	bool opened() const;
+	// Read a file into a string
+	static bool read(const Path& path, String* str);
+	// Read a file into a blob
+	static bool read(const Path& path, Blob* blob);
 
-	bool read(void* data, size_t size);
-	bool write(const void* data, size_t size);
-	bool seek(size_t position);
-	size_t length() const;
-	size_t position();
-	FileMode mode() const;
-
-	static std::string readString(const Path& path);
-	static std::vector<uint8_t> readBinary(const Path& path);
-	static bool writeString(const Path& path, const char* str);
-	static bool writeString(const Path& path, const std::string& str);
-	static bool writeBinary(const Path& path, const uint8_t* bytes, size_t size);
-	static bool writeBinary(const Path& path, const std::vector<uint8_t>& bytes);
-private:
-	FILE* m_file;
-	FileMode m_mode;
-	size_t m_length;
-};
-
-namespace directory {
-// Check if a directory exist
-bool exist(const Path &path);
-// Create a directory
-bool create(const Path& path);
-// Remove a directory, recurse if asked
-bool remove(const Path& path, bool recursive = false);
-};
-
-namespace file {
-// Create a file at the given path
-bool create(const Path& path);
-// Check if a file exist at path
-bool exist(const Path& path);
-// Remove a file from path
-bool remove(const Path& path);
-// Get the extension of the file
-String extension(const Path& path);
-// Get the name of the file
-String name(const Path& path);
+	// Write a string to a file
+	static bool write(const Path& path, const char* str);
+	// Write a string to a file
+	static bool write(const Path& path, const String& str);
+	// Write binary data to a file
+	static bool write(const Path& path, const uint8_t* bytes, size_t size);
+	// Write a blob to a file
+	static bool write(const Path& path, const Blob& blob);
 };
 
 std::ostream& operator<<(std::ostream& os, const Path& path);
-
-struct Asset {
-	static Path path(const Path& path);
-};
-
-
 
 };

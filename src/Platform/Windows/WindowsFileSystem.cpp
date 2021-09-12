@@ -1,6 +1,7 @@
 #include <Aka/OS/FileSystem.h>
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/Logger.h>
+#include <Aka/OS/Stream/FileStream.h>
 
 #include "WindowsPlatform.h"
 
@@ -8,7 +9,7 @@
 
 namespace aka {
 
-bool directory::exist(const Path& path)
+bool Directory::exist(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(wstr.cstr());
@@ -19,7 +20,7 @@ bool directory::exist(const Path& path)
 	return false;
 }
 
-bool directory::create(const Path& path)
+bool Directory::create(const Path& path)
 {
 	size_t pos = 0;
 	const String& str = path.str();
@@ -44,7 +45,7 @@ bool directory::create(const Path& path)
 	return true;
 }
 
-bool directory::remove(const Path& path, bool recursive)
+bool Directory::remove(const Path& path, bool recursive)
 {
 	if (recursive)
 	{
@@ -70,7 +71,7 @@ bool directory::remove(const Path& path, bool recursive)
 	return RemoveDirectory(str.cstr()) == TRUE;
 }
 
-bool file::exist(const Path& path)
+bool File::exist(const Path& path)
 {
 	StringWide str = Utf8ToWchar(path.str());
 	DWORD ftyp = GetFileAttributes(str.cstr());
@@ -78,7 +79,7 @@ bool file::exist(const Path& path)
 		return false;  //something is wrong with your path!
 	return (!(ftyp & FILE_ATTRIBUTE_DIRECTORY));
 }
-bool file::create(const Path& path)
+bool File::create(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.str());
 	HANDLE h = CreateFile(wstr.cstr(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -92,13 +93,13 @@ bool file::create(const Path& path)
 		return false; // GetLastError()
 	}
 }
-bool file::remove(const Path& path)
+bool File::remove(const Path& path)
 {
 	StringWide str = Utf8ToWchar(path.str());
 	return DeleteFile(str.cstr()) == TRUE;
 }
 
-String file::extension(const Path& path)
+String File::extension(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.str());
 	LPWSTR extension = PathFindExtension(wstr.cstr());
@@ -108,11 +109,31 @@ String file::extension(const Path& path)
 	return out.substr(1, out.length() - 1);
 }
 
-String file::name(const Path& path)
+String File::name(const Path& path)
 {
 	StringWide str = Utf8ToWchar(path.str());
-	LPWSTR fileName = PathFindFileName(str.cstr());
-	return WcharToUtf8(fileName);
+	LPWSTR FileName = PathFindFileName(str.cstr());
+	return WcharToUtf8(FileName);
+}
+size_t File::size(const Path& path)
+{
+	StringWide wstr = Utf8ToWchar(path.str());
+	HANDLE h = CreateFile(wstr.cstr(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (h)
+	{
+		LARGE_INTEGER size;
+		if (!GetFileSizeEx(h, &size))
+		{
+			CloseHandle(h);
+			return 0;
+		}
+		CloseHandle(h);
+		return size.QuadPart;
+	}
+	else
+	{
+		return 0; // GetLastError()
+	}
 }
 
 std::vector<Path> Path::enumerate(const Path& path)
@@ -137,13 +158,13 @@ std::vector<Path> Path::enumerate(const Path& path)
 				continue;
 			if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
-				// directory
+				// Directory
 				String str = WcharToUtf8(data.cFileName);
 				paths.push_back(str + '/');
 			}
 			else
 			{
-				// file
+				// File
 				String str = WcharToUtf8(data.cFileName);
 				paths.push_back(str);
 				// size :((unsigned long long)data.nFileSizeHigh * ((unsigned long long)MAXDWORD + 1ULL)) + (unsigned long long)data.nFileSizeLow;
@@ -193,27 +214,39 @@ Path Path::cwd()
 	return Path(str + '/');
 }
 
-const wchar_t* fileMode(FileMode mode)
+const wchar_t* fileMode(FileMode mode, FileType type)
 {
-	switch (mode)
+	switch (type)
 	{
-	case FileMode::Read:
-		return L"rb";
-	case FileMode::Write:
-		return L"wb";
+	case aka::FileType::Binary:
+		if (mode == FileMode::Read)
+			return L"rb";
+		else if (mode == FileMode::Write)
+			return L"wb";
+		else if (mode == FileMode::ReadWrite)
+			return L"rwb";
+		break;
+	case aka::FileType::String:
+		if (mode == FileMode::Read)
+			return L"r";
+		else if (mode == FileMode::Write)
+			return L"w";
+		else if (mode == FileMode::ReadWrite)
+			return L"rw";
+		break;
 	default:
-	case FileMode::ReadWrite:
-		return L"rwb";
+		break;
 	}
+	return L"";
 }
 
-FILE* fopen(const Path& path, FileMode mode)
+FILE* fopen(const Path& path, FileMode mode, FileType type)
 {
 	StringWide wstr = Utf8ToWchar(path.str());
-	FILE* file = nullptr;
-	errno_t err = _wfopen_s(&file, wstr.cstr(), fileMode(mode));
+	FILE* File = nullptr;
+	errno_t err = _wfopen_s(&File, wstr.cstr(), fileMode(mode, type));
 	if (err == 0)
-		return file;
+		return File;
 	return nullptr;
 }
 

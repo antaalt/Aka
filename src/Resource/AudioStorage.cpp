@@ -17,7 +17,7 @@ std::unique_ptr<IStorage<AudioStream>> IStorage<AudioStream>::create()
 
 bool AudioStorage::load(const Path& path)
 {
-	FileStream stream(path, FileMode::Read);
+	FileStream stream(path, FileMode::Read, FileType::Binary);
 	// Read header
 	char sign[4];
 	stream.read<char>(sign, 4);
@@ -31,7 +31,7 @@ bool AudioStorage::load(const Path& path)
 }
 bool AudioStorage::save(const Path& path) const
 {
-	FileStream stream(path, FileMode::Write);
+	FileStream stream(path, FileMode::Write, FileType::Binary);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'a' };
 	stream.write<char>(signature, 4);

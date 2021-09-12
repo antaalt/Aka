@@ -1,10 +1,5 @@
 #pragma once
 
-//#include <Aka/Graphic/Texture.h>
-//#include <Aka/Graphic/Mesh.h>
-//#include <Aka/Audio/AudioStream.h>
-//#include <Aka/Core/Font.h>
-//#include <Aka/Scene/World.h>
 #include <Aka/OS/FileSystem.h>
 
 namespace aka {

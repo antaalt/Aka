@@ -17,7 +17,7 @@ std::unique_ptr<IStorage<Font>> IStorage<Font>::create()
 
 bool FontStorage::load(const Path& path)
 {
-	FileStream stream(path, FileMode::Read);
+	FileStream stream(path, FileMode::Read, FileType::Binary);
 	// Read header
 	char sign[4];
 	stream.read<char>(sign, 4);
@@ -31,7 +31,7 @@ bool FontStorage::load(const Path& path)
 }
 bool FontStorage::save(const Path& path) const
 {
-	FileStream stream(path, FileMode::Write);
+	FileStream stream(path, FileMode::Write, FileType::Binary);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'f' };
 	stream.write<char>(signature, 4);

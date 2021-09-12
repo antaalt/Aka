@@ -4,6 +4,7 @@
 
 namespace aka {
 
+Path ResourceManager::assetPath = Path::cwd() + Path("asset/");
 ResourceAllocator<Texture> ResourceManager::textures;
 ResourceAllocator<Mesh> ResourceManager::meshes;
 ResourceAllocator<AudioStream> ResourceManager::audios;
@@ -12,10 +13,12 @@ ResourceAllocator<Buffer> ResourceManager::buffers;
 
 void ResourceManager::parse(const Path& path)
 {
-	std::string content = File::readString(path);
+	String content;
+	if (!File::read(path, &content))
+		Logger::error("Failed to load : ", path);
 	try
 	{
-		nlohmann::json json = nlohmann::json::parse(content);
+		nlohmann::json json = nlohmann::json::parse(content.cstr());
 		for (auto& buffer : json["buffers"].items())
 		{
 			buffers.load(String(buffer.key()), Path(buffer.value().get<std::string>()));
@@ -39,13 +42,13 @@ void ResourceManager::parse(const Path& path)
 	}
 	catch (const nlohmann::json::exception& e)
 	{
-		Logger::error("Failed to parse " + file::name(path) + " : ", e.what());
+		Logger::error("Failed to parse " + File::name(path) + " : ", e.what());
 	}
 }
 
 void ResourceManager::serialize(const Path& path)
 {
-	std::string str;
+	String str;
 	try
 	{
 		nlohmann::json json = nlohmann::json();
@@ -78,9 +81,15 @@ void ResourceManager::serialize(const Path& path)
 	}
 	catch (const nlohmann::json::exception& e)
 	{
-		Logger::error("Failed to serialize " + file::name(path) + " : ", e.what());
+		Logger::error("Failed to serialize " + File::name(path) + " : ", e.what());
 	}
-	File::writeString(path.str(), str);
+	File::write(path.str(), str);
+}
+
+
+Path ResourceManager::path(const Path& path)
+{
+	return Path::normalize(assetPath + path);
 }
 
 

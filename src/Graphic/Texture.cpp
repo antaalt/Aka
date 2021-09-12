@@ -113,6 +113,13 @@ uint32_t Texture::depth() const
 	return m_depth;
 }
 
+uint32_t Texture::levels() const
+{
+	if ((m_flags & TextureFlag::GenerateMips) == TextureFlag::GenerateMips)
+		return TextureSampler::mipLevelCount(m_width, m_height);
+	return 1;
+}
+
 TextureFormat Texture::format() const
 {
 	return m_format;

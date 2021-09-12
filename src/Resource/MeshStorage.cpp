@@ -17,7 +17,7 @@ std::unique_ptr<IStorage<Mesh>> IStorage<Mesh>::create()
 
 bool MeshStorage::load(const Path& path)
 {
-	FileStream stream(path, FileMode::Read);
+	FileStream stream(path, FileMode::Read, FileType::Binary);
 	// Read header
 	char sign[4];
 	stream.read<char>(sign, 4);
@@ -51,7 +51,7 @@ bool MeshStorage::load(const Path& path)
 }
 bool MeshStorage::save(const Path& path) const
 {
-	FileStream stream(path, FileMode::Write);
+	FileStream stream(path, FileMode::Write, FileType::Binary);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'm' };
 	stream.write<char>(signature, 4);

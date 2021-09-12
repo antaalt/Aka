@@ -17,7 +17,7 @@ std::unique_ptr<IStorage<Buffer>> IStorage<Buffer>::create()
 
 bool BufferStorage::load(const Path& path)
 {
-	FileStream stream(path, FileMode::Read);
+	FileStream stream(path, FileMode::Read, FileType::Binary);
 	// Read header
 	char sign[4];
 	stream.read<char>(sign, 4);
@@ -36,7 +36,7 @@ bool BufferStorage::load(const Path& path)
 }
 bool BufferStorage::save(const Path& path) const
 {
-	FileStream stream(path, FileMode::Write);
+	FileStream stream(path, FileMode::Write, FileType::Binary);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'b' };
 	stream.write<char>(signature, 4);

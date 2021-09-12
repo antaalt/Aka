@@ -35,7 +35,11 @@ struct ResourceManager
 	static void parse(const Path& path);
 	// serialize a library.json and save updated resources
 	static void serialize(const Path& path);
+
+	// Generate an asset path from a relative path.
+	static Path path(const Path& path);
 private:
+	static Path assetPath;
 	static ResourceAllocator<Texture> textures;
 	static ResourceAllocator<Mesh> meshes;
 	static ResourceAllocator<AudioStream> audios;
