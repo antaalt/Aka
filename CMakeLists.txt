@@ -28,7 +28,8 @@ add_library (Aka
 	"src/Scene/World.cpp"
 	"src/Scene/Serializer.cpp"
 	"src/Scene/Camera.cpp"
-
+	
+	"src/Resource/ProgramManager.cpp"
 	"src/Resource/ResourceManager.cpp"
 	"src/Resource/MeshStorage.cpp"
 	"src/Resource/FontStorage.cpp"

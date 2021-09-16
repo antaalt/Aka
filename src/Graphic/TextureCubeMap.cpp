@@ -63,9 +63,18 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 		"	o_color = vec4(color, 1.0);\n"
 		"}\n";
 #elif defined(AKA_USE_D3D11)
-	static const char* s_shader = ""
+	static const char* s_vertShader = ""
 		"cbuffer CameraUniformBuffer : register(b0) { float4x4 projection; float4x4 view; };\n"
-		"struct vs_out { float4 position : SV_POSITION; float3 localPosition : POS; };\n"
+		"struct vs_out { float4 position : SV_POSITION; float3 localPosition : POSITION; };\n"
+		"vs_out main(float3 position : POSITION)\n"
+		"{\n"
+		"	vs_out output;\n"
+		"	output.localPosition = position;\n"
+		"	output.position = mul(projection, mul(view, float4(position.x, position.y, position.z, 1.0)));\n"
+		"	return output;\n"
+		"}\n";
+	static const char* s_fragShader = ""
+		"struct vs_out { float4 position : SV_POSITION; float3 localPosition : POSITION; };\n"
 		"Texture2D    u_equirectangularMap : register(t0);\n"
 		"SamplerState u_equirectangularMapSampler : register(s0);\n"
 		"static const float2 invAtan = float2(0.1591, 0.3183);\n"
@@ -76,21 +85,12 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 		"	uv += 0.5;\n"
 		"	return uv;\n"
 		"}\n"
-		"vs_out vs_main(float3 position : POS)\n"
-		"{\n"
-		"	vs_out output;\n"
-		"	output.localPosition = position;\n"
-		"	output.position = mul(projection, mul(view, float4(position.x, position.y, position.z, 1.0)));\n"
-		"	return output;\n"
-		"}\n"
-		"float4 ps_main(vs_out input) : SV_TARGET\n"
+		"float4 main(vs_out input) : SV_TARGET\n"
 		"{\n"
 		"	float2 uv = SampleSphericalMap(normalize(input.localPosition));\n"
 		"	float3 color = u_equirectangularMap.Sample(u_equirectangularMapSampler, uv).rgb;\n"
 		"	return float4(color.x, color.y, color.z, 1.0);\n"
 		"}\n";
-	static const char* s_vertShader = s_shader;
-	static const char* s_fragShader = s_shader;
 #endif
 	RenderPass pass;
 	// Setup framebuffer

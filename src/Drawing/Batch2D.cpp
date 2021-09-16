@@ -31,46 +31,46 @@ static const char* fragShader =
 "}"
 "";
 #elif defined(AKA_USE_D3D11)
-static const char* shader = ""
+static const char* vertShader = ""
 "cbuffer ModelUniformBuffer : register(b0)\n"
 "{\n"
-"	row_major float4x4 u_mvp;\n"
+"	float4x4 u_mvp;\n"
 "}\n"
-
 "struct vs_in\n"
 "{\n"
-"	float2 position : POS;\n"
-"	float2 texcoord : TEX;\n"
-"	float4 color : COL;\n"
+"	float2 position : POSITION;\n"
+"	float2 texcoord : TEXCOORD;\n"
+"	float4 color : COLOR;\n"
 "};\n"
-
 "struct vs_out\n"
 "{\n"
 "	float4 position : SV_POSITION;\n"
-"	float2 texcoord : TEX;\n"
-"	float4 color : COL;\n"
+"	float2 texcoord : TEXCOORD;\n"
+"	float4 color : COLOR;\n"
+"};\n"
+"vs_out main(vs_in input)\n"
+"{\n"
+"	vs_out output;\n"
+"	output.position = mul(u_mvp, float4(input.position, 0.0f, 1.0f));\n"
+"	output.texcoord = input.texcoord;\n"
+"	output.color = input.color;\n"
+"	return output;\n"
+"}\n";
+static const char* fragShader = ""
+"struct vs_out\n"
+"{\n"
+"	float4 position : SV_POSITION;\n"
+"	float2 texcoord : TEXCOORD;\n"
+"	float4 color : COLOR;\n"
 "};\n"
 
 "Texture2D    u_texture : register(t0);\n"
 "SamplerState u_sampler : register(s0);\n"
 
-"vs_out vs_main(vs_in input)\n"
-"{\n"
-"	vs_out output;\n"
-
-"	output.position = mul(float4(input.position, 0.0f, 1.0f), u_mvp);\n"
-"	output.texcoord = input.texcoord;\n"
-"	output.color = input.color;\n"
-
-"	return output;\n"
-"}\n"
-
-"float4 ps_main(vs_out input) : SV_TARGET\n"
+"float4 main(vs_out input) : SV_TARGET\n"
 "{\n"
 "	return input.color * u_texture.Sample(u_sampler, input.texcoord);\n"
 "}\n";
-static const char* vertShader = shader;
-static const char* fragShader = shader;
 #endif
 
 void Batch2D::draw(const mat3f& transform, const Line& line)

@@ -51,6 +51,7 @@ public:
 	Str operator+(T character) const;
 
 	Str& append(const Str& string);
+	Str& append(const T* string, size_t length);
 	Str& append(const T* string);
 	Str& append(T character);
 
@@ -289,12 +290,23 @@ inline Str<T>& Str<T>::append(const Str<T>& str)
 	return *this;
 }
 template<typename T>
+inline Str<T>& Str<T>::append(const T* str, size_t length)
+{
+	size_t off = m_length;
+	size_t len = length;
+	resize(off + len);
+	Str<T>::copy(m_string + off, len, str);
+	m_string[m_length] = '\0';
+	return *this;
+}
+template<typename T>
 inline Str<T>& Str<T>::append(const T* str)
 {
 	size_t off = m_length;
 	size_t len = Str<T>::length(str);
 	resize(off + len);
-	Str<T>::copy(m_string + off, len + 1, str);
+	Str<T>::copy(m_string + off, len, str);
+	m_string[m_length] = '\0';
 	return *this;
 }
 template<typename T>

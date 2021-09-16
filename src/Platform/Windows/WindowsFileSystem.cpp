@@ -5,6 +5,8 @@
 
 #include "WindowsPlatform.h"
 
+#include <filesystem>
+
 #if defined(AKA_PLATFORM_WINDOWS)
 
 namespace aka {
@@ -115,6 +117,14 @@ String File::name(const Path& path)
 	LPWSTR FileName = PathFindFileName(str.cstr());
 	return WcharToUtf8(FileName);
 }
+
+String File::basename(const Path& path)
+{
+	namespace fs = std::filesystem;
+	fs::path stem = fs::path(path.cstr()).stem();
+	return stem.string();
+}
+
 size_t File::size(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
@@ -134,6 +144,14 @@ size_t File::size(const Path& path)
 	{
 		return 0; // GetLastError()
 	}
+}
+
+Time::Unit File::lastWrite(const Path& path)
+{
+	struct _stat result;
+	if (::_stat(path.cstr(), &result) != 0)
+		return Time::Unit::milliseconds(0);
+	return Time::Unit::milliseconds(result.st_mtime * 1000);
 }
 
 std::vector<Path> Path::enumerate(const Path& path)

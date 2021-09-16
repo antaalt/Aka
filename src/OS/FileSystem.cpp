@@ -120,12 +120,11 @@ bool File::read(const Path& path, String* str)
 	FILE* file = fopen(path, FileMode::Read, FileType::String);
 	if (file == nullptr)
 		return false;
-	int error = fseek(file, 0L, SEEK_END);
-	size_t size = ftell(file);
-	rewind(file);
-	*str = String(size);
-	if (fread(str->cstr(), 1, str->length(), file) != str->length())
-		return false;
+	String buf(4096, '\0');
+	size_t read = 0;
+	while ((read = fread(buf.cstr(), 1, buf.length(), file)) == buf.length())
+		str->append(buf.cstr(), read);
+	str->append(buf.cstr(), read);
 	fclose(file);
 	return true;
 }
@@ -140,7 +139,10 @@ bool File::read(const Path& path, Blob* blob)
 	rewind(file);
 	*blob = Blob(size);
 	if (fread(blob->data(), 1, blob->size(), file) != blob->size())
+	{
+		fclose(file);
 		return false;
+	}
 	fclose(file);
 	return true;
 }
@@ -152,7 +154,10 @@ bool File::write(const Path& path, const char* str)
 		return false;
 	size_t length = strlen(str);
 	if (length != fwrite(str, 1, length, file))
+	{
+		fclose(file);
 		return false;
+	}
 	fclose(file);
 	return true;
 }
@@ -168,7 +173,10 @@ bool File::write(const Path& path, const uint8_t* bytes, size_t size)
 	if (file == nullptr)
 		return false;
 	if (size != fwrite(bytes, 1, size, file))
+	{
+		fclose(file);
 		return false;
+	}
 	fclose(file);
 	return true;
 }

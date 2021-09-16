@@ -12,9 +12,10 @@
 #include <errno.h>
 #include <dirent.h>
 #include <string.h>
+
 namespace aka {
 
-bool directory::exist(const Path& path)
+bool Directory::exist(const Path& path)
 {
 	struct stat st;
 	if (stat(path.cstr(), &st) == 0)
@@ -22,7 +23,7 @@ bool directory::exist(const Path& path)
 	return false;
 }
 
-bool directory::create(const Path& path)
+bool Directory::create(const Path& path)
 {
 	size_t pos = 0;
 	do
@@ -44,35 +45,50 @@ bool directory::create(const Path& path)
 	return true;
 }
 
-bool directory::remove(const Path& path, bool recursive)
+bool Directory::remove(const Path& path, bool recursive)
 {
 	return rmdir(path.cstr()) == 0;
 }
 
-bool file::exist(const Path& path)
+bool File::exist(const Path& path)
 {
 	return access(path.cstr(), F_OK) != -1;
 }
-bool file::create(const Path& path)
+bool File::create(const Path& path)
 {
-	std::ofstream file(path.cstr());
-	return file.is_open();
+	std::ofstream f(path.cstr());
+	return f.is_open();
 }
-bool file::remove(const Path& path)
+bool File::remove(const Path& path)
 {
 	return unlink(path.cstr()) == 0;
 }
 
-String file::extension(const Path& path)
+String File::extension(const Path& path)
 {
 	const char* dot = strrchr(path.cstr(), '.');
 	if (!dot || dot == path.cstr()) return "";
 	return dot + 1;
 }
 
-String file::name(const Path& path)
+String File::name(const Path& path)
 {
 	return basename(path.cstr());
+}
+size_t File::size(const Path& path)
+{
+	struct stat st;
+	if (::stat(filename, &st) != 0)
+		return 0;
+	return st.st_size;
+}
+
+Time::Unit File::lastWrite(const Path& path)
+{
+	struct stat result;
+	if (::stat(path.cstr(), &result) != 0)
+		return Time::Unit::milliseconds(0);
+	return Time::Unit::milliseconds(result.st_mtime * 1000);
 }
 
 std::vector<Path> Path::enumerate(const Path& path)
@@ -119,23 +135,35 @@ Path Path::cwd()
 	return Path(path);
 }
 
-const char* fileMode(FileMode mode)
+const char* fileMode(FileMode mode, FileType type)
 {
-	switch (mode)
+	switch (type)
 	{
-	case FileMode::ReadOnly:
-		return "rb";
-	case FileMode::WriteOnly:
-		return "wb" ;
+	case aka::FileType::Binary:
+		if (mode == FileMode::Read)
+			return "rb";
+		else if (mode == FileMode::Write)
+			return "wb";
+		else if (mode == FileMode::ReadWrite)
+			return "rwb";
+		break;
+	case aka::FileType::String:
+		if (mode == FileMode::Read)
+			return "r";
+		else if (mode == FileMode::Write)
+			return "w";
+		else if (mode == FileMode::ReadWrite)
+			return "rw";
+		break;
 	default:
-	case FileMode::ReadWrite:
-		return "rwb";
+		break;
 	}
+	return "";
 }
 
-FILE* fopen(const Path& path, FileMode mode)
+FILE* fopen(const Path& path, FileMode mode, FileType type)
 {
-	return ::fopen(path.cstr(), fileMode(mode));
+	return ::fopen(path.cstr(), fileMode(mode, type));
 }
 
 };

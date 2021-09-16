@@ -52,6 +52,7 @@ class Shader
 public:
 	using Ptr = std::shared_ptr<Shader>;
 protected:
+	Shader();
 	Shader(const VertexAttribute* attributes, size_t count);
 	Shader(const Shader&) = delete;
 	const Shader& operator=(const Shader&) = delete;
@@ -67,7 +68,7 @@ public:
 	// Create a vertex program with geometry stage
 	static Shader::Ptr createGeometryProgram(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count);
 	// Create a compute program
-	static Shader::Ptr createComputeProgram(ShaderHandle compute, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createComputeProgram(ShaderHandle compute);
 public:
 	// Get uniform
 	const Uniform* getUniform(const char* name) const;

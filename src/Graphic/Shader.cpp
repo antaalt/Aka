@@ -5,6 +5,10 @@
 
 namespace aka {
 
+Shader::Shader() :
+	m_attributes()
+{
+}
 Shader::Shader(const VertexAttribute* attributes, size_t count) :
 	m_attributes(attributes, attributes + count)
 {
@@ -34,9 +38,9 @@ Shader::Ptr Shader::createGeometryProgram(ShaderHandle vert, ShaderHandle frag, 
 	return GraphicBackend::createShaderGeometry(vert, frag, geometry, attributes, count);
 }
 
-Shader::Ptr Shader::createComputeProgram(ShaderHandle compute, const VertexAttribute* attributes, size_t count)
+Shader::Ptr Shader::createComputeProgram(ShaderHandle compute)
 {
-	return GraphicBackend::createShaderCompute(compute, attributes, count);
+	return GraphicBackend::createShaderCompute(compute);
 }
 
 const Uniform* Shader::getUniform(const char* name) const

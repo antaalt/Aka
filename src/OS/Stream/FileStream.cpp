@@ -33,7 +33,7 @@ FileStream::~FileStream()
 void FileStream::skim(size_t size) 
 {
 	AKA_ASSERT(m_file != nullptr, "File not opened");
-	int error = fseek(m_file, size, SEEK_CUR);
+	int error = fseek(m_file, (long)size, SEEK_CUR);
 	AKA_ASSERT(error == 0, "Error while seeking");
 }
 

@@ -101,7 +101,7 @@ protected:
 	static void destroy(ShaderHandle handle);
 	static Shader::Ptr createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count);
 	static Shader::Ptr createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createShaderCompute(ShaderHandle compute, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr createShaderCompute(ShaderHandle compute);
 
 	friend class ShaderMaterial;
 	static ShaderMaterial::Ptr createShaderMaterial(Shader::Ptr shader);

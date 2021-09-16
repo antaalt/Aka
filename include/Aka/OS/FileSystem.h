@@ -3,6 +3,7 @@
 #include <vector>
 #include <Aka/Core/Container/String.h>
 #include <Aka/Core/Container/Blob.h>
+#include <Aka/OS/Time.h>
 
 namespace aka {
 
@@ -65,8 +66,12 @@ struct File
 	static String extension(const Path& path);
 	// Get the name of the file
 	static String name(const Path& path);
+	// Get the base name of the file
+	static String basename(const Path& path);
 	// Get the size of the file
 	static size_t size(const Path& path);
+	// Get the last write timestamp of a file
+	static Time::Unit lastWrite(const Path& path);
 
 	// Read a file into a string
 	static bool read(const Path& path, String* str);

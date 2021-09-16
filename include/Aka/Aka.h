@@ -61,6 +61,7 @@
 #include "Resource/MeshStorage.h"
 #include "Resource/FontStorage.h"
 #include "Resource/AudioStorage.h"
+#include "Resource/ProgramManager.h"
 #include "Resource/ResourceManager.h"
 #include "Resource/ResourceManager.h"
 #include "Resource/ResourceAllocator.h"

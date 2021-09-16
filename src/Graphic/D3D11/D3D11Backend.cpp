@@ -633,7 +633,10 @@ public:
 
 		bool isShaderResource = (TextureFlag::ShaderResource & flags) == TextureFlag::ShaderResource;
 		bool isRenderTarget = (TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget;
+		bool hasMips = (TextureFlag::GenerateMips & flags) == TextureFlag::RenderTarget;
 
+		if (hasMips)
+			desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 		if (isShaderResource)
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
@@ -669,12 +672,12 @@ public:
 			viewDesc.Texture2D.MostDetailedMip = 0;
 
 			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &viewDesc, &m_view));
-			if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			if (hasMips)
 				dctx.deviceContext->GenerateMips(m_view);
 		}
 		else
 		{
-			if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			if (hasMips)
 				Logger::warn("Trying to generate mips but texture is not a shader resource.");
 		}
 	}
@@ -834,6 +837,10 @@ public:
 
 		bool isShaderResource = (TextureFlag::ShaderResource & flags) == TextureFlag::ShaderResource;
 		bool isRenderTarget = (TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget;
+		bool hasMips = (TextureFlag::GenerateMips & flags) == TextureFlag::RenderTarget;
+
+		if (hasMips)
+			desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
 		if (isShaderResource)
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -869,12 +876,12 @@ public:
 			viewDesc.Texture2DMS.UnusedField_NothingToDefine;
 
 			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &viewDesc, &m_view));
-			if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			if (hasMips)
 				dctx.deviceContext->GenerateMips(m_view);
 		}
 		else
 		{
-			if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			if (hasMips)
 				Logger::warn("Trying to generate mips but texture is not a shader resource.");
 		}
 	}
@@ -999,6 +1006,10 @@ public:
 
 		bool isShaderResource = (TextureFlag::ShaderResource & flags) == TextureFlag::ShaderResource;
 		bool isRenderTarget = (TextureFlag::RenderTarget & flags) == TextureFlag::RenderTarget;
+		bool hasMips = (TextureFlag::GenerateMips & flags) == TextureFlag::RenderTarget;
+
+		if (hasMips)
+			desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
 		if (isShaderResource)
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -1039,12 +1050,12 @@ public:
 			viewDesc.TextureCube.MostDetailedMip = 0;
 
 			D3D_CHECK_RESULT(dctx.device->CreateShaderResourceView(m_texture, &viewDesc, &m_view));
-			if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			if (hasMips)
 				dctx.deviceContext->GenerateMips(m_view);
 		}
 		else
 		{
-			if ((TextureFlag::GenerateMips & flags) == TextureFlag::GenerateMips)
+			if (hasMips)
 				Logger::warn("Trying to generate mips but texture is not a shader resource.");
 		}
 	}
@@ -1801,103 +1812,106 @@ public:
 			D3D_CHECK_RESULT(dctx.device->CreateGeometryShader(geometryShaderBuffer->GetBufferPointer(), geometryShaderBuffer->GetBufferSize(), nullptr, &m_geometryShader));
 
 		// --- Layout
-		std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
-		AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
-		for (uint32_t i = 0; i < count; i++)
+		if (compute.value() == 0)
 		{
-			const VertexAttribute& a = attributes[i];
-			switch (a.semantic)
+			std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
+			AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
+			for (uint32_t i = 0; i < count; i++)
 			{
-			case VertexSemantic::Position: polygonLayout[i].SemanticName = "POS"; break;
-			case VertexSemantic::Normal: polygonLayout[i].SemanticName = "NORM"; break;
-			case VertexSemantic::Tangent: polygonLayout[i].SemanticName = "TAN"; break;
-			case VertexSemantic::TexCoord0: polygonLayout[i].SemanticName = "TEX"; break;
-			case VertexSemantic::TexCoord1: polygonLayout[i].SemanticName = "TEX"; break;
-			case VertexSemantic::TexCoord2: polygonLayout[i].SemanticName = "TEX"; break;
-			case VertexSemantic::TexCoord3: polygonLayout[i].SemanticName = "TEX"; break;
-			case VertexSemantic::Color0: polygonLayout[i].SemanticName = "COL"; break;
-			case VertexSemantic::Color1: polygonLayout[i].SemanticName = "COL"; break;
-			case VertexSemantic::Color2: polygonLayout[i].SemanticName = "COL"; break;
-			case VertexSemantic::Color3: polygonLayout[i].SemanticName = "COL"; break;
-			default: Logger::error("Semantic not supported");
-				break;
-			}
-			polygonLayout[i].SemanticIndex = 0; // TODO if mat4, set different index
-			if (a.format == VertexFormat::Float)
-			{
-				switch (a.type)
+				const VertexAttribute& a = attributes[i];
+				switch (a.semantic)
 				{
-				case VertexType::Scalar: polygonLayout[i].Format = DXGI_FORMAT_R32_FLOAT;  break;
-				case VertexType::Vec2: polygonLayout[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
-				case VertexType::Vec3: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-				default: Logger::error("Format not supported for layout");
+				case VertexSemantic::Position: polygonLayout[i].SemanticName = "POSITION"; break;
+				case VertexSemantic::Normal: polygonLayout[i].SemanticName = "NORMAL"; break;
+				case VertexSemantic::Tangent: polygonLayout[i].SemanticName = "TANGENT"; break;
+				case VertexSemantic::TexCoord0: polygonLayout[i].SemanticName = "TEXCOORD"; break;
+				case VertexSemantic::TexCoord1: polygonLayout[i].SemanticName = "TEXCOORD"; break;
+				case VertexSemantic::TexCoord2: polygonLayout[i].SemanticName = "TEXCOORD"; break;
+				case VertexSemantic::TexCoord3: polygonLayout[i].SemanticName = "TEXCOORD"; break;
+				case VertexSemantic::Color0: polygonLayout[i].SemanticName = "COLOR"; break;
+				case VertexSemantic::Color1: polygonLayout[i].SemanticName = "COLOR"; break;
+				case VertexSemantic::Color2: polygonLayout[i].SemanticName = "COLOR"; break;
+				case VertexSemantic::Color3: polygonLayout[i].SemanticName = "COLOR"; break;
+				default: Logger::error("Semantic not supported");
+					break;
 				}
-			}
-			else if (a.format == VertexFormat::Byte)
-			{
-				switch (a.type)
+				polygonLayout[i].SemanticIndex = 0; // TODO if mat4, set different index
+				if (a.format == VertexFormat::Float)
 				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
-				default: Logger::error("Format not supported for layout");
+					switch (a.type)
+					{
+					case VertexType::Scalar: polygonLayout[i].Format = DXGI_FORMAT_R32_FLOAT;  break;
+					case VertexType::Vec2: polygonLayout[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
+					case VertexType::Vec3: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+					default: Logger::error("Format not supported for layout");
+					}
 				}
-			}
-			else if (a.format == VertexFormat::UnsignedByte)
-			{
-				switch (a.type)
+				else if (a.format == VertexFormat::Byte)
 				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-				default: Logger::error("Format not supported for layout");
+					switch (a.type)
+					{
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+					default: Logger::error("Format not supported for layout");
+					}
 				}
-			}
-			else if (a.format == VertexFormat::Short)
-			{
-				switch (a.type)
+				else if (a.format == VertexFormat::UnsignedByte)
 				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-				default: Logger::error("Format not supported for layout");
+					switch (a.type)
+					{
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+					default: Logger::error("Format not supported for layout");
+					}
 				}
-			}
-			else if (a.format == VertexFormat::UnsignedShort)
-			{
-				switch (a.type)
+				else if (a.format == VertexFormat::Short)
 				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-				default: Logger::error("Format not supported for layout");
+					switch (a.type)
+					{
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+					default: Logger::error("Format not supported for layout");
+					}
 				}
-			}
-			else if (a.format == VertexFormat::Int)
-			{
-				switch (a.type)
+				else if (a.format == VertexFormat::UnsignedShort)
 				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_SINT; break;
-				default: Logger::error("Format not supported for layout");
+					switch (a.type)
+					{
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+					default: Logger::error("Format not supported for layout");
+					}
 				}
-			}
-			else if (a.format == VertexFormat::UnsignedInt)
-			{
-				switch (a.type)
+				else if (a.format == VertexFormat::Int)
 				{
-				case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_UINT; break;
-				default: Logger::error("Format not supported for layout");
+					switch (a.type)
+					{
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_SINT; break;
+					default: Logger::error("Format not supported for layout");
+					}
 				}
+				else if (a.format == VertexFormat::UnsignedInt)
+				{
+					switch (a.type)
+					{
+					case VertexType::Vec4: polygonLayout[i].Format = DXGI_FORMAT_R32G32B32A32_UINT; break;
+					default: Logger::error("Format not supported for layout");
+					}
+				}
+				else
+				{
+					Logger::error("Format not supported for layout");
+				}
+				polygonLayout[i].InputSlot = 0;
+				polygonLayout[i].AlignedByteOffset = (i == 0 ? 0 : D3D11_APPEND_ALIGNED_ELEMENT);
+				polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				polygonLayout[i].InstanceDataStepRate = 0;
 			}
-			else
-			{
-				Logger::error("Format not supported for layout");
-			}
-			polygonLayout[i].InputSlot = 0;
-			polygonLayout[i].AlignedByteOffset = (i == 0 ? 0 : D3D11_APPEND_ALIGNED_ELEMENT);
-			polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-			polygonLayout[i].InstanceDataStepRate = 0;
+			D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
+				polygonLayout.data(),
+				(UINT)polygonLayout.size(),
+				vertexShaderBuffer->GetBufferPointer(),
+				vertexShaderBuffer->GetBufferSize(),
+				&m_layout
+			));
 		}
-		D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
-			polygonLayout.data(),
-			(UINT)polygonLayout.size(),
-			vertexShaderBuffer->GetBufferPointer(),
-			vertexShaderBuffer->GetBufferSize(),
-			&m_layout
-		));
 
 		// --- Uniforms
 		// Find and merge all uniforms
@@ -2717,19 +2731,19 @@ ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
 	switch (type)
 	{
 	case ShaderType::Vertex:
-		entryPoint = "vs_main";
+		entryPoint = "main";
 		version = "vs_5_0";
 		break;
 	case ShaderType::Fragment:
-		entryPoint = "ps_main";
+		entryPoint = "main";
 		version = "ps_5_0";
 		break;
 	case ShaderType::Geometry:
-		entryPoint = "gs_main";
+		entryPoint = "main";
 		version = "gs_5_0";
 		break;
 	case ShaderType::Compute:
-		entryPoint = "cs_main";
+		entryPoint = "main";
 		version = "cs_5_0";
 		break;
 	default:
@@ -2785,9 +2799,9 @@ Shader::Ptr GraphicBackend::createShader(ShaderHandle vert, ShaderHandle frag, c
 	return std::make_shared<D3D11Shader>(vert, frag, ShaderHandle(0), ShaderHandle(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute)
 {
-	return std::make_shared<D3D11Shader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, attributes, count);
+	return std::make_shared<D3D11Shader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, nullptr, 0);
 }
 
 Shader::Ptr GraphicBackend::createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count)

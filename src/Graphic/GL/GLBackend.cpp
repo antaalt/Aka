@@ -2059,9 +2059,10 @@ Shader::Ptr GraphicBackend::createShaderGeometry(ShaderHandle vert, ShaderHandle
 	return std::make_shared<GLShader>(vert, frag, geometry, ShaderHandle(0), attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute, const VertexAttribute* attributes, size_t count)
+Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute)
 {
-	return std::make_shared<GLShader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, attributes, count);
+	VertexAttribute dummy{};
+	return std::make_shared<GLShader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, &dummy, 0);
 }
 
 ShaderMaterial::Ptr aka::GraphicBackend::createShaderMaterial(Shader::Ptr shader)

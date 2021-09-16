@@ -24,7 +24,7 @@ Time::Unit Time::unixtime()
 	using namespace std::chrono;
 	time_point<system_clock> now = system_clock::now();
 	const duration<double> tse = now.time_since_epoch();
-	seconds::rep milli = duration_cast<milliseconds>(tse).count() % 1000;
+	seconds::rep milli = duration_cast<milliseconds>(tse).count();
 	return Time::Unit(milli);
 }
 
