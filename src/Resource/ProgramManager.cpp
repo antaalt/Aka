@@ -3,6 +3,7 @@
 #include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/Compiler.h>
 #include <Aka/Resource/ResourceManager.h>
 
 #include <nlohmann/json.hpp>
@@ -35,7 +36,7 @@ bool ProgramManager::reload(const String& name)
 	{
 		if (info.name == name)
 		{
-			ShaderHandle out = compile(info.path, info.type);
+			ShaderHandle out = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
 			if (out.value() == 0)
 				return false;
 			info.shader = out;
@@ -76,7 +77,6 @@ bool ProgramManager::parse(const Path& path)
 			}
 			if (!File::read(path, &str))
 				return false;
-			info.shader = compile(info.path, info.type);
 			m_shaders.push_back(info);
 		}
 		for (auto& element : json["programs"].items())
@@ -91,22 +91,63 @@ bool ProgramManager::parse(const Path& path)
 				info.comp = element.value()["compute"].get<std::string>();
 			if (info.vert.length() > 0 && info.frag.length() > 0)
 			{
-				std::vector<VertexAttribute> attributes;
-				for (auto& attribute : element.value()["attributes"])
+				std::vector<VertexAttribute>& attributes = getShaderInfo(info.vert).attributes;
+				if (attributes.size() == 0)
 				{
-					VertexAttribute att;
-					att.semantic = (VertexSemantic)attribute["semantic"].get<uint32_t>();
-					att.format = (VertexFormat)attribute["format"].get<uint32_t>();
-					att.type = (VertexType)attribute["type"].get<uint32_t>();
-					attributes.push_back(att);
+					for (auto& attribute : element.value()["attributes"])
+					{
+						VertexAttribute att;
+						att.semantic = (VertexSemantic)attribute["semantic"].get<uint32_t>();
+						att.format = (VertexFormat)attribute["format"].get<uint32_t>();
+						att.type = (VertexType)attribute["type"].get<uint32_t>();
+						attributes.push_back(att);
+					}
 				}
-				info.program = Shader::createVertexProgram(getShaderInfo(info.vert).shader, getShaderInfo(info.frag).shader, attributes.data(), attributes.size());
+				else
+				{
+					bool valid = true;
+					if (attributes.size() != element.value()["attributes"].size())
+					{
+						valid = false;
+					}
+					for (size_t i = 0; i < attributes.size(); i++)
+					{
+						nlohmann::json& attribute = element.value()["attributes"][i];
+						valid |= (VertexSemantic)attribute["semantic"].get<uint32_t>() == attributes[i].semantic;
+						valid |= (VertexFormat)attribute["format"].get<uint32_t>() == attributes[i].format;
+						valid |= (VertexType)attribute["type"].get<uint32_t>() == attributes[i].type;
+					}
+					if (!valid)
+					{
+						Logger::warn("Invalid elements");
+					}
+				}
 			}
 			else if (info.comp.length() > 0)
 			{
-				info.program = Shader::createComputeProgram(getShaderInfo(info.comp).shader);
+				// Compile later
 			}
 			m_programs.push_back(info);
+		}
+		for (ShaderInfo& info : m_shaders)
+			info.shader = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
+		for (ProgramInfo& info : m_programs)
+		{
+			if (info.vert.length() > 0 && info.frag.length() > 0)
+			{
+				info.program = Shader::createVertexProgram(
+					getShaderInfo(info.vert).shader, 
+					getShaderInfo(info.frag).shader, 
+					getShaderInfo(info.vert).attributes.data(),
+					getShaderInfo(info.vert).attributes.size()
+				);
+			}
+			else if (info.comp.length() > 0)
+			{
+				info.program = Shader::createComputeProgram(
+					getShaderInfo(info.comp).shader
+				);
+			}
 		}
 		return true;
 	}
@@ -142,7 +183,7 @@ void ProgramManager::update()
 				if (vertUpdated)
 				{
 					AKA_ASSERT(vertInfo.type == ShaderType::Vertex, "Invalid shader type");
-					ShaderHandle shader = compile(vertInfo.path, vertInfo.type);
+					ShaderHandle shader = compile(vertInfo.path, vertInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
 					if (shader.value() != 0)
 					{
 						compiled = true;
@@ -153,7 +194,7 @@ void ProgramManager::update()
 				if (fragUpdated)
 				{
 					AKA_ASSERT(fragInfo.type == ShaderType::Fragment, "Invalid shader type");
-					ShaderHandle shader = compile(fragInfo.path, fragInfo.type);
+					ShaderHandle shader = compile(fragInfo.path, fragInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
 					if (shader.value() != 0)
 					{
 						compiled = true;
@@ -163,10 +204,7 @@ void ProgramManager::update()
 				}
 				if (compiled)
 				{
-					std::vector<VertexAttribute> att;
-					for (uint32_t i = 0; i < programInfo.program->getAttributeCount(); i++)
-						att.push_back(programInfo.program->getAttribute(i));
-					programInfo.program = Shader::createVertexProgram(vertInfo.shader, fragInfo.shader, att.data(), att.size());
+					programInfo.program = Shader::createVertexProgram(vertInfo.shader, fragInfo.shader, vertInfo.attributes.data(), vertInfo.attributes.size());
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
 			}
@@ -177,7 +215,7 @@ void ProgramManager::update()
 			if (File::lastWrite(compInfo.path) > compInfo.loaded)
 			{
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
-				ShaderHandle shader = compile(compInfo.path, compInfo.type);
+				ShaderHandle shader = compile(compInfo.path, compInfo.type, nullptr, 0);
 				if (shader.value() != 0)
 				{
 					compInfo.shader = shader;
@@ -191,89 +229,44 @@ void ProgramManager::update()
 	EventDispatcher<ProgramReloadedEvent>::dispatch();
 }
 
-ShaderHandle ProgramManager::compile(const Path& path, ShaderType type)
+ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
 {
-	static Path glslccPath = ResourceManager::path("shaders/glslcc.exe");
-	if (!File::exist(glslccPath))
-	{
-		Logger::error("glslcc.exe not found.");
-		return ShaderHandle(0);
-	}
-	// TODO Look up in cache before (Do it before calling compile).
-	String command = glslccPath.cstr();
-	//command.append(" -S"); // silent
-	//command.append(" -I path/to/include/dir"); // includes
-#if !defined(AKA_DEBUG)
-	command.append(" -O"); // optimize
-#endif
-	String ext;
-	switch (type)
-	{
-	case ShaderType::Vertex:
-		ext = "vs";
-		command.append(" -v ");
-		break;
-	case ShaderType::Fragment:
-		ext = "fs";
-		command.append(" -f ");
-		break;
-	case ShaderType::Compute:
-		ext = "cs";
-		command.append(" -c ");
-		break;
-	default:
-		Logger::error("Shader type not supported.");
-		return ShaderHandle(0);
-	}
-	command.append(path.cstr());
-	String name = File::basename(path);
-	String extension = File::extension(path);
 	Path compiledPath;
 	switch (GraphicBackend::api())
 	{
 	case GraphicApi::OpenGL:
-		compiledPath = "./library/shaders/GL/" + name + "." + extension + ".glsl";
-		command.append(" --output=");
-		command.append(compiledPath.cstr());
-		command.append(" -l glsl -p 330");
-		compiledPath = "./library/shaders/GL/" + name + "_" + ext + "." + extension + ".glsl";
+		compiledPath = "./library/shaders/GL/" + File::name(path) + ".glsl";
 		break;
 	case GraphicApi::DirectX11:
-		compiledPath = "./library/shaders/D3D/" + name + ".hlsl";
-		command.append(" -o ");
-		command.append(compiledPath.cstr());
-		command.append(" -l hlsl");
-		compiledPath = "./library/shaders/D3D/" + name + "_" + ext + ".hlsl";
+		compiledPath = "./library/shaders/D3D/" + File::name(path) + ".hlsl";
 		break;
 	default:
-		Logger::error("API not supported.");
 		return ShaderHandle(0);
 	}
-	// Recompile only if cached shader older than shader
+	String shader;
 	if (!File::exist(compiledPath) || File::lastWrite(compiledPath) < File::lastWrite(path))
 	{
-		int status = std::system(command.cstr());
-		if (status < 0)
+		Compiler compiler;
+		if (!compiler.parse(path, type))
 		{
-			Logger::error("Failed to execute glslcc.");
 			return ShaderHandle(0);
 		}
-		else
-		{
-			Logger::debug("Shader ", File::name(path), " successfully compiled.");
-		}
+		shader = compiler.compile(GraphicBackend::api(), attributes, count);
+		if (!File::write(compiledPath, shader))
+			Logger::warn("Failed to cache shader");
+		Logger::debug("Shader ", File::name(path), " successfully compiled.");
 	}
 	else
 	{
+		if (!File::read(compiledPath, &shader))
+		{
+			Logger::error("Could not read ", compiledPath);
+			return ShaderHandle(0);
+		}
 		Logger::debug("Shader ", File::name(path), " loaded from cache.");
 	}
-	String str;
-	if (!File::read(compiledPath, &str))
-	{
-		Logger::error("Could not read ", compiledPath);
-		return ShaderHandle(0);
-	}
-	return Shader::compile(str.cstr(), type);
+	return Shader::compile(shader.cstr(), type);
+
 }
 
 };

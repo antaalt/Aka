@@ -48,6 +48,7 @@ add_library (Aka
 	"src/Graphic/Framebuffer.cpp"
 	"src/Graphic/Mesh.cpp"
 	"src/Graphic/RenderPass.cpp"
+	"src/Graphic/Compiler.cpp"
 	"src/Graphic/Shader.cpp"
 	"src/Graphic/ShaderMaterial.cpp"
 	"src/Graphic/Texture.cpp"
@@ -137,6 +138,8 @@ endif()
 
 # Third party libs
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/SPIRV-Cross)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
@@ -147,7 +150,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
 
 target_link_libraries(Aka PUBLIC Geometry AkaEntt AkaImGui)
-target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb freetype AkaJson)
+target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb AkaJson freetype glslang SPIRV spirv-cross-core spirv-cross-cpp spirv-cross-glsl spirv-cross-hlsl)
 
 # Enable UNICODE in windows
 if(WIN32)

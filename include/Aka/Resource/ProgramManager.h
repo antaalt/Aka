@@ -33,13 +33,14 @@ public:
 	static void update();
 private:
 	// Compile a shader using GLSLCC for currently used graphic API
-	static ShaderHandle compile(const Path& path, ShaderType type);
+	static ShaderHandle compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count);
 private:
 	struct ShaderInfo {
 		String name;
 		ShaderType type;
 		ShaderHandle shader;
 		Path path;
+		std::vector<VertexAttribute> attributes;
 		Time::Unit loaded;
 	};
 	struct ProgramInfo {
