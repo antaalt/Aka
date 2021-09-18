@@ -62,8 +62,9 @@ bool ProgramManager::parse(const Path& path)
 			ShaderInfo info;
 			info.loaded = Time::unixtime();
 			info.name = element.key();
-			info.path = element.value().get<std::string>().c_str();
+			info.path = element.value()["path"].get<std::string>().c_str();
 			String ext = File::extension(info.path);
+			// TODO add type in shader.json instead of checking extension.
 			if (ext == "vert")
 				info.type = ShaderType::Vertex;
 			else if (ext == "frag")
@@ -75,8 +76,20 @@ bool ProgramManager::parse(const Path& path)
 				Logger::warn("Invalid shader type. Ignoring.");
 				continue;
 			}
+			if (element.value().find("attributes") != element.value().end())
+			{
+				for (auto& attribute : element.value()["attributes"])
+				{
+					VertexAttribute att;
+					att.semantic = (VertexSemantic)attribute["semantic"].get<uint32_t>();
+					att.format = (VertexFormat)attribute["format"].get<uint32_t>();
+					att.type = (VertexType)attribute["type"].get<uint32_t>();
+					info.attributes.push_back(att);
+				}
+			}
 			if (!File::read(path, &str))
 				return false;
+			info.shader = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
 			m_shaders.push_back(info);
 		}
 		for (auto& element : json["programs"].items())
@@ -92,52 +105,9 @@ bool ProgramManager::parse(const Path& path)
 			if (info.vert.length() > 0 && info.frag.length() > 0)
 			{
 				std::vector<VertexAttribute>& attributes = getShaderInfo(info.vert).attributes;
-				if (attributes.size() == 0)
-				{
-					for (auto& attribute : element.value()["attributes"])
-					{
-						VertexAttribute att;
-						att.semantic = (VertexSemantic)attribute["semantic"].get<uint32_t>();
-						att.format = (VertexFormat)attribute["format"].get<uint32_t>();
-						att.type = (VertexType)attribute["type"].get<uint32_t>();
-						attributes.push_back(att);
-					}
-				}
-				else
-				{
-					bool valid = true;
-					if (attributes.size() != element.value()["attributes"].size())
-					{
-						valid = false;
-					}
-					for (size_t i = 0; i < attributes.size(); i++)
-					{
-						nlohmann::json& attribute = element.value()["attributes"][i];
-						valid |= (VertexSemantic)attribute["semantic"].get<uint32_t>() == attributes[i].semantic;
-						valid |= (VertexFormat)attribute["format"].get<uint32_t>() == attributes[i].format;
-						valid |= (VertexType)attribute["type"].get<uint32_t>() == attributes[i].type;
-					}
-					if (!valid)
-					{
-						Logger::warn("Invalid elements");
-					}
-				}
-			}
-			else if (info.comp.length() > 0)
-			{
-				// Compile later
-			}
-			m_programs.push_back(info);
-		}
-		for (ShaderInfo& info : m_shaders)
-			info.shader = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
-		for (ProgramInfo& info : m_programs)
-		{
-			if (info.vert.length() > 0 && info.frag.length() > 0)
-			{
 				info.program = Shader::createVertexProgram(
-					getShaderInfo(info.vert).shader, 
-					getShaderInfo(info.frag).shader, 
+					getShaderInfo(info.vert).shader,
+					getShaderInfo(info.frag).shader,
 					getShaderInfo(info.vert).attributes.data(),
 					getShaderInfo(info.vert).attributes.size()
 				);
@@ -148,6 +118,7 @@ bool ProgramManager::parse(const Path& path)
 					getShaderInfo(info.comp).shader
 				);
 			}
+			m_programs.push_back(info);
 		}
 		return true;
 	}
@@ -161,8 +132,52 @@ bool ProgramManager::parse(const Path& path)
 
 bool ProgramManager::serialize(const Path& path)
 {
-	// TODO
-	return false;
+	try
+	{
+		nlohmann::json json = nlohmann::json::object();
+		json["asset"]["version"] = "0.1";
+		json["shaders"] = nlohmann::json::object();
+		nlohmann::json& shaderJSON = json["shaders"];
+		for (ShaderInfo& info : m_shaders)
+		{
+			shaderJSON[info.name] = nlohmann::json::object();
+			shaderJSON[info.name]["path"] = info.path.cstr();
+			if (info.attributes.size() > 0)
+			{
+				shaderJSON[info.name]["attributes"] = nlohmann::json::array();
+				shaderJSON[info.name]["attributes"];
+				for (size_t i = 0; i < info.attributes.size(); i++)
+				{
+					VertexAttribute& attribute = info.attributes[i];
+					nlohmann::json att = nlohmann::json::object();
+					att["semantic"] = (uint32_t)attribute.semantic;
+					att["format"] = (uint32_t)attribute.format;
+					att["type"] = (uint32_t)attribute.type;
+					shaderJSON[info.name]["attributes"].push_back(att);
+				}
+			}
+		}
+		json["programs"] = nlohmann::json::object();
+		nlohmann::json& programJSON = json["programs"];
+		for (ProgramInfo& info : m_programs)
+		{
+			if (info.vert.length() > 0)
+				programJSON[info.name]["vertex"] = info.vert;
+			if (info.frag.length() > 0)
+				programJSON[info.name]["fragment"] = info.frag;
+			if (info.comp.length() > 0)
+				programJSON[info.name]["compute"] = info.comp;
+		}
+		std::string str = json.dump(4);
+		if (!File::write(path, str.c_str()))
+			return false;
+		return true;
+	}
+	catch (const nlohmann::json::exception& e)
+	{
+		Logger::error(e.what());
+		return false;
+	}
 }
 
 void ProgramManager::update()
