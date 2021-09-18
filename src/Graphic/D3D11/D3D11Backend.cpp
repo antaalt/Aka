@@ -2004,6 +2004,7 @@ public:
 					uniform.shaderType = shaderType;
 					uniform.count = max(count, desc.BindCount);
 					uniform.type = UniformType::Texture2D;
+					uniform.binding = desc.BindPoint;
 				}
 				else if (desc.Dimension == D3D_SRV_DIMENSION_TEXTURECUBE)
 				{
@@ -2013,9 +2014,20 @@ public:
 					uniform.shaderType = shaderType;
 					uniform.count = max(count, desc.BindCount);
 					uniform.type = UniformType::TextureCubemap;
+					uniform.binding = desc.BindPoint;
 				}
 			}
-			// TODO remove sampler from uniforms ?
+			else if (desc.Type == D3D_SIT_CBUFFER)
+			{
+				uniforms.emplace_back();
+				Uniform& uniform = uniforms.back();
+				uniform.name = desc.Name;
+				uniform.shaderType = shaderType;
+				uniform.count = max(1U, desc.BindCount);
+				uniform.type = UniformType::Buffer;
+				uniform.binding = desc.BindPoint;
+			}
+			// Samplers are automatically created for each textures (as in GLSL, they are implicit for each texture)
 			/*else if (desc.Type == D3D_SIT_SAMPLER)
 			{
 				uniforms.emplace_back();
@@ -2025,96 +2037,6 @@ public:
 				uniform.count = max(1U, desc.BindCount);
 				uniform.type = UniformType::Sampler2D;
 			}*/
-		}
-		// Store number of uniform buffer, size, bufferIDX of variables
-		for (uint32_t i = 0; i < shader_desc.ConstantBuffers; i++)
-		{
-			D3D11_SHADER_BUFFER_DESC desc {};
-			ID3D11ShaderReflectionConstantBuffer *cb = reflector->GetConstantBufferByIndex(i);
-			D3D_CHECK_RESULT(cb->GetDesc(&desc));
-
-			uniforms.emplace_back();
-			Uniform& uniform = uniforms.back();
-			uniform.name = desc.Name;
-			uniform.shaderType = shaderType;
-			uniform.count = 1;
-			uniform.type = UniformType::Buffer;
-			
-			// get the uniforms
-			for (uint32_t j = 0; j < desc.Variables; j++)
-			{
-				D3D11_SHADER_VARIABLE_DESC varDesc{};
-				ID3D11ShaderReflectionVariable* var = cb->GetVariableByIndex(j);
-				D3D_CHECK_RESULT(var->GetDesc(&varDesc));
-
-				D3D11_SHADER_TYPE_DESC typeDesc{};
-				ID3D11ShaderReflectionType* type = var->GetType();
-				D3D_CHECK_RESULT(type->GetDesc(&typeDesc));
-
-				uniforms.emplace_back();
-				Uniform& uniform = uniforms.back();
-				uniform.name = varDesc.Name;
-				uniform.shaderType = shaderType;
-				uniform.count = max(1U, typeDesc.Elements);
-				uniform.type = UniformType::None;
-
-				switch (typeDesc.Type)
-				{
-				case D3D_SVT_FLOAT: {
-					if (typeDesc.Rows == 1)
-					{
-						if (typeDesc.Columns == 1)
-							uniform.type = UniformType::Float;
-						else if (typeDesc.Columns == 2)
-							uniform.type = UniformType::Vec2;
-						else if (typeDesc.Columns == 3)
-							uniform.type = UniformType::Vec3;
-						else if (typeDesc.Columns == 4)
-							uniform.type = UniformType::Vec4;
-					}
-					else if (typeDesc.Rows == 3 && typeDesc.Columns == 3)
-					{
-						uniform.type = UniformType::Mat3;
-					}
-					else if (typeDesc.Rows == 4 && typeDesc.Columns == 4)
-					{
-						uniform.type = UniformType::Mat4;
-					}
-					else
-					{
-						Logger::warn("Unsupported uniform size : ", typeDesc.Rows, "x", typeDesc.Columns);
-					}
-					break;
-				}
-				case D3D_SVT_INT: {
-					if (typeDesc.Rows == 1)
-					{
-						if (typeDesc.Columns == 1)
-							uniform.type = UniformType::Int;
-						else
-							Logger::warn("Unsupported uniform type : ", typeDesc.Type);
-					}
-					else
-						Logger::warn("Unsupported uniform type : ", typeDesc.Type);
-					break;
-				}
-				case D3D_SVT_UINT: {
-					if (typeDesc.Rows == 1)
-					{
-						if (typeDesc.Columns == 1)
-							uniform.type = UniformType::UnsignedInt;
-						else
-							Logger::warn("Unsupported uniform type : ", typeDesc.Type);
-					}
-					else
-						Logger::warn("Unsupported uniform type : ", typeDesc.Type);
-					break;
-				}
-				default:
-					Logger::warn("Unsupported uniform type : ", typeDesc.Type);
-					break;				
-				}
-			}
 		}
 		return uniforms;
 	}
@@ -2143,20 +2065,20 @@ public:
 	{
 		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
 
-		size_t textureCount = 0;
-		size_t bufferCount = 0;
+		uint32_t textureCount = 0;
+		uint32_t bufferCount = 0;
 		for (const Uniform &uniform : *m_shader)
 		{
 			// Create textures & data buffers
 			switch (uniform.type)
 			{
 			case UniformType::Buffer:
-				bufferCount += uniform.count;
+				bufferCount = max(bufferCount, uniform.binding + uniform.count);
 				break;
 			case UniformType::Texture2D:
 			case UniformType::TextureCubemap:
 			case UniformType::Texture2DMultisample :
-				textureCount += uniform.count;
+				textureCount = max(textureCount, uniform.binding + uniform.count);
 				break;
 			case UniformType::Int:
 			case UniformType::UnsignedInt:
@@ -2206,8 +2128,7 @@ public:
 			case UniformType::Buffer: {
 				for (uint32_t i = 0; i < uniform.count; i++)
 				{
-					uint32_t unit = bufferUnit++;
-					Buffer::Ptr buffer = m_buffers[unit];
+					Buffer::Ptr buffer = m_buffers[uniform.binding];
 					if (buffer != nullptr)
 					{
 						for (size_t i = 0; i < shaderTypeCount; i++)
@@ -2228,9 +2149,8 @@ public:
 			case UniformType::TextureCubemap: {
 				for (uint32_t i = 0; i < uniform.count; i++)
 				{
-					uint32_t unit = textureUnit++;
-					Texture::Ptr texture = m_textures[unit];
-					TextureSampler sampler = m_samplers[unit];
+					Texture::Ptr texture = m_textures[uniform.binding];
+					TextureSampler sampler = m_samplers[uniform.binding];
 					if (texture != nullptr)
 					{
 						for (size_t i = 0; i < shaderTypeCount; i++)
@@ -2439,9 +2359,22 @@ Framebuffer::Ptr GraphicBackend::backbuffer()
 
 void GraphicBackend::render(RenderPass& pass)
 {
-	// Set to null to avoid warning & D3D unbinding texture that is also set as rendertarget
-	ID3D11RenderTargetView* nullRenderTarget = nullptr;
-	dctx.deviceContext->OMSetRenderTargets(1, &nullRenderTarget, nullptr);
+	{
+		// Unbind resources to avoid warning & D3D unbinding texture that is also set as rendertarget
+		ID3D11RenderTargetView* nullRenderTarget[5] = { nullptr };
+		ID3D11DepthStencilState* nullDepthStencil = nullptr;
+		ID3D11ShaderResourceView* const pSRV[10] = { nullptr };
+		ID3D11SamplerState* const pSamplers[10] = { nullptr };
+		dctx.deviceContext->OMSetRenderTargets(5, nullRenderTarget, nullptr);
+		dctx.deviceContext->PSSetShaderResources(0, 10, pSRV);
+		dctx.deviceContext->PSSetSamplers(0, 10, pSamplers);
+		dctx.deviceContext->VSSetShaderResources(0, 10, pSRV);
+		dctx.deviceContext->VSSetSamplers(0, 10, pSamplers);
+		dctx.deviceContext->CSSetShaderResources(0, 10, pSRV);
+		dctx.deviceContext->CSSetSamplers(0, 10, pSamplers);
+		dctx.deviceContext->GSSetShaderResources(0, 10, pSRV);
+		dctx.deviceContext->GSSetSamplers(0, 10, pSamplers);
+	}
 	{
 		// Shader
 		if (pass.material == nullptr)
@@ -2543,7 +2476,7 @@ void GraphicBackend::render(RenderPass& pass)
 		if (depthState != nullptr)
 			dctx.deviceContext->OMSetDepthStencilState(depthState, 1);
 		else
-			dctx.deviceContext->OMSetDepthStencilState(nullptr, 0);
+			dctx.deviceContext->OMSetDepthStencilState(nullptr, 1);
 
 	}
 
@@ -2557,7 +2490,7 @@ void GraphicBackend::render(RenderPass& pass)
 		}
 		else
 		{
-			dctx.deviceContext->OMSetBlendState(nullptr, nullptr, 0);
+			dctx.deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 		}
 	}
 

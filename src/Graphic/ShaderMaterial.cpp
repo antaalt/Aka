@@ -33,18 +33,16 @@ void ShaderMaterial::set(const char* name, const Buffer::Ptr& buffer)
 
 void ShaderMaterial::set(const char* name, const Buffer::Ptr* buffers, size_t count)
 {
-	uint32_t bindPoint = 0;
 	for (const Uniform& uniform : *m_shader)
 	{
 		if (uniform.type != UniformType::Buffer)
 			continue;
 		if (uniform.name == name)
 		{
-			for (size_t iBuf = 0; iBuf < count; iBuf++)
-				m_buffers[bindPoint + iBuf] = buffers[iBuf];
+			for (size_t i = 0; i < count; i++)
+				m_buffers[uniform.binding + i] = buffers[i];
 			return;
 		}
-		bindPoint += uniform.count;
 	}
 	Logger::error("Buffer not found : ", name);
 }
@@ -56,19 +54,16 @@ void ShaderMaterial::set(const char* name, const Texture::Ptr& texture)
 
 void ShaderMaterial::set(const char* name, const Texture::Ptr* textures, size_t count)
 {
-	// Texture slot is attributed "automatically" (first called, first served). fix this.
-	uint32_t slot = 0;
 	for (const Uniform& uniform : *m_shader)
 	{
 		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::Texture2DMultisample && uniform.type != UniformType::TextureCubemap)
 			continue;
 		if (uniform.name == name)
 		{
-			for (size_t iTex = 0; iTex < count; iTex++)
-				m_textures[slot + iTex] = textures[iTex];
+			for (size_t i = 0; i < count; i++)
+				m_textures[uniform.binding + i] = textures[i];
 			return;
 		}
-		slot += uniform.count;
 	}
 	Logger::error("Texture not found : ", name);
 }
@@ -80,18 +75,16 @@ void ShaderMaterial::set(const char* name, TextureSampler sampler)
 
 void ShaderMaterial::set(const char* name, const TextureSampler* samplers, size_t count)
 {
-	uint32_t slot = 0;
 	for (const Uniform& uniform : *m_shader)
 	{
 		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::Texture2DMultisample && uniform.type != UniformType::TextureCubemap)
 			continue;
 		if (uniform.name == name)
 		{
-			for (size_t iTex = 0; iTex < count; iTex++)
-				m_samplers[slot + iTex] = samplers[iTex];
+			for (size_t i = 0; i < count; i++)
+				m_samplers[uniform.binding + i] = samplers[i];
 			return;
 		}
-		slot += 1 * uniform.count;
 	}
 	Logger::error("Sampler not found : ", name);
 }

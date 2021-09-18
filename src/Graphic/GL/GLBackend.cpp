@@ -882,6 +882,7 @@ public:
 				Logger::error("[GL] Program is not valid");
 			else
 			{
+				uint32_t textureUnit = 0;
 				GLint activeUniforms = 0;
 				glGetProgramiv(m_programID, GL_ACTIVE_UNIFORMS, &activeUniforms);
 				// Uniforms
@@ -904,21 +905,25 @@ public:
 					case GL_IMAGE_2D:
 						uniform.type = UniformType::Image2D;
 						uniform.shaderType = ShaderType::Compute;
+						uniform.binding = textureUnit++;
 						break;
 					case GL_SAMPLER_2D:
 						uniform.type = UniformType::Texture2D;
 						uniform.shaderType = ShaderType::Fragment;
+						uniform.binding = textureUnit++;
 						// TODO add sampler
 						break;
 					case GL_SAMPLER_CUBE:
 						uniform.type = UniformType::TextureCubemap;
 						uniform.shaderType = ShaderType::Fragment;
+						uniform.binding = textureUnit++;
 						break;
 					case GL_SAMPLER_2D_MULTISAMPLE:
 						uniform.type = UniformType::Texture2DMultisample;
 						uniform.shaderType = ShaderType::Fragment;
+						uniform.binding = textureUnit++;
 						break;
-					case GL_FLOAT:
+					/*case GL_FLOAT:
 						uniform.type = UniformType::Float;
 						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
 						break;
@@ -949,10 +954,11 @@ public:
 					case GL_FLOAT_MAT4:
 						uniform.type = UniformType::Mat4;
 						uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
-						break;
+						break;*/
 					default:
-						Logger::warn("[GL] Unsupported Uniform Type : ", name);
-						break;
+						continue;
+						//Logger::warn("[GL] Unsupported Uniform Type : ", name);
+						//break;
 					}
 					m_uniforms.push_back(uniform);
 				}
@@ -964,14 +970,12 @@ public:
 					GLsizei length;
 					GLchar name[257];
 					glGetActiveUniformBlockName(m_programID, iUniform, 257, &length, name);
-					GLint param = 0;
-					glGetActiveUniformBlockiv(m_programID, iUniform, GL_UNIFORM_BLOCK_DATA_SIZE, &param);
-
 					name[length] = '\0';
 
 					Uniform uniform;
 					uniform.name = name;
 					uniform.count = 1;
+					uniform.binding = iUniform;
 					uniform.shaderType = (ShaderType)((int)ShaderType::Vertex | (int)ShaderType::Fragment);
 					uniform.type = UniformType::Buffer;
 					m_uniforms.push_back(uniform);
@@ -998,6 +1002,7 @@ public:
 	GLShaderMaterial(Shader::Ptr shader) :
 		ShaderMaterial(shader)
 	{
+		// TODO This is API agnostic, move in ShaderMaterial.cpp
 		GLint activeUniforms = 0;
 		uint32_t textureCount = 0;
 		uint32_t imageCount = 0;
@@ -1007,12 +1012,12 @@ public:
 			switch (uniform.type)
 			{
 			case UniformType::Buffer:
-				bufferCount += 1 * uniform.count;
+				bufferCount = max(bufferCount, uniform.binding + uniform.count);
 				break;
 			case UniformType::TextureCubemap:
 			case UniformType::Texture2D:
 			case UniformType::Texture2DMultisample:
-				textureCount += 1 * uniform.count;
+				textureCount = max(textureCount, uniform.binding + uniform.count);
 				break;
 			case UniformType::Float:
 			case UniformType::Int:
@@ -1041,10 +1046,6 @@ public:
 	void use() const
 	{
 		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
-		GLint textureUnit = 0;
-		GLint imageUnit = 0;
-		GLint bufferUnit = 0;
-		uint32_t offset = 0;
 		glUseProgram(glShader->getProgramID());
 		for (const Uniform& uniform : *m_shader)
 		{
@@ -1069,11 +1070,10 @@ public:
 			case UniformType::Buffer: {
 				for (uint32_t i = 0; i < uniform.count; i++)
 				{
-					GLint unit = bufferUnit++;
-					Buffer::Ptr buffer = m_buffers[unit];
+					Buffer::Ptr buffer = m_buffers[uniform.binding + i];
 					GLuint blockID = glGetUniformBlockIndex(programID, uniform.name.cstr());
-					glUniformBlockBinding(programID, blockID, unit);
-					glBindBufferBase(GL_UNIFORM_BUFFER, unit, (GLuint)buffer->handle().value());
+					glUniformBlockBinding(programID, blockID, uniform.binding + i);
+					glBindBufferBase(GL_UNIFORM_BUFFER, uniform.binding + i, (GLuint)buffer->handle().value());
 					//glBindBufferRange
 				}
 				break;
@@ -1085,10 +1085,9 @@ public:
 				// Bind texture to units.
 				for (uint32_t i = 0; i < uniform.count; i++)
 				{
-					GLint unit = textureUnit++;
-					Texture::Ptr texture = m_textures[unit];
-					TextureSampler sampler = m_samplers[unit];
-					glActiveTexture(GL_TEXTURE0 + unit);
+					Texture::Ptr texture = m_textures[uniform.binding + i];
+					TextureSampler sampler = m_samplers[uniform.binding + i];
+					glActiveTexture(GL_TEXTURE0 + uniform.binding + i);
 					if (texture != nullptr)
 					{
 						// Bind and set sampler
@@ -1121,7 +1120,7 @@ public:
 						}
 						glBindTexture(glType, 0);
 					}
-					units.push_back(unit);
+					units.push_back(uniform.binding + i);
 				}
 				// Upload texture unit array.
 				glUniform1iv(location, (GLsizei)units.size(), units.data());
@@ -1147,9 +1146,9 @@ public:
 			}*/
 			}
 		}
-		GLint maxTextureUnits = -1;
-		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
-		AKA_ASSERT(textureUnit <= maxTextureUnits, "Cannot handle so many textures in a single pass.");
+		//GLint maxTextureUnits = -1;
+		//glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
+		//AKA_ASSERT(textureUnit <= maxTextureUnits, "Cannot handle so many textures in a single pass.");
 	}
 };
 
@@ -1460,6 +1459,8 @@ public:
 		Attachment* attachment = getAttachment(type);
 		if (attachment == nullptr)
 		{
+			m_attachments.push_back(newAttachment);
+			attachment = &m_attachments.back();
 			// Set correct draw buffers to support new attachment
 			std::vector<GLenum> drawBuffers;
 			for (Attachment& attachment : m_attachments)
@@ -1469,8 +1470,6 @@ public:
 					drawBuffers.push_back(attachmentType);
 			}
 			glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
-			m_attachments.push_back(newAttachment);
-			attachment = &m_attachments.back();
 		}
 		else
 		{

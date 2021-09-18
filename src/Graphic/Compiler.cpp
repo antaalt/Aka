@@ -201,7 +201,7 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	glslang::InitializeProcess();
 
 	EShMessages messages = EShMsgDefault;
-	int default_version = 100; // 110 for desktop
+	int default_version = 110; // 110 for desktop
 	glslang::TProgram program;
 	glslang::TShader shader(stage);
 

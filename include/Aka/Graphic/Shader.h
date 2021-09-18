@@ -40,8 +40,9 @@ enum class UniformType
 struct Uniform
 {
 	String name; // Name of uniform
+	uint32_t binding; // Binding point of the uniform
 	UniformType type; // Type of uniform
-	ShaderType shaderType; // Shader used
+	ShaderType shaderType; // Shader stage used
 	uint32_t count; // Number of element for this uniform
 };
 
