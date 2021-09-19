@@ -5,7 +5,7 @@
 #include <Aka/Graphic/TextureCubeMap.h>
 #include <Aka/Graphic/Device.h>
 #include <Aka/Graphic/Shader.h>
-#include <Aka/Graphic/ShaderMaterial.h>
+#include <Aka/Graphic/Material.h>
 #include <Aka/Graphic/Framebuffer.h>
 #include <Aka/Graphic/Buffer.h>
 #include <Aka/Graphic/Mesh.h>
@@ -97,14 +97,15 @@ protected:
 	static Mesh::Ptr createMesh();
 
 	friend class Shader;
-	static ShaderHandle compile(const char* content, ShaderType type);
-	static void destroy(ShaderHandle handle);
-	static Shader::Ptr createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count);
-	static Shader::Ptr createShaderCompute(ShaderHandle compute);
+	static Shader::Ptr compile(const char* content, ShaderType type);
 
-	friend class ShaderMaterial;
-	static ShaderMaterial::Ptr createShaderMaterial(Shader::Ptr shader);
+	friend class Program;
+	static Program::Ptr createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count);
+	static Program::Ptr createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count);
+	static Program::Ptr createComputeProgram(Shader::Ptr compute);
+
+	friend class Material;
+	static Material::Ptr createMaterial(Program::Ptr shader);
 };
 
 }

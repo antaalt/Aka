@@ -3,7 +3,7 @@
 #include <Aka/Graphic/Framebuffer.h>
 #include <Aka/Graphic/Mesh.h>
 #include <Aka/Graphic/Shader.h>
-#include <Aka/Graphic/ShaderMaterial.h>
+#include <Aka/Graphic/Material.h>
 
 namespace aka {
 
@@ -190,7 +190,7 @@ struct RenderPass
 	// Mesh to render
 	SubMesh submesh;
 	// Material for mesh
-	ShaderMaterial::Ptr material;
+	Material::Ptr material;
 	// Clear values for framebuffer
 	Clear clear;
 	// Blending for alpha operation
@@ -213,7 +213,7 @@ struct RenderPass
 struct ComputePass
 {
 	// Material for mesh
-	ShaderMaterial::Ptr material;
+	Material::Ptr material;
 	// Number of group for dispatch
 	vec3u groupCount;
 	// Group size in shader

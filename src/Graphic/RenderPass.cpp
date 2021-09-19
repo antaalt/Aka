@@ -176,25 +176,25 @@ void RenderPass::execute()
 	}
 	if (this->submesh.mesh == nullptr)
 	{
-		Logger::warn("No mesh set for render pass.");
+		Logger::error("No mesh set for render pass.");
 		return;
 	}
-	if (this->submesh.mesh->getVertexAttributeCount() >= this->material->shader()->getAttributeCount())
+	if (this->submesh.mesh->getVertexAttributeCount() >= this->material->program()->getAttributeCount())
 	{
-		for (uint32_t i = 0; i < this->material->shader()->getAttributeCount(); i++)
+		for (uint32_t i = 0; i < this->material->program()->getAttributeCount(); i++)
 		{
 			const VertexAttribute& mesh = this->submesh.mesh->getVertexAttribute(i);
-			const VertexAttribute& shader = this->material->shader()->getAttribute(i);
+			const VertexAttribute& shader = this->material->program()->getAttribute(i);
 			if (mesh.semantic != shader.semantic || mesh.format != shader.format || mesh.type != shader.type)
 			{
-				Logger::warn("Shader and mesh non compatible");
+				Logger::error("Shader and mesh non compatible");
 				return;
 			}
 		}
 	}
 	else
 	{
-		Logger::warn("Shader and mesh non compatible");
+		Logger::error("Shader and mesh non compatible");
 		return;
 	}
 	GraphicBackend::render(*this);

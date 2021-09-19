@@ -1,22 +1,22 @@
 #pragma once
 
-#include "Shader.h"
+#include <Aka/Graphic/Program.h>
 
 namespace aka {
 
-class ShaderMaterial
+class Material
 {
 public:
-	using Ptr = std::shared_ptr<ShaderMaterial>;
+	using Ptr = std::shared_ptr<Material>;
 protected:
-	ShaderMaterial(Shader::Ptr shader);
-	ShaderMaterial(const ShaderMaterial&) = delete;
-	const ShaderMaterial& operator=(const ShaderMaterial&) = delete;
-	virtual ~ShaderMaterial();
+	Material(Program::Ptr program);
+	Material(const Material&) = delete;
+	const Material& operator=(const Material&) = delete;
+	virtual ~Material();
 public:
-	static ShaderMaterial::Ptr create(Shader::Ptr shader);
+	static Material::Ptr create(Program::Ptr program);
 
-	Shader::Ptr shader();
+	Program::Ptr program();
 
 	// TODO use buffer handle & texture handle
 	void set(const char* name, const Buffer::Ptr& buffer);
@@ -32,7 +32,7 @@ public:
 	//void setSlot(const char* name, uint32_t slot);
 
 protected:
-	Shader::Ptr m_shader;
+	Program::Ptr m_program;
 	std::vector<Buffer::Ptr> m_buffers;
 	std::vector<Texture::Ptr> m_textures;
 	std::vector<TextureSampler> m_samplers;

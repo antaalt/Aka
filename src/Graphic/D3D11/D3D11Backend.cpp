@@ -592,7 +592,7 @@ uint32_t d3dComponent(TextureFormat format)
 	}
 }
 
-class D3D11ShaderMaterial;
+class D3D11Material;
 
 struct D3D11Texture
 {
@@ -1789,30 +1789,53 @@ private:
 class D3D11Shader : public Shader
 {
 public:
-	D3D11Shader(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, ShaderHandle compute, const VertexAttribute* attributes, size_t count) :
-		Shader(attributes, count),
+	D3D11Shader(ID3D10Blob* shaderBuffer) :
+		m_shaderBuffer(shaderBuffer)
+	{
+
+	}
+	~D3D11Shader()
+	{
+		if (m_shaderBuffer)
+			m_shaderBuffer->Release();
+	}
+	ID3D10Blob* getShaderBuffer() { return m_shaderBuffer; }
+private:
+	ID3D10Blob* m_shaderBuffer;
+};
+
+class D3D11Program : public Program
+{
+public:
+	D3D11Program(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, Shader::Ptr compute, const VertexAttribute* attributes, size_t count) :
+		Program(attributes, count),
 		m_layout(nullptr),
 		m_vertexShader(nullptr),
 		m_pixelShader(nullptr),
 		m_geometryShader(nullptr),
 		m_computeShader(nullptr)
 	{
-		ID3D10Blob* vertexShaderBuffer = ((ID3D10Blob*)vert.value());
-		ID3D10Blob* pixelShaderBuffer = ((ID3D10Blob*)frag.value());
-		ID3D10Blob* geometryShaderBuffer = ((ID3D10Blob*)geometry.value());
-		ID3D10Blob* computeShaderBuffer = ((ID3D10Blob*)compute.value());
+		auto getShaderBuffer = [](Shader* shader) -> ID3D10Blob* {
+			if (shader == nullptr)
+				return nullptr;
+			return reinterpret_cast<D3D11Shader*>(shader)->getShaderBuffer();
+		};
+		ID3D10Blob* vertexShaderBuffer = getShaderBuffer(vert.get());
+		ID3D10Blob* pixelShaderBuffer = getShaderBuffer(frag.get());
+		ID3D10Blob* geometryShaderBuffer = getShaderBuffer(geometry.get());
+		ID3D10Blob* computeShaderBuffer = getShaderBuffer(compute.get());
 		// --- Create shaders
-		if (vert.value() != 0)
+		if (vert != nullptr)
 			D3D_CHECK_RESULT(dctx.device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), nullptr, &m_vertexShader));
-		if (frag.value() != 0)
+		if (frag != nullptr)
 			D3D_CHECK_RESULT(dctx.device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), nullptr, &m_pixelShader));
-		if (compute.value() != 0)
+		if (compute != nullptr)
 			D3D_CHECK_RESULT(dctx.device->CreateComputeShader(computeShaderBuffer->GetBufferPointer(), computeShaderBuffer->GetBufferSize(), nullptr, &m_computeShader));
-		if (geometry.value() != 0)
+		if (geometry != nullptr)
 			D3D_CHECK_RESULT(dctx.device->CreateGeometryShader(geometryShaderBuffer->GetBufferPointer(), geometryShaderBuffer->GetBufferSize(), nullptr, &m_geometryShader));
 
 		// --- Layout
-		if (compute.value() == 0)
+		if (compute == nullptr)
 		{
 			std::vector<D3D11_INPUT_ELEMENT_DESC> polygonLayout(count);
 			AKA_ASSERT(m_attributes.size() == count, "Incorrect size");
@@ -1915,10 +1938,10 @@ public:
 
 		// --- Uniforms
 		// Find and merge all uniforms
-		std::vector<Uniform> uniformsVert = getUniforms((ID3D10Blob*)vert.value(), ShaderType::Vertex);
-		std::vector<Uniform> uniformsFrag = getUniforms((ID3D10Blob*)frag.value(), ShaderType::Fragment);
-		std::vector<Uniform> uniformsGeo = getUniforms((ID3D10Blob*)geometry.value(), ShaderType::Geometry);
-		std::vector<Uniform> uniformsComp = getUniforms((ID3D10Blob*)compute.value(), ShaderType::Compute);
+		std::vector<Uniform> uniformsVert = getUniforms(vertexShaderBuffer, ShaderType::Vertex);
+		std::vector<Uniform> uniformsFrag = getUniforms(pixelShaderBuffer, ShaderType::Fragment);
+		std::vector<Uniform> uniformsGeo = getUniforms(geometryShaderBuffer, ShaderType::Geometry);
+		std::vector<Uniform> uniformsComp = getUniforms(computeShaderBuffer , ShaderType::Compute);
 		m_uniforms.insert(m_uniforms.end(), uniformsVert.begin(), uniformsVert.end());
 		m_uniforms.insert(m_uniforms.end(), uniformsFrag.begin(), uniformsFrag.end());
 		m_uniforms.insert(m_uniforms.end(), uniformsGeo.begin(), uniformsGeo.end());
@@ -1940,9 +1963,7 @@ public:
 			}
 		}
 	}
-	D3D11Shader(const D3D11Shader&) = delete;
-	D3D11Shader& operator=(const D3D11Shader&) = delete;
-	~D3D11Shader()
+	~D3D11Program()
 	{
 		if (m_layout)
 			m_layout->Release();
@@ -2057,17 +2078,15 @@ private:
 	ID3D11ComputeShader* m_computeShader;
 };
 
-class D3D11ShaderMaterial : public ShaderMaterial
+class D3D11Material : public Material
 {
 public:
-	D3D11ShaderMaterial(Shader::Ptr shader) :
-		ShaderMaterial(shader)
+	D3D11Material(Program::Ptr program) :
+		Material(program)
 	{
-		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
-
 		uint32_t textureCount = 0;
 		uint32_t bufferCount = 0;
-		for (const Uniform &uniform : *m_shader)
+		for (const Uniform &uniform : *m_program)
 		{
 			// Create textures & data buffers
 			switch (uniform.type)
@@ -2096,16 +2115,14 @@ public:
 		m_samplers.resize(textureCount, TextureSampler::nearest);
 		m_buffers.resize(bufferCount, nullptr);
 	}
-	D3D11ShaderMaterial(const D3D11ShaderMaterial&) = delete;
-	const D3D11ShaderMaterial& operator=(const D3D11ShaderMaterial&) = delete;
-	~D3D11ShaderMaterial()
+	~D3D11Material()
 	{
 	}
 public:
 	void apply()
 	{
-		D3D11Shader* d3dShader = reinterpret_cast<D3D11Shader*>(m_shader.get());
-		d3dShader->use();
+		D3D11Program* d3dProgram = reinterpret_cast<D3D11Program*>(m_program.get());
+		d3dProgram->use();
 		uint32_t textureUnit = 0;
 		uint32_t bufferUnit = 0;
 		// Alignement hlsl :
@@ -2115,7 +2132,7 @@ public:
 		std::vector<ID3D11Buffer*> uniformBuffers[shaderTypeCount];
 		std::vector<ID3D11ShaderResourceView*> shaderResourceViews[shaderTypeCount];
 		std::vector<ID3D11SamplerState*> samplerStates[shaderTypeCount];
-		for (const Uniform& uniform : *m_shader)
+		for (const Uniform& uniform : *m_program)
 		{
 			const bool isShaderType[shaderTypeCount] = {
 				(ShaderType)((int)uniform.shaderType & (int)ShaderType::Vertex) == ShaderType::Vertex,
@@ -2384,10 +2401,8 @@ void GraphicBackend::render(RenderPass& pass)
 		}
 		else
 		{
-			D3D11ShaderMaterial* d3dShaderMaterial = (D3D11ShaderMaterial*)pass.material.get();
-			Shader::Ptr shader = d3dShaderMaterial->shader();
-			D3D11Shader* d3dShader = (D3D11Shader*)shader.get();
-			d3dShaderMaterial->apply();
+			D3D11Material* d3dMaterial = (D3D11Material*)pass.material.get();
+			d3dMaterial->apply();
 		}
 	}
 
@@ -2651,7 +2666,7 @@ Mesh::Ptr GraphicBackend::createMesh()
 	return std::make_shared<D3D11Mesh>();
 }
 
-ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
+Shader::Ptr GraphicBackend::compile(const char* content, ShaderType type)
 {
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorMessage = nullptr;
@@ -2710,41 +2725,35 @@ ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
 			// Release the error message.
 			errorMessage->Release();
 			errorMessage = 0;
-			return ShaderHandle(0);
+			return nullptr;
 		}
 		else
 		{
 			Logger::error("[compilation] Missing shader file");
-			return ShaderHandle(0);
+			return nullptr;
 		}
 	}
-	return ShaderHandle((uintptr_t)shaderBuffer);
-}
-void GraphicBackend::destroy(ShaderHandle handle)
-{
-	ID3DBlob* blob = (ID3DBlob*)handle.value();
-	if (blob != nullptr)
-		blob->Release();
+	return std::make_shared<D3D11Shader>(shaderBuffer);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count)
+Program::Ptr GraphicBackend::createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, ShaderHandle(0), ShaderHandle(0), attributes, count);
+	return std::make_shared<D3D11Program>(vert, frag, nullptr, nullptr, attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute)
+Program::Ptr GraphicBackend::createComputeProgram(Shader::Ptr compute)
 {
-	return std::make_shared<D3D11Shader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, nullptr, 0);
+	return std::make_shared<D3D11Program>(nullptr, nullptr, nullptr, compute, nullptr, 0);
 }
 
-Shader::Ptr GraphicBackend::createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count)
+Program::Ptr GraphicBackend::createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<D3D11Shader>(vert, frag, geometry, ShaderHandle(0), attributes, count);
+	return std::make_shared<D3D11Program>(vert, frag, geometry, nullptr, attributes, count);
 }
 
-ShaderMaterial::Ptr GraphicBackend::createShaderMaterial(Shader::Ptr shader)
+Material::Ptr GraphicBackend::createMaterial(Program::Ptr program)
 {
-	return std::make_shared<D3D11ShaderMaterial>(shader);
+	return std::make_shared<D3D11Material>(program);
 }
 
 };

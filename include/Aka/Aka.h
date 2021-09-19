@@ -30,6 +30,7 @@
 #include "Graphic/Sampler.h"
 #include "Graphic/Device.h"
 #include "Graphic/RenderPass.h"
+#include "Graphic/Program.h"
 #include "Graphic/Shader.h"
 
 #include "Drawing/Batch2D.h"

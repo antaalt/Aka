@@ -14,7 +14,7 @@ namespace aka {
 std::vector<ProgramManager::ShaderInfo> ProgramManager::m_shaders;
 std::vector<ProgramManager::ProgramInfo> ProgramManager::m_programs;
 
-Shader::Ptr ProgramManager::get(const String& name)
+Program::Ptr ProgramManager::get(const String& name)
 {
 	for (ProgramInfo& info : m_programs)
 		if (info.name == name)
@@ -22,12 +22,12 @@ Shader::Ptr ProgramManager::get(const String& name)
 	return nullptr;
 }
 
-ShaderHandle ProgramManager::getShader(const String& name)
+Shader::Ptr ProgramManager::getShader(const String& name)
 {
 	for (ShaderInfo& info : m_shaders)
 		if (info.name == name)
 			return info.shader;
-	return ShaderHandle(0);
+	return Shader::Ptr(0);
 }
 
 bool ProgramManager::reload(const String& name)
@@ -36,8 +36,8 @@ bool ProgramManager::reload(const String& name)
 	{
 		if (info.name == name)
 		{
-			ShaderHandle out = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
-			if (out.value() == 0)
+			Shader::Ptr out = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
+			if (out == nullptr)
 				return false;
 			info.shader = out;
 			return true;
@@ -105,7 +105,7 @@ bool ProgramManager::parse(const Path& path)
 			if (info.vert.length() > 0 && info.frag.length() > 0)
 			{
 				std::vector<VertexAttribute>& attributes = getShaderInfo(info.vert).attributes;
-				info.program = Shader::createVertexProgram(
+				info.program = Program::createVertexProgram(
 					getShaderInfo(info.vert).shader,
 					getShaderInfo(info.frag).shader,
 					getShaderInfo(info.vert).attributes.data(),
@@ -114,7 +114,7 @@ bool ProgramManager::parse(const Path& path)
 			}
 			else if (info.comp.length() > 0)
 			{
-				info.program = Shader::createComputeProgram(
+				info.program = Program::createComputeProgram(
 					getShaderInfo(info.comp).shader
 				);
 			}
@@ -198,8 +198,8 @@ void ProgramManager::update()
 				if (vertUpdated)
 				{
 					AKA_ASSERT(vertInfo.type == ShaderType::Vertex, "Invalid shader type");
-					ShaderHandle shader = compile(vertInfo.path, vertInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
-					if (shader.value() != 0)
+					Shader::Ptr shader = compile(vertInfo.path, vertInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
+					if (shader != nullptr)
 					{
 						compiled = true;
 						vertInfo.shader = shader;
@@ -209,8 +209,8 @@ void ProgramManager::update()
 				if (fragUpdated)
 				{
 					AKA_ASSERT(fragInfo.type == ShaderType::Fragment, "Invalid shader type");
-					ShaderHandle shader = compile(fragInfo.path, fragInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
-					if (shader.value() != 0)
+					Shader::Ptr shader = compile(fragInfo.path, fragInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
+					if (shader != nullptr)
 					{
 						compiled = true;
 						fragInfo.shader = shader;
@@ -219,7 +219,7 @@ void ProgramManager::update()
 				}
 				if (compiled)
 				{
-					programInfo.program = Shader::createVertexProgram(vertInfo.shader, fragInfo.shader, vertInfo.attributes.data(), vertInfo.attributes.size());
+					programInfo.program = Program::createVertexProgram(vertInfo.shader, fragInfo.shader, vertInfo.attributes.data(), vertInfo.attributes.size());
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
 			}
@@ -230,11 +230,11 @@ void ProgramManager::update()
 			if (File::lastWrite(compInfo.path) > compInfo.loaded)
 			{
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
-				ShaderHandle shader = compile(compInfo.path, compInfo.type, nullptr, 0);
-				if (shader.value() != 0)
+				Shader::Ptr shader = compile(compInfo.path, compInfo.type, nullptr, 0);
+				if (shader != nullptr)
 				{
 					compInfo.shader = shader;
-					programInfo.program = Shader::createComputeProgram(compInfo.shader);
+					programInfo.program = Program::createComputeProgram(compInfo.shader);
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
 				compInfo.loaded = Time::now();
@@ -244,7 +244,7 @@ void ProgramManager::update()
 	EventDispatcher<ProgramReloadedEvent>::dispatch();
 }
 
-ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
+Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
 {
 	Path compiledPath;
 	switch (GraphicBackend::api())
@@ -256,7 +256,7 @@ ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, const Ve
 		compiledPath = "./library/shaders/D3D/" + File::name(path) + ".hlsl";
 		break;
 	default:
-		return ShaderHandle(0);
+		return Shader::Ptr(0);
 	}
 	String shader;
 	if (!File::exist(compiledPath) || File::lastWrite(compiledPath) < File::lastWrite(path))
@@ -264,7 +264,7 @@ ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, const Ve
 		Compiler compiler;
 		if (!compiler.parse(path, type))
 		{
-			return ShaderHandle(0);
+			return Shader::Ptr(0);
 		}
 		shader = compiler.compile(GraphicBackend::api(), attributes, count);
 		if (!File::write(compiledPath, shader))
@@ -276,7 +276,7 @@ ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, const Ve
 		if (!File::read(compiledPath, &shader))
 		{
 			Logger::error("Could not read ", compiledPath);
-			return ShaderHandle(0);
+			return Shader::Ptr(0);
 		}
 		Logger::debug("Shader ", File::name(path), " loaded from cache.");
 	}

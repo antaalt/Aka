@@ -142,7 +142,7 @@ void Batch3D::draw(const mat4f& transform, const Poly& poly)
 }
 
 Batch3D::Batch3D() :
-	m_shader(nullptr),
+	m_program(nullptr),
 	m_mesh(nullptr),
 	m_defaultTexture(nullptr)
 {
@@ -161,16 +161,14 @@ void Batch3D::initialize()
 		VertexAttribute{ VertexSemantic::TexCoord0, VertexFormat::Float, VertexType::Vec2 },
 		VertexAttribute{ VertexSemantic::Color0, VertexFormat::Float, VertexType::Vec4 }
 	};
-	ShaderHandle vert = Shader::compile(vertShader, ShaderType::Vertex);
-	ShaderHandle frag = Shader::compile(fragShader, ShaderType::Fragment);
-	m_shader = Shader::createVertexProgram(
+	Shader::Ptr vert = Shader::compile(vertShader, ShaderType::Vertex);
+	Shader::Ptr frag = Shader::compile(fragShader, ShaderType::Fragment);
+	m_program = Program::createVertexProgram(
 		vert,
 		frag,
 		att.data(), att.size()
 	);
-	m_material = ShaderMaterial::create(m_shader);
-	Shader::destroy(vert);
-	Shader::destroy(frag);
+	m_material = Material::create(m_program);
 
 	m_uniformBuffer = Buffer::create(BufferType::Uniform, sizeof(mat4f), BufferUsage::Default, BufferCPUAccess::None);
 	m_material->set("ModelUniformBuffer", m_uniformBuffer);
@@ -233,7 +231,7 @@ void Batch3D::clear()
 
 void Batch3D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4f& projection)
 {
-	if (m_shader == nullptr)
+	if (m_program == nullptr)
 		initialize();
 
 	{

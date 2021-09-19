@@ -1,25 +1,22 @@
 #pragma once
 
-#include <Aka/Graphic/Shader.h>
-#include <Aka/Graphic/ShaderMaterial.h>
+#include <Aka/Graphic/Program.h>
 
 namespace aka {
 
 struct ProgramReloadedEvent
 {
 	String name;
-	Shader::Ptr program;
+	Program::Ptr program;
 };
 
-// TODO rename ShaderMaterial Material
-// TODO rename Shader -> Program & ShaderHandle -> Shader (and make it RAII)
 class ProgramManager
 {
 public:
 	// Get a program from its name
-	static Shader::Ptr get(const String& name);
+	static Program::Ptr get(const String& name);
 	// Get a shader from its name
-	static ShaderHandle getShader(const String& name);
+	static Shader::Ptr getShader(const String& name);
 	// Reload a specific shader.
 	static bool reload(const String& name);
 
@@ -33,19 +30,19 @@ public:
 	static void update();
 private:
 	// Compile a shader using GLSLCC for currently used graphic API
-	static ShaderHandle compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count);
+	static Shader::Ptr compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count);
 private:
 	struct ShaderInfo {
 		String name;
 		ShaderType type;
-		ShaderHandle shader;
+		Shader::Ptr shader;
 		Path path;
 		std::vector<VertexAttribute> attributes;
 		Time::Unit loaded;
 	};
 	struct ProgramInfo {
 		String name;
-		Shader::Ptr program;
+		Program::Ptr program;
 		String vert;
 		String frag;
 		String comp;

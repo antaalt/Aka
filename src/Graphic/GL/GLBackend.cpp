@@ -816,17 +816,40 @@ private:
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDeleteFramebuffers(1, &m_copyFBO);
 }*/
-
 class GLShader : public Shader
 {
 public:
-	GLShader(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, ShaderHandle compute, const VertexAttribute* attributes, size_t count) :
-		Shader(attributes, count)
+	GLShader(GLuint shaderID) :
+		Shader(),
+		m_shaderID(shaderID)
 	{
-		GLuint vert = static_cast<GLuint>(vertex.value());
-		GLuint frag = static_cast<GLuint>(fragment.value());
-		GLuint comp = static_cast<GLuint>(compute.value());
-		GLuint geo = static_cast<GLuint>(geometry.value());
+
+	}
+	~GLShader()
+	{
+		if (m_shaderID != 0)
+			glDeleteShader(m_shaderID);
+	}
+	GLuint getShaderID() const { return m_shaderID; }
+private:
+	GLuint m_shaderID;
+};
+
+class GLProgram : public Program
+{
+public:
+	GLProgram(Shader::Ptr vertex, Shader::Ptr fragment, Shader::Ptr geometry, Shader::Ptr compute, const VertexAttribute* attributes, size_t count) :
+		Program(attributes, count)
+	{
+		auto getShaderID = [](Shader* shader) -> GLuint {
+			if (shader == nullptr)
+				return 0;
+			return reinterpret_cast<GLShader*>(shader)->getShaderID();
+		};
+		GLuint vert = getShaderID(vertex.get());
+		GLuint frag = getShaderID(fragment.get());
+		GLuint comp = getShaderID(compute.get());
+		GLuint geo = getShaderID(geometry.get());
 		m_programID = glCreateProgram();
 		// Attach shaders
 		if (vert != 0 && glIsShader(vert) == GL_TRUE)
@@ -983,9 +1006,7 @@ public:
 			}
 		}
 	}
-	GLShader(const GLShader&) = delete;
-	GLShader& operator=(const GLShader&) = delete;
-	~GLShader()
+	~GLProgram()
 	{
 		if (m_programID != 0)
 			glDeleteProgram(m_programID);
@@ -996,18 +1017,18 @@ private:
 	GLuint m_programID;
 };
 
-class GLShaderMaterial : public ShaderMaterial
+class GLMaterial : public Material
 {
 public:
-	GLShaderMaterial(Shader::Ptr shader) :
-		ShaderMaterial(shader)
+	GLMaterial(Program::Ptr shader) :
+		Material(shader)
 	{
-		// TODO This is API agnostic, move in ShaderMaterial.cpp
+		// TODO This is API agnostic, move in Material.cpp
 		GLint activeUniforms = 0;
 		uint32_t textureCount = 0;
 		uint32_t imageCount = 0;
 		uint32_t bufferCount = 0;
-		for (const Uniform& uniform : *m_shader)
+		for (const Uniform& uniform : *m_program)
 		{
 			switch (uniform.type)
 			{
@@ -1037,20 +1058,20 @@ public:
 		m_textures.resize(textureCount, nullptr);
 		m_samplers.resize(textureCount, TextureSampler::nearest);
 	}
-	GLShaderMaterial(const GLShaderMaterial&) = delete;
-	GLShaderMaterial& operator=(const GLShaderMaterial&) = delete;
-	~GLShaderMaterial()
+	GLMaterial(const GLMaterial&) = delete;
+	GLMaterial& operator=(const GLMaterial&) = delete;
+	~GLMaterial()
 	{
 	}
 public:
 	void use() const
 	{
-		GLShader* glShader = reinterpret_cast<GLShader*>(m_shader.get());
+		GLProgram* glShader = reinterpret_cast<GLProgram*>(m_program.get());
 		glUseProgram(glShader->getProgramID());
-		for (const Uniform& uniform : *m_shader)
+		for (const Uniform& uniform : *m_program)
 		{
 			// TODO map this for performance
-			GLuint programID = reinterpret_cast<GLShader*>(m_shader.get())->getProgramID();
+			GLuint programID = glShader->getProgramID();
 			GLint location = glGetUniformLocation(programID, uniform.name.cstr());
 			switch (uniform.type)
 			{
@@ -1910,7 +1931,7 @@ void GraphicBackend::render(RenderPass& pass)
 
 	{
 		// Shader
-		GLShaderMaterial* material = (GLShaderMaterial*)pass.material.get();
+		GLMaterial* material = (GLMaterial*)pass.material.get();
 		material->use();
 	}
 	{
@@ -1927,7 +1948,7 @@ void GraphicBackend::dispatch(ComputePass& pass)
 	// TODO assert GL version is 4.3 at least (minimum requirement for compute)
 	{
 		// Shader
-		GLShaderMaterial* material = (GLShaderMaterial*)pass.material.get();
+		GLMaterial* material = (GLMaterial*)pass.material.get();
 		material->use();
 	}
 	{
@@ -2019,7 +2040,7 @@ Mesh::Ptr GraphicBackend::createMesh()
 	return std::make_shared<GLMesh>();
 }
 
-ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
+Shader::Ptr GraphicBackend::compile(const char* content, ShaderType type)
 {
 	GLuint shaderID = glCreateShader(gl::getType(type));
 	glShaderSource(shaderID, 1, &content, NULL);
@@ -2038,35 +2059,30 @@ ShaderHandle GraphicBackend::compile(const char* content, ShaderType type)
 		// Exit with failure.
 		glDeleteShader(shaderID); // Don't leak the shader.
 		Logger::error("[GL] ", str);
-		return ShaderHandle(0);
+		return nullptr;
 	}
-	return ShaderHandle(shaderID);
+	return std::make_shared<GLShader>(shaderID);
 }
 
-void GraphicBackend::destroy(ShaderHandle handle)
+Program::Ptr GraphicBackend::createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count)
 {
-	glDeleteShader((GLuint)handle.value());
+	return std::make_shared<GLProgram>(vert, frag, nullptr, nullptr, attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShader(ShaderHandle vert, ShaderHandle frag, const VertexAttribute* attributes, size_t count)
+Program::Ptr GraphicBackend::createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count)
 {
-	return std::make_shared<GLShader>(vert, frag, ShaderHandle(0), ShaderHandle(0), attributes, count);
+	return std::make_shared<GLProgram>(vert, frag, geometry, nullptr, attributes, count);
 }
 
-Shader::Ptr GraphicBackend::createShaderGeometry(ShaderHandle vert, ShaderHandle frag, ShaderHandle geometry, const VertexAttribute* attributes, size_t count)
-{
-	return std::make_shared<GLShader>(vert, frag, geometry, ShaderHandle(0), attributes, count);
-}
-
-Shader::Ptr GraphicBackend::createShaderCompute(ShaderHandle compute)
+Program::Ptr GraphicBackend::createComputeProgram(Shader::Ptr compute)
 {
 	VertexAttribute dummy{};
-	return std::make_shared<GLShader>(ShaderHandle(0), ShaderHandle(0), ShaderHandle(0), compute, &dummy, 0);
+	return std::make_shared<GLProgram>(nullptr, nullptr, nullptr, compute, &dummy, 0);
 }
 
-ShaderMaterial::Ptr aka::GraphicBackend::createShaderMaterial(Shader::Ptr shader)
+Material::Ptr aka::GraphicBackend::createMaterial(Program::Ptr shader)
 {
-	return std::make_shared<GLShaderMaterial>(shader);
+	return std::make_shared<GLMaterial>(shader);
 }
 
 };

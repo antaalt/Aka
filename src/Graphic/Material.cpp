@@ -1,4 +1,4 @@
-#include <Aka/Graphic/ShaderMaterial.h>
+#include <Aka/Graphic/Material.h>
 
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/OS/Logger.h>
@@ -7,33 +7,33 @@
 
 namespace aka {
 
-ShaderMaterial::ShaderMaterial(Shader::Ptr shader) :
-	m_shader(shader)
+Material::Material(Program::Ptr program) :
+	m_program(program)
 {
 }
 
-ShaderMaterial::~ShaderMaterial()
+Material::~Material()
 {
 }
 
-ShaderMaterial::Ptr ShaderMaterial::create(Shader::Ptr shader)
+Material::Ptr Material::create(Program::Ptr program)
 {
-	return GraphicBackend::createShaderMaterial(shader);
+	return GraphicBackend::createMaterial(program);
 }
 
-Shader::Ptr ShaderMaterial::shader()
+Program::Ptr Material::program()
 {
-	return m_shader;
+	return m_program;
 }
 
-void ShaderMaterial::set(const char* name, const Buffer::Ptr& buffer)
+void Material::set(const char* name, const Buffer::Ptr& buffer)
 {
 	set(name, &buffer, 1);
 }
 
-void ShaderMaterial::set(const char* name, const Buffer::Ptr* buffers, size_t count)
+void Material::set(const char* name, const Buffer::Ptr* buffers, size_t count)
 {
-	for (const Uniform& uniform : *m_shader)
+	for (const Uniform& uniform : *m_program)
 	{
 		if (uniform.type != UniformType::Buffer)
 			continue;
@@ -47,14 +47,14 @@ void ShaderMaterial::set(const char* name, const Buffer::Ptr* buffers, size_t co
 	Logger::error("Buffer not found : ", name);
 }
 
-void ShaderMaterial::set(const char* name, const Texture::Ptr& texture)
+void Material::set(const char* name, const Texture::Ptr& texture)
 {
 	set(name, &texture, 1);
 }
 
-void ShaderMaterial::set(const char* name, const Texture::Ptr* textures, size_t count)
+void Material::set(const char* name, const Texture::Ptr* textures, size_t count)
 {
-	for (const Uniform& uniform : *m_shader)
+	for (const Uniform& uniform : *m_program)
 	{
 		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::Texture2DMultisample && uniform.type != UniformType::TextureCubemap)
 			continue;
@@ -68,14 +68,14 @@ void ShaderMaterial::set(const char* name, const Texture::Ptr* textures, size_t 
 	Logger::error("Texture not found : ", name);
 }
 
-void ShaderMaterial::set(const char* name, TextureSampler sampler)
+void Material::set(const char* name, TextureSampler sampler)
 {
 	set(name, &sampler, 1);
 }
 
-void ShaderMaterial::set(const char* name, const TextureSampler* samplers, size_t count)
+void Material::set(const char* name, const TextureSampler* samplers, size_t count)
 {
-	for (const Uniform& uniform : *m_shader)
+	for (const Uniform& uniform : *m_program)
 	{
 		if (uniform.type != UniformType::Texture2D && uniform.type != UniformType::Texture2DMultisample && uniform.type != UniformType::TextureCubemap)
 			continue;

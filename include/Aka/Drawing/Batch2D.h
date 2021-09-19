@@ -101,8 +101,8 @@ private:
 	uint32_t m_maxVertices;
 	uint32_t m_maxIndices;
 	RenderPass m_pass;
-	Shader::Ptr m_shader; // Make static as we only need one instance of shader even though multiple class exist
-	ShaderMaterial::Ptr m_material;
+	Program::Ptr m_program; // Make static as we only need one instance of shader even though multiple class exist
+	Material::Ptr m_material;
 	Buffer::Ptr m_uniformBuffer;
 	Mesh::Ptr m_mesh;
 	Buffer::Ptr m_vertexBuffer;
