@@ -116,7 +116,7 @@ uint32_t Texture::depth() const
 uint32_t Texture::levels() const
 {
 	if ((m_flags & TextureFlag::GenerateMips) == TextureFlag::GenerateMips)
-		return TextureSampler::mipLevelCount(m_width, m_height);
+		return TextureSampler::mipLevelCount(m_width, m_height); // TODO cache
 	return 1;
 }
 
@@ -133,6 +133,11 @@ TextureFlag Texture::flags() const
 TextureType Texture::type() const
 {
 	return m_type;
+}
+
+TextureFlag operator~(TextureFlag value)
+{
+	return static_cast<TextureFlag>(~static_cast<std::underlying_type<TextureFlag>::type>(value));
 }
 
 TextureFlag operator&(TextureFlag lhs, TextureFlag rhs)

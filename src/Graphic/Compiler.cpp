@@ -140,7 +140,9 @@ public:
 				String str;
 				if (File::read(header, &str))
 				{
-					return new IncludeResult(header.cstr(), str.cstr(), str.length(), nullptr);
+					char* data = new char[str.length() + 1];
+					memcpy(data, str.cstr(), str.length() + 1);
+					return new IncludeResult(header.cstr(), data, str.length(), nullptr);
 				}
 			}
 		}
@@ -155,14 +157,21 @@ public:
 			String str;
 			if (File::read(header, &str))
 			{
-				return new IncludeResult(header.cstr(), str.cstr(), str.length(), nullptr);
+				char* data = new char[str.length() + 1];
+				memcpy(data, str.cstr(), str.length() + 1);
+				return new IncludeResult(header.cstr(), data, str.length(), nullptr);
 			}
 		}
 		return nullptr;
 	}
 	void releaseInclude(IncludeResult* result) override
 	{
-		delete result;
+		if (result)
+		{
+			if (result->headerData)
+				delete[] result->headerData;
+			delete result;
+		}
 	}
 private:
 	std::vector<Path> m_systemDirectories;
@@ -217,9 +226,17 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	// Set define values
 	std::vector<std::string> processes;
 	std::string defs = "#extension GL_GOOGLE_include_directive : require\n";
+#if defined(AKA_USE_D3D11) && defined(AKA_ORIGIN_TOP_LEFT)
+	defs += "#define AKA_FLIP_UV\n";
+#endif
+#if defined(AKA_ORIGIN_TOP_LEFT)
+	defs += "#define AKA_ORIGIN_TOP_LEFT\n";
+#elif defined(AKA_ORIGIN_BOTTOM_LEFT)
+	defs += "#define AKA_ORIGIN_BOTTOM_LEFT\n";
+#endif
 	for (size_t i = 0; i < defineCount; i++)
 	{
-		defs += " " + std::string(defines[i]);
+		defs += "#define " + std::string(defines[i]) + " 1\n";
 		processes.push_back("D" + std::string(defines[i]));
 	}
 	shader.setPreamble(defs.c_str());

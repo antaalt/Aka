@@ -26,12 +26,12 @@ Program::Ptr Material::program()
 	return m_program;
 }
 
-void Material::set(const char* name, const Buffer::Ptr& buffer)
+void Material::set(const char* name, const Buffer::Ptr& buffer, uint32_t binding)
 {
-	set(name, &buffer, 1);
+	set(name, &buffer, 1, binding);
 }
 
-void Material::set(const char* name, const Buffer::Ptr* buffers, size_t count)
+void Material::set(const char* name, const Buffer::Ptr* buffers, size_t count, size_t offset)
 {
 	for (const Uniform& uniform : *m_program)
 	{
@@ -39,20 +39,21 @@ void Material::set(const char* name, const Buffer::Ptr* buffers, size_t count)
 			continue;
 		if (uniform.name == name)
 		{
+			AKA_ASSERT(uniform.count >= offset + count, "Invalid range");
 			for (size_t i = 0; i < count; i++)
-				m_buffers[uniform.binding + i] = buffers[i];
+				m_buffers[uniform.binding + offset + i] = buffers[i];
 			return;
 		}
 	}
 	Logger::error("Buffer not found : ", name);
 }
 
-void Material::set(const char* name, const Texture::Ptr& texture)
+void Material::set(const char* name, const Texture::Ptr& texture, uint32_t binding)
 {
-	set(name, &texture, 1);
+	set(name, &texture, 1, binding);
 }
 
-void Material::set(const char* name, const Texture::Ptr* textures, size_t count)
+void Material::set(const char* name, const Texture::Ptr* textures, size_t count, size_t offset)
 {
 	for (const Uniform& uniform : *m_program)
 	{
@@ -60,20 +61,21 @@ void Material::set(const char* name, const Texture::Ptr* textures, size_t count)
 			continue;
 		if (uniform.name == name)
 		{
+			AKA_ASSERT(uniform.count >= offset + count, "Invalid range");
 			for (size_t i = 0; i < count; i++)
-				m_textures[uniform.binding + i] = textures[i];
+				m_textures[uniform.binding + offset + i] = textures[i];
 			return;
 		}
 	}
 	Logger::error("Texture not found : ", name);
 }
 
-void Material::set(const char* name, TextureSampler sampler)
+void Material::set(const char* name, const TextureSampler& sampler, uint32_t binding)
 {
-	set(name, &sampler, 1);
+	set(name, &sampler, 1, binding);
 }
 
-void Material::set(const char* name, const TextureSampler* samplers, size_t count)
+void Material::set(const char* name, const TextureSampler* samplers, size_t count, size_t offset)
 {
 	for (const Uniform& uniform : *m_program)
 	{
@@ -81,8 +83,9 @@ void Material::set(const char* name, const TextureSampler* samplers, size_t coun
 			continue;
 		if (uniform.name == name)
 		{
+			AKA_ASSERT(uniform.count >= offset + count, "Invalid range");
 			for (size_t i = 0; i < count; i++)
-				m_samplers[uniform.binding + i] = samplers[i];
+				m_samplers[uniform.binding + offset + i] = samplers[i];
 			return;
 		}
 	}

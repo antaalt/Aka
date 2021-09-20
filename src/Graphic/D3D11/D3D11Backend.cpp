@@ -636,7 +636,10 @@ public:
 		bool hasMips = (TextureFlag::GenerateMips & flags) == TextureFlag::RenderTarget;
 
 		if (hasMips)
+		{
+			desc.MipLevels = 0;
 			desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		}
 		if (isShaderResource)
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
@@ -832,7 +835,7 @@ public:
 		desc.SampleDesc.Quality = 0;
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = D3D11_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET | D3D11_FORMAT_SUPPORT_MULTISAMPLE_LOAD;
+		desc.MiscFlags = 0;
 		desc.BindFlags = 0;
 
 		bool isShaderResource = (TextureFlag::ShaderResource & flags) == TextureFlag::ShaderResource;
@@ -840,10 +843,14 @@ public:
 		bool hasMips = (TextureFlag::GenerateMips & flags) == TextureFlag::RenderTarget;
 
 		if (hasMips)
-			desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		{
+			Logger::warn("Cannot generate mips for multisampled texture.");
+			hasMips = false;
+			flags = flags & ~TextureFlag::GenerateMips;
+		}
 
 		if (isShaderResource)
-			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_FORMAT_SUPPORT_MULTISAMPLE_LOAD;
 
 		m_d3dFormat = d3dformat(format);
 		m_component = d3dComponent(format);
@@ -851,9 +858,9 @@ public:
 		if (isRenderTarget)
 		{
 			if (isDepth(format))
-				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+				desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL | D3D11_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET;
 			else
-				desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				desc.BindFlags |= D3D11_BIND_RENDER_TARGET | D3D11_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET;
 		}
 		if (isShaderResource)
 			desc.Format = d3dShaderDataFormat(m_d3dFormat);
@@ -1009,7 +1016,10 @@ public:
 		bool hasMips = (TextureFlag::GenerateMips & flags) == TextureFlag::RenderTarget;
 
 		if (hasMips)
+		{
+			desc.MipLevels = 0;
 			desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		}
 
 		if (isShaderResource)
 			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -1077,7 +1087,7 @@ public:
 		box.back = 1;
 		dctx.deviceContext->UpdateSubresource(
 			m_texture,
-			D3D11CalcSubresource(level, layer, TextureSampler::mipLevelCount(m_width, m_height)),
+			D3D11CalcSubresource(level, layer, levels()),
 			&box,
 			data,
 			m_width * m_component,
@@ -1095,7 +1105,7 @@ public:
 		box.back = 1;
 		dctx.deviceContext->UpdateSubresource(
 			m_texture,
-			D3D11CalcSubresource(level, layer, TextureSampler::mipLevelCount(m_width, m_height)),
+			D3D11CalcSubresource(level, layer, levels()),
 			&box,
 			data,
 			m_width * m_component,
@@ -1244,6 +1254,29 @@ public:
 	}
 	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
+		// Check attachment
+		Attachment newAttachment = Attachment{ type, texture, flag, layer, level };
+		if (!valid(newAttachment))
+		{
+			Logger::error("Incompatible attachment set for framebuffer");
+			return;
+		}
+		Attachment* attachment = getAttachment(type);
+		if (attachment == nullptr)
+		{
+			m_attachments.push_back(newAttachment);
+			attachment = &m_attachments.back();
+		}
+		else
+		{
+			if (attachment->texture == texture && attachment->flag == flag && attachment->layer == layer && attachment->level == level)
+				return; // Everything already set.
+			attachment->texture = texture;
+			attachment->flag = flag;
+			attachment->layer = layer;
+			attachment->level = level;
+		}
+
 		D3D11Texture* d3dTexture = reinterpret_cast<D3D11Texture2D*>(texture.get());
 		if (type == AttachmentType::Depth || type == AttachmentType::Stencil || type == AttachmentType::DepthStencil)
 		{
@@ -1261,19 +1294,23 @@ public:
 				viewDesc.Texture2DMS.UnusedField_NothingToDefine;
 				break;
 			case TextureType::TextureCubeMap:
-				viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 				if ((AttachmentFlag::AttachTextureObject & flag) == AttachmentFlag::AttachTextureObject)
 				{
-					// use SV_RenderTargetArrayIndex
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 					viewDesc.Texture2DArray.ArraySize = 6;
 					viewDesc.Texture2DArray.FirstArraySlice = 0;
+					viewDesc.Texture2DArray.MipSlice = level;
 				}
 				else
 				{
+					viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 					viewDesc.Texture2DArray.ArraySize = 1;
 					viewDesc.Texture2DArray.FirstArraySlice = layer;
+					viewDesc.Texture2DArray.MipSlice = level;
 				}
-				viewDesc.Texture2DArray.MipSlice = level;
+				break;
+			default:
+				Logger::error("Unsupported texture type");
 				break;
 			}
 			viewDesc.Format = d3dTexture->m_d3dFormat;
@@ -1282,19 +1319,54 @@ public:
 		}
 		else
 		{
+			D3D11_RENDER_TARGET_VIEW_DESC viewDesc{};
+			switch (texture->type())
+			{
+			case TextureType::Texture2D:
+				viewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+				viewDesc.Texture2D.MipSlice = level;
+				break;
+			case TextureType::Texture2DMultisample:
+				viewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
+				viewDesc.Texture2DMS.UnusedField_NothingToDefine;
+				break;
+			case TextureType::TextureCubeMap:
+				if ((AttachmentFlag::AttachTextureObject & flag) == AttachmentFlag::AttachTextureObject)
+				{
+					viewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+					viewDesc.Texture2DArray.ArraySize = 6;
+					viewDesc.Texture2DArray.FirstArraySlice = 0;
+					viewDesc.Texture2DArray.MipSlice = level;
+				}
+				else
+				{
+					viewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+					viewDesc.Texture2DArray.ArraySize = 1;
+					viewDesc.Texture2DArray.FirstArraySlice = layer;
+					viewDesc.Texture2DArray.MipSlice = level;
+				}
+				break;
+			default:
+				Logger::error("Unsupported texture type");
+				break;
+			}
+			viewDesc.Format = d3dTexture->m_d3dFormat;
 			auto& it = m_colorViews.find(type);
 			if (it != m_colorViews.end())
 			{
 				it->second->Release();
-				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, nullptr, &it->second));
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, &viewDesc, &it->second));
 			}
 			else
 			{
 				ID3D11RenderTargetView* view = nullptr;
-				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, nullptr, &view));
+				D3D_CHECK_RESULT(dctx.device->CreateRenderTargetView(d3dTexture->m_texture, &viewDesc, &view));
 				m_colorViews.insert(std::make_pair(type, view));
 			}
 		}
+
+		// TODO Recompute size
+		//computeSize();
 	}
 	uint32_t getNumberView() const { return static_cast<uint32_t>(m_colorViews.size()); }
 	ID3D11RenderTargetView* getRenderTargetView(AttachmentType index) const {
@@ -1628,6 +1700,7 @@ public:
 		D3D11_MAP map;
 		switch (bufferMap)
 		{
+		default:
 		case BufferMap::Read:
 			map = D3D11_MAP_READ;
 			break;

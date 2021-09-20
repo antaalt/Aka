@@ -65,16 +65,17 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 #elif defined(AKA_USE_D3D11)
 	static const char* s_vertShader = ""
 		"cbuffer CameraUniformBuffer : register(b0) { float4x4 projection; float4x4 view; };\n"
-		"struct vs_out { float4 position : SV_POSITION; float3 localPosition : POSITION; };\n"
+		"struct vs_out { float4 position : SV_POSITION; float3 texcoord : TEXCOORD; };\n"
 		"vs_out main(float3 position : POSITION)\n"
 		"{\n"
 		"	vs_out output;\n"
-		"	output.localPosition = position;\n"
+		"	output.texcoord = position;\n"
 		"	output.position = mul(projection, mul(view, float4(position.x, position.y, position.z, 1.0)));\n"
+		"	output.position.y = output.position.y * -1.f;\n" // Flip position for output
 		"	return output;\n"
 		"}\n";
 	static const char* s_fragShader = ""
-		"struct vs_out { float4 position : SV_POSITION; float3 localPosition : POSITION; };\n"
+		"struct vs_out { float4 position : SV_POSITION; float3 texcoord : TEXCOORD; };\n"
 		"Texture2D    u_equirectangularMap : register(t0);\n"
 		"SamplerState u_equirectangularMapSampler : register(s0);\n"
 		"static const float2 invAtan = float2(0.1591, 0.3183);\n"
@@ -87,7 +88,8 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 		"}\n"
 		"float4 main(vs_out input) : SV_TARGET\n"
 		"{\n"
-		"	float2 uv = SampleSphericalMap(normalize(input.localPosition));\n"
+		"	float2 uv = SampleSphericalMap(normalize(input.texcoord));\n"
+		"	uv = 1.f - uv.y;\n" // flip
 		"	float3 color = u_equirectangularMap.Sample(u_equirectangularMapSampler, uv).rgb;\n"
 		"	return float4(color.x, color.y, color.z, 1.0);\n"
 		"}\n";
@@ -143,32 +145,19 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 		-1.0f, -1.0f,  1.0f,
 		1.0f, -1.0f,  1.0f
 	};
+	// TODO use quad
 	pass.submesh.mesh = Mesh::create();
-	uint32_t vertStride = sizeof(float) * 3;
-	uint32_t vertCount = sizeof(skyboxVertices) / vertStride;
-	VertexAccessor skyboxVertexInfo = {
-		VertexAttribute{ VertexSemantic::Position, VertexFormat::Float, VertexType::Vec3 },
-		VertexBufferView{
-			Buffer::create(BufferType::Vertex, sizeof(skyboxVertices), BufferUsage::Immutable, BufferCPUAccess::None, skyboxVertices),
-			0, // offset
-			sizeof(skyboxVertices), // size
-			vertStride // stride
-		},
-		0, // offset
-		vertCount // count
-	};
-	pass.submesh.mesh->upload(&skyboxVertexInfo, 1);
+	VertexAttribute cubeAttributes = { VertexSemantic::Position, VertexFormat::Float, VertexType::Vec3 };
+	pass.submesh.mesh->uploadInterleaved(&cubeAttributes, 1, &skyboxVertices, 36);
 	pass.submesh.type = PrimitiveType::Triangles;
 	pass.submesh.offset = 0;
-	pass.submesh.count = vertCount;
+	pass.submesh.count = 36;
 
 	// Setup shader
 	VertexAttribute attribute{ VertexSemantic::Position, VertexFormat::Float, VertexType::Vec3 };
-	ShaderHandle vert = Shader::compile(s_vertShader, ShaderType::Vertex);
-	ShaderHandle frag = Shader::compile(s_fragShader, ShaderType::Fragment);
-	pass.material = ShaderMaterial::create(Shader::createVertexProgram(vert, frag, &attribute, 1));
-	Shader::destroy(vert);
-	Shader::destroy(frag);
+	Shader::Ptr vert = Shader::compile(s_vertShader, ShaderType::Vertex);
+	Shader::Ptr frag = Shader::compile(s_fragShader, ShaderType::Fragment);
+	pass.material = Material::create(Program::createVertexProgram(vert, frag, &attribute, 1));
 
 	// Setup uniforms
 	struct CameraUniformBuffer {
@@ -219,6 +208,8 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 		pass.framebuffer->set(AttachmentType::Color0, cubemap, AttachmentFlag::None, i);
 		pass.execute();
 	}
+	//TextureCubeMap::Ptr cubemap2 = TextureCubeMap::create(width, height, format, flags);
+	//TextureCubeMap::copy(cubemap, cubemap2);
 	return cubemap;
 }
 

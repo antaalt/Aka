@@ -19,14 +19,14 @@ public:
 	Program::Ptr program();
 
 	// TODO use buffer handle & texture handle
-	void set(const char* name, const Buffer::Ptr& buffer);
-	void set(const char* name, const Buffer::Ptr* buffer, size_t count);
+	void set(const char* name, const Buffer::Ptr& buffer, uint32_t binding = 0);
+	void set(const char* name, const Buffer::Ptr* buffer, size_t count, size_t offset = 0);
 
-	void set(const char* name, const Texture::Ptr& texture);
-	void set(const char* name, const Texture::Ptr* texture, size_t count);
+	void set(const char* name, const Texture::Ptr& texture, uint32_t binding = 0);
+	void set(const char* name, const Texture::Ptr* texture, size_t count, size_t offset = 0);
 
-	void set(const char* name, TextureSampler sampler);
-	void set(const char* name, const TextureSampler* sampler, size_t count);
+	void set(const char* name, const TextureSampler& sampler, uint32_t binding = 0);
+	void set(const char* name, const TextureSampler* sampler, size_t count, size_t offset = 0);
 
 	// Force a specific slot for a texture
 	//void setSlot(const char* name, uint32_t slot);

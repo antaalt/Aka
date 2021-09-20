@@ -116,6 +116,7 @@ protected:
 	uint32_t m_width, m_height, m_depth;
 };
 
+TextureFlag operator~(TextureFlag value);
 TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);
 TextureFlag operator|(TextureFlag lhs, TextureFlag rhs);
 
