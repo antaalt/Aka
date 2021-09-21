@@ -40,4 +40,10 @@ BufferCPUAccess Buffer::access() const
 	return m_access;
 }
 
+
+void Buffer::copy(const Buffer::Ptr& dst)
+{
+	copy(dst, 0, 0, min(m_size, dst->m_size));
+}
+
 }

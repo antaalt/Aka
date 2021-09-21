@@ -1731,6 +1731,22 @@ public:
 	{
 		return BufferHandle((uintptr_t)m_buffer);
 	}
+
+	void copy(const Buffer::Ptr& dst, size_t offsetSRC, size_t offsetDST, size_t size) override
+	{
+		D3D11_BOX box{};
+		box.left = offsetSRC;
+		box.right = offsetSRC + size;
+		box.top = 0;
+		box.bottom = 1;
+		box.front = 0;
+		box.back = 1;
+
+		D3D11_BOX* pBox = nullptr;
+		if (offsetSRC != offsetDST)
+			pBox = &box;		
+		dctx.deviceContext->CopySubresourceRegion(reinterpret_cast<D3D11Buffer*>(dst.get())->m_buffer, 0, offsetDST, 0, 0, m_buffer, 0, pBox);
+	}
 private:
 	ID3D11Buffer* m_buffer;
 };

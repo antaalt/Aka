@@ -1297,7 +1297,17 @@ public:
 		glBindBuffer(m_glType, 0);
 	}
 
-	BufferHandle handle() const override { return BufferHandle(m_bufferID); }
+	BufferHandle handle() const override 
+	{ 
+		return BufferHandle(m_bufferID); 
+	}
+
+	void copy(const Buffer::Ptr& buffer, size_t offsetSRC, size_t offsetDST, size_t size) override
+	{
+		glBindBuffer(GL_COPY_READ_BUFFER, m_bufferID);
+		glBindBuffer(GL_COPY_WRITE_BUFFER, reinterpret_cast<GLBuffer*>(buffer.get())->m_bufferID);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, offsetSRC, offsetDST, size);
+	}
 private:
 	GLenum m_glType;
 	GLuint m_bufferID;

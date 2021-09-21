@@ -23,11 +23,13 @@ FileStream::FileStream(const Path& path, FileMode mode, FileType type) :
 	m_mode = mode;
 	fseek(m_file, 0L, SEEK_END);
 	m_length = ftell(m_file);
-	::rewind(m_file);
+ 	::rewind(m_file);
 }
 
 FileStream::~FileStream()
 {
+	if (m_file)
+		fclose(m_file);
 }
 
 void FileStream::skim(size_t size) 

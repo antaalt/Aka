@@ -37,7 +37,7 @@ Image::Image(uint32_t width, uint32_t height, uint32_t components, ImageFormat f
 	m_height(height),
 	m_components(components),
 	m_format(format),
-	m_bytes(width * height * components * ((format == ImageFormat::Float) ? sizeof(float) : 1))
+	m_bytes(width * height * components * aka::size(format))
 {
 }
 

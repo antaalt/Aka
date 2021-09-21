@@ -59,37 +59,47 @@ protected:
 	Buffer& operator=(const Buffer&) = delete;
 	virtual ~Buffer();
 public:
+	// Create a buffer
 	static Buffer::Ptr create(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
 
+	// Get the buffer type
 	BufferType type() const;
-
+	// Get the buffer size
 	size_t size() const;
-
+	// Get the buffer usage
 	BufferUsage usage() const;
-
+	// Get the buffer access for CPU
 	BufferCPUAccess access() const;
 
+	// Reallocate the buffer memory
 	virtual void reallocate(size_t size, const void* data = nullptr) = 0;
-
+	// Upload partial data to the buffer
 	virtual void upload(const void* data, size_t size, size_t offset = 0) = 0;
-
+	// Upload data to the whole buffer
 	virtual void upload(const void* data) = 0;
-
+	// Download partial data from buffer
 	virtual void download(void* data, size_t size, size_t offset = 0) = 0;
-
+	// Download data from whole buffer
 	virtual void download(void* data) = 0;
 
+	// Map the buffer on CPU
 	virtual void* map(BufferMap map) = 0;
-
+	// Unmap the buffer
 	virtual void unmap() = 0;
 
+	// Get a native handle to the buffer
 	virtual BufferHandle handle() const = 0;
 
+	// Copy the buffer to another buffer
+	void copy(const Buffer::Ptr& dst);
+	// Copy a partial buffer to another buffer
+	virtual void copy(const Buffer::Ptr& dst, size_t offsetSRC, size_t offsetDST, size_t size) = 0;
+
 protected:
-	size_t m_size;
-	BufferType m_type;
-	BufferUsage m_usage;
-	BufferCPUAccess m_access;
+	size_t m_size; // Size of the buffer
+	BufferType m_type; // Type of the buffer
+	BufferUsage m_usage; // Usage of the buffer for memory
+	BufferCPUAccess m_access; // Access of the buffer on the CPU
 };
 
 struct SubBuffer {
