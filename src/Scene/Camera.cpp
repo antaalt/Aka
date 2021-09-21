@@ -11,7 +11,7 @@ mat4f CameraPerspective::projection() const
 
 mat4f CameraOrthographic::projection() const
 {
-	return mat4f::orthographic(0, viewport.y, 0, viewport.x);
+	return mat4f::orthographic(bottom, top, left, right, nearZ, farZ);
 }
 
 bool CameraArcball::update(Time::Unit deltaTime)

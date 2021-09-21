@@ -171,11 +171,7 @@ void Batch2D::initialize()
 	};
 	Shader::Ptr vert = Shader::compile(vertShader, ShaderType::Vertex);
 	Shader::Ptr frag = Shader::compile(fragShader, ShaderType::Fragment);
-	m_program = Program::createVertexProgram(
-		Shader::compile(vertShader, ShaderType::Vertex),
-		Shader::compile(fragShader, ShaderType::Fragment),
-		att.data(), att.size()
-	);
+	m_program = Program::createVertexProgram(vert, frag, att.data(), att.size());
 	m_material = Material::create(m_program);
 
 	m_uniformBuffer = Buffer::create(BufferType::Uniform, sizeof(mat4f), BufferUsage::Default, BufferCPUAccess::None);
@@ -309,7 +305,7 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 			},
 			VertexAccessor{
 				VertexAttribute{ VertexSemantic::Color0, VertexFormat::Float, VertexType::Vec4 },
-				VertexBufferView { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)) },
+				VertexBufferView { m_vertexBuffer, 0, static_cast<uint32_t>(m_vertices.size() * sizeof(Vertex)), sizeof(Vertex) },
 				offsetof(Vertex, color), static_cast<uint32_t>(m_vertices.size())
 			},
 		} };
@@ -336,11 +332,21 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 		return lhs.layer < rhs.layer;
 	});
 
+	const TextureSampler sampler = {  // TODO do not force nearest
+	   TextureFilter::Nearest,
+	   TextureFilter::Nearest,
+	   TextureMipMapMode::None,
+	   TextureWrap::ClampToEdge,
+	   TextureWrap::ClampToEdge,
+	   TextureWrap::ClampToEdge,
+	   1.f
+	};
 	// Draw the batches
 	for (const DrawBatch &batch : m_batches)
 	{
+
 		// TODO draw instanced & pass model matrix, textures & offset / count.
-		m_material->set("u_texture", TextureSampler::nearest); // TODO do not force nearest
+		m_material->set("u_texture", sampler);
 		m_material->set("u_texture", batch.texture ? batch.texture : m_defaultTexture);
 		m_pass.submesh.count = batch.indexCount;
 		m_pass.submesh.offset = batch.indexOffset;

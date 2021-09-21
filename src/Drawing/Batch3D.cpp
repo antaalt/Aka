@@ -163,11 +163,7 @@ void Batch3D::initialize()
 	};
 	Shader::Ptr vert = Shader::compile(vertShader, ShaderType::Vertex);
 	Shader::Ptr frag = Shader::compile(fragShader, ShaderType::Fragment);
-	m_program = Program::createVertexProgram(
-		vert,
-		frag,
-		att.data(), att.size()
-	);
+	m_program = Program::createVertexProgram(vert, frag, att.data(), att.size());
 	m_material = Material::create(m_program);
 
 	m_uniformBuffer = Buffer::create(BufferType::Uniform, sizeof(mat4f), BufferUsage::Default, BufferCPUAccess::None);

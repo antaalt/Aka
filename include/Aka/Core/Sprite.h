@@ -14,12 +14,12 @@ namespace aka {
 struct Sprite {
 	struct Frame {
 		// TODO use subtexture with atlas
-		Texture::Ptr texture = nullptr;
+		Texture2D::Ptr texture = nullptr;
 		Time::Unit duration = Time::Unit();
 		uint32_t width = 0;
 		uint32_t height = 0;
 
-		static Frame create(Texture::Ptr texture, Time::Unit duration)
+		static Frame create(Texture2D::Ptr texture, Time::Unit duration)
 		{ 
 			Frame frame; 
 			frame.texture = texture; 

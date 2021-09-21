@@ -38,7 +38,8 @@ struct CameraOrthographic : CameraProjection
 {
 	mat4f projection() const override;
 
-	vec2f viewport;
+	float left, right, bottom, top;
+	float nearZ, farZ;
 };
 
 
