@@ -1167,9 +1167,6 @@ public:
 			}*/
 			}
 		}
-		//GLint maxTextureUnits = -1;
-		//glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
-		//AKA_ASSERT(textureUnit <= maxTextureUnits, "Cannot handle so many textures in a single pass.");
 	}
 };
 
@@ -1662,6 +1659,7 @@ struct GLContext
 {
 	std::shared_ptr<GLBackBuffer> backbuffer = nullptr;
 	bool vsync = true;
+	GraphicDeviceFeatures features = {};
 };
 
 static GLContext gctx;
@@ -1694,6 +1692,28 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 		Logger::warn("[GL] glDebugMessageCallback not supported");
 #endif
 	gctx.backbuffer = std::make_shared<GLBackBuffer>(width, height);
+
+	// Features
+	auto getUnsignedInteger = [](GLenum pname) -> uint32_t {
+		GLint max = -1;
+		glGetIntegerv(pname, &max);
+		return (max == -1 ? 0 : max);
+	};
+	// We are using OpenGL 3.3 in this backend.
+	gctx.features.api = GraphicApi::OpenGL;
+	gctx.features.version.major = 3;
+	gctx.features.version.minor = 3;
+	gctx.features.profile = 330;
+
+	gctx.features.maxTextureUnits = getUnsignedInteger(GL_MAX_TEXTURE_IMAGE_UNITS);
+	gctx.features.maxTextureSize = getUnsignedInteger(GL_MAX_TEXTURE_SIZE);
+	gctx.features.maxColorAttachments = getUnsignedInteger(GL_MAX_COLOR_ATTACHMENTS);
+	gctx.features.maxElementIndices = getUnsignedInteger(GL_MAX_ELEMENTS_INDICES);
+	gctx.features.maxElementVertices = getUnsignedInteger(GL_MAX_ELEMENTS_VERTICES);
+	gctx.features.coordinates.clipSpacePositive = false; // GL clip space is [-1, 1]
+	gctx.features.coordinates.originTextureBottomLeft = true; // GL start reading texture at bottom left.
+	gctx.features.coordinates.originUVBottomLeft = true; // GL UV origin is bottom left
+	gctx.features.coordinates.renderAxisYUp = true; // GL render axis y is up
 }
 
 void GraphicBackend::destroy()
@@ -1705,7 +1725,12 @@ void GraphicBackend::destroy()
 
 GraphicApi GraphicBackend::api()
 {
-	return GraphicApi::OpenGL;
+	return gctx.features.api;
+}
+
+const GraphicDeviceFeatures& GraphicBackend::features()
+{
+	return gctx.features;
 }
 
 void GraphicBackend::frame()

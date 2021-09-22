@@ -67,6 +67,8 @@ struct D3D11Context
 	ID3D11Device* device = nullptr;
 	ID3D11DeviceContext* deviceContext = nullptr;
 
+	GraphicDeviceFeatures features = {};
+
 	void log()
 	{
 		UINT64 messageCount = debugInfoQueue->GetNumStoredMessages();
@@ -2016,6 +2018,7 @@ public:
 				polygonLayout[i].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				polygonLayout[i].InstanceDataStepRate = 0;
 			}
+			// TODO cache layout
 			D3D_CHECK_RESULT(dctx.device->CreateInputLayout(
 				polygonLayout.data(),
 				(UINT)polygonLayout.size(),
@@ -2393,6 +2396,23 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	D3D_CHECK_RESULT(dctx.debugInfoQueue->PushEmptyStorageFilter());
 #endif
 	s_backbuffer = std::make_shared<D3D11BackBuffer>(width, height, dctx.swapchain.swapChain);
+
+	// We are using DirectX11 in this backend.
+	dctx.features.api = GraphicApi::DirectX11;
+	dctx.features.version.major = 11;
+	dctx.features.version.minor = 0;
+	dctx.features.profile = 50;
+	// D3D11_COMMONSHADER_CONSTANT_BUFFER_HW_SLOT_COUNT 
+	// D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT 
+	dctx.features.maxTextureUnits = D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+	dctx.features.maxTextureSize = D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+	dctx.features.maxColorAttachments = 0; // ?
+	dctx.features.maxElementIndices = 0; // ?
+	dctx.features.maxElementVertices =  0; // ?
+	dctx.features.coordinates.clipSpacePositive = true; // D3D11 clip space is [0, 1]
+	dctx.features.coordinates.originTextureBottomLeft = false; // D3D11 start reading texture at top left.
+	dctx.features.coordinates.originUVBottomLeft = false; // D3D11 UV origin is top left
+	dctx.features.coordinates.renderAxisYUp = true; // D3D11 render axis y is up
 }
 
 void GraphicBackend::destroy()
@@ -2433,7 +2453,12 @@ void GraphicBackend::destroy()
 
 GraphicApi GraphicBackend::api()
 {
-	return GraphicApi::DirectX11;
+	return dctx.features.api;
+}
+
+const GraphicDeviceFeatures& GraphicBackend::features()
+{
+	return dctx.features;
 }
 
 void GraphicBackend::frame()

@@ -19,11 +19,57 @@ struct ID3D11DeviceContext;
 
 namespace aka {
 
-class Window;
-
-enum class GraphicApi {
+enum class GraphicApi 
+{
+	None,
 	OpenGL,
 	DirectX11,
+};
+
+// Specific api coordinates that might affect external code.
+struct GraphicCoordinates
+{
+	// Is origin of texture bottom left or top left.
+	// Textures data must be flipped at loading if originTextureBottomLeft is true.
+	// This need to be respected to be render target compatible.
+	// D3D / Metal / Consoles origin is top left
+	// OpenGL / OpenGL ES origin is bottom left
+	bool originTextureBottomLeft; 
+
+	// Is UV (0, 0) bottom left or top left (pixel space coordinate).
+	// UV of models must be flipped if originUVBottomLeft is false.
+	// This need to be respected to be render target compatible.
+	bool originUVBottomLeft;
+
+	// Is clip space between [0, 1] or [-1, 1]
+	// This affect mostly projection matrix which are responsible of changing view space to clip space.
+	bool clipSpacePositive;
+
+	// Is render Y Axis up
+	// This affect mostly projection matrix which are responsible of changing view space to clip space
+	// Vulkan is false, others are true
+	bool renderAxisYUp;
+
+	// Graphics math conventions is up to the dev (left-handed vs right-handed, column-major vs row-major...)
+};
+
+struct GraphicDeviceFeatures
+{
+	GraphicApi api; // Current API
+	struct 
+	{
+		uint32_t major; // Major version of the API
+		uint32_t minor; // Minor version of the API
+	} version;
+	uint32_t profile; // Profile version of API shader
+
+	uint32_t maxColorAttachments; // Max number of color attachments for framebuffer
+	uint32_t maxElementIndices; // Max number of indices for index buffer
+	uint32_t maxElementVertices; // Max number of vertices for vertex buffer
+	uint32_t maxTextureUnits; // Max number of textures bound at same time
+	uint32_t maxTextureSize; // Maximum size of a single texture
+
+	GraphicCoordinates coordinates;
 };
 
 class GraphicBackend {
@@ -34,6 +80,8 @@ class GraphicBackend {
 public:
 	// Get the current API
 	static GraphicApi api();
+	// Get the current API
+	static const GraphicDeviceFeatures& features();
 	// Initialize the graphic API
 	static void initialize(uint32_t width, uint32_t height);
 	// Destroy the graphic API
@@ -50,7 +98,7 @@ public:
 	// Dispatch a compute pass
 	static void dispatch(ComputePass& computePass);
 	// Take a screenshot
-	static void screenshot(const Path& path);
+	static void screenshot(const Path& path); // TODO move to backbuffer ?
 	// Set the vsync
 	static void vsync(bool enabled);
 public:
