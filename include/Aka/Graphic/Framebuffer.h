@@ -68,10 +68,6 @@ public:
 
 	// Clear the framebuffer
 	virtual void clear(const color4f& color, float depth = 1.f, int stencil = 1, ClearMask mask = ClearMask::All) = 0;
-	// Blit a whole framebuffer into another one
-	void blit(Framebuffer::Ptr src, AttachmentType type, TextureFilter filter);
-	// Blit a framebuffer region into another one
-	virtual void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) = 0;
 
 	// Get the framebuffer attachment
 	Attachment* getAttachment(AttachmentType type);

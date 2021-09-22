@@ -7,6 +7,7 @@
 #include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/Material.h>
 #include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/Backbuffer.h>
 #include <Aka/Graphic/Buffer.h>
 #include <Aka/Graphic/Mesh.h>
 #include <Aka/Graphic/RenderPass.h>
@@ -92,7 +93,7 @@ public:
 	// Present the frame
 	static void present();
 	// Get the backbuffer
-	static Framebuffer::Ptr backbuffer();
+	static Backbuffer::Ptr backbuffer();
 	// Render a render pass
 	static void render(RenderPass& renderPass);
 	// Dispatch a compute pass
@@ -101,6 +102,11 @@ public:
 	static void screenshot(const Path& path); // TODO move to backbuffer ?
 	// Set the vsync
 	static void vsync(bool enabled);
+public:
+	// Copy the whole texture to destination texture
+	static void copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST);
+	// Copy a texture
+	static void blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter);
 public:
 #if defined(AKA_USE_D3D11)
 	// Get D3D11 device

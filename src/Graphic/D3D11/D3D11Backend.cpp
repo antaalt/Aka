@@ -608,6 +608,8 @@ struct D3D11Texture
 	ID3D11ShaderResourceView* m_view;
 	DXGI_FORMAT m_d3dFormat;
 	uint32_t m_component;
+
+	static D3D11Texture* convert(const Texture::Ptr& texture);
 };
 
 class D3D11Texture2D : public Texture2D, public D3D11Texture
@@ -767,41 +769,6 @@ public:
 		D3D_CHECK_RESULT(dctx.deviceContext->Map(m_staging, 0, D3D11_MAP_READ, 0, &map));
 		memcpy(data, map.pData, m_width * m_height * 4);
 		dctx.deviceContext->Unmap(m_staging, 0);*/
-	}
-
-	void copy(const Texture2D::Ptr& dst, const Rect& rectSRC, const Rect& rectDST, uint32_t level) override
-	{
-		AKA_ASSERT(dst->format() == this->format(), "Invalid format");
-		AKA_ASSERT(rectDST.x + rectDST.w <= dst->width() && rectDST.y + rectDST.h <= dst->height(), "Rect not in range");
-		AKA_ASSERT(rectSRC.x + rectSRC.w <= this->width() && rectSRC.y + rectSRC.h <= this->height(), "Rect not in range");
-		AKA_ASSERT(rectSRC.w == rectDST.w && rectSRC.h == rectDST.h, "Rect size invalid.");
-
-		D3D11_BOX box{};
-		box.left = rectSRC.x;
-		box.right = rectSRC.x + rectSRC.w;
-		box.top = rectSRC.y;
-		box.bottom = rectSRC.y + rectSRC.h;
-		box.front = 0;
-		box.back = 1;
-
-		D3D11_BOX* pBox = nullptr;
-		if (rectSRC.w != m_width || rectSRC.h != m_height)
-			pBox = &box;
-
-		dctx.deviceContext->CopySubresourceRegion(
-			reinterpret_cast<D3D11Texture2D*>(dst.get())->m_texture, level,
-			rectDST.x, rectDST.y, 0,
-			m_texture, level,
-			pBox
-		);
-		if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
-			dst->generateMips();
-	}
-	void blit(const Texture2D::Ptr& dst, const Rect& rectSRC, const Rect& rectDST, TextureFilter filter, uint32_t level) override
-	{
-		// For now, simply copy.
-		// TODO Write a shader pass to blit the texture.
-		this->copy(dst, rectSRC, rectDST, level);
 	}
 	TextureHandle handle() const override
 	{
@@ -1166,6 +1133,21 @@ public:
 	}
 };
 
+D3D11Texture* D3D11Texture::convert(const Texture::Ptr& texture)
+{
+	switch (texture->type())
+	{
+	case TextureType::Texture2D:
+		return reinterpret_cast<D3D11Texture2D*>(texture.get());
+	case TextureType::TextureCubeMap:
+		return reinterpret_cast<D3D11TextureCubeMap*>(texture.get());
+	case TextureType::Texture2DMultisample:
+		return reinterpret_cast<D3D11Texture2DMultisample*>(texture.get());
+	default:
+		return nullptr;
+	}
+}
+
 class D3D11Framebuffer : public Framebuffer
 {
 public:
@@ -1234,25 +1216,6 @@ public:
 			flag |= D3D11_CLEAR_STENCIL;
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
-	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
-	{
-		Texture::Ptr srcTexture = src->get(type);
-		Texture::Ptr dstTexture = this->get(type);
-		if (srcTexture == nullptr || dstTexture == nullptr)
-		{
-			Logger::error("Missing attachment type.");
-			return;
-		}
-		if (srcTexture->format() != dstTexture->format())
-		{
-			// TODO write a shader to handle this
-			Logger::error("Different format blitting not supported");
-			return;
-		}
-		D3D11Texture* srcD3DTexture = reinterpret_cast<D3D11Texture2D*>(srcTexture.get());
-		D3D11Texture* dstD3DTexture = reinterpret_cast<D3D11Texture2D*>(dstTexture.get());
-		dctx.deviceContext->CopyResource(dstD3DTexture->m_texture, srcD3DTexture->m_texture);
 	}
 	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
@@ -1491,54 +1454,6 @@ public:
 		if (m_depthStencilView != nullptr && flag != 0)
 			dctx.deviceContext->ClearDepthStencilView(m_depthStencilView, flag, depth, stencil);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
-	{
-		ID3D11Texture2D* srcResource = nullptr;
-		ID3D11Texture2D* dstResource = nullptr;
-		ID3D11Texture2D* swapChainBuffer = nullptr;
-		Texture::Ptr srcTexture = src->get(type);
-		if (srcTexture == nullptr)
-		{
-			Logger::error("Missing attachment type.");
-			return;
-		}
-		D3D11Texture* srcD3DTexture = reinterpret_cast<D3D11Texture2D*>(srcTexture.get());
-		srcResource = srcD3DTexture->m_texture;
-		switch (type)
-		{
-		case AttachmentType::Color0:
-		case AttachmentType::Color1:
-		case AttachmentType::Color2:
-		case AttachmentType::Color3:
-			if (srcTexture->format() != TextureFormat::RGBA8U)
-			{
-				// TODO write a shader to handle this
-				Logger::error("Different format blitting not supported.");
-				return;
-			}
-			D3D_CHECK_RESULT(m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapChainBuffer));
-			dstResource = swapChainBuffer;
-			break;
-		case AttachmentType::Depth:
-		case AttachmentType::Stencil:
-		case AttachmentType::DepthStencil:
-			if (srcTexture->format() != TextureFormat::Depth24Stencil8 && srcTexture->format() != TextureFormat::DepthStencil)
-			{
-				Logger::error("Different depth format blitting not supported.");
-				return;
-			}
-			dstResource = m_depthStencilBuffer;
-			break;
-		}
-		if (dstResource == nullptr)
-		{
-			Logger::error("Swapchain target is null.");
-			return;
-		}
-		dctx.deviceContext->CopyResource(dstResource, srcResource);
-		if (swapChainBuffer)
-			swapChainBuffer->Release();
-	}
 	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
 		Logger::error("Cannot set attachment of backbuffer");
@@ -1551,6 +1466,7 @@ public:
 	}
 	ID3D11RenderTargetView* getRenderTargetView() const { return m_renderTargetView; }
 	ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView; }
+	ID3D11Texture2D* getDepthStencilBuffer() const { return m_depthStencilBuffer; } // TODO make it attachment
 private:
 	IDXGISwapChain* m_swapChain;
 	ID3D11RenderTargetView* m_renderTargetView;
@@ -1737,8 +1653,8 @@ public:
 	void copy(const Buffer::Ptr& dst, size_t offsetSRC, size_t offsetDST, size_t size) override
 	{
 		D3D11_BOX box{};
-		box.left = offsetSRC;
-		box.right = offsetSRC + size;
+		box.left = (UINT)offsetSRC;
+		box.right = (UINT)offsetSRC + (UINT)size;
 		box.top = 0;
 		box.bottom = 1;
 		box.front = 0;
@@ -1747,7 +1663,7 @@ public:
 		D3D11_BOX* pBox = nullptr;
 		if (offsetSRC != offsetDST)
 			pBox = &box;		
-		dctx.deviceContext->CopySubresourceRegion(reinterpret_cast<D3D11Buffer*>(dst.get())->m_buffer, 0, offsetDST, 0, 0, m_buffer, 0, pBox);
+		dctx.deviceContext->CopySubresourceRegion(reinterpret_cast<D3D11Buffer*>(dst.get())->m_buffer, 0, (UINT)offsetDST, 0, 0, m_buffer, 0, pBox);
 	}
 private:
 	ID3D11Buffer* m_buffer;
@@ -2651,6 +2567,274 @@ void GraphicBackend::screenshot(const Path& path)
 void GraphicBackend::vsync(bool enabled)
 {
 	dctx.swapchain.vsync = enabled;
+}
+
+void GraphicBackend::copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST)
+{
+	AKA_ASSERT(src->format() == dst->format(), "Invalid format");
+	AKA_ASSERT(regionSRC.x + regionSRC.width <= src->width() && regionSRC.y + regionSRC.height <= src->height(), "Region not in range.");
+	AKA_ASSERT(regionDST.x + regionDST.width <= dst->width() && regionDST.y + regionDST.height <= dst->height(), "Region not in range.");
+	AKA_ASSERT(regionSRC.width == regionDST.width && regionSRC.height == regionDST.height, "Region size invalid.");
+	
+	D3D11_BOX box{};
+	box.left = regionSRC.x;
+	box.right = regionSRC.x + regionSRC.width;
+	box.top = regionSRC.y;
+	box.bottom = regionSRC.y + regionSRC.height;
+	box.front = 0;
+	box.back = 1;
+
+	D3D11_BOX* pBox = nullptr;
+	if (regionSRC.width != regionDST.width || regionSRC.height != regionDST.height)
+		pBox = &box;
+
+	D3D11Texture* srcTexture = D3D11Texture::convert(src);
+	D3D11Texture* dstTexture = D3D11Texture::convert(dst);
+	dctx.deviceContext->CopySubresourceRegion(
+		dstTexture->m_texture, regionDST.level,
+		regionDST.x, regionDST.y, 0,
+		srcTexture->m_texture, regionSRC.level,
+		pBox
+	);
+	if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
+		dst->generateMips();
+}
+
+void blitColor(const Texture::Ptr& src, const Framebuffer::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
+{
+	const char* vertShader = ""
+		"struct vs_out { float4 position : SV_POSITION; float3 texcoord : TEXCOORD; };\n"
+		"vs_out main(float2 position : POSITION) : TEXCOORD0\n"
+		"{\n"
+		"	vs_out output;\n"
+		"	output.texcoord = position * 0.5 + 0.5;\n"
+		"	output.texcoord.y = 1.f - output.texcoord.y;\n"
+		"	output.position = float4(position.x, position.y, 0.0, 1.0);\n"
+		"}\n";
+	const char* fragShader = ""
+		"struct vs_out { float4 position : SV_POSITION; float3 texcoord : TEXCOORD; };\n"
+		"Texture2D    u_input : register(t0);\n"
+		"SamplerState u_inputSampler : register(s0);\n"
+		"float4 main(vs_out input) : SV_Target\n"
+		"{\n"
+		"	return u_input.Sample(u_inputSampler, input.texcoord);\n"
+		"}\n";
+	RenderPass pass;
+	pass.framebuffer = dst;
+
+	// Setup quad mesh
+	float quadVertices[] = {
+		-1.f, -1.f, // bottom left corner
+		 1.f, -1.f, // bottom right corner
+		 1.f,  1.f, // top right corner
+		-1.f,  1.f, // top left corner
+	};
+	uint16_t quadIndices[] = { 0,1,2,0,2,3 };
+	VertexAttribute quadAttributes = VertexAttribute{ VertexSemantic::Position, VertexFormat::Float, VertexType::Vec2 };
+	pass.submesh.mesh = Mesh::create();
+	pass.submesh.mesh->uploadInterleaved(&quadAttributes, 1, quadVertices, 4, IndexFormat::UnsignedShort, quadIndices, 6);
+	pass.submesh.type = PrimitiveType::Triangles;
+	pass.submesh.offset = 0;
+	pass.submesh.count = 6;
+	pass.material = Material::create(Program::createVertexProgram(
+		Shader::compile(vertShader, ShaderType::Vertex),
+		Shader::compile(fragShader, ShaderType::Fragment),
+		&quadAttributes, 1
+	));
+	pass.clear = Clear{ ClearMask::Color | ClearMask::Depth, color4f(0.f), 1.f, 0 };
+	pass.blend = Blending::none;
+	pass.cull = Culling::none;
+	pass.depth = Depth::none;
+	pass.stencil = Stencil::none;
+	pass.scissor = Rect{ 0 };
+	pass.viewport = Rect{ regionDST.x, regionDST.y, regionDST.width, regionDST.height };
+
+	// Setup textures
+	TextureSampler sampler;
+	sampler.filterMin = filter;
+	sampler.filterMag = filter;
+	sampler.mipmapMode = TextureMipMapMode::None;
+	sampler.wrapU = TextureWrap::ClampToEdge;
+	sampler.wrapV = TextureWrap::ClampToEdge;
+	sampler.wrapW = TextureWrap::ClampToEdge;
+	sampler.anisotropy = 1.f;
+
+	pass.material->set("u_input", sampler);
+	pass.material->set("u_input", src);
+
+	pass.execute();
+}
+
+void blitDepth(const Texture::Ptr& src, const Framebuffer::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
+{
+	const char* vertShader = ""
+		"struct vs_out { float4 position : SV_POSITION; float3 texcoord : TEXCOORD; };\n"
+		"vs_out main(float2 position : POSITION) : TEXCOORD0\n"
+		"{\n"
+		"	vs_out output;\n"
+		"	output.texcoord = position * 0.5 + 0.5;\n"
+		"	output.texcoord.y = 1.f - output.texcoord.y;\n"
+		"	output.position = float4(position.x, position.y, 0.0, 1.0);\n"
+		"}\n";
+	const char* fragShader = ""
+		"struct vs_out { float4 position : SV_POSITION; float3 texcoord : TEXCOORD; };\n"
+		"Texture2D    u_input : register(t0);\n"
+		"SamplerState u_inputSampler : register(s0);\n"
+		"float main(vs_out input) : SV_Depth\n"
+		"{\n"
+		"	return u_input.Sample(u_inputSampler, input.texcoord).x;\n"
+		"}\n";
+	RenderPass pass;
+	pass.framebuffer = dst;
+
+	// Setup quad mesh
+	float quadVertices[] = {
+		-1.f, -1.f, // bottom left corner
+		 1.f, -1.f, // bottom right corner
+		 1.f,  1.f, // top right corner
+		-1.f,  1.f, // top left corner
+	};
+	uint16_t quadIndices[] = { 0,1,2,0,2,3 };
+	VertexAttribute quadAttributes = VertexAttribute{ VertexSemantic::Position, VertexFormat::Float, VertexType::Vec2 };
+	pass.submesh.mesh = Mesh::create();
+	pass.submesh.mesh->uploadInterleaved(&quadAttributes, 1, quadVertices, 4, IndexFormat::UnsignedShort, quadIndices, 6);
+	pass.submesh.type = PrimitiveType::Triangles;
+	pass.submesh.offset = 0;
+	pass.submesh.count = 6;
+	pass.material = Material::create(Program::createVertexProgram(
+		Shader::compile(vertShader, ShaderType::Vertex),
+		Shader::compile(fragShader, ShaderType::Fragment),
+		&quadAttributes, 1
+	));
+	pass.clear = Clear{ ClearMask::Color | ClearMask::Depth, color4f(0.f), 1.f, 0 };
+	pass.blend = Blending::none;
+	pass.cull = Culling::none;
+	pass.depth = Depth::none;
+	pass.stencil = Stencil::none;
+	pass.scissor = Rect{ 0 };
+	pass.viewport = Rect{ regionDST.x, regionDST.y, regionDST.width, regionDST.height };
+
+	// Setup textures
+	TextureSampler sampler;
+	sampler.filterMin = filter;
+	sampler.filterMag = filter;
+	sampler.mipmapMode = TextureMipMapMode::None;
+	sampler.wrapU = TextureWrap::ClampToEdge;
+	sampler.wrapV = TextureWrap::ClampToEdge;
+	sampler.wrapW = TextureWrap::ClampToEdge;
+	sampler.anisotropy = 1.f;
+
+	pass.material->set("u_input", sampler);
+	pass.material->set("u_input", src);
+
+	pass.execute();
+}
+
+void blitDepthStencil(const Texture::Ptr& src, const Framebuffer::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
+{
+	// TODO draw on quad to ?
+	Texture::Ptr dstTex = dst->get(AttachmentType::DepthStencil);
+	AKA_ASSERT(src->format() == dstTex->format(), "Invalid format");
+	AKA_ASSERT(regionSRC.x + regionSRC.width <= src->width() && regionSRC.y + regionSRC.height <= src->height(), "Region not in range.");
+	AKA_ASSERT(regionDST.x + regionDST.width <= dst->width() && regionDST.y + regionDST.height <= dst->height(), "Region not in range.");
+	AKA_ASSERT(regionSRC.width == regionDST.width && regionSRC.height == regionDST.height, "Region size invalid.");
+
+	D3D11_BOX box{};
+	box.left = regionSRC.x;
+	box.right = regionSRC.x + regionSRC.width;
+	box.top = regionSRC.y;
+	box.bottom = regionSRC.y + regionSRC.height;
+	box.front = 0;
+	box.back = 1;
+
+	D3D11_BOX* pBox = nullptr;
+	if (regionSRC.width != regionDST.width || regionSRC.height != regionDST.height)
+		pBox = &box;
+	D3D11Texture* srcTexture = D3D11Texture::convert(src);
+	D3D11Texture* dstTexture = D3D11Texture::convert(dstTex);
+	dctx.deviceContext->CopySubresourceRegion(
+		dstTexture->m_texture, regionDST.level,
+		regionDST.x, regionDST.y, 0,
+		srcTexture->m_texture, regionSRC.level,
+		pBox
+	);
+}
+
+void GraphicBackend::blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
+{
+	if (src->format() == dst->format() && regionSRC.width == regionDST.width && regionSRC.height == regionDST.height)
+	{
+		GraphicBackend::copy(src, dst, regionSRC, regionDST);
+	}
+	else
+	{
+		if (isDepthStencil(src->format()))
+		{
+			AKA_ASSERT(isDepthStencil(dst->format()), "");
+			Attachment attachment = Attachment{ AttachmentType::DepthStencil, dst, AttachmentFlag::None, regionDST.layer, regionDST.level };
+			Framebuffer::Ptr framebuffer = Framebuffer::create(&attachment, 1);
+			blitDepthStencil(src, framebuffer, regionSRC, regionDST, filter);
+		}
+		else if (isDepth(src->format()))
+		{
+			AKA_ASSERT(isDepth(dst->format()), "");
+			Attachment attachment = Attachment{ AttachmentType::Depth, dst, AttachmentFlag::None, regionDST.layer, regionDST.level };
+			Framebuffer::Ptr framebuffer = Framebuffer::create(&attachment, 1);
+			blitDepth(src, framebuffer, regionSRC, regionDST, filter);
+		}
+		else
+		{
+			Attachment attachment = Attachment{ AttachmentType::Color0, dst, AttachmentFlag::None, regionDST.layer, regionDST.level };
+			Framebuffer::Ptr framebuffer = Framebuffer::create(&attachment, 1);
+			blitColor(src, framebuffer, regionSRC, regionDST, filter);
+		}
+	}
+}
+
+void GraphicBackend::blitToBackbuffer(const Texture::Ptr& src, TextureFilter filter)
+{
+	TextureRegion regionSRC{ 0, 0, src->width(), src->height(), 0, 0 };
+	TextureRegion regionDST{ 0, 0, s_backbuffer->width(), s_backbuffer->height(), 0, 0 };
+	blitToBackbuffer(src, regionSRC, regionDST, filter);
+}
+
+void GraphicBackend::blitToBackbuffer(const Texture::Ptr& src, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
+{
+	if (isDepthStencil(src->format()))
+	{
+		AKA_ASSERT(src->format() == TextureFormat::Depth24Stencil8 || src->format() == TextureFormat::DepthStencil, "Invalid format");
+		AKA_ASSERT(regionSRC.x + regionSRC.width <= src->width() && regionSRC.y + regionSRC.height <= src->height(), "Region not in range.");
+		AKA_ASSERT(regionDST.x + regionDST.width <= s_backbuffer->width() && regionDST.y + regionDST.height <= s_backbuffer->height(), "Region not in range.");
+		AKA_ASSERT(regionSRC.width == regionDST.width && regionSRC.height == regionDST.height, "Region size invalid.");
+
+		D3D11_BOX box{};
+		box.left = regionSRC.x;
+		box.right = regionSRC.x + regionSRC.width;
+		box.top = regionSRC.y;
+		box.bottom = regionSRC.y + regionSRC.height;
+		box.front = 0;
+		box.back = 1;
+
+		D3D11_BOX* pBox = nullptr;
+		if (regionSRC.width != regionDST.width || regionSRC.height != regionDST.height)
+			pBox = &box;
+
+		D3D11Texture* srcTexture = D3D11Texture::convert(src);
+		dctx.deviceContext->CopySubresourceRegion(
+			s_backbuffer->getDepthStencilBuffer(), regionDST.level,
+			regionDST.x, regionDST.y, 0,
+			srcTexture->m_texture, regionSRC.level,
+			pBox
+		);
+	}
+	else if (isDepth(src->format()))
+	{
+		blitDepth(src, s_backbuffer, regionSRC, regionDST, filter);
+	}
+	else
+	{
+		blitColor(src, s_backbuffer, regionSRC, regionDST, filter);
+	}
 }
 
 ID3D11Device* GraphicBackend::getD3D11Device()

@@ -39,8 +39,6 @@ public:
 	virtual void upload(const void* data, uint32_t layer, uint32_t level = 0) = 0;
 	// Download the layer of the cube map
 	virtual void download(void* data, uint32_t layer, uint32_t level = 0) = 0;
-	// Copy the texture to dst texture
-	//virtual void copy(TextureCubeMap::Ptr dst, const Rect& rect) = 0;
 };
 
 };

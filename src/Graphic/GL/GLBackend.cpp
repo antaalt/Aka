@@ -596,63 +596,6 @@ public:
 		glBindTexture(GL_TEXTURE_2D, m_textureID);
 		glGetTexImage(GL_TEXTURE_2D, level, gl::component(m_format), gl::format(m_format), data);
 	}
-	void copy(const Texture2D::Ptr& dst, const Rect& rectSRC, const Rect& rectDST, uint32_t level) override
-	{
-		AKA_ASSERT(dst->format() == this->format(), "Invalid format");
-		AKA_ASSERT(rectDST.x + rectDST.w <= dst->width() && rectDST.y + rectDST.h <= dst->height(), "Rect not in range.");
-		AKA_ASSERT(rectSRC.x + rectSRC.w <= this->width() && rectSRC.y + rectSRC.h <= this->height(), "Rect not in range.");
-		AKA_ASSERT(rectSRC.w == rectDST.w && rectSRC.h == rectDST.h, "Rect size invalid.");
-		GLuint copyFBO = 0;
-		glGenFramebuffers(1, &copyFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, copyFBO);
-		GLenum attachment = GL_COLOR_ATTACHMENT0;
-		if (isStencil(m_format))
-			attachment = GL_DEPTH_STENCIL_ATTACHMENT;
-		else if (isDepth(m_format))
-			attachment = GL_DEPTH_ATTACHMENT;
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, m_textureID, level);
-		glBindTexture(GL_TEXTURE_2D, (GLuint)dst->handle().value());
-		glCopyTexSubImage2D(GL_TEXTURE_2D, level, rectDST.x, rectDST.y, rectSRC.x, rectSRC.y, rectSRC.w, rectSRC.h);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDeleteFramebuffers(1, &copyFBO);
-		if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
-			dst->generateMips();
-	}
-	void blit(const Texture2D::Ptr& dst, const Rect& rectSRC, const Rect& rectDST, TextureFilter filter, uint32_t level) override
-	{
-		AKA_ASSERT(dst->format() == this->format(), "Invalid format");
-		AKA_ASSERT(rectSRC.x + rectSRC.w <= this->width() || rectSRC.y + rectSRC.h <= this->height(), "Rect not in range");
-		AKA_ASSERT(rectDST.x + rectDST.w <= dst->width() || rectDST.y + rectDST.h <= dst->height(), "Rect not in range");
-		GLuint blitFBO[2] = { 0 };
-		GLenum attachment = GL_COLOR_ATTACHMENT0;
-		GLenum mask = GL_COLOR_BUFFER_BIT;
-		if (isDepth(m_format))
-		{
-			attachment = GL_DEPTH_ATTACHMENT;
-			mask = GL_DEPTH_BUFFER_BIT;
-		}
-		else if (isStencil(m_format))
-		{
-			attachment = GL_DEPTH_STENCIL_ATTACHMENT;
-			mask = GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
-		}
-		glGenFramebuffers(2, blitFBO);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, blitFBO[0]); // src
-		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, attachment, GL_TEXTURE_2D, m_textureID, level);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, blitFBO[1]); // dst
-		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, (GLuint)dst->handle().value(), level);
-		glBlitFramebuffer(
-			rectSRC.x, rectSRC.y, rectSRC.w, rectSRC.h,
-			rectDST.x, rectDST.y, rectDST.w, rectDST.h,
-			mask,
-			gl::filter(filter)
-		);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDeleteFramebuffers(2, blitFBO);
-		if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
-			dst->generateMips();
-	}
 	TextureHandle handle() const override
 	{
 		return TextureHandle(static_cast<uintptr_t>(m_textureID));
@@ -1442,39 +1385,6 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
-	{
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferID);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->m_framebufferID);
-		GLenum mask = 0;
-		switch (type)
-		{
-		case AttachmentType::Color0:
-		case AttachmentType::Color1:
-		case AttachmentType::Color2:
-		case AttachmentType::Color3:
-			mask |= GL_COLOR_BUFFER_BIT;
-			break;
-		case AttachmentType::Depth:
-			mask |= GL_DEPTH_BUFFER_BIT;
-			break;
-		case AttachmentType::Stencil:
-			mask |= GL_STENCIL_BUFFER_BIT;
-			break;
-		case AttachmentType::DepthStencil:
-			mask |= GL_DEPTH_BUFFER_BIT;
-			mask |= GL_STENCIL_BUFFER_BIT;
-			break;
-		default:
-			break;
-		}
-		glBlitFramebuffer(
-			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h,
-			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
-			mask,
-			gl::filter(filter)
-		);
-	}
 	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
 		// Check attachment
@@ -1572,24 +1482,19 @@ private:
 	GLuint m_framebufferID;
 };
 
-class GLBackBuffer :
-	public Framebuffer,
-	EventListener<BackbufferResizeEvent>
+class GLBackBuffer : public Backbuffer
 {
 public:
-	GLBackBuffer(uint32_t width, uint32_t height) :
-		Framebuffer(width, height)
+	GLBackBuffer(GLFWwindow* window, uint32_t width, uint32_t height) :
+		Backbuffer(width, height),
+		m_window(window)
 	{
 	}
-	GLBackBuffer(const GLBackBuffer&) = delete;
-	GLBackBuffer& operator=(const GLBackBuffer&) = delete;
 	~GLBackBuffer()
 	{
 	}
-	void onReceive(const BackbufferResizeEvent& event) override
+	void resize(uint32_t width, uint32_t height) override
 	{
-		m_width = event.width;
-		m_height = event.height;
 	}
 	void clear(const color4f& color, float depth, int stencil, ClearMask mask) override
 	{
@@ -1615,44 +1520,59 @@ public:
 		}
 		glClear(glMask);
 	}
-	void blit(Framebuffer::Ptr src, Rect rectSrc, Rect rectDst, AttachmentType type, TextureFilter filter) override
+
+	void set(Synchronisation sync) override
 	{
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, reinterpret_cast<GLFramebuffer*>(src.get())->getFramebufferID());
-		GLenum mask = 0;
-		switch (type)
-		{
-		case AttachmentType::Color0:
-		case AttachmentType::Color1:
-		case AttachmentType::Color2:
-		case AttachmentType::Color3:
-			mask |= GL_COLOR_BUFFER_BIT;
-			break;
-		case AttachmentType::Depth:
-			mask |= GL_DEPTH_BUFFER_BIT;
-			break;
-		case AttachmentType::Stencil:
-			mask |= GL_STENCIL_BUFFER_BIT;
-			break;
-		case AttachmentType::DepthStencil:
-			mask |= GL_DEPTH_BUFFER_BIT;
-			mask |= GL_STENCIL_BUFFER_BIT;
-			break;
-		default:
-			break;
-		}
-		glBlitFramebuffer(
-			rectSrc.x, rectSrc.y, rectSrc.w, rectSrc.h,
-			rectDst.x, rectDst.y, rectDst.w, rectDst.h,
-			mask,
-			gl::filter(filter)
-		);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glfwSwapInterval((int)sync);
 	}
 	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override
 	{
 		Logger::error("Trying to set backbuffer attachement.");
 	}
+	void blit(const Texture::Ptr& texture, TextureFilter filter) override
+	{
+		GLuint blitFBO = 0;
+		GLenum attachment = GL_COLOR_ATTACHMENT0;
+		GLenum mask = GL_COLOR_BUFFER_BIT;
+		if (isDepthStencil(texture->format()))
+		{
+			attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+			mask = GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+		}
+		else if (isDepth(texture->format()))
+		{
+			attachment = GL_DEPTH_ATTACHMENT;
+			mask = GL_DEPTH_BUFFER_BIT;
+		}
+		glGenFramebuffers(1, &blitFBO);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, blitFBO); // src
+		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, attachment, GL_TEXTURE_2D, (GLuint)texture->handle().value(), 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // dst
+		glBlitFramebuffer(
+			0, 0, texture->width(), texture->height(),
+			0, 0, m_width, m_height,
+			mask, gl::filter(filter)
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &blitFBO);
+	}
+
+	void frame() override
+	{
+		// Nothing to do here
+	}
+
+	void submit() override
+	{
+		glfwSwapBuffers(m_window);
+	}
+
+	void download(void* data) override
+	{
+		glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	}
+private:
+	GLFWwindow* m_window;
 };
 
 struct GLContext
@@ -1691,7 +1611,7 @@ void GraphicBackend::initialize(uint32_t width, uint32_t height)
 	else
 		Logger::warn("[GL] glDebugMessageCallback not supported");
 #endif
-	gctx.backbuffer = std::make_shared<GLBackBuffer>(width, height);
+	gctx.backbuffer = std::make_shared<GLBackBuffer>(PlatformBackend::getGLFW3Handle(), width, height);
 
 	// Features
 	auto getUnsignedInteger = [](GLenum pname) -> uint32_t {
@@ -1735,6 +1655,7 @@ const GraphicDeviceFeatures& GraphicBackend::features()
 
 void GraphicBackend::frame()
 {
+	gctx.backbuffer->frame();
 }
 
 void GraphicBackend::present()
@@ -1744,10 +1665,10 @@ void GraphicBackend::present()
 	while ((errorCode = glGetError()) != GL_NO_ERROR)
 		Logger::error("[GL] Error during frame : ", glGetErrorString(errorCode));
 #endif
-	glfwSwapBuffers(PlatformBackend::getGLFW3Handle());
+	gctx.backbuffer->submit();
 }
 
-Framebuffer::Ptr GraphicBackend::backbuffer()
+Backbuffer::Ptr GraphicBackend::backbuffer()
 {
 	return gctx.backbuffer;
 }
@@ -2011,6 +1932,64 @@ void GraphicBackend::vsync(bool enabled)
 	else
 		glfwSwapInterval(0);
 	gctx.vsync = enabled;
+}
+
+void GraphicBackend::copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST)
+{
+	AKA_ASSERT(src->format() == dst->format(), "Invalid format");
+	AKA_ASSERT(regionSRC.x + regionSRC.width <= src->width() && regionSRC.y + regionSRC.height <= src->height(), "Region not in range.");
+	AKA_ASSERT(regionDST.x + regionDST.width <= dst->width() && regionDST.y + regionDST.height <= dst->height(), "Region not in range.");
+	AKA_ASSERT(regionSRC.width == regionDST.width && regionSRC.height == regionDST.height, "Region size invalid.");
+	// TODO cache copyFBO to reuse it.
+	GLuint copyFBO = 0;
+	glGenFramebuffers(1, &copyFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, copyFBO);
+	GLenum attachment = GL_COLOR_ATTACHMENT0;
+	if (isDepthStencil(src->format()))
+		attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+	else if (isDepth(src->format()))
+		attachment = GL_DEPTH_ATTACHMENT;
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, (GLuint)src->handle().value(), regionSRC.level);
+	glBindTexture(GL_TEXTURE_2D, (GLuint)dst->handle().value());
+	glCopyTexSubImage2D(GL_TEXTURE_2D, regionDST.level, regionDST.x, regionDST.y, regionSRC.x, regionSRC.y, regionSRC.width, regionSRC.height);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &copyFBO);
+	if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
+		dst->generateMips();
+}
+
+void GraphicBackend::blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
+{
+	AKA_ASSERT(regionSRC.x + regionSRC.width <= src->width() || regionSRC.y + regionSRC.height <= src->height(), "Region not in range");
+	AKA_ASSERT(regionDST.x + regionDST.width <= dst->width() || regionDST.y + regionDST.height <= dst->height(), "Region not in range");
+	GLuint blitFBO[2] = { 0 };
+	GLenum attachment = GL_COLOR_ATTACHMENT0;
+	GLenum mask = GL_COLOR_BUFFER_BIT;
+	if (isDepthStencil(src->format()))
+	{
+		attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+		mask = GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+	}
+	else if (isDepth(src->format()))
+	{
+		attachment = GL_DEPTH_ATTACHMENT;
+		mask = GL_DEPTH_BUFFER_BIT;
+	}
+	glGenFramebuffers(2, blitFBO);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, blitFBO[0]); // src
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, attachment, GL_TEXTURE_2D, (GLuint)src->handle().value(), regionSRC.level);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, blitFBO[1]); // dst
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, (GLuint)dst->handle().value(), regionDST.level);
+	glBlitFramebuffer(
+		regionSRC.x, regionSRC.y, regionSRC.width, regionSRC.height,
+		regionDST.x, regionDST.y, regionDST.width, regionDST.height,
+		mask, gl::filter(filter)
+	);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(2, blitFBO);
+	if ((TextureFlag::GenerateMips & dst->flags()) == TextureFlag::GenerateMips)
+		dst->generateMips();
 }
 
 Device GraphicBackend::getDevice(uint32_t id)

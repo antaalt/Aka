@@ -23,6 +23,7 @@
 #include "Graphic/GraphicBackend.h"
 #include "Graphic/Mesh.h"
 #include "Graphic/Framebuffer.h"
+#include "Graphic/Backbuffer.h"
 #include "Graphic/Texture2D.h"
 #include "Graphic/Texture2DMultisample.h"
 #include "Graphic/TextureCubeMap.h"

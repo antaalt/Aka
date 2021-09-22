@@ -70,17 +70,6 @@ Attachment* Framebuffer::getAttachment(AttachmentType type)
 	return nullptr;
 }
 
-void Framebuffer::blit(Framebuffer::Ptr src, AttachmentType type, TextureFilter filter)
-{
-	blit(
-		src,
-		Rect{ 0,0, src->width(), src->height() },
-		Rect{ 0,0, this->width(), this->height() },
-		type,
-		filter
-	);
-}
-
 Texture::Ptr Framebuffer::get(AttachmentType type)
 {
 	for (Attachment& attachment : m_attachments)

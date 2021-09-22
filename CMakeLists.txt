@@ -46,6 +46,7 @@ add_library (Aka
 	"src/Graphic/GL/GLBackend.cpp"
 	"src/Graphic/Device.cpp"
 	"src/Graphic/Framebuffer.cpp"
+	"src/Graphic/Backbuffer.cpp"
 	"src/Graphic/Mesh.cpp"
 	"src/Graphic/RenderPass.cpp"
 	"src/Graphic/Compiler.cpp"

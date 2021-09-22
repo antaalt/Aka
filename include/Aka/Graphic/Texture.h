@@ -70,12 +70,20 @@ enum class TextureType {
 	Texture2DMultisampleArray, // no mip map
 };
 
+struct TextureRegion
+{
+	int32_t x, y;
+	uint32_t width, height;
+	uint32_t layer;
+	uint32_t level;
+};
+
 // Get the size in bytes of given format
 uint32_t size(TextureFormat format);
 // Return true if given type is a depth or a depth stencil format
 bool isDepth(TextureFormat format);
 // Return true if given type is a depth stencil format
-bool isStencil(TextureFormat format);
+bool isDepthStencil(TextureFormat format);
 
 using TextureHandle = StrictType<uintptr_t, struct TextureHandleTag>;
 
@@ -109,6 +117,19 @@ public:
 	virtual TextureHandle handle() const = 0;
 	// Generate mip maps for the texture.
 	virtual void generateMips() = 0;
+
+public:
+	// Copy the whole texture to destination texture
+	static void copy(const Texture::Ptr& src, const Texture::Ptr& dst);
+	// Copy the texture region to destination texture region
+	static void copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST);
+	// Blit the whole texture to destination texture
+	// Require the texture to be a render target
+	static void blit(const Texture::Ptr& src, const Texture::Ptr& dst, TextureFilter filter);
+	// Blit the texture region to destination texture region
+	// Require the texture to be a render target
+	static void blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter);
+
 protected:
 	TextureType m_type;
 	TextureFormat m_format;
