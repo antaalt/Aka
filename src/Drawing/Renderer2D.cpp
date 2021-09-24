@@ -117,7 +117,7 @@ void Renderer2D::drawText(const mat3f& transform, const String& text, const Font
 
 void Renderer2D::render()
 {
-	render(GraphicBackend::backbuffer());
+	render(GraphicBackend::device()->backbuffer());
 }
 
 void Renderer2D::render(Framebuffer::Ptr framebuffer)

@@ -252,7 +252,7 @@ size_t Batch2D::indicesCount() const
 
 void Batch2D::render()
 {
-	render(GraphicBackend::backbuffer());
+	render(GraphicBackend::device()->backbuffer());
 }
 
 void Batch2D::render(Framebuffer::Ptr framebuffer)

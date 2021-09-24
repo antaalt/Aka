@@ -20,17 +20,17 @@ Program::~Program()
 
 Program::Ptr Program::createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count)
 {
-	return GraphicBackend::createVertexProgram(vert, frag, attributes, count);
+	return GraphicBackend::device()->createVertexProgram(vert, frag, attributes, count);
 }
 
 Program::Ptr Program::createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count)
 {
-	return GraphicBackend::createGeometryProgram(vert, frag, geometry, attributes, count);
+	return GraphicBackend::device()->createGeometryProgram(vert, frag, geometry, attributes, count);
 }
 
 Program::Ptr Program::createComputeProgram(Shader::Ptr compute)
 {
-	return GraphicBackend::createComputeProgram(compute);
+	return GraphicBackend::device()->createComputeProgram(compute);
 }
 
 const Uniform* Program::getUniform(const char* name) const

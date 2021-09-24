@@ -15,7 +15,7 @@ Shader::~Shader()
 
 Shader::Ptr Shader::compile(const char* content, ShaderType type)
 {
-	return GraphicBackend::compile(content, type);
+	return GraphicBackend::device()->compile(content, type);
 }
 
 };

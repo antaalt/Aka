@@ -22,7 +22,7 @@ Texture2DMultisample::Ptr Texture2DMultisample::create(
 	const void* data
 )
 {
-	return GraphicBackend::createTexture2DMultisampled(width, height, format, flags, samples, data);
+	return GraphicBackend::device()->createTexture2DMultisampled(width, height, format, flags, samples, data);
 }
 
 };

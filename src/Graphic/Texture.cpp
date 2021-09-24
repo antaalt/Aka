@@ -138,24 +138,24 @@ TextureType Texture::type() const
 void Texture::copy(const Texture::Ptr& src, const Texture::Ptr& dst)
 {
 	TextureRegion region{ 0, 0, min(src->width(), dst->width()), min(src->height(), dst->height()), 0, 0 };
-	GraphicBackend::copy(src, dst, region, region);
+	GraphicBackend::device()->copy(src, dst, region, region);
 }
 
 void Texture::copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST)
 {
-	GraphicBackend::copy(src, dst, regionSRC, regionDST);
+	GraphicBackend::device()->copy(src, dst, regionSRC, regionDST);
 }
 
 void Texture::blit(const Texture::Ptr& src, const Texture::Ptr& dst, TextureFilter filter)
 {
 	TextureRegion regionSRC{ 0, 0, src->width(), src->height(), 0, 0 };
 	TextureRegion regionDST{ 0, 0, dst->width(), dst->height(), 0, 0 };
-	GraphicBackend::blit(src, dst, regionSRC, regionDST, filter);
+	GraphicBackend::device()->blit(src, dst, regionSRC, regionDST, filter);
 }
 
 void Texture::blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
 {
-	GraphicBackend::blit(src, dst, regionSRC, regionDST, filter);
+	GraphicBackend::device()->blit(src, dst, regionSRC, regionDST, filter);
 }
 
 TextureFlag operator~(TextureFlag value)

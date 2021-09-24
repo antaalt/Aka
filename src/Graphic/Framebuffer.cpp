@@ -40,7 +40,7 @@ Framebuffer::Ptr Framebuffer::create(Attachment* attachment, size_t count)
 			return nullptr;
 		}
 	}
-	return GraphicBackend::createFramebuffer(attachment, count);
+	return GraphicBackend::device()->createFramebuffer(attachment, count);
 }
 
 bool Framebuffer::valid(Attachment attachment)

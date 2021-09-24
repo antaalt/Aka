@@ -15,7 +15,7 @@ Texture2D::~Texture2D()
 
 Texture2D::Ptr Texture2D::create(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data)
 {
-	return GraphicBackend::createTexture2D(width, height, format, flags, data);
+	return GraphicBackend::device()->createTexture2D(width, height, format, flags, data);
 }
 
 };

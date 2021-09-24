@@ -57,7 +57,7 @@ Mesh::~Mesh()
 
 Mesh::Ptr Mesh::create()
 {
-	return GraphicBackend::createMesh();
+	return GraphicBackend::device()->createMesh();
 }
 
 void Mesh::uploadInterleaved(const VertexAttribute* attributes, size_t attributeCount, void* vertices, uint32_t vertexCount)

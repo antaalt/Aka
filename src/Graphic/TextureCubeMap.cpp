@@ -21,7 +21,7 @@ TextureCubeMap::Ptr TextureCubeMap::create(
 	const void* pz, const void* nz
 )
 {
-	return GraphicBackend::createTextureCubeMap(width, height, format, flags, px, nx, py, ny, pz, nz);
+	return GraphicBackend::device()->createTextureCubeMap(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 TextureCubeMap::Ptr TextureCubeMap::generate(

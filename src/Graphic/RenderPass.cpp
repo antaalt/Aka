@@ -197,7 +197,7 @@ void RenderPass::execute()
 		Logger::error("Shader and mesh non compatible");
 		return;
 	}
-	GraphicBackend::render(*this);
+	GraphicBackend::device()->render(*this);
 }
 
 void ComputePass::execute()
@@ -207,7 +207,7 @@ void ComputePass::execute()
 		Logger::error("No Material set for render pass.");
 		return;
 	}
-	GraphicBackend::dispatch(*this);
+	GraphicBackend::device()->dispatch(*this);
 }
 
 };

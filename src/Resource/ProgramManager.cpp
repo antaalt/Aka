@@ -246,8 +246,9 @@ void ProgramManager::update()
 
 Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
 {
+	GraphicDevice* device = GraphicBackend::device();
 	Path compiledPath;
-	switch (GraphicBackend::api())
+	switch (device->api())
 	{
 	case GraphicApi::OpenGL:
 		compiledPath = "./library/shaders/GL/" + File::name(path) + ".glsl";
@@ -266,7 +267,7 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 		{
 			return Shader::Ptr(0);
 		}
-		shader = compiler.compile(GraphicBackend::api(), attributes, count);
+		shader = compiler.compile(device->api(), attributes, count);
 		if (!File::write(compiledPath, shader))
 			Logger::warn("Failed to cache shader");
 		Logger::debug("Shader ", File::name(path), " successfully compiled.");

@@ -105,6 +105,7 @@ void Application::run(const Config& config)
 	Time::Unit timestep = Time::Unit::milliseconds(10);
 	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
 
+	GraphicDevice* device = GraphicBackend::device();
 	Application* app = config.app;
 	app->initialize(config.width, config.height, config.arguments.count, config.arguments.values);
 
@@ -128,13 +129,13 @@ void Application::run(const Config& config)
 			InputBackend::update();
 			app->update(deltaTime);
 			// Rendering
-			GraphicBackend::frame();
+			device->frame();
 			Renderer2D::frame();
 			Renderer3D::frame();
 			app->frame();
 			app->render();
 			app->present();
-			GraphicBackend::present();
+			device->present();
 
 			app->end();
 		} while (app->m_running && PlatformBackend::running());

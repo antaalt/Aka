@@ -46,7 +46,7 @@ void ImGuiLayer::onLayerAttach()
 	ImGui_ImplOpenGL3_Init(ss.str().c_str());
 #else
 	ImGui_ImplGlfw_InitForVulkan(PlatformBackend::getGLFW3Handle(), true);
-	ImGui_ImplDX11_Init(GraphicBackend::getD3D11Device(), GraphicBackend::getD3D11DeviceContext());
+	ImGui_ImplDX11_Init(GraphicBackend::device()->device(), GraphicBackend::device()->context());
 #endif
 
     ImGui::StyleColorsClassic();

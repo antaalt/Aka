@@ -6,17 +6,17 @@ namespace aka {
 
 Device Device::getDefault()
 {
-	return GraphicBackend::getDevice(0);
+	return GraphicBackend::device()->getDevice(0);
 }
 
 Device Device::get(uint32_t id)
 {
-	return GraphicBackend::getDevice(id);
+	return GraphicBackend::device()->getDevice(id);
 }
 
 uint32_t Device::count()
 {
-	return GraphicBackend::deviceCount();
+	return GraphicBackend::device()->getDeviceCount();
 }
 
 };

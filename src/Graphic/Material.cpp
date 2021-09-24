@@ -18,7 +18,7 @@ Material::~Material()
 
 Material::Ptr Material::create(Program::Ptr program)
 {
-	return GraphicBackend::createMaterial(program);
+	return GraphicBackend::device()->createMaterial(program);
 }
 
 Program::Ptr Material::program()
@@ -63,7 +63,10 @@ void Material::set(const char* name, const Texture::Ptr* textures, size_t count,
 		{
 			AKA_ASSERT(uniform.count >= offset + count, "Invalid range");
 			for (size_t i = 0; i < count; i++)
+			{
+				AKA_ASSERT((textures[i]->flags() & TextureFlag::ShaderResource) == TextureFlag::ShaderResource, "Input must be a shader resource");
 				m_textures[uniform.binding + offset + i] = textures[i];
+			}
 			return;
 		}
 	}

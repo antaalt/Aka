@@ -413,25 +413,22 @@ void PlatformBackend::initialize(const Config& config)
 		throw std::runtime_error("Could not init GLFW");
 
 	// Backend API
-	if (GraphicBackend::api() == GraphicApi::OpenGL)
-	{
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+#if defined(AKA_USE_OPENGL)
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #if !defined(__APPLE__)
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 #else
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 #if defined(DEBUG)
-		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 #endif
-	}
-	else if (GraphicBackend::api() == GraphicApi::DirectX11)
-	{
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	}
+#elif defined(AKA_USE_D3D11)
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
 
 	pctx.window = glfwCreateWindow(config.width, config.height, config.name.cstr(), NULL, NULL);
 	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(&pctx.width), reinterpret_cast<int*>(&pctx.height));
