@@ -11,7 +11,7 @@ namespace aka {
 
 class D3D11Device;
 
-class D3D11Backbuffer : public Backbuffer, std::enable_shared_from_this<D3D11Backbuffer>
+class D3D11Backbuffer : public Backbuffer, public std::enable_shared_from_this<D3D11Backbuffer>
 {
 	friend class D3D11Device;
 public:
