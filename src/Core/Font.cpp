@@ -55,7 +55,7 @@ Font::Font(const Path& path, uint32_t height)
             Logger::error("[freetype] Failed to load glyph '", (char)c, "'");
             continue;
         }
-        packer.add(c, face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
+        packer.add(c, face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer, 1);
         // now store character for later use
         m_characters[c] = {
             vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows),

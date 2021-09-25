@@ -16,20 +16,42 @@ Packer::Packer(uint32_t elements, uint32_t elementWidth, uint32_t elementHeight)
 void Packer::add(uint32_t id, const Image& image)
 {
     if (m_packed) return;
-	AKA_ASSERT(image.components() == 4, "Does not support image with less than 4 components");
-    add(id, image.width(), image.height(), static_cast<const uint8_t*>(image.data()));
+    add(id, image.width(), image.height(), static_cast<const uint8_t*>(image.data()), image.components());
 }
-void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* data)
+void Packer::add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* data, uint8_t components)
 {
+	// TODO check component count is 1.
     if (m_packed) return;
 	AKA_ASSERT(width <= m_elementSize.x, "Element too big on x");
 	AKA_ASSERT(height <= m_elementSize.y, "Element too big on y");
 	AKA_ASSERT(id < m_elements, "ID out of bound");
     uint32_t idx = id % m_elementCount.x;
     uint32_t idy = id / m_elementCount.x;
-    for (uint32_t y = 0; y < height; y++)
-        for (uint32_t x = 0; x < width; x++)
-			m_image.set(x, y, color32(data[y * width + x]));
+	uint8_t index[4] = { 1, 2, 3, 4	};
+	if (components != 4)
+	{
+		if (components == 1)
+			for (uint32_t x = 0; x < 4; x++)
+				index[x] = 0;
+		else if (components == 3)
+			index[3] = 0;
+		else
+			return; // not supported
+	}
+	for (uint32_t y = 0; y < height; y++)
+	{
+		uint32_t yy = idy * m_elementSize.y + y;
+		for (uint32_t x = 0; x < width; x++)
+		{
+			uint32_t xx = idx * m_elementSize.x + x;
+			m_image.set(xx, yy, color32(
+				data[y * width * components + x * components + index[0]],
+				data[y * width * components + x * components + index[1]],
+				data[y * width * components + x * components + index[2]],
+				data[y * width * components + x * components + index[3]]
+			));
+		}
+	}
     Rect& region = m_regions[id];
     region.x = static_cast<int32_t>(idx * m_elementSize.x);
     region.y = static_cast<int32_t>(m_image.height() - height - idy * m_elementSize.y);

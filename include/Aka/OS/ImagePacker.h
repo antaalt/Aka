@@ -15,7 +15,7 @@ struct Packer {
     // Add an image to the packer
     void add(uint32_t id, const Image &image);
     // Add data to the packer
-    void add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* data);
+    void add(uint32_t id, uint32_t width, uint32_t height, const uint8_t* data, uint8_t components);
 
     // Pack the atlas and return the result.
     const Image& pack();
