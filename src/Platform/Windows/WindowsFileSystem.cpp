@@ -29,7 +29,7 @@ bool Directory::create(const Path& path)
 	do
 	{
 		pos = str.findFirst('/', pos + 1);
-		if (pos == str.length())
+		if (pos == str.length() || pos == String::invalid)
 			return true;
 		String p = str.substr(0, pos);
 		if (p == "." || p == ".." || p == "/" || p == "\\")

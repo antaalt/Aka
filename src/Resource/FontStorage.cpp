@@ -27,6 +27,9 @@ bool FontStorage::load(const Path& path)
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read font
+	uint32_t size = stream.read<uint32_t>();
+	ttf.resize(size);
+	stream.read<byte_t>(ttf.data(), size);
 	return true;
 }
 bool FontStorage::save(const Path& path) const
@@ -37,21 +40,24 @@ bool FontStorage::save(const Path& path) const
 	stream.write<char>(signature, 4);
 	stream.write<uint16_t>((major << 8) | minor);
 	// Write font
+	stream.write<uint32_t>((uint32_t)ttf.size());
+	stream.write<byte_t>(ttf.data(), ttf.size());
 	return true;
 }
 
 std::shared_ptr<Font> FontStorage::to() const
 {
-	Font::Ptr mesh = Font::create("", 34);
+	Font::Ptr mesh = Font::create(ttf.data(), ttf.size(), 34);
 	return mesh;
 }
-void FontStorage::from(const std::shared_ptr<Font>& mesh)
+void FontStorage::from(const std::shared_ptr<Font>& font)
 {
+	throw std::runtime_error("Not supported");
 }
 
-size_t FontStorage::size(const std::shared_ptr<Font>& mesh)
+size_t FontStorage::size(const std::shared_ptr<Font>& font)
 {
-	return 0;
+	return font->atlas()->width() * font->atlas()->height() * aka::size(font->atlas()->format());
 }
 
 }; // namespace aka

@@ -14,6 +14,7 @@ struct FontStorage : IStorage<Font>
 	static constexpr uint16_t major = 0;
 	static constexpr uint16_t minor = 1;
 
+	std::vector<byte_t> ttf;
 	
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;

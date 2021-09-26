@@ -28,16 +28,13 @@
 
 namespace aka {
 
-Font::Font(const Path& path, uint32_t height)
+Font::Font(const byte_t* bytes, size_t count, uint32_t height)
 {
     FT_Library ft;
     FREETYPE_CHECK_RESULT(FT_Init_FreeType(&ft));
 
     FT_Face face;
-	Blob font;
-	if (!File::read(path, &font))
-		Logger::error("Failed to load font : ", path);
-    FREETYPE_CHECK_RESULT(FT_New_Memory_Face(ft, font.data(), (FT_Long)font.size(), 0, &face));
+    FREETYPE_CHECK_RESULT(FT_New_Memory_Face(ft, bytes, (FT_Long)count, 0, &face));
     FREETYPE_CHECK_RESULT(FT_Set_Pixel_Sizes(face, 0, height));
 
     m_familyName = face->family_name;
@@ -66,38 +63,27 @@ Font::Font(const Path& path, uint32_t height)
     }
     // Generate the atlas and store it.
     Image atlas = packer.pack();
-	Texture2D::Ptr textureAtlas = Texture2D::create(
+	m_atlas = Texture2D::create(
         atlas.width(), atlas.height(),
         TextureFormat::RGBA8,
         TextureFlag::ShaderResource,
         atlas.data()
     );
-    //atlas.save("atlas.png");
-    for (unsigned char c = 0; c < (unsigned char)m_characters.size(); c++)
+
+	for (unsigned char c = 0; c < (unsigned char)m_characters.size(); c++)
     {
-        m_characters[c].texture.texture = textureAtlas;
+        m_characters[c].texture.texture = m_atlas;
         m_characters[c].texture.region = packer.getRegion(c);
         m_characters[c].texture.update();
     }
 
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
-
-    // TODO use stb_truetype.h instead ?
-
-    /*stbtt_fontinfo font;
-    std::vector<uint8_t> data = loadFromBinaryFile(path);
-    stbtt_InitFont(&font, data.data(), 0);
-
-    int ascent;
-    int descent;
-    int line_gap;
-    stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);*/
 }
 
-Font::Ptr Font::create(const Path& path, uint32_t height)
+Font::Ptr Font::create(const byte_t* bytes, size_t count, uint32_t height)
 {
-    return std::make_shared<Font>(path, height);
+    return std::make_shared<Font>(bytes, count, height);
 }
 
 vec2i Font::size(const String& text) const
@@ -144,6 +130,31 @@ uint32_t Font::height() const
 uint32_t Font::advance() const
 {
     return m_advance;
+}
+
+Texture2D::Ptr Font::atlas()
+{
+	return m_atlas;
+}
+
+Font::CharacterIterator Font::begin()
+{
+    return m_characters.begin();
+}
+
+Font::CharacterIterator Font::end()
+{
+	return m_characters.end();
+}
+
+Font::CharacterConstIterator Font::begin() const
+{
+	return m_characters.begin();
+}
+
+Font::CharacterConstIterator Font::end() const
+{
+	return m_characters.end();
 }
 
 }

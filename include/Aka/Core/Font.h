@@ -20,9 +20,9 @@ class Font
 public:
 	using Ptr = std::shared_ptr<Font>;
 
-	Font(const Path& path, uint32_t height);
+	Font(const byte_t* bytes, size_t count, uint32_t height);
 
-	static Font::Ptr create(const Path& path, uint32_t height);
+	static Font::Ptr create(const byte_t* bytes, size_t count, uint32_t height);
 
 	// Get the size of the given string depending on the font
 	vec2i size(const String& text) const;
@@ -38,11 +38,22 @@ public:
 	uint32_t height() const;
 	// Get the advance of the font
 	uint32_t advance() const;
+	// Get the texture atlas
+	Texture2D::Ptr atlas();
+
+	// Iterator
+	using CharacterIterator = std::vector<Character>::iterator;
+	using CharacterConstIterator = std::vector<Character>::const_iterator;
+	CharacterIterator begin();
+	CharacterConstIterator begin() const;
+	CharacterIterator end();
+	CharacterConstIterator end() const;
 private:
 	uint32_t m_height;
 	uint32_t m_advance;
 	String m_familyName;
 	String m_styleName;
+	Texture2D::Ptr m_atlas;
 	std::vector<Character> m_characters;
 };
 
