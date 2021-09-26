@@ -6,10 +6,23 @@
 
 namespace aka {
 
+enum class CameraProjectionType
+{
+	Perpective,
+	Orthographic
+};
+
+enum class CameraControllerType
+{
+	Arcball
+};
+
 struct CameraProjection
 {
 	// Get the projection matrix
 	virtual mat4f projection() const = 0;
+	// Get the projection type
+	virtual CameraProjectionType type() const = 0;
 };
 
 struct CameraController
@@ -20,6 +33,8 @@ struct CameraController
 	virtual mat4f transform() const = 0;
 	// Get the view of the controller
 	virtual mat4f view() const = 0;
+	// Get the controller type
+	virtual CameraControllerType type() const = 0;
 
 	// Set the camera to look for a bounding box
 	virtual void set(const aabbox<>& bbox) = 0;
@@ -28,6 +43,7 @@ struct CameraController
 struct CameraPerspective : CameraProjection
 {
 	mat4f projection() const override;
+	CameraProjectionType type() const override;
 	
 	anglef hFov;
 	float ratio;
@@ -37,6 +53,7 @@ struct CameraPerspective : CameraProjection
 struct CameraOrthographic : CameraProjection
 {
 	mat4f projection() const override;
+	CameraProjectionType type() const override;
 
 	float left, right, bottom, top;
 	float nearZ, farZ;
@@ -48,6 +65,7 @@ struct CameraArcball : CameraController
 	bool update(Time::Unit deltaTime) override;
 	mat4f transform() const override;
 	mat4f view() const override;
+	CameraControllerType type() const override;
 	void set(const aabbox<>& bbox) override;
 
 	point3f position;

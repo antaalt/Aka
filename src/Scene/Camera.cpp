@@ -9,9 +9,19 @@ mat4f CameraPerspective::projection() const
 	return mat4f::perspective(hFov, ratio, nearZ, farZ);
 }
 
+CameraProjectionType CameraPerspective::type() const
+{
+	return CameraProjectionType::Perpective;
+}
+
 mat4f CameraOrthographic::projection() const
 {
 	return mat4f::orthographic(bottom, top, left, right, nearZ, farZ);
+}
+
+CameraProjectionType CameraOrthographic::type() const
+{
+	return CameraProjectionType::Orthographic;
 }
 
 bool CameraArcball::update(Time::Unit deltaTime)
@@ -75,6 +85,11 @@ void CameraArcball::set(const aabbox<>& bbox)
 mat4f CameraArcball::view() const
 { 
 	return mat4f::inverse(mat4f::lookAt(position, target, up)); 
+}
+
+CameraControllerType CameraArcball::type() const
+{
+	return CameraControllerType::Arcball;
 }
 
 };
