@@ -69,7 +69,7 @@ bool CameraArcball::update(Time::Unit deltaTime)
 }
 
 mat4f CameraArcball::transform() const
-{ 
+{
 	return mat4f::lookAt(position, target, up);
 }
 
@@ -83,8 +83,8 @@ void CameraArcball::set(const aabbox<>& bbox)
 }
 
 mat4f CameraArcball::view() const
-{ 
-	return mat4f::inverse(mat4f::lookAt(position, target, up)); 
+{
+	return mat4f::lookAtView(position, target, up); 
 }
 
 CameraControllerType CameraArcball::type() const

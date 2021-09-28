@@ -14,7 +14,7 @@ TextureCubeMap::~TextureCubeMap()
 }
 
 TextureCubeMap::Ptr TextureCubeMap::create(
-	uint32_t width, uint32_t height, 
+	uint32_t width, uint32_t height,
 	TextureFormat format, TextureFlag flags,
 	const void* px, const void* nx,
 	const void* py, const void* ny,
@@ -178,12 +178,12 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 	CameraUniformBuffer camera;
 	camera.projection = mat4f::perspective(anglef::degree(90.0f), 1.f, 0.1f, 10.f);
 	mat4f captureViews[6] = {
-		mat4f::inverse(mat4f::lookAt(point3f(0.0f, 0.0f, 0.0f), point3f(1.0f,  0.0f,  0.0f), norm3f(0.0f, -1.0f,  0.0f))),
-		mat4f::inverse(mat4f::lookAt(point3f(0.0f, 0.0f, 0.0f), point3f(-1.0f,  0.0f,  0.0f), norm3f(0.0f, -1.0f,  0.0f))),
-		mat4f::inverse(mat4f::lookAt(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f,  1.0f,  0.0f), norm3f(0.0f,  0.0f,  1.0f))),
-		mat4f::inverse(mat4f::lookAt(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f, -1.0f,  0.0f), norm3f(0.0f,  0.0f, -1.0f))),
-		mat4f::inverse(mat4f::lookAt(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f,  0.0f,  1.0f), norm3f(0.0f, -1.0f,  0.0f))),
-		mat4f::inverse(mat4f::lookAt(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f,  0.0f, -1.0f), norm3f(0.0f, -1.0f,  0.0f)))
+		mat4f::lookAtView(point3f(0.0f, 0.0f, 0.0f), point3f(1.0f,  0.0f,  0.0f), norm3f(0.0f, -1.0f,  0.0f)),
+		mat4f::lookAtView(point3f(0.0f, 0.0f, 0.0f), point3f(-1.0f,  0.0f,  0.0f), norm3f(0.0f, -1.0f,  0.0f)),
+		mat4f::lookAtView(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f,  1.0f,  0.0f), norm3f(0.0f,  0.0f,  1.0f)),
+		mat4f::lookAtView(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f, -1.0f,  0.0f), norm3f(0.0f,  0.0f, -1.0f)),
+		mat4f::lookAtView(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f,  0.0f,  1.0f), norm3f(0.0f, -1.0f,  0.0f)),
+		mat4f::lookAtView(point3f(0.0f, 0.0f, 0.0f), point3f(0.0f,  0.0f, -1.0f), norm3f(0.0f, -1.0f,  0.0f))
 	};
 	// Setup textures
 	TextureSampler sampler;
