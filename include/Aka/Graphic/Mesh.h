@@ -49,6 +49,7 @@ enum class VertexSemantic {
 };
 
 enum class PrimitiveType {
+	Unknown,
 	Points,
 	LineStrip,
 	LineLoop,

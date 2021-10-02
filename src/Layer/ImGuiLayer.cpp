@@ -167,6 +167,8 @@ void ImGuiLayer::onLayerPresent()
 {
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
+	// TODO do not enforce backbuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #else
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

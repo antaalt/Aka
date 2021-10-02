@@ -186,25 +186,25 @@ struct Clear
 struct RenderPass
 {
 	// Framebuffer to render to
-	Framebuffer::Ptr framebuffer;
+	Framebuffer::Ptr framebuffer = nullptr;
 	// Mesh to render
-	SubMesh submesh;
+	SubMesh submesh = { nullptr, PrimitiveType::Unknown, 0, 0 };
 	// Material for mesh
-	Material::Ptr material;
+	Material::Ptr material = nullptr;
 	// Clear values for framebuffer
-	Clear clear;
+	Clear clear = Clear::none;
 	// Blending for alpha operation
-	Blending blend;
+	Blending blend = Blending::none;
 	// Culling for triangle face
-	Culling cull;
+	Culling cull = Culling::none;
 	// Depth test
-	Depth depth;
+	Depth depth = Depth::none;
 	// Stencil test
-	Stencil stencil;
+	Stencil stencil = Stencil::none;
 	// Viewport for rendering
-	Rect viewport;
+	Rect viewport = Rect{};
 	// Scissor for rendering
-	Rect scissor;
+	Rect scissor = Rect{};
 
 	// Execute the render pass
 	void execute();

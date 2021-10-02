@@ -40,8 +40,8 @@ void World::create()
 
 void World::destroy()
 {
-	m_dispatcher.clear();
 	m_registry.clear();
+	m_dispatcher.clear();
 	for (std::unique_ptr<System>& system : m_systems)
 		system->onDestroy(*this);
 	m_systems.clear();
