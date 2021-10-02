@@ -108,7 +108,7 @@ GLDevice::GLDevice(uint32_t width, uint32_t height) :
 #endif
 
 	// Setup log system
-#if defined(DEBUG)
+#if defined(AKA_DEBUG)
 	if (glDebugMessageCallback) {
 		Logger::debug("[GL] Setting up openGL callback.");
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

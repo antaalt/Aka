@@ -24,7 +24,7 @@ Shader::Ptr D3D11Shader::compileHLSL(const char* content, ShaderType type)
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorMessage = nullptr;
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if defined(DEBUG)
+#if defined(AKA_DEBUG)
 	flags |= D3DCOMPILE_DEBUG;
 #endif
 	std::string entryPoint;

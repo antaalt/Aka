@@ -175,7 +175,7 @@ void D3D11Backbuffer::blit(const Texture::Ptr& texture, TextureFilter filter)
 
 void D3D11Backbuffer::frame()
 {
-#if defined(DEBUG)
+#if defined(AKA_DEBUG)
 	m_device->ctx()->log();
 #endif
 }

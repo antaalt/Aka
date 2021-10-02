@@ -21,7 +21,7 @@ D3D11Context::D3D11Context(D3D11Device* device) :
 	m_device(device),
 	m_debugInfoQueue(nullptr)
 {
-#if defined(DEBUG)
+#if defined(AKA_DEBUG)
 	D3D_CHECK_RESULT(m_device->device()->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&m_debugInfoQueue));
 	D3D_CHECK_RESULT(m_debugInfoQueue->PushEmptyStorageFilter());
 #endif

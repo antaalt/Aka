@@ -21,14 +21,6 @@ struct Rect {
 	uint32_t h;
 };
 
-#if defined(AKA_ORIGIN_BOTTOM_LEFT)
-constexpr const bool defaultFlipImageAtLoad = true;
-constexpr const bool defaultFlipImageAtSave = true;
-#else
-constexpr const bool defaultFlipImageAtLoad = false;
-constexpr const bool defaultFlipImageAtSave = false;
-#endif
-
 enum class ImageFormat {
 	None,
 	UnsignedByte,

@@ -13,6 +13,14 @@
 
 namespace aka {
 
+#if defined(AKA_ORIGIN_BOTTOM_LEFT)
+constexpr const bool defaultFlipImageAtLoad = true;
+constexpr const bool defaultFlipImageAtSave = true;
+#else
+constexpr const bool defaultFlipImageAtLoad = false;
+constexpr const bool defaultFlipImageAtSave = false;
+#endif
+
 size_t size(ImageFormat format)
 {
 	switch (format)

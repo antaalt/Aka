@@ -81,7 +81,7 @@ D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	IDXGISwapChain* swapchain;
 	UINT flags = 0;
-#if defined(DEBUG)
+#if defined(AKA_DEBUG)
 	flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 	D3D_CHECK_RESULT(D3D11CreateDeviceAndSwapChain(

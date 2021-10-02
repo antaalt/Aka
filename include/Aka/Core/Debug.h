@@ -6,9 +6,11 @@
 #define AKA_STRINGIFY(x) #x
 #define AKA_TOSTRING(x) AKA_STRINGIFY(x)
 
-#if defined(_DEBUG) && !defined(DEBUG)
+// Check for debug compiler define
+#if defined(_DEBUG) || defined(DEBUG) || defined(DBG)
 #define AKA_DEBUG
-#define DEBUG
+#else
+#define AKA_RELEASE
 #endif
 
 #if defined(AKA_DEBUG)

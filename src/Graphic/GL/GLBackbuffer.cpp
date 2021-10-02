@@ -88,7 +88,7 @@ void GLBackbuffer::blit(const Texture::Ptr& texture, TextureFilter filter)
 
 void GLBackbuffer::frame()
 {
-#if defined(DEBUG)
+#if defined(AKA_DEBUG)
 	GLenum errorCode;
 	while ((errorCode = glGetError()) != GL_NO_ERROR)
 		Logger::error("[GL] Error during frame : ", glGetErrorString(errorCode));
