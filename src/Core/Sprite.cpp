@@ -15,7 +15,7 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	memcpy(image.data(), aseImage[0].data, image.size());
 	// Set frame
 	Sprite::Frame frame;
-	frame.duration = Time::Unit::milliseconds(aseFrame.duration);
+	frame.duration = Time::milliseconds(aseFrame.duration);
 	frame.width = ase.width;
 	frame.height = ase.height;
 	// Generate texture

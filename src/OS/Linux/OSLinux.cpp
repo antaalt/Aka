@@ -1,4 +1,5 @@
-#include <Aka/OS/FileSystem.h>
+#include <Aka/OS/OS.h>
+#include <Aka/OS/Path.h>
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/Logger.h>
 
@@ -12,10 +13,37 @@
 #include <errno.h>
 #include <dirent.h>
 #include <string.h>
+#include <filesystem>
 
 namespace aka {
 
-bool Directory::exist(const Path& path)
+const unsigned int terminalColors[20] = {
+	30, // ForgeroundBlack
+	31, // ForegroundRed
+	32, // ForegroundGreen
+	33, // ForegroundYellow
+	34, // ForegroundBlue
+	35, // ForegroundMagenta
+	36, // ForegroundCyan
+	37, // ForegroundWhite
+	90, // ForgeroundBrightBlack
+	91, // ForegroundBrightRed
+	92, // ForegroundBrightGreen
+	93, // ForegroundBrightYellow
+	94, // ForegroundBrightBlue 
+	95, // ForegroundBrightMagenta
+	96, // ForegroundBrightCyan
+	97, // ForegroundBrightWhite
+};
+
+std::ostream& operator<<(std::ostream& os, Logger::Color color)
+{
+	if (color == Logger::Color::ForegroundNone)
+		return os;
+	return os << "\033[" << terminalColors[(unsigned int)color] << "m";
+}
+
+bool OS::Directory::exist(const Path& path)
 {
 	struct stat st;
 	if (stat(path.cstr(), &st) == 0)
@@ -23,7 +51,7 @@ bool Directory::exist(const Path& path)
 	return false;
 }
 
-bool Directory::create(const Path& path)
+bool OS::Directory::create(const Path& path)
 {
 	size_t pos = 0;
 	do
@@ -45,37 +73,37 @@ bool Directory::create(const Path& path)
 	return true;
 }
 
-bool Directory::remove(const Path& path, bool recursive)
+bool OS::Directory::remove(const Path& path, bool recursive)
 {
 	return rmdir(path.cstr()) == 0;
 }
 
-bool File::exist(const Path& path)
+bool OS::File::exist(const Path& path)
 {
 	return access(path.cstr(), F_OK) != -1;
 }
-bool File::create(const Path& path)
+bool OS::File::create(const Path& path)
 {
 	std::ofstream f(path.cstr());
 	return f.is_open();
 }
-bool File::remove(const Path& path)
+bool OS::File::remove(const Path& path)
 {
 	return unlink(path.cstr()) == 0;
 }
 
-String File::extension(const Path& path)
+String OS::File::extension(const Path& path)
 {
 	const char* dot = strrchr(path.cstr(), '.');
 	if (!dot || dot == path.cstr()) return "";
 	return dot + 1;
 }
 
-String File::name(const Path& path)
+String OS::File::name(const Path& path)
 {
 	return basename(path.cstr());
 }
-size_t File::size(const Path& path)
+size_t OS::File::size(const Path& path)
 {
 	struct stat st;
 	if (::stat(filename, &st) != 0)
@@ -83,15 +111,22 @@ size_t File::size(const Path& path)
 	return st.st_size;
 }
 
-Time::Unit File::lastWrite(const Path& path)
+Timestamp OS::File::lastWrite(const Path& path)
 {
 	struct stat result;
 	if (::stat(path.cstr(), &result) != 0)
-		return Time::Unit::milliseconds(0);
-	return Time::Unit::milliseconds(result.st_mtime * 1000);
+		return Timestamp::seconds(0);
+	return Timestamp::seconds(result.st_mtime);
 }
 
-std::vector<Path> Path::enumerate(const Path& path)
+bool OS::File::copy(const Path& src, const Path& dst)
+{
+	std::filesystem::copy(src.cstr(), dst.cstr());
+	return true;
+}
+
+
+std::vector<Path> OS::enumerate(const Path& path)
 {
 	DIR* dp;
 	struct dirent* dirp;
@@ -112,14 +147,14 @@ std::vector<Path> Path::enumerate(const Path& path)
 	return paths;
 }
 
-Path Path::normalize(const Path& path)
+Path OS::normalize(const Path& path)
 {
 	// On linux, correct path should be only with '/'
 	// Remove ../ & ./ aswell.
 	return path;
 }
 
-Path Path::executable()
+Path OS::executable()
 {
 	char result[PATH_MAX] = { 0 };
 	if (readlink("/proc/self/exe", result, PATH_MAX) <= 0)
@@ -127,7 +162,7 @@ Path Path::executable()
 	return Path(result);
 }
 
-Path Path::cwd()
+Path OS::cwd()
 {
 	char path[PATH_MAX] = { 0 };
 	if (getcwd(path, PATH_MAX) == nullptr)
@@ -161,7 +196,7 @@ const char* fileMode(FileMode mode, FileType type)
 	return "";
 }
 
-FILE* fopen(const Path& path, FileMode mode, FileType type)
+FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 {
 	return ::fopen(path.cstr(), fileMode(mode, type));
 }

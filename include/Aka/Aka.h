@@ -43,8 +43,9 @@
 #include "Audio/AudioStream.h"
 #include "Audio/AudioBackend.h"
 
+#include "OS/OS.h"
 #include "OS/Logger.h"
-#include "OS/FileSystem.h"
+#include "OS/Path.h"
 #include "OS/Time.h"
 #include "OS/Image.h"
 #include "OS/Endian.h"

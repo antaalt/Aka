@@ -5,7 +5,7 @@
 #include <memory>
 
 #include <Aka/OS/Logger.h>
-#include <Aka/OS/FileSystem.h>
+#include <Aka/OS/Path.h>
 #include <Aka/Core/Container/String.h>
 #include <Aka/Resource/Storage.h>
 
@@ -18,8 +18,8 @@ struct Resource
 {
 	std::shared_ptr<T> resource;
 	Path path;
-	Time::Unit loaded; // When the resource was loaded
-	Time::Unit updated; // When the resource was updated. TODO use event ?
+	Time loaded; // When the resource was loaded
+	Time updated; // When the resource was updated. TODO use event ?
 	size_t size;
 
 	// Load a resource from library folder

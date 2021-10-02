@@ -1,4 +1,5 @@
 #include <Aka/OS/Stream/FileStream.h>
+#include <Aka/OS/OS.h>
 
 namespace aka {
 
@@ -17,7 +18,7 @@ FileStream::FileStream(const Path& path, FileMode mode, FileType type) :
 	m_mode(mode),
 	m_length(0)
 {
-	m_file = fopen(path, mode, type);
+	m_file = OS::File::open(path, mode, type);
 	if (m_file == nullptr)
 		return;
 	m_mode = mode;

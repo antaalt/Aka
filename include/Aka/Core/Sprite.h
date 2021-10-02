@@ -2,7 +2,7 @@
 
 #include <Aka/Graphic/Texture2D.h>
 #include <Aka/OS/Time.h>
-#include <Aka/OS/FileSystem.h>
+#include <Aka/OS/Path.h>
 #include <Aka/OS/Stream/Stream.h>
 #include <Aka/Core/Geometry.h>
 
@@ -15,11 +15,11 @@ struct Sprite {
 	struct Frame {
 		// TODO use subtexture with atlas
 		Texture2D::Ptr texture = nullptr;
-		Time::Unit duration = Time::Unit();
+		Time duration = Time();
 		uint32_t width = 0;
 		uint32_t height = 0;
 
-		static Frame create(Texture2D::Ptr texture, Time::Unit duration)
+		static Frame create(Texture2D::Ptr texture, Time duration)
 		{ 
 			Frame frame; 
 			frame.texture = texture; 
@@ -34,9 +34,9 @@ struct Sprite {
 		std::vector<Frame> frames;
 
 		// Whole duration of animation
-		Time::Unit duration() const
+		Time duration() const
 		{
-			Time::Unit duration = Time::Unit();
+			Time duration = Time();
 			for (const Frame& frame : frames)
 				duration += frame.duration;
 			return duration;

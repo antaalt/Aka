@@ -84,24 +84,22 @@ add_library (Aka
 	"src/Graphic/Sampler.cpp"
 	"src/Graphic/Buffer.cpp"
 
-	"src/OS/FileSystem.cpp"
+	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"
-	"src/OS/ImagePacker.cpp"
+	"src/OS/Packer.cpp"
 	"src/OS/Logger.cpp"
 	"src/OS/Time.cpp"
 	"src/OS/Endian.cpp"
-
 	"src/OS/Stream/MemoryStream.cpp"
 	"src/OS/Stream/FileStream.cpp"
+	"src/OS/OS.cpp"
+
+	"src/OS/Windows/OSWindows.cpp"
+
+	"src/OS/Linux/OSLinux.cpp" 
 
 	"src/Platform/Input.cpp"
 	"src/Platform/PlatformGLFW3.cpp"
-
-	"src/Platform/Windows/WindowsPlatform.h"
-	"src/Platform/Windows/WindowsFileSystem.cpp"
-	"src/Platform/Windows/WindowsPlatform.cpp"
-	"src/Platform/Linux/LinuxFileSystem.cpp"
-	"src/Platform/Linux/LinuxPlatform.cpp"
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)

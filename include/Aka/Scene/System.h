@@ -19,8 +19,8 @@ protected:
 	virtual void onCreate(World &world) {}
 	virtual void onDestroy(World& world) {}
 
-	virtual void onFixedUpdate(World& world, Time::Unit deltaTime) {}
-	virtual void onUpdate(World& world, Time::Unit deltaTime) {}
+	virtual void onFixedUpdate(World& world, Time deltaTime) {}
+	virtual void onUpdate(World& world, Time deltaTime) {}
 	virtual void onRender(World& world) {}
 };
 

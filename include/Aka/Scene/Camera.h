@@ -28,7 +28,7 @@ struct CameraProjection
 struct CameraController
 {
 	// Update the camera using delta time
-	virtual bool update(Time::Unit deltaTime) = 0;
+	virtual bool update(Time deltaTime) = 0;
 	// Get the transform of the controller
 	virtual mat4f transform() const = 0;
 	// Get the view of the controller
@@ -62,7 +62,7 @@ struct CameraOrthographic : CameraProjection
 
 struct CameraArcball : CameraController
 {
-	bool update(Time::Unit deltaTime) override;
+	bool update(Time deltaTime) override;
 	mat4f transform() const override;
 	mat4f view() const override;
 	CameraControllerType type() const override;

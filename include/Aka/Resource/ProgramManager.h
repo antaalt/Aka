@@ -38,7 +38,7 @@ private:
 		Shader::Ptr shader;
 		Path path;
 		std::vector<VertexAttribute> attributes;
-		Time::Unit loaded;
+		Timestamp loaded;
 	};
 	struct ProgramInfo {
 		String name;

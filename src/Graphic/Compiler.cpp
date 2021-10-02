@@ -1,5 +1,6 @@
 #include <Aka/Graphic/Compiler.h>
 
+#include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
 #include <SPIRV/GlslangToSpv.h>
@@ -135,10 +136,10 @@ public:
 		{
 			// TODO Ensure / at the end
 			Path header = systemDirectory + headerName;
-			if (File::exist(header))
+			if (OS::File::exist(header))
 			{
 				String str;
-				if (File::read(header, &str))
+				if (OS::File::read(header, &str))
 				{
 					char* data = new char[str.length() + 1];
 					memcpy(data, str.cstr(), str.length() + 1);
@@ -151,11 +152,11 @@ public:
 	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
 	{
 		// TODO pass correct path
-		Path header = Path::cwd() + headerName;
-		if (File::exist(header))
+		Path header = OS::cwd() + headerName;
+		if (OS::File::exist(header))
 		{
 			String str;
-			if (File::read(header, &str))
+			if (OS::File::read(header, &str))
 			{
 				char* data = new char[str.length() + 1];
 				memcpy(data, str.cstr(), str.length() + 1);
@@ -185,7 +186,7 @@ Compiler::Compiler()
 bool Compiler::parse(const Path& path, ShaderType type, const char** defines, size_t defineCount)
 {
 	String file;
-	if (!File::read(path, &file))
+	if (!OS::File::read(path, &file))
 		return false;
 
 	EShLanguage stage = EShLanguage::EShLangVertex;
@@ -215,7 +216,7 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	glslang::TShader shader(stage);
 
 	char* shaderString = file.cstr();
-	char* shaderName = File::basename(path).cstr();
+	char* shaderName = OS::File::basename(path).cstr();
 	int shaderLength = (int)file.length();
 	shader.setStringsWithLengthsAndNames(&shaderString, &shaderLength, &shaderName, 1);
 	shader.setInvertY(false);

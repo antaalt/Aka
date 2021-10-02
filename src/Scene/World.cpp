@@ -1,5 +1,6 @@
 #include <Aka/Scene/World.h>
 
+#include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Scene/Entity.h>
 #include <Aka/Scene/Serializer.h>
@@ -22,13 +23,13 @@ void World::destroyEntity(Entity entity)
 void World::save(const Path& path)
 {
 	String str = Serializer::serialize(*this);
-	File::write(path, str);
+	OS::File::write(path, str);
 }
 
 void World::load(const Path& path)
 {
 	String str;
-	File::read(path, &str);
+	OS::File::read(path, &str);
 	//*this = Parser::parse(str);
 }
 
@@ -47,14 +48,14 @@ void World::destroy()
 	m_systems.clear();
 }
 
-void World::update(Time::Unit deltaTime)
+void World::update(Time deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
 		system->onUpdate(*this, deltaTime);
 	m_dispatcher.update();
 }
 
-void World::fixedUpdate(Time::Unit deltaTime)
+void World::fixedUpdate(Time deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
 		system->onFixedUpdate(*this, deltaTime);

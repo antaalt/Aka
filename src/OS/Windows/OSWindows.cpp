@@ -1,17 +1,65 @@
-#include <Aka/OS/FileSystem.h>
-#include <Aka/Platform/Platform.h>
-#include <Aka/OS/Logger.h>
-#include <Aka/OS/Stream/FileStream.h>
-
-#include "WindowsPlatform.h"
-
-#include <filesystem>
+#include <Aka/OS/OS.h>
 
 #if defined(AKA_PLATFORM_WINDOWS)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <string>
+#include <shlwapi.h>
+
+#include <filesystem>
+#include <iostream>
+
+#pragma comment(lib, "shlwapi.lib")
 
 namespace aka {
 
-bool Directory::exist(const Path& path)
+const WORD terminalColors[20] = {
+	0, // ForgeroundBlack
+	FOREGROUND_RED, // ForegroundRed
+	FOREGROUND_GREEN, // ForegroundGreen
+	FOREGROUND_RED | FOREGROUND_GREEN, // ForegroundYellow
+	FOREGROUND_BLUE, // ForegroundBlue
+	FOREGROUND_RED | FOREGROUND_BLUE, // ForegroundMagenta
+	FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundCyan
+	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundWhite
+	FOREGROUND_INTENSITY, // ForgeroundBrightBlack
+	FOREGROUND_RED | FOREGROUND_INTENSITY, // ForegroundBrightRed
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightGreen
+	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightYellow
+	FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightBlue
+	FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightMagenta
+	FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightCyan
+	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightWhite
+};
+
+aka::StringWide Utf8ToWchar(const char* str)
+{
+	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str, -1, nullptr, 0);
+	aka::StringWide wstr(wstr_size - 1);
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr.cstr(), (int)wstr.length());
+	return wstr;
+}
+
+aka::String WcharToUtf8(const wchar_t* wstr)
+{
+	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, NULL, NULL);
+	aka::String str(str_size - 1);
+	WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str.cstr(), (int)str.length(), NULL, NULL);
+	return str;
+}
+
+std::ostream& operator<<(std::ostream& os, Logger::Color color)
+{
+	if (color == Logger::Color::ForegroundNone)
+		return os;
+	HANDLE hdl = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleTextAttribute(hdl, terminalColors[(unsigned int)color]);
+	return os;
+}
+
+bool OS::Directory::exist(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	DWORD ftyp = GetFileAttributes(wstr.cstr());
@@ -22,7 +70,7 @@ bool Directory::exist(const Path& path)
 	return false;
 }
 
-bool Directory::create(const Path& path)
+bool OS::Directory::create(const Path& path)
 {
 	size_t pos = 0;
 	String str = path.cstr();
@@ -47,7 +95,7 @@ bool Directory::create(const Path& path)
 	return true;
 }
 
-bool Directory::remove(const Path& path, bool recursive)
+bool OS::Directory::remove(const Path& path, bool recursive)
 {
 	if (recursive)
 	{
@@ -62,7 +110,7 @@ bool Directory::remove(const Path& path, bool recursive)
 				DeleteFile(data.cFileName);
 			else
 			{
-				Path p = WcharToUtf8(data.cFileName);
+				String p = WcharToUtf8(data.cFileName);
 				remove(p, true);
 			}
 		} while (FindNextFile(hFind, &data) != 0);
@@ -73,7 +121,7 @@ bool Directory::remove(const Path& path, bool recursive)
 	return RemoveDirectory(str.cstr()) == TRUE;
 }
 
-bool File::exist(const Path& path)
+bool OS::File::exist(const Path& path)
 {
 	StringWide str = Utf8ToWchar(path.cstr());
 	DWORD ftyp = GetFileAttributes(str.cstr());
@@ -81,7 +129,7 @@ bool File::exist(const Path& path)
 		return false;  //something is wrong with your path!
 	return (!(ftyp & FILE_ATTRIBUTE_DIRECTORY));
 }
-bool File::create(const Path& path)
+bool OS::File::create(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	HANDLE h = CreateFile(wstr.cstr(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -95,13 +143,13 @@ bool File::create(const Path& path)
 		return false; // GetLastError()
 	}
 }
-bool File::remove(const Path& path)
+bool OS::File::remove(const Path& path)
 {
 	StringWide str = Utf8ToWchar(path.cstr());
 	return DeleteFile(str.cstr()) == TRUE;
 }
 
-String File::extension(const Path& path)
+String OS::File::extension(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	LPWSTR extension = PathFindExtension(wstr.cstr());
@@ -111,21 +159,21 @@ String File::extension(const Path& path)
 	return out.substr(1, out.length() - 1);
 }
 
-String File::name(const Path& path)
+String OS::File::name(const Path& path)
 {
 	StringWide str = Utf8ToWchar(path.cstr());
 	LPWSTR FileName = PathFindFileName(str.cstr());
 	return WcharToUtf8(FileName);
 }
 
-String File::basename(const Path& path)
+String OS::File::basename(const Path& path)
 {
 	namespace fs = std::filesystem;
 	fs::path stem = fs::path(path.cstr()).stem();
 	return stem.string();
 }
 
-size_t File::size(const Path& path)
+size_t OS::File::size(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	HANDLE h = CreateFile(wstr.cstr(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -146,15 +194,21 @@ size_t File::size(const Path& path)
 	}
 }
 
-Time::Unit File::lastWrite(const Path& path)
+Timestamp OS::File::lastWrite(const Path& path)
 {
 	struct _stat result;
 	if (::_stat(path.cstr(), &result) != 0)
-		return Time::Unit::milliseconds(0);
-	return Time::Unit::milliseconds(result.st_mtime * 1000);
+		return Timestamp::seconds(0);
+	return Timestamp::seconds(result.st_mtime);
 }
 
-std::vector<Path> Path::enumerate(const Path& path)
+bool OS::File::copy(const Path& src, const Path& dst)
+{
+	std::filesystem::copy(src.cstr(), dst.cstr());
+	return true;
+}
+
+std::vector<Path> OS::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
 	StringWide wstr = Utf8ToWchar(path.cstr());
@@ -193,7 +247,7 @@ std::vector<Path> Path::enumerate(const Path& path)
 	return paths;
 }
 
-Path Path::normalize(const Path& path)
+Path OS::normalize(const Path& path)
 {
 	WCHAR canonicalizedPath[MAX_PATH];
 	StringWide wstr = Utf8ToWchar(path.cstr());
@@ -208,7 +262,7 @@ Path Path::normalize(const Path& path)
 	return path;
 }
 
-Path Path::executable()
+Path OS::executable()
 {
 	WCHAR path[MAX_PATH]{};
 	if (GetModuleFileName(NULL, path, MAX_PATH) == 0)
@@ -220,7 +274,7 @@ Path Path::executable()
 	return Path(str);
 }
 
-Path Path::cwd()
+Path OS::cwd()
 {
 	WCHAR path[MAX_PATH] = { 0 };
 	if (GetCurrentDirectory(MAX_PATH, path) == 0)
@@ -258,7 +312,7 @@ const wchar_t* fileMode(FileMode mode, FileType type)
 	return L"";
 }
 
-FILE* fopen(const Path& path, FileMode mode, FileType type)
+FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	FILE* file = nullptr;

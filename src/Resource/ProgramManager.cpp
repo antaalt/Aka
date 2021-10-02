@@ -1,6 +1,7 @@
 #include <Aka/Resource/ProgramManager.h>
 
 #include <Aka/Core/Event.h>
+#include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Graphic/Compiler.h>
@@ -50,7 +51,7 @@ bool ProgramManager::parse(const Path& path)
 {
 	// Get all shaders path & name, as well as program name and shaders. Load them, build them...
 	String str;
-	if (!File::read(path, &str))
+	if (!OS::File::read(path, &str))
 		return false;
 	try
 	{
@@ -60,10 +61,10 @@ bool ProgramManager::parse(const Path& path)
 		for (auto& element : json["shaders"].items())
 		{
 			ShaderInfo info;
-			info.loaded = Time::unixtime();
+			info.loaded = Timestamp::now();
 			info.name = element.key();
 			info.path = element.value()["path"].get<std::string>().c_str();
-			String ext = File::extension(info.path);
+			String ext = OS::File::extension(info.path);
 			// TODO add type in shader.json instead of checking extension.
 			if (ext == "vert")
 				info.type = ShaderType::Vertex;
@@ -87,7 +88,7 @@ bool ProgramManager::parse(const Path& path)
 					info.attributes.push_back(att);
 				}
 			}
-			if (!File::read(path, &str))
+			if (!OS::File::read(path, &str))
 				return false;
 			info.shader = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
 			m_shaders.push_back(info);
@@ -169,7 +170,7 @@ bool ProgramManager::serialize(const Path& path)
 				programJSON[info.name]["compute"] = info.comp;
 		}
 		std::string str = json.dump(4);
-		if (!File::write(path, str.c_str()))
+		if (!OS::File::write(path, str.c_str()))
 			return false;
 		return true;
 	}
@@ -190,8 +191,8 @@ void ProgramManager::update()
 		{
 			ShaderInfo& vertInfo = getShaderInfo(programInfo.vert);
 			ShaderInfo& fragInfo = getShaderInfo(programInfo.frag);
-			bool vertUpdated = File::lastWrite(vertInfo.path) > vertInfo.loaded;
-			bool fragUpdated = File::lastWrite(fragInfo.path) > fragInfo.loaded;
+			bool vertUpdated = OS::File::lastWrite(vertInfo.path) > vertInfo.loaded;
+			bool fragUpdated = OS::File::lastWrite(fragInfo.path) > fragInfo.loaded;
 			if (vertUpdated || fragUpdated)
 			{
 				bool compiled = false;
@@ -204,7 +205,7 @@ void ProgramManager::update()
 						compiled = true;
 						vertInfo.shader = shader;
 					}
-					vertInfo.loaded = Time::unixtime();
+					vertInfo.loaded = Timestamp::now();
 				}
 				if (fragUpdated)
 				{
@@ -215,7 +216,7 @@ void ProgramManager::update()
 						compiled = true;
 						fragInfo.shader = shader;
 					}
-					fragInfo.loaded = Time::unixtime();
+					fragInfo.loaded = Timestamp::now();
 				}
 				if (compiled)
 				{
@@ -227,7 +228,7 @@ void ProgramManager::update()
 		if (programInfo.comp.length() > 0)
 		{
 			ShaderInfo& compInfo = getShaderInfo(programInfo.comp);
-			if (File::lastWrite(compInfo.path) > compInfo.loaded)
+			if (OS::File::lastWrite(compInfo.path) > compInfo.loaded)
 			{
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
 				Shader::Ptr shader = compile(compInfo.path, compInfo.type, nullptr, 0);
@@ -237,7 +238,7 @@ void ProgramManager::update()
 					programInfo.program = Program::createComputeProgram(compInfo.shader);
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
-				compInfo.loaded = Time::now();
+				compInfo.loaded = Timestamp::now();
 			}
 		}
 	}
@@ -251,16 +252,16 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 	switch (device->api())
 	{
 	case GraphicApi::OpenGL:
-		compiledPath = "./library/shaders/GL/" + File::name(path) + ".glsl";
+		compiledPath = "./library/shaders/GL/" + OS::File::name(path) + ".glsl";
 		break;
 	case GraphicApi::DirectX11:
-		compiledPath = "./library/shaders/D3D/" + File::name(path) + ".hlsl";
+		compiledPath = "./library/shaders/D3D/" + OS::File::name(path) + ".hlsl";
 		break;
 	default:
 		return Shader::Ptr(0);
 	}
 	String shader;
-	if (!File::exist(compiledPath) || File::lastWrite(compiledPath) < File::lastWrite(path))
+	if (!OS::File::exist(compiledPath) || OS::File::lastWrite(compiledPath) < OS::File::lastWrite(path))
 	{
 		Compiler compiler;
 		if (!compiler.parse(path, type))
@@ -268,18 +269,18 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 			return Shader::Ptr(0);
 		}
 		shader = compiler.compile(device->api(), attributes, count);
-		if (!File::write(compiledPath, shader))
+		if (!OS::File::write(compiledPath, shader))
 			Logger::warn("Failed to cache shader");
-		Logger::debug("Shader ", File::name(path), " successfully compiled.");
+		Logger::debug("Shader ", OS::File::name(path), " successfully compiled.");
 	}
 	else
 	{
-		if (!File::read(compiledPath, &shader))
+		if (!OS::File::read(compiledPath, &shader))
 		{
 			Logger::error("Could not read ", compiledPath);
 			return Shader::Ptr(0);
 		}
-		Logger::debug("Shader ", File::name(path), " loaded from cache.");
+		Logger::debug("Shader ", OS::File::name(path), " loaded from cache.");
 	}
 	return Shader::compile(shader.cstr(), type);
 

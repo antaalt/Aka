@@ -364,7 +364,7 @@ struct InputListener :
 		keyboard._pressedCount++;
 		keyboard._down[static_cast<int>(event.key)] = true;
 		keyboard._pressed[static_cast<int>(event.key)] = true;
-		keyboard._timestamp[static_cast<int>(event.key)] = Time::unixtime().milliseconds();
+		keyboard._timestamp[static_cast<int>(event.key)] = Timestamp::now().seconds();
 	}
 	void onReceive(const KeyboardKeyUpEvent& event)
 	{
@@ -377,7 +377,7 @@ struct InputListener :
 	{
 		mouse._down[static_cast<int>(event.button)] = true;
 		mouse._pressed[static_cast<int>(event.button)] = true;
-		mouse._timestamp[static_cast<int>(event.button)] = Time::unixtime().milliseconds();
+		mouse._timestamp[static_cast<int>(event.button)] = Timestamp::now().seconds();
 	}
 	void onReceive(const MouseButtonUpEvent& event)
 	{
@@ -422,7 +422,7 @@ struct InputListener :
 		AKA_ASSERT(Gamepad::connected(event.id), "No gamepad");
 		gamepads[event.id]._down[static_cast<int>(event.button)] = true;
 		gamepads[event.id]._pressed[static_cast<int>(event.button)] = true;
-		gamepads[event.id]._timestamp[static_cast<int>(event.button)] = Time::unixtime().milliseconds();
+		gamepads[event.id]._timestamp[static_cast<int>(event.button)] = Timestamp::now().seconds();
 	}
 	void onReceive(const GamepadButtonUpEvent& event)
 	{

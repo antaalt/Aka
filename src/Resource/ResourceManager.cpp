@@ -1,10 +1,12 @@
 #include <Aka/Resource/ResourceManager.h>
 
+#include <Aka/OS/OS.h>
+
 #include <nlohmann/json.hpp>
 
 namespace aka {
 
-Path ResourceManager::assetPath = Path::cwd() + Path("asset/");
+Path ResourceManager::assetPath = OS::cwd() + Path("asset/");
 ResourceAllocator<Texture> ResourceManager::textures;
 ResourceAllocator<Mesh> ResourceManager::meshes;
 ResourceAllocator<AudioStream> ResourceManager::audios;
@@ -14,7 +16,7 @@ ResourceAllocator<Buffer> ResourceManager::buffers;
 void ResourceManager::parse(const Path& path)
 {
 	String content;
-	if (!File::read(path, &content))
+	if (!OS::File::read(path, &content))
 		Logger::error("Failed to load : ", path);
 	try
 	{
@@ -42,7 +44,7 @@ void ResourceManager::parse(const Path& path)
 	}
 	catch (const nlohmann::json::exception& e)
 	{
-		Logger::error("Failed to parse " + File::name(path) + " : ", e.what());
+		Logger::error("Failed to parse " + OS::File::name(path) + " : ", e.what());
 	}
 }
 
@@ -81,15 +83,15 @@ void ResourceManager::serialize(const Path& path)
 	}
 	catch (const nlohmann::json::exception& e)
 	{
-		Logger::error("Failed to serialize " + File::name(path) + " : ", e.what());
+		Logger::error("Failed to serialize " + OS::File::name(path) + " : ", e.what());
 	}
-	File::write(path, str);
+	OS::File::write(path, str);
 }
 
 
 Path ResourceManager::path(const Path& path)
 {
-	return Path::normalize(assetPath + path);
+	return OS::normalize(assetPath + path);
 }
 
 

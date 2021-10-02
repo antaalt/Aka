@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 #include <Aka/OS/Logger.h>
-#include <Aka/OS/ImagePacker.h>
+#include <Aka/OS/Packer.h>
 #include <Aka/Core/Debug.h>
 
 #define FREETYPE_CHECK_RESULT(result)\

@@ -1,3 +1,14 @@
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
+#include "..\..\include\Aka\OS\Time.h"
 #include <Aka/OS/Time.h>
 
 #include <chrono>
@@ -8,115 +19,213 @@ using namespace std::chrono;
 
 const time_point<steady_clock> g_startup = steady_clock::now();
 
-Time::Unit Time::zero()
+Timestamp::Timestamp() :
+	m_timestamp(0)
 {
-	return Time::Unit(0);
 }
 
-Time::Unit Time::now()
+Timestamp::Timestamp(uint64_t seconds) :
+	m_timestamp(seconds)
 {
-	using namespace std::chrono;
-	return Unit(static_cast<uint64_t>(duration_cast<milliseconds>(steady_clock::now() - g_startup).count()));
 }
 
-Time::Unit Time::unixtime()
+Timestamp& Timestamp::operator=(uint64_t seconds)
+{
+	m_timestamp = seconds;
+	return *this;
+}
+
+Timestamp Timestamp::seconds(uint64_t seconds)
+{
+	return Timestamp(seconds);
+}
+
+Timestamp Timestamp::zero()
+{
+	return Timestamp();
+}
+
+Timestamp Timestamp::now()
 {
 	using namespace std::chrono;
 	time_point<system_clock> now = system_clock::now();
 	const duration<double> tse = now.time_since_epoch();
-	seconds::rep milli = duration_cast<milliseconds>(tse).count();
-	return Time::Unit(milli);
+	seconds::rep secs = duration_cast<std::chrono::seconds>(tse).count();
+	return Timestamp(secs);
 }
 
-Time::Unit::Unit() :
+uint64_t Timestamp::seconds() const
+{
+	return m_timestamp;
+}
+
+Timestamp Timestamp::operator+(const Timestamp& rhs) const
+{
+	return Timestamp(m_timestamp + rhs.m_timestamp);
+}
+
+Timestamp Timestamp::operator-(const Timestamp& rhs) const
+{
+	return Timestamp(m_timestamp - rhs.m_timestamp);
+}
+
+Timestamp& Timestamp::operator+=(const Timestamp& rhs)
+{
+	m_timestamp += rhs.m_timestamp;
+	return *this;
+}
+
+Timestamp& Timestamp::operator-=(const Timestamp& rhs)
+{
+	m_timestamp -= rhs.m_timestamp;
+	return *this;
+}
+
+Timestamp Timestamp::operator%(const Timestamp& rhs) const
+{
+	return Timestamp(m_timestamp % rhs.m_timestamp);
+}
+
+bool Timestamp::operator==(const Timestamp& rhs) const
+{
+	return m_timestamp == rhs.m_timestamp;
+}
+
+bool Timestamp::operator!=(const Timestamp& rhs) const
+{
+	return m_timestamp != rhs.m_timestamp;
+}
+
+bool Timestamp::operator<(const Timestamp& rhs) const
+{
+	return m_timestamp < rhs.m_timestamp;
+}
+
+bool Timestamp::operator>(const Timestamp& rhs) const
+{
+	return m_timestamp > rhs.m_timestamp;
+}
+
+bool Timestamp::operator<=(const Timestamp& rhs) const
+{
+	return m_timestamp <= rhs.m_timestamp;
+}
+
+bool Timestamp::operator>=(const Timestamp& rhs) const
+{
+	return m_timestamp >= rhs.m_timestamp;
+}
+
+Time Time::zero()
+{
+	return Time(0);
+}
+
+Time Time::now()
+{
+	using namespace std::chrono;
+	return Time(static_cast<uint64_t>(duration_cast<std::chrono::milliseconds>(steady_clock::now() - g_startup).count()));
+}
+
+Time::Time() :
 	m_value(0)
 {
 }
 
-Time::Unit::Unit(uint64_t milliseconds) :
+Time::Time(uint64_t milliseconds) :
 	m_value(milliseconds)
 {
 }
 
-Time::Unit& Time::Unit::operator=(uint64_t milliseconds)
+Time& Time::operator=(uint64_t milliseconds)
 {
 	m_value = milliseconds;
 	return *this;
 }
 
-Time::Unit Time::Unit::milliseconds(uint64_t milliseconds)
+Time Time::milliseconds(uint64_t milliseconds)
 {
-	return Time::Unit(milliseconds);
+	return Time(milliseconds);
 }
 
-Time::Unit Time::Unit::seconds(float seconds)
+Time Time::seconds(float seconds)
 {
-	return Time::Unit(static_cast<uint64_t>(seconds * 1000.f));
+	return Time(static_cast<uint64_t>(seconds * 1000.f));
 }
 
-uint64_t Time::Unit::milliseconds() const
+Time Time::from(Timestamp timestamp)
+{
+	return Time(timestamp.seconds() * 1000);
+}
+
+uint64_t Time::milliseconds() const
 {
 	return m_value;
 }
 
-float Time::Unit::seconds() const
+float Time::seconds() const
 {
 	return m_value / 1000.f;
 }
 
-Time::Unit Time::Unit::operator+(const Unit& rhs) const
+Timestamp Time::timestamp() const
 {
-	return Unit(m_value + rhs.m_value);
+	return Timestamp::seconds(m_value / 1000);
 }
 
-Time::Unit Time::Unit::operator-(const Unit& rhs) const
+Time Time::operator+(const Time& rhs) const
 {
-	return Unit(m_value - rhs.m_value);
+	return Time(m_value + rhs.m_value);
 }
 
-Time::Unit& Time::Unit::operator+=(const Unit& rhs)
+Time Time::operator-(const Time& rhs) const
+{
+	return Time(m_value - rhs.m_value);
+}
+
+Time& Time::operator+=(const Time& rhs)
 {
 	m_value += rhs.m_value;
 	return *this;
 }
 
-Time::Unit& Time::Unit::operator-=(const Unit& rhs)
+Time& Time::operator-=(const Time& rhs)
 {
 	m_value -= rhs.m_value;
 	return *this;
 }
 
-Time::Unit Time::Unit::operator%(const Unit& rhs) const
+Time Time::operator%(const Time& rhs) const
 {
-	return Time::Unit(m_value % rhs.m_value);
+	return Time(m_value % rhs.m_value);
 }
 
-bool Time::Unit::operator==(const Unit& rhs) const
+bool Time::operator==(const Time& rhs) const
 {
 	return m_value == rhs.m_value;
 }
 
-bool Time::Unit::operator!=(const Unit& rhs) const
+bool Time::operator!=(const Time& rhs) const
 {
 	return m_value != rhs.m_value;
 }
 
-bool Time::Unit::operator<(const Unit& rhs) const
+bool Time::operator<(const Time& rhs) const
 {
 	return m_value < rhs.m_value;
 }
 
-bool Time::Unit::operator>(const Unit& rhs) const
+bool Time::operator>(const Time& rhs) const
 {
 	return m_value > rhs.m_value;
 }
 
-bool Time::Unit::operator<=(const Unit& rhs) const
+bool Time::operator<=(const Time& rhs) const
 {
 	return m_value <= rhs.m_value;
 }
 
-bool Time::Unit::operator>=(const Unit& rhs) const
+bool Time::operator>=(const Time& rhs) const
 {
 	return m_value >= rhs.m_value;
 }

@@ -1,5 +1,6 @@
-#include <Aka/OS/FileSystem.h>
+#include <Aka/OS/Path.h>
 
+#include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Core/Debug.h>
@@ -62,12 +63,12 @@ Path& Path::operator+=(const Path& rhs)
 
 bool Path::operator==(const Path& rhs) const
 {
-	return Path::normalize(*this).m_string == Path::normalize(rhs).m_string;
+	return OS::normalize(*this).m_string == OS::normalize(rhs).m_string;
 }
 
 bool Path::operator!=(const Path& rhs) const
 {
-	return Path::normalize(*this).m_string != Path::normalize(rhs).m_string;
+	return OS::normalize(*this).m_string != OS::normalize(rhs).m_string;
 }
 
 Path Path::up() const
@@ -113,77 +114,6 @@ const char* Path::begin() const
 const char* Path::end() const
 {
 	return m_string.end();
-}
-
-bool File::read(const Path& path, String* str)
-{
-	FILE* file = fopen(path, FileMode::Read, FileType::String);
-	if (file == nullptr)
-		return false;
-	String buf(4096, '\0');
-	size_t read = 0;
-	while ((read = fread(buf.cstr(), 1, buf.length(), file)) == buf.length())
-		str->append(buf.cstr(), read);
-	str->append(buf.cstr(), read);
-	fclose(file);
-	return true;
-}
-
-bool File::read(const Path& path, Blob* blob)
-{
-	FILE* file = fopen(path, FileMode::Read, FileType::Binary);
-	if (file == nullptr)
-		return false;
-	int error = fseek(file, 0L, SEEK_END);
-	size_t size = ftell(file);
-	rewind(file);
-	*blob = Blob(size);
-	if (fread(blob->data(), 1, blob->size(), file) != blob->size())
-	{
-		fclose(file);
-		return false;
-	}
-	fclose(file);
-	return true;
-}
-
-bool File::write(const Path& path, const char* str)
-{
-	FILE* file = fopen(path, FileMode::Write, FileType::String);
-	if (file == nullptr)
-		return false;
-	size_t length = strlen(str);
-	if (length != fwrite(str, 1, length, file))
-	{
-		fclose(file);
-		return false;
-	}
-	fclose(file);
-	return true;
-}
-
-bool File::write(const Path& path, const String& str)
-{
-	return write(path, str.cstr());
-}
-
-bool File::write(const Path& path, const uint8_t* bytes, size_t size)
-{
-	FILE* file = fopen(path, FileMode::Write, FileType::Binary);
-	if (file == nullptr)
-		return false;
-	if (size != fwrite(bytes, 1, size, file))
-	{
-		fclose(file);
-		return false;
-	}
-	fclose(file);
-	return true;
-}
-
-bool File::write(const Path& path, const Blob& blob)
-{
-	return write(path, blob.data(), blob.size());
 }
 
 std::ostream& operator<<(std::ostream& os, const Path& path)

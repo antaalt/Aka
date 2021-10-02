@@ -1,6 +1,7 @@
 #include <Aka/Platform/PlatformBackend.h>
 
 #include <Aka/OS/Logger.h>
+#include <Aka/OS/OS.h>
 #include <Aka/Core/Application.h>
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Platform/InputBackend.h>
@@ -510,7 +511,7 @@ void PlatformBackend::initialize(const Config& config)
 	glfwSetDropCallback(pctx.window, [](GLFWwindow* window, int count, const char** paths) {
 		WindowDropEvent e;
 		for (int i = 0; i < count; i++)
-			e.paths.append(Path::normalize(paths[i]));
+			e.paths.append(OS::normalize(paths[i]));
 		EventDispatcher<WindowDropEvent>::emit(std::move(e));
 	});
 	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {

@@ -20,43 +20,74 @@ struct Date
 	uint32_t second;
 };
 
+struct Timestamp
+{
+	Timestamp();
+private:
+	Timestamp(uint64_t seconds);
+	Timestamp& operator=(uint64_t seconds);
+public:
+	static Timestamp seconds(uint64_t seconds);
+	// Timestamp initialized at zero
+	static Timestamp zero();
+	// Timestamp respresenting current unix time.
+	static Timestamp now();
+
+	uint64_t seconds() const;
+
+	Timestamp operator+(const Timestamp& rhs) const;
+	Timestamp operator-(const Timestamp& rhs) const;
+	Timestamp& operator+=(const Timestamp& rhs);
+	Timestamp& operator-=(const Timestamp& rhs);
+
+	Timestamp operator%(const Timestamp& rhs) const;
+
+	bool operator==(const Timestamp& rhs) const;
+	bool operator!=(const Timestamp& rhs) const;
+	bool operator<(const Timestamp& rhs) const;
+	bool operator>(const Timestamp& rhs) const;
+	bool operator<=(const Timestamp& rhs) const;
+	bool operator>=(const Timestamp& rhs) const;
+private:
+	uint64_t m_timestamp;
+};
+
 struct Time
 {
-	struct Unit {
-		Unit();
-	private:
-		friend struct Time;
-		Unit(uint64_t milliseconds);
-		Unit& operator=(uint64_t milliseconds);
-	public:
-		static Time::Unit milliseconds(uint64_t seconds);
-		static Time::Unit seconds(float seconds);
-
-		uint64_t milliseconds() const;
-		float seconds() const;
-
-		Unit operator+(const Unit& rhs) const;
-		Unit operator-(const Unit& rhs) const;
-		Unit& operator+=(const Unit& rhs);
-		Unit& operator-=(const Unit& rhs);
-
-		Time::Unit operator%(const Unit& rhs) const;
-
-		bool operator==(const Unit& rhs) const;
-		bool operator!=(const Unit& rhs) const;
-		bool operator<(const Unit& rhs) const;
-		bool operator>(const Unit& rhs) const;
-		bool operator<=(const Unit& rhs) const;
-		bool operator>=(const Unit& rhs) const;
-	private:
-		uint64_t m_value;
-	};
+	Time();
+private:
+	Time(uint64_t milliseconds);
+	Time& operator=(uint64_t milliseconds);
+public:
 	// Time initialized at zero
-	static Time::Unit zero();
+	static Time zero();
 	// Time elapsed since app startup in ms
-	static Time::Unit now();
-	// Get unix timestamp
-	static Time::Unit unixtime();
+	static Time now();
+
+	static Time milliseconds(uint64_t seconds);
+	static Time seconds(float seconds);
+	static Time from(Timestamp timestamp);
+
+	uint64_t milliseconds() const;
+	float seconds() const;
+	Timestamp timestamp() const;
+
+	Time operator+(const Time& rhs) const;
+	Time operator-(const Time& rhs) const;
+	Time& operator+=(const Time& rhs);
+	Time& operator-=(const Time& rhs);
+
+	Time operator%(const Time& rhs) const;
+
+	bool operator==(const Time& rhs) const;
+	bool operator!=(const Time& rhs) const;
+	bool operator<(const Time& rhs) const;
+	bool operator>(const Time& rhs) const;
+	bool operator<=(const Time& rhs) const;
+	bool operator>=(const Time& rhs) const;
+private:
+	// TODO use float for better resolution ?
+	uint64_t m_value; // Internal resolution is milliseconds
 };
 
 };

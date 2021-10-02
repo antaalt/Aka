@@ -24,7 +24,7 @@ CameraProjectionType CameraOrthographic::type() const
 	return CameraProjectionType::Orthographic;
 }
 
-bool CameraArcball::update(Time::Unit deltaTime)
+bool CameraArcball::update(Time deltaTime)
 {
 	bool dirty = false;
 	// https://gamedev.stackexchange.com/questions/53333/how-to-implement-a-basic-arcball-camera-in-opengl-with-glm

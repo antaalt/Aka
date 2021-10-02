@@ -33,14 +33,14 @@ void Application::destroy()
 void Application::start()
 {
 }
-void Application::update(Time::Unit deltaTime)
+void Application::update(Time deltaTime)
 {
 	onUpdate(deltaTime);
 	EventDispatcher<BackbufferResizeEvent>::dispatch();
 	for (Layer* layer : m_layers)
 		layer->onLayerUpdate(deltaTime);
 }
-void Application::fixedUpdate(Time::Unit deltaTime)
+void Application::fixedUpdate(Time deltaTime)
 {
 	onFixedUpdate(deltaTime);
 	for (Layer* layer : m_layers)
@@ -102,19 +102,19 @@ void Application::run(const Config& config)
 	Renderer2D::initialize();
 	Renderer3D::initialize();
 	
-	Time::Unit timestep = Time::Unit::milliseconds(10);
-	Time::Unit maxUpdate = Time::Unit::milliseconds(100);
+	Time timestep = Time::milliseconds(10);
+	Time maxUpdate = Time::milliseconds(100);
 
 	GraphicDevice* device = GraphicBackend::device();
 	Application* app = config.app;
 	app->initialize(config.width, config.height, config.arguments.count, config.arguments.values);
 
 	{
-		Time::Unit lastTick = Time::now();
-		Time::Unit accumulator = Time::zero();
+		Time lastTick = Time::now();
+		Time accumulator = Time::zero();
 		do {
-			Time::Unit now = Time::now();
-			Time::Unit deltaTime = min(now - lastTick, maxUpdate);
+			Time now = Time::now();
+			Time deltaTime = min(now - lastTick, maxUpdate);
 			lastTick = now;
 			accumulator += deltaTime;
 

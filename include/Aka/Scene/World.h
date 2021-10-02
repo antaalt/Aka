@@ -62,9 +62,9 @@ public:
 	// Destroy everything in this world
 	void destroy();
 	// Update all systems
-	void update(Time::Unit deltaTime);
+	void update(Time deltaTime);
 	// Update all systems
-	void fixedUpdate(Time::Unit deltaTime);
+	void fixedUpdate(Time deltaTime);
 	// Render all systems
 	void render();
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/OS/FileSystem.h>
+#include <Aka/OS/Path.h>
 #include <Aka/OS/Stream/Stream.h>
 
 #include <stdio.h>
@@ -22,8 +22,6 @@ enum class FileType
 
 FileMode operator&(FileMode lhs, FileMode rhs);
 FileMode operator|(FileMode lhs, FileMode rhs);
-
-FILE* fopen(const Path& path, FileMode mode, FileType type);
 
 class FileStream : public Stream
 {

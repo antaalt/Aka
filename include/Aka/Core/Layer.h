@@ -13,8 +13,8 @@ public:
 	virtual void onLayerAttach() {}
 	virtual void onLayerDetach() {}
 
-	virtual void onLayerUpdate(Time::Unit deltaTime) {}
-	virtual void onLayerFixedUpdate(Time::Unit deltaTime) {}
+	virtual void onLayerUpdate(Time deltaTime) {}
+	virtual void onLayerFixedUpdate(Time deltaTime) {}
 	virtual void onLayerFrame() {}
 	virtual void onLayerRender() {}
 	virtual void onLayerPresent() {}

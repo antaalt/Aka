@@ -22,9 +22,9 @@ public:
 	// Called on view destruction
 	virtual void onDestroy() {}
 	// Called on every view update
-	virtual void onUpdate(Time::Unit deltaTime) {}
+	virtual void onUpdate(Time deltaTime) {}
 	// Called on every view update at a fixed timestep
-	virtual void onFixedUpdate(Time::Unit deltaTime) {}
+	virtual void onFixedUpdate(Time deltaTime) {}
 	// Called on view frame beginning
 	virtual void onFrame() {}
 	// Called on view frame render
