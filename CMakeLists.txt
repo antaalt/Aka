@@ -7,7 +7,7 @@ add_library (Aka
 	"src/Audio/AudioStream.cpp"
 	"src/Audio/AudioStreamMp3.cpp"
 	"src/Audio/AudioStreamMemory.cpp"
-	
+
 	"src/Core/Container/Blob.cpp"
 	"src/Core/Container/String.cpp"
 	"src/Core/Application.cpp"
@@ -28,7 +28,7 @@ add_library (Aka
 	"src/Scene/World.cpp"
 	"src/Scene/Serializer.cpp"
 	"src/Scene/Camera.cpp"
-	
+
 	"src/Resource/ProgramManager.cpp"
 	"src/Resource/ResourceManager.cpp"
 	"src/Resource/MeshStorage.cpp"
@@ -41,28 +41,28 @@ add_library (Aka
 	"src/Drawing/Renderer3D.cpp"
 	"src/Drawing/Batch2D.cpp"
 	"src/Drawing/Batch3D.cpp"
-	
-	"src/Graphic/Dummy/DummyBackend.cpp" 
-	
-	"src/Graphic/D3D11/D3D11Context.cpp" 
-	"src/Graphic/D3D11/D3D11Device.cpp" 
+
+	"src/Graphic/Dummy/DummyBackend.cpp"
+
+	"src/Graphic/D3D11/D3D11Context.cpp"
+	"src/Graphic/D3D11/D3D11Device.cpp"
 	"src/Graphic/D3D11/D3D11Backbuffer.cpp"
 	"src/Graphic/D3D11/D3D11Buffer.cpp"
 	"src/Graphic/D3D11/D3D11Texture.cpp"
-	"src/Graphic/D3D11/D3D11Mesh.cpp" 
+	"src/Graphic/D3D11/D3D11Mesh.cpp"
 	"src/Graphic/D3D11/D3D11Material.cpp"
-	"src/Graphic/D3D11/D3D11Framebuffer.cpp" 
+	"src/Graphic/D3D11/D3D11Framebuffer.cpp"
 	"src/Graphic/D3D11/D3D11Program.cpp"
 	"src/Graphic/D3D11/Internal/D3D11Blit.cpp"
-	
-	"src/Graphic/GL/GLContext.cpp" 
-	"src/Graphic/GL/GLDevice.cpp" 
+
+	"src/Graphic/GL/GLContext.cpp"
+	"src/Graphic/GL/GLDevice.cpp"
 	"src/Graphic/GL/GLBackbuffer.cpp"
 	"src/Graphic/GL/GLBuffer.cpp"
 	"src/Graphic/GL/GLTexture.cpp"
-	"src/Graphic/GL/GLMesh.cpp" 
+	"src/Graphic/GL/GLMesh.cpp"
 	"src/Graphic/GL/GLMaterial.cpp"
-	"src/Graphic/GL/GLFramebuffer.cpp" 
+	"src/Graphic/GL/GLFramebuffer.cpp"
 	"src/Graphic/GL/GLProgram.cpp"
 
 	"src/Graphic/GraphicBackend.cpp"
@@ -77,9 +77,9 @@ add_library (Aka
 	"src/Graphic/Program.cpp"
 	"src/Graphic/Material.cpp"
 	"src/Graphic/Texture.cpp"
-	"src/Graphic/Texture2D.cpp" 
-	"src/Graphic/Texture2DMultisample.cpp" 
-	"src/Graphic/TextureCubeMap.cpp" 
+	"src/Graphic/Texture2D.cpp"
+	"src/Graphic/Texture2DMultisample.cpp"
+	"src/Graphic/TextureCubeMap.cpp"
 	"src/Graphic/Texture2DArray.cpp"
 	"src/Graphic/Sampler.cpp"
 	"src/Graphic/Buffer.cpp"
@@ -173,9 +173,28 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/lua)
 
-target_link_libraries(Aka PUBLIC Geometry AkaEntt AkaImGui)
-target_link_libraries(Aka PRIVATE AkaMiniz AkaUtfCpp AkaMiniMp3 AkaStb AkaJson freetype glslang SPIRV spirv-cross-core spirv-cross-cpp spirv-cross-glsl spirv-cross-hlsl)
+target_link_libraries(Aka PUBLIC
+	Geometry
+	AkaEntt
+	AkaImGui
+	AkaLua
+)
+target_link_libraries(Aka PRIVATE
+	AkaMiniz
+	AkaUtfCpp
+	AkaMiniMp3
+	AkaStb
+	AkaJson
+	freetype
+	glslang
+	SPIRV
+	spirv-cross-core
+	spirv-cross-cpp
+	spirv-cross-glsl
+	spirv-cross-hlsl
+)
 
 # Enable UNICODE in windows
 if(WIN32)
