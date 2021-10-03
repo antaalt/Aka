@@ -1,5 +1,6 @@
 #include <Aka/Graphic/Framebuffer.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 
 namespace aka {
@@ -40,7 +41,7 @@ Framebuffer::Ptr Framebuffer::create(Attachment* attachment, size_t count)
 			return nullptr;
 		}
 	}
-	return GraphicBackend::device()->createFramebuffer(attachment, count);
+	return Application::graphic()->createFramebuffer(attachment, count);
 }
 
 bool Framebuffer::valid(Attachment attachment)

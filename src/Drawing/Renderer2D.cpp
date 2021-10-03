@@ -1,5 +1,7 @@
 #include <Aka/Drawing/Renderer2D.h>
 
+#include <Aka/Core/Application.h>
+
 namespace aka {
 
 Batch2D Renderer2D::batch;
@@ -117,7 +119,7 @@ void Renderer2D::drawText(const mat3f& transform, const String& text, const Font
 
 void Renderer2D::render()
 {
-	render(GraphicBackend::device()->backbuffer());
+	render(Application::graphic()->backbuffer());
 }
 
 void Renderer2D::render(Framebuffer::Ptr framebuffer)

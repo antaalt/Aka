@@ -281,7 +281,7 @@ Device GraphicBackend::getDevice(uint32_t id)
 	return Device{};
 }
 
-uint32_t GraphicBackend::deviceCount()
+uint32_t Application::graphicCount()
 {
 	return 0;
 }

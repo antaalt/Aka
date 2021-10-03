@@ -12,6 +12,7 @@
 
 #include "Platform/GLFW3/PlatformGLFW3.h"
 
+#include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 
 namespace aka {
@@ -97,8 +98,8 @@ void APIENTRY openglCallbackFunction(
 	}
 }
 
-GLDevice::GLDevice(uint32_t width, uint32_t height) :
-	GraphicDevice(width, height)
+GLDevice::GLDevice(const GraphicConfig& config) :
+	GraphicDevice(config)
 {
 	// Init glew for loading gl func
 #if !defined(__APPLE__)
@@ -152,8 +153,8 @@ GLDevice::GLDevice(uint32_t width, uint32_t height) :
 	m_features.coordinates.renderAxisYUp = true; // GL render axis y is up
 
 	// Create backbuffer
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(PlatformBackend::get());
-	m_backbuffer = std::make_shared<GLBackbuffer>(platform->getGLFW3Handle(), width, height);
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::platform());
+	m_backbuffer = std::make_shared<GLBackbuffer>(platform->getGLFW3Handle(), config.width, config.height);
 }
 
 GLDevice::~GLDevice()

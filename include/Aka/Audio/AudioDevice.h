@@ -7,10 +7,16 @@
 
 namespace aka {
 
+struct AudioConfig
+{
+	uint32_t frequency = 44100;
+	uint32_t channels = 2;
+};
+
 class AudioDevice
 {
 public:
-	AudioDevice(uint32_t frequency, uint32_t channels);
+	AudioDevice(const AudioConfig& config);
 	virtual ~AudioDevice();
 
 	// Get the frequency of the device
@@ -31,15 +37,6 @@ protected:
 	uint32_t m_frequency;
 	uint32_t m_channelCount;
 	std::set<AudioStream::Ptr> m_streams;
-};
-
-class AudioBackend
-{
-public:
-	static void initialize(uint32_t frequency, uint32_t channels);
-	static void destroy();
-	static AudioDevice* get();
-
 };
 
 };

@@ -2,6 +2,8 @@
 
 #include <Aka/Platform/Platform.h>
 #include <Aka/Platform/PlatformDevice.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Audio/AudioDevice.h>
 #include <Aka/Scene/World.h>
 
 #include <Aka/Core/Event.h>
@@ -12,20 +14,14 @@ namespace aka {
 
 class Application;
 
-struct Config {
-	uint32_t width = 1280;
-	uint32_t height = 720;
-	String name = "Aka";
-	Image icon = {};
+struct Config
+{
+	GraphicConfig graphic = {};
+	AudioConfig audio = {};
+	PlatformConfig platform = {};
 	Application* app = nullptr;
-	struct Audio {
-		uint32_t frequency = 44100;
-		uint32_t channels = 2;
-	} audio;
-	struct Arguments {
-		int count = 0;
-		char** values = nullptr;
-	} arguments;
+	int argc = 0;
+	char** argv = nullptr;
 };
 
 // Event to notify app to exit.
@@ -97,6 +93,16 @@ protected:
 public:
 	// Entry point of the application
 	static void run(const Config& config);
+	// Get the graphic device
+	static GraphicDevice* graphic();
+	// Get the platform device
+	static PlatformDevice* platform();
+	// Get the audio device
+	static AudioDevice* audio();
+private:
+	static GraphicDevice* s_graphic;
+	static PlatformDevice* s_platform;
+	static AudioDevice* s_audio;
 private:
 	std::vector<Layer*> m_layers;
 	uint32_t m_width, m_height;

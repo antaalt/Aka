@@ -1,7 +1,8 @@
 #include <Aka/Layer/ImGuiLayer.h>
 
 #include <Aka/Platform/PlatformDevice.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 
 #if defined(AKA_USE_IMGUI_LAYER)
 
@@ -18,6 +19,7 @@
 #include <d3d11.h>
 #include <backends/imgui_impl_dx11.h>
 #include "Graphic/D3D11/D3D11Context.h"
+#include "Graphic/D3D11/D3D11Device.h"
 #include "Graphic/D3D11/D3D11Backbuffer.h"
 #endif
 #include "Platform/GLFW3/PlatformGLFW3.h"
@@ -41,7 +43,7 @@ void ImGuiLayer::onLayerAttach()
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(PlatformBackend::get());
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::platform());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplGlfw_InitForOpenGL(platform->getGLFW3Handle(), true);
 
@@ -50,8 +52,9 @@ void ImGuiLayer::onLayerAttach()
 	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
 	ImGui_ImplOpenGL3_Init(ss.str().c_str());
 #else
+	D3D11Device* device = reinterpret_cast<D3D11Device*>(Application::graphic());
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
-	ImGui_ImplDX11_Init(GraphicBackend::device()->device(), GraphicBackend::device()->context());
+	ImGui_ImplDX11_Init(device->device(), device->context());
 #endif
 
     ImGui::StyleColorsClassic();
@@ -177,7 +180,7 @@ void ImGuiLayer::onLayerPresent()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #else
 	// TODO do not enforce backbuffer
-	GraphicDevice* device = GraphicBackend::device();
+	GraphicDevice* device = Application::graphic();
 	D3D11Backbuffer* backbuffer = (D3D11Backbuffer*)device->backbuffer().get();
 	backbuffer->bind();
 	

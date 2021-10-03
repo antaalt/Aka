@@ -145,11 +145,4 @@ protected:
 	std::map<GamepadID, Gamepad> m_gamepads;
 };
 
-struct PlatformBackend
-{
-	static void initialize(const Config& config);
-	static void destroy();
-	static PlatformDevice* get();
-};
-
 };

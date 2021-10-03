@@ -1,5 +1,6 @@
 #include <Aka/Graphic/Mesh.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -57,7 +58,7 @@ Mesh::~Mesh()
 
 Mesh::Ptr Mesh::create()
 {
-	return GraphicBackend::device()->createMesh();
+	return Application::graphic()->createMesh();
 }
 
 void Mesh::uploadInterleaved(const VertexAttribute* attributes, size_t attributeCount, void* vertices, uint32_t vertexCount)

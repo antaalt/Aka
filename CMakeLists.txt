@@ -66,7 +66,7 @@ add_library (Aka
 	"src/Graphic/GL/GLFramebuffer.cpp"
 	"src/Graphic/GL/GLProgram.cpp"
 
-	"src/Graphic/GraphicBackend.cpp"
+	
 	"src/Graphic/GraphicDevice.cpp"
 	"src/Graphic/Device.cpp"
 	"src/Graphic/Framebuffer.cpp"

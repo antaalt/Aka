@@ -10,7 +10,7 @@ namespace aka {
 class AudioRtAudio : public AudioDevice
 {
 public:
-	AudioRtAudio(uint32_t frequency, uint32_t channels);
+	AudioRtAudio(const AudioConfig& config);
 	~AudioRtAudio();
 
 	// Play an audio at path.

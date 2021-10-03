@@ -19,7 +19,7 @@
 #include "Core/Controller.h"
 #include "Core/Event.h"
 
-#include "Graphic/GraphicBackend.h"
+#include "Graphic/GraphicDevice.h"
 #include "Graphic/Mesh.h"
 #include "Graphic/Framebuffer.h"
 #include "Graphic/Backbuffer.h"

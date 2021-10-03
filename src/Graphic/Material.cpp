@@ -1,6 +1,7 @@
 #include <Aka/Graphic/Material.h>
 
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 
 #include <cstring>
@@ -18,7 +19,7 @@ Material::~Material()
 
 Material::Ptr Material::create(Program::Ptr program)
 {
-	return GraphicBackend::device()->createMaterial(program);
+	return Application::graphic()->createMaterial(program);
 }
 
 Program::Ptr Material::program()

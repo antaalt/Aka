@@ -1,9 +1,14 @@
 #include <Aka/Core/Application.h>
 
 #include <Aka/Platform/PlatformDevice.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Audio/AudioDevice.h>
 #include <Aka/OS/Logger.h>
+
+#include "Platform/GLFW3/PlatformGLFW3.h"
+#include "Graphic/D3D11/D3D11Device.h"
+#include "Graphic/GL/GLDevice.h"
+#include "Audio/RtAudio/AudioRtAudio.h"
 
 namespace aka {
 
@@ -90,22 +95,49 @@ uint32_t Application::height() const
 	return m_height;
 }
 
+GraphicDevice* Application::s_graphic = nullptr;
+PlatformDevice* Application::s_platform = nullptr;
+AudioDevice* Application::s_audio = nullptr;
+
+
+GraphicDevice* Application::graphic()
+{
+	return s_graphic;
+}
+
+PlatformDevice* Application::platform()
+{
+	return s_platform;
+}
+
+AudioDevice* Application::audio()
+{
+	return s_audio;
+}
+
 void Application::run(const Config& config)
 {
 	if (config.app == nullptr)
 		throw std::invalid_argument("No app set.");
-	PlatformBackend::initialize(config);
-	GraphicBackend::initialize(config.width, config.height);
-	AudioBackend::initialize(config.audio.frequency, config.audio.channels);
+
+#if defined(AKA_USE_GLFW3)
+	s_platform = new PlatformGLFW3(config.platform);
+#endif
+#if defined(AKA_USE_OPENGL)
+	s_graphic = new GLDevice(config.graphic);
+#elif defined(AKA_USE_D3D11)
+	s_graphic = new D3D11Device(config.graphic);
+#endif
+	s_audio = new AudioRtAudio(config.audio);
+
+	Application* app = config.app;
+
 	Renderer2D::initialize();
 	Renderer3D::initialize();
 	
 	Time timestep = Time::milliseconds(10);
 	Time maxUpdate = Time::milliseconds(100);
-	PlatformDevice* platform = PlatformBackend::get();
-	GraphicDevice* device = GraphicBackend::device();
-	Application* app = config.app;
-	app->initialize(config.width, config.height, config.arguments.count, config.arguments.values);
+	app->initialize(config.platform.width, config.platform.height, config.argc, config.argv);
 
 	{
 		Time lastTick = Time::now();
@@ -123,16 +155,16 @@ void Application::run(const Config& config)
 				app->fixedUpdate(timestep);
 				accumulator -= timestep;
 			}
-			platform->poll();
+			s_platform->poll();
 			app->update(deltaTime);
 			// Rendering
-			device->frame();
+			s_graphic->frame();
 			Renderer2D::frame();
 			Renderer3D::frame();
 			app->frame();
 			app->render();
 			app->present();
-			device->present();
+			s_graphic->present();
 
 			app->end();
 		} while (app->m_running);
@@ -142,9 +174,12 @@ void Application::run(const Config& config)
 
 	Renderer3D::destroy();
 	Renderer2D::destroy();
-	AudioBackend::destroy();
-	GraphicBackend::destroy();
-	PlatformBackend::destroy();
+	delete s_audio;
+	delete s_graphic;
+	delete s_platform;
+	s_audio = nullptr;
+	s_graphic = nullptr;
+	s_platform = nullptr;
 }
 
 };

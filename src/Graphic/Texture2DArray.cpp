@@ -1,6 +1,7 @@
 #include <Aka/Graphic/Texture2DArray.h>
 
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 

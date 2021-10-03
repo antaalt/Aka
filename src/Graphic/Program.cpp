@@ -1,6 +1,7 @@
 #include <Aka/Graphic/Program.h>
 
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 
 namespace aka {
@@ -20,17 +21,17 @@ Program::~Program()
 
 Program::Ptr Program::createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count)
 {
-	return GraphicBackend::device()->createVertexProgram(vert, frag, attributes, count);
+	return Application::graphic()->createVertexProgram(vert, frag, attributes, count);
 }
 
 Program::Ptr Program::createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count)
 {
-	return GraphicBackend::device()->createGeometryProgram(vert, frag, geometry, attributes, count);
+	return Application::graphic()->createGeometryProgram(vert, frag, geometry, attributes, count);
 }
 
 Program::Ptr Program::createComputeProgram(Shader::Ptr compute)
 {
-	return GraphicBackend::device()->createComputeProgram(compute);
+	return Application::graphic()->createComputeProgram(compute);
 }
 
 const Uniform* Program::getUniform(const char* name) const

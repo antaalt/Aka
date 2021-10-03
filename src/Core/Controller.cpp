@@ -1,6 +1,7 @@
 #include <Aka/Core/Controller.h>
 
-#include <Aka/Platform/PlatformDevice.h>	
+#include <Aka/Platform/PlatformDevice.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -41,7 +42,7 @@ bool ButtonController::up() const
 
 void ButtonController::update()
 {
-	PlatformDevice* platform = PlatformBackend::get();
+	PlatformDevice* platform = Application::platform();
 	const Keyboard& keyboard = platform->keyboard();
 	const Mouse& mouse = platform->mouse();
 	m_down = 0;
@@ -115,7 +116,7 @@ const Position& MotionController::delta() const
 
 void MotionController::update()
 {
-	PlatformDevice* platform = PlatformBackend::get();
+	PlatformDevice* platform = Application::platform();
 	const Keyboard& keyboard = platform->keyboard();
 	const Mouse& mouse = platform->mouse();
 	m_delta = { 0.f };

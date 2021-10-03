@@ -30,13 +30,13 @@ ID3D11DeviceContext* D3D11Device::context()
 	return m_deviceContext;
 }
 
-D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
-	GraphicDevice(width, height),
+D3D11Device::D3D11Device(const GraphicConfig& config) :
+	GraphicDevice(config),
 	m_context(nullptr),
 	m_device(nullptr),
 	m_deviceContext(nullptr)
 {
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(PlatformBackend::get());
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::platform());
 	bool vsync = true;
 	bool fullscreen = false;
 	Device device = getDevice(0);
@@ -46,8 +46,8 @@ D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
 	// Set to a single back buffer.
 	swapChainDesc.BufferCount = 1;
 	// Set the width and height of the back buffer.
-	swapChainDesc.BufferDesc.Width = width;
-	swapChainDesc.BufferDesc.Height = height;
+	swapChainDesc.BufferDesc.Width = config.width;
+	swapChainDesc.BufferDesc.Height = config.height;
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// Set the refresh rate of the back buffer.
@@ -100,7 +100,7 @@ D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
 		nullptr,
 		&m_deviceContext
 	));
-	m_backbuffer = std::make_shared<D3D11Backbuffer>(this, swapchain, width, height);
+	m_backbuffer = std::make_shared<D3D11Backbuffer>(this, swapchain, config.width, config.height);
 
 	// Check Features
 	// We are using DirectX11 in this backend.

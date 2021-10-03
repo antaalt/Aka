@@ -172,27 +172,4 @@ void PlatformDevice::onGamepadAxisMotion(GamepadID gid, GamepadAxis axis, const 
 	m_gamepads[gid].m_axes[(int)axis] = value;
 }
 
-
-static PlatformDevice* s_device = nullptr;
-
-void PlatformBackend::initialize(const Config& config)
-{
-	PlatformConfig cfg;
-	cfg.width = config.width;
-	cfg.height = config.height;
-	cfg.icon.bytes = (byte_t*)config.icon.data();
-	cfg.icon.size = config.icon.width();
-	cfg.name = config.name;
-	s_device = new PlatformGLFW3(cfg);
-}
-void PlatformBackend::destroy()
-{
-	delete s_device;
-	s_device = nullptr;
-}
-PlatformDevice* PlatformBackend::get()
-{
-	return s_device;
-}
-
 };

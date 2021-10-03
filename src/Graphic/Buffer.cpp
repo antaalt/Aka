@@ -1,5 +1,5 @@
 #include <Aka/Graphic/Buffer.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -17,7 +17,7 @@ Buffer::~Buffer()
 
 Buffer::Ptr Buffer::create(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
-	return GraphicBackend::device()->createBuffer(type, size, usage, access, data);
+	return Application::graphic()->createBuffer(type, size, usage, access, data);
 }
 
 size_t Buffer::size() const

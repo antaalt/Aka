@@ -1,6 +1,7 @@
 #include <Aka/Graphic/TextureCubeMap.h>
 
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -21,7 +22,7 @@ TextureCubeMap::Ptr TextureCubeMap::create(
 	const void* pz, const void* nz
 )
 {
-	return GraphicBackend::device()->createTextureCubeMap(width, height, format, flags, px, nx, py, ny, pz, nz);
+	return Application::graphic()->createTextureCubeMap(width, height, format, flags, px, nx, py, ny, pz, nz);
 }
 
 TextureCubeMap::Ptr TextureCubeMap::generate(

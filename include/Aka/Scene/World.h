@@ -3,7 +3,6 @@
 #include <Aka/Scene/System.h>
 #include <Aka/OS/Time.h>
 #include <Aka/Core/Debug.h>
-#include <Aka/Graphic/GraphicBackend.h>
 
 #include <entt.hpp>
 

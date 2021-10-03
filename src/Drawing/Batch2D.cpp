@@ -1,5 +1,6 @@
 #include <Aka/Drawing/Batch2D.h>
 
+#include <Aka/Core/Application.h>
 #include <algorithm>
 
 namespace aka {
@@ -252,7 +253,7 @@ size_t Batch2D::indicesCount() const
 
 void Batch2D::render()
 {
-	render(GraphicBackend::device()->backbuffer());
+	render(Application::graphic()->backbuffer());
 }
 
 void Batch2D::render(Framebuffer::Ptr framebuffer)

@@ -7,7 +7,7 @@
 #include <Aka/Graphic/Texture.h>
 #include <Aka/Graphic/Mesh.h>
 #include <Aka/Graphic/RenderPass.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
 
 namespace aka {
 

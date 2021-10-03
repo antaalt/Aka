@@ -13,12 +13,12 @@ class D3D11Context;
 class D3D11Device : public GraphicDevice
 {
 public:
-	D3D11Device(uint32_t width, uint32_t height);
+	D3D11Device(const GraphicConfig& config);
 	~D3D11Device();
 public:
 	D3D11Context* ctx();
-	ID3D11Device* device() override;
-	ID3D11DeviceContext* context() override;
+	ID3D11Device* device();
+	ID3D11DeviceContext* context();
 public:
 	void render(RenderPass& renderPass) override;
 	void dispatch(ComputePass& computePass) override;

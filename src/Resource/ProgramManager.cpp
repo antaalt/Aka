@@ -1,9 +1,10 @@
 #include <Aka/Resource/ProgramManager.h>
 
 #include <Aka/Core/Event.h>
+#include <Aka/Core/Application.h>
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Graphic/Compiler.h>
 #include <Aka/Resource/ResourceManager.h>
 
@@ -247,7 +248,7 @@ void ProgramManager::update()
 
 Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
 {
-	GraphicDevice* device = GraphicBackend::device();
+	GraphicDevice* device = Application::graphic();
 	Path compiledPath;
 	switch (device->api())
 	{

@@ -12,11 +12,6 @@
 #include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/Program.h>
 
-#if defined(AKA_USE_D3D11)
-struct ID3D11Device;
-struct ID3D11DeviceContext;
-#endif
-
 namespace aka {
 
 enum class GraphicApi
@@ -72,10 +67,16 @@ struct GraphicDeviceFeatures
 	GraphicCoordinates coordinates;
 };
 
+struct GraphicConfig
+{
+	uint32_t width = 1280;
+	uint32_t height = 720;
+};
+
 class GraphicDevice
 {
 public:
-	GraphicDevice(uint32_t width, uint32_t height);
+	GraphicDevice(const GraphicConfig& config);
 	GraphicDevice(const GraphicDevice&) = delete;
 	GraphicDevice& operator=(const GraphicDevice&) = delete;
 	virtual ~GraphicDevice();
@@ -100,11 +101,6 @@ public:
 	// Copy a texture
 	virtual void blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter) = 0;
 
-#if defined(AKA_USE_D3D11)
-public:
-	virtual ID3D11Device* device() { return nullptr; }
-	virtual ID3D11DeviceContext* context() { return nullptr; }
-#endif
 public:
 	// Get the physical device info
 	virtual Device getDevice(uint32_t id) = 0;

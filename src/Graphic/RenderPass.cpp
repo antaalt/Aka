@@ -1,5 +1,6 @@
 #include <Aka/Graphic/RenderPass.h>
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 
 namespace aka {
@@ -197,7 +198,7 @@ void RenderPass::execute()
 		Logger::error("Shader and mesh non compatible");
 		return;
 	}
-	GraphicBackend::device()->render(*this);
+	Application::graphic()->render(*this);
 }
 
 void ComputePass::execute()
@@ -207,7 +208,7 @@ void ComputePass::execute()
 		Logger::error("No Material set for render pass.");
 		return;
 	}
-	GraphicBackend::device()->dispatch(*this);
+	Application::graphic()->dispatch(*this);
 }
 
 };

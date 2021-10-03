@@ -1,6 +1,7 @@
 #include <Aka/Graphic/Texture2DMultisample.h>
 
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -22,7 +23,7 @@ Texture2DMultisample::Ptr Texture2DMultisample::create(
 	const void* data
 )
 {
-	return GraphicBackend::device()->createTexture2DMultisampled(width, height, format, flags, samples, data);
+	return Application::graphic()->createTexture2DMultisampled(width, height, format, flags, samples, data);
 }
 
 };

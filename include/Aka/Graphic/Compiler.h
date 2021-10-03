@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Graphic/GraphicBackend.h>
+#include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Graphic/Shader.h>
 
 #include <vector>

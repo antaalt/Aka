@@ -2,7 +2,7 @@
 
 namespace aka {
 
-GraphicDevice::GraphicDevice(uint32_t width, uint32_t height) :
+GraphicDevice::GraphicDevice(const GraphicConfig& config) :
 	m_features{},
 	m_backbuffer(nullptr)
 {

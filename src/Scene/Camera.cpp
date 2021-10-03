@@ -2,6 +2,7 @@
 
 #include <Aka/Platform/Input.h>
 #include <Aka/Platform/PlatformDevice.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -27,7 +28,7 @@ CameraProjectionType CameraOrthographic::type() const
 
 bool CameraArcball::update(Time deltaTime)
 {
-	PlatformDevice* platform = PlatformBackend::get();
+	PlatformDevice* platform = Application::platform();
 	const Mouse& mouse = platform->mouse();
 	bool dirty = false;
 	// https://gamedev.stackexchange.com/questions/53333/how-to-implement-a-basic-arcball-camera-in-opengl-with-glm

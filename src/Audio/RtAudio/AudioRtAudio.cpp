@@ -8,8 +8,8 @@
 
 namespace aka {
 
-AudioRtAudio::AudioRtAudio(uint32_t frequency, uint32_t channels) :
-	AudioDevice(frequency, channels)
+AudioRtAudio::AudioRtAudio(const AudioConfig& config) :
+	AudioDevice(config)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	m_audio = new RtAudio(RtAudio::Api::WINDOWS_DS);

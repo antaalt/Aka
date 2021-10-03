@@ -8,7 +8,7 @@ namespace aka {
 class GLDevice : public GraphicDevice
 {
 public:
-	GLDevice(uint32_t width, uint32_t height);
+	GLDevice(const GraphicConfig& config);
 	~GLDevice();
 public:
 	void render(RenderPass& renderPass) override;
