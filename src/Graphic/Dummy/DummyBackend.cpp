@@ -6,7 +6,7 @@
 #include <Aka/Core/Event.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Platform/Platform.h>
-#include <Aka/Platform/PlatformBackend.h>
+#include <Aka/Platform/PlatformDevice.h>
 
 namespace aka {
 

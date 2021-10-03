@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Platform/Platform.h"
-#include "Platform/PlatformBackend.h"
+#include "Platform/PlatformDevice.h"
 #include "Platform/Input.h"
 #include "Platform/InputBackend.h"
 

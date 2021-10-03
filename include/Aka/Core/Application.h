@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Aka/Platform/Platform.h>
-#include <Aka/Platform/PlatformBackend.h>
+#include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Scene/World.h>
 
 #include <Aka/Core/Event.h>
@@ -23,8 +23,8 @@ struct Config {
 		uint32_t channels = 2;
 	} audio;
 	struct Arguments {
-		int count;
-		char** values;
+		int count = 0;
+		char** values = nullptr;
 	} arguments;
 };
 
@@ -119,10 +119,12 @@ void Application::detach()
 	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
 	for (auto it = m_layers.begin(); it != m_layers.end(); it++)
 	{
-		if (typeid(*(*it)) == typeid(T))
+		Layer* layer = *it;
+		if (typeid(*layer) == typeid(T))
 		{
-			(*it)->onLayerDetach();
+			layer->onLayerDetach();
 			m_layers.erase(it);
+			delete layer;
 			break;
 		}
 	}

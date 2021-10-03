@@ -10,6 +10,8 @@
 #include "GLFramebuffer.h"
 #include "GLProgram.h"
 
+#include "Platform/GLFW3/PlatformGLFW3.h"
+
 #include <Aka/OS/Logger.h>
 
 namespace aka {
@@ -150,7 +152,8 @@ GLDevice::GLDevice(uint32_t width, uint32_t height) :
 	m_features.coordinates.renderAxisYUp = true; // GL render axis y is up
 
 	// Create backbuffer
-	m_backbuffer = std::make_shared<GLBackbuffer>(PlatformBackend::getGLFW3Handle(), width, height);
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(PlatformBackend::get());
+	m_backbuffer = std::make_shared<GLBackbuffer>(platform->getGLFW3Handle(), width, height);
 }
 
 GLDevice::~GLDevice()

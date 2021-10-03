@@ -1,12 +1,10 @@
-#include <Aka/Platform/PlatformBackend.h>
+#include "PlatformGLFW3.h"
 
-#include <Aka/OS/Logger.h>
-#include <Aka/OS/OS.h>
+#include <Aka/Platform/Input.h>
+#include <Aka/Core/Event.h>
 #include <Aka/Core/Application.h>
-#include <Aka/Graphic/GraphicBackend.h>
-#include <Aka/Platform/InputBackend.h>
-
-#include <GLFW/glfw3.h>
+#include <Aka/OS/OS.h>
+#include <Aka/OS/Logger.h>
 
 namespace aka {
 
@@ -391,25 +389,25 @@ const GamepadButton glfwGamepadButtonMap[512] = {
 	GamepadButton::DpadLeft, // GLFW_GAMEPAD_BUTTON_DPAD_LEFT
 };
 
-struct GLFW3Context {
-	GLFWwindow* window = nullptr;
-	int x = 0;
-	int y = 0;
-	int width = 0;
-	int height = 0;
-};
 
-GLFW3Context pctx;
 
-void PlatformBackend::initialize(const Config& config)
+PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
+	PlatformDevice(config)
 {
 	glfwSetErrorCallback([](int error, const char* description) {
 		Logger::error("[GLFW][", error, "] ", description);
 	});
+	// TODO glfw context static to handle multiple window creation
 	if (glfwInit() != GLFW_TRUE)
 		throw std::runtime_error("Could not init GLFW");
-
+	auto has = [](PlatformFlag flags, PlatformFlag flag) -> int {
+		return (flags & flag) == flag ? GLFW_TRUE : GLFW_FALSE;
+	};
 	// Backend API
+	glfwWindowHint(GLFW_RESIZABLE, has(config.flags, PlatformFlag::Resizable));
+	glfwWindowHint(GLFW_DECORATED, has(config.flags, PlatformFlag::Decorated));
+	glfwWindowHint(GLFW_MAXIMIZED, has(config.flags, PlatformFlag::Maximized));
+	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, has(config.flags, PlatformFlag::Transparent));
 #if defined(AKA_USE_OPENGL)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -426,55 +424,59 @@ void PlatformBackend::initialize(const Config& config)
 #elif defined(AKA_USE_D3D11)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
-
-	pctx.window = glfwCreateWindow(config.width, config.height, config.name.cstr(), NULL, NULL);
-	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(&pctx.width), reinterpret_cast<int*>(&pctx.height));
-	glfwGetWindowPos(pctx.window, reinterpret_cast<int*>(&pctx.x), reinterpret_cast<int*>(&pctx.y));
-	if (config.icon.size() > 0)
+	GLFWmonitor* monitor = nullptr;
+	if ((config.flags & PlatformFlag::FullScreen) == PlatformFlag::FullScreen)
+		monitor = glfwGetPrimaryMonitor();
+	m_window = glfwCreateWindow(config.width, config.height, config.name.cstr(), monitor, nullptr);
+	glfwGetWindowSize(m_window, reinterpret_cast<int*>(&m_width), reinterpret_cast<int*>(&m_height));
+	glfwGetWindowPos(m_window, reinterpret_cast<int*>(&m_x), reinterpret_cast<int*>(&m_y));
+	glfwSetWindowUserPointer(m_window, this);
+	if (config.icon.size > 0)
 	{
-		Image image = config.icon;
-		GLFWimage img{ (int)config.icon.width(), (int)config.icon.height(), static_cast<unsigned char*>(image.data()) };
-		glfwSetWindowIcon(pctx.window, 1, &img);
+		GLFWimage img{ (int)config.icon.size, (int)config.icon.size, config.icon.bytes };
+		glfwSetWindowIcon(m_window, 1, &img);
 	}
-	if (pctx.window == nullptr) {
+	if (m_window == nullptr) {
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
 	}
 #if defined(AKA_USE_OPENGL)
-	glfwMakeContextCurrent(pctx.window);
+	glfwMakeContextCurrent(m_window);
 	glfwSwapInterval(1); // default enable vsync
 #endif
 
 	// --- Callbacks ---
 	// --- Size
-	glfwSetWindowSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
-		pctx.width = width;
-		pctx.height = height;
+	glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
+		p->m_width = width;
+		p->m_height = height;
 		EventDispatcher<WindowResizeEvent>::emit(WindowResizeEvent{ (uint32_t)width, (uint32_t)height });
 	});
-	glfwSetFramebufferSizeCallback(pctx.window, [](GLFWwindow* window, int width, int height) {
+	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
 		EventDispatcher<BackbufferResizeEvent>::emit(BackbufferResizeEvent{ (uint32_t)width, (uint32_t)height });
 	});
-	glfwSetWindowContentScaleCallback(pctx.window, [](GLFWwindow* window, float x, float y) {
+	glfwSetWindowContentScaleCallback(m_window, [](GLFWwindow* window, float x, float y) {
 		EventDispatcher<WindowContentScaledEvent>::emit(WindowContentScaledEvent{ x, y });
 	});
-	glfwSetWindowMaximizeCallback(pctx.window, [](GLFWwindow* window, int maximized) {
+	glfwSetWindowMaximizeCallback(m_window, [](GLFWwindow* window, int maximized) {
 		EventDispatcher<WindowMaximizedEvent>::emit(WindowMaximizedEvent{ (maximized == GLFW_TRUE) });
 	});
 	// --- Window
-	glfwSetWindowFocusCallback(pctx.window, [](GLFWwindow* window, int focused) {
+	glfwSetWindowFocusCallback(m_window, [](GLFWwindow* window, int focused) {
 		EventDispatcher<WindowFocusedEvent>::emit(WindowFocusedEvent{ (focused == GLFW_TRUE) });
 	});
-	glfwSetWindowRefreshCallback(pctx.window, [](GLFWwindow* window) {
+	glfwSetWindowRefreshCallback(m_window, [](GLFWwindow* window) {
 		EventDispatcher<WindowRefreshedEvent>::emit(WindowRefreshedEvent{});
 	});
-	glfwSetWindowIconifyCallback(pctx.window, [](GLFWwindow* window, int iconified) {
+	glfwSetWindowIconifyCallback(m_window, [](GLFWwindow* window, int iconified) {
 		EventDispatcher<WindowIconifiedEvent>::emit(WindowIconifiedEvent{ (iconified == GLFW_TRUE) });
 	});
-	glfwSetWindowPosCallback(pctx.window, [](GLFWwindow* window, int x, int y) {
+	glfwSetWindowPosCallback(m_window, [](GLFWwindow* window, int x, int y) {
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		EventDispatcher<WindowMovedEvent>::emit(WindowMovedEvent{ x, y });
-		pctx.x = x;
-		pctx.y = y;
+		p->m_x = x;
+		p->m_y = y;
 	});
 	// --- Monitor
 	glfwSetMonitorCallback([](GLFWmonitor* monitor, int event) {
@@ -485,7 +487,7 @@ void PlatformBackend::initialize(const Config& config)
 			EventDispatcher<MonitorDisconnectedEvent>::emit(MonitorDisconnectedEvent {});
 	});
 	// --- Inputs
-	glfwSetKeyCallback(pctx.window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
+	glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
 		if (action == GLFW_PRESS)
 			EventDispatcher<KeyboardKeyDownEvent>::emit(KeyboardKeyDownEvent{ glfwKeyboardKeyMap[key] });
 		else if (action == GLFW_RELEASE)
@@ -493,7 +495,7 @@ void PlatformBackend::initialize(const Config& config)
 		else if (action == GLFW_REPEAT)
 			EventDispatcher<KeyboardKeyRepeatEvent>::emit(KeyboardKeyRepeatEvent{ glfwKeyboardKeyMap[key] });
 	});
-	glfwSetMouseButtonCallback(pctx.window, [](GLFWwindow* window, int button, int action, int mode) {
+	glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mode) {
 		if (action == GLFW_PRESS)
 			EventDispatcher<MouseButtonDownEvent>::emit(MouseButtonDownEvent{ glfwMouseButtonMap[button] });
 		else if (action == GLFW_RELEASE)
@@ -501,30 +503,32 @@ void PlatformBackend::initialize(const Config& config)
 		else if (action == GLFW_REPEAT)
 			EventDispatcher<MouseButtonRepeatEvent>::emit(MouseButtonRepeatEvent{ glfwMouseButtonMap[button] });
 	});
-	glfwSetCharCallback(pctx.window, [](GLFWwindow* window, unsigned int character) {
+	glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int character) {
 		EventDispatcher<WindowUnicodeCharEvent>::emit(WindowUnicodeCharEvent{ character });
 	});
-	glfwSetDropCallback(pctx.window, [](GLFWwindow* window, int count, const char** paths) {
+	glfwSetDropCallback(m_window, [](GLFWwindow* window, int count, const char** paths) {
+		// TODO get mouse position and pass it along the event.
 		WindowDropEvent e;
 		for (int i = 0; i < count; i++)
 			e.paths.append(OS::normalize(paths[i]));
 		EventDispatcher<WindowDropEvent>::emit(std::move(e));
 	});
-	glfwSetCursorPosCallback(pctx.window, [](GLFWwindow* window, double xpos, double ypos) {
+	glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		// Aka coordinates system origin is bottom left, so we convert.
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		EventDispatcher<MouseMoveEvent>::emit(MouseMoveEvent{
 			static_cast<float>(xpos), 
-			static_cast<float>(pctx.height) - static_cast<float>(ypos) 
+			static_cast<float>(p->height()) - static_cast<float>(ypos)
 		});
 	});
-	glfwSetScrollCallback(pctx.window, [](GLFWwindow* window, double xoffset, double yoffset) {
+	glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
 		EventDispatcher<MouseScrollEvent>::emit(MouseScrollEvent{ 
 			static_cast<float>(xoffset), 
 			static_cast<float>(yoffset) 
 		});
 	});
-	glfwSetCursorEnterCallback(pctx.window, [](GLFWwindow* window, int entered) {
+	glfwSetCursorEnterCallback(m_window, [](GLFWwindow* window, int entered) {
 		if (entered == GLFW_TRUE)
 			EventDispatcher<MouseEnterEvent>::emit();
 		else if (entered == GLFW_FALSE)
@@ -547,13 +551,12 @@ void PlatformBackend::initialize(const Config& config)
 	}
 }
 
-void PlatformBackend::destroy()
+PlatformGLFW3::~PlatformGLFW3()
 {
 	glfwTerminate();
-	pctx = {};
 }
 
-void PlatformBackend::update()
+void PlatformGLFW3::poll()
 {
 	glfwPollEvents();
 	// Generate joystick events as GLFW does not seem to have built in way...
@@ -622,61 +625,69 @@ void PlatformBackend::update()
 	EventDispatcher<WindowDropEvent>::dispatch();
 	EventDispatcher<MonitorConnectedEvent>::dispatch();
 	EventDispatcher<MonitorDisconnectedEvent>::dispatch();
+
+	if (glfwWindowShouldClose(m_window))
+		EventDispatcher<QuitEvent>::emit();
+
+	// TODO call input backend here.
+	// What about input resets ?
 }
 
-bool PlatformBackend::running()
+void PlatformGLFW3::move(int32_t x, int32_t y)
 {
-	return !glfwWindowShouldClose(pctx.window);
+	glfwSetWindowPos(m_window, x, y);
 }
 
-void PlatformBackend::getSize(uint32_t* width, uint32_t* height)
+void PlatformGLFW3::resize(uint32_t width, uint32_t height)
 {
-	glfwGetWindowSize(pctx.window, reinterpret_cast<int*>(width), reinterpret_cast<int*>(height));
+	if ((m_flags & PlatformFlag::Resizable) != PlatformFlag::Resizable)
+		return;
+	glfwSetWindowSize(m_window, width, height);
 }
 
-void PlatformBackend::setSize(uint32_t width, uint32_t height)
-{
-	glfwSetWindowSize(pctx.window, width, height);
-}
-
-void PlatformBackend::setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight)
+void PlatformGLFW3::setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight)
 {
 	auto convert = [](uint32_t value) -> int { if (value == 0) return GLFW_DONT_CARE; return value; };
-	glfwSetWindowSizeLimits(pctx.window, convert(minWidth), convert(minHeight), convert(maxWidth), convert(maxHeight));
+	glfwSetWindowSizeLimits(m_window, convert(minWidth), convert(minHeight), convert(maxWidth), convert(maxHeight));
 }
 
-void PlatformBackend::setFullscreen(bool enabled)
+void PlatformGLFW3::fullscreen(bool enable)
 {
-	static uint32_t x = pctx.x;
-	static uint32_t y = pctx.y;
-	static uint32_t width = pctx.width;
-	static uint32_t height = pctx.height;
-	if (enabled)
+	// TODO do we really need to store this ? do not make it static
+	static uint32_t x = m_x;
+	static uint32_t y = m_y;
+	static uint32_t width = m_width;
+	static uint32_t height = m_height;
+	// Check current fullscreen state.
+	bool enabled = (m_flags & PlatformFlag::FullScreen) == PlatformFlag::FullScreen;
+	if (enabled == enable)
+		return;
+	if (enable)
 	{
-		if (glfwGetWindowMonitor(pctx.window) != nullptr)
-			return; // Already full screen
+		AKA_ASSERT(glfwGetWindowMonitor(m_window) == nullptr, "Fullscreen should not be enabled.");
+		m_flags = m_flags | PlatformFlag::FullScreen;
 		// Store windowed size for switching back from fullscreen
-		x = pctx.x;
-		y = pctx.y;
-		width = pctx.width;
-		height = pctx.height;
+		x = m_x;
+		y = m_y;
+		width = m_width;
+		height = m_height;
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-		glfwSetWindowMonitor(pctx.window, monitor, 0, 0, mode->width, mode->height, 0);
-		// TODO correctly reenable vsync
+		glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, 0);
+		// TODO correctly reenable vsync. This should be swapchain dependent ?
 		glfwSwapInterval(1);
 	}
 	else
 	{
-		if (glfwGetWindowMonitor(pctx.window) == nullptr)
-			return; // Already not fullscreen
-		glfwSetWindowMonitor(pctx.window, nullptr, x, y, width, height, GLFW_DONT_CARE);
+		AKA_ASSERT(glfwGetWindowMonitor(m_window) != nullptr, "Fullscreen should be enabled.");
+		m_flags = m_flags & ~PlatformFlag::FullScreen;
+		glfwSetWindowMonitor(m_window, nullptr, x, y, width, height, GLFW_DONT_CARE);
 	}
 }
 
-GLFWwindow* PlatformBackend::getGLFW3Handle()
+GLFWwindow* PlatformGLFW3::getGLFW3Handle()
 {
-	return pctx.window;
+	return m_window;
 }
 
 };

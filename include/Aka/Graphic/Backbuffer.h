@@ -2,7 +2,7 @@
 
 #include <Aka/Graphic/Framebuffer.h>
 #include <Aka/Core/Event.h>
-#include <Aka/Platform/PlatformBackend.h>
+#include <Aka/Platform/PlatformDevice.h>
 
 namespace aka {
 

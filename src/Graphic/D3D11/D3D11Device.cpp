@@ -11,6 +11,8 @@
 #include "D3D11Program.h"
 #include "Internal/D3D11Blit.h"
 
+#include "Platform/GLFW3/PlatformGLFW3.h"
+
 #include <Aka/OS/Logger.h>
 
 namespace aka {
@@ -34,6 +36,7 @@ D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
 	m_device(nullptr),
 	m_deviceContext(nullptr)
 {
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(PlatformBackend::get());
 	bool vsync = true;
 	bool fullscreen = false;
 	Device device = getDevice(0);
@@ -61,7 +64,7 @@ D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
 	// Set the usage of the back buffer.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = glfwGetWin32Window(PlatformBackend::getGLFW3Handle());
+	swapChainDesc.OutputWindow = glfwGetWin32Window(platform->getGLFW3Handle());
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;

@@ -4,7 +4,7 @@
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Core/Debug.h>
-#include <Aka/Platform/PlatformBackend.h>
+#include <Aka/Platform/PlatformDevice.h>
 
 #include <algorithm>
 #include <cstring>

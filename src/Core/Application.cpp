@@ -1,6 +1,6 @@
 #include <Aka/Core/Application.h>
 
-#include <Aka/Platform/PlatformBackend.h>
+#include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Platform/InputBackend.h>
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Audio/AudioBackend.h>
@@ -104,7 +104,7 @@ void Application::run(const Config& config)
 	
 	Time timestep = Time::milliseconds(10);
 	Time maxUpdate = Time::milliseconds(100);
-
+	PlatformDevice* platform = PlatformBackend::get();
 	GraphicDevice* device = GraphicBackend::device();
 	Application* app = config.app;
 	app->initialize(config.width, config.height, config.arguments.count, config.arguments.values);
@@ -125,7 +125,7 @@ void Application::run(const Config& config)
 				app->fixedUpdate(timestep);
 				accumulator -= timestep;
 			}
-			PlatformBackend::update();
+			platform->poll();
 			InputBackend::update();
 			app->update(deltaTime);
 			// Rendering
@@ -138,7 +138,7 @@ void Application::run(const Config& config)
 			device->present();
 
 			app->end();
-		} while (app->m_running && PlatformBackend::running());
+		} while (app->m_running);
 	}
 
 	app->destroy();

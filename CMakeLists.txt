@@ -99,7 +99,8 @@ add_library (Aka
 	"src/OS/Linux/OSLinux.cpp" 
 
 	"src/Platform/Input.cpp"
-	"src/Platform/PlatformGLFW3.cpp"
+	"src/Platform/GLFW3/PlatformGLFW3.cpp" 
+	"src/Platform/PlatformDevice.cpp" 
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)

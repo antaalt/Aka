@@ -1,6 +1,6 @@
 #include <Aka/Layer/ImGuiLayer.h>
 
-#include <Aka/Platform/PlatformBackend.h>
+#include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Graphic/GraphicBackend.h>
 
 #if defined(AKA_USE_IMGUI_LAYER)
@@ -17,9 +17,10 @@
 #if defined(AKA_USE_D3D11)
 #include <d3d11.h>
 #include <backends/imgui_impl_dx11.h>
-#include "../Graphic/D3D11/D3D11Context.h"
-#include "../Graphic/D3D11/D3D11Backbuffer.h"
+#include "Graphic/D3D11/D3D11Context.h"
+#include "Graphic/D3D11/D3D11Backbuffer.h"
 #endif
+#include "Platform/GLFW3/PlatformGLFW3.h"
 
 namespace aka {
 
@@ -40,15 +41,16 @@ void ImGuiLayer::onLayerAttach()
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(PlatformBackend::get());
 #if defined(AKA_USE_OPENGL)
-	ImGui_ImplGlfw_InitForOpenGL(PlatformBackend::getGLFW3Handle(), true);
+	ImGui_ImplGlfw_InitForOpenGL(platform->getGLFW3Handle(), true);
 
 	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 	std::stringstream ss;
 	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
 	ImGui_ImplOpenGL3_Init(ss.str().c_str());
 #else
-	ImGui_ImplGlfw_InitForVulkan(PlatformBackend::getGLFW3Handle(), true);
+	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(GraphicBackend::device()->device(), GraphicBackend::device()->context());
 #endif
 
