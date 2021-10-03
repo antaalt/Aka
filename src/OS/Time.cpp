@@ -1,14 +1,3 @@
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
-#include "..\..\include\Aka\OS\Time.h"
 #include <Aka/OS/Time.h>
 
 #include <chrono>
@@ -230,18 +219,22 @@ bool Time::operator>=(const Time& rhs) const
 	return m_value >= rhs.m_value;
 }
 
-Date Date::localtime()
-{
-	using namespace std::chrono;
-	time_point<system_clock> now = system_clock::now();
-	time_t t = system_clock::to_time_t(now);
-	std::tm lt{};
-	// Safe localtime for multithread issues
+// Safe localtime for multithread issues
 #if defined(AKA_PLATFORM_WINDOWS)
-	localtime_s(&lt, &t);
+#define local(lt, t) localtime_s(lt, t);
 #else
-	localtime_r(&t, &lt);
+#define local(lt, t) localtime_r(t, lt);
 #endif
+
+// Safe gmtime for multithread issues
+#if defined(AKA_PLATFORM_WINDOWS)
+#define global(lt, t) gmtime_s(lt, t);
+#else
+#define global(lt, t) gmtime_r(t, lt);
+#endif
+
+Date from(const std::tm& lt)
+{
 	Date date;
 	date.year = lt.tm_year + 1900;
 	date.month = lt.tm_mon + 1;
@@ -252,26 +245,40 @@ Date Date::localtime()
 	return date;
 }
 
+Date Date::localtime()
+{
+	using namespace std::chrono;
+	time_point<system_clock> now = system_clock::now();
+	time_t t = system_clock::to_time_t(now);
+	std::tm lt{};
+	local(&lt, &t);
+	return from(lt);
+}
+
 Date Date::globaltime()
 {
 	using namespace std::chrono;
 	time_point<system_clock> now = system_clock::now();
 	time_t t = system_clock::to_time_t(now);
 	std::tm lt{};
-	// Safe gmtime for multithread issues
-#if defined(AKA_PLATFORM_WINDOWS)
-	gmtime_s(&lt, &t);
-#else
-	gmtime_r(&t, &lt);
-#endif
-	Date date;
-	date.year = lt.tm_year + 1900;
-	date.month = lt.tm_mon + 1;
-	date.day = lt.tm_mday;
-	date.hour = lt.tm_mday;
-	date.minute = lt.tm_min;
-	date.second = lt.tm_sec;
-	return date;
+	global(&lt, &t);
+	return from(lt);
+}
+
+Date Date::localtime(Timestamp timestamp)
+{
+	time_t t = timestamp.seconds();
+	std::tm lt{};
+	local(&lt, &t);
+	return from(lt);
+}
+
+Date Date::globaltime(Timestamp timestamp)
+{
+	time_t t = timestamp.seconds();
+	std::tm lt{};
+	global(&lt, &t);
+	return from(lt);
 }
 
 }

@@ -15,7 +15,10 @@
 #include <sstream>
 #endif
 #if defined(AKA_USE_D3D11)
+#include <d3d11.h>
 #include <backends/imgui_impl_dx11.h>
+#include "../Graphic/D3D11/D3D11Context.h"
+#include "../Graphic/D3D11/D3D11Backbuffer.h"
 #endif
 
 namespace aka {
@@ -171,6 +174,11 @@ void ImGuiLayer::onLayerPresent()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #else
+	// TODO do not enforce backbuffer
+	GraphicDevice* device = GraphicBackend::device();
+	D3D11Backbuffer* backbuffer = (D3D11Backbuffer*)device->backbuffer().get();
+	backbuffer->bind();
+	
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #endif
 }

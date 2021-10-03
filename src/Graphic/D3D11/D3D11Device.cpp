@@ -61,7 +61,7 @@ D3D11Device::D3D11Device(uint32_t width, uint32_t height) :
 	// Set the usage of the back buffer.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = PlatformBackend::getWindowsWindowHandle();
+	swapChainDesc.OutputWindow = glfwGetWin32Window(PlatformBackend::getGLFW3Handle());
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;

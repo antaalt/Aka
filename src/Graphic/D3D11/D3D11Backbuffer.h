@@ -31,6 +31,8 @@ public:
 	void submit() override;
 	// download current frame content
 	void download(void* data) override;
+	// Bind the backbuffer
+	void bind();
 protected: // Can't set backbuffer attachment
 	void resize(uint32_t width, uint32_t height) override;
 	void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag, uint32_t layer, uint32_t level) override;

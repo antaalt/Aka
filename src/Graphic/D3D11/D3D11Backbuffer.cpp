@@ -199,6 +199,12 @@ void D3D11Backbuffer::download(void* data)
 	throw std::runtime_error("not implemented");
 }
 
+void D3D11Backbuffer::bind()
+{
+	ID3D11RenderTargetView* view = m_renderTargetView;
+	m_device->context()->OMSetRenderTargets(1, &view, m_depthStencilView);
+}
+
 };
 
 #endif

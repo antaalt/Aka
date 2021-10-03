@@ -5,12 +5,18 @@
 
 namespace aka {
 
+struct Timestamp;
+
 struct Date
 {
-	// Get the date corresponding to the local timezone
+	// Get the current date corresponding to the local timezone
 	static Date localtime();
-	// Get the date corresponding to the UTC time
+	// Get the current date corresponding to the UTC time
 	static Date globaltime();
+	// Get the date corresponding to the local timezone from a timestamp
+	static Date localtime(Timestamp timestamp);
+	// Get the date corresponding to the UTC time from a timestamp
+	static Date globaltime(Timestamp timestamp);
 
 	uint32_t year;
 	uint32_t month;

@@ -7,10 +7,6 @@
 #include <Aka/Platform/InputBackend.h>
 
 #include <GLFW/glfw3.h>
-#if defined(AKA_PLATFORM_WINDOWS)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
-#endif
 
 namespace aka {
 
@@ -677,13 +673,6 @@ void PlatformBackend::setFullscreen(bool enabled)
 		glfwSetWindowMonitor(pctx.window, nullptr, x, y, width, height, GLFW_DONT_CARE);
 	}
 }
-
-#if defined(AKA_PLATFORM_WINDOWS)
-HWND PlatformBackend::getWindowsWindowHandle()
-{
-	return glfwGetWin32Window(pctx.window);
-}
-#endif
 
 GLFWwindow* PlatformBackend::getGLFW3Handle()
 {

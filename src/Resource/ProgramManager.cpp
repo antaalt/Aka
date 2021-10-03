@@ -266,6 +266,7 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 		Compiler compiler;
 		if (!compiler.parse(path, type))
 		{
+			Logger::error("Shader ", OS::File::name(path), " failed to compiled.");
 			return Shader::Ptr(0);
 		}
 		shader = compiler.compile(device->api(), attributes, count);
