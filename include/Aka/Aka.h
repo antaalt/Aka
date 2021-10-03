@@ -40,7 +40,7 @@
 
 #include "Audio/Audio.h"
 #include "Audio/AudioStream.h"
-#include "Audio/AudioBackend.h"
+#include "Audio/AudioDevice.h"
 
 #include "OS/OS.h"
 #include "OS/Logger.h"

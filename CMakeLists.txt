@@ -3,10 +3,11 @@ project(Aka)
 
 # Ajoutez une source à l'exécutable de ce projet.
 add_library (Aka
-	"src/Audio/RtAudioBackend.cpp"
+	"src/Audio/AudioDevice.cpp"
 	"src/Audio/AudioStream.cpp"
 	"src/Audio/AudioStreamMp3.cpp"
 	"src/Audio/AudioStreamMemory.cpp"
+	"src/Audio/RtAudio/AudioRtAudio.cpp"
 
 	"src/Core/Container/Blob.cpp"
 	"src/Core/Container/String.cpp"
