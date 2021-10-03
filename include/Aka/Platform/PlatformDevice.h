@@ -1,10 +1,12 @@
 #pragma once
 
 #include <Aka/Platform/Platform.h>
+#include <Aka/Platform/Input.h>
 #include <Aka/OS/Path.h>
 #include <Aka/Core/Encoding.h>
 #include <Aka/Core/Container/Vector.h>
 
+#include <map>
 #include <stdint.h>
 
 namespace aka {
@@ -98,6 +100,15 @@ public:
 	// Get the flags of the window
 	PlatformFlag flags() const;
 
+	// Get the mouse
+	const Mouse& mouse() const;
+	// Get the keyboard
+	const Keyboard& keyboard() const;
+	// Get the gamepad
+	const Gamepad& gamepad(GamepadID id) const;
+	// Check if gamepad is connected
+	bool connected(GamepadID id) const;
+
 	// Poll all the events of the window.
 	virtual void poll() = 0;
 	// Move the window
@@ -108,12 +119,30 @@ public:
 	virtual void setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight) = 0;
 	// Set fullscreen mode of the window
 	virtual void fullscreen(bool enabled) = 0;
+protected: // Inputs
+	void onInputsUpdate();
+	void onKeyboardKeyDown(KeyboardKey key);
+	void onKeyboardKeyUp(KeyboardKey key);
+	void onMouseButtonDown(MouseButton button);
+	void onMouseButtonUp(MouseButton button);
+	void onMouseMotion(float x, float y);
+	void onMouseScroll(float x, float y);
+	void onMouseEnter();
+	void onMouseLeave();
+	void onGamepadConnected(GamepadID gid, const char* name);
+	void onGamepadDisconnected(GamepadID gid);
+	void onGamepadButtonDown(GamepadID gid, GamepadButton button);
+	void onGamepadButtonUp(GamepadID gid, GamepadButton button);
+	void onGamepadAxisMotion(GamepadID gid, GamepadAxis axis, const Position& value);
 protected:
 	uint32_t m_width;
 	uint32_t m_height;
 	int32_t m_x;
 	int32_t m_y;
 	PlatformFlag m_flags;
+	Keyboard m_keyboard;
+	Mouse m_mouse;
+	std::map<GamepadID, Gamepad> m_gamepads;
 };
 
 struct PlatformBackend

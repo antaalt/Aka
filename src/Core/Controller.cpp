@@ -1,5 +1,7 @@
 #include <Aka/Core/Controller.h>
 
+#include <Aka/Platform/PlatformDevice.h>	
+
 namespace aka {
 
 void ButtonController::add(KeyboardKey key)
@@ -39,16 +41,19 @@ bool ButtonController::up() const
 
 void ButtonController::update()
 {
+	PlatformDevice* platform = PlatformBackend::get();
+	const Keyboard& keyboard = platform->keyboard();
+	const Mouse& mouse = platform->mouse();
 	m_down = 0;
 	m_up = 0;
 	for (KeyboardKey key : m_keyboardKeys)
 	{
-		if (Keyboard::down(key))
+		if (keyboard.down(key))
 		{
 			m_down++;
 			m_pressed++;
 		}
-		if (Keyboard::up(key))
+		if (keyboard.up(key))
 		{
 			m_up++;
 			m_pressed--;
@@ -56,28 +61,30 @@ void ButtonController::update()
 	}
 	for (MouseButton button : m_mouseButtons)
 	{
-		if (Mouse::down(button))
+		if (mouse.down(button))
 		{
 			m_down++;
 			m_pressed++;
 		}
-		if (Mouse::up(button))
+		if (mouse.up(button))
 		{
 			m_up++;
 			m_pressed--;
 		}
 	}
-	GamepadID gid = Gamepad::get();
-	if (Gamepad::connected(gid))
+	// TODO all gid ?
+	GamepadID gid = (GamepadID)0;
+	if (platform->connected(gid))
 	{
+		const Gamepad& gamepad = platform->gamepad(gid);
 		for (GamepadButton button : m_gamepadButtons)
 		{
-			if (Gamepad::down(gid, button))
+			if (gamepad.down(gid, button))
 			{
 				m_down++;
 				m_pressed++;
 			}
-			if (Gamepad::up(gid, button))
+			if (gamepad.up(gid, button))
 			{
 				m_up++;
 				m_pressed--;
@@ -108,27 +115,31 @@ const Position& MotionController::delta() const
 
 void MotionController::update()
 {
+	PlatformDevice* platform = PlatformBackend::get();
+	const Keyboard& keyboard = platform->keyboard();
+	const Mouse& mouse = platform->mouse();
 	m_delta = { 0.f };
 	if (m_mouseAxis)
 	{
-		const Position& pos = Mouse::delta();
+		const Position& pos = mouse.delta();
 		m_delta.x += pos.x;
 		m_delta.y += pos.y;
 	}
-	GamepadID gid = Gamepad::get();
-	if (Gamepad::connected(gid))
+	GamepadID gid = (GamepadID)0;
+	if (platform->connected(gid))
 	{
+		const Gamepad& gamepad = platform->gamepad(gid);
 		for (GamepadAxis axis : m_gamepadAxis)
 		{
-			const Position& pos = Gamepad::axis(gid, axis);
+			const Position& pos = gamepad.axis(gid, axis);
 			m_delta.x += pos.x;
 			m_delta.y += pos.y;
 		}
 	}
 	for (const KeyboardAxis& axis : m_keyboardAxis)
 	{
-		m_delta.x += static_cast<float>(Keyboard::pressed(axis.right) - Keyboard::pressed(axis.left));
-		m_delta.y += static_cast<float>(Keyboard::pressed(axis.up) - Keyboard::pressed(axis.down));
+		m_delta.x += static_cast<float>(keyboard.pressed(axis.right) - keyboard.pressed(axis.left));
+		m_delta.y += static_cast<float>(keyboard.pressed(axis.up) - keyboard.pressed(axis.down));
 	}
 	// threshold
 	if (abs(m_delta.x) < 0.3f)

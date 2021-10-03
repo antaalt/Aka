@@ -3,7 +3,6 @@
 #include "Platform/Platform.h"
 #include "Platform/PlatformDevice.h"
 #include "Platform/Input.h"
-#include "Platform/InputBackend.h"
 
 #include "Core/Container/Vector.h"
 #include "Core/Container/Array.h"

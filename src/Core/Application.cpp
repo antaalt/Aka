@@ -1,7 +1,6 @@
 #include <Aka/Core/Application.h>
 
 #include <Aka/Platform/PlatformDevice.h>
-#include <Aka/Platform/InputBackend.h>
 #include <Aka/Graphic/GraphicBackend.h>
 #include <Aka/Audio/AudioBackend.h>
 #include <Aka/OS/Logger.h>
@@ -97,7 +96,6 @@ void Application::run(const Config& config)
 		throw std::invalid_argument("No app set.");
 	PlatformBackend::initialize(config);
 	GraphicBackend::initialize(config.width, config.height);
-	InputBackend::initialize();
 	AudioBackend::initialize(config.audio.frequency, config.audio.channels);
 	Renderer2D::initialize();
 	Renderer3D::initialize();
@@ -126,7 +124,6 @@ void Application::run(const Config& config)
 				accumulator -= timestep;
 			}
 			platform->poll();
-			InputBackend::update();
 			app->update(deltaTime);
 			// Rendering
 			device->frame();
@@ -146,7 +143,6 @@ void Application::run(const Config& config)
 	Renderer3D::destroy();
 	Renderer2D::destroy();
 	AudioBackend::destroy();
-	InputBackend::destroy();
 	GraphicBackend::destroy();
 	PlatformBackend::destroy();
 }

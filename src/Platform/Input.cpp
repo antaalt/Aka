@@ -1,6 +1,5 @@
 #include <Aka/Platform/Input.h>
 
-#include <Aka/Platform/InputBackend.h>
 #include <Aka/OS/Time.h>
 #include <Aka/Core/Event.h>
 
@@ -8,10 +7,6 @@
 #include <map>
 
 namespace aka {
-
-static Keyboard keyboard = {};
-static Mouse mouse = {};
-static std::map<GamepadID, Gamepad> gamepads = {};
 
 std::ostream& operator<<(std::ostream& os, const KeyboardKey key)
 {
@@ -216,262 +211,89 @@ const char* Gamepad::name(GamepadAxis axis)
 	}
 }
 
-KeyboardLayout Keyboard::layout()
+KeyboardLayout Keyboard::layout() const
 {
-	return keyboard._layout;
+	return m_layout;
 }
 
-bool Keyboard::down(KeyboardKey key)
+bool Keyboard::down(KeyboardKey key) const
 {
-	return keyboard._down[static_cast<int>(key)];
+	return m_down[static_cast<int>(key)];
 }
 
-bool Keyboard::up(KeyboardKey key)
+bool Keyboard::up(KeyboardKey key) const
 {
-	return keyboard._up[static_cast<int>(key)];
+	return m_up[static_cast<int>(key)];
 }
 
-bool Keyboard::pressed(KeyboardKey key)
+bool Keyboard::pressed(KeyboardKey key) const
 {
-	return keyboard._pressed[static_cast<int>(key)];
+	return m_pressed[static_cast<int>(key)];
 }
 
-bool Keyboard::any()
+bool Keyboard::any() const
 {
-	return keyboard._pressedCount > 0;
+	return m_pressedCount > 0;
 }
 
-void Keyboard::update()
+bool Mouse::down(MouseButton button) const
 {
-	for (uint32_t iKey = 0; iKey < getKeyboardKeyCount(); iKey++)
-		_down[iKey] = false;
-	for (uint32_t iKey = 0; iKey < getKeyboardKeyCount(); iKey++)
-		_up[iKey] = false;
+	return m_down[static_cast<int>(button)];
 }
 
-bool Mouse::down(MouseButton button)
+bool Mouse::up(MouseButton button) const
 {
-	return mouse._down[static_cast<int>(button)];
+	return m_up[static_cast<int>(button)];
 }
 
-bool Mouse::up(MouseButton button)
+bool Mouse::pressed(MouseButton button) const
 {
-	return mouse._up[static_cast<int>(button)];
+	return m_pressed[static_cast<int>(button)];
 }
 
-bool Mouse::pressed(MouseButton button)
+bool Mouse::focused() const
 {
-	return mouse._pressed[static_cast<int>(button)];
+	return m_focus;
 }
 
-bool Mouse::focused()
+const Position& Mouse::position() const
 {
-	return mouse._focus;
+	return m_position;
 }
 
-const Position& Mouse::position()
+const Position& Mouse::delta() const
 {
-	return mouse._position;
+	return m_delta;
 }
 
-const Position& Mouse::delta()
+const Position& Mouse::scroll() const
 {
-	return mouse._delta;
+	return m_scroll;
 }
 
-const Position& Mouse::scroll()
+const char* Gamepad::name(GamepadID gid) const
 {
-	return mouse._scroll;
+	return m_name;
 }
 
-void Mouse::update()
+bool Gamepad::down(GamepadID gid, GamepadButton button) const
 {
-	for (uint32_t iButton = 0; iButton < getMouseButtonCount(); iButton++)
-		_down[iButton] = false;
-	for (uint32_t iButton = 0; iButton < getMouseButtonCount(); iButton++)
-		_up[iButton] = false;
-	_delta = { 0.f };
-	_scroll = { 0.f };
+	return m_down[static_cast<int>(button)];
 }
 
-GamepadID Gamepad::get()
+bool Gamepad::up(GamepadID gid, GamepadButton button) const
 {
-	if (gamepads.size() == 0)
-		return static_cast<GamepadID>(-1); // Invalid ID
-	return gamepads.begin()->first;
+	return m_up[static_cast<int>(button)];
 }
 
-bool Gamepad::connected(GamepadID gid)
+bool Gamepad::pressed(GamepadID gid, GamepadButton button) const
 {
-	return gamepads.find(gid) != gamepads.end();
+	return m_pressed[static_cast<int>(button)];
 }
 
-const char* Gamepad::name(GamepadID gid)
+const Position& Gamepad::axis(GamepadID gid, GamepadAxis axis) const
 {
-	AKA_ASSERT(connected(gid), "No gamepad");
-	return gamepads[gid]._name;
-}
-
-bool Gamepad::down(GamepadID gid, GamepadButton button)
-{
-	AKA_ASSERT(connected(gid), "No gamepad");
-	return gamepads[gid]._down[static_cast<int>(button)];
-}
-
-bool Gamepad::up(GamepadID gid, GamepadButton button)
-{
-	AKA_ASSERT(connected(gid), "No gamepad");
-	return gamepads[gid]._up[static_cast<int>(button)];
-}
-
-bool Gamepad::pressed(GamepadID gid, GamepadButton button)
-{
-	AKA_ASSERT(connected(gid), "No gamepad");
-	return gamepads[gid]._pressed[static_cast<int>(button)];
-}
-
-const Position& Gamepad::axis(GamepadID gid, GamepadAxis axis)
-{
-	AKA_ASSERT(connected(gid), "No gamepad");
-	return gamepads[gid]._axes[static_cast<int>(axis)];
-}
-
-void Gamepad::update()
-{
-	for (uint32_t iButton = 0; iButton < getGamepadButtonCount(); iButton++)
-		_down[iButton] = false;
-	for (uint32_t iButton = 0; iButton < getGamepadButtonCount(); iButton++)
-		_up[iButton] = false;
-}
-
-struct InputListener :
-	EventListener<KeyboardKeyDownEvent>,
-	EventListener<KeyboardKeyUpEvent>,
-	EventListener<MouseButtonDownEvent>,
-	EventListener<MouseButtonUpEvent>,
-	EventListener<MouseMoveEvent>,
-	EventListener<MouseScrollEvent>,
-	EventListener<MouseEnterEvent>,
-	EventListener<MouseLeaveEvent>,
-	EventListener<GamepadConnectedEvent>,
-	EventListener<GamepadDisconnectedEvent>,
-	EventListener<GamepadButtonDownEvent>,
-	EventListener<GamepadButtonUpEvent>,
-	EventListener<GamepadAxesMotionEvent>
-{
-	void onReceive(const KeyboardKeyDownEvent& event)
-	{
-		keyboard._pressedCount++;
-		keyboard._down[static_cast<int>(event.key)] = true;
-		keyboard._pressed[static_cast<int>(event.key)] = true;
-		keyboard._timestamp[static_cast<int>(event.key)] = Timestamp::now().seconds();
-	}
-	void onReceive(const KeyboardKeyUpEvent& event)
-	{
-		keyboard._pressedCount--;
-		keyboard._up[static_cast<int>(event.key)] = true;
-		keyboard._pressed[static_cast<int>(event.key)] = false;
-		keyboard._timestamp[static_cast<int>(event.key)] = 0;
-	}
-	void onReceive(const MouseButtonDownEvent& event)
-	{
-		mouse._down[static_cast<int>(event.button)] = true;
-		mouse._pressed[static_cast<int>(event.button)] = true;
-		mouse._timestamp[static_cast<int>(event.button)] = Timestamp::now().seconds();
-	}
-	void onReceive(const MouseButtonUpEvent& event)
-	{
-		mouse._up[static_cast<int>(event.button)] = true;
-		mouse._pressed[static_cast<int>(event.button)] = false;
-		mouse._timestamp[static_cast<int>(event.button)] = 0;
-	}
-	void onReceive(const MouseMoveEvent& event)
-	{
-		mouse._delta.x = event.x - mouse._position.x;
-		mouse._delta.y = event.y - mouse._position.y;
-		mouse._position.x = event.x;
-		mouse._position.y = event.y;
-	}
-	void onReceive(const MouseScrollEvent& event)
-	{
-		mouse._scroll.x = event.x;
-		mouse._scroll.y = event.y;
-	}
-	void onReceive(const MouseEnterEvent& event)
-	{
-		mouse._focus = true;
-	}
-	void onReceive(const MouseLeaveEvent& event)
-	{
-		mouse._focus = false;
-	}
-	void onReceive(const GamepadConnectedEvent& event)
-	{
-		auto it = gamepads.insert(std::make_pair(event.id, Gamepad {}));
-		if (it.second)
-			it.first->second._name = event.name;
-	}
-	void onReceive(const GamepadDisconnectedEvent& event)
-	{
-		auto it = gamepads.find(event.id);
-		if (it != gamepads.end())
-			gamepads.erase(it);
-	}
-	void onReceive(const GamepadButtonDownEvent& event)
-	{
-		AKA_ASSERT(Gamepad::connected(event.id), "No gamepad");
-		gamepads[event.id]._down[static_cast<int>(event.button)] = true;
-		gamepads[event.id]._pressed[static_cast<int>(event.button)] = true;
-		gamepads[event.id]._timestamp[static_cast<int>(event.button)] = Timestamp::now().seconds();
-	}
-	void onReceive(const GamepadButtonUpEvent& event)
-	{
-		AKA_ASSERT(Gamepad::connected(event.id), "No gamepad");
-		gamepads[event.id]._up[static_cast<int>(event.button)] = true;
-		gamepads[event.id]._pressed[static_cast<int>(event.button)] = false;
-		gamepads[event.id]._timestamp[static_cast<int>(event.button)] = 0;
-	}
-	void onReceive(const GamepadAxesMotionEvent& event)
-	{
-		AKA_ASSERT(Gamepad::connected(event.id), "No gamepad");
-		gamepads[event.id]._axes[(int)event.axis] = event.value;
-	}
-};
-
-static InputListener* listener = nullptr;
-
-void InputBackend::initialize()
-{
-	if (listener == nullptr)
-		listener = new InputListener;
-}
-
-void InputBackend::destroy()
-{
-	delete listener;
-	listener = nullptr;
-}
-
-void InputBackend::update()
-{
-	keyboard.update();
-	mouse.update();
-	for (auto& g : gamepads)
-		g.second.update();
-	// Dispatch all input events
-	EventDispatcher<KeyboardKeyDownEvent>::dispatch();
-	EventDispatcher<KeyboardKeyUpEvent>::dispatch();
-	EventDispatcher<MouseButtonDownEvent>::dispatch();
-	EventDispatcher<MouseButtonUpEvent>::dispatch();
-	EventDispatcher<MouseMoveEvent>::dispatch();
-	EventDispatcher<MouseScrollEvent>::dispatch();
-	EventDispatcher<MouseEnterEvent>::dispatch();
-	EventDispatcher<MouseLeaveEvent>::dispatch();
-	EventDispatcher<GamepadConnectedEvent>::dispatch();
-	EventDispatcher<GamepadDisconnectedEvent>::dispatch();
-	EventDispatcher<GamepadButtonDownEvent>::dispatch();
-	EventDispatcher<GamepadButtonUpEvent>::dispatch();
-	EventDispatcher<GamepadAxesMotionEvent>::dispatch();
+	return m_axes[static_cast<int>(axis)];
 }
 
 };

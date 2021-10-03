@@ -1,6 +1,7 @@
 #include <Aka/Scene/Camera.h>
 
 #include <Aka/Platform/Input.h>
+#include <Aka/Platform/PlatformDevice.h>
 
 namespace aka {
 
@@ -26,12 +27,14 @@ CameraProjectionType CameraOrthographic::type() const
 
 bool CameraArcball::update(Time deltaTime)
 {
+	PlatformDevice* platform = PlatformBackend::get();
+	const Mouse& mouse = platform->mouse();
 	bool dirty = false;
 	// https://gamedev.stackexchange.com/questions/53333/how-to-implement-a-basic-arcball-camera-in-opengl-with-glm
-	if (Mouse::pressed(MouseButton::ButtonLeft) && (Mouse::delta().x != 0.f || Mouse::delta().y != 0.f))
+	if (mouse.pressed(MouseButton::ButtonLeft) && (mouse.delta().x != 0.f || mouse.delta().y != 0.f))
 	{
-		float x = Mouse::delta().x * deltaTime.seconds();
-		float y = -Mouse::delta().y * deltaTime.seconds();
+		float x = mouse.delta().x * deltaTime.seconds();
+		float y = -mouse.delta().y * deltaTime.seconds();
 		anglef pitch = anglef::radian(y);
 		anglef yaw = anglef::radian(x);
 		vec3f upCamera = vec3f(0, 1, 0);
@@ -41,10 +44,10 @@ bool CameraArcball::update(Time deltaTime)
 		position = mat4f::rotate(upCamera, yaw).multiplyPoint(point3f(position - target)) + vec3f(target);
 		dirty = true;
 	}
-	if (Mouse::pressed(MouseButton::ButtonRight) && (Mouse::delta().x != 0.f || Mouse::delta().y != 0.f))
+	if (mouse.pressed(MouseButton::ButtonRight) && (mouse.delta().x != 0.f || mouse.delta().y != 0.f))
 	{
-		float x = -Mouse::delta().x * deltaTime.seconds();
-		float y = -Mouse::delta().y * deltaTime.seconds();
+		float x = -mouse.delta().x * deltaTime.seconds();
+		float y = -mouse.delta().y * deltaTime.seconds();
 		vec3f upCamera = vec3f(0, 1, 0); // TODO change it when close to up
 		vec3f forwardCamera = vec3f::normalize(target - position);
 		vec3f rightCamera = vec3f::normalize(vec3f::cross(forwardCamera, vec3f(upCamera)));
@@ -53,9 +56,9 @@ bool CameraArcball::update(Time deltaTime)
 		position += move;
 		dirty = true;
 	}
-	if (Mouse::scroll().y != 0.f)
+	if (mouse.scroll().y != 0.f)
 	{
-		float zoom = Mouse::scroll().y * deltaTime.seconds();
+		float zoom = mouse.scroll().y * deltaTime.seconds();
 		vec3f dir = vec3f::normalize(target - position);
 		float dist = point3f::distance(target, position);
 		float coeff = zoom * speed;

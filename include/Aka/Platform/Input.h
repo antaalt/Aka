@@ -5,7 +5,8 @@
 
 namespace aka {
 
-enum class KeyboardLayout {
+enum class KeyboardLayout
+{
 	Azerty,
 	Qwerty,
 	Qwertz,
@@ -17,7 +18,8 @@ enum class KeyboardLayout {
 };
 
 // Key correspond to Qwerty.
-enum class KeyboardKey {
+enum class KeyboardKey 
+{
 	A,
 	B,
 	C,
@@ -139,7 +141,8 @@ enum class KeyboardKey {
 	Unknown,
 };
 
-enum class MouseButton {
+enum class MouseButton 
+{
 	Button1,
 	Button2,
 	Button3,
@@ -158,7 +161,8 @@ enum class MouseButton {
 	ButtonMiddle = Button3,
 };
 
-enum class GamepadButton {
+enum class GamepadButton 
+{
 	A,
 	B,
 	X,
@@ -183,7 +187,8 @@ enum class GamepadButton {
 	Triangle = Y
 };
 
-enum class GamepadAxis {
+enum class GamepadAxis 
+{
 	Left,
 	Right,
 	TriggerLeft,
@@ -206,148 +211,160 @@ constexpr uint32_t getGamepadButtonCount() { return static_cast<uint32_t>(Gamepa
 constexpr uint32_t getGamepadAxisCount() { return static_cast<uint32_t>(GamepadAxis::Count); }
 
 // Structs
-struct Position {
+struct Position 
+{
 	float x, y;
 };
 
-struct Keyboard {
+struct Keyboard 
+{
+	friend class PlatformDevice;
 	// Is key just pressed
-	static bool down(KeyboardKey key);
+	bool down(KeyboardKey key) const;
 	// Is key just released
-	static bool up(KeyboardKey key);
+	bool up(KeyboardKey key) const;
 	// Is key pressed
-	static bool pressed(KeyboardKey key);
+	bool pressed(KeyboardKey key) const;
 	// Is any key pressed
-	static bool any();
+	bool any() const;
+	// Get the currently used layout for the keyboard
+	KeyboardLayout layout() const;
+
 	// Get the name of a specific key
 	static const char* name(KeyboardKey key);
 	// Get the name of a specific layout
 	static const char* layoutName(KeyboardLayout layout);
-	// Get the currently used layout for the keyboard
-	static KeyboardLayout layout();
 
-	// Update the mouse values.
-	void update();
-
-	bool _pressed[getKeyboardKeyCount()];
-	bool _down[getKeyboardKeyCount()];
-	bool _up[getKeyboardKeyCount()];
-	uint64_t _timestamp[getKeyboardKeyCount()];
-	KeyboardLayout _layout;
-	size_t _pressedCount;
+protected:
+	bool m_pressed[getKeyboardKeyCount()];
+	bool m_down[getKeyboardKeyCount()];
+	bool m_up[getKeyboardKeyCount()];
+	KeyboardLayout m_layout;
+	size_t m_pressedCount;
 };
 
-struct Mouse {
+struct Mouse
+{
+	friend class PlatformDevice;
 	// Is mouse button just pressed
-	static bool down(MouseButton button);
+	bool down(MouseButton button) const;
 	// Is mouse button just released
-	static bool up(MouseButton button);
+	bool up(MouseButton button) const;
 	// Is mouse button pressed
-	static bool pressed(MouseButton button);
+	bool pressed(MouseButton button) const;
 	// Is mouse in window
-	static bool focused();
+	bool focused() const;
+	// Get the current mouse position
+	const Position& position() const;
+	// Get the current mouse delta since last frame
+	const Position& delta() const;
+	// Get the mouse current scroll value
+	const Position& scroll() const;
+
 	// Get the name of a specific button
 	static const char* name(MouseButton button);
-	// Get the current mouse position
-	static const Position& position();
-	// Get the current mouse delta since last frame
-	static const Position& delta();
-	// Get the mouse current scroll value
-	static const Position& scroll();
 
-	// Update the mouse values.
-	void update();
-
-	bool _pressed[getMouseButtonCount()];
-	bool _down[getMouseButtonCount()];
-	bool _up[getMouseButtonCount()];
-	uint64_t _timestamp[getMouseButtonCount()];
-	Position _position; // raw position
-	Position _delta; // relative movement
-	Position _scroll;
-	bool _focus;
+protected:
+	bool m_pressed[getMouseButtonCount()];
+	bool m_down[getMouseButtonCount()];
+	bool m_up[getMouseButtonCount()];
+	Position m_position; // raw position
+	Position m_delta; // relative movement
+	Position m_scroll;
+	bool m_focus;
 };
 
 enum class GamepadID : unsigned int {};
 
-struct Gamepad {
-	// Get the first gamepad
-	static GamepadID get();
-	// Is gamepad connected
-	static bool connected(GamepadID gid);
+struct Gamepad
+{
+	friend class PlatformDevice;
 	// Get gamepad name
-	static const char* name(GamepadID gid);
+	const char* name(GamepadID gid) const;
 	// Is gamepad button just pressed
-	static bool down(GamepadID gid, GamepadButton button);
+	bool down(GamepadID gid, GamepadButton button) const;
 	// Is gamepad button just released
-	static bool up(GamepadID gid, GamepadButton button);
+	bool up(GamepadID gid, GamepadButton button) const;
 	// Is gamepad button pressed
-	static bool pressed(GamepadID gid, GamepadButton button);
+	bool pressed(GamepadID gid, GamepadButton button) const;
 	// Get the axis value of a specific gamepad axis
-	static const Position& axis(GamepadID gid, GamepadAxis axis);
+	const Position& axis(GamepadID gid, GamepadAxis axis) const;
+
 	// Get the name of a specific gamepad button
 	static const char* name(GamepadButton button);
 	// Get the name of a specific gamepad axis
 	static const char* name(GamepadAxis axis);
 
-	// Update the gamepad values
-	void update();
-
-	const char* _name;
-	bool _pressed[getGamepadButtonCount()];
-	bool _down[getGamepadButtonCount()];
-	bool _up[getGamepadButtonCount()];
-	uint64_t _timestamp[getGamepadButtonCount()];
-	Position _axes[getGamepadAxisCount()];
+protected:
+	const char* m_name;
+	bool m_pressed[getGamepadButtonCount()];
+	bool m_down[getGamepadButtonCount()];
+	bool m_up[getGamepadButtonCount()];
+	Position m_axes[getGamepadAxisCount()];
 };
 
 // Events
-struct KeyboardKeyDownEvent {
+struct KeyboardKeyDownEvent
+{
 	KeyboardKey key;
 };
-struct KeyboardKeyUpEvent {
+struct KeyboardKeyUpEvent 
+{
 	KeyboardKey key;
 };
-struct KeyboardKeyRepeatEvent {
+struct KeyboardKeyRepeatEvent 
+{
 	KeyboardKey key;
 };
-struct MouseButtonDownEvent {
+struct MouseButtonDownEvent 
+{
 	MouseButton button;
 };
-struct MouseButtonUpEvent {
+struct MouseButtonUpEvent 
+{
 	MouseButton button;
 };
-struct MouseButtonRepeatEvent {
+struct MouseButtonRepeatEvent 
+{
 	MouseButton button;
 };
-struct MouseMoveEvent {
+struct MouseMotionEvent 
+{
 	float x, y;
 };
-struct MouseScrollEvent {
+struct MouseScrollEvent 
+{
 	float x, y;
 };
-struct MouseEnterEvent {
+struct MouseEnterEvent 
+{
 	// emtpy !
 };
-struct MouseLeaveEvent {
+struct MouseLeaveEvent 
+{
 	// emtpy !
 };
-struct GamepadConnectedEvent {
+struct GamepadConnectedEvent 
+{
 	GamepadID id;
 	const char* name;
 };
-struct GamepadDisconnectedEvent {
+struct GamepadDisconnectedEvent
+{
 	GamepadID id;
 };
-struct GamepadButtonDownEvent {
-	GamepadID id;
-	GamepadButton button;
-};
-struct GamepadButtonUpEvent {
+struct GamepadButtonDownEvent 
+{
 	GamepadID id;
 	GamepadButton button;
 };
-struct GamepadAxesMotionEvent {
+struct GamepadButtonUpEvent
+{
+	GamepadID id;
+	GamepadButton button;
+};
+struct GamepadAxesMotionEvent 
+{
 	GamepadID id;
 	GamepadAxis axis;
 	Position value;

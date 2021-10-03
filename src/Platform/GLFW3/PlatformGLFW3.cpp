@@ -431,6 +431,9 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 	glfwGetWindowSize(m_window, reinterpret_cast<int*>(&m_width), reinterpret_cast<int*>(&m_height));
 	glfwGetWindowPos(m_window, reinterpret_cast<int*>(&m_x), reinterpret_cast<int*>(&m_y));
 	glfwSetWindowUserPointer(m_window, this);
+	//glfwSetMonitorUserPointer(monitor, this);
+	for (int jid = GLFW_JOYSTICK_1; jid < GLFW_JOYSTICK_LAST; ++jid)
+		glfwSetJoystickUserPointer(jid, this);
 	if (config.icon.size > 0)
 	{
 		GLFWimage img{ (int)config.icon.size, (int)config.icon.size, config.icon.bytes };
@@ -488,20 +491,36 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 	});
 	// --- Inputs
 	glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
+		KeyboardKey k = glfwKeyboardKeyMap[key];
 		if (action == GLFW_PRESS)
-			EventDispatcher<KeyboardKeyDownEvent>::emit(KeyboardKeyDownEvent{ glfwKeyboardKeyMap[key] });
+		{
+			p->onKeyboardKeyDown(k);
+			EventDispatcher<KeyboardKeyDownEvent>::emit(KeyboardKeyDownEvent{ k });
+		}
 		else if (action == GLFW_RELEASE)
-			EventDispatcher<KeyboardKeyUpEvent>::emit(KeyboardKeyUpEvent{ glfwKeyboardKeyMap[key] });
+		{
+			p->onKeyboardKeyUp(k);
+			EventDispatcher<KeyboardKeyUpEvent>::emit(KeyboardKeyUpEvent{ k });
+		}
 		else if (action == GLFW_REPEAT)
-			EventDispatcher<KeyboardKeyRepeatEvent>::emit(KeyboardKeyRepeatEvent{ glfwKeyboardKeyMap[key] });
+			EventDispatcher<KeyboardKeyRepeatEvent>::emit(KeyboardKeyRepeatEvent{ k });
 	});
 	glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mode) {
+		MouseButton b = glfwMouseButtonMap[button];
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		if (action == GLFW_PRESS)
-			EventDispatcher<MouseButtonDownEvent>::emit(MouseButtonDownEvent{ glfwMouseButtonMap[button] });
+		{
+			p->onMouseButtonDown(b);
+			EventDispatcher<MouseButtonDownEvent>::emit(MouseButtonDownEvent{ b });
+		}
 		else if (action == GLFW_RELEASE)
-			EventDispatcher<MouseButtonUpEvent>::emit(MouseButtonUpEvent{ glfwMouseButtonMap[button] });
+		{
+			p->onMouseButtonUp(b);
+			EventDispatcher<MouseButtonUpEvent>::emit(MouseButtonUpEvent{ b });
+		}
 		else if (action == GLFW_REPEAT)
-			EventDispatcher<MouseButtonRepeatEvent>::emit(MouseButtonRepeatEvent{ glfwMouseButtonMap[button] });
+			EventDispatcher<MouseButtonRepeatEvent>::emit(MouseButtonRepeatEvent{ b });
 	});
 	glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int character) {
 		EventDispatcher<WindowUnicodeCharEvent>::emit(WindowUnicodeCharEvent{ character });
@@ -517,37 +536,58 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		// Aka coordinates system origin is bottom left, so we convert.
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
-		EventDispatcher<MouseMoveEvent>::emit(MouseMoveEvent{
-			static_cast<float>(xpos), 
-			static_cast<float>(p->height()) - static_cast<float>(ypos)
-		});
+		float x = static_cast<float>(xpos);
+		float y = static_cast<float>(p->height()) - static_cast<float>(ypos);
+		p->onMouseMotion(x, y);
+		EventDispatcher<MouseMotionEvent>::emit(MouseMotionEvent{ x, y });
 	});
 	glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
-		EventDispatcher<MouseScrollEvent>::emit(MouseScrollEvent{ 
-			static_cast<float>(xoffset), 
-			static_cast<float>(yoffset) 
-		});
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
+		float x = static_cast<float>(xoffset);
+		float y = static_cast<float>(yoffset);
+		p->onMouseScroll(x, y);
+		EventDispatcher<MouseScrollEvent>::emit(MouseScrollEvent{ x, y });
 	});
 	glfwSetCursorEnterCallback(m_window, [](GLFWwindow* window, int entered) {
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		if (entered == GLFW_TRUE)
+		{
+			p->onMouseEnter();
 			EventDispatcher<MouseEnterEvent>::emit();
+		}
 		else if (entered == GLFW_FALSE)
+		{
+			p->onMouseLeave();
 			EventDispatcher<MouseLeaveEvent>::emit();
+		}
 	});
 	glfwSetJoystickCallback([](int jid, int event) {
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetJoystickUserPointer(jid));
 		if (glfwJoystickIsGamepad(jid) == GLFW_FALSE)
 			return;
 		GamepadID gid = (GamepadID)jid;
 		if (event == GLFW_CONNECTED)
-			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent {gid, glfwGetGamepadName(jid) });
+		{
+			const char* name = glfwGetGamepadName(jid);
+			p->onGamepadConnected(gid, name);
+			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ gid, name });
+		}
 		else if (event == GLFW_DISCONNECTED)
-			EventDispatcher<GamepadDisconnectedEvent>::emit(GamepadDisconnectedEvent {gid});
+		{
+			p->onGamepadDisconnected(gid);
+			EventDispatcher<GamepadDisconnectedEvent>::emit(GamepadDisconnectedEvent{ gid });
+		}
 	});
 	// Register all connected joystick by emitting a connected event
 	for (int jid = GLFW_JOYSTICK_1; jid <= GLFW_JOYSTICK_LAST; jid++)
 	{
+		GamepadID gid = (GamepadID)jid;
 		if (glfwJoystickPresent(jid) == GLFW_TRUE && glfwJoystickIsGamepad(jid) == GLFW_TRUE)
-			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ (GamepadID)jid, glfwGetGamepadName(jid) });
+		{
+			const char* name = glfwGetGamepadName(jid);
+			onGamepadConnected(gid, name);
+			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ gid, name });
+		}
 	}
 }
 
@@ -558,24 +598,27 @@ PlatformGLFW3::~PlatformGLFW3()
 
 void PlatformGLFW3::poll()
 {
+	onInputsUpdate();
 	glfwPollEvents();
 	// Generate joystick events as GLFW does not seem to have built in way...
 	for (int jid = GLFW_JOYSTICK_1; jid < GLFW_JOYSTICK_LAST; ++jid)
 	{
 		GamepadID gid = static_cast<GamepadID>(jid);
-		if (!Gamepad::connected(gid))
+		auto it = m_gamepads.find(gid);
+		if (it == m_gamepads.end())
 			continue;
+		Gamepad& gamepad = it->second;
 		GLFWgamepadstate state;
 		if (glfwGetGamepadState(jid, &state) == GLFW_TRUE)
 		{
 			for (int iButton = 0; iButton < sizeof(state.buttons) / sizeof(state.buttons[0]); iButton++)
 			{ 
-				if (state.buttons[iButton] == GLFW_PRESS && !Gamepad::pressed(gid, glfwGamepadButtonMap[iButton]))
+				if (state.buttons[iButton] == GLFW_PRESS && !gamepad.pressed(gid, glfwGamepadButtonMap[iButton]))
 					EventDispatcher<GamepadButtonDownEvent>::emit(GamepadButtonDownEvent{ gid, glfwGamepadButtonMap[iButton] });
-				else if (state.buttons[iButton] == GLFW_RELEASE && Gamepad::pressed(gid, glfwGamepadButtonMap[iButton]))
+				else if (state.buttons[iButton] == GLFW_RELEASE && gamepad.pressed(gid, glfwGamepadButtonMap[iButton]))
 					EventDispatcher<GamepadButtonUpEvent>::emit(GamepadButtonUpEvent{ gid, glfwGamepadButtonMap[iButton] });
 			}
-			const Position& leftAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::Left);
+			const Position& leftAxis = gamepad.axis((GamepadID)gid, GamepadAxis::Left);
 			if (leftAxis.x != state.axes[GLFW_GAMEPAD_AXIS_LEFT_X] || leftAxis.y != state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y])
 			{
 				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
@@ -584,7 +627,7 @@ void PlatformGLFW3::poll()
 					Position{ state.axes[GLFW_GAMEPAD_AXIS_LEFT_X], state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y] }
 				});
 			}
-			const Position& rightAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::Right);
+			const Position& rightAxis = gamepad.axis((GamepadID)gid, GamepadAxis::Right);
 			if (rightAxis.x != state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X] || rightAxis.y != state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y])
 			{
 				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
@@ -593,7 +636,7 @@ void PlatformGLFW3::poll()
 					Position{ state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X], state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y] }
 				});
 			}
-			const Position& triggerLeftAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::TriggerLeft);
+			const Position& triggerLeftAxis = gamepad.axis((GamepadID)gid, GamepadAxis::TriggerLeft);
 			if (triggerLeftAxis.x != state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER])
 			{
 				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
@@ -602,7 +645,7 @@ void PlatformGLFW3::poll()
 					Position{ state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER], 0.f }
 				});
 			}
-			const Position& triggerRightAxis = Gamepad::axis((GamepadID)gid, GamepadAxis::TriggerRight);
+			const Position& triggerRightAxis = gamepad.axis((GamepadID)gid, GamepadAxis::TriggerRight);
 			if (triggerRightAxis.x != state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER])
 			{
 				EventDispatcher<GamepadAxesMotionEvent>::emit(GamepadAxesMotionEvent{
@@ -629,8 +672,20 @@ void PlatformGLFW3::poll()
 	if (glfwWindowShouldClose(m_window))
 		EventDispatcher<QuitEvent>::emit();
 
-	// TODO call input backend here.
-	// What about input resets ?
+	// Dispatch all input events
+	EventDispatcher<KeyboardKeyDownEvent>::dispatch();
+	EventDispatcher<KeyboardKeyUpEvent>::dispatch();
+	EventDispatcher<MouseButtonDownEvent>::dispatch();
+	EventDispatcher<MouseButtonUpEvent>::dispatch();
+	EventDispatcher<MouseMotionEvent>::dispatch();
+	EventDispatcher<MouseScrollEvent>::dispatch();
+	EventDispatcher<MouseEnterEvent>::dispatch();
+	EventDispatcher<MouseLeaveEvent>::dispatch();
+	EventDispatcher<GamepadConnectedEvent>::dispatch();
+	EventDispatcher<GamepadDisconnectedEvent>::dispatch();
+	EventDispatcher<GamepadButtonDownEvent>::dispatch();
+	EventDispatcher<GamepadButtonUpEvent>::dispatch();
+	EventDispatcher<GamepadAxesMotionEvent>::dispatch();
 }
 
 void PlatformGLFW3::move(int32_t x, int32_t y)
