@@ -168,6 +168,9 @@ bool ProgramManager::serialize(const Path& path)
 				programJSON[info.name]["compute"] = info.comp;
 		}
 		std::string str = json.dump(4);
+		Path dir = path.up();
+		if (!OS::Directory::exist(dir))
+			OS::Directory::create(dir);
 		if (!OS::File::write(path, str.c_str()))
 			return false;
 		return true;
@@ -246,20 +249,24 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
 {
 	GraphicDevice* device = Application::graphic();
-	Path compiledPath;
+	String compiledPath;
+	String fileName;
 	switch (device->api())
 	{
 	case GraphicAPI::OpenGL3:
-		compiledPath = "./library/shaders/GL/" + OS::File::name(path) + ".glsl";
+		compiledPath = "./library/shaders/GL/";
+		fileName = OS::File::name(path) + ".glsl";
 		break;
 	case GraphicAPI::DirectX11:
-		compiledPath = "./library/shaders/D3D/" + OS::File::name(path) + ".hlsl";
+		compiledPath = "./library/shaders/D3D/";
+		fileName = OS::File::name(path) + ".hlsl";
 		break;
 	default:
 		return Shader::Ptr(0);
 	}
+	String finalPath = compiledPath + fileName;
 	String shader;
-	if (!OS::File::exist(compiledPath) || OS::File::lastWrite(compiledPath) < OS::File::lastWrite(path))
+	if (!OS::File::exist(finalPath) || OS::File::lastWrite(finalPath) < OS::File::lastWrite(path))
 	{
 		Compiler compiler;
 		if (!compiler.parse(path, type))
@@ -268,15 +275,17 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 			return Shader::Ptr(0);
 		}
 		shader = compiler.compile(device->api(), attributes, count);
-		if (!OS::File::write(compiledPath, shader))
+		if (!OS::Directory::exist(compiledPath))
+			OS::Directory::create(compiledPath);
+		if (!OS::File::write(finalPath, shader))
 			Logger::warn("Failed to cache shader");
 		Logger::debug("Shader ", OS::File::name(path), " successfully compiled.");
 	}
 	else
 	{
-		if (!OS::File::read(compiledPath, &shader))
+		if (!OS::File::read(finalPath, &shader))
 		{
-			Logger::error("Could not read ", compiledPath);
+			Logger::error("Could not read ", finalPath);
 			return Shader::Ptr(0);
 		}
 		Logger::debug("Shader ", OS::File::name(path), " loaded from cache.");

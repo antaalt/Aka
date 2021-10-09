@@ -170,6 +170,12 @@ Path OS::cwd()
 	return Path(path);
 }
 
+
+bool OS::setcwd(const Path& path)
+{
+	return chdir(path.cstr()) == 0;
+}
+
 const char* fileMode(FileMode mode, FileType type)
 {
 	switch (type)

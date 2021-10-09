@@ -8,6 +8,7 @@
 #include <Aka/Drawing/Renderer2D.h>
 #include <Aka/Drawing/Renderer3D.h>
 #include <Aka/Audio/AudioDevice.h>
+#include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
 #include "Platform/GLFW3/PlatformGLFW3.h"
@@ -60,6 +61,7 @@ Application::~Application()
 }
 void Application::create(const Config& config)
 {
+	OS::setcwd(config.directory);
 	s_platform = platformFactory(config.platform);
 	s_graphic = graphicFactory(s_platform, config.graphic);
 	s_audio = audioFactory(config.audio);

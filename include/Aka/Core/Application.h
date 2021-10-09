@@ -21,6 +21,7 @@ struct Config
 	AudioConfig audio = {};
 	PlatformConfig platform = {};
 	Application* app = nullptr;
+	Path directory;
 	int argc = 0;
 	char** argv = nullptr;
 };

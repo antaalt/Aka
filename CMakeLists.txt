@@ -43,8 +43,6 @@ add_library (Aka
 	"src/Drawing/Batch2D.cpp"
 	"src/Drawing/Batch3D.cpp"
 
-	"src/Graphic/Dummy/DummyBackend.cpp"
-
 	"src/Graphic/D3D11/D3D11Context.cpp"
 	"src/Graphic/D3D11/D3D11Device.cpp"
 	"src/Graphic/D3D11/D3D11Backbuffer.cpp"
@@ -66,7 +64,6 @@ add_library (Aka
 	"src/Graphic/GL/GLFramebuffer.cpp"
 	"src/Graphic/GL/GLProgram.cpp"
 
-	
 	"src/Graphic/GraphicDevice.cpp"
 	"src/Graphic/Device.cpp"
 	"src/Graphic/Framebuffer.cpp"

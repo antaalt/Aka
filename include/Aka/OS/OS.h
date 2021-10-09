@@ -16,6 +16,8 @@ struct OS
 	static Path executable();
 	// Get the current working directory
 	static Path cwd();
+	// Set the current working directory
+	static bool setcwd(const Path& path);
 	// Enumerate all path in a directory.
 	static std::vector<Path> enumerate(const Path& path);
 

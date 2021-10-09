@@ -286,6 +286,12 @@ Path OS::cwd()
 	return Path(str + '/');
 }
 
+bool OS::setcwd(const Path& path)
+{
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	return _wchdir(wstr.cstr()) == 0;
+}
+
 const wchar_t* fileMode(FileMode mode, FileType type)
 {
 	switch (type)
