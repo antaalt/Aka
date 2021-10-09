@@ -280,13 +280,13 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	return true;
 }
 
-String Compiler::compile(GraphicApi api, const VertexAttribute* attributes, size_t count)
+String Compiler::compile(GraphicAPI api, const VertexAttribute* attributes, size_t count)
 {
 	switch (api)
 	{
-	case aka::GraphicApi::OpenGL:
+	case aka::GraphicAPI::OpenGL3:
 		return compileGLSL330();
-	case aka::GraphicApi::DirectX11:
+	case aka::GraphicAPI::DirectX11:
 		return compileHLSL50(attributes, count);
 	default:
 		Logger::error("Unsupported API.");

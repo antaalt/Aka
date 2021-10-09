@@ -2,6 +2,7 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
+#include <Aka/Core/Application.h>
 #include <Aka/Resource/ResourceManager.h>
 
 namespace aka {
@@ -82,6 +83,7 @@ bool MeshStorage::save(const Path& path) const
 
 std::shared_ptr<Mesh> MeshStorage::to() const
 {
+	ResourceManager* resources = Application::resource();
 	Mesh::Ptr mesh = Mesh::create();
 	std::vector<VertexAccessor> vertexAccessor(vertices.size());
 	for (size_t i = 0; i < vertices.size(); i++)
@@ -91,14 +93,14 @@ std::shared_ptr<Mesh> MeshStorage::to() const
 		accessor.attribute = vert.attribute;
 		accessor.count = vert.vertexCount;
 		accessor.offset = vert.vertexOffset;
-		accessor.bufferView.buffer = ResourceManager::get<Buffer>(vert.vertexBufferName);
+		accessor.bufferView.buffer = resources->get<Buffer>(vert.vertexBufferName);
 		AKA_ASSERT(accessor.bufferView.buffer != nullptr, "No vertex buffer");
 		accessor.bufferView.offset = vert.vertexBufferOffset;
 		accessor.bufferView.size = vert.vertexBufferSize;
 		accessor.bufferView.stride = vert.vertexBufferStride;
 	}
 	IndexAccessor indexAccessor;
-	indexAccessor.bufferView.buffer = ResourceManager::get<Buffer>(indexBufferName);
+	indexAccessor.bufferView.buffer = resources->get<Buffer>(indexBufferName);
 	AKA_ASSERT(indexAccessor.bufferView.buffer != nullptr, "No index buffer");
 	indexAccessor.bufferView.offset = indexBufferOffset;
 	indexAccessor.bufferView.size = indexCount * aka::size(indexFormat);
@@ -109,6 +111,7 @@ std::shared_ptr<Mesh> MeshStorage::to() const
 }
 void MeshStorage::from(const std::shared_ptr<Mesh>& mesh)
 {
+	ResourceManager* resources = Application::resource();
 	vertices.resize(mesh->getVertexAttributeCount());
 	for (uint32_t i = 0; i < mesh->getVertexAttributeCount(); i++)
 	{
@@ -117,13 +120,13 @@ void MeshStorage::from(const std::shared_ptr<Mesh>& mesh)
 		vert.attribute = mesh->getVertexAttribute(i);
 		vert.vertexCount = mesh->getVertexCount(i);
 		vert.vertexOffset = mesh->getVertexOffset(i);
-		vert.vertexBufferName = ResourceManager::name<Buffer>(bufferView.buffer);
+		vert.vertexBufferName = resources->name<Buffer>(bufferView.buffer);
 		vert.vertexBufferOffset = bufferView.offset;
 		vert.vertexBufferSize = bufferView.size;
 		vert.vertexBufferStride = bufferView.stride;
 	}
 	IndexBufferView bufferView = mesh->getIndexBuffer();
-	indexBufferName = ResourceManager::name<Buffer>(bufferView.buffer);
+	indexBufferName = resources->name<Buffer>(bufferView.buffer);
 	indexBufferOffset = bufferView.offset;
 	indexCount = mesh->getIndexCount();
 	indexFormat = mesh->getIndexFormat();

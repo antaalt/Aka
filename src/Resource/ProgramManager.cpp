@@ -13,9 +13,6 @@
 
 namespace aka {
 
-std::vector<ProgramManager::ShaderInfo> ProgramManager::m_shaders;
-std::vector<ProgramManager::ProgramInfo> ProgramManager::m_programs;
-
 Program::Ptr ProgramManager::get(const String& name)
 {
 	for (ProgramInfo& info : m_programs)
@@ -182,7 +179,7 @@ bool ProgramManager::serialize(const Path& path)
 	}
 }
 
-void ProgramManager::update()
+void ProgramManager::onReceive(const AppUpdateEvent& event)
 {
 	// TODO execute this only once per second ?
 	// TODO use a file watcher
@@ -252,10 +249,10 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 	Path compiledPath;
 	switch (device->api())
 	{
-	case GraphicApi::OpenGL:
+	case GraphicAPI::OpenGL3:
 		compiledPath = "./library/shaders/GL/" + OS::File::name(path) + ".glsl";
 		break;
-	case GraphicApi::DirectX11:
+	case GraphicAPI::DirectX11:
 		compiledPath = "./library/shaders/D3D/" + OS::File::name(path) + ".hlsl";
 		break;
 	default:

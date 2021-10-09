@@ -7,11 +7,6 @@
 namespace aka {
 
 Path ResourceManager::assetPath = OS::cwd() + Path("asset/");
-ResourceAllocator<Texture> ResourceManager::textures;
-ResourceAllocator<Mesh> ResourceManager::meshes;
-ResourceAllocator<AudioStream> ResourceManager::audios;
-ResourceAllocator<Font> ResourceManager::fonts;
-ResourceAllocator<Buffer> ResourceManager::buffers;
 
 void ResourceManager::parse(const Path& path)
 {

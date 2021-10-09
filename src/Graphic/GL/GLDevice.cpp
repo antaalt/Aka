@@ -98,7 +98,7 @@ void APIENTRY openglCallbackFunction(
 	}
 }
 
-GLDevice::GLDevice(const GraphicConfig& config) :
+GLDevice::GLDevice(PlatformDevice* platform, const GraphicConfig& config) :
 	GraphicDevice(config)
 {
 	// Init glew for loading gl func
@@ -137,24 +137,24 @@ GLDevice::GLDevice(const GraphicConfig& config) :
 		return (max == -1 ? 0 : max);
 	};
 	// We are using OpenGL 3.3 in this backend.
-	m_features.api = GraphicApi::OpenGL;
-	m_features.version.major = 3;
-	m_features.version.minor = 3;
-	m_features.profile = 330;
+	m_settings.api = GraphicAPI::OpenGL3;
+	m_settings.version.major = 3;
+	m_settings.version.minor = 3;
+	m_settings.profile = 330;
+	m_settings.coordinates.clipSpacePositive = false; // GL clip space is [-1, 1]
+	m_settings.coordinates.originTextureBottomLeft = true; // GL start reading texture at bottom left.
+	m_settings.coordinates.originUVBottomLeft = true; // GL UV origin is bottom left
+	m_settings.coordinates.renderAxisYUp = true; // GL render axis y is up
 
 	m_features.maxTextureUnits = getUnsignedInteger(GL_MAX_TEXTURE_IMAGE_UNITS);
 	m_features.maxTextureSize = getUnsignedInteger(GL_MAX_TEXTURE_SIZE);
 	m_features.maxColorAttachments = getUnsignedInteger(GL_MAX_COLOR_ATTACHMENTS);
 	m_features.maxElementIndices = getUnsignedInteger(GL_MAX_ELEMENTS_INDICES);
 	m_features.maxElementVertices = getUnsignedInteger(GL_MAX_ELEMENTS_VERTICES);
-	m_features.coordinates.clipSpacePositive = false; // GL clip space is [-1, 1]
-	m_features.coordinates.originTextureBottomLeft = true; // GL start reading texture at bottom left.
-	m_features.coordinates.originUVBottomLeft = true; // GL UV origin is bottom left
-	m_features.coordinates.renderAxisYUp = true; // GL render axis y is up
 
 	// Create backbuffer
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::platform());
-	m_backbuffer = std::make_shared<GLBackbuffer>(platform->getGLFW3Handle(), config.width, config.height);
+	PlatformGLFW3* p = reinterpret_cast<PlatformGLFW3*>(platform);
+	m_backbuffer = std::make_shared<GLBackbuffer>(p->getGLFW3Handle(), platform->width(), platform->height());
 }
 
 GLDevice::~GLDevice()

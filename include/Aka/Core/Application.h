@@ -4,15 +4,16 @@
 #include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Audio/AudioDevice.h>
-#include <Aka/Scene/World.h>
 
 #include <Aka/Core/Event.h>
 #include <Aka/Core/View.h>
-#include <Aka/Core/Layer.h>
 
 namespace aka {
 
 class Application;
+class Layer;
+class ProgramManager;
+class ResourceManager;
 
 struct Config
 {
@@ -33,16 +34,35 @@ struct ViewChangedEvent
 	View::Ptr view;
 };
 
+struct AppCreateEvent {
+
+};
+struct AppDestroyEvent {
+
+};
+struct AppFixedUpdateEvent
+{
+	Time deltaTime;
+};
+struct AppUpdateEvent
+{
+	Time deltaTime;
+};
+struct AppRenderEvent {};
+struct AppFrameEvent {};
+struct AppPresentEvent {};
+struct AppResizeEvent { uint32_t width; uint32_t height; };
+
 class Application : 
 	EventListener<QuitEvent>,
-	EventListener<BackbufferResizeEvent>
+	EventListener<WindowResizeEvent>
 {
 public:
-	Application();
+	Application(const std::vector<Layer*> layers);
 	virtual ~Application();
 private:
-	// Initialize the application and its resources.
-	void initialize(uint32_t width, uint32_t height, int argc, char* argv[]);
+	// Create the application and its resources.
+	void create(const Config& config);
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop
@@ -60,7 +80,7 @@ private:
 	// Last function called in a loop
 	void end();
 	// Called on app resize
-	void onReceive(const BackbufferResizeEvent& event) override;
+	void onReceive(const WindowResizeEvent& event) override;
 	// Called on app quit request
 	void onReceive(const QuitEvent& event) override;
 protected:
@@ -84,12 +104,6 @@ protected:
 	uint32_t width() const;
 	// Get the current app height
 	uint32_t height() const;
-	// Attach a layer to the app
-	template <typename T> void attach();
-	// Detach a layer from the app
-	template <typename T> void detach();
-	// Get a layer from the app
-	template <typename T> T& get();
 public:
 	// Entry point of the application
 	static void run(const Config& config);
@@ -99,50 +113,20 @@ public:
 	static PlatformDevice* platform();
 	// Get the audio device
 	static AudioDevice* audio();
+	// Get the program manager
+	static ProgramManager* program();
+	// Get the resource manager
+	static ResourceManager* resource();
 private:
-	static GraphicDevice* s_graphic;
 	static PlatformDevice* s_platform;
+	static GraphicDevice* s_graphic;
 	static AudioDevice* s_audio;
+	static ProgramManager* s_program;
+	static ResourceManager* s_resource;
 private:
 	std::vector<Layer*> m_layers;
 	uint32_t m_width, m_height;
 	bool m_running;
 };
-
-template <typename T>
-void Application::attach() 
-{
-	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
-	for (Layer* layer : m_layers)
-		if (typeid(*layer) == typeid(T))
-			return; // already attached.
-	m_layers.push_back(new T);
-	m_layers.back()->onLayerAttach();
-}
-template <typename T>
-void Application::detach()
-{
-	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
-	for (auto it = m_layers.begin(); it != m_layers.end(); it++)
-	{
-		Layer* layer = *it;
-		if (typeid(*layer) == typeid(T))
-		{
-			layer->onLayerDetach();
-			m_layers.erase(it);
-			delete layer;
-			break;
-		}
-	}
-}
-template <typename T>
-T& Application::get()
-{
-	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer.");
-	for (Layer* layer : m_layers)
-		if (typeid(*layer) == typeid(T))
-			return reinterpret_cast<T&>(*layer);
-	throw std::runtime_error("Layer not attached");
-}
 
 }

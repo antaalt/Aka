@@ -26,15 +26,7 @@
 
 namespace aka {
 
-ImGuiLayer::ImGuiLayer()
-{
-}
-
-ImGuiLayer::~ImGuiLayer()
-{
-}
-
-void ImGuiLayer::onLayerAttach()
+void ImGuiLayer::onLayerCreate()
 {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -148,7 +140,7 @@ void ImGuiLayer::onLayerAttach()
     style.PopupBorderSize = 1.f;
 }
 
-void ImGuiLayer::onLayerDetach()
+void ImGuiLayer::onLayerDestroy()
 {
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Platform/PlatformDevice.h>
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -13,7 +14,7 @@ class D3D11Context;
 class D3D11Device : public GraphicDevice
 {
 public:
-	D3D11Device(const GraphicConfig& config);
+	D3D11Device(PlatformDevice* platform, const GraphicConfig& config);
 	~D3D11Device();
 public:
 	D3D11Context* ctx();

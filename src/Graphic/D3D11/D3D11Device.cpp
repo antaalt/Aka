@@ -14,6 +14,7 @@
 #include "Platform/GLFW3/PlatformGLFW3.h"
 
 #include <Aka/OS/Logger.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -30,14 +31,14 @@ ID3D11DeviceContext* D3D11Device::context()
 	return m_deviceContext;
 }
 
-D3D11Device::D3D11Device(const GraphicConfig& config) :
+D3D11Device::D3D11Device(PlatformDevice* platform, const GraphicConfig& config) :
 	GraphicDevice(config),
 	m_context(nullptr),
 	m_device(nullptr),
 	m_deviceContext(nullptr)
 {
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::platform());
-	bool vsync = true;
+	PlatformGLFW3* p = reinterpret_cast<PlatformGLFW3*>(platform);
+	bool vsync = (config.flags & GraphicFlag::VerticalSynchronisation) == GraphicFlag::VerticalSynchronisation;
 	bool fullscreen = false;
 	Device device = getDevice(0);
 	// --- SwapChain ---
@@ -46,8 +47,8 @@ D3D11Device::D3D11Device(const GraphicConfig& config) :
 	// Set to a single back buffer.
 	swapChainDesc.BufferCount = 1;
 	// Set the width and height of the back buffer.
-	swapChainDesc.BufferDesc.Width = config.width;
-	swapChainDesc.BufferDesc.Height = config.height;
+	swapChainDesc.BufferDesc.Width = platform->width();
+	swapChainDesc.BufferDesc.Height = platform->height();
 	// Set regular 32-bit surface for the back buffer.
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	// Set the refresh rate of the back buffer.
@@ -64,7 +65,7 @@ D3D11Device::D3D11Device(const GraphicConfig& config) :
 	// Set the usage of the back buffer.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// Set the handle for the window to render to.
-	swapChainDesc.OutputWindow = glfwGetWin32Window(platform->getGLFW3Handle());
+	swapChainDesc.OutputWindow = glfwGetWin32Window(p->getGLFW3Handle());
 	// Turn multisampling off.
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;
@@ -100,14 +101,18 @@ D3D11Device::D3D11Device(const GraphicConfig& config) :
 		nullptr,
 		&m_deviceContext
 	));
-	m_backbuffer = std::make_shared<D3D11Backbuffer>(this, swapchain, config.width, config.height);
+	m_backbuffer = std::make_shared<D3D11Backbuffer>(this, swapchain, platform->width(), platform->height());
 
 	// Check Features
 	// We are using DirectX11 in this backend.
-	m_features.api = GraphicApi::DirectX11;
-	m_features.version.major = 11;
-	m_features.version.minor = 0;
-	m_features.profile = 50;
+	m_settings.api = GraphicAPI::DirectX11;
+	m_settings.version.major = 11;
+	m_settings.version.minor = 0;
+	m_settings.profile = 50;
+	m_settings.coordinates.clipSpacePositive = true; // D3D11 clip space is [0, 1]
+	m_settings.coordinates.originTextureBottomLeft = false; // D3D11 start reading texture at top left.
+	m_settings.coordinates.originUVBottomLeft = false; // D3D11 UV origin is top left
+	m_settings.coordinates.renderAxisYUp = true; // D3D11 render axis y is up
 	// D3D11_COMMONSHADER_CONSTANT_BUFFER_HW_SLOT_COUNT 
 	// D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT 
 	m_features.maxTextureUnits = D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
@@ -115,10 +120,6 @@ D3D11Device::D3D11Device(const GraphicConfig& config) :
 	m_features.maxColorAttachments = 0; // ?
 	m_features.maxElementIndices = 0; // ?
 	m_features.maxElementVertices = 0; // ?
-	m_features.coordinates.clipSpacePositive = true; // D3D11 clip space is [0, 1]
-	m_features.coordinates.originTextureBottomLeft = false; // D3D11 start reading texture at top left.
-	m_features.coordinates.originUVBottomLeft = false; // D3D11 UV origin is top left
-	m_features.coordinates.renderAxisYUp = true; // D3D11 render axis y is up
 
 	m_context = new D3D11Context(this);
 }

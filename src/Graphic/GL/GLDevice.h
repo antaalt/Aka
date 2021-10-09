@@ -2,13 +2,14 @@
 #pragma once
 
 #include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Platform/PlatformDevice.h>
 
 namespace aka {
 
 class GLDevice : public GraphicDevice
 {
 public:
-	GLDevice(const GraphicConfig& config);
+	GLDevice(PlatformDevice* platform, const GraphicConfig& config);
 	~GLDevice();
 public:
 	void render(RenderPass& renderPass) override;

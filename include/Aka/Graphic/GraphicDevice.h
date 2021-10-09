@@ -14,14 +14,13 @@
 
 namespace aka {
 
-enum class GraphicApi
+enum class GraphicAPI
 {
 	None,
-	OpenGL,
+	OpenGL3,
 	DirectX11,
 };
 
-// Specific api coordinates that might affect external code.
 struct GraphicCoordinates
 {
 	// Is origin of texture bottom left or top left.
@@ -50,27 +49,38 @@ struct GraphicCoordinates
 
 struct GraphicDeviceFeatures
 {
-	GraphicApi api; // Current API
-	struct
-	{
-		uint32_t major; // Major version of the API
-		uint32_t minor; // Minor version of the API
-	} version;
-	uint32_t profile; // Profile version of API shader
-
 	uint32_t maxColorAttachments; // Max number of color attachments for framebuffer
 	uint32_t maxElementIndices; // Max number of indices for index buffer
 	uint32_t maxElementVertices; // Max number of vertices for vertex buffer
 	uint32_t maxTextureUnits; // Max number of textures bound at same time
 	uint32_t maxTextureSize; // Maximum size of a single texture
-
-	GraphicCoordinates coordinates;
 };
+
+struct GraphicDeviceSettings
+{
+	GraphicAPI api; // Current API
+	struct {
+		uint32_t major; // Major version of the API
+		uint32_t minor; // Minor version of the API
+	} version;
+	uint32_t profile; // Profile version of API shader
+	GraphicCoordinates coordinates; // Specific api coordinates that might affect external code.
+};
+
+enum class GraphicFlag
+{
+	None,
+	VerticalSynchronisation,
+	HDRBackbuffer,
+};
+
+GraphicFlag operator|(const GraphicFlag& lhs, const GraphicFlag& rhs);
+GraphicFlag operator&(const GraphicFlag& lhs, const GraphicFlag& rhs);
+GraphicFlag operator~(const GraphicFlag& flag);
 
 struct GraphicConfig
 {
-	uint32_t width = 1280;
-	uint32_t height = 720;
+	GraphicFlag flags;
 };
 
 class GraphicDevice
@@ -82,9 +92,15 @@ public:
 	virtual ~GraphicDevice();
 public:
 	// Get the underlying api.
-	const GraphicApi& api() const;
+	const GraphicAPI& api() const;
 	// Get device features
 	const GraphicDeviceFeatures& features() const;
+	// Get device flags
+	GraphicFlag flags() const;
+	// Get device settings
+	const GraphicDeviceSettings& settings() const;
+	// Get current api coordinates
+	const GraphicCoordinates& coordinates() const;
 	// Start a new frame
 	void frame();
 	// Present the frame
@@ -144,6 +160,8 @@ public:
 	// Create a material using given program.
 	virtual Material::Ptr createMaterial(Program::Ptr shader) = 0;
 protected:
+	GraphicFlag m_flags;
+	GraphicDeviceSettings m_settings;
 	GraphicDeviceFeatures m_features; // Features of the device
 	Backbuffer::Ptr m_backbuffer; // Backbuffer of the device
 };

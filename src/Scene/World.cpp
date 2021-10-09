@@ -7,9 +7,22 @@
 
 namespace aka {
 
+World::World()
+{
+
+}
+
+World::~World()
+{
+	m_registry.clear();
+	m_dispatcher.clear();
+	for (std::unique_ptr<System>& system : m_systems)
+		system->onDestroy(*this);
+}
+
 Entity World::createEntity(const String& name)
 {
-	Entity e =  Entity(m_registry.create(), this);
+	Entity e = Entity(m_registry.create(), this);
 	e.add<TagComponent>();
 	e.get<TagComponent>().name = name;
 	return e;
@@ -33,35 +46,20 @@ void World::load(const Path& path)
 	//*this = Parser::parse(str);
 }
 
-void World::create()
+void World::onReceive(const AppUpdateEvent& event)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onCreate(*this);
-}
-
-void World::destroy()
-{
-	m_registry.clear();
-	m_dispatcher.clear();
-	for (std::unique_ptr<System>& system : m_systems)
-		system->onDestroy(*this);
-	m_systems.clear();
-}
-
-void World::update(Time deltaTime)
-{
-	for (std::unique_ptr<System>& system : m_systems)
-		system->onUpdate(*this, deltaTime);
+		system->onUpdate(*this, event.deltaTime);
 	m_dispatcher.update();
 }
 
-void World::fixedUpdate(Time deltaTime)
+void World::onReceive(const AppFixedUpdateEvent& event)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onFixedUpdate(*this, deltaTime);
+		system->onFixedUpdate(*this, event.deltaTime);
 }
 
-void World::render()
+void World::onReceive(const AppRenderEvent& event)
 {
 	for (std::unique_ptr<System>& system : m_systems)
 		system->onRender(*this);

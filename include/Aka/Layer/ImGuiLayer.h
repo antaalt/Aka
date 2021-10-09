@@ -2,8 +2,6 @@
 
 #include <Aka/Core/Layer.h>
 
-#include <atomic>
-
 namespace aka {
 
 #if defined(AKA_USE_IMGUI_LAYER)
@@ -11,11 +9,11 @@ namespace aka {
 class ImGuiLayer final : public Layer
 {
 public:
-	ImGuiLayer();
-	~ImGuiLayer();
-
-	void onLayerAttach() override;
-	void onLayerDetach() override;
+	ImGuiLayer() {}
+	~ImGuiLayer() {}
+private:
+	void onLayerCreate() override;
+	void onLayerDestroy() override;
 
 	void onLayerFrame() override;
 	void onLayerPresent() override;

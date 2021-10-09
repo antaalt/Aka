@@ -15,7 +15,7 @@ public:
 	// Compile the shader to SPIRV
 	bool parse(const Path& path, ShaderType shader, const char** defines = nullptr, size_t defineCount = 0);
 	// Export it and generate a shader for given API
-	String compile(GraphicApi api, const VertexAttribute* attributes, size_t count);
+	String compile(GraphicAPI api, const VertexAttribute* attributes, size_t count);
 private:
 	// Export to HLSL 5.0 for D3D11 backend
 	String compileHLSL50(const VertexAttribute* attributes, size_t count);
