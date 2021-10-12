@@ -94,6 +94,9 @@ TextureCubeMap::Ptr TextureCubeMap::generate(
 		"	float3 color = u_equirectangularMap.Sample(u_equirectangularMapSampler, uv).rgb;\n"
 		"	return float4(color.x, color.y, color.z, 1.0);\n"
 		"}\n";
+#else
+	static const char* s_vertShader = nullptr;
+	static const char* s_fragShader = nullptr;
 #endif
 	RenderPass pass;
 	// Setup framebuffer

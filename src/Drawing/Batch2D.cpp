@@ -72,6 +72,9 @@ static const char* fragShader = ""
 "{\n"
 "	return input.color * u_texture.Sample(u_sampler, input.texcoord);\n"
 "}\n";
+#else
+static const char* vertShader = nullptr;
+static const char* fragShader = nullptr;
 #endif
 
 void Batch2D::draw(const mat3f& transform, const Line& line)

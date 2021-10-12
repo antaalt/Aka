@@ -63,8 +63,11 @@ void Application::create(const Config& config)
 {
 	OS::setcwd(config.directory);
 	s_platform = platformFactory(config.platform);
+	AKA_ASSERT(s_platform != nullptr, "No platform");
 	s_graphic = graphicFactory(s_platform, config.graphic);
+	AKA_ASSERT(s_graphic != nullptr, "No graphics");
 	s_audio = audioFactory(config.audio);
+	AKA_ASSERT(s_audio != nullptr, "No audio");
 	s_program = new ProgramManager;
 	s_resource = new ResourceManager;
 	m_width = config.platform.width;

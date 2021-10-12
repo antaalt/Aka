@@ -43,7 +43,7 @@ void ImGuiLayer::onLayerCreate()
 	std::stringstream ss;
 	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
 	ImGui_ImplOpenGL3_Init(ss.str().c_str());
-#else
+#elif defined(AKA_USE_D3D11)
 	D3D11Device* device = reinterpret_cast<D3D11Device*>(Application::graphic());
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
@@ -144,7 +144,7 @@ void ImGuiLayer::onLayerDestroy()
 {
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
-#else
+#elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_Shutdown();
 #endif
 	ImGui_ImplGlfw_Shutdown();
@@ -156,7 +156,7 @@ void ImGuiLayer::onLayerFrame()
 	// Start the Dear ImGui frame
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_NewFrame();
-#else
+#elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_NewFrame();
 #endif
 	ImGui_ImplGlfw_NewFrame();
@@ -170,7 +170,7 @@ void ImGuiLayer::onLayerPresent()
 	// TODO do not enforce backbuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-#else
+#elif defined(AKA_USE_D3D11)
 	// TODO do not enforce backbuffer
 	GraphicDevice* device = Application::graphic();
 	D3D11Backbuffer* backbuffer = (D3D11Backbuffer*)device->backbuffer().get();
