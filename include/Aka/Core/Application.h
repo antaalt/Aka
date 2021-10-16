@@ -59,6 +59,7 @@ class Application :
 	EventListener<WindowResizeEvent>
 {
 public:
+	Application();
 	Application(const std::vector<Layer*> layers);
 	virtual ~Application();
 private:

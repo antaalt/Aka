@@ -43,10 +43,18 @@ AudioDevice* audioFactory(const AudioConfig& config)
 #if defined(AKA_USE_RTAUDIO)
 	return new AudioRtAudio(config);
 #else
+	Logger::critical("No audio defined.");
 	return nullptr;
 #endif
 }
 
+Application::Application() :
+	m_width(0),
+	m_height(0),
+	m_running(true),
+	m_layers()
+{
+}
 Application::Application(const std::vector<Layer*> layers) :
 	m_width(0),
 	m_height(0),
