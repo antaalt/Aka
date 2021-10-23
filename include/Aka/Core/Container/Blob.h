@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 
-namespace aka {
+#include <Aka/Memory/Memory.h>
 
-using byte_t = uint8_t;
+namespace aka {
 
 class Blob
 {

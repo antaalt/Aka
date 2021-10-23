@@ -90,14 +90,7 @@ inline void EventDispatcher<T>::subscribe(EventListener<T>* listener)
 template <typename T>
 inline void EventDispatcher<T>::unsubscribe(EventListener<T>* listener)
 {
-	for (auto it = m_listeners.begin(); it != m_listeners.end(); it++)
-	{
-		if ((*it) == listener)
-		{
-			m_listeners.erase(it);
-			break;
-		}
-	}
+	m_listeners.erase(listener);
 }
 template <typename T>
 inline void EventDispatcher<T>::unsubscribe()

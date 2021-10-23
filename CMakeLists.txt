@@ -21,6 +21,11 @@ add_library (Aka
 	"src/Core/Encoding.cpp"
 	"src/Core/Controller.cpp"
 
+	"src/Memory/Allocator.cpp"
+	"src/Memory/Memory.cpp"
+	"src/Memory/Allocator/PoolAllocator.cpp" 
+	"src/Memory/Allocator/LinearAllocator.cpp"
+
 	"src/Layer/ImGuiLayer.cpp"
 
 	"src/Scene/Component.cpp"

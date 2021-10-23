@@ -19,6 +19,11 @@
 #include "Core/Controller.h"
 #include "Core/Event.h"
 
+#include "Memory/Memory.h"
+#include "Memory/Allocator.h"
+#include "Memory/Allocator/LinearAllocator.h"
+#include "Memory/Allocator/PoolAllocator.h"
+
 #include "Graphic/GraphicDevice.h"
 #include "Graphic/Mesh.h"
 #include "Graphic/Framebuffer.h"
