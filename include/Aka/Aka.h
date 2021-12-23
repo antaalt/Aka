@@ -20,6 +20,7 @@
 #include "Core/Event.h"
 
 #include "Memory/Memory.h"
+#include "Memory/Pool.h"
 #include "Memory/Allocator.h"
 #include "Memory/Allocator/LinearAllocator.h"
 #include "Memory/Allocator/PoolAllocator.h"

@@ -72,4 +72,35 @@ void* Memory::copy(void* dst, const void* src, size_t size)
 	return ::memcpy(dst, src, size);
 }
 
+void Memory::set(void* memory, uint8_t data, size_t size)
+{
+	::memset(memory, data, size);
+}
+
+int32_t Memory::compare(const void* lhs, const void* rhs, size_t size)
+{
+	return ::memcmp(lhs, rhs, size);
+}
+
+void Memory::zero(void* memory, size_t size)
+{
+	Memory::set(memory, 0, size);
+}
+
+bool Memory::operator==(const Memory& rhs)
+{
+	if (m_size != rhs.m_size)
+		return false;
+	return Memory::compare(m_data, rhs.m_data, m_size) == 0;
+}
+
+bool Memory::operator!=(const Memory& rhs)
+{
+	if (m_size == rhs.m_size)
+		return false;
+	return Memory::compare(m_data, rhs.m_data, m_size) != 0;
+}
+
+
+
 };
