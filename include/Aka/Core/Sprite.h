@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Graphic/Texture2D.h>
+#include <Aka/Graphic/Texture.h>
 #include <Aka/OS/Time.h>
 #include <Aka/OS/Path.h>
 #include <Aka/OS/Stream/Stream.h>
@@ -14,18 +14,18 @@ namespace aka {
 struct Sprite {
 	struct Frame {
 		// TODO use subtexture with atlas
-		Texture2D::Ptr texture = nullptr;
+		Texture* texture = nullptr;
 		Time duration = Time();
 		uint32_t width = 0;
 		uint32_t height = 0;
 
-		static Frame create(Texture2D::Ptr texture, Time duration)
+		static Frame create(Texture* texture, Time duration)
 		{ 
 			Frame frame; 
 			frame.texture = texture; 
 			frame.duration = duration; 
-			frame.width = texture->width();
-			frame.height = texture->height();
+			frame.width = texture->width;
+			frame.height = texture->height;
 			return frame; 
 		}
 	};

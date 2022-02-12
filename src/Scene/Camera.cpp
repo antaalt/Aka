@@ -28,7 +28,8 @@ CameraProjectionType CameraOrthographic::type() const
 
 bool CameraArcball::update(Time deltaTime)
 {
-	PlatformDevice* platform = Application::platform();
+	Application* app = Application::app();
+	PlatformDevice* platform = app->platform();
 	const Mouse& mouse = platform->mouse();
 	bool dirty = false;
 	// https://gamedev.stackexchange.com/questions/53333/how-to-implement-a-basic-arcball-camera-in-opengl-with-glm

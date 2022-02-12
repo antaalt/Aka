@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 
 namespace aka {
 

@@ -19,10 +19,11 @@ struct FontStorage : IStorage<Font>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	std::shared_ptr<Font> to() const override;
-	void from(const std::shared_ptr<Font>& mesh) override;
+	Font* allocate() const override;
+	void deallocate(Font* font) const override;
+	void serialize(const Font* font) override;
 
-	size_t size(const std::shared_ptr<Font>& mesh) override;
+	size_t size(const Font* mesh) override;
 };
 
 };

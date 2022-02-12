@@ -2,7 +2,7 @@
 
 #include <Aka/Resource/ResourceAllocator.h>
 
-#include <Aka/Graphic/Mesh.h>
+#include <Aka/Rendering/Mesh.h>
 #include <Aka/Graphic/Texture.h>
 #include <Aka/Graphic/Buffer.h>
 #include <Aka/Core/Font.h>
@@ -14,22 +14,22 @@ class ResourceManager
 {
 public:
 	ResourceManager() {}
-	~ResourceManager() {}
+	virtual ~ResourceManager() {}
 
 	// Get the allocator of the given resource
 	template <typename T> ResourceAllocator<T>& allocator();
 	// Get the raw resource
-	template <typename T> std::shared_ptr<T> get(const String& name);
+	template <typename T> T* get(const String& name);
 	// Get the resource 
 	template <typename T> Resource<T> getResource(const String& name);
 	// Load a resource from file
 	template <typename T> Resource<T> load(const String& name, const Path& path);
 	// Load a resource internally
-	template <typename T> Resource<T> load(const String& name, const std::shared_ptr<T>& data);
+	template <typename T> Resource<T> load(const String& name, T* data);
 	// Unload a resource
 	template <typename T> void unload(const String& name);
 	// Get the name of a resource
-	template <typename T> String name(const std::shared_ptr<T>& data);
+	template <typename T> String name(const T* data);
 	// Get the number of resources
 	template <typename T> size_t count();
 	// Check if a resource with this name exist
@@ -58,9 +58,9 @@ template <> inline ResourceAllocator<Font>& ResourceManager::allocator() { retur
 template <> inline ResourceAllocator<Buffer>& ResourceManager::allocator() { return buffers; }
 
 template <typename T>
-inline std::shared_ptr<T> ResourceManager::get(const String& name)
+inline T* ResourceManager::get(const String& name)
 {
-	return allocator<T>().get(name);
+	return allocator<T>().get(name).get();
 }
 template <typename T>
 inline Resource<T> ResourceManager::getResource(const String& name)
@@ -73,7 +73,7 @@ inline Resource<T> ResourceManager::load(const String& name, const Path& path)
 	return allocator<T>().load(name, path);
 }
 template <typename T>
-inline Resource<T> ResourceManager::load(const String& name, const std::shared_ptr<T>& data)
+inline Resource<T> ResourceManager::load(const String& name, T* data)
 {
 	return allocator<T>().load(name, data);
 }
@@ -88,7 +88,7 @@ inline size_t ResourceManager::count()
 	return allocator<T>().count();
 }
 template <typename T>
-inline String ResourceManager::name(const std::shared_ptr<T>& data)
+inline String ResourceManager::name(const T* data)
 {
 	return allocator<T>().name(data);
 }

@@ -1,77 +1,59 @@
 #pragma once
 
-#include <vector>
+#include <stdint.h>
 
-#include <Aka/Core/Geometry.h>
-#include <Aka/Core/StrictType.h>
-#include <Aka/Graphic/Texture.h>
 #include <Aka/Graphic/Shader.h>
-#include <Aka/Graphic/Mesh.h>
+#include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Buffer.h>
 
 namespace aka {
 
-enum class UniformType
+enum class ShaderBindingType : uint8_t
 {
 	None,
-	Float,
-	Int,
-	UnsignedInt,
-	Vec2,
-	Vec3,
-	Vec4,
-	Mat3,
-	Mat4,
-	Image2D,
-	Texture2D,
-	Texture2DMultisample,
-	TextureCubemap,
-	Buffer,
+	SampledImage,
+	StorageImage,
+	UniformBuffer,
+	StorageBuffer,
+	AccelerationStructure,
 };
 
-struct Uniform
+struct ShaderBindingLayout
 {
-	String name; // Name of uniform
-	uint32_t binding; // Binding point of the uniform
-	UniformType type; // Type of uniform
+	ShaderBindingType type; // Type of binding
 	ShaderType shaderType; // Shader stage used
-	uint32_t count; // Number of element for this uniform
+	uint32_t count; // Number of element for this binding
 };
 
-class Program
+struct ShaderBindingState
 {
-public:
-	using Ptr = std::shared_ptr<Program>;
-protected:
-	Program();
-	Program(const VertexAttribute* attributes, size_t count);
-	Program(const Program&) = delete;
-	const Program& operator=(const Program&) = delete;
-	virtual ~Program();
-public:
-	// Create a vertex program
-	static Program::Ptr createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count);
-	// Create a vertex program with geometry 
-	static Program::Ptr createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count);
-	// Create a compute program
-	static Program::Ptr createComputeProgram(Shader::Ptr compute);
-public:
-	// Get uniform
-	const Uniform* getUniform(const char* name) const;
-	// Iterate uniforms
-	std::vector<Uniform>::iterator begin();
-	std::vector<Uniform>::iterator end();
-	std::vector<Uniform>::const_iterator begin() const;
-	std::vector<Uniform>::const_iterator end() const;
-public:
-	// Get number of attribute
-	uint32_t getAttributeCount() const;
-	// Get attribute at given binding
-	const VertexAttribute& getAttribute(uint32_t iBinding) const;
-protected:
-	std::vector<Uniform> m_uniforms;
-	std::vector<VertexAttribute> m_attributes;
+	static constexpr uint32_t MaxBindingCount = 16; // TODO increase
+	ShaderBindingLayout bindings[MaxBindingCount];
+	uint32_t count;
+
+	static ShaderBindingState merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 };
 
+struct Program
+{
+	void* native;
 
+	Shader* vertex;
+	Shader* fragment;
+	Shader* geometry;
+	Shader* compute;
 
-}
+	ShaderBindingState bindings;
+
+	bool hasVertexStage() const;
+	bool hasFragmentStage() const;
+	bool hasGeometryStage() const;
+	bool hasComputeStage() const;
+
+	static Program* createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState& bindings);
+	static Program* createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState& bindings);
+	static Program* createCompute(Shader* compute);
+	static void destroy(Program* program);
+};
+
+};

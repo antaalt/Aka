@@ -49,7 +49,7 @@ struct AppUpdateEvent
 {
 	Time deltaTime;
 };
-struct AppRenderEvent {};
+struct AppRenderEvent { Frame* frame; };
 struct AppFrameEvent {};
 struct AppPresentEvent {};
 struct AppResizeEvent { uint32_t width; uint32_t height; };
@@ -76,7 +76,7 @@ private:
 	// Called before render for the app.
 	void frame();
 	// Render the app.
-	void render();
+	void render(Frame* frame);
 	// Called before present of the frame
 	void present();
 	// Last function called in a loop
@@ -97,11 +97,12 @@ protected:
 	// Called before app render
 	virtual void onFrame() {}
 	// Called on app render
-	virtual void onRender() {}
+	virtual void onRender(Frame* frame) {}
 	// Called before present of the app
 	virtual void onPresent() {}
 	// Called on app resize
 	virtual void onResize(uint32_t width, uint32_t height) {}
+public:
 	// Get the current app width
 	uint32_t width() const;
 	// Get the current app height
@@ -109,22 +110,25 @@ protected:
 public:
 	// Entry point of the application
 	static void run(const Config& config);
+	// Get the application
+	static Application* app();
 	// Get the graphic device
-	static GraphicDevice* graphic();
+	GraphicDevice* graphic();
 	// Get the platform device
-	static PlatformDevice* platform();
+	PlatformDevice* platform();
 	// Get the audio device
-	static AudioDevice* audio();
+	AudioDevice* audio();
 	// Get the program manager
-	static ProgramManager* program();
+	ProgramManager* program();
 	// Get the resource manager
-	static ResourceManager* resource();
+	ResourceManager* resource();
 private:
-	static PlatformDevice* s_platform;
-	static GraphicDevice* s_graphic;
-	static AudioDevice* s_audio;
-	static ProgramManager* s_program;
-	static ResourceManager* s_resource;
+	static Application* s_app;
+	PlatformDevice* m_platform;
+	GraphicDevice* m_graphic;
+	AudioDevice* m_audio;
+	ProgramManager* m_program;
+	ResourceManager* m_resource;
 private:
 	std::vector<Layer*> m_layers;
 	uint32_t m_width, m_height;

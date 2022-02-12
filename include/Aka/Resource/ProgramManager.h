@@ -8,7 +8,7 @@ namespace aka {
 struct ProgramReloadedEvent
 {
 	String name;
-	Program::Ptr program;
+	Program* program;
 };
 
 class ProgramManager :
@@ -19,9 +19,9 @@ public:
 	~ProgramManager() {}
 
 	// Get a program from its name
-	Program::Ptr get(const String& name);
+	Program* get(const String& name);
 	// Get a shader from its name
-	Shader::Ptr getShader(const String& name);
+	Shader* getShader(const String& name);
 	// Reload a specific shader.
 	bool reload(const String& name);
 
@@ -35,19 +35,20 @@ private:
 	void onReceive(const AppUpdateEvent& event);
 private:
 	// Compile a shader using GLSLCC for currently used graphic API
-	Shader::Ptr compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count);
+	Shader* compile(const Path& path, ShaderType type, ShaderBindingState* bindings, VertexBindingState* vertices);
 private:
 	struct ShaderInfo {
 		String name;
 		ShaderType type;
-		Shader::Ptr shader;
+		Shader* shader;
 		Path path;
-		std::vector<VertexAttribute> attributes;
+		ShaderBindingState bindings;
+		VertexBindingState vertices;
 		Timestamp loaded;
 	};
 	struct ProgramInfo {
 		String name;
-		Program::Ptr program;
+		Program* program;
 		String vert;
 		String frag;
 		String comp;

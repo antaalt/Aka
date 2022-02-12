@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <memory>
+#include <stdint.h>
 
 namespace aka {
 
-enum class ShaderType
+enum class ShaderType : uint8_t
 {
+	None = 0,
 	Vertex = (1 << 0),
 	Fragment = (1 << 1),
 	Compute = (1 << 2),
@@ -15,17 +15,18 @@ enum class ShaderType
 	//TessEvaluation  = (1 << 5),
 };
 
-class Shader
+bool has(ShaderType flags, ShaderType flag);
+ShaderType operator&(ShaderType lhs, ShaderType rhs);
+ShaderType operator|(ShaderType lhs, ShaderType rhs);
+
+struct Shader
 {
-public:
-	using Ptr = std::shared_ptr<Shader>;
-protected:
-	Shader();
-	Shader(const Shader&) = delete;
-	const Shader& operator=(const Shader&) = delete;
-	virtual ~Shader();
-public:
-	static Shader::Ptr compile(const char* content, ShaderType type);
+	void* native;
+
+	ShaderType type;
+
+	static Shader* compile(ShaderType type, const uint8_t* content, size_t size);
+	static void destroy(Shader* shader);
 };
 
 };

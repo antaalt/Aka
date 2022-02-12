@@ -19,7 +19,7 @@ Sprite::Frame convertFrame(const Aseprite& ase, const Aseprite::Frame& aseFrame)
 	frame.width = ase.width;
 	frame.height = ase.height;
 	// Generate texture
-	frame.texture = Texture2D::create(
+	frame.texture = Texture::create2D(
 		ase.width, ase.height,
 		TextureFormat::RGBA8,
 		TextureFlag::ShaderResource,

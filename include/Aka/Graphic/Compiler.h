@@ -15,12 +15,18 @@ public:
 	// Compile the shader to SPIRV
 	bool parse(const Path& path, ShaderType shader, const char** defines = nullptr, size_t defineCount = 0);
 	// Export it and generate a shader for given API
-	String compile(GraphicAPI api, const VertexAttribute* attributes, size_t count);
+	Blob compile(GraphicAPI api);
+	// Get shader bindings from compiler
+	ShaderBindingState getShaderBindings();
+	// Get vertex bindings from compiler
+	VertexBindingState getVertexBindings();
 private:
 	// Export to HLSL 5.0 for D3D11 backend
-	String compileHLSL50(const VertexAttribute* attributes, size_t count);
+	Blob compileHLSL50(const VertexAttribute* attributes, size_t count);
 	// Export to GLSL 330 for OpenGL backend
-	String compileGLSL330();
+	Blob compileGLSL330();
+	// Export to SPIR-V for Vulkan backend
+	Blob compileSPV();
 private:
 	std::vector<uint32_t> m_spirv;
 };

@@ -1,35 +1,25 @@
 #pragma once
 
 #include <stdint.h>
-#include <vector>
 
 #include <Aka/Graphic/Texture.h>
-#include <Aka/Graphic/TextureCubeMap.h>
-#include <Aka/Core/Geometry.h>
 
 namespace aka {
 
-enum class ClearMask
+enum class ClearMask : uint8_t
 {
-	None = 0,
-	Color = 1,
-	Depth = 2,
-	Stencil = 4,
+	None    = 0,
+	Color   = (1 << 0),
+	Depth   = (1 << 1),
+	Stencil = (1 << 2),
 	All = Color | Depth | Stencil
 };
 
-enum class AttachmentType
-{
-	Color0,
-	Color1,
-	Color2,
-	Color3,
-	Depth,
-	Stencil,
-	DepthStencil
-};
+bool has(ClearMask flags, ClearMask flag);
+ClearMask operator&(ClearMask lhs, ClearMask rhs);
+ClearMask operator|(ClearMask lhs, ClearMask rhs);
 
-enum class AttachmentFlag
+enum class AttachmentFlag : uint8_t
 {
 	None = 0,
 	AttachTextureObject = (1 << 0), // Attach the object instead of the layer
@@ -37,55 +27,40 @@ enum class AttachmentFlag
 
 struct Attachment
 {
-	AttachmentType type; // Type of the attachment
-	Texture::Ptr texture; // Texture used as attachment
+	Texture* texture; // Texture used as attachment
 	AttachmentFlag flag; // Attachment flag
-	uint32_t layer; // Layer of the texture used as attachment (if AttachmentFlag::AttachTextureLayer set)
+	uint32_t layer; // Layer of the texture used as attachment (if AttachmentFlag::AttachTextureObject not set)
 	uint32_t level; // Level of the mips used as attachment
 };
 
-class Framebuffer
+struct FramebufferState
 {
-public:
-	using Ptr = std::shared_ptr<Framebuffer>;
+	struct Attachment
+	{
+		TextureFormat format;
+	};
+	static constexpr uint32_t MaxColorAttachmentCount = 8;
 
-protected:
-	Framebuffer(uint32_t width, uint32_t height);
-	Framebuffer(Attachment* attachment, size_t count);
-	Framebuffer(const Framebuffer&) = delete;
-	Framebuffer& operator=(const Framebuffer&) = delete;
-	virtual ~Framebuffer();
-public:
-	// Create a framebuffer from attachment
-	static Framebuffer::Ptr create(Attachment* attachment, size_t count);
-	// Check if an attachment is valid
-	static bool valid(Attachment attachment);
+	uint32_t count; // color attachment count
+	Attachment colors[MaxColorAttachmentCount];
+	Attachment depth;
 
-	// Get framebuffer width
-	uint32_t width() const;
-	// Get framebuffer height
-	uint32_t height() const;
-
-	// Clear the framebuffer
-	virtual void clear(const color4f& color, float depth = 1.f, int stencil = 1, ClearMask mask = ClearMask::All) = 0;
-
-	// Get the framebuffer attachment
-	Attachment* getAttachment(AttachmentType type);
-	// Get the texture of the framebuffer attachment
-	Texture::Ptr get(AttachmentType type);
-	// Set the attachment of the framebuffer
-	virtual void set(AttachmentType type, Texture::Ptr texture, AttachmentFlag flag = AttachmentFlag::None, uint32_t layer = 0, uint32_t level = 0) = 0;
-
-protected:
-	uint32_t m_width;
-	uint32_t m_height;
-	std::vector<Attachment> m_attachments;
+	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
 };
 
-AttachmentFlag operator&(const AttachmentFlag& lhs, const AttachmentFlag& rhs);
-AttachmentFlag operator|(const AttachmentFlag& lhs, const AttachmentFlag& rhs);
+struct Framebuffer
+{
+	uint32_t width, height;
+	
+	FramebufferState framebuffer;
 
-ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs);
-ClearMask operator|(const ClearMask& lhs, const ClearMask& rhs);
+	Attachment colors[FramebufferState::MaxColorAttachmentCount];
+	Attachment depth;
 
-}
+	bool hasDepthStencil() const { return depth.texture != nullptr; }
+
+	static Framebuffer* create(const Attachment* attachments, uint32_t count, const Attachment* depth);
+	static void destroy(Framebuffer* framebuffer);
+};
+
+};

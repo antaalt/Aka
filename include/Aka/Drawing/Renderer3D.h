@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Core/Geometry.h>
+/*#include <Aka/Core/Geometry.h>
 #include <Aka/Drawing/Batch3D.h>
 #include <Aka/Graphic/Framebuffer.h>
 
@@ -33,4 +33,4 @@ private:
 	static Batch3D batch;
 };
 
-};
+};*/

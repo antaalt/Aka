@@ -3,6 +3,7 @@
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Resource/ResourceManager.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -50,23 +51,28 @@ bool BufferStorage::save(const Path& path) const
 	return true;
 }
 
-std::shared_ptr<Buffer> BufferStorage::to() const
+Buffer* BufferStorage::allocate() const
 {
-	return Buffer::create(type, bytes.size(), usage, access, bytes.data());
+	return Application::app()->graphic()->createBuffer(type, (uint32_t)bytes.size(), usage, access, bytes.data());
 }
 
-void BufferStorage::from(const std::shared_ptr<Buffer>& buffer)
+void BufferStorage::deallocate(Buffer* buffer) const
 {
-	type = buffer->type();
-	usage = buffer->usage();
-	access = buffer->access();
-	bytes.resize(buffer->size());
-	buffer->download(bytes.data());
+	Application::app()->graphic()->destroy(buffer);
 }
 
-size_t BufferStorage::size(const std::shared_ptr<Buffer>& buffer)
+void BufferStorage::serialize(const Buffer* buffer)
 {
-	return buffer->size();
+	type = buffer->type;
+	usage = buffer->usage;
+	access = buffer->access;
+	bytes.resize(buffer->size);
+	Application::app()->graphic()->download(buffer, bytes.data(), 0, buffer->size);
+}
+
+size_t BufferStorage::size(const Buffer* buffer)
+{
+	return buffer->size;
 }
 
 }; // namespace aka

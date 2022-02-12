@@ -13,7 +13,7 @@
 
 namespace aka {
 
-Program::Ptr ProgramManager::get(const String& name)
+Program* ProgramManager::get(const String& name)
 {
 	for (ProgramInfo& info : m_programs)
 		if (info.name == name)
@@ -21,12 +21,12 @@ Program::Ptr ProgramManager::get(const String& name)
 	return nullptr;
 }
 
-Shader::Ptr ProgramManager::getShader(const String& name)
+Shader* ProgramManager::getShader(const String& name)
 {
 	for (ShaderInfo& info : m_shaders)
 		if (info.name == name)
 			return info.shader;
-	return Shader::Ptr(0);
+	return nullptr;
 }
 
 bool ProgramManager::reload(const String& name)
@@ -35,7 +35,7 @@ bool ProgramManager::reload(const String& name)
 	{
 		if (info.name == name)
 		{
-			Shader::Ptr out = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
+			Shader* out = compile(info.path, info.type, &info.bindings, &info.vertices);
 			if (out == nullptr)
 				return false;
 			info.shader = out;
@@ -75,7 +75,7 @@ bool ProgramManager::parse(const Path& path)
 				Logger::warn("Invalid shader type. Ignoring.");
 				continue;
 			}
-			if (element.value().find("attributes") != element.value().end())
+			/*if (element.value().find("attributes") != element.value().end())
 			{
 				for (auto& attribute : element.value()["attributes"])
 				{
@@ -85,10 +85,10 @@ bool ProgramManager::parse(const Path& path)
 					att.type = (VertexType)attribute["type"].get<uint32_t>();
 					info.attributes.push_back(att);
 				}
-			}
+			}*/
 			if (!OS::File::read(path, &str))
 				return false;
-			info.shader = compile(info.path, info.type, info.attributes.data(), info.attributes.size());
+			info.shader = compile(info.path, info.type, &info.bindings, &info.vertices);
 			m_shaders.push_back(info);
 		}
 		for (auto& element : json["programs"].items())
@@ -103,17 +103,18 @@ bool ProgramManager::parse(const Path& path)
 				info.comp = element.value()["compute"].get<std::string>();
 			if (info.vert.length() > 0 && info.frag.length() > 0)
 			{
-				std::vector<VertexAttribute>& attributes = getShaderInfo(info.vert).attributes;
-				info.program = Program::createVertexProgram(
+				ShaderBindingState vertBindings = getShaderInfo(info.vert).bindings;
+				ShaderBindingState fragBindings = getShaderInfo(info.frag).bindings;
+				ShaderBindingState bindings = ShaderBindingState::merge(vertBindings, fragBindings);
+				info.program = Program::createVertex(
 					getShaderInfo(info.vert).shader,
 					getShaderInfo(info.frag).shader,
-					getShaderInfo(info.vert).attributes.data(),
-					getShaderInfo(info.vert).attributes.size()
+					bindings
 				);
 			}
 			else if (info.comp.length() > 0)
 			{
-				info.program = Program::createComputeProgram(
+				info.program = Program::createCompute(
 					getShaderInfo(info.comp).shader
 				);
 			}
@@ -141,18 +142,31 @@ bool ProgramManager::serialize(const Path& path)
 		{
 			shaderJSON[info.name] = nlohmann::json::object();
 			shaderJSON[info.name]["path"] = info.path.cstr();
-			if (info.attributes.size() > 0)
+			if (info.bindings.count > 0)
 			{
-				shaderJSON[info.name]["attributes"] = nlohmann::json::array();
-				shaderJSON[info.name]["attributes"];
-				for (size_t i = 0; i < info.attributes.size(); i++)
+				shaderJSON[info.name]["bindings"] = nlohmann::json::array();
+				for (size_t i = 0; i < info.bindings.count; i++)
 				{
-					VertexAttribute& attribute = info.attributes[i];
+					ShaderBindingLayout& binding = info.bindings.bindings[i];
 					nlohmann::json att = nlohmann::json::object();
-					att["semantic"] = (uint32_t)attribute.semantic;
-					att["format"] = (uint32_t)attribute.format;
-					att["type"] = (uint32_t)attribute.type;
-					shaderJSON[info.name]["attributes"].push_back(att);
+					att["shaderType"] = (uint32_t)binding.shaderType;
+					att["count"] = (uint32_t)binding.count;
+					att["type"] = (uint32_t)binding.type;
+					shaderJSON[info.name]["bindings"].push_back(att);
+				}
+			}
+			if (info.vertices.count > 0)
+			{
+				shaderJSON[info.name]["inputs"] = nlohmann::json::array();
+				info.vertices.offsets; // TODO move out
+				for (size_t i = 0; i < info.vertices.count; i++)
+				{
+					VertexAttribute& attributes = info.vertices.attributes[i];
+					nlohmann::json att = nlohmann::json::object();
+					att["semantic"] = (uint32_t)attributes.semantic;
+					att["format"] = (uint32_t)attributes.format;
+					att["type"] = (uint32_t)attributes.type;
+					shaderJSON[info.name]["inputs"].push_back(att);
 				}
 			}
 		}
@@ -200,7 +214,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (vertUpdated)
 				{
 					AKA_ASSERT(vertInfo.type == ShaderType::Vertex, "Invalid shader type");
-					Shader::Ptr shader = compile(vertInfo.path, vertInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
+					Shader* shader = compile(vertInfo.path, vertInfo.type, &vertInfo.bindings, &vertInfo.vertices);
 					if (shader != nullptr)
 					{
 						compiled = true;
@@ -211,7 +225,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (fragUpdated)
 				{
 					AKA_ASSERT(fragInfo.type == ShaderType::Fragment, "Invalid shader type");
-					Shader::Ptr shader = compile(fragInfo.path, fragInfo.type, vertInfo.attributes.data(), vertInfo.attributes.size());
+					Shader* shader = compile(fragInfo.path, fragInfo.type, &fragInfo.bindings, &fragInfo.vertices);
 					if (shader != nullptr)
 					{
 						compiled = true;
@@ -221,7 +235,8 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				}
 				if (compiled)
 				{
-					programInfo.program = Program::createVertexProgram(vertInfo.shader, fragInfo.shader, vertInfo.attributes.data(), vertInfo.attributes.size());
+					ShaderBindingState bindings = ShaderBindingState::merge(vertInfo.bindings, fragInfo.bindings);
+					programInfo.program = Program::createVertex(vertInfo.shader, fragInfo.shader, bindings);
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
 			}
@@ -232,11 +247,12 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 			if (OS::File::lastWrite(compInfo.path) > compInfo.loaded)
 			{
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
-				Shader::Ptr shader = compile(compInfo.path, compInfo.type, nullptr, 0);
+				ShaderBindingState bindings{};
+				Shader* shader = compile(compInfo.path, compInfo.type, &bindings, nullptr);
 				if (shader != nullptr)
 				{
 					compInfo.shader = shader;
-					programInfo.program = Program::createComputeProgram(compInfo.shader);
+					programInfo.program = Program::createCompute(compInfo.shader);
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
 				compInfo.loaded = Timestamp::now();
@@ -246,9 +262,10 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 	EventDispatcher<ProgramReloadedEvent>::dispatch();
 }
 
-Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const VertexAttribute* attributes, size_t count)
+Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, VertexBindingState* vertices)
 {
-	GraphicDevice* device = Application::graphic();
+	Application* app = Application::app();
+	GraphicDevice* device = app->graphic();
 	String compiledPath;
 	String fileName;
 	switch (device->api())
@@ -261,36 +278,46 @@ Shader::Ptr ProgramManager::compile(const Path& path, ShaderType type, const Ver
 		compiledPath = "./library/shaders/D3D/";
 		fileName = OS::File::name(path) + ".hlsl";
 		break;
+	case GraphicAPI::Vulkan:
+		compiledPath = "./library/shaders/SPV/";
+		fileName = OS::File::name(path) + ".spv";
+		break;
 	default:
-		return Shader::Ptr(0);
+		return nullptr;
 	}
 	String finalPath = compiledPath + fileName;
-	String shader;
-	if (!OS::File::exist(finalPath) || OS::File::lastWrite(finalPath) < OS::File::lastWrite(path))
+	Blob shader;
+	//if (!OS::File::exist(finalPath) || OS::File::lastWrite(finalPath) < OS::File::lastWrite(path))
 	{
 		Compiler compiler;
 		if (!compiler.parse(path, type))
 		{
 			Logger::error("Shader ", OS::File::name(path), " failed to compiled.");
-			return Shader::Ptr(0);
+			return nullptr;
 		}
-		shader = compiler.compile(device->api(), attributes, count);
+		if (vertices && type == ShaderType::Vertex)
+			*vertices = compiler.getVertexBindings();
+		if (bindings)
+			*bindings = compiler.getShaderBindings();
+		shader = compiler.compile(device->api());
 		if (!OS::Directory::exist(compiledPath))
 			OS::Directory::create(compiledPath);
 		if (!OS::File::write(finalPath, shader))
 			Logger::warn("Failed to cache shader");
 		Logger::debug("Shader ", OS::File::name(path), " successfully compiled.");
 	}
-	else
+	/*else
 	{
 		if (!OS::File::read(finalPath, &shader))
 		{
 			Logger::error("Could not read ", finalPath);
-			return Shader::Ptr(0);
+			return nullptr;
 		}
+		*vertices = {};
+		*bindings = {};
 		Logger::debug("Shader ", OS::File::name(path), " loaded from cache.");
-	}
-	return Shader::compile(shader.cstr(), type);
+	}*/
+	return Shader::compile(type, shader.data(), shader.size());
 
 }
 

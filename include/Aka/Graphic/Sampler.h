@@ -1,45 +1,52 @@
 #pragma once
 
 #include <stdint.h>
-#include <memory>
 
 namespace aka {
 
-enum class TextureFilter {
+enum class Filter : uint8_t
+{
 	Nearest,
 	Linear,
 };
 
-enum class TextureWrap {
+enum class SamplerAddressMode : uint8_t
+{
 	Repeat,
 	Mirror,
 	ClampToEdge,
 	ClampToBorder,
 };
 
-enum class TextureMipMapMode {
+enum class SamplerMipMapMode : uint8_t
+{
 	None,
 	Nearest,
 	Linear,
 };
 
-struct TextureSampler {
-	TextureFilter filterMin;
-	TextureFilter filterMag;
-	TextureMipMapMode mipmapMode;
-	TextureWrap wrapU;
-	TextureWrap wrapV;
-	TextureWrap wrapW;
+struct Sampler
+{
+	Filter filterMin;
+	Filter filterMag;
+	SamplerMipMapMode mipmapMode;
+	SamplerAddressMode wrapU;
+	SamplerAddressMode wrapV;
+	SamplerAddressMode wrapW;
 	float anisotropy;
 
 	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
 
-	static const TextureSampler nearest;
-	static const TextureSampler bilinear;
-	static const TextureSampler trilinear;
-
-	bool operator==(const TextureSampler& rhs) const;
-	bool operator!=(const TextureSampler& rhs) const;
+	static Sampler* create(
+		Filter filterMin,
+		Filter filterMag,
+		SamplerMipMapMode mipmapMode,
+		SamplerAddressMode wrapU,
+		SamplerAddressMode wrapV,
+		SamplerAddressMode wrapW,
+		float anisotropy
+	);
+	static void destroy(Sampler* sampler);
 };
 
-}; // namespace aka
+};

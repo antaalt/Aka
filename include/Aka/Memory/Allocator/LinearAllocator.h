@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Memory/Allocator.h>
 
 namespace aka {

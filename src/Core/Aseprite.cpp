@@ -1,7 +1,7 @@
 #include <Aka/Core/Aseprite.h>
 
 #include <Aka/OS/Logger.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Core/Geometry.h>
 
 #include <miniz.h>

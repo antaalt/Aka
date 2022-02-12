@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 3.10)
 project(AkaImGui)
 
-
 set(SRC "")
 set(LIBS "")
 set(INCLUDE_DIRS "")
@@ -22,6 +21,14 @@ elseif(GRAPHIC_D3D11)
 		"${SRC}"
 		"src/backends/imgui_impl_dx11.cpp"
 	)
+	set(ENABLED TRUE)
+elseif(GRAPHIC_VULKAN)
+	set(SRC
+		"${SRC}"
+		"src/backends/imgui_impl_vulkan.cpp"
+	)
+	set(LIBS Vulkan::Vulkan)
+	set(INCLUDE_DIRS "${Vulkan_INCLUDE_DIRS}")
 	set(ENABLED TRUE)
 else()
 	message(WARNING "ImGui not set. Disable layer.")
@@ -46,7 +53,7 @@ if(ENABLED)
 		"${SRC}"
 	)
 	target_include_directories(AkaImGui PRIVATE ${INCLUDE_DIRS})
-	target_compile_definitions(AkaImGui PUBLIC AKA_USE_IMGUI_LAYER ${COMPILES})
+	#target_compile_definitions(AkaImGui PUBLIC AKA_USE_IMGUI_LAYER ${COMPILES})
 	target_link_libraries(AkaImGui PRIVATE ${LIBS})
 
 	target_include_directories(AkaImGui

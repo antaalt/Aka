@@ -24,6 +24,8 @@ struct Resource
 
 	// Load a resource from library folder
 	static Resource<T> load(const Path& path);
+	// Unload a resource from library folder
+	static void unload(Resource<T>& path);
 	// Save a resource to library folder
 	static bool save(const Resource<T>& resource);
 };
@@ -37,7 +39,7 @@ public:
 	// Load a resource from the given path
 	Resource<T> load(const String& name, const Path& path);
 	// Load a resource from an object built internally
-	Resource<T> load(const String& name, const std::shared_ptr<T>& data);
+	Resource<T> load(const String& name, T* data);
 	
 	// Unload a resource from the database
 	void unload(const String& name);
@@ -46,7 +48,7 @@ public:
 	// Get the number of allocated resources
 	size_t count() const;
 	// Get a resource name
-	String name(const std::shared_ptr<T>& resource) const;
+	String name(const T* resource) const;
 	// Get a resource directly
 	std::shared_ptr<T> get(const String& name);
 	// Get a resource with its informations
@@ -69,19 +71,25 @@ inline Resource<T> Resource<T>::load(const Path& path)
 	if (storage->load(path))
 	{
 		Resource<T> res;
-		res.resource = storage->to();
+		res.resource = std::shared_ptr<T>(storage->allocate(), [](T* data) { IStorage<T>::create()->deallocate(data); });
 		res.path = path;
-		res.size = storage->size(res.resource);
+		res.size = storage->size(res.resource.get());
 		res.loaded = Time::now();
 		return res;
 	}
 	return Resource<T>{};
 }
 template<typename T>
+inline void Resource<T>::unload(Resource<T>& res)
+{
+	// This will call custom deleter.
+	res.resource.reset();
+}
+template<typename T>
 inline bool Resource<T>::save(const Resource<T>& resource)
 {
 	auto storage = IStorage<T>::create();
-	storage->from(resource.resource);
+	storage->serialize(resource.resource.get());
 	return storage->save(resource.path);
 }
 
@@ -112,7 +120,7 @@ inline Resource<T> ResourceAllocator<T>::load(const String& name, const Path& pa
 }
 
 template<typename T>
-inline Resource<T> ResourceAllocator<T>::load(const String& name, const std::shared_ptr<T>& data)
+inline Resource<T> ResourceAllocator<T>::load(const String& name, T* data)
 {
 	std::lock_guard<std::mutex> m(m_lock);
 	auto it = m_resources.find(name);
@@ -123,7 +131,7 @@ inline Resource<T> ResourceAllocator<T>::load(const String& name, const std::sha
 		res.updated = Time::now();
 		res.path = "";
 		res.size = 0;
-		res.resource = data;
+		res.resource = std::shared_ptr<T>(data, [](T* data) { IStorage<T>::create()->deallocate(data); });
 		if (res.resource == nullptr)
 		{
 			Logger::error("Resource failed to load : ", name);
@@ -148,7 +156,10 @@ inline void ResourceAllocator<T>::unload(const String& name)
 	std::lock_guard<std::mutex> m(m_lock);
 	auto it = m_resources.find(name);
 	if (it != m_resources.end())
+	{
+		Resource<T>::unload(it->second);
 		m_resources.erase(it);
+	}
 }
 
 template<typename T>
@@ -167,12 +178,12 @@ inline size_t ResourceAllocator<T>::count() const
 }
 
 template<typename T>
-inline String ResourceAllocator<T>::name(const std::shared_ptr<T>& resource) const
+inline String ResourceAllocator<T>::name(const T* resource) const
 {
 	// TODO use inverse map for better perf
 	std::lock_guard<std::mutex> m(m_lock);
 	for (const auto& res : m_resources)
-		if (resource == res.second.resource)
+		if (resource == res.second.resource.get())
 			return res.first;
 	return "";
 }

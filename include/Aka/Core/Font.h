@@ -3,7 +3,7 @@
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Container/String.h>
 #include <Aka/Core/Encoding.h>
-#include <Aka/Graphic/Texture2D.h>
+#include <Aka/Graphic/Texture.h>
 #include <Aka/OS/Path.h>
 
 namespace aka {
@@ -18,11 +18,11 @@ struct Character {
 class Font
 {
 public:
-	using Ptr = std::shared_ptr<Font>;
 
 	Font(const byte_t* bytes, size_t count, uint32_t height);
 
-	static Font::Ptr create(const byte_t* bytes, size_t count, uint32_t height);
+	static Font* create(const byte_t* bytes, size_t count, uint32_t height);
+	static void destroy(Font* font);
 
 	// Get the size of the given string depending on the font
 	vec2i size(const String& text) const;
@@ -39,7 +39,7 @@ public:
 	// Get the advance of the font
 	uint32_t advance() const;
 	// Get the texture atlas
-	Texture2D::Ptr atlas();
+	const Texture* atlas() const;
 
 	// Iterator
 	using CharacterIterator = std::vector<Character>::iterator;
@@ -53,7 +53,7 @@ private:
 	uint32_t m_advance;
 	String m_familyName;
 	String m_styleName;
-	Texture2D::Ptr m_atlas;
+	Texture* m_atlas;
 	std::vector<Character> m_characters;
 };
 

@@ -62,7 +62,7 @@ void World::onReceive(const AppFixedUpdateEvent& event)
 void World::onReceive(const AppRenderEvent& event)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onRender(*this);
+		system->onRender(*this, event.frame);
 }
 
 entt::registry& World::registry()

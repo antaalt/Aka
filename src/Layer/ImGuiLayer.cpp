@@ -22,6 +22,11 @@
 #include "Graphic/D3D11/D3D11Device.h"
 #include "Graphic/D3D11/D3D11Backbuffer.h"
 #endif
+#if defined(AKA_USE_VULKAN)
+#include "Graphic/Vulkan/VulkanContext.h"
+#include "Graphic/Vulkan/VulkanGraphicDevice.h"
+#include <backends/imgui_impl_vulkan.h>
+#endif
 #include "Platform/GLFW3/PlatformGLFW3.h"
 
 namespace aka {
@@ -35,7 +40,7 @@ void ImGuiLayer::onLayerCreate()
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::platform());
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::app()->platform());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplGlfw_InitForOpenGL(platform->getGLFW3Handle(), true);
 
@@ -47,6 +52,31 @@ void ImGuiLayer::onLayerCreate()
 	D3D11Device* device = reinterpret_cast<D3D11Device*>(Application::graphic());
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
+#elif defined(AKA_USE_VULKAN)
+	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
+	VulkanGraphicDevice* device;
+	ImGui_ImplVulkan_InitInfo info{};
+	info.Instance = device->context().instance;
+	info.PhysicalDevice = device->context().physicalDevice;
+	info.Device = device->context().device;
+	info.QueueFamily = device->context().graphicQueue.index;
+	info.Queue = device->context().graphicQueue.queue;
+	info.PipelineCache = VK_NULL_HANDLE;
+	info.DescriptorPool = device->context().commandPool;
+	info.MinImageCount = 1; // >= 2
+	info.ImageCount = static_cast<uint32_t>(device->swapchain().imageCount); // >= MinImageCount
+	info.CheckVkResultFn = [](VkResult err) {
+		VK_CHECK_RESULT(err);
+	};
+	ImGui_ImplVulkan_Init(&info, renderPass);
+
+	VkCommandBuffer cmdBuffer = context.getDevice().createSingleTimeCommand();
+
+	ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
+
+	context.getDevice().endSingleTimeCommand(cmdBuffer);
+
+	ImGui_ImplVulkan_DestroyFontUploadObjects();
 #endif
 
     ImGui::StyleColorsClassic();
@@ -146,6 +176,9 @@ void ImGuiLayer::onLayerDestroy()
 	ImGui_ImplOpenGL3_Shutdown();
 #elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_Shutdown();
+#elif defined(AKA_USE_VULKAN)
+	ImGui_ImplVulkan_Shutdown();
+	// TODO
 #endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
@@ -158,6 +191,8 @@ void ImGuiLayer::onLayerFrame()
 	ImGui_ImplOpenGL3_NewFrame();
 #elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_NewFrame();
+#elif defined(AKA_USE_VULKAN)
+	ImGui_ImplVulkan_NewFrame();
 #endif
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -177,6 +212,44 @@ void ImGuiLayer::onLayerPresent()
 	backbuffer->bind();
 	
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+#elif defined(AKA_USE_VULKAN)
+	vk::CommandBuffer& cmdBuff = m_commandBuffers[frame.imageIndex()];
+
+	cmdBuff.begin();
+
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = renderPass;
+	renderPassInfo.framebuffer = frames[frame.imageIndex()];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = VkExtent2D{ context.getWidth(), context.getHeight() };
+	vkCmdBeginRenderPass(cmdBuff(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuff());
+
+	vkCmdEndRenderPass(cmdBuff());
+
+	cmdBuff.end();
+
+	VkCommandBuffer commandBuffer = cmdBuff();
+	VkSemaphore waitSemaphore[] = { frame.renderFinishedSemaphore };
+	VkSemaphore signalSemaphore[] = { m_signalSemaphore[frame.imageIndex()] };
+	// Replace signal frame semaphore for present.
+	frame.renderFinishedSemaphore = m_signalSemaphore[frame.imageIndex()];
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	// Wait for rendering to finish
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphore;
+	// Signal semaphore for present
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphore;
+
+	VK_CHECK_RESULT(vkQueueSubmit(context.getDevice().queue.graphics, 1, &submitInfo, VK_NULL_HANDLE));
 #endif
 }
 

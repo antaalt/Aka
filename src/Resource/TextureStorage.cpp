@@ -1,5 +1,7 @@
+#include "..\..\include\Aka\Resource\TextureStorage.h"
 #include <Aka/Resource/TextureStorage.h>
 
+#include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/OS/Stream/MemoryStream.h>
@@ -120,42 +122,49 @@ bool TextureStorage::save(const Path& path) const
 	return true;
 }
 
-std::shared_ptr<Texture> TextureStorage::to() const
+Texture* TextureStorage::allocate() const
 {
 	switch (type)
 	{
 	case TextureType::Texture2D:
 		if (images.size() != 1)
 			return nullptr;
-		return Texture2D::create(images[0].width(), images[0].height(), format, flags, images[0].data());
-	case TextureType::TextureCubeMap:
+		return Texture::create2D(images[0].width(), images[0].height(), format, flags, images[0].data());
+	case TextureType::TextureCubeMap: {
 		if (images.size() != 6)
 			return nullptr;
-		return TextureCubeMap::create(
-			images[0].width(), images[0].height(),
-			format, flags,
+		const void* data[6] = {
 			images[0].data(),
 			images[1].data(),
 			images[2].data(),
 			images[3].data(),
 			images[4].data(),
 			images[5].data()
+		};
+		return Texture::createCubemap(
+			images[0].width(), images[0].height(),
+			format, flags,
+			data
 		);
+	}
 	default:
 		return nullptr;
 	}
 }
-void TextureStorage::from(const std::shared_ptr<Texture>& texture)
+
+void TextureStorage::deallocate(Texture* texture) const
 {
-	type = texture->type();
-	format = texture->format();
-	flags = texture->flags();
-	switch (type)
+	Texture::destroy(texture);
+}
+void TextureStorage::serialize(const Texture* texture)
+{
+	GraphicDevice* device = Application::app()->graphic();
+	switch (texture->type)
 	{
 	case TextureType::Texture2D: {
 		images.resize(1);
 		ImageFormat format = ImageFormat::None;
-		switch (texture->format())
+		switch (texture->format)
 		{
 		case TextureFormat::RGBA32F:
 			format = ImageFormat::Float;
@@ -169,14 +178,14 @@ void TextureStorage::from(const std::shared_ptr<Texture>& texture)
 			Logger::error("Texture format not supported.");
 			return;
 		}
-		images[0] = Image(texture->width(), texture->height(), 4, format);
-		reinterpret_cast<Texture2D*>(texture.get())->download(images[0].data());
+		images[0] = Image(texture->width, texture->height, 4, format);
+		device->download(texture, images[0].data(), 0, 0, texture->width, texture->height);
 		break;
 	}
 	case TextureType::TextureCubeMap: {
 		images.resize(6);
 		ImageFormat format = ImageFormat::None;
-		switch (texture->format())
+		switch (texture->format)
 		{
 		case TextureFormat::RGBA32F:
 			format = ImageFormat::Float;
@@ -190,10 +199,10 @@ void TextureStorage::from(const std::shared_ptr<Texture>& texture)
 			Logger::error("Texture format not supported.");
 			return;
 		}
-		for (size_t i = 0; i < 6; i++)
+		for (uint32_t i = 0; i < 6; i++)
 		{
-			images[i] = Image(texture->width(), texture->height(), 4, format);
-			reinterpret_cast<TextureCubeMap*>(texture.get())->download(images[i].data(), (uint32_t)i);
+			images[i] = Image(texture->width, texture->height, 4, format);
+			device->download(texture, images[i].data(), 0, 0, texture->width, texture->height, 0, i);
 		}
 		break;
 	}
@@ -204,9 +213,9 @@ void TextureStorage::from(const std::shared_ptr<Texture>& texture)
 	
 }
 
-size_t TextureStorage::size(const std::shared_ptr<Texture>& mesh)
+size_t TextureStorage::size(const Texture* texture)
 {
-	return mesh->width() * mesh->height() * aka::size(mesh->format());
+	return texture->width * texture->height * Texture::size(texture->format);
 }
 
 }; // namespace aka

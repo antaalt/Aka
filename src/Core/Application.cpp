@@ -11,42 +11,9 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
-#include "Platform/GLFW3/PlatformGLFW3.h"
-#include "Graphic/D3D11/D3D11Device.h"
-#include "Graphic/GL/GLDevice.h"
-#include "Audio/RtAudio/AudioRtAudio.h"
-
 namespace aka {
 
-PlatformDevice* platformFactory(const PlatformConfig& config)
-{
-#if defined(AKA_USE_GLFW3)
-	return new PlatformGLFW3(config);
-#elif
-	return nullptr;
-#endif
-}
-
-GraphicDevice* graphicFactory(PlatformDevice* platform, const GraphicConfig& config)
-{
-#if defined(AKA_USE_OPENGL)
-	return new GLDevice(platform, config);
-#elif defined(AKA_USE_D3D11)
-	return new D3D11Device(platform, config);
-#else
-	return nullptr;
-#endif
-}
-
-AudioDevice* audioFactory(const AudioConfig& config)
-{
-#if defined(AKA_USE_RTAUDIO)
-	return new AudioRtAudio(config);
-#else
-	Logger::critical("No audio defined.");
-	return nullptr;
-#endif
-}
+Application* Application::s_app = nullptr;
 
 Application::Application() :
 	m_width(0),
@@ -70,14 +37,14 @@ Application::~Application()
 void Application::create(const Config& config)
 {
 	OS::setcwd(config.directory);
-	s_platform = platformFactory(config.platform);
-	AKA_ASSERT(s_platform != nullptr, "No platform");
-	s_graphic = graphicFactory(s_platform, config.graphic);
-	AKA_ASSERT(s_graphic != nullptr, "No graphics");
-	s_audio = audioFactory(config.audio);
-	AKA_ASSERT(s_audio != nullptr, "No audio");
-	s_program = new ProgramManager;
-	s_resource = new ResourceManager;
+	m_platform = PlatformDevice::create(config.platform);
+	AKA_ASSERT(m_platform != nullptr, "No platform");
+	m_graphic = GraphicDevice::create(m_platform, config.graphic);
+	AKA_ASSERT(m_graphic != nullptr, "No graphics");
+	m_audio = AudioDevice::create(config.audio);
+	AKA_ASSERT(m_audio != nullptr, "No audio");
+	m_program = new ProgramManager;
+	m_resource = new ResourceManager;
 	m_width = config.platform.width;
 	m_height = config.platform.height;
 	onCreate(config.argc, config.argv);
@@ -88,17 +55,17 @@ void Application::destroy()
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
 	onDestroy();
 
-	delete s_audio;
-	delete s_graphic;
-	delete s_platform;
-	delete s_program;
-	delete s_resource;
+	AudioDevice::destroy(m_audio);
+	GraphicDevice::destroy(m_graphic);
+	PlatformDevice::destroy(m_platform);
+	delete m_program;
+	delete m_resource;
 	
-	s_audio = nullptr;
-	s_graphic = nullptr;
-	s_platform = nullptr;
-	s_program = nullptr;
-	s_resource = nullptr;
+	m_audio = nullptr;
+	m_graphic = nullptr;
+	m_platform = nullptr;
+	m_program = nullptr;
+	m_resource = nullptr;
 }
 void Application::start()
 {
@@ -118,10 +85,10 @@ void Application::frame()
 	onFrame();
 	EventDispatcher<AppFrameEvent>::trigger(AppFrameEvent{});
 }
-void Application::render()
+void Application::render(Frame* frame)
 {
-	onRender();
-	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{});
+	onRender(frame);
+	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{ frame });
 }
 void Application::present()
 {
@@ -153,35 +120,34 @@ uint32_t Application::height() const
 	return m_height;
 }
 
-PlatformDevice* Application::s_platform = nullptr;
-GraphicDevice* Application::s_graphic = nullptr;
-AudioDevice* Application::s_audio = nullptr;
-ProgramManager* Application::s_program = nullptr;
-ResourceManager* Application::s_resource = nullptr;
+Application* Application::app()
+{
+	return s_app;
+}
 
 GraphicDevice* Application::graphic()
 {
-	return s_graphic;
+	return m_graphic;
 }
 
 PlatformDevice* Application::platform()
 {
-	return s_platform;
+	return m_platform;
 }
 
 AudioDevice* Application::audio()
 {
-	return s_audio;
+	return m_audio;
 }
 
 ProgramManager* Application::program()
 {
-	return s_program;
+	return m_program;
 }
 
 ResourceManager* Application::resource()
 {
-	return s_resource;
+	return m_resource;
 }
 
 void Application::run(const Config& config)
@@ -193,14 +159,12 @@ void Application::run(const Config& config)
 	const Time maxUpdate = Time::milliseconds(100);
 
 	Application* app = config.app;
+	s_app = app;
 
 	app->create(config);
 
-	GraphicDevice* graphic = s_graphic;
-	PlatformDevice* platform = s_platform;
-
-	Renderer2D::initialize();
-	Renderer3D::initialize();
+	GraphicDevice* graphic = app->m_graphic;
+	PlatformDevice* platform = app->m_platform;
 	
 	Time lastTick = Time::now();
 	Time accumulator = Time::zero();
@@ -220,20 +184,15 @@ void Application::run(const Config& config)
 		platform->poll();
 		app->update(deltaTime);
 		// Rendering
-		graphic->frame();
-		Renderer2D::frame();
-		Renderer3D::frame();
+		Frame* frame = graphic->frame();
 		app->frame();
-		app->render();
+		app->render(frame);
 		app->present();
-		graphic->present();
+		graphic->present(frame);
 
 		app->end();
 		EventDispatcher<QuitEvent>::dispatch();
 	} while (app->m_running);
-
-	Renderer3D::destroy();
-	Renderer2D::destroy();
 
 	app->destroy();
 }

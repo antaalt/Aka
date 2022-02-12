@@ -1,23 +1,26 @@
 #pragma once
 
 #include <stdint.h>
-#include <memory>
 
-#include <Aka/Core/StrictType.h>
-#include <Aka/Core/Geometry.h>
 #include <Aka/OS/Image.h>
-#include <Aka/Graphic/Sampler.h>
 
 namespace aka {
 
-enum class TextureFlag : uint8_t {
+enum class TextureFlag : uint8_t
+{
 	None = (1 << 0),
 	RenderTarget = (1 << 1),
 	ShaderResource = (1 << 2),
 	GenerateMips = (1 << 3),
 };
 
-enum class TextureFormat : uint8_t {
+bool has(TextureFlag flags, TextureFlag flag);
+TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);
+TextureFlag operator|(TextureFlag lhs, TextureFlag rhs);
+
+enum class TextureFormat : uint8_t
+{
+	Unknown,
 	R8,
 	R8U,
 	R16,
@@ -46,6 +49,13 @@ enum class TextureFormat : uint8_t {
 	RGBA16F,
 	RGBA32F,
 
+	BGRA,
+	BGRA8,
+	BGRA16,
+	BGRA16U,
+	BGRA16F,
+	BGRA32F,
+
 	Depth,
 	Depth16,
 	Depth24,
@@ -58,7 +68,9 @@ enum class TextureFormat : uint8_t {
 	Depth32FStencil8
 };
 
-enum class TextureType {
+enum class TextureType : uint8_t
+{
+	Unknown,
 	Texture1D,
 	Texture2D,
 	Texture3D,
@@ -70,88 +82,47 @@ enum class TextureType {
 	Texture2DMultisampleArray, // no mip map
 };
 
-struct TextureRegion
+struct Texture
 {
-	int32_t x, y;
-	uint32_t width, height;
-	uint32_t layer;
-	uint32_t level;
+	void* native; // Native handle to the texture
+
+	uint32_t width; // Width of the texture
+	uint32_t height; // Height of the texture
+	uint32_t depth; // Depth of the texture
+
+	uint32_t layers; // Layer count
+	uint32_t levels; // Mips levels
+
+	TextureFormat format; // Underlying format of the texture
+	TextureType type; // Type of the texture
+	TextureFlag flags; // Texture flags
+
+	bool hasMips() const;
+	bool isRenderTarget() const;
+	bool isShaderResource() const;
+
+	static bool isColor(TextureFormat format);
+	static bool isDepth(TextureFormat format);
+	static bool isStencil(TextureFormat format);
+	static bool isDepthStencil(TextureFormat format);
+	static bool hasDepth(TextureFormat format);
+	static bool hasStencil(TextureFormat format);
+
+	static uint32_t size(TextureFormat format);
+
+	static Texture* create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data = nullptr);
+	static Texture* createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static Texture* create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static void destroy(Texture* texture);
 };
-
-// Get the size in bytes of given format
-uint32_t size(TextureFormat format);
-// Return true if given type is a depth or a depth stencil format
-bool isDepth(TextureFormat format);
-// Return true if given type is a depth stencil format
-bool isDepthStencil(TextureFormat format);
-
-using TextureHandle = StrictType<uintptr_t, struct TextureHandleTag>;
-
-class Texture
-{
-public:
-	using Ptr = std::shared_ptr<Texture>;
-protected:
-	Texture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, TextureFormat format, TextureFlag flag);
-	Texture(const Texture&) = delete;
-	Texture& operator=(const Texture&) = delete;
-	Texture(Texture&&) = delete;
-	Texture& operator=(Texture&&) = delete;
-	virtual ~Texture();
-public:
-	// Get width of the texture
-	uint32_t width() const;
-	// Get height of the texture
-	uint32_t height() const;
-	// Get depth of the texture
-	uint32_t depth() const;
-	// Get levels of the texture
-	uint32_t levels() const;
-	// Get format of the texture
-	TextureFormat format() const;
-	// Get creation flags of the texture
-	TextureFlag flags() const;
-	// Get type of the texture
-	TextureType type() const;
-	// Get handle of the texture
-	virtual TextureHandle handle() const = 0;
-	// Generate mip maps for the texture.
-	virtual void generateMips() = 0;
-
-public:
-	// Copy the whole texture to destination texture
-	static void copy(const Texture::Ptr& src, const Texture::Ptr& dst);
-	// Copy the texture region to destination texture region
-	static void copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST);
-	// Blit the whole texture to destination texture
-	// Require the texture to be a render target
-	static void blit(const Texture::Ptr& src, const Texture::Ptr& dst, TextureFilter filter);
-	// Blit the texture region to destination texture region
-	// Require the texture to be a render target
-	static void blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter);
-
-protected:
-	TextureType m_type;
-	TextureFormat m_format;
-	TextureFlag m_flags;
-	uint32_t m_width, m_height, m_depth;
-};
-
-TextureFlag operator~(TextureFlag value);
-TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);
-TextureFlag operator|(TextureFlag lhs, TextureFlag rhs);
 
 struct SubTexture
 {
+	Texture* texture;
 	Rect region;
-	Texture::Ptr texture;
-
-	// Update the uv values depending on region
-	void update();
-	// Get the uv value
-	const uv2f& get(uint32_t uv) const;
-private:
-	uv2f m_uv[2];
+	void update() {} // TODO
 };
 
-}
+using TextureHandle = Texture*;
+
+};

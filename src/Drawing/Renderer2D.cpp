@@ -1,4 +1,4 @@
-#include <Aka/Drawing/Renderer2D.h>
+/*#include <Aka/Drawing/Renderer2D.h>
 
 #include <Aka/Core/Application.h>
 
@@ -142,4 +142,4 @@ void Renderer2D::clear()
 	batch.clear();
 }
 
-};
+};*/

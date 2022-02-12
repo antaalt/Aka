@@ -7,6 +7,7 @@
 namespace aka {
 
 class World;
+struct Frame;
 
 class System
 {
@@ -21,7 +22,7 @@ protected:
 
 	virtual void onFixedUpdate(World& world, Time deltaTime) {}
 	virtual void onUpdate(World& world, Time deltaTime) {}
-	virtual void onRender(World& world) {}
+	virtual void onRender(World& world, Frame* frame) {}
 };
 
 }

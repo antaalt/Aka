@@ -4,7 +4,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/OS/Endian.h>
 #include <Aka/Platform/Platform.h>
 

@@ -1,4 +1,4 @@
-#include <Aka/Drawing/Renderer3D.h>
+/*#include <Aka/Drawing/Renderer3D.h>
 
 namespace aka {
 
@@ -209,4 +209,4 @@ void Renderer3D::clear()
 	batch.clear();
 }
 
-};
+};*/

@@ -18,10 +18,11 @@ struct AudioStorage : IStorage<AudioStream>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	std::shared_ptr<AudioStream> to() const override;
-	void from(const std::shared_ptr<AudioStream>& mesh) override;
+	AudioStream* allocate() const override;
+	void deallocate(AudioStream* buffer) const override;
+	void serialize(const AudioStream* mesh) override;
 
-	size_t size(const std::shared_ptr<AudioStream>& mesh) override;
+	size_t size(const AudioStream* mesh) override;
 };
 
 };

@@ -2,7 +2,7 @@
 
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/Time.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 
 
 #include <iostream>

@@ -40,15 +40,19 @@ bool AudioStorage::save(const Path& path) const
 	return true;
 }
 
-std::shared_ptr<AudioStream> AudioStorage::to() const
+AudioStream* AudioStorage::allocate() const
 {
 	return nullptr;
 }
-void AudioStorage::from(const std::shared_ptr<AudioStream>& mesh)
+
+void AudioStorage::deallocate(AudioStream* audio) const
+{
+}
+void AudioStorage::serialize(const AudioStream* mesh)
 {
 }
 
-size_t AudioStorage::size(const std::shared_ptr<AudioStream>& mesh)
+size_t AudioStorage::size(const AudioStream* mesh)
 {
 	return 0;
 }

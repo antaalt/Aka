@@ -3,7 +3,7 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Platform/PlatformDevice.h>
 
 #include <algorithm>

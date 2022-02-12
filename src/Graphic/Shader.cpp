@@ -1,22 +1,39 @@
 #include <Aka/Graphic/Shader.h>
 
-#include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Core/Application.h>
-#include <Aka/OS/Logger.h>
+
+#include <type_traits>
 
 namespace aka {
 
-Shader::Shader()
+bool has(ShaderType flags, ShaderType flag)
 {
+	return (flags & flag) == flag;
 }
 
-Shader::~Shader()
+ShaderType operator&(ShaderType lhs, ShaderType rhs)
 {
+	return static_cast<ShaderType>(
+		static_cast<std::underlying_type<ShaderType>::type>(lhs) &
+		static_cast<std::underlying_type<ShaderType>::type>(rhs)
+	);
+}
+ShaderType operator|(ShaderType lhs, ShaderType rhs)
+{
+	return static_cast<ShaderType>(
+		static_cast<std::underlying_type<ShaderType>::type>(lhs) |
+		static_cast<std::underlying_type<ShaderType>::type>(rhs)
+	);
 }
 
-Shader::Ptr Shader::compile(const char* content, ShaderType type)
+Shader* Shader::compile(ShaderType type, const uint8_t* content, size_t size)
 {
-	return Application::graphic()->compile(content, type);
+	return Application::app()->graphic()->compile(type, content, size);
+}
+
+void Shader::destroy(Shader* shader)
+{
+	Application::app()->graphic()->destroy(shader);
 }
 
 };

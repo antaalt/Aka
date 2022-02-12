@@ -24,12 +24,14 @@ struct IStorage
 	virtual bool load(const Path& path) = 0;
 	// Save a resource to a path
 	virtual bool save(const Path& path) const = 0;
-	// Convert the file to a resource
-	virtual std::shared_ptr<T> to() const = 0;
-	// Convert the resource to a file
-	virtual void from(const std::shared_ptr<T>& resource) = 0;
+	// Allocate the resource on GPU
+	virtual T* allocate() const = 0;
+	// Deallocate the resource from GPU
+	virtual void deallocate(T* resource) const = 0;
+	// Convert the resource to a storage
+	virtual void serialize(const T* resource) = 0;
 	// Get the size of a resource
-	virtual size_t size(const std::shared_ptr<T>& resource) = 0;
+	virtual size_t size(const T* resource) = 0;
 	// Create the storage from type
 	static std::unique_ptr<IStorage<T>> create();
 };

@@ -3,7 +3,7 @@
 #include <Aka/Resource/Storage.h>
 #include <Aka/Resource/ResourceAllocator.h>
 
-#include <Aka/Graphic/Mesh.h>
+#include <Aka/Rendering/Mesh.h>
 
 namespace aka {
 
@@ -15,7 +15,7 @@ struct MeshStorage : IStorage<Mesh>
 	static constexpr uint16_t minor = 1;
 
 	// Vertices
-	struct Vertex {
+	struct VertexBinding {
 		VertexAttribute attribute;
 		String vertexBufferName;
 		uint32_t vertexCount;
@@ -24,7 +24,7 @@ struct MeshStorage : IStorage<Mesh>
 		uint32_t vertexBufferSize;
 		uint32_t vertexBufferStride;
 	};
-	std::vector<Vertex> vertices;
+	std::vector<VertexBinding> vertices;
 
 	// Indices
 	IndexFormat indexFormat;
@@ -36,10 +36,11 @@ struct MeshStorage : IStorage<Mesh>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	std::shared_ptr<Mesh> to() const override;
-	void from(const std::shared_ptr<Mesh>& mesh) override;
+	Mesh* allocate() const override;
+	void deallocate(Mesh* mesh) const override;
+	void serialize(const Mesh* mesh) override;
 
-	size_t size(const std::shared_ptr<Mesh>& mesh) override;
+	size_t size(const Mesh* mesh) override;
 };
 
 };

@@ -20,6 +20,21 @@ PlatformFlag operator~(const PlatformFlag& flag)
 	return static_cast<PlatformFlag>(~(int)flag);
 }
 
+PlatformDevice* PlatformDevice::create(const PlatformConfig& config)
+{
+#if defined(AKA_USE_GLFW3)
+	return new PlatformGLFW3(config);
+#else
+	Logger::critical("No platform defined.");
+	return nullptr;
+#endif
+}
+
+void PlatformDevice::destroy(PlatformDevice* device)
+{
+	delete device;
+}
+
 PlatformDevice::PlatformDevice(const PlatformConfig& config) :
 	m_width(config.width),
 	m_height(config.height),

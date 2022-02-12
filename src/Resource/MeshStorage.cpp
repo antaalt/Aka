@@ -29,7 +29,7 @@ bool MeshStorage::load(const Path& path)
 		return false; // Incompatible version
 	// Read vertices
 	vertices.resize(stream.read<uint32_t>());
-	for (Vertex& vertex : vertices)
+	for (VertexBinding& vertex : vertices)
 	{
 		vertex.attribute.semantic = (VertexSemantic)stream.read<uint8_t>();
 		vertex.attribute.format = (VertexFormat)stream.read<uint8_t>();
@@ -59,7 +59,7 @@ bool MeshStorage::save(const Path& path) const
 	stream.write<uint16_t>((major << 8) | minor);
 	// Write vertices
 	stream.write<uint32_t>((uint32_t)vertices.size());
-	for (const Vertex& vertex : vertices)
+	for (const VertexBinding& vertex : vertices)
 	{
 		stream.write<uint8_t>((uint8_t)vertex.attribute.semantic);
 		stream.write<uint8_t>((uint8_t)vertex.attribute.format);
@@ -81,37 +81,44 @@ bool MeshStorage::save(const Path& path) const
 	return true;
 }
 
-std::shared_ptr<Mesh> MeshStorage::to() const
+Mesh* MeshStorage::allocate() const
 {
-	ResourceManager* resources = Application::resource();
-	Mesh::Ptr mesh = Mesh::create();
-	std::vector<VertexAccessor> vertexAccessor(vertices.size());
+	Application* app = Application::app();
+	ResourceManager* resources = app->resource();
+
+	Mesh* mesh = Mesh::create();
+	mesh->bindings.count = (uint32_t)vertices.size();
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		const Vertex& vert = vertices[i];
-		VertexAccessor& accessor = vertexAccessor[i];
-		accessor.attribute = vert.attribute;
-		accessor.count = vert.vertexCount;
-		accessor.offset = vert.vertexOffset;
-		accessor.bufferView.buffer = resources->get<Buffer>(vert.vertexBufferName);
-		AKA_ASSERT(accessor.bufferView.buffer != nullptr, "No vertex buffer");
-		accessor.bufferView.offset = vert.vertexBufferOffset;
-		accessor.bufferView.size = vert.vertexBufferSize;
-		accessor.bufferView.stride = vert.vertexBufferStride;
+		mesh->bindings.attributes[i] = vertices[i].attribute;
+		mesh->bindings.offsets[i] = vertices[i].vertexOffset;
+		
+		//mesh->bindings.offsets[i] = vertices[i].vertexCount;
+
+		mesh->vertices[i] = resources->get<Buffer>(vertices[i].vertexBufferName);
+		AKA_ASSERT(mesh->vertices[i] != nullptr, "No vertex buffer");
+		//mesh->bindings.offsets[i] = vertices[i].vertexBufferOffset;
+		//mesh->bindings.offsets[i] = vertices[i].vertexBufferSize;
+		//mesh->bindings.offsets[i] = vertices[i].vertexBufferStride;
 	}
-	IndexAccessor indexAccessor;
-	indexAccessor.bufferView.buffer = resources->get<Buffer>(indexBufferName);
-	AKA_ASSERT(indexAccessor.bufferView.buffer != nullptr, "No index buffer");
-	indexAccessor.bufferView.offset = indexBufferOffset;
-	indexAccessor.bufferView.size = indexCount * aka::size(indexFormat);
-	indexAccessor.count = indexCount;
-	indexAccessor.format = indexFormat;
-	mesh->upload(vertexAccessor.data(), vertexAccessor.size(), indexAccessor);
+	mesh->count = indexCount;
+	mesh->format = indexFormat;
+
+	mesh->indices = resources->get<Buffer>(indexBufferName);
+	AKA_ASSERT(mesh->indices != nullptr, "No index buffer");
 	return mesh;
 }
-void MeshStorage::from(const std::shared_ptr<Mesh>& mesh)
+
+void MeshStorage::deallocate(Mesh* mesh) const
 {
-	ResourceManager* resources = Application::resource();
+	Mesh::destroy(mesh);
+}
+
+void MeshStorage::serialize(const Mesh* mesh)
+{
+	/*Application* app = Application::app();
+	ResourceManager* resources = app->resource();
+
 	vertices.resize(mesh->getVertexAttributeCount());
 	for (uint32_t i = 0; i < mesh->getVertexAttributeCount(); i++)
 	{
@@ -129,14 +136,14 @@ void MeshStorage::from(const std::shared_ptr<Mesh>& mesh)
 	indexBufferName = resources->name<Buffer>(bufferView.buffer);
 	indexBufferOffset = bufferView.offset;
 	indexCount = mesh->getIndexCount();
-	indexFormat = mesh->getIndexFormat();
+	indexFormat = mesh->getIndexFormat();*/
 }
 
-size_t MeshStorage::size(const std::shared_ptr<Mesh>& mesh)
+size_t MeshStorage::size(const Mesh* mesh)
 {
-	size_t size = mesh->getIndexBuffer().size;
-	for (uint32_t i = 0; i < mesh->getVertexAttributeCount(); i++)
-		size += mesh->getVertexBuffer(i).size;
+	size_t size = mesh->indices->size;
+	for (uint32_t i = 0; i < mesh->bindings.count; i++)
+		size += mesh->vertices[i]->size;
 	return size;
 }
 

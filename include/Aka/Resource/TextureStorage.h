@@ -2,9 +2,9 @@
 
 #include <Aka/Resource/Storage.h>
 #include <Aka/Resource/ResourceAllocator.h>
+#include <Aka/OS/Image.h>
 
-#include <Aka/Graphic/Texture2D.h>
-#include <Aka/Graphic/TextureCubeMap.h>
+#include <Aka/Graphic/Texture.h>
 
 namespace aka {
 
@@ -24,10 +24,11 @@ struct TextureStorage : IStorage<Texture>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	std::shared_ptr<Texture> to() const override;
-	void from(const std::shared_ptr<Texture>& mesh) override;
+	Texture* allocate() const override;
+	void deallocate(Texture* texture) const override;
+	void serialize(const Texture* texture) override;
 
-	size_t size(const std::shared_ptr<Texture>& mesh) override;
+	size_t size(const Texture* texture) override;
 };
 
 };

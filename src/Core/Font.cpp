@@ -5,7 +5,7 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Packer.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 
 #define FREETYPE_CHECK_RESULT(result)\
 {                                    \
@@ -63,7 +63,7 @@ Font::Font(const byte_t* bytes, size_t count, uint32_t height)
     }
     // Generate the atlas and store it.
     Image atlas = packer.pack();
-	m_atlas = Texture2D::create(
+	m_atlas = Texture::create2D(
         atlas.width(), atlas.height(),
         TextureFormat::RGBA8,
         TextureFlag::ShaderResource,
@@ -81,9 +81,15 @@ Font::Font(const byte_t* bytes, size_t count, uint32_t height)
     FT_Done_FreeType(ft);
 }
 
-Font::Ptr Font::create(const byte_t* bytes, size_t count, uint32_t height)
+Font* Font::create(const byte_t* bytes, size_t count, uint32_t height)
 {
-    return std::make_shared<Font>(bytes, count, height);
+	// TODO use font pool ? resource pool ?
+    return new Font(bytes, count, height);
+}
+
+void Font::destroy(Font* font)
+{
+	delete font;
 }
 
 vec2i Font::size(const String& text) const
@@ -132,7 +138,7 @@ uint32_t Font::advance() const
     return m_advance;
 }
 
-Texture2D::Ptr Font::atlas()
+const Texture* Font::atlas() const
 {
 	return m_atlas;
 }

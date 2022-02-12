@@ -2,7 +2,7 @@
 
 #include <Aka/OS/Image.h>
 #include <Aka/OS/Logger.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 
 namespace aka {
 

@@ -421,7 +421,7 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 #if defined(AKA_DEBUG)
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 #endif
-#elif defined(AKA_USE_D3D11)
+#elif defined(AKA_USE_D3D11) || defined(AKA_USE_VULKAN)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
 	GLFWmonitor* monitor = nullptr;

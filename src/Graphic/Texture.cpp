@@ -1,58 +1,114 @@
 #include <Aka/Graphic/Texture.h>
 
-#include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Core/Application.h>
+
+#include <type_traits>
 
 namespace aka {
 
+bool has(TextureFlag flags, TextureFlag flag)
+{
+	return (flags & flag) == flag;
+}
+TextureFlag operator&(TextureFlag lhs, TextureFlag rhs)
+{
+	return static_cast<TextureFlag>(
+		static_cast<std::underlying_type<TextureFlag>::type>(lhs) & 
+		static_cast<std::underlying_type<TextureFlag>::type>(rhs)
+	);
+}
+TextureFlag operator|(TextureFlag lhs, TextureFlag rhs)
+{
+	return static_cast<TextureFlag>(
+		static_cast<std::underlying_type<TextureFlag>::type>(lhs) |
+		static_cast<std::underlying_type<TextureFlag>::type>(rhs)
+	);
+}
 
-uint32_t size(TextureFormat format)
+bool Texture::hasMips() const
+{
+	return has(flags, TextureFlag::GenerateMips);
+}
+bool Texture::isRenderTarget() const
+{
+	return has(flags, TextureFlag::RenderTarget);
+}
+bool Texture::isShaderResource() const
+{
+	return has(flags, TextureFlag::ShaderResource);
+}
+
+bool Texture::isColor(TextureFormat format)
 {
 	switch (format)
 	{
-	case TextureFormat::R8: return 1;
-	case TextureFormat::R8U: return 1;
-	case TextureFormat::R16: return 2;
-	case TextureFormat::R16U: return 2;
-	case TextureFormat::R16F: return 2;
-	case TextureFormat::R32F: return 4;
-
-	case TextureFormat::RG8: return 2;
-	case TextureFormat::RG8U: return 2;
-	case TextureFormat::RG16: return 4;
-	case TextureFormat::RG16U: return 4;
-	case TextureFormat::RG16F: return 4;
-	case TextureFormat::RG32F: return 8;
-
-	case TextureFormat::RGB8: return 3;
-	case TextureFormat::RGB8U: return 3;
-	case TextureFormat::RGB16: return 6;
-	case TextureFormat::RGB16U: return 6;
-	case TextureFormat::RGB16F: return 6;
-	case TextureFormat::RGB32F: return 12;
-
-	case TextureFormat::RGBA8: return 4;
-	case TextureFormat::RGBA8U: return 4;
-	case TextureFormat::RGBA16: return 8;
-	case TextureFormat::RGBA16U: return 8;
-	case TextureFormat::RGBA16F: return 8;
-	case TextureFormat::RGBA32F: return 16;
-
-	case TextureFormat::Depth: return 4; // ?
-	case TextureFormat::Depth16: return 2; // ?
-	case TextureFormat::Depth24: return 3; // ?
-	case TextureFormat::Depth32: return 4; // ?
-	case TextureFormat::Depth32F: return 4; // ?
-	case TextureFormat::DepthStencil: return 4; // ?
-	case TextureFormat::Depth0Stencil8: return 1; // ?
-	case TextureFormat::Depth24Stencil8: return 4; // ?
-	case TextureFormat::Depth32FStencil8: return 4; // ?
-		
-	default: return 0;
+	case aka::TextureFormat::R8:
+	case aka::TextureFormat::R8U:
+	case aka::TextureFormat::R16:
+	case aka::TextureFormat::R16U:
+	case aka::TextureFormat::R16F:
+	case aka::TextureFormat::R32F:
+	case aka::TextureFormat::RG8:
+	case aka::TextureFormat::RG8U:
+	case aka::TextureFormat::RG16U:
+	case aka::TextureFormat::RG16:
+	case aka::TextureFormat::RG16F:
+	case aka::TextureFormat::RG32F:
+	case aka::TextureFormat::RGB8:
+	case aka::TextureFormat::RGB8U:
+	case aka::TextureFormat::RGB16:
+	case aka::TextureFormat::RGB16U:
+	case aka::TextureFormat::RGB16F:
+	case aka::TextureFormat::RGB32F:
+	case aka::TextureFormat::RGBA8:
+	case aka::TextureFormat::RGBA8U:
+	case aka::TextureFormat::RGBA16:
+	case aka::TextureFormat::RGBA16U:
+	case aka::TextureFormat::RGBA16F:
+	case aka::TextureFormat::RGBA32F:
+	case aka::TextureFormat::BGRA:
+	case aka::TextureFormat::BGRA8:
+	case aka::TextureFormat::BGRA16:
+	case aka::TextureFormat::BGRA16U:
+	case aka::TextureFormat::BGRA16F:
+	case aka::TextureFormat::BGRA32F:
+		return true;
+	default:
+		return false;
 	}
 }
-
-bool isDepth(TextureFormat format)
+bool Texture::isDepth(TextureFormat format)
+{
+	switch (format)
+	{
+	case TextureFormat::Depth:
+	case TextureFormat::Depth16:
+	case TextureFormat::Depth24:
+	case TextureFormat::Depth32:
+	case TextureFormat::Depth32F:
+		return true;
+	default:
+		return false;
+	}
+}
+bool Texture::isStencil(TextureFormat format)
+{
+	return false;
+}
+bool Texture::isDepthStencil(TextureFormat format)
+{
+	switch (format)
+	{
+	case TextureFormat::DepthStencil:
+	case TextureFormat::Depth0Stencil8:
+	case TextureFormat::Depth24Stencil8:
+	case TextureFormat::Depth32FStencil8:
+		return true;
+	default:
+		return false;
+	}
+}
+bool Texture::hasDepth(TextureFormat format)
 {
 	switch (format)
 	{
@@ -70,8 +126,7 @@ bool isDepth(TextureFormat format)
 		return false;
 	}
 }
-
-bool isDepthStencil(TextureFormat format)
+bool Texture::hasStencil(TextureFormat format)
 {
 	switch (format)
 	{
@@ -85,113 +140,80 @@ bool isDepthStencil(TextureFormat format)
 	}
 }
 
-Texture::Texture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, TextureFormat format, TextureFlag flags) :
-	m_type(type),
-	m_format(format),
-	m_flags(flags),
-	m_width(width),
-	m_height(height),
-	m_depth(depth)
+
+uint32_t Texture::size(TextureFormat format)
 {
+	switch (format)
+	{
+	case aka::TextureFormat::Unknown:
+		break;
+	case aka::TextureFormat::R8:
+	case aka::TextureFormat::R8U:
+		return 1;
+
+	case aka::TextureFormat::R16:
+	case aka::TextureFormat::R16U:
+	case aka::TextureFormat::R16F:
+		return 2;
+	case aka::TextureFormat::R32F:
+		return 4;
+	case aka::TextureFormat::RG8:
+	case aka::TextureFormat::RG8U:
+		return 2;
+	case aka::TextureFormat::RG16U:
+	case aka::TextureFormat::RG16:
+	case aka::TextureFormat::RG16F:
+		return 4;
+	case aka::TextureFormat::RG32F:
+		return 8;
+	case aka::TextureFormat::RGB8:
+	case aka::TextureFormat::RGB8U:
+		return 3;
+	case aka::TextureFormat::RGB16:
+	case aka::TextureFormat::RGB16U:
+	case aka::TextureFormat::RGB16F:
+		return 6;
+	case aka::TextureFormat::RGB32F:
+		return 12;
+	case aka::TextureFormat::RGBA8:
+	case aka::TextureFormat::RGBA8U:
+		return 4;
+	case aka::TextureFormat::RGBA16:
+	case aka::TextureFormat::RGBA16U:
+	case aka::TextureFormat::RGBA16F:
+		return 8;
+	case aka::TextureFormat::RGBA32F:
+		return 16;
+	case aka::TextureFormat::BGRA:
+	case aka::TextureFormat::BGRA8:
+		return 4;
+	case aka::TextureFormat::BGRA16:
+	case aka::TextureFormat::BGRA16U:
+	case aka::TextureFormat::BGRA16F:
+		return 8;
+	case aka::TextureFormat::BGRA32F:
+		return 16;
+	default:
+		return 0;
+	}
+	return 0;
 }
 
-Texture::~Texture()
+Texture* Texture::create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data)
 {
+	return Application::app()->graphic()->createTexture(width, height, 1, TextureType::Texture2D, 1, 1, format, flags, &data);
 }
-
-uint32_t Texture::width() const
+Texture* Texture::createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data)
 {
-	return m_width;
+	return Application::app()->graphic()->createTexture(width, height, 1, TextureType::TextureCubeMap, 1, 6, format, flags, data);
 }
-
-uint32_t Texture::height() const
+Texture* Texture::create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data)
 {
-	return m_height;
+	return Application::app()->graphic()->createTexture(width, height, 1, TextureType::Texture2DArray, 1, layers, format, flags, data);
 }
-
-uint32_t Texture::depth() const
+void Texture::destroy(Texture* texture)
 {
-	return m_depth;
-}
-
-uint32_t Texture::levels() const
-{
-	if ((m_flags & TextureFlag::GenerateMips) == TextureFlag::GenerateMips)
-		return TextureSampler::mipLevelCount(m_width, m_height); // TODO cache
-	return 1;
-}
-
-TextureFormat Texture::format() const
-{
-	return m_format;
-}
-
-TextureFlag Texture::flags() const
-{
-	return m_flags;
-}
-
-TextureType Texture::type() const
-{
-	return m_type;
-}
-
-void Texture::copy(const Texture::Ptr& src, const Texture::Ptr& dst)
-{
-	TextureRegion region{ 0, 0, min(src->width(), dst->width()), min(src->height(), dst->height()), 0, 0 };
-	Application::graphic()->copy(src, dst, region, region);
-}
-
-void Texture::copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST)
-{
-	Application::graphic()->copy(src, dst, regionSRC, regionDST);
-}
-
-void Texture::blit(const Texture::Ptr& src, const Texture::Ptr& dst, TextureFilter filter)
-{
-	TextureRegion regionSRC{ 0, 0, src->width(), src->height(), 0, 0 };
-	TextureRegion regionDST{ 0, 0, dst->width(), dst->height(), 0, 0 };
-	Application::graphic()->blit(src, dst, regionSRC, regionDST, filter);
-}
-
-void Texture::blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter)
-{
-	Application::graphic()->blit(src, dst, regionSRC, regionDST, filter);
-}
-
-TextureFlag operator~(TextureFlag value)
-{
-	return static_cast<TextureFlag>(~static_cast<std::underlying_type<TextureFlag>::type>(value));
-}
-
-TextureFlag operator&(TextureFlag lhs, TextureFlag rhs)
-{
-	return static_cast<TextureFlag>(static_cast<std::underlying_type<TextureFlag>::type>(lhs) & static_cast<std::underlying_type<TextureFlag>::type>(rhs));
-}
-
-TextureFlag operator|(TextureFlag lhs, TextureFlag rhs)
-{
-	return static_cast<TextureFlag>(static_cast<std::underlying_type<TextureFlag>::type>(lhs) | static_cast<std::underlying_type<TextureFlag>::type>(rhs));
-}
-
-void SubTexture::update()
-{
-	if (texture->width() == 0 || texture->height() == 0)
-		return;
-	if (region.x == 0 ) m_uv[0].u = 0.f;
-	else m_uv[0].u = 1.f / (texture->width() / (float)region.x);
-	if (region.y == 0) m_uv[0].v = 0.f;
-	else m_uv[0].v = 1.f / (texture->height() / (float)region.y);
-	
-	if (region.w == 0) m_uv[1].u = m_uv[0].u;
-	else m_uv[1].u = m_uv[0].u + 1.f / (texture->width() / (float)region.w);
-	if (region.h == 0) m_uv[1].v = m_uv[0].v;
-	else m_uv[1].v = m_uv[0].v + 1.f / (texture->height() / (float)region.h);
-}
-
-const uv2f& SubTexture::get(uint32_t uv) const
-{
-	return m_uv[uv];
+	return Application::app()->graphic()->destroy(texture);
 }
 
 };

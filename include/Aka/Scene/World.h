@@ -2,7 +2,7 @@
 
 #include <Aka/Scene/System.h>
 #include <Aka/OS/Time.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Core/Application.h>
 
 #include <entt.hpp>
@@ -113,7 +113,7 @@ inline void World::detach()
 	static_assert(std::is_base_of<System, T>::value, "Type is not a system");
 	for (auto& it = m_systems.begin(); it != m_systems.end(); it++)
 	{
-		auto system = *it;
+		auto& system = *it;
 		if (typeid(*system) == typeid(T))
 		{
 			system->onDestroy(*this);

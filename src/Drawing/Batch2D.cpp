@@ -1,6 +1,6 @@
 #include <Aka/Drawing/Batch2D.h>
 
-#include <Aka/Core/Application.h>
+/* #include <Aka/Core/Application.h>
 #include <algorithm>
 
 namespace aka {
@@ -359,4 +359,4 @@ void Batch2D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	}
 }
 
-};
+};*/

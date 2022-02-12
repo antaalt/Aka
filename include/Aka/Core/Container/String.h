@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Core/Geometry.h>
 
 namespace aka {

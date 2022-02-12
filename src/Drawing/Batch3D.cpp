@@ -1,4 +1,4 @@
-#include <Aka/Drawing/Batch3D.h>
+/*#include <Aka/Drawing/Batch3D.h>
 
 #include <algorithm>
 
@@ -307,4 +307,4 @@ void Batch3D::render(Framebuffer::Ptr framebuffer, const mat4f& view, const mat4
 	}
 }
 
-};
+};*/

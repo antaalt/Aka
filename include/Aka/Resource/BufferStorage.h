@@ -22,10 +22,11 @@ struct BufferStorage : IStorage<Buffer>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	std::shared_ptr<Buffer> to() const override;
-	void from(const std::shared_ptr<Buffer>& mesh) override;
+	Buffer* allocate() const override;
+	void deallocate(Buffer* buffer) const override;
+	void serialize(const Buffer* mesh) override;
 
-	size_t size(const std::shared_ptr<Buffer>& mesh) override;
+	size_t size(const Buffer* mesh) override;
 };
 
 };

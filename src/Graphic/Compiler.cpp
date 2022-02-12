@@ -126,7 +126,7 @@ const TBuiltInResource defaultConf = {
 class Includer : public glslang::TShader::Includer
 {
 public:
-	Includer(const Path* systemDirectories, size_t count) : 
+	Includer(const Path* systemDirectories, size_t count) :
 		glslang::TShader::Includer(),
 		m_systemDirectories(systemDirectories, systemDirectories + count)
 	{
@@ -280,21 +280,202 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	return true;
 }
 
-String Compiler::compile(GraphicAPI api, const VertexAttribute* attributes, size_t count)
+Blob Compiler::compile(GraphicAPI api)
 {
 	switch (api)
 	{
 	case aka::GraphicAPI::OpenGL3:
 		return compileGLSL330();
 	case aka::GraphicAPI::DirectX11:
-		return compileHLSL50(attributes, count);
+		VertexBindingState v = getVertexBindings();
+		return compileHLSL50(v.attributes, v.count);
+	case aka::GraphicAPI::Vulkan:
+		return compileSPV();
 	default:
 		Logger::error("Unsupported API.");
-		return false;
+		return Blob();
 	}
 }
 
-String Compiler::compileHLSL50(const VertexAttribute* attributes, size_t count)
+ShaderType getShaderType(spv::ExecutionModel executionModel)
+{
+	switch (executionModel)
+	{
+	case spv::ExecutionModelVertex:
+		return ShaderType::Vertex;
+	case spv::ExecutionModelGeometry:
+		return ShaderType::Geometry;
+	case spv::ExecutionModelFragment:
+		return ShaderType::Fragment;
+	case spv::ExecutionModelGLCompute:
+		return ShaderType::Compute;
+	default:
+		return ShaderType::None;
+	}
+}
+
+ShaderBindingState Compiler::getShaderBindings()
+{
+	ShaderBindingState bindings{};
+
+	spirv_cross::Compiler compiler(m_spirv);
+	spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+	spv::ExecutionModel executionModel = compiler.get_execution_model();
+	for (spirv_cross::Resource& resource : resources.sampled_images)
+	{
+		std::string name = compiler.get_name(resource.id);
+		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		bindings.bindings[binding].count = 1; // TODO
+		bindings.bindings[binding].shaderType = getShaderType(executionModel);
+		bindings.bindings[binding].type = ShaderBindingType::SampledImage;
+		bindings.count = max(bindings.count, binding + 1);
+	}
+	for (spirv_cross::Resource& resource : resources.storage_images)
+	{
+		std::string name = compiler.get_name(resource.id);
+		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		bindings.bindings[binding].count = 1; // TODO
+		bindings.bindings[binding].shaderType = getShaderType(executionModel);
+		bindings.bindings[binding].type = ShaderBindingType::StorageImage;
+		bindings.count = max(bindings.count, binding + 1);
+	}
+	for (spirv_cross::Resource& resource : resources.uniform_buffers)
+	{
+		std::string name = compiler.get_name(resource.id);
+		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		bindings.bindings[binding].count = 1; // TODO
+		bindings.bindings[binding].shaderType = getShaderType(executionModel);
+		bindings.bindings[binding].type = ShaderBindingType::UniformBuffer;
+		bindings.count = max(bindings.count, binding + 1);
+	}
+	for (spirv_cross::Resource& resource : resources.storage_buffers)
+	{
+		std::string name = compiler.get_name(resource.id);
+		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		bindings.bindings[binding].count = 1; // TODO
+		bindings.bindings[binding].shaderType = getShaderType(executionModel);
+		bindings.bindings[binding].type = ShaderBindingType::StorageBuffer;
+		bindings.count = max(bindings.count, binding + 1);
+	}
+
+	resources.acceleration_structures;
+
+	return bindings;
+}
+
+VertexFormat getType(spirv_cross::SPIRType::BaseType type)
+{
+	switch (type)
+	{
+	case spirv_cross::SPIRType::BaseType::Half:
+		return VertexFormat::Half;
+	case spirv_cross::SPIRType::BaseType::Float:
+		return VertexFormat::Float;
+	case spirv_cross::SPIRType::BaseType::UByte:
+		return VertexFormat::UnsignedByte;
+	case spirv_cross::SPIRType::BaseType::SByte:
+		return VertexFormat::Byte;
+	case spirv_cross::SPIRType::BaseType::UShort:
+		return VertexFormat::UnsignedShort;
+	case spirv_cross::SPIRType::BaseType::Short:
+		return VertexFormat::Short;
+	case spirv_cross::SPIRType::BaseType::UInt:
+		return VertexFormat::UnsignedInt;
+	case spirv_cross::SPIRType::BaseType::Int:
+		return VertexFormat::Int;
+	default:
+		return VertexFormat::Unknown;
+	}
+}
+VertexType getSize(uint32_t rows, uint32_t cols)
+{
+	switch (cols)
+	{
+	case 1: {
+		switch (rows)
+		{
+		case 1: return VertexType::Scalar;
+		case 2: return VertexType::Vec2;
+		case 3: return VertexType::Vec3;
+		case 4: return VertexType::Vec4;
+		default: return VertexType::Unknown;
+		}
+	}
+	case 2: {
+		switch (rows)
+		{
+		case 2: return VertexType::Mat2;
+		default: return VertexType::Unknown;
+		}
+	}
+	case 3: {
+		switch (rows)
+		{
+		case 3: return VertexType::Mat3;
+		default: return VertexType::Unknown;
+		}
+	}
+	case 4: {
+		switch (rows)
+		{
+		case 4: return VertexType::Mat4;
+		default: return VertexType::Unknown;
+		}
+	}
+	default:
+		return VertexType::Unknown;
+	}
+}
+
+VertexBindingState Compiler::getVertexBindings()
+{
+	VertexBindingState bindings{};
+
+	spirv_cross::Compiler compiler(m_spirv); // TODO move compiler to member 
+	spv::ExecutionModel executionModel = compiler.get_execution_model();
+	if (executionModel != spv::ExecutionModel::ExecutionModelVertex)
+		return VertexBindingState{};
+	auto e = compiler.get_entry_point("main", executionModel);
+	for (spirv_cross::VariableID id : e.interface_variables)
+	{
+		//std::string name = compiler.get_name(id);
+		spv::StorageClass storage = compiler.get_storage_class(id);
+		if (storage != spv::StorageClass::StorageClassInput)
+			continue;
+		uint32_t location = compiler.get_decoration(id, spv::Decoration::DecorationLocation);
+		spirv_cross::SPIRType type = compiler.get_type_from_variable(id);
+		
+		AKA_ASSERT(location < VertexBindingState::MaxAttributes, "");
+		
+		bindings.attributes[location].format = getType(type.basetype); 
+		bindings.attributes[location].semantic = VertexSemantic::Unknown; // store somewhere
+		bindings.attributes[location].type =  getSize(type.vecsize, type.columns); 
+		bindings.count = max(bindings.count, location + 1);
+	}
+	// Compute offsets ? 
+	// TODO move them out of here.
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < bindings.count; i++)
+	{
+		bindings.offsets[i] = offset;
+		offset += VertexBindingState::size(bindings.attributes[i].format) * VertexBindingState::size(bindings.attributes[i].type);
+	}
+	return bindings;
+}
+
+Blob Compiler::compileHLSL50(const VertexAttribute* attributes, size_t count)
 {
 	spirv_cross::CompilerHLSL compiler(m_spirv);
 
@@ -326,16 +507,16 @@ String Compiler::compileHLSL50(const VertexAttribute* attributes, size_t count)
 		case VertexSemantic::Color1: semantic = "COLOR1"; break;
 		case VertexSemantic::Color2: semantic = "COLOR2"; break;
 		case VertexSemantic::Color3: semantic = "COLOR3"; break;
-		default: Logger::error("Semantic not supported."); break;
+		default: Logger::warn("Semantic not supported."); break;
 		}
 		spirv_cross::HLSLVertexAttributeRemap remap = { (uint32_t)i, semantic };
 		compiler.add_vertex_attribute_remap(remap);
 	}
-
-	return compiler.compile();
+	std::string str = compiler.compile();
+	return Blob(reinterpret_cast<byte_t*>(str.data()), str.size());
 }
 
-String Compiler::compileGLSL330()
+Blob Compiler::compileGLSL330()
 {
 	spirv_cross::CompilerGLSL compiler(m_spirv);
 
@@ -346,7 +527,13 @@ String Compiler::compileGLSL330()
 
 	compiler.set_common_options(options);
 
-	return compiler.compile();
+	std::string str = compiler.compile();
+	return Blob(reinterpret_cast<byte_t*>(str.data()), str.size());
+}
+
+Blob Compiler::compileSPV()
+{
+	return Blob(reinterpret_cast<byte_t*>(m_spirv.data()), m_spirv.size() * sizeof(uint32_t));
 }
 
 

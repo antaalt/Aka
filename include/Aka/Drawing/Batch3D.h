@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Core/Geometry.h>
+/*#include <Aka/Core/Geometry.h>
 #include <Aka/Core/Font.h>
 #include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/Framebuffer.h>
@@ -97,4 +97,4 @@ private:
 	std::vector<DrawBatch> m_batches;
 };
 
-};
+}; */

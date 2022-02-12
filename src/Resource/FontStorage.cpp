@@ -45,19 +45,23 @@ bool FontStorage::save(const Path& path) const
 	return true;
 }
 
-std::shared_ptr<Font> FontStorage::to() const
+Font* FontStorage::allocate() const
 {
-	Font::Ptr mesh = Font::create(ttf.data(), ttf.size(), 34);
-	return mesh;
+	Font* font = Font::create(ttf.data(), ttf.size(), 34);
+	return font;
 }
-void FontStorage::from(const std::shared_ptr<Font>& font)
+void FontStorage::deallocate(Font* font) const
+{
+	throw std::runtime_error("Not supported");
+}
+void FontStorage::serialize(const Font* font)
 {
 	throw std::runtime_error("Not supported");
 }
 
-size_t FontStorage::size(const std::shared_ptr<Font>& font)
+size_t FontStorage::size(const Font* font)
 {
-	return font->atlas()->width() * font->atlas()->height() * aka::size(font->atlas()->format());
+	return font->atlas()->width * font->atlas()->height * Texture::size(font->atlas()->format);
 }
 
 }; // namespace aka
