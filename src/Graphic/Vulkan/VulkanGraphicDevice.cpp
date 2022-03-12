@@ -36,14 +36,20 @@ PhysicalDevice* VulkanGraphicDevice::getPhysicalDevice(uint32_t index)
 Frame* VulkanGraphicDevice::frame()
 {
 	// TODO wait then resize if require resize (shutdown and recreate)
-	return m_swapchain.acquireNextImage(&m_context);
+	Frame* frame = m_swapchain.acquireNextImage(&m_context);
+	frame->commandList = acquireCommandList();
+	frame->commandList->begin();
+	return frame;
 }
 
 void VulkanGraphicDevice::present(Frame* frame)
 {
 	// TODO wait then resize if require resize
 	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
+	frame->commandList->end();
+	submit(&vk_frame->commandList, 1);
 	m_swapchain.present(&m_context, vk_frame);
+	release(vk_frame->commandList);
 }
 
 void VulkanGraphicDevice::screenshot(void* data)

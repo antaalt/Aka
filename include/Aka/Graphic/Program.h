@@ -28,6 +28,7 @@ struct ShaderBindingLayout
 struct ShaderBindingState
 {
 	static constexpr uint32_t MaxBindingCount = 16; // TODO increase
+	static constexpr uint32_t MaxSetCount = 8;
 	ShaderBindingLayout bindings[MaxBindingCount];
 	uint32_t count;
 

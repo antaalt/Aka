@@ -243,8 +243,6 @@ VkShaderStageFlagBits tovk(ShaderType type)
 VkPipeline VulkanPipeline::createVkPipeline(
 	VkDevice device, 
 	VkRenderPass renderpass,
-	VkDescriptorSetLayout* layouts,
-	uint32_t layoutCount,
 	VkPipelineLayout pipelineLayout,
 	VulkanShader** shaders,
 	uint32_t shaderCount,
@@ -443,8 +441,6 @@ Pipeline* VulkanGraphicDevice::createPipeline(
 	pipeline->vk_pipeline = VulkanPipeline::createVkPipeline(
 		m_context.device,
 		m_context.getRenderPass(framebuffer, VulkanRenderPassLayout::Unknown),
-		&data.layout,
-		data.layout == VK_NULL_HANDLE ? 0 : 1,
 		data.pipelineLayout,
 		vk_shaders,
 		shaderCount,

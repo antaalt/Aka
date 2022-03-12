@@ -17,8 +17,10 @@ struct VulkanTexture : Texture
 	VkImageLayout vk_layout;
 
 	static VkImage createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags);
-	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers);
-	
+	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips = 0, uint32_t baseLayer = 0);
+	static VkImageAspectFlags getAspectFlag(TextureFormat format);
+	static VkAccessFlags accessFlagForLayout(VkImageLayout layout);
+
 	void generateMips(VkCommandBuffer cmd);
 	void transitionImageLayout(
 		VkCommandBuffer cmd, 

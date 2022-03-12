@@ -228,7 +228,7 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	// Set define values
 	std::vector<std::string> processes;
 	std::string defs = "#extension GL_GOOGLE_include_directive : require\n";
-#if defined(AKA_USE_D3D11) && defined(AKA_ORIGIN_TOP_LEFT)
+#if defined(AKA_ORIGIN_TOP_LEFT)
 	defs += "#define AKA_FLIP_UV\n";
 #endif
 #if defined(AKA_ORIGIN_TOP_LEFT)

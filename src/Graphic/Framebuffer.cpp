@@ -25,6 +25,26 @@ ClearMask operator|(ClearMask lhs, ClearMask rhs)
 		static_cast<std::underlying_type<ClearMask>::type>(rhs)
 	);
 }
+bool has(AttachmentFlag flags, AttachmentFlag flag)
+{
+	return (flags & flag) == flag;
+}
+
+AttachmentFlag operator&(AttachmentFlag lhs, AttachmentFlag rhs)
+{
+	return static_cast<AttachmentFlag>(
+		static_cast<std::underlying_type<AttachmentFlag>::type>(lhs) &
+		static_cast<std::underlying_type<AttachmentFlag>::type>(rhs)
+	);
+}
+AttachmentFlag operator|(AttachmentFlag lhs, AttachmentFlag rhs)
+{
+	return static_cast<AttachmentFlag>(
+		static_cast<std::underlying_type<AttachmentFlag>::type>(lhs) |
+		static_cast<std::underlying_type<AttachmentFlag>::type>(rhs)
+	);
+}
+
 
 Framebuffer* Framebuffer::create(const Attachment* attachments, uint32_t count, const Attachment* depth)
 {

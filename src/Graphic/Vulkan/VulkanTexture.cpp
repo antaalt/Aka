@@ -5,7 +5,7 @@
 
 namespace aka {
 
-VkImageAspectFlags getAspectFlag(TextureFormat format)
+VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 {
 	VkImageAspectFlags aspect;
 	if (Texture::isColor(format))
@@ -18,7 +18,7 @@ VkImageAspectFlags getAspectFlag(TextureFormat format)
 		aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
 	return aspect;
 }
-VkAccessFlags accessFlagForLayout(VkImageLayout layout)
+VkAccessFlags VulkanTexture::accessFlagForLayout(VkImageLayout layout)
 {
 	switch (layout)
 	{
@@ -230,13 +230,24 @@ Texture* VulkanGraphicDevice::createTexture(
 	VkImageTiling vk_tiling = VK_IMAGE_TILING_OPTIMAL; // TODO control this (flag dependent ? staging ?)
 	VkImageUsageFlags vk_usage = 0;
 	VkImageCreateFlags vk_flags = 0;
-	VkImageAspectFlags vk_aspect = getAspectFlag(format);
+	VkImageAspectFlags vk_aspect = VulkanTexture::getAspectFlag(format);
 	VkImageViewType vk_type = VK_IMAGE_VIEW_TYPE_2D;
-	if (type == TextureType::TextureCubeMap)
+	switch (type)
 	{
-		AKA_ASSERT(width == height, "")
+	case aka::TextureType::Texture2D:
+		vk_type = VK_IMAGE_VIEW_TYPE_2D;
+		break;
+	case aka::TextureType::TextureCubeMap:
+		AKA_ASSERT(width == height, "");
 		vk_type = VK_IMAGE_VIEW_TYPE_CUBE;
 		vk_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		break;
+	case aka::TextureType::Texture2DArray:
+		vk_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		break;
+	default:
+		AKA_ASSERT(false, "Invalid type.");
+		break;
 	}
 	// TODO rename textureFlag as TextureUsage
 	if (has(flags, TextureFlag::RenderTarget))
@@ -294,7 +305,7 @@ Texture* VulkanGraphicDevice::createTexture(
 	);
 
 	// Upload
-	if (data[0] != nullptr)
+	if (data != nullptr && data[0] != nullptr)
 	{
 		// Create staging buffer
 		VkDeviceSize imageSize = texture->width * texture->height * Texture::size(format);
@@ -337,7 +348,7 @@ Texture* VulkanGraphicDevice::createTexture(
 	{
 		VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		VkImageSubresourceRange subresource = VkImageSubresourceRange{ getAspectFlag(format), 0, levels, 0, layers };
+		VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
 		if (has(flags, TextureFlag::RenderTarget))
 		{
 			if (Texture::hasDepth(format) || Texture::hasStencil(format))
@@ -491,7 +502,7 @@ VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t h
 	return image;
 }
 
-VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers)
+VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips, uint32_t baseLayer)
 {
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -499,9 +510,9 @@ VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkI
 	viewInfo.viewType = type;
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspect;
-	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.baseMipLevel = baseMips;
 	viewInfo.subresourceRange.levelCount = mipLevels;
-	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.baseArrayLayer = baseLayer;
 	viewInfo.subresourceRange.layerCount = layers;
 
 	VkImageView view;

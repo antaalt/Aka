@@ -18,7 +18,7 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 		VkAttachmentDescription& vk_attachment = vk_attachments[i];
 		vk_attachment.format = VulkanContext::tovk(framebufferDesc.colors[i].format);
 		vk_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		vk_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		vk_attachment.loadOp = has(framebufferDesc.colors[i].flags, AttachmentFlag::Load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
 		vk_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		vk_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		vk_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -34,12 +34,12 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 		VkAttachmentDescription depthAttachment = {};
 		depthAttachment.format = VulkanContext::tovk(framebufferDesc.depth.format);
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp =  VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.loadOp = has(framebufferDesc.depth.flags, AttachmentFlag::Load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // Should be VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL if rendertarrget & shader resource
 
 		vk_depthAttachment.attachment = static_cast<uint32_t>(vk_attachments.size());
 		vk_depthAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -123,13 +123,55 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 
 VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPass renderpass, const Framebuffer* framebuffer)
 {
-	// TODO cache render pass from framebuffer settings.
-
 	std::vector<VkImageView> vk_attachments(framebuffer->framebuffer.count);
 	for (size_t i = 0; i < framebuffer->framebuffer.count; i++)
-		vk_attachments[i] = reinterpret_cast<VulkanTexture*>(framebuffer->colors[i].texture)->vk_view;
+	{
+		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(framebuffer->colors[i].texture);
+		// View dependent on flag.
+		if (!vk_texture->hasLayers() || has(framebuffer->colors[i].flag, AttachmentFlag::AttachTextureObject))
+		{
+			vk_attachments[i] = vk_texture->vk_view;
+		}
+		else
+		{
+			// TODO fix leak here, store the new view somewhere
+			// Create new view, where do we store it ?
+			vk_attachments[i] = VulkanTexture::createVkImageView(
+				device,
+				vk_texture->vk_image,
+				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+				VulkanContext::tovk(vk_texture->format),
+				VulkanTexture::getAspectFlag(vk_texture->format),
+				framebuffer->colors[i].level,
+				framebuffer->colors[i].layer
+			);
+		}
+	}
 	if (framebuffer->hasDepthStencil())
-		vk_attachments.push_back(reinterpret_cast<VulkanTexture*>(framebuffer->depth.texture)->vk_view);
+	{
+		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(framebuffer->depth.texture);
+		// View dependent on flag.
+		if (!vk_texture->hasLayers() || has(framebuffer->depth.flag, AttachmentFlag::AttachTextureObject))
+		{
+			vk_attachments.push_back(vk_texture->vk_view);
+		}
+		else
+		{
+			// TODO fix leak here, store the new view somewhere
+			// Create new view, where do we store it ?
+			vk_attachments.push_back(VulkanTexture::createVkImageView(
+				device,
+				vk_texture->vk_image,
+				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+				VulkanContext::tovk(vk_texture->format),
+				VulkanTexture::getAspectFlag(vk_texture->format),
+				1,
+				1,
+				framebuffer->depth.level, 
+				framebuffer->depth.layer
+			));
+		}
+	}
 
 	VkFramebufferCreateInfo framebufferInfo = {};
 	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -164,6 +206,7 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 		framebuffer->height = min(attachments[i].texture->height, framebuffer->height);
 		framebuffer->colors[i] = attachments[i];
 		framebuffer->framebuffer.colors[i].format = attachments[i].texture->format;
+		framebuffer->framebuffer.colors[i].flags = attachments[i].flag;
 	}
 	if (depth == nullptr)
 	{
@@ -174,6 +217,7 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 	{
 		framebuffer->depth = *depth;
 		framebuffer->framebuffer.depth.format = depth->texture->format;
+		framebuffer->framebuffer.depth.flags = depth->flag;
 		framebuffer->width = min(depth->texture->width, framebuffer->width);
 		framebuffer->height = min(depth->texture->height, framebuffer->height);
 	}

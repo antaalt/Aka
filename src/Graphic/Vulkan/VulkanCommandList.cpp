@@ -180,7 +180,7 @@ void VulkanCommandList::bindPipeline(const Pipeline* pipeline)
 	this->vk_pipeline = vk_pipeline;
 
 }
-void VulkanCommandList::bindMaterial(const Material* material)
+void VulkanCommandList::bindMaterial(uint32_t index, const Material* material)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(material->program != nullptr, "Invalid material");
@@ -196,8 +196,41 @@ void VulkanCommandList::bindMaterial(const Material* material)
 
 		const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(material);
 		VulkanProgram* vk_program = reinterpret_cast<VulkanProgram*>(material->program);
-		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_program->vk_pipelineLayout, 0, 1, &vk_material->vk_descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_program->vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
 	}
+}
+void VulkanCommandList::bindMaterials(const Material* const* materials, uint32_t count) 
+{
+	if (count < 1)
+		return;
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(materials[0]->program != nullptr, "Invalid material");
+
+	VkPipelineBindPoint vk_bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
+	VkDescriptorSet vk_sets[8]{}; // Max bindings
+	VkPipelineLayout vk_layout = reinterpret_cast<VulkanProgram*>(materials[0]->program)->vk_pipelineLayout;
+	for (uint32_t i = 0; i < count; i++)
+	{
+		if (materials[i]->program->bindings.count > 0)
+		{
+			// TODO This might be done only once, when switching buffer / texture...
+			// Check for dirty
+			// if (material->dirty)
+			//if (vk_material != material)
+			VulkanProgram::updateDescriptorSet(vk_device, materials[i]);
+
+			const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(materials[i]);
+			VulkanProgram* vk_program = reinterpret_cast<VulkanProgram*>(materials[i]->program);
+			vk_sets[i] = vk_material->vk_descriptorSet;
+			if (vk_layout != vk_program->vk_pipelineLayout)
+			{
+				Logger::warn("Invalid pipeline layout");
+				return;
+			}
+			vk_layout = vk_program->vk_pipelineLayout;
+		}
+	}
+	vkCmdBindDescriptorSets(vk_command, vk_bindPoint, vk_layout, 0, count, vk_sets, 0, nullptr);
 }
 void VulkanCommandList::bindVertexBuffer(const Buffer*const* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
 {

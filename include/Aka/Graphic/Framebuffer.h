@@ -22,8 +22,14 @@ ClearMask operator|(ClearMask lhs, ClearMask rhs);
 enum class AttachmentFlag : uint8_t
 {
 	None = 0,
-	AttachTextureObject = (1 << 0), // Attach the object instead of the layer
+	Clear = 1 << 0,
+	Load = 1 << 1,
+	AttachTextureObject = (1 << 2), // Attach the object instead of the layer
 };
+
+bool has(AttachmentFlag flags, AttachmentFlag flag);
+AttachmentFlag operator&(AttachmentFlag lhs, AttachmentFlag rhs);
+AttachmentFlag operator|(AttachmentFlag lhs, AttachmentFlag rhs);
 
 struct Attachment
 {
@@ -38,6 +44,7 @@ struct FramebufferState
 	struct Attachment
 	{
 		TextureFormat format;
+		AttachmentFlag flags;
 	};
 	static constexpr uint32_t MaxColorAttachmentCount = 8;
 

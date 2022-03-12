@@ -49,6 +49,7 @@ struct ImageIndex
 struct Frame
 {
 	ImageIndex image;
+	CommandList* commandList;
 };
 
 class AKA_NO_VTABLE GraphicDevice

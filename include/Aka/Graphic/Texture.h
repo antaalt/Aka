@@ -98,6 +98,7 @@ struct Texture
 	TextureFlag flags; // Texture flags
 
 	bool hasMips() const;
+	bool hasLayers() const;
 	bool isRenderTarget() const;
 	bool isShaderResource() const;
 

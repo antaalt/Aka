@@ -117,10 +117,18 @@ VkRenderPass VulkanContext::getRenderPass(const FramebufferState& fbDesc, Vulkan
 	auto it = m_framebufferDesc.find(fbDesc);
 	if (it != m_framebufferDesc.end())
 		return it->second;
-	AKA_ASSERT(layout != VulkanRenderPassLayout::Unknown, "Layout need to be set here.");
-	VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, layout);
-	m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
-	return vk_renderPass;
+	if (layout != VulkanRenderPassLayout::Unknown)
+	{
+		VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, layout);
+		m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
+		return vk_renderPass;
+	}
+	else
+	{
+		VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, VulkanRenderPassLayout::Framebuffer);
+		m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
+		return vk_renderPass;
+	}
 }
 
 VulkanContext::ShaderInputData VulkanContext::getDescriptorLayout(const ShaderBindingState& bindingsDesc)

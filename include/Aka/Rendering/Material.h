@@ -19,6 +19,9 @@ struct Material
 	void setStorageBuffer(uint32_t slot, Buffer* buffer);
 	void setSampledImage(uint32_t slot, Texture* texture, Sampler* sampler);
 	void setStorageImage(uint32_t slot, Texture* texture);
+
+	static Material* create(Program* program);
+	static void destroy(Material* program);
 };
 
 };

@@ -17,8 +17,6 @@ struct VulkanPipeline : Pipeline
 	static VkPipeline VulkanPipeline::createVkPipeline(
 		VkDevice device,
 		VkRenderPass renderpass,
-		VkDescriptorSetLayout* layouts, // TODO get from cache using ShaderBinding as key
-		uint32_t layoutCount,
 		VkPipelineLayout pipelineLayout,
 		VulkanShader** shaders,
 		uint32_t shaderCount,

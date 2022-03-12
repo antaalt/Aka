@@ -29,6 +29,24 @@ bool Texture::hasMips() const
 {
 	return has(flags, TextureFlag::GenerateMips);
 }
+bool Texture::hasLayers() const
+{
+	switch (type)
+	{
+	default:
+	case aka::TextureType::Texture1D:
+	case aka::TextureType::Texture2D:
+	case aka::TextureType::Texture3D:
+	case aka::TextureType::Texture2DMultisample:
+		return false;
+	case aka::TextureType::TextureCubeMap:
+	case aka::TextureType::Texture1DArray:
+	case aka::TextureType::Texture2DArray:
+	case aka::TextureType::TextureCubeMapArray:
+	case aka::TextureType::Texture2DMultisampleArray:
+		return layers > 1;
+	}
+}
 bool Texture::isRenderTarget() const
 {
 	return has(flags, TextureFlag::RenderTarget);

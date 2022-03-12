@@ -1,4 +1,5 @@
 #include <Aka/Rendering/Material.h>
+#include <Aka/Core/Application.h>
 
 namespace aka {
 
@@ -35,6 +36,16 @@ void Material::setStorageImage(uint32_t slot, Texture* texture)
 		return;
 	images[slot] = texture;
 	samplers[slot] = nullptr;
+}
+
+Material* Material::create(Program* program)
+{
+	return Application::app()->graphic()->createMaterial(program);
+}
+
+void Material::destroy(Material* material)
+{
+	Application::app()->graphic()->destroy(material);
 }
 
 };
