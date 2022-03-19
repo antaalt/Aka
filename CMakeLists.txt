@@ -64,6 +64,7 @@ add_library (Aka
 	"src/Rendering/Material.cpp" 
 
 	"src/Graphic/Compiler.cpp"
+	"src/Graphic/Program.cpp"
 	"src/Graphic/GraphicDevice.cpp"
 	"src/Graphic/Framebuffer.cpp"
 	"src/Graphic/Shader.cpp"
@@ -78,8 +79,10 @@ add_library (Aka
 	"src/OS/Logger.cpp"
 	"src/OS/Time.cpp"
 	"src/OS/Endian.cpp"
+	"src/OS/Stream/Stream.cpp"
 	"src/OS/Stream/MemoryStream.cpp"
 	"src/OS/Stream/FileStream.cpp"
+	"src/OS/Archive.cpp"
 	"src/OS/OS.cpp"
 
 	"src/OS/Windows/OSWindows.cpp"
@@ -89,7 +92,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
- "src/Graphic/Program.cpp" "include/Aka/Scene/WorldEC.h")
+)
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

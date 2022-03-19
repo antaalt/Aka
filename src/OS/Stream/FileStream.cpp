@@ -14,6 +14,7 @@ FileMode operator|(FileMode lhs, FileMode rhs)
 }
 
 FileStream::FileStream(const Path& path, FileMode mode, FileType type) :
+	Stream(),
 	m_file(nullptr),
 	m_mode(mode),
 	m_length(0)
@@ -22,7 +23,8 @@ FileStream::FileStream(const Path& path, FileMode mode, FileType type) :
 	if (m_file == nullptr)
 		return;
 	m_mode = mode;
-	fseek(m_file, 0L, SEEK_END);
+	int error = fseek(m_file, 0L, SEEK_END);
+	AKA_ASSERT(error == 0, "Error while seeking");
 	m_length = ftell(m_file);
  	::rewind(m_file);
 }
@@ -65,7 +67,7 @@ void FileStream::rewind()
 	::rewind(m_file);
 }
 
-void FileStream::readData(void* data, size_t size)
+void FileStream::unserialize(void* data, size_t size)
 {
 	AKA_ASSERT((m_mode & FileMode::Read) == FileMode::Read, "File mode invalid");
 	AKA_ASSERT(m_file != nullptr, "File not opened");
@@ -73,7 +75,7 @@ void FileStream::readData(void* data, size_t size)
 	AKA_ASSERT(length == size, "File not read");
 }
 
-void FileStream::writeData(const void* data, size_t size)
+void FileStream::serialize(const void* data, size_t size)
 {
 	AKA_ASSERT((m_mode & FileMode::Write) == FileMode::Write, "File mode invalid");
 	AKA_ASSERT(m_file != nullptr, "File not opened");

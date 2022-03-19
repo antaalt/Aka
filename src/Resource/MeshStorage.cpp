@@ -1,6 +1,7 @@
 #include <Aka/Resource/MeshStorage.h>
 
 #include <Aka/OS/Logger.h>
+#include <Aka/OS/Archive.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Core/Application.h>
 #include <Aka/Resource/ResourceManager.h>
@@ -19,65 +20,67 @@ std::unique_ptr<IStorage<Mesh>> IStorage<Mesh>::create()
 bool MeshStorage::load(const Path& path)
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
+	BinaryArchive archive(stream);
 	// Read header
 	char sign[4];
-	stream.read<char>(sign, 4);
+	archive.read<char>(sign, 4);
 	if (sign[0] != 'a' || sign[1] != 'k' || sign[2] != 'a' || sign[3] != 'm' )
 		return false; // Invalid file
-	uint16_t version = stream.read<uint16_t>();
+	uint16_t version = archive.read<uint16_t>();
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read vertices
-	vertices.resize(stream.read<uint32_t>());
+	vertices.resize(archive.read<uint32_t>());
 	for (VertexBinding& vertex : vertices)
 	{
-		vertex.attribute.semantic = (VertexSemantic)stream.read<uint8_t>();
-		vertex.attribute.format = (VertexFormat)stream.read<uint8_t>();
-		vertex.attribute.type = (VertexType)stream.read<uint8_t>();
-		vertex.vertexCount = stream.read<uint32_t>();
-		vertex.vertexOffset = stream.read<uint32_t>();
-		vertex.vertexBufferOffset = stream.read<uint32_t>();
-		vertex.vertexBufferSize = stream.read<uint32_t>();
-		vertex.vertexBufferStride = stream.read<uint32_t>();
-		vertex.vertexBufferName.resize(stream.read<uint16_t>());
-		stream.read<char>(vertex.vertexBufferName.cstr(), vertex.vertexBufferName.length() + 1);
+		vertex.attribute.semantic = (VertexSemantic)archive.read<uint8_t>();
+		vertex.attribute.format = (VertexFormat)archive.read<uint8_t>();
+		vertex.attribute.type = (VertexType)archive.read<uint8_t>();
+		vertex.vertexCount = archive.read<uint32_t>();
+		vertex.vertexOffset = archive.read<uint32_t>();
+		vertex.vertexBufferOffset = archive.read<uint32_t>();
+		vertex.vertexBufferSize = archive.read<uint32_t>();
+		vertex.vertexBufferStride = archive.read<uint32_t>();
+		vertex.vertexBufferName.resize(archive.read<uint16_t>());
+		archive.read<char>(vertex.vertexBufferName.cstr(), vertex.vertexBufferName.length() + 1);
 	}
 	// Read indices
-	indexFormat = (IndexFormat)stream.read<uint8_t>();
-	indexCount = stream.read<uint32_t>();
-	indexBufferOffset = stream.read<uint32_t>();
-	indexBufferName.resize(stream.read<uint16_t>());
-	stream.read<char>(indexBufferName.cstr(), indexBufferName.length());
+	indexFormat = (IndexFormat)archive.read<uint8_t>();
+	indexCount = archive.read<uint32_t>();
+	indexBufferOffset = archive.read<uint32_t>();
+	indexBufferName.resize(archive.read<uint16_t>());
+	archive.read<char>(indexBufferName.cstr(), indexBufferName.length());
 	return true;
 }
 bool MeshStorage::save(const Path& path) const
 {
 	FileStream stream(path, FileMode::Write, FileType::Binary);
+	BinaryArchive archive(stream);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'm' };
-	stream.write<char>(signature, 4);
-	stream.write<uint16_t>((major << 8) | minor);
+	archive.write<char>(signature, 4);
+	archive.write<uint16_t>((major << 8) | minor);
 	// Write vertices
-	stream.write<uint32_t>((uint32_t)vertices.size());
+	archive.write<uint32_t>((uint32_t)vertices.size());
 	for (const VertexBinding& vertex : vertices)
 	{
-		stream.write<uint8_t>((uint8_t)vertex.attribute.semantic);
-		stream.write<uint8_t>((uint8_t)vertex.attribute.format);
-		stream.write<uint8_t>((uint8_t)vertex.attribute.type);
-		stream.write<uint32_t>(vertex.vertexCount);
-		stream.write<uint32_t>(vertex.vertexOffset);
-		stream.write<uint32_t>(vertex.vertexBufferOffset);
-		stream.write<uint32_t>(vertex.vertexBufferSize);
-		stream.write<uint32_t>(vertex.vertexBufferStride);
-		stream.write<uint16_t>((uint16_t)vertex.vertexBufferName.length());
-		stream.write<char>(vertex.vertexBufferName.cstr(), vertex.vertexBufferName.length() + 1);
+		archive.write<uint8_t>((uint8_t)vertex.attribute.semantic);
+		archive.write<uint8_t>((uint8_t)vertex.attribute.format);
+		archive.write<uint8_t>((uint8_t)vertex.attribute.type);
+		archive.write<uint32_t>(vertex.vertexCount);
+		archive.write<uint32_t>(vertex.vertexOffset);
+		archive.write<uint32_t>(vertex.vertexBufferOffset);
+		archive.write<uint32_t>(vertex.vertexBufferSize);
+		archive.write<uint32_t>(vertex.vertexBufferStride);
+		archive.write<uint16_t>((uint16_t)vertex.vertexBufferName.length());
+		archive.write<char>(vertex.vertexBufferName.cstr(), vertex.vertexBufferName.length() + 1);
 	}
 	// Write indices
-	stream.write<uint8_t>((uint8_t)indexFormat);
-	stream.write<uint32_t>(indexCount);
-	stream.write<uint32_t>(indexBufferOffset);
-	stream.write<uint16_t>((uint16_t)indexBufferName.length() + 1);
-	stream.write<char>(indexBufferName.cstr(), indexBufferName.length() + 1);
+	archive.write<uint8_t>((uint8_t)indexFormat);
+	archive.write<uint32_t>(indexCount);
+	archive.write<uint32_t>(indexBufferOffset);
+	archive.write<uint16_t>((uint16_t)indexBufferName.length() + 1);
+	archive.write<char>(indexBufferName.cstr(), indexBufferName.length() + 1);
 	return true;
 }
 

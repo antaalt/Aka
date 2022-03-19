@@ -1,6 +1,7 @@
 #include <Aka/Resource/FontStorage.h>
 
 #include <Aka/OS/Logger.h>
+#include <Aka/OS/Archive.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Resource/ResourceManager.h>
 
@@ -18,30 +19,32 @@ std::unique_ptr<IStorage<Font>> IStorage<Font>::create()
 bool FontStorage::load(const Path& path)
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
+	BinaryArchive archive(stream);
 	// Read header
 	char sign[4];
-	stream.read<char>(sign, 4);
+	archive.read<char>(sign, 4);
 	if (sign[0] != 'a' || sign[1] != 'k' || sign[2] != 'a' || sign[3] != 'f')
 		return false; // Invalid file
-	uint16_t version = stream.read<uint16_t>();
+	uint16_t version = archive.read<uint16_t>();
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read font
-	uint32_t size = stream.read<uint32_t>();
+	uint32_t size = archive.read<uint32_t>();
 	ttf.resize(size);
-	stream.read<byte_t>(ttf.data(), size);
+	archive.read<byte_t>(ttf.data(), size);
 	return true;
 }
 bool FontStorage::save(const Path& path) const
 {
 	FileStream stream(path, FileMode::Write, FileType::Binary);
+	BinaryArchive archive(stream);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'f' };
-	stream.write<char>(signature, 4);
-	stream.write<uint16_t>((major << 8) | minor);
+	archive.write<char>(signature, 4);
+	archive.write<uint16_t>((major << 8) | minor);
 	// Write font
-	stream.write<uint32_t>((uint32_t)ttf.size());
-	stream.write<byte_t>(ttf.data(), ttf.size());
+	archive.write<uint32_t>((uint32_t)ttf.size());
+	archive.write<byte_t>(ttf.data(), ttf.size());
 	return true;
 }
 

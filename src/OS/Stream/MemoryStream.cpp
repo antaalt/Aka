@@ -4,7 +4,8 @@
 
 namespace aka {
 
-MemoryStream::MemoryStream(const uint8_t* bytes, size_t size) : 
+MemoryStream::MemoryStream(const uint8_t* bytes, size_t size) :
+	Stream(),
 	m_bytes(bytes), 
 	m_bytesWrite(nullptr), 
 	m_size(size), 
@@ -17,7 +18,8 @@ MemoryStream::MemoryStream(const std::vector<uint8_t>& bytes) :
 {
 }
 
-MemoryStream::MemoryStream(uint8_t* bytes, size_t size) : 
+MemoryStream::MemoryStream(uint8_t* bytes, size_t size) :
+	Stream(),
 	m_bytes(bytes), 
 	m_bytesWrite(bytes),
 	m_size(size), 
@@ -64,7 +66,7 @@ const uint8_t* MemoryStream::data(size_t len) const
 	return m_bytes + m_offset; 
 }
 
-void MemoryStream::readData(void* data, size_t size)
+void MemoryStream::unserialize(void* data, size_t size)
 {
 	if (m_offset + size > m_size)
 		throw std::runtime_error("Reading out of bounds");
@@ -72,7 +74,7 @@ void MemoryStream::readData(void* data, size_t size)
 	m_offset += size;
 }
 
-void MemoryStream::writeData(const void* data, size_t size)
+void MemoryStream::serialize(const void* data, size_t size)
 {
 	if (m_offset + size > m_size)
 		throw std::runtime_error("Writing out of bounds");

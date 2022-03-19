@@ -23,8 +23,8 @@ public:
 
 	const uint8_t* data(size_t len) const;
 protected:
-	void readData(void* data, size_t size) override;
-	void writeData(const void* data, size_t size) override;
+	void unserialize(void* data, size_t size) override;
+	void serialize(const void* data, size_t size) override;
 private:
 	const uint8_t* m_bytes;  // Const bytes of the non-owned buffer. Used for reading.
 	uint8_t* m_bytesWrite;  // Bytes of the non-owned buffer. Used for writing

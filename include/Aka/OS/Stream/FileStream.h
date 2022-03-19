@@ -35,8 +35,8 @@ public:
 	size_t offset() override;
 	void rewind() override;
 protected:
-	void readData(void* data, size_t size) override;
-	void writeData(const void* data, size_t size) override;
+	void unserialize(void* data, size_t size) override;
+	void serialize(const void* data, size_t size) override;
 private:
 	FILE* m_file;
 	FileMode m_mode;

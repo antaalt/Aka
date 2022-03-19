@@ -1,9 +1,9 @@
-#include "..\..\include\Aka\Resource\TextureStorage.h"
 #include <Aka/Resource/TextureStorage.h>
 
 #include <Aka/Core/Application.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
+#include <Aka/OS/Archive.h>
 #include <Aka/OS/Stream/MemoryStream.h>
 #include <Aka/Resource/ResourceManager.h>
 
@@ -21,24 +21,26 @@ std::unique_ptr<IStorage<Texture>> IStorage<Texture>::create()
 bool TextureStorage::load(const Path& path)
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
+	BinaryArchive archive(stream, Endian::native());
+
 	// Read header
 	char sign[4];
-	stream.read<char>(sign, 4);
+	archive.read<char>(sign, 4);
 	if (sign[0] != 'a' || sign[1] != 'k' || sign[2] != 'a' || sign[3] != 't')
 		return false; // Invalid file
-	uint16_t version = stream.read<uint16_t>();
+	uint16_t version = archive.read<uint16_t>();
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read texture
-	type = (TextureType)stream.read<uint8_t>();
-	format = (TextureFormat)stream.read<uint8_t>();
-	flags = (TextureFlag)stream.read<uint8_t>();
-	bool isHDR = stream.read<bool>();
+	type = (TextureType)archive.read<uint8_t>();
+	format = (TextureFormat)archive.read<uint8_t>();
+	flags = (TextureFlag)archive.read<uint8_t>();
+	bool isHDR = archive.read<bool>();
 	switch (type)
 	{
 	case TextureType::Texture2D: {
-		std::vector<uint8_t> bytes(stream.read<uint32_t>());
-		stream.read<uint8_t>(bytes.data(), bytes.size());
+		std::vector<uint8_t> bytes(archive.read<uint32_t>());
+		archive.read<uint8_t>(bytes.data(), bytes.size());
 		if (isHDR)
 			images.push_back(Image::loadHDR(bytes.data(), bytes.size()));
 		else
@@ -49,8 +51,8 @@ bool TextureStorage::load(const Path& path)
 		std::vector<uint8_t> bytes;
 		for (size_t i = 0; i < 6; i++)
 		{
-			std::vector<uint8_t> bytes(stream.read<uint32_t>());
-			stream.read<uint8_t>(bytes.data(), bytes.size());
+			std::vector<uint8_t> bytes(archive.read<uint32_t>());
+			archive.read<uint8_t>(bytes.data(), bytes.size());
 			if (isHDR)
 				images.push_back(Image::loadHDR(bytes.data(), bytes.size()));
 			else
@@ -67,16 +69,18 @@ bool TextureStorage::load(const Path& path)
 bool TextureStorage::save(const Path& path) const
 {
 	FileStream stream(path, FileMode::Write, FileType::Binary);
+	BinaryArchive archive(stream, Endian::native());
+
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 't' };
 	bool isHDR = images[0].format() == ImageFormat::Float;
-	stream.write<char>(signature, 4);
-	stream.write<uint16_t>((major << 8) | minor);
+	archive.write<char>(signature, 4);
+	archive.write<uint16_t>((major << 8) | minor);
 	// Write texture
-	stream.write<uint8_t>((uint8_t)type);
-	stream.write<uint8_t>((uint8_t)format);
-	stream.write<uint8_t>((uint8_t)flags);
-	stream.write<bool>(isHDR);
+	archive.write<uint8_t>((uint8_t)type);
+	archive.write<uint8_t>((uint8_t)format);
+	archive.write<uint8_t>((uint8_t)flags);
+	archive.write<bool>(isHDR);
 	switch (type)
 	{
 	case TextureType::Texture2D: {
@@ -84,15 +88,15 @@ bool TextureStorage::save(const Path& path) const
 		{
 			// encode to .hdr
 			std::vector<uint8_t> data = images[0].encodeHDR();
-			stream.write<uint32_t>((uint32_t)data.size());
-			stream.write<uint8_t>(data.data(), data.size());
+			archive.write<uint32_t>((uint32_t)data.size());
+			archive.write<uint8_t>(data.data(), data.size());
 		}
 		else
 		{
 			// encode to .png
 			std::vector<uint8_t> data = images[0].encodePNG();
-			stream.write<uint32_t>((uint32_t)data.size());
-			stream.write<uint8_t>(data.data(), data.size());
+			archive.write<uint32_t>((uint32_t)data.size());
+			archive.write<uint8_t>(data.data(), data.size());
 		}
 		break;
 	}
@@ -103,15 +107,15 @@ bool TextureStorage::save(const Path& path) const
 			{
 				// encode to .hdr
 				std::vector<uint8_t> data = images[i].encodeHDR();
-				stream.write<uint32_t>((uint32_t)data.size());
-				stream.write<uint8_t>(data.data(), data.size());
+				archive.write<uint32_t>((uint32_t)data.size());
+				archive.write<uint8_t>(data.data(), data.size());
 			}
 			else
 			{
 				// encode to png.
 				std::vector<uint8_t> data = images[i].encodePNG();
-				stream.write<uint32_t>((uint32_t)data.size());
-				stream.write<uint8_t>(data.data(), data.size());
+				archive.write<uint32_t>((uint32_t)data.size());
+				archive.write<uint8_t>(data.data(), data.size());
 			}
 		}
 		break;

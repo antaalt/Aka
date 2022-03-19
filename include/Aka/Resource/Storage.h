@@ -14,8 +14,6 @@ namespace aka {
 // .buffer : header, buffer info, raw buffer
 // .anim :
 
-
-
 template <typename T>
 struct IStorage
 {

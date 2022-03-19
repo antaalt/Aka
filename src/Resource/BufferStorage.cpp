@@ -1,6 +1,7 @@
 #include <Aka/Resource/BufferStorage.h>
 
 #include <Aka/OS/Logger.h>
+#include <Aka/OS/Archive.h>
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Resource/ResourceManager.h>
 #include <Aka/Core/Application.h>
@@ -19,35 +20,37 @@ std::unique_ptr<IStorage<Buffer>> IStorage<Buffer>::create()
 bool BufferStorage::load(const Path& path)
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
+	BinaryArchive archive(stream);
 	// Read header
 	char sign[4];
-	stream.read<char>(sign, 4);
+	archive.read<char>(sign, 4);
 	if (sign[0] != 'a' || sign[1] != 'k' || sign[2] != 'a' || sign[3] != 'b')
 		return false; // Invalid file
-	uint16_t version = stream.read<uint16_t>();
+	uint16_t version = archive.read<uint16_t>();
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read buffer
-	type = (BufferType)stream.read<uint8_t>();
-	usage = (BufferUsage)stream.read<uint8_t>();
-	access = (BufferCPUAccess)stream.read<uint8_t>();
-	bytes.resize(stream.read<uint32_t>());
-	stream.read<uint8_t>(bytes.data(), bytes.size());
+	type = (BufferType)archive.read<uint8_t>();
+	usage = (BufferUsage)archive.read<uint8_t>();
+	access = (BufferCPUAccess)archive.read<uint8_t>();
+	bytes.resize(archive.read<uint32_t>());
+	archive.read<uint8_t>(bytes.data(), bytes.size());
 	return true;
 }
 bool BufferStorage::save(const Path& path) const
 {
 	FileStream stream(path, FileMode::Write, FileType::Binary);
+	BinaryArchive archive(stream);
 	// Write header
 	char signature[4] = { 'a', 'k', 'a', 'b' };
-	stream.write<char>(signature, 4);
-	stream.write<uint16_t>((major << 8) | minor);
+	archive.write<char>(signature, 4);
+	archive.write<uint16_t>((major << 8) | minor);
 	// Write buffer
-	stream.write<uint8_t>((uint8_t)type);
-	stream.write<uint8_t>((uint8_t)usage);
-	stream.write<uint8_t>((uint8_t)access);
-	stream.write<uint32_t>((uint32_t)bytes.size());
-	stream.write<uint8_t>(bytes.data(), bytes.size());
+	archive.write<uint8_t>((uint8_t)type);
+	archive.write<uint8_t>((uint8_t)usage);
+	archive.write<uint8_t>((uint8_t)access);
+	archive.write<uint32_t>((uint32_t)bytes.size());
+	archive.write<uint8_t>(bytes.data(), bytes.size());
 	return true;
 }
 
