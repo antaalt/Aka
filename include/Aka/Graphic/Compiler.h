@@ -17,7 +17,7 @@ public:
 	// Export it and generate a shader for given API
 	Blob compile(GraphicAPI api);
 	// Get shader bindings from compiler
-	ShaderBindingState getShaderBindings();
+	ShaderBindingState getShaderBindings(uint32_t set);
 	// Get vertex bindings from compiler
 	VertexBindingState getVertexBindings();
 private:

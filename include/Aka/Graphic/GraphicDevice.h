@@ -67,9 +67,10 @@ public:
 	virtual void destroy(Shader* handle) = 0;
 
 	// Programs
-	virtual Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState& bindings) = 0;
+	virtual Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
 	virtual void destroy(Program* program) = 0;
-	virtual Material* createMaterial(Program* program) = 0;
+	virtual Material* createMaterial(const ShaderBindingState& bindings) = 0;
+	virtual void update(Material* material) = 0;
 	virtual void destroy(Material* material) = 0;
 
 	// Device
@@ -106,7 +107,8 @@ public:
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
-		const ShaderBindingState& bindings,
+		const ShaderBindingState* bindings,
+		uint32_t shaderBindingCounts,
 		const ViewportState& viewport, 
 		const DepthState& depth, 
 		const StencilState& stencil,

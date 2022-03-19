@@ -140,16 +140,30 @@ VulkanContext::ShaderInputData VulkanContext::getDescriptorLayout(const ShaderBi
 	s.pool = VK_NULL_HANDLE;
 	s.layout = VulkanProgram::createVkDescriptorSetLayout(device, bindingsDesc, &s.pool);
 
+	m_bindingDesc.insert(std::make_pair(bindingsDesc, s));
+	return s;
+}
+
+VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count)
+{
+	std::vector<VkDescriptorSetLayout> data(layouts, layouts + count);
+	auto it = m_pipelineLayout.find(data);
+	if (it != m_pipelineLayout.end())
+		return it->second;
+
 	// Create the layout of the pipeline following the provided descriptor set layout
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = s.layout == nullptr ? 0 : 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &s.layout;
+	pipelineLayoutCreateInfo.setLayoutCount = count;
+	pipelineLayoutCreateInfo.pSetLayouts = layouts;
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &s.pipelineLayout));
 
-	m_bindingDesc.insert(std::make_pair(bindingsDesc, s));
-	return s;
+	VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+
+	m_pipelineLayout.insert(std::make_pair(data, pipelineLayout));
+
+	return pipelineLayout;
 }
 
 VulkanContext::VertexInputData VulkanContext::getVertexInputData(const VertexBindingState& verticesDesc)
@@ -463,7 +477,11 @@ void VulkanContext::shutdown()
 	{
 		vkDestroyDescriptorPool(device, rp.second.pool, nullptr);
 		vkDestroyDescriptorSetLayout(device, rp.second.layout, nullptr);
-		vkDestroyPipelineLayout(device, rp.second.pipelineLayout, nullptr);
+		//vkDestroyPipelineLayout(device, rp.second.pipelineLayout, nullptr);
+	}
+	for (auto& rp : m_pipelineLayout)
+	{
+		vkDestroyPipelineLayout(device, rp.second, nullptr);
 	}
 	for (auto& rp : m_framebufferDesc)
 	{

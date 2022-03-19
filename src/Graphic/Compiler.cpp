@@ -314,7 +314,7 @@ ShaderType getShaderType(spv::ExecutionModel executionModel)
 	}
 }
 
-ShaderBindingState Compiler::getShaderBindings()
+ShaderBindingState Compiler::getShaderBindings(uint32_t inSet)
 {
 	ShaderBindingState bindings{};
 
@@ -325,7 +325,8 @@ ShaderBindingState Compiler::getShaderBindings()
 	{
 		std::string name = compiler.get_name(resource.id);
 		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		if (set != inSet)
+			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
@@ -337,7 +338,8 @@ ShaderBindingState Compiler::getShaderBindings()
 	{
 		std::string name = compiler.get_name(resource.id);
 		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		if (set != inSet)
+			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
@@ -349,7 +351,8 @@ ShaderBindingState Compiler::getShaderBindings()
 	{
 		std::string name = compiler.get_name(resource.id);
 		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		if (set != inSet)
+			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
@@ -361,7 +364,8 @@ ShaderBindingState Compiler::getShaderBindings()
 	{
 		std::string name = compiler.get_name(resource.id);
 		uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		AKA_ASSERT(set == 0, "Only one set supported for now.");
+		if (set != inSet)
+			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO

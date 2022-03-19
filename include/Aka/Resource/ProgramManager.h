@@ -35,14 +35,15 @@ private:
 	void onReceive(const AppUpdateEvent& event);
 private:
 	// Compile a shader using GLSLCC for currently used graphic API
-	Shader* compile(const Path& path, ShaderType type, ShaderBindingState* bindings, VertexBindingState* vertices);
+	Shader* compile(const Path& path, ShaderType type, ShaderBindingState* bindings, uint32_t* setCount, VertexBindingState* vertices);
 private:
 	struct ShaderInfo {
 		String name;
 		ShaderType type;
 		Shader* shader;
 		Path path;
-		ShaderBindingState bindings;
+		uint32_t setCount;
+		ShaderBindingState sets[ShaderBindingState::MaxSetCount];
 		VertexBindingState vertices;
 		Timestamp loaded;
 	};

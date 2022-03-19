@@ -12,7 +12,7 @@ namespace aka {
 struct VulkanPipeline : Pipeline
 {
 	VkPipeline vk_pipeline;
-	//VkPipelineLayout vk_pipelineLayout; // Cached with descriptor set.
+	VkPipelineLayout vk_pipelineLayout;
 
 	static VkPipeline VulkanPipeline::createVkPipeline(
 		VkDevice device,
@@ -22,7 +22,6 @@ struct VulkanPipeline : Pipeline
 		uint32_t shaderCount,
 		PrimitiveType primitive,
 		const VertexBindingState& vertices,
-		const ShaderBindingState& bindings,
 		const FramebufferState& framebuffer,
 		const DepthState& depth,
 		const StencilState& stencil,

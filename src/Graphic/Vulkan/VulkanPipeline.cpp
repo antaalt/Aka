@@ -248,7 +248,6 @@ VkPipeline VulkanPipeline::createVkPipeline(
 	uint32_t shaderCount,
 	PrimitiveType primitive,
 	const VertexBindingState& vertices,
-	const ShaderBindingState& bindings,
 	const FramebufferState& framebuffer,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -410,7 +409,8 @@ Pipeline* VulkanGraphicDevice::createPipeline(
 	PrimitiveType primitive,
 	const FramebufferState& framebuffer,
 	const VertexBindingState& vertices,
-	const ShaderBindingState& bindings,
+	const ShaderBindingState* bindings,
+	uint32_t shaderBindingCounts,
 	const ViewportState& viewport,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -433,20 +433,25 @@ Pipeline* VulkanGraphicDevice::createPipeline(
 
 	pipeline->framebuffer = framebuffer;
 	pipeline->vertices = vertices;
-	pipeline->bindings = bindings;
+	memcpy(pipeline->bindings, bindings, shaderBindingCounts * sizeof(ShaderBindingState));
 
 	VulkanShader** vk_shaders = reinterpret_cast<VulkanShader**>(shaders);
-	VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(bindings);
+	VkDescriptorSetLayout layouts[ShaderBindingState::MaxSetCount];
+	for (uint32_t i = 0; i < shaderBindingCounts; i++)
+	{
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(bindings[i]);
+		layouts[i] = data.layout;
+	}
+	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, shaderBindingCounts);
 	// Create Pipeline
 	pipeline->vk_pipeline = VulkanPipeline::createVkPipeline(
 		m_context.device,
 		m_context.getRenderPass(framebuffer, VulkanRenderPassLayout::Unknown),
-		data.pipelineLayout,
+		pipeline->vk_pipelineLayout,
 		vk_shaders,
 		shaderCount,
 		pipeline->primitive,
 		pipeline->vertices,
-		pipeline->bindings,
 		pipeline->framebuffer,
 		pipeline->depth,
 		pipeline->stencil,
@@ -462,6 +467,7 @@ void VulkanGraphicDevice::destroy(Pipeline* pipeline)
 	VulkanPipeline* vk_pipeline = reinterpret_cast<VulkanPipeline*>(pipeline);
 
 	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
+	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
 
 	m_pipelinePool.release(vk_pipeline);

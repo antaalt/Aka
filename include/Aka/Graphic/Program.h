@@ -44,15 +44,17 @@ struct Program
 	Shader* geometry;
 	Shader* compute;
 
-	ShaderBindingState bindings;
+	ShaderBindingState bindings[ShaderBindingState::MaxSetCount];
+
+	uint32_t setCount;
 
 	bool hasVertexStage() const;
 	bool hasFragmentStage() const;
 	bool hasGeometryStage() const;
 	bool hasComputeStage() const;
 
-	static Program* createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState& bindings);
-	static Program* createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState& bindings);
+	static Program* createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static Program* createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
 	static Program* createCompute(Shader* compute);
 	static void destroy(Program* program);
 };

@@ -278,7 +278,7 @@ struct Pipeline
 {
 	PrimitiveType primitive;
 	VertexBindingState vertices;
-	ShaderBindingState bindings;
+	ShaderBindingState bindings[ShaderBindingState::MaxSetCount];
 	FramebufferState framebuffer;
 	CullState cull;
 	FillState fill;

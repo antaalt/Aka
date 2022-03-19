@@ -29,9 +29,10 @@ public:
 	void destroy(Shader* handle) override;
 
 	// Programs
-	Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState& bindings) override;
+	Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
 	void destroy(Program* handle) override;
-	Material* createMaterial(Program* program) override;
+	Material* createMaterial(const ShaderBindingState& bindings) override;
+	void update(Material* material) override;
 	void destroy(Material* material) override;
 
 	// Textures
@@ -80,7 +81,8 @@ public:
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
-		const ShaderBindingState& bindings,
+		const ShaderBindingState* bindings,
+		uint32_t shaderBindingCounts,
 		const ViewportState& viewport,
 		const DepthState& depth,
 		const StencilState& stencil,

@@ -44,13 +44,13 @@ bool Program::hasComputeStage() const
 	return compute != nullptr;
 }
 
-Program* Program::createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState& bindings)
+Program* Program::createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState* bindings, uint32_t count)
 {
-	return Application::app()->graphic()->createProgram(vertex, fragment, nullptr, bindings);
+	return Application::app()->graphic()->createProgram(vertex, fragment, nullptr, bindings, count);
 }
-Program* Program::createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState& bindings)
+Program* Program::createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t count)
 {
-	return Application::app()->graphic()->createProgram(vertex, fragment, geometry, bindings);
+	return Application::app()->graphic()->createProgram(vertex, fragment, geometry, bindings, count);
 }
 Program* Program::createCompute(Shader* compute)
 {

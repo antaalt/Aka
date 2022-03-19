@@ -104,10 +104,11 @@ public:
 	struct ShaderInputData {
 		VkDescriptorPool pool;
 		VkDescriptorSetLayout layout;
-		VkPipelineLayout pipelineLayout;
+		//VkPipelineLayout pipelineLayout;
 	};
 	VkRenderPass getRenderPass(const FramebufferState& fbDesc, VulkanRenderPassLayout layout);
 	ShaderInputData getDescriptorLayout(const ShaderBindingState& bindingsDesc);
+	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count);
 	VertexInputData getVertexInputData(const VertexBindingState& verticesDesc);
 
 private:
@@ -163,6 +164,7 @@ private:
 	};
 	std::map<FramebufferState, VkRenderPass, CacheComparator> m_framebufferDesc;
 	std::map<ShaderBindingState, ShaderInputData, CacheComparator> m_bindingDesc;
+	std::map<std::vector<VkDescriptorSetLayout>, VkPipelineLayout> m_pipelineLayout;
 	std::map<VertexBindingState, VertexInputData, CacheComparator> m_verticesDesc;
 
 private:

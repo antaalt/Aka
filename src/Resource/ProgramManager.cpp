@@ -35,7 +35,7 @@ bool ProgramManager::reload(const String& name)
 	{
 		if (info.name == name)
 		{
-			Shader* out = compile(info.path, info.type, &info.bindings, &info.vertices);
+			Shader* out = compile(info.path, info.type, info.sets, &info.setCount, &info.vertices);
 			if (out == nullptr)
 				return false;
 			info.shader = out;
@@ -58,7 +58,7 @@ bool ProgramManager::parse(const Path& path)
 			return false;
 		for (auto& element : json["shaders"].items())
 		{
-			ShaderInfo info;
+			ShaderInfo info{};
 			info.loaded = Timestamp::now();
 			info.name = element.key();
 			info.path = element.value()["path"].get<std::string>().c_str();
@@ -88,12 +88,12 @@ bool ProgramManager::parse(const Path& path)
 			}*/
 			if (!OS::File::read(path, &str))
 				return false;
-			info.shader = compile(info.path, info.type, &info.bindings, &info.vertices);
+			info.shader = compile(info.path, info.type, info.sets, &info.setCount, &info.vertices);
 			m_shaders.push_back(info);
 		}
 		for (auto& element : json["programs"].items())
 		{
-			ProgramInfo info;
+			ProgramInfo info{};
 			info.name = element.key();
 			if (!element.value()["vertex"].is_null())
 				info.vert = element.value()["vertex"].get<std::string>();
@@ -103,13 +103,19 @@ bool ProgramManager::parse(const Path& path)
 				info.comp = element.value()["compute"].get<std::string>();
 			if (info.vert.length() > 0 && info.frag.length() > 0)
 			{
-				ShaderBindingState vertBindings = getShaderInfo(info.vert).bindings;
-				ShaderBindingState fragBindings = getShaderInfo(info.frag).bindings;
-				ShaderBindingState bindings = ShaderBindingState::merge(vertBindings, fragBindings);
+				ShaderBindingState sets[ShaderBindingState::MaxSetCount]{};
+				uint32_t setCount = max(getShaderInfo(info.vert).setCount, getShaderInfo(info.frag).setCount);
+				for (uint32_t i = 0; i < setCount; i++)
+				{
+					ShaderBindingState vertBindings = getShaderInfo(info.vert).sets[i];
+					ShaderBindingState fragBindings = getShaderInfo(info.frag).sets[i];
+					sets[i] = ShaderBindingState::merge(vertBindings, fragBindings);
+				}
 				info.program = Program::createVertex(
 					getShaderInfo(info.vert).shader,
 					getShaderInfo(info.frag).shader,
-					bindings
+					sets,
+					setCount
 				);
 			}
 			else if (info.comp.length() > 0)
@@ -135,24 +141,28 @@ bool ProgramManager::serialize(const Path& path)
 	try
 	{
 		nlohmann::json json = nlohmann::json::object();
-		json["asset"]["version"] = "0.1";
+		json["asset"]["version"] = "0.2";
 		json["shaders"] = nlohmann::json::object();
 		nlohmann::json& shaderJSON = json["shaders"];
 		for (ShaderInfo& info : m_shaders)
 		{
 			shaderJSON[info.name] = nlohmann::json::object();
 			shaderJSON[info.name]["path"] = info.path.cstr();
-			if (info.bindings.count > 0)
+			if (info.setCount > 0)
 			{
 				shaderJSON[info.name]["bindings"] = nlohmann::json::array();
-				for (size_t i = 0; i < info.bindings.count; i++)
+				for (size_t iSet = 0; iSet < info.setCount; iSet++)
 				{
-					ShaderBindingLayout& binding = info.bindings.bindings[i];
-					nlohmann::json att = nlohmann::json::object();
-					att["shaderType"] = (uint32_t)binding.shaderType;
-					att["count"] = (uint32_t)binding.count;
-					att["type"] = (uint32_t)binding.type;
-					shaderJSON[info.name]["bindings"].push_back(att);
+					for (size_t iBinding = 0; iBinding < info.setCount; iBinding++)
+					{
+						ShaderBindingLayout& binding = info.sets[iSet].bindings[iBinding];
+						nlohmann::json att = nlohmann::json::object();
+						att["shaderType"] = (uint32_t)binding.shaderType;
+						att["count"] = (uint32_t)binding.count;
+						att["type"] = (uint32_t)binding.type;
+						att["set"] = (uint32_t)iSet;
+						shaderJSON[info.name]["bindings"].push_back(att);
+					}
 				}
 			}
 			if (info.vertices.count > 0)
@@ -214,7 +224,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (vertUpdated)
 				{
 					AKA_ASSERT(vertInfo.type == ShaderType::Vertex, "Invalid shader type");
-					Shader* shader = compile(vertInfo.path, vertInfo.type, &vertInfo.bindings, &vertInfo.vertices);
+					Shader* shader = compile(vertInfo.path, vertInfo.type, vertInfo.sets, &vertInfo.setCount, &vertInfo.vertices);
 					if (shader != nullptr)
 					{
 						compiled = true;
@@ -225,7 +235,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (fragUpdated)
 				{
 					AKA_ASSERT(fragInfo.type == ShaderType::Fragment, "Invalid shader type");
-					Shader* shader = compile(fragInfo.path, fragInfo.type, &fragInfo.bindings, &fragInfo.vertices);
+					Shader* shader = compile(fragInfo.path, fragInfo.type, fragInfo.sets, &fragInfo.setCount, &fragInfo.vertices);
 					if (shader != nullptr)
 					{
 						compiled = true;
@@ -235,8 +245,13 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				}
 				if (compiled)
 				{
-					ShaderBindingState bindings = ShaderBindingState::merge(vertInfo.bindings, fragInfo.bindings);
-					programInfo.program = Program::createVertex(vertInfo.shader, fragInfo.shader, bindings);
+					ShaderBindingState bindings[ShaderBindingState::MaxSetCount]{};
+					uint32_t bindingCount = max(vertInfo.setCount, fragInfo.setCount);
+					for (uint32_t i = 0; i < bindingCount; i++)
+					{
+						bindings[i] = ShaderBindingState::merge(vertInfo.sets[i], fragInfo.sets[i]);
+					}
+					programInfo.program = Program::createVertex(vertInfo.shader, fragInfo.shader, bindings, bindingCount);
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
 				}
 			}
@@ -248,7 +263,8 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 			{
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
 				ShaderBindingState bindings{};
-				Shader* shader = compile(compInfo.path, compInfo.type, &bindings, nullptr);
+				uint32_t setCount = 0;
+				Shader* shader = compile(compInfo.path, compInfo.type, &bindings, &setCount, nullptr);
 				if (shader != nullptr)
 				{
 					compInfo.shader = shader;
@@ -262,7 +278,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 	EventDispatcher<ProgramReloadedEvent>::dispatch();
 }
 
-Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, VertexBindingState* vertices)
+Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, uint32_t* setCount, VertexBindingState* vertices)
 {
 	Application* app = Application::app();
 	GraphicDevice* device = app->graphic();
@@ -298,7 +314,14 @@ Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBinding
 		if (vertices && type == ShaderType::Vertex)
 			*vertices = compiler.getVertexBindings();
 		if (bindings)
-			*bindings = compiler.getShaderBindings();
+		{
+			for (uint32_t i = 0; i < ShaderBindingState::MaxSetCount; i++)
+			{
+				bindings[i] = compiler.getShaderBindings(i);
+				if (bindings[i].count > 0)
+					*setCount = i + 1;
+			}
+		}
 		shader = compiler.compile(device->api());
 		if (!OS::Directory::exist(compiledPath))
 			OS::Directory::create(compiledPath);

@@ -60,20 +60,19 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 void VulkanProgram::updateDescriptorSet(VkDevice device, const Material* material)
 {
 	const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(material);
-	VulkanProgram* vk_program = reinterpret_cast<VulkanProgram*>(material->program);
 	if (vk_material->vk_descriptorSet == VK_NULL_HANDLE)
 		return;
 	// TODO create a bindDescriptor / bindProgram
-	std::vector<VkWriteDescriptorSet> descriptorWrites(vk_program->bindings.count, VkWriteDescriptorSet{});
-	std::vector<VkDescriptorImageInfo> imageDescriptors(vk_program->bindings.count, VkDescriptorImageInfo{});
-	std::vector<VkDescriptorBufferInfo> bufferDescriptors(vk_program->bindings.count, VkDescriptorBufferInfo{});
+	std::vector<VkWriteDescriptorSet> descriptorWrites(material->bindings.count, VkWriteDescriptorSet{});
+	std::vector<VkDescriptorImageInfo> imageDescriptors(material->bindings.count, VkDescriptorImageInfo{});
+	std::vector<VkDescriptorBufferInfo> bufferDescriptors(material->bindings.count, VkDescriptorBufferInfo{});
 	uint32_t imageIndex = 0;
 	uint32_t bufferIndex = 0;
 	uint32_t samplerIndex = 0;
 
-	for (uint32_t iBinding = 0; iBinding < vk_program->bindings.count; iBinding++)
+	for (uint32_t iBinding = 0; iBinding < material->bindings.count; iBinding++)
 	{
-		const ShaderBindingLayout& binding = vk_program->bindings.bindings[iBinding];
+		const ShaderBindingLayout& binding = material->bindings.bindings[iBinding];
 		descriptorWrites[iBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[iBinding].dstSet = vk_material->vk_descriptorSet;
 		descriptorWrites[iBinding].dstBinding = static_cast<uint32_t>(iBinding);
@@ -107,12 +106,23 @@ void VulkanProgram::updateDescriptorSet(VkDevice device, const Material* materia
 		case ShaderBindingType::StorageBuffer:
 		case ShaderBindingType::UniformBuffer: {
 			Buffer* buffer = material->buffers[iBinding];
-			AKA_ASSERT(valid(binding.type, buffer->type), "Invalid buffer binding, skipping.");
-			VkDescriptorBufferInfo& vk_buffer = bufferDescriptors[bufferIndex++];
-			vk_buffer.buffer = reinterpret_cast<VulkanBuffer*>(buffer)->vk_buffer;
-			vk_buffer.offset = 0; // TODO use buffer view
-			vk_buffer.range = buffer->size;
-			descriptorWrites[iBinding].pBufferInfo = &vk_buffer;
+			if (buffer == nullptr)
+			{
+				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors[bufferIndex++];
+				vk_buffer.buffer = VK_NULL_HANDLE;
+				vk_buffer.offset = 0;
+				vk_buffer.range = 0;
+				descriptorWrites[iBinding].pBufferInfo = &vk_buffer;
+			}
+			else
+			{
+				AKA_ASSERT(valid(binding.type, buffer->type), "Invalid buffer binding, skipping.");
+				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors[bufferIndex++];
+				vk_buffer.buffer = reinterpret_cast<VulkanBuffer*>(buffer)->vk_buffer;
+				vk_buffer.offset = 0; // TODO use buffer view
+				vk_buffer.range = buffer->size;
+				descriptorWrites[iBinding].pBufferInfo = &vk_buffer;
+			}
 			break;
 		}
 		default:
@@ -201,22 +211,28 @@ void VulkanGraphicDevice::destroy(Shader* shader)
 }
 
 // Programs
-Program* VulkanGraphicDevice::createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState& bindings)
+Program* VulkanGraphicDevice::createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts)
 {
 	// TODO check shaders
-	if (bindings.count > ShaderBindingState::MaxBindingCount)
+	if (bindingCounts == 0 || bindingCounts > ShaderBindingState::MaxSetCount)
+		return nullptr;
+	if (bindings[0].count > ShaderBindingState::MaxBindingCount)
 		return nullptr;
 	VulkanProgram* vk_program = m_programPool.acquire();
 	vk_program->vertex = vertex;
 	vk_program->fragment = fragment;
 	vk_program->compute = nullptr;
 	vk_program->geometry = geometry;
-	vk_program->bindings = bindings;
+	memcpy(vk_program->bindings, bindings, bindingCounts * sizeof(ShaderBindingState));
 
-	vk_program->vk_descriptorPool = VK_NULL_HANDLE;
-	vk_program->vk_descriptorSetLayout = VulkanProgram::createVkDescriptorSetLayout(m_context.device, vk_program->bindings, &vk_program->vk_descriptorPool);
-	//vk_program->vk_descriptorSet = VulkanProgram::createVkDescriptorSet(m_context.device, vk_program->vk_descriptorPool, &vk_program->vk_descriptorSetLayout, (vk_program->vk_descriptorSetLayout == VK_NULL_HANDLE ? 0 : 1));
-	vk_program->vk_pipelineLayout = m_context.getDescriptorLayout(bindings).pipelineLayout;
+	vk_program->setCount = bindingCounts;
+	for (uint32_t i = 0; i < bindingCounts; i++)
+	{
+		auto data = m_context.getDescriptorLayout(vk_program->bindings[i]);
+		vk_program->vk_descriptorPool[i] = data.pool;
+		vk_program->vk_descriptorSetLayout[i] = data.layout;
+		//vk_program->vk_pipelineLayout = m_context.getPipelineLayout(vk_program->vk_descriptorSetLayout);
+	}
 
 	vk_program->native = nullptr;// vk_program->vk_descriptorSet;
 
@@ -229,36 +245,39 @@ void VulkanGraphicDevice::destroy(Program* program)
 	// only call free if VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT set
 	//if (vk_program->vk_descriptorSet)
 	//	vkFreeDescriptorSets(m_context.device, vk_program->vk_descriptorPool, 1, &vk_program->vk_descriptorSet);
-	if (vk_program->vk_descriptorPool)
-		vkDestroyDescriptorPool(m_context.device, vk_program->vk_descriptorPool, nullptr);
-	if (vk_program->vk_descriptorSetLayout)
-		vkDestroyDescriptorSetLayout(m_context.device, vk_program->vk_descriptorSetLayout, nullptr);
+	for (uint32_t i = 0; i < vk_program->setCount; i++)
+	{
+		if (vk_program->vk_descriptorPool)
+			vkDestroyDescriptorPool(m_context.device, vk_program->vk_descriptorPool[i], nullptr);
+		if (vk_program->vk_descriptorSetLayout)
+			vkDestroyDescriptorSetLayout(m_context.device, vk_program->vk_descriptorSetLayout[i], nullptr);
+	}
 	m_programPool.release(vk_program);
 }
 
-Material* VulkanGraphicDevice::createMaterial(Program* program)
+Material* VulkanGraphicDevice::createMaterial(const ShaderBindingState& bindings)
 {
-	if (program == nullptr)
-		return nullptr;
-
-	VulkanProgram* vk_program = reinterpret_cast<VulkanProgram*>(program);
-
 	VulkanMaterial* material = m_materialPool.acquire();
 
-	material->program = program;
+	material->bindings = bindings;
 
 	memset(material->images, 0x00, sizeof(material->images));
 	memset(material->samplers, 0x00, sizeof(material->samplers));
 	memset(material->buffers, 0x00, sizeof(material->buffers));
 
+	VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(bindings);
 	material->vk_descriptorSet = VulkanProgram::createVkDescriptorSet(
 		m_context.device, 
-		vk_program->vk_descriptorPool,
-		&vk_program->vk_descriptorSetLayout, 
-		(vk_program->vk_descriptorSetLayout == VK_NULL_HANDLE ? 0 : 1)
+		data.pool,
+		&data.layout,
+		(data.layout == VK_NULL_HANDLE ? 0 : 1)
 	);
 
 	return material;
+}
+void VulkanGraphicDevice::update(Material* material)
+{
+	VulkanProgram::updateDescriptorSet(m_context.device, material);
 }
 
 void VulkanGraphicDevice::destroy(Material* material)
