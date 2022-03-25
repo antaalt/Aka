@@ -20,6 +20,26 @@ struct VulkanTexture : Texture
 	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips = 0, uint32_t baseLayer = 0);
 	static VkImageAspectFlags getAspectFlag(TextureFormat format);
 	static VkAccessFlags accessFlagForLayout(VkImageLayout layout);
+	static void transitionImageLayout(
+		VkCommandBuffer cmd,
+		VkImage image,
+		VkImageLayout oldLayout,
+		VkImageLayout newLayout,
+		VkImageSubresourceRange subResource,
+		VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
+	static void insertMemoryBarrier(
+		VkCommandBuffer cmd,
+		VkImage image,
+		VkImageLayout oldLayout,
+		VkImageLayout newLayout,
+		VkImageSubresourceRange subResource,
+		VkPipelineStageFlags srcStage,
+		VkPipelineStageFlags dstStage,
+		VkAccessFlags srcAccess,
+		VkAccessFlags dstAccess
+	);
 
 	void generateMips(VkCommandBuffer cmd);
 	void transitionImageLayout(

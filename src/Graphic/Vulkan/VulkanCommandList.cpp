@@ -145,11 +145,49 @@ void VulkanCommandList::beginRenderPass(const Framebuffer* framebuffer, const Cl
 		clearValues.push_back(depthClear);
 	}
 
-	for (uint32_t i = 0; i < framebuffer->framebuffer.count; i++)
-		reinterpret_cast<VulkanTexture*>(framebuffer->colors[i].texture)->vk_layout = vk_framebuffer->isSwapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	
+	// Transition to attachment optimal if shader resource
 	if (vk_framebuffer->hasDepthStencil())
-		reinterpret_cast<VulkanTexture*>(framebuffer->depth.texture)->vk_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	{
+		AKA_ASSERT(has(vk_framebuffer->depth.texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(vk_framebuffer->depth.texture->flags, TextureFlag::ShaderResource))
+		{
+			VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
+			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			{
+				vk_texture->transitionImageLayout(
+					vk_command,
+					VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+					VkImageSubresourceRange{ 
+						VulkanTexture::getAspectFlag(vk_texture->format),
+						0, vk_texture->levels,
+						0, vk_texture->layers
+					}
+				);
+			}
+		}
+	}
+	for ( uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
+	{
+		const Attachment& att = vk_framebuffer->colors[i];
+		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(att.texture);
+		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(vk_texture->flags, TextureFlag::ShaderResource))
+		{
+			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
+			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+			{
+				vk_texture->transitionImageLayout(
+					vk_command,
+					VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+					VkImageSubresourceRange{
+						VulkanTexture::getAspectFlag(vk_texture->format),
+						0, vk_texture->levels,
+						0, vk_texture->layers
+					}
+				);
+			}
+		}
+	}
 
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -167,6 +205,77 @@ void VulkanCommandList::endRenderPass()
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	vkCmdEndRenderPass(vk_command);
+
+	// Transition to shader resource optimal
+	// TODO color too
+	/*if (vk_framebuffer->hasDepthStencil())
+	{
+		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
+		if (has(vk_framebuffer->depth.texture->flags, TextureFlag::ShaderResource))
+		{
+			VulkanTexture::transitionImageLayout(
+				vk_command,
+				vk_texture->vk_image,
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // VK_IMAGE_LAYOUT_UNDEFINED
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				VkImageSubresourceRange{
+					VulkanTexture::getAspectFlag(vk_texture->format),
+					0, 1,
+					0, 1
+				}
+			);
+			vk_texture->vk_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+		else
+		{
+			//vk_texture->vk_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		}
+	}*/
+
+	if (vk_framebuffer->hasDepthStencil())
+	{
+		AKA_ASSERT(has(vk_framebuffer->depth.texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(vk_framebuffer->depth.texture->flags, TextureFlag::ShaderResource))
+		{
+			VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
+			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+			{
+				vk_texture->transitionImageLayout(
+					vk_command,
+					VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+					VkImageSubresourceRange{
+						VulkanTexture::getAspectFlag(vk_texture->format),
+						0, vk_texture->levels,
+						0, vk_texture->layers
+					}
+				);
+			}
+		}
+	}
+	for (uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
+	{
+		const Attachment& att = vk_framebuffer->colors[i];
+		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(att.texture);
+		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(vk_texture->flags, TextureFlag::ShaderResource))
+		{
+			AKA_ASSERT(!vk_framebuffer->isSwapchain, "Swapchain should not be a shader resource.");
+			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
+			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+			{
+				vk_texture->transitionImageLayout(
+					vk_command,
+					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // vk_framebuffer->isSwapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+					VkImageSubresourceRange{
+						VulkanTexture::getAspectFlag(vk_texture->format),
+						0, vk_texture->levels,
+						0, vk_texture->layers
+					}
+				);
+			}
+		}
+	}
+	
 	this->vk_framebuffer = nullptr;
 }
 
@@ -196,6 +305,7 @@ void VulkanCommandList::bindMaterial(uint32_t index, const Material* material)
 
 		const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(material);
 		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipeline->vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
+		this->vk_material[index] = vk_material;
 	}
 }
 void VulkanCommandList::bindMaterials(const Material* const* materials, uint32_t count) 
@@ -220,6 +330,7 @@ void VulkanCommandList::bindMaterials(const Material* const* materials, uint32_t
 
 			const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(materials[i]);
 			vk_sets[i] = vk_material->vk_descriptorSet;
+			this->vk_material[i] = vk_material;
 		}
 		else
 		{
@@ -287,6 +398,7 @@ void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32
 }
 void VulkanCommandList::drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount) 
 {
+	// TODO check binded render target are not also binded as input.
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	uint32_t instanceOffset = 0;
 	vkCmdDrawIndexed(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);

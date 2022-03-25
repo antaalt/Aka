@@ -85,11 +85,16 @@ void VulkanProgram::updateDescriptorSet(VkDevice device, const Material* materia
 		case ShaderBindingType::SampledImage: {
 			Texture* texture = material->images[iBinding];
 			Sampler* sampler = material->samplers[iBinding];
-			AKA_ASSERT(texture->type == TextureType::Texture2D || texture->type == TextureType::TextureCubeMap, "Invalid texture binding, skipping.");
+			AKA_ASSERT(
+				texture->type == TextureType::Texture2D || 
+				texture->type == TextureType::TextureCubeMap || 
+				texture->type == TextureType::Texture2DArray,
+				"Invalid texture binding, skipping."
+			);
 			VkDescriptorImageInfo& vk_image = imageDescriptors[imageIndex++];
 			vk_image.imageView = reinterpret_cast<VulkanTexture*>(texture)->vk_view;
 			vk_image.sampler = reinterpret_cast<VulkanSampler*>(sampler)->vk_sampler;
-			vk_image.imageLayout = reinterpret_cast<VulkanTexture*>(texture)->vk_layout;
+			vk_image.imageLayout = Texture::hasDepth(texture->format) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;//reinterpret_cast<VulkanTexture*>(texture)->vk_layout;
 			descriptorWrites[iBinding].pImageInfo = &vk_image;
 			break;
 		}
@@ -99,7 +104,7 @@ void VulkanProgram::updateDescriptorSet(VkDevice device, const Material* materia
 			VkDescriptorImageInfo& vk_image = imageDescriptors[imageIndex++];
 			vk_image.imageView = reinterpret_cast<VulkanTexture*>(texture)->vk_view;
 			vk_image.sampler = VK_NULL_HANDLE;
-			vk_image.imageLayout = reinterpret_cast<VulkanTexture*>(texture)->vk_layout;
+			vk_image.imageLayout = Texture::hasDepth(texture->format) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;//reinterpret_cast<VulkanTexture*>(texture)->vk_layout;
 			descriptorWrites[iBinding].pImageInfo = &vk_image;
 			break;
 		}

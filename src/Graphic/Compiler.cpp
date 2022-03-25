@@ -187,6 +187,7 @@ Compiler::Compiler()
 bool Compiler::parse(const Path& path, ShaderType type, const char** defines, size_t defineCount)
 {
 	String file;
+	String name = OS::File::basename(path);
 	if (!OS::File::read(path, &file))
 		return false;
 
@@ -217,7 +218,7 @@ bool Compiler::parse(const Path& path, ShaderType type, const char** defines, si
 	glslang::TShader shader(stage);
 
 	char* shaderString = file.cstr();
-	char* shaderName = OS::File::basename(path).cstr();
+	char* shaderName = name.cstr();
 	int shaderLength = (int)file.length();
 	shader.setStringsWithLengthsAndNames(&shaderString, &shaderLength, &shaderName, 1);
 	shader.setInvertY(false);

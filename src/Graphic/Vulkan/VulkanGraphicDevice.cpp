@@ -37,6 +37,8 @@ Frame* VulkanGraphicDevice::frame()
 {
 	// TODO wait then resize if require resize (shutdown and recreate)
 	Frame* frame = m_swapchain.acquireNextImage(&m_context);
+	if (frame == nullptr)
+		return nullptr;
 	frame->commandList = acquireCommandList();
 	frame->commandList->begin();
 	return frame;

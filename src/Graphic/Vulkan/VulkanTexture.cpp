@@ -39,6 +39,20 @@ VkAccessFlags VulkanTexture::accessFlagForLayout(VkImageLayout layout)
 	}
 }
 
+void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subResource, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage)
+{
+	VulkanTexture::insertMemoryBarrier(
+		cmd, 
+		image,
+		oldLayout, newLayout,
+		subResource,
+		srcStage,
+		dstStage,
+		accessFlagForLayout(oldLayout),
+		accessFlagForLayout(newLayout)
+	);
+}
+
 void VulkanTexture::transitionImageLayout(
 	VkCommandBuffer cmd,
 	VkImageLayout newLayout, 
@@ -289,7 +303,13 @@ Texture* VulkanGraphicDevice::createTexture(
 	VK_CHECK_RESULT(vkBindImageMemory(m_context.device, image, memory, 0));
 
 	// Create View
-	VkImageView view = VulkanTexture::createVkImageView(m_context.device, image, vk_type, vk_format, vk_aspect, levels, layers);
+	// View must only have one aspect flag
+	VkImageAspectFlags vk_viewAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	if (Texture::hasDepth(format))
+		vk_viewAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+	else if (Texture::hasStencil(format))
+		vk_viewAspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+	VkImageView view = VulkanTexture::createVkImageView(m_context.device, image, vk_type, vk_format, vk_viewAspect, levels, layers);
 
 	// Make
 	VulkanTexture* texture = makeTexture(
@@ -353,8 +373,16 @@ Texture* VulkanGraphicDevice::createTexture(
 		{
 			if (Texture::hasDepth(format) || Texture::hasStencil(format))
 			{
-				layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-				dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+				if (has(flags, TextureFlag::ShaderResource))
+				{
+					layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;// VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+					dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				}
+				else
+				{
+					layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+					dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+				}
 			}
 			else
 			{
@@ -518,6 +546,29 @@ VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkI
 	VkImageView view;
 	VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, nullptr, &view));
 	return view;
+}
+
+void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subResource, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess)
+{
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange = subResource;
+	barrier.srcAccessMask = srcAccess;
+	barrier.dstAccessMask = dstAccess;
+
+	vkCmdPipelineBarrier(
+		cmd,
+		srcStage, dstStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
 }
 
 void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)

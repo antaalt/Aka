@@ -23,7 +23,7 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 		vk_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		vk_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		vk_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		vk_attachment.finalLayout = swapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		vk_attachment.finalLayout = swapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		vk_colorAttachmentsReferences[i].attachment = static_cast<uint32_t>(i);
 		vk_colorAttachmentsReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -39,7 +39,7 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // Should be VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL if rendertarrget & shader resource
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;// Should be VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL if rendertarrget & shader resource
 
 		vk_depthAttachment.attachment = static_cast<uint32_t>(vk_attachments.size());
 		vk_depthAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;

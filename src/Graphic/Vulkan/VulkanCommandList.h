@@ -41,7 +41,7 @@ struct VulkanCommandList : CommandList
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
 	const VulkanPipeline* vk_pipeline;
-	const Material* vk_material;
+	const Material* vk_material[ShaderBindingState::MaxSetCount];
 	const VulkanFramebuffer* vk_framebuffer;
 	const VulkanBuffer* vk_indices;
 	const VulkanBuffer* vk_vertices;
