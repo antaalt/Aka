@@ -7,7 +7,7 @@
 
 namespace aka {
 
-struct Material
+struct DescriptorSet
 {
 	ShaderBindingState bindings;
 
@@ -21,8 +21,8 @@ struct Material
 	void setSampledImage(uint32_t slot, Texture* texture, Sampler* sampler);
 	void setStorageImage(uint32_t slot, Texture* texture);
 
-	static Material* create(const ShaderBindingState& state);
-	static void destroy(Material* program);
+	static DescriptorSet* create(const ShaderBindingState& state);
+	static void destroy(DescriptorSet* set);
 };
 
 };

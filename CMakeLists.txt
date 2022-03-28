@@ -61,7 +61,7 @@ add_library (Aka
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
 	
 	"src/Rendering/Mesh.cpp" 
-	"src/Rendering/Material.cpp" 
+	 
 
 	"src/Graphic/Compiler.cpp"
 	"src/Graphic/Program.cpp"
@@ -72,6 +72,7 @@ add_library (Aka
 	"src/Graphic/Pipeline.cpp"
 	"src/Graphic/Sampler.cpp"
 	"src/Graphic/Buffer.cpp"
+	"src/Graphic/DescriptorSet.cpp"
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"

@@ -1,9 +1,9 @@
-#include <Aka/Rendering/Material.h>
+#include <Aka/Graphic/DescriptorSet.h>
 #include <Aka/Core/Application.h>
 
 namespace aka {
 
-void Material::setUniformBuffer(uint32_t slot, Buffer* buffer)
+void DescriptorSet::setUniformBuffer(uint32_t slot, Buffer* buffer)
 {
 	AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::UniformBuffer)
@@ -11,7 +11,7 @@ void Material::setUniformBuffer(uint32_t slot, Buffer* buffer)
 	buffers[slot] = buffer;
 }
 
-void Material::setStorageBuffer(uint32_t slot, Buffer* buffer)
+void DescriptorSet::setStorageBuffer(uint32_t slot, Buffer* buffer)
 {
 	AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::UniformBuffer)
@@ -19,7 +19,7 @@ void Material::setStorageBuffer(uint32_t slot, Buffer* buffer)
 	buffers[slot] = buffer;
 }
 
-void Material::setSampledImage(uint32_t slot, Texture* texture, Sampler* sampler)
+void DescriptorSet::setSampledImage(uint32_t slot, Texture* texture, Sampler* sampler)
 {
 	AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::SampledImage)
@@ -28,7 +28,7 @@ void Material::setSampledImage(uint32_t slot, Texture* texture, Sampler* sampler
 	samplers[slot] = sampler;
 }
 
-void Material::setStorageImage(uint32_t slot, Texture* texture)
+void DescriptorSet::setStorageImage(uint32_t slot, Texture* texture)
 {
 	AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::StorageImage)
@@ -37,14 +37,14 @@ void Material::setStorageImage(uint32_t slot, Texture* texture)
 	samplers[slot] = nullptr;
 }
 
-Material* Material::create(const ShaderBindingState& bindings)
+DescriptorSet* DescriptorSet::create(const ShaderBindingState& bindings)
 {
-	return Application::app()->graphic()->createMaterial(bindings);
+	return Application::app()->graphic()->createDescriptorSet(bindings);
 }
 
-void Material::destroy(Material* material)
+void DescriptorSet::destroy(DescriptorSet* descriptorSet)
 {
-	Application::app()->graphic()->destroy(material);
+	Application::app()->graphic()->destroy(descriptorSet);
 }
 
 };

@@ -14,6 +14,7 @@
 #include <Aka/Graphic/Framebuffer.h>
 #include <Aka/Graphic/Pipeline.h>
 #include <Aka/Graphic/CommandList.h>
+#include <Aka/Graphic/DescriptorSet.h>
 #include <Aka/Graphic/PhysicalDevice.h>
 
 namespace aka {
@@ -69,9 +70,9 @@ public:
 	// Programs
 	virtual Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
 	virtual void destroy(Program* program) = 0;
-	virtual Material* createMaterial(const ShaderBindingState& bindings) = 0;
-	virtual void update(Material* material) = 0;
-	virtual void destroy(Material* material) = 0;
+	virtual DescriptorSet* createDescriptorSet(const ShaderBindingState& bindings) = 0;
+	virtual void update(DescriptorSet* set) = 0;
+	virtual void destroy(DescriptorSet* set) = 0;
 
 	// Device
 	virtual uint32_t getPhysicalDeviceCount() = 0;

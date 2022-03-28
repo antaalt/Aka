@@ -3,7 +3,6 @@
 #if defined(AKA_USE_VULKAN)
 
 #include <Aka/Graphic/CommandList.h>
-#include <Aka/Rendering/Material.h>
 
 #include "VulkanContext.h"
 
@@ -22,8 +21,8 @@ struct VulkanCommandList : CommandList
 	void endRenderPass() override;
 
 	void bindPipeline(const Pipeline* pipeline) override;
-	void bindMaterial(uint32_t index, const Material* material) override;
-	void bindMaterials(const Material* const* material, uint32_t count) override;
+	void bindDescriptorSet(uint32_t index, const DescriptorSet* set) override;
+	void bindDescriptorSets(const DescriptorSet* const* sets, uint32_t count) override;
 
 	void bindVertexBuffer(const Buffer* const* buffer, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) override;
 	void bindIndexBuffer(const Buffer* buffer, IndexFormat format, uint32_t offset) override;
@@ -41,7 +40,7 @@ struct VulkanCommandList : CommandList
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
 	const VulkanPipeline* vk_pipeline;
-	const Material* vk_material[ShaderBindingState::MaxSetCount];
+	const DescriptorSet* vk_sets[ShaderBindingState::MaxSetCount];
 	const VulkanFramebuffer* vk_framebuffer;
 	const VulkanBuffer* vk_indices;
 	const VulkanBuffer* vk_vertices;

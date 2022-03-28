@@ -14,6 +14,7 @@
 #elif defined(AKA_USE_D3D11) || defined(AKA_USE_VULKAN)
 #define GEOMETRY_CLIP_SPACE_POSITIVE // [0, 1]
 #else
+#error "Undetected API"
 #endif
 
 #include <geo/geometry.h>

@@ -44,7 +44,7 @@ struct Program
 	Shader* geometry;
 	Shader* compute;
 
-	ShaderBindingState bindings[ShaderBindingState::MaxSetCount];
+	ShaderBindingState bindings[ShaderBindingState::MaxSetCount]; // TODO rename sets
 
 	uint32_t setCount;
 

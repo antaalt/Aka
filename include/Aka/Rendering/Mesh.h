@@ -4,7 +4,6 @@
 
 #include <Aka/Graphic/Pipeline.h>
 #include <Aka/Graphic/Buffer.h>
-#include <Aka/Rendering/Material.h>
 
 namespace aka {
 

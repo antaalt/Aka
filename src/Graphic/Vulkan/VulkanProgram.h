@@ -2,7 +2,7 @@
 
 #include <Aka/Graphic/Program.h>
 #include <Aka/Graphic/Shader.h>
-#include <Aka/Rendering/Material.h>
+#include <Aka/Graphic/DescriptorSet.h>
 
 #include "VulkanContext.h"
 
@@ -21,12 +21,12 @@ struct VulkanProgram : Program
 	//VkDescriptorSet vk_descriptorSet;
 	//VkPipelineLayout vk_pipelineLayout; // soft reference
 
-	static void updateDescriptorSet(VkDevice device, const Material* material);
+	static void updateDescriptorSet(VkDevice device, const DescriptorSet* set);
 	static VkDescriptorSetLayout createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings, VkDescriptorPool* pool);
 	static VkDescriptorSet createVkDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout* layouts, uint32_t count);
 };
 
-struct VulkanMaterial : Material
+struct VulkanDescriptorSet : DescriptorSet
 {
 	VkDescriptorSet vk_descriptorSet;
 };

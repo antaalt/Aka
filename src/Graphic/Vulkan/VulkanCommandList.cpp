@@ -289,26 +289,26 @@ void VulkanCommandList::bindPipeline(const Pipeline* pipeline)
 	this->vk_pipeline = vk_pipeline;
 
 }
-void VulkanCommandList::bindMaterial(uint32_t index, const Material* material)
+void VulkanCommandList::bindDescriptorSet(uint32_t index, const DescriptorSet* set)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_pipeline != nullptr, "Invalid pipeline");
 
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
-	if (material->bindings.count > 0)
+	if (set->bindings.count > 0)
 	{
 		// TODO This might be done only once, when switching buffer / texture...
 		// Check for dirty
 		// if (material->dirty)
 		//if (vk_material != material)
-		VulkanProgram::updateDescriptorSet(vk_device, material);
+		VulkanProgram::updateDescriptorSet(vk_device, set);
 
-		const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(material);
+		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(set);
 		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipeline->vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
-		this->vk_material[index] = vk_material;
+		this->vk_sets[index] = vk_material;
 	}
 }
-void VulkanCommandList::bindMaterials(const Material* const* materials, uint32_t count) 
+void VulkanCommandList::bindDescriptorSets(const DescriptorSet* const* sets, uint32_t count)
 {
 	if (count < 1)
 		return;
@@ -320,7 +320,7 @@ void VulkanCommandList::bindMaterials(const Material* const* materials, uint32_t
 	VkPipelineLayout vk_layout = vk_pipeline->vk_pipelineLayout;
 	for (uint32_t i = 0; i < count; i++)
 	{
-		if (materials[i]->bindings.count > 0)
+		if (sets[i]->bindings.count > 0)
 		{
 			// TODO This might be done only once, when switching buffer / texture...
 			// Check for dirty
@@ -328,9 +328,9 @@ void VulkanCommandList::bindMaterials(const Material* const* materials, uint32_t
 			//if (vk_material != material)
 			//VulkanProgram::updateDescriptorSet(vk_device, materials[i]);
 
-			const VulkanMaterial* vk_material = reinterpret_cast<const VulkanMaterial*>(materials[i]);
-			vk_sets[i] = vk_material->vk_descriptorSet;
-			this->vk_material[i] = vk_material;
+			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(sets[i]);
+			vk_sets[i] = vk_set->vk_descriptorSet;
+			this->vk_sets[i] = vk_set;
 		}
 		else
 		{

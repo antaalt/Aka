@@ -25,12 +25,12 @@
 #include "Memory/Allocator/LinearAllocator.h"
 #include "Memory/Allocator/PoolAllocator.h"
 
-#include "Rendering/Material.h"
 #include "Rendering/Mesh.h"
 
 #include "Graphic/Compiler.h"
 #include "Graphic/GraphicDevice.h"
 #include "Graphic/Framebuffer.h"
+#include "Graphic/DescriptorSet.h"
 #include "Graphic/Buffer.h"
 #include "Graphic/Texture.h"
 #include "Graphic/Sampler.h"

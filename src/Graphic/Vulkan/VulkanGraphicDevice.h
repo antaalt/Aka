@@ -31,9 +31,9 @@ public:
 	// Programs
 	Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
 	void destroy(Program* handle) override;
-	Material* createMaterial(const ShaderBindingState& bindings) override;
-	void update(Material* material) override;
-	void destroy(Material* material) override;
+	DescriptorSet* createDescriptorSet(const ShaderBindingState& bindings) override;
+	void update(DescriptorSet* set) override;
+	void destroy(DescriptorSet* set) override;
 
 	// Textures
 	Texture* createTexture(
@@ -150,7 +150,7 @@ private:
 	GraphicPool<VulkanProgram> m_programPool;
 	GraphicPool<VulkanFramebuffer> m_framebufferPool;
 	GraphicPool<VulkanPipeline> m_pipelinePool;
-	GraphicPool<VulkanMaterial> m_materialPool;
+	GraphicPool<VulkanDescriptorSet> m_descriptorPool;
 	//GraphicPool<VulkanCommandList> m_commandPool;
 };
 
