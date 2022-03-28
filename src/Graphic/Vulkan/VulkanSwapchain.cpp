@@ -195,7 +195,6 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		VK_CHECK_RESULT(vkCreateImageView(context->device, &viewInfo, nullptr, &view));
 
 		backbuffers[i] = device->m_framebufferPool.acquire();
-		backbuffers[i]->framebuffer.count = 1;
 		backbuffers[i]->colors[0].layer = 0;
 		backbuffers[i]->colors[0].level = 0;
 		backbuffers[i]->colors[0].flag = AttachmentFlag::None;
@@ -211,9 +210,12 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			VK_IMAGE_LAYOUT_UNDEFINED
 		);
 		backbuffers[i]->isSwapchain = true;
+		backbuffers[i]->framebuffer.count = 1;
 		backbuffers[i]->framebuffer.depth.format = depthFormat;
+		backbuffers[i]->framebuffer.depth.flags = AttachmentFlag::Load;
 		backbuffers[i]->framebuffer.count = 1;
 		backbuffers[i]->framebuffer.colors[0].format = colorFormat;
+		backbuffers[i]->framebuffer.colors[0].flags = AttachmentFlag::Load;
 	}
 
 	// Frames

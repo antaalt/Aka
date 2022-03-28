@@ -31,8 +31,20 @@
 
 namespace aka {
 
+#if defined(AKA_USE_VULKAN)
+struct ImGuiRenderData
+{
+	VkDescriptorPool descriptorPool;
+	//VkRenderPass renderPass;
+	//std::vector<VkFramebuffer> framebuffers;
+};
+#else
+struct ImGuiRenderData {};
+#endif
+
 void ImGuiLayer::onLayerCreate()
 {
+	m_renderData = new ImGuiRenderData;
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -53,28 +65,53 @@ void ImGuiLayer::onLayerCreate()
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
 #elif defined(AKA_USE_VULKAN)
+	VulkanGraphicDevice* device = reinterpret_cast<VulkanGraphicDevice*>(Application::app()->graphic());
+	VulkanContext& context = device->context();
+
+	{ // Custom descriptor pool for imgui
+		VkDescriptorPoolSize pool_sizes[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
+		VK_CHECK_RESULT(vkCreateDescriptorPool(context.device, &pool_info, nullptr, &m_renderData->descriptorPool));
+	}
+
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
-	VulkanGraphicDevice* device;
 	ImGui_ImplVulkan_InitInfo info{};
-	info.Instance = device->context().instance;
-	info.PhysicalDevice = device->context().physicalDevice;
-	info.Device = device->context().device;
-	info.QueueFamily = device->context().graphicQueue.index;
-	info.Queue = device->context().graphicQueue.queue;
+	info.Instance = context.instance;
+	info.PhysicalDevice = context.physicalDevice;
+	info.Device = context.device;
+	info.QueueFamily = context.graphicQueue.index;
+	info.Queue = context.graphicQueue.queue;
 	info.PipelineCache = VK_NULL_HANDLE;
-	info.DescriptorPool = device->context().commandPool;
-	info.MinImageCount = 1; // >= 2
+	info.DescriptorPool = m_renderData->descriptorPool;
+	info.MinImageCount = 2; // >= 2
 	info.ImageCount = static_cast<uint32_t>(device->swapchain().imageCount); // >= MinImageCount
 	info.CheckVkResultFn = [](VkResult err) {
 		VK_CHECK_RESULT(err);
 	};
-	ImGui_ImplVulkan_Init(&info, renderPass);
 
-	VkCommandBuffer cmdBuffer = context.getDevice().createSingleTimeCommand();
+	ImGui_ImplVulkan_Init(&info, device->swapchain().backbuffers[0]->vk_renderpass);
 
+	VkCommandBuffer cmdBuffer = VulkanCommandList::createSingleTime(context.device, context.commandPool);
 	ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
-
-	context.getDevice().endSingleTimeCommand(cmdBuffer);
+	VulkanCommandList::endSingleTime(context.device, context.commandPool, cmdBuffer, context.graphicQueue.queue);
 
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 #endif
@@ -172,16 +209,20 @@ void ImGuiLayer::onLayerCreate()
 
 void ImGuiLayer::onLayerDestroy()
 {
+	GraphicDevice* device = Application::app()->graphic();
+	VulkanGraphicDevice * vk_device = reinterpret_cast<VulkanGraphicDevice*>(device);
+	VulkanContext& vk_context = vk_device->context();
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
 #elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_Shutdown();
 #elif defined(AKA_USE_VULKAN)
 	ImGui_ImplVulkan_Shutdown();
-	// TODO
 #endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+	vkDestroyDescriptorPool(vk_context.device, m_renderData->descriptorPool, nullptr);
+	delete m_renderData;
 }
 
 void ImGuiLayer::onLayerFrame()
@@ -192,14 +233,17 @@ void ImGuiLayer::onLayerFrame()
 #elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_NewFrame();
 #elif defined(AKA_USE_VULKAN)
-	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplVulkan_NewFrame(); // Nothing done
 #endif
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 }
 
-void ImGuiLayer::onLayerPresent()
+void ImGuiLayer::onLayerRender(Frame* frame)
 {
+	CommandList* cmd = frame->commandList;
+	VulkanCommandList* vk_cmd = reinterpret_cast<VulkanCommandList*>(cmd);
+	GraphicDevice* device = Application::app()->graphic();
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
 	// TODO do not enforce backbuffer
@@ -210,47 +254,18 @@ void ImGuiLayer::onLayerPresent()
 	GraphicDevice* device = Application::graphic();
 	D3D11Backbuffer* backbuffer = (D3D11Backbuffer*)device->backbuffer().get();
 	backbuffer->bind();
-	
+
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
-	vk::CommandBuffer& cmdBuff = m_commandBuffers[frame.imageIndex()];
-
-	cmdBuff.begin();
-
-	VkRenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = renderPass;
-	renderPassInfo.framebuffer = frames[frame.imageIndex()];
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = VkExtent2D{ context.getWidth(), context.getHeight() };
-	vkCmdBeginRenderPass(cmdBuff(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuff());
-
-	vkCmdEndRenderPass(cmdBuff());
-
-	cmdBuff.end();
-
-	VkCommandBuffer commandBuffer = cmdBuff();
-	VkSemaphore waitSemaphore[] = { frame.renderFinishedSemaphore };
-	VkSemaphore signalSemaphore[] = { m_signalSemaphore[frame.imageIndex()] };
-	// Replace signal frame semaphore for present.
-	frame.renderFinishedSemaphore = m_signalSemaphore[frame.imageIndex()];
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-	// Wait for rendering to finish
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphore;
-	// Signal semaphore for present
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphore;
-
-	VK_CHECK_RESULT(vkQueueSubmit(context.getDevice().queue.graphics, 1, &submitInfo, VK_NULL_HANDLE));
+	// TODO do not enforce backbuffer
+	cmd->beginRenderPass(device->backbuffer(frame), ClearState{});
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->vk_command);
+	cmd->endRenderPass();
 #endif
+}
+
+void ImGuiLayer::onLayerPresent()
+{
 }
 
 };

@@ -23,7 +23,7 @@ private:
 	void onReceive(const AppDestroyEvent& event) { onLayerDestroy(); }
 	void onReceive(const AppFixedUpdateEvent& event) { onLayerFixedUpdate(event.deltaTime); }
 	void onReceive(const AppUpdateEvent& event) { onLayerUpdate(event.deltaTime); }
-	void onReceive(const AppRenderEvent& event) { onLayerRender(); }
+	void onReceive(const AppRenderEvent& event) { onLayerRender(event.frame); }
 	void onReceive(const AppFrameEvent& event) { onLayerFrame(); }
 	void onReceive(const AppPresentEvent& event) { onLayerPresent(); }
 	void onReceive(const AppResizeEvent& event) { onLayerResize(event.width, event.height); }
@@ -34,7 +34,7 @@ protected:
 	virtual void onLayerUpdate(Time deltaTime) {}
 	virtual void onLayerFixedUpdate(Time deltaTime) {}
 	virtual void onLayerFrame() {}
-	virtual void onLayerRender() {}
+	virtual void onLayerRender(Frame* frame) {}
 	virtual void onLayerPresent() {}
 
 	virtual void onLayerResize(uint32_t width, uint32_t height) {}

@@ -53,7 +53,7 @@ if(ENABLED)
 		"${SRC}"
 	)
 	target_include_directories(AkaImGui PRIVATE ${INCLUDE_DIRS})
-	#target_compile_definitions(AkaImGui PUBLIC AKA_USE_IMGUI_LAYER ${COMPILES})
+	target_compile_definitions(AkaImGui PUBLIC AKA_USE_IMGUI_LAYER ${COMPILES})
 	target_link_libraries(AkaImGui PRIVATE ${LIBS})
 
 	target_include_directories(AkaImGui
