@@ -180,6 +180,15 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, vk_images.data()));
 	for (size_t i = 0; i < imageCount; i++)
 	{
+		backbuffers[i] = device->m_framebufferPool.acquire();
+		// Framebuffer
+		backbuffers[i]->framebuffer.depth.format = depthFormat;
+		backbuffers[i]->framebuffer.depth.loadOp = AttachmentLoadOp::Load;
+		backbuffers[i]->framebuffer.colors[0].format = colorFormat;
+		backbuffers[i]->framebuffer.colors[0].loadOp = AttachmentLoadOp::Load;
+		backbuffers[i]->framebuffer.count = 1;
+
+
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewInfo.image = vk_images[i];
@@ -194,10 +203,10 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		VkImageView view = VK_NULL_HANDLE;
 		VK_CHECK_RESULT(vkCreateImageView(context->device, &viewInfo, nullptr, &view));
 
-		backbuffers[i] = device->m_framebufferPool.acquire();
 		backbuffers[i]->colors[0].layer = 0;
 		backbuffers[i]->colors[0].level = 0;
 		backbuffers[i]->colors[0].flag = AttachmentFlag::None;
+		backbuffers[i]->colors[0].loadOp = backbuffers[i]->framebuffer.colors[0].loadOp;
 		backbuffers[i]->colors[0].texture = device->makeTexture(
 			extent.width, extent.height, 1,
 			1, 1,
@@ -210,12 +219,6 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			VK_IMAGE_LAYOUT_UNDEFINED
 		);
 		backbuffers[i]->isSwapchain = true;
-		backbuffers[i]->framebuffer.count = 1;
-		backbuffers[i]->framebuffer.depth.format = depthFormat;
-		backbuffers[i]->framebuffer.depth.flags = AttachmentFlag::Load;
-		backbuffers[i]->framebuffer.count = 1;
-		backbuffers[i]->framebuffer.colors[0].format = colorFormat;
-		backbuffers[i]->framebuffer.colors[0].flags = AttachmentFlag::Load;
 	}
 
 	// Frames
@@ -235,6 +238,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	}
 
 	// Create depth buffer
+	// TODO make it optional
 	VkRenderPass vk_renderPass = context->getRenderPass(backbuffers[0]->framebuffer, VulkanRenderPassLayout::Backbuffer);
 	for (size_t i = 0; i < imageCount; i++)
 	{
@@ -288,6 +292,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		backbuffers[i]->depth.layer = 0;
 		backbuffers[i]->depth.level = 0;
 		backbuffers[i]->depth.flag = AttachmentFlag::None;
+		backbuffers[i]->depth.loadOp = backbuffers[i]->framebuffer.depth.loadOp;
 		backbuffers[i]->depth.texture = device->makeTexture(
 			extent.width, extent.height, 1,
 			1, 1,

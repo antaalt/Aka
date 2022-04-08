@@ -22,9 +22,14 @@ ClearMask operator|(ClearMask lhs, ClearMask rhs);
 enum class AttachmentFlag : uint8_t
 {
 	None = 0,
-	Clear = 1 << 0,
-	Load = 1 << 1,
 	AttachTextureObject = (1 << 2), // Attach the object instead of the layer
+};
+
+enum class AttachmentLoadOp : uint8_t
+{
+	Load,
+	Clear,
+	DontCare,
 };
 
 bool has(AttachmentFlag flags, AttachmentFlag flag);
@@ -35,6 +40,7 @@ struct Attachment
 {
 	Texture* texture; // Texture used as attachment
 	AttachmentFlag flag; // Attachment flag
+	AttachmentLoadOp loadOp; // LoadOp setting
 	uint32_t layer; // Layer of the texture used as attachment (if AttachmentFlag::AttachTextureObject not set)
 	uint32_t level; // Level of the mips used as attachment
 };
@@ -44,7 +50,7 @@ struct FramebufferState
 	struct Attachment
 	{
 		TextureFormat format;
-		AttachmentFlag flags;
+		AttachmentLoadOp loadOp;
 	};
 	static constexpr uint32_t MaxColorAttachmentCount = 8;
 

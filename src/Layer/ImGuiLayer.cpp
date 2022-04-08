@@ -35,8 +35,6 @@ namespace aka {
 struct ImGuiRenderData
 {
 	VkDescriptorPool descriptorPool;
-	//VkRenderPass renderPass;
-	//std::vector<VkFramebuffer> framebuffers;
 };
 #else
 struct ImGuiRenderData {};

@@ -13,6 +13,20 @@
 
 namespace aka {
 
+ProgramManager::~ProgramManager()
+{
+	Application* app = Application::app();
+	GraphicDevice* graphic = app->graphic();
+	for (ProgramInfo& program : m_programs)
+	{
+		graphic->destroy(program.program);
+	}
+	for (ShaderInfo& shader : m_shaders)
+	{
+		graphic->destroy(shader.shader);
+	}
+}
+
 Program* ProgramManager::get(const String& name)
 {
 	for (ProgramInfo& info : m_programs)

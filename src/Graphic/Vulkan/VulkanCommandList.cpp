@@ -207,31 +207,6 @@ void VulkanCommandList::endRenderPass()
 	vkCmdEndRenderPass(vk_command);
 
 	// Transition to shader resource optimal
-	// TODO color too
-	/*if (vk_framebuffer->hasDepthStencil())
-	{
-		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
-		if (has(vk_framebuffer->depth.texture->flags, TextureFlag::ShaderResource))
-		{
-			VulkanTexture::transitionImageLayout(
-				vk_command,
-				vk_texture->vk_image,
-				VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // VK_IMAGE_LAYOUT_UNDEFINED
-				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-				VkImageSubresourceRange{
-					VulkanTexture::getAspectFlag(vk_texture->format),
-					0, 1,
-					0, 1
-				}
-			);
-			vk_texture->vk_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		}
-		else
-		{
-			//vk_texture->vk_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		}
-	}*/
-
 	if (vk_framebuffer->hasDepthStencil())
 	{
 		AKA_ASSERT(has(vk_framebuffer->depth.texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
@@ -240,14 +215,18 @@ void VulkanCommandList::endRenderPass()
 			VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
 			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
 			{
-				vk_texture->transitionImageLayout(
+				vk_texture->insertMemoryBarrier(
 					vk_command,
 					VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
 					VkImageSubresourceRange{
 						VulkanTexture::getAspectFlag(vk_texture->format),
 						0, vk_texture->levels,
 						0, vk_texture->layers
-					}
+					},
+					VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+					VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+					VK_ACCESS_SHADER_READ_BIT
 				);
 			}
 		}
@@ -263,14 +242,18 @@ void VulkanCommandList::endRenderPass()
 			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
 			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 			{
-				vk_texture->transitionImageLayout(
+				vk_texture->insertMemoryBarrier(
 					vk_command,
 					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // vk_framebuffer->isSwapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 					VkImageSubresourceRange{
 						VulkanTexture::getAspectFlag(vk_texture->format),
 						0, vk_texture->levels,
 						0, vk_texture->layers
-					}
+					},
+					VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+					VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+					VK_ACCESS_SHADER_READ_BIT
 				);
 			}
 		}

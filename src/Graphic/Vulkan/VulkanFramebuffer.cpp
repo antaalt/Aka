@@ -18,7 +18,7 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 		VkAttachmentDescription& vk_attachment = vk_attachments[i];
 		vk_attachment.format = VulkanContext::tovk(framebufferDesc.colors[i].format);
 		vk_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		vk_attachment.loadOp = has(framebufferDesc.colors[i].flags, AttachmentFlag::Load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
+		vk_attachment.loadOp = (framebufferDesc.colors[i].loadOp == AttachmentLoadOp::Load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
 		vk_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		vk_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		vk_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -34,7 +34,7 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 		VkAttachmentDescription depthAttachment = {};
 		depthAttachment.format = VulkanContext::tovk(framebufferDesc.depth.format);
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = has(framebufferDesc.depth.flags, AttachmentFlag::Load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.loadOp = (framebufferDesc.depth.loadOp == AttachmentLoadOp::Load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -206,7 +206,7 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 		framebuffer->height = min(attachments[i].texture->height, framebuffer->height);
 		framebuffer->colors[i] = attachments[i];
 		framebuffer->framebuffer.colors[i].format = attachments[i].texture->format;
-		framebuffer->framebuffer.colors[i].flags = attachments[i].flag;
+		framebuffer->framebuffer.colors[i].loadOp = attachments[i].loadOp;
 	}
 	if (depth == nullptr)
 	{
@@ -217,7 +217,7 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 	{
 		framebuffer->depth = *depth;
 		framebuffer->framebuffer.depth.format = depth->texture->format;
-		framebuffer->framebuffer.depth.flags = depth->flag;
+		framebuffer->framebuffer.depth.loadOp = depth->loadOp;
 		framebuffer->width = min(depth->texture->width, framebuffer->width);
 		framebuffer->height = min(depth->texture->height, framebuffer->height);
 	}

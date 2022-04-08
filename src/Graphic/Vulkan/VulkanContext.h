@@ -121,13 +121,13 @@ private:
 			{
 				if (lhs.colors[i].format < rhs.colors[i].format) return true;
 				else if (lhs.colors[i].format > rhs.colors[i].format) return false;
-				if (lhs.colors[i].flags < rhs.colors[i].flags) return true;
-				else if (lhs.colors[i].flags > rhs.colors[i].flags) return false;
+				if (lhs.colors[i].loadOp < rhs.colors[i].loadOp) return true;
+				else if (lhs.colors[i].loadOp > rhs.colors[i].loadOp) return false;
 			}
 			if (lhs.depth.format < rhs.depth.format) return true;
 			else if (lhs.depth.format > rhs.depth.format) return false;
-			if (lhs.depth.flags < rhs.depth.flags) return true;
-			else if (lhs.depth.flags > rhs.depth.flags) return false;
+			if (lhs.depth.loadOp < rhs.depth.loadOp) return true;
+			else if (lhs.depth.loadOp > rhs.depth.loadOp) return false;
 			return false; // equal
 		}
 		bool operator()(const ShaderBindingState& lhs, const ShaderBindingState& rhs) const {

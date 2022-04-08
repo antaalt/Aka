@@ -55,11 +55,11 @@ void Application::destroy()
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
 	onDestroy();
 
+	delete m_program;
+	delete m_resource;
 	AudioDevice::destroy(m_audio);
 	GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
-	delete m_program;
-	delete m_resource;
 	
 	m_audio = nullptr;
 	m_graphic = nullptr;

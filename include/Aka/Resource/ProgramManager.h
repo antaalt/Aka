@@ -16,7 +16,7 @@ class ProgramManager :
 {
 public:
 	ProgramManager() {}
-	~ProgramManager() {}
+	~ProgramManager();
 
 	// Get a program from its name
 	Program* get(const String& name);
