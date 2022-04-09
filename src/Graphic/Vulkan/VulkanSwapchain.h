@@ -2,6 +2,7 @@
 
 #include "VulkanContext.h"
 #include <Aka/Core/Container/Vector.h>
+#include <Aka/Core/Event.h>
 
 #include "VulkanFramebuffer.h"
 
@@ -9,7 +10,6 @@ namespace aka {
 
 struct VulkanFrame : Frame
 {
-	bool needRecreation;
 	VkSemaphore acquireSemaphore;
 	VkSemaphore presentSemaphore;
 	VkFence acquireFence;
@@ -20,14 +20,20 @@ struct VulkanFrame : Frame
 
 class VulkanGraphicDevice;
 
-struct VulkanSwapchain
+struct VulkanSwapchain : 
+	EventListener<BackbufferResizeEvent>
 {
 	void initialize(VulkanGraphicDevice* device, PlatformDevice* platform);
 	void shutdown(VulkanGraphicDevice* device);
 
-	VulkanFrame* acquireNextImage(VulkanContext* context);
-	void present(VulkanContext* context, VulkanFrame* frame);
+	void onReceive(const BackbufferResizeEvent& e) override;
+	void recreate(VulkanGraphicDevice* context);
 
+	VulkanFrame* acquireNextImage(VulkanGraphicDevice* context);
+	void present(VulkanGraphicDevice* context, VulkanFrame* frame);
+
+	bool needRecreation;
+	PlatformDevice* platform;
 	VkSwapchainKHR swapchain;
 	//VkSurfaceKHR surface;
 	uint32_t imageCount;

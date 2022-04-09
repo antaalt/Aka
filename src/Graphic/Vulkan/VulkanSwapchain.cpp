@@ -121,6 +121,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 {
 	VulkanContext* context = &device->m_context;
 	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(platform);
+	this->platform = platform;
 
 	VkSurfaceCapabilitiesKHR capabilities;
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context->physicalDevice, context->surface, &capabilities));
@@ -331,30 +332,57 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 	}
 }
 
-VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanContext* context)
+void VulkanSwapchain::onReceive(const BackbufferResizeEvent& e)
+{
+	needRecreation = true;
+}
+
+void VulkanSwapchain::recreate(VulkanGraphicDevice* device)
+{
+	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(platform);
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(glfw3->getGLFW3Handle(), &width, &height);
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(glfw3->getGLFW3Handle(), &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(device->context().device);
+
+	shutdown(device);
+	initialize(device, platform);
+}
+
+VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 {
 	VulkanFrame& vk_frame = frames[currentFrameIndex.value];
 
 	// Wait for the frame to complete before acquiring it.
-	vk_frame.wait(context->device);
+	vk_frame.wait(device->context().device);
 
 	uint32_t imageIndex = 0;
 	VkResult result = vkAcquireNextImageKHR(
-		context->device,
+		device->context().device,
 		swapchain,
 		(std::numeric_limits<uint64_t>::max)(),
 		vk_frame.acquireSemaphore,
 		VK_NULL_HANDLE,//vk_frame.acquireFence,
 		&imageIndex
 	);
-	if (result != VK_SUCCESS)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		Logger::error("Failed to acquire next swapchain image.");
+		recreate(device);
+		return nullptr; // Do not draw this frame.
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
 		return nullptr;
 	}
 
+	// Only reset the fence if we are submitting work
+	vkResetFences(device->context().device, 1, &vk_frame.presentFence);
+	
 	// Set the index 
-	vk_frame.needRecreation = (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR);
 	vk_frame.image.value = imageIndex;
 
 	AKA_ASSERT(FrameIndex::MaxInFlight <= imageCount, "more frames in flight than image available. May induce bugs in application.");
@@ -364,7 +392,7 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanContext* context)
 	return &vk_frame;
 }
 
-void VulkanSwapchain::present(VulkanContext* context, VulkanFrame* frame)
+void VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* frame)
 {
 	VkSemaphore waitSemaphores[] = { frame->presentSemaphore };
 	VkSwapchainKHR swapChains[] = { swapchain };
@@ -377,19 +405,18 @@ void VulkanSwapchain::present(VulkanContext* context, VulkanFrame* frame)
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &frame->image.value;
 
-	VkResult result = vkQueuePresentKHR(context->presentQueue.queue, &presentInfo);
+	VkResult result = vkQueuePresentKHR(device->context().presentQueue.queue, &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || needRecreation)
 	{
-		VK_CHECK_RESULT(vkQueueWaitIdle(context->presentQueue.queue));
-		//return true;
+		needRecreation = false;
+		recreate(device);
 	}
 	else if (result != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to present swap chain image!");
+		Logger::error("Failed to present swap chain image!");
 	}
 	currentFrameIndex.next();
-	//return false;
 }
 
 void VulkanFrame::wait(VkDevice device)

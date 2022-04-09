@@ -252,10 +252,11 @@ void VulkanGraphicDevice::destroy(Program* program)
 	//	vkFreeDescriptorSets(m_context.device, vk_program->vk_descriptorPool, 1, &vk_program->vk_descriptorSet);
 	for (uint32_t i = 0; i < vk_program->setCount; i++)
 	{
-		if (vk_program->vk_descriptorPool)
-			vkDestroyDescriptorPool(m_context.device, vk_program->vk_descriptorPool[i], nullptr);
-		if (vk_program->vk_descriptorSetLayout)
-			vkDestroyDescriptorSetLayout(m_context.device, vk_program->vk_descriptorSetLayout[i], nullptr);
+		// This is stored in cache so should only unreference it
+		//if (vk_program->vk_descriptorPool[i])
+		//	vkDestroyDescriptorPool(m_context.device, vk_program->vk_descriptorPool[i], nullptr);
+		//if (vk_program->vk_descriptorSetLayout[i])
+		//	vkDestroyDescriptorSetLayout(m_context.device, vk_program->vk_descriptorSetLayout[i], nullptr);
 	}
 	m_programPool.release(vk_program);
 }
