@@ -317,7 +317,7 @@ Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBinding
 	}
 	String finalPath = compiledPath + fileName;
 	Blob shader;
-	//if (!OS::File::exist(finalPath) || OS::File::lastWrite(finalPath) < OS::File::lastWrite(path))
+	if (!OS::File::exist(finalPath) || OS::File::lastWrite(finalPath) < OS::File::lastWrite(path))
 	{
 		Compiler compiler;
 		if (!compiler.parse(path, type))
@@ -343,17 +343,28 @@ Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBinding
 			Logger::warn("Failed to cache shader");
 		Logger::debug("Shader ", OS::File::name(path), " successfully compiled.");
 	}
-	/*else
+	else
 	{
 		if (!OS::File::read(finalPath, &shader))
 		{
 			Logger::error("Could not read ", finalPath);
 			return nullptr;
 		}
-		*vertices = {};
-		*bindings = {};
+		Compiler compiler;
+		compiler.set(shader.data(), shader.size());
+		if (vertices && type == ShaderType::Vertex)
+			*vertices = compiler.getVertexBindings();
+		if (bindings)
+		{
+			for (uint32_t i = 0; i < ShaderBindingState::MaxSetCount; i++)
+			{
+				bindings[i] = compiler.getShaderBindings(i);
+				if (bindings[i].count > 0)
+					*setCount = i + 1;
+			}
+		}
 		Logger::debug("Shader ", OS::File::name(path), " loaded from cache.");
-	}*/
+	}
 	return Shader::compile(type, shader.data(), shader.size());
 
 }

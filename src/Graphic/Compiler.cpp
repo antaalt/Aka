@@ -298,6 +298,11 @@ Blob Compiler::compile(GraphicAPI api)
 	}
 }
 
+void Compiler::set(const byte_t* bytes, size_t count)
+{
+	m_spirv = std::vector<uint32_t>(bytes, bytes + count);
+}
+
 ShaderType getShaderType(spv::ExecutionModel executionModel)
 {
 	switch (executionModel)

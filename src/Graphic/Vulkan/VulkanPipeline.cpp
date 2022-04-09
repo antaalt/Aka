@@ -404,13 +404,10 @@ VkVertexInputBindingDescription VulkanPipeline::getVertexBindings(const VertexBi
 }
 
 Pipeline* VulkanGraphicDevice::createPipeline(
-	Shader** shaders,
-	uint32_t shaderCount,
+	Program* program,
 	PrimitiveType primitive,
 	const FramebufferState& framebuffer,
 	const VertexBindingState& vertices,
-	const ShaderBindingState* bindings,
-	uint32_t shaderBindingCounts,
 	const ViewportState& viewport,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -419,10 +416,11 @@ Pipeline* VulkanGraphicDevice::createPipeline(
 	const FillState& fill
 )
 {
-	if (shaders == nullptr || shaderCount == 0)
+	if (program == nullptr)
 		return nullptr;
 
 	VulkanPipeline* pipeline = m_pipelinePool.acquire();
+	pipeline->program = program;
 	pipeline->primitive = primitive;
 	pipeline->viewport = viewport;
 	pipeline->depth = depth;
@@ -433,23 +431,44 @@ Pipeline* VulkanGraphicDevice::createPipeline(
 
 	pipeline->framebuffer = framebuffer;
 	pipeline->vertices = vertices;
-	memcpy(pipeline->bindings, bindings, shaderBindingCounts * sizeof(ShaderBindingState));
+	memcpy(pipeline->bindings, program->bindings, program->setCount * sizeof(ShaderBindingState));
 
-	VulkanShader** vk_shaders = reinterpret_cast<VulkanShader**>(shaders);
+	VulkanProgram* vk_program = reinterpret_cast<VulkanProgram*>(program);
 	VkDescriptorSetLayout layouts[ShaderBindingState::MaxSetCount];
-	for (uint32_t i = 0; i < shaderBindingCounts; i++)
+	for (uint32_t i = 0; i < program->setCount; i++)
 	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(bindings[i]);
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program->bindings[i]);
 		layouts[i] = data.layout;
 	}
-	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, shaderBindingCounts);
+	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program->setCount);
 	// Create Pipeline
+	std::vector<VulkanShader*> vk_shaders;
+	uint32_t shaderCount = 0;
+	if (vk_program->vertex)
+	{
+		vk_shaders.push_back(reinterpret_cast<VulkanShader*>(vk_program->vertex));
+	}
+	if (vk_program->fragment)
+	{
+		vk_shaders.push_back(reinterpret_cast<VulkanShader*>(vk_program->fragment));
+		AKA_ASSERT(vk_shaders.size() == 2, "Missing vertex shader");
+	}
+	if (vk_program->geometry)
+	{
+		vk_shaders.push_back(reinterpret_cast<VulkanShader*>(vk_program->geometry));
+		AKA_ASSERT(vk_shaders.size() == 3, "Missing vertex or fragment shader");
+	}
+	if (vk_program->compute)
+	{
+		vk_shaders.push_back(reinterpret_cast<VulkanShader*>(vk_program->compute));
+		AKA_ASSERT(vk_shaders.size() == 1, "Compute should only have 1 shader");
+	}
 	pipeline->vk_pipeline = VulkanPipeline::createVkPipeline(
 		m_context.device,
 		m_context.getRenderPass(framebuffer, VulkanRenderPassLayout::Unknown),
 		pipeline->vk_pipelineLayout,
-		vk_shaders,
-		shaderCount,
+		vk_shaders.data(),
+		(uint32_t)vk_shaders.size(),
 		pipeline->primitive,
 		pipeline->vertices,
 		pipeline->framebuffer,

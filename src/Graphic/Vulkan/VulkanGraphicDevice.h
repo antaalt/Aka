@@ -77,13 +77,10 @@ public:
 
 	// Pipeline
 	Pipeline* createPipeline(
-		Shader** shaders,
-		uint32_t shaderCount,
+		Program *program,
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
-		const ShaderBindingState* bindings,
-		uint32_t shaderBindingCounts,
 		const ViewportState& viewport,
 		const DepthState& depth,
 		const StencilState& stencil,

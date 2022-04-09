@@ -276,6 +276,8 @@ struct ViewportState
 
 struct Pipeline
 {
+	Program* program;
+
 	PrimitiveType primitive;
 	VertexBindingState vertices;
 	ShaderBindingState bindings[ShaderBindingState::MaxSetCount];

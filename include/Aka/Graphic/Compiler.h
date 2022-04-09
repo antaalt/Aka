@@ -16,6 +16,8 @@ public:
 	bool parse(const Path& path, ShaderType shader, const char** defines = nullptr, size_t defineCount = 0);
 	// Export it and generate a shader for given API
 	Blob compile(GraphicAPI api);
+	// Set the SPIRV code from bytes
+	void set(const byte_t* bytes, size_t count);
 	// Get shader bindings from compiler
 	ShaderBindingState getShaderBindings(uint32_t set);
 	// Get vertex bindings from compiler
