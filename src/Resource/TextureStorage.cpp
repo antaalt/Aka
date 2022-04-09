@@ -35,6 +35,8 @@ bool TextureStorage::load(const Path& path)
 	type = (TextureType)archive.read<uint8_t>();
 	format = (TextureFormat)archive.read<uint8_t>();
 	flags = (TextureFlag)archive.read<uint8_t>();
+	levels = archive.read<uint8_t>();
+
 	bool isHDR = archive.read<bool>();
 	switch (type)
 	{
@@ -80,6 +82,7 @@ bool TextureStorage::save(const Path& path) const
 	archive.write<uint8_t>((uint8_t)type);
 	archive.write<uint8_t>((uint8_t)format);
 	archive.write<uint8_t>((uint8_t)flags);
+	archive.write<uint8_t>((uint8_t)levels);
 	archive.write<bool>(isHDR);
 	switch (type)
 	{
@@ -128,12 +131,25 @@ bool TextureStorage::save(const Path& path) const
 
 Texture* TextureStorage::allocate() const
 {
+	GraphicDevice* device = Application::app()->graphic();
 	switch (type)
 	{
-	case TextureType::Texture2D:
+	case TextureType::Texture2D: {
 		if (images.size() != 1)
 			return nullptr;
-		return Texture::create2D(images[0].width(), images[0].height(), format, flags, images[0].data());
+		const void* data = images[0].data();
+		return device->createTexture(
+			images[0].width(),
+			images[0].height(),
+			1,
+			TextureType::Texture2D,
+			levels,
+			1,
+			format,
+			flags,
+			&data
+		);
+	}
 	case TextureType::TextureCubeMap: {
 		if (images.size() != 6)
 			return nullptr;
@@ -145,8 +161,11 @@ Texture* TextureStorage::allocate() const
 			images[4].data(),
 			images[5].data()
 		};
-		return Texture::createCubemap(
-			images[0].width(), images[0].height(),
+		return device->createTexture(
+			images[0].width(), images[0].height(), 1,
+			TextureType::TextureCubeMap,
+			levels,
+			6,
 			format, flags,
 			data
 		);

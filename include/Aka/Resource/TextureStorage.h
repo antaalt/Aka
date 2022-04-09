@@ -18,6 +18,7 @@ struct TextureStorage : IStorage<Texture>
 	TextureType type;
 	TextureFormat format;
 	TextureFlag flags;
+	uint32_t levels;
 	
 	std::vector<Image> images;
 

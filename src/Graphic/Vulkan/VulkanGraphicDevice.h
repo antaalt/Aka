@@ -54,6 +54,7 @@ public:
 		Filter filterMin, 
 		Filter filterMag, 
 		SamplerMipMapMode mipmapMode, 
+		uint32_t mipLevels,
 		SamplerAddressMode wrapU, 
 		SamplerAddressMode wrapV, 
 		SamplerAddressMode wrapW, 

@@ -15,6 +15,7 @@ struct VulkanSampler : Sampler
 		VkFilter vk_filterMin,
 		VkFilter vk_filterMag,
 		VkSamplerMipmapMode vk_mipmapMode,
+		uint32_t mipLevels,
 		VkSamplerAddressMode vk_wrapU,
 		VkSamplerAddressMode vk_wrapV,
 		VkSamplerAddressMode vk_wrapW,

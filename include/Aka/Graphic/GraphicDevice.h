@@ -98,7 +98,7 @@ public:
 	virtual void copy(const Texture* lhs, const Texture* rhs) = 0;
 	virtual void destroy(Texture* texture) = 0;
 
-	virtual Sampler* createSampler(Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
+	virtual Sampler* createSampler(Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, uint32_t mipLevels, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
 	virtual void destroy(Sampler* sampler) = 0;
 
 	// Pass

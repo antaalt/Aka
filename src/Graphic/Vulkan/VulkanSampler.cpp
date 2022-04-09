@@ -49,6 +49,7 @@ Sampler* VulkanGraphicDevice::createSampler(
 	Filter filterMin,
 	Filter filterMag,
 	SamplerMipMapMode mipmapMode,
+	uint32_t mipLevels,
 	SamplerAddressMode wrapU,
 	SamplerAddressMode wrapV,
 	SamplerAddressMode wrapW,
@@ -78,6 +79,7 @@ Sampler* VulkanGraphicDevice::createSampler(
 		vk_filterMin,
 		vk_filterMag,
 		vk_mipmapMode,
+		mipLevels,
 		vk_wrapU,
 		vk_wrapV,
 		vk_wrapW,
@@ -99,6 +101,7 @@ VkSampler VulkanSampler::createVkSampler(
 	VkFilter vk_filterMin,
 	VkFilter vk_filterMag,
 	VkSamplerMipmapMode vk_mipmapMode,
+	uint32_t mipLevels,
 	VkSamplerAddressMode vk_wrapU,
 	VkSamplerAddressMode vk_wrapV,
 	VkSamplerAddressMode vk_wrapW,
@@ -128,7 +131,7 @@ VkSampler VulkanSampler::createVkSampler(
 	samplerInfo.mipmapMode = vk_mipmapMode;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
-	samplerInfo.maxLod = 0.0f;
+	samplerInfo.maxLod = static_cast<float>(mipLevels);
 
 	VkSampler sampler = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));

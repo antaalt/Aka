@@ -98,14 +98,6 @@ void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImageLayout newLa
 void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer)
 {
 	VkImageSubresourceRange subresource { getAspectFlag(format), 0, levels, 0, layers };
-	// Transition to transfer layout
-	transitionImageLayout(
-		cmd,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresource,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT
-	);
 
 	// Copy buffer to image
 	{
@@ -139,14 +131,6 @@ void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffe
 			}
 		}
 	}
-	// Transition to default layout
-	transitionImageLayout(
-		cmd,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		subresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-	);
 }
 
 void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
@@ -353,10 +337,27 @@ Texture* VulkanGraphicDevice::createTexture(
 
 		// Copy buffer to image
 		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+		VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
+		texture->transitionImageLayout(cmd,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+			subresource,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			VK_PIPELINE_STAGE_TRANSFER_BIT
+		);
 		texture->copyBufferToImage(cmd, stagingBuffer);
 		if (has(flags, TextureFlag::GenerateMips))
 		{
 			texture->generateMips(cmd);
+			// Should be in SHADER_READ_ONLY
+		}
+		else
+		{
+			texture->transitionImageLayout(cmd,
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				subresource,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			);
 		}
 		VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
 
@@ -440,8 +441,24 @@ void VulkanGraphicDevice::upload(const Texture* texture, const void* const* data
 	vkUnmapMemory(m_context.device, stagingBufferMemory);
 
 	// Copy buffer to image
+	VulkanTexture* vk_ctexture = const_cast<VulkanTexture*>(vk_texture);
+	VkImageSubresourceRange subresource{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers };
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-	const_cast<VulkanTexture*>(vk_texture)->copyBufferToImage(cmd, stagingBuffer);
+	vk_ctexture->transitionImageLayout(
+		cmd,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		subresource,
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
+	vk_ctexture->copyBufferToImage(cmd, stagingBuffer);
+	vk_ctexture->transitionImageLayout(
+		cmd,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		subresource,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+	);
 	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
 
 	// Free staging buffer
@@ -581,7 +598,6 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 		throw std::runtime_error("texture image format does not support linear blitting!"); 
 	}*/
 
-	// TODO cubemap mips
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.image = vk_image;
@@ -595,8 +611,12 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 	int32_t mipWidth = width;
 	int32_t mipHeight = height;
 
-	for (uint32_t i = 1; i < levels; i++) {
-		barrier.subresourceRange.baseMipLevel = i - 1;
+	// TODO cubemap mips
+	AKA_ASSERT(layers == 1, "More than one layer unsupported for now");
+	//for (uint32_t iLayer = 1; iLayer < layers; iLayer++)
+	for (uint32_t iLevel = 1; iLevel < levels; iLevel++)
+	{
+		barrier.subresourceRange.baseMipLevel = iLevel - 1;
 		barrier.oldLayout = vk_layout;
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -614,13 +634,13 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 		blit.srcOffsets[0] = { 0, 0, 0 };
 		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
 		blit.srcSubresource.aspectMask = getAspectFlag(format);
-		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.mipLevel = iLevel - 1;
 		blit.srcSubresource.baseArrayLayer = 0;
 		blit.srcSubresource.layerCount = 1;
 		blit.dstOffsets[0] = { 0, 0, 0 };
 		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
 		blit.dstSubresource.aspectMask = getAspectFlag(format);
-		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.mipLevel = iLevel;
 		blit.dstSubresource.baseArrayLayer = 0;
 		blit.dstSubresource.layerCount = 1;
 
@@ -664,6 +684,8 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 		0, nullptr,
 		1, &barrier
 	);
+
+	vk_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
 };
