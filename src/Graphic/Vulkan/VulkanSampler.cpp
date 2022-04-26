@@ -61,6 +61,7 @@ Sampler* VulkanGraphicDevice::createSampler(
 	vk_sampler->filterMin = filterMin;
 	vk_sampler->filterMag = filterMag;
 	vk_sampler->mipmapMode = mipmapMode;
+	vk_sampler->mipLevels = mipLevels;
 	vk_sampler->wrapU = wrapU;
 	vk_sampler->wrapV = wrapV;
 	vk_sampler->wrapW = wrapW;
