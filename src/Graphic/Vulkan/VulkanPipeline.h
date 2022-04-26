@@ -8,6 +8,7 @@
 #include "Vulkanprogram.h"
 
 namespace aka {
+namespace gfx {
 
 struct VulkanPipeline : Pipeline
 {
@@ -34,6 +35,7 @@ struct VulkanPipeline : Pipeline
 	static VkVertexInputBindingDescription getVertexBindings(const VertexBindingState& vertices, VkVertexInputAttributeDescription* attributes, uint32_t count);
 };
 
+};
 };
 
 #endif

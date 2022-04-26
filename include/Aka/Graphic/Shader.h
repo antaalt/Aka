@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 namespace aka {
+namespace gfx {
 
 enum class ShaderType : uint8_t
 {
@@ -29,4 +30,5 @@ struct Shader
 	static void destroy(Shader* shader);
 };
 
+};
 };

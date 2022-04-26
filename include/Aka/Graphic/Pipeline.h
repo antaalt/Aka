@@ -8,6 +8,7 @@
 #include <Aka/OS/Image.h>
 
 namespace aka {
+namespace gfx {
 
 enum class IndexFormat : uint8_t
 {
@@ -300,4 +301,5 @@ struct RaytracingPipeline
 
 };
 
+};
 };

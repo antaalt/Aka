@@ -7,6 +7,7 @@
 #include "VulkanContext.h"
 
 namespace aka {
+namespace gfx {
 
 struct VulkanCommandList : CommandList
 {
@@ -51,6 +52,7 @@ struct VulkanCommandList : CommandList
 	bool m_recording;
 };
 
+};
 };
 
 #endif

@@ -12,7 +12,7 @@ struct Character {
 	vec2i size;           // Size of glyph
 	vec2i bearing;        // Offset from baseline to left/top of glyph
 	uint32_t advance;     // Offset to advance to next glyph
-	SubTexture texture;   // Glyph texture
+	gfx::SubTexture texture;   // Glyph texture
 };
 
 class Font
@@ -39,7 +39,7 @@ public:
 	// Get the advance of the font
 	uint32_t advance() const;
 	// Get the texture atlas
-	const Texture* atlas() const;
+	const gfx::Texture* atlas() const;
 
 	// Iterator
 	using CharacterIterator = std::vector<Character>::iterator;
@@ -53,7 +53,7 @@ private:
 	uint32_t m_advance;
 	String m_familyName;
 	String m_styleName;
-	Texture* m_atlas;
+	gfx::Texture* m_atlas;
 	std::vector<Character> m_characters;
 };
 

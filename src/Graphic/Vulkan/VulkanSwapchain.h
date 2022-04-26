@@ -7,6 +7,7 @@
 #include "VulkanFramebuffer.h"
 
 namespace aka {
+namespace gfx {
 
 struct VulkanFrame : Frame
 {
@@ -44,4 +45,5 @@ struct VulkanSwapchain :
 
 };
 
+};
 };

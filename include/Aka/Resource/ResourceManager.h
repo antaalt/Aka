@@ -44,18 +44,18 @@ public:
 	static Path path(const Path& path);
 private:
 	static Path assetPath;
-	ResourceAllocator<Texture> textures;
+	ResourceAllocator<gfx::Texture> textures;
 	ResourceAllocator<Mesh> meshes;
 	ResourceAllocator<AudioStream> audios;
 	ResourceAllocator<Font> fonts;
-	ResourceAllocator<Buffer> buffers;
+	ResourceAllocator<gfx::Buffer> buffers;
 };
 
-template <> inline ResourceAllocator<Texture>& ResourceManager::allocator() { return textures; }
+template <> inline ResourceAllocator<gfx::Texture>& ResourceManager::allocator() { return textures; }
 template <> inline ResourceAllocator<Mesh>& ResourceManager::allocator() { return meshes; }
 template <> inline ResourceAllocator<AudioStream>& ResourceManager::allocator() { return audios; }
 template <> inline ResourceAllocator<Font>& ResourceManager::allocator() { return fonts; }
-template <> inline ResourceAllocator<Buffer>& ResourceManager::allocator() { return buffers; }
+template <> inline ResourceAllocator<gfx::Buffer>& ResourceManager::allocator() { return buffers; }
 
 template <typename T>
 inline T* ResourceManager::get(const String& name)

@@ -4,15 +4,16 @@
 #include "VulkanGraphicDevice.h"
 
 namespace aka {
+namespace gfx {
 
 VkFilter tovk(Filter filter)
 {
 	switch (filter)
 	{
-	case aka::Filter::Nearest:
+	case Filter::Nearest:
 		return VK_FILTER_NEAREST;
 	default:
-	case aka::Filter::Linear:
+	case Filter::Linear:
 		return VK_FILTER_LINEAR;
 	}
 }
@@ -22,9 +23,9 @@ VkSamplerMipmapMode tovk(SamplerMipMapMode mips)
 	switch (mips)
 	{
 	default:
-	case aka::SamplerMipMapMode::Nearest:
+	case SamplerMipMapMode::Nearest:
 		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-	case aka::SamplerMipMapMode::Linear:
+	case SamplerMipMapMode::Linear:
 		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	}
 }
@@ -34,13 +35,13 @@ VkSamplerAddressMode tovk(SamplerAddressMode mode)
 	switch (mode)
 	{
 	default:
-	case aka::SamplerAddressMode::Repeat:
+	case SamplerAddressMode::Repeat:
 		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	case aka::SamplerAddressMode::Mirror:
+	case SamplerAddressMode::Mirror:
 		return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-	case aka::SamplerAddressMode::ClampToEdge:
+	case SamplerAddressMode::ClampToEdge:
 		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	case aka::SamplerAddressMode::ClampToBorder:
+	case SamplerAddressMode::ClampToBorder:
 		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 	}
 }
@@ -139,6 +140,7 @@ VkSampler VulkanSampler::createVkSampler(
 
 	return sampler;
 }
-}
+};
+};
 
 #endif

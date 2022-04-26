@@ -7,6 +7,7 @@
 #if defined(AKA_USE_VULKAN)
 
 namespace aka {
+namespace gfx {
 
 CommandList* VulkanGraphicDevice::acquireCommandList()
 {
@@ -471,6 +472,7 @@ void VulkanCommandList::endSingleTime(VkDevice device, VkCommandPool commandPool
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
+};
 };
 
 #endif

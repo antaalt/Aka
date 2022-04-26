@@ -3,21 +3,22 @@
 #include "VulkanGraphicDevice.h"
 
 namespace aka {
+namespace gfx {
 
 VkDescriptorType tovk(ShaderBindingType type)
 {
 	switch (type)
 	{
 	default:
-	case aka::ShaderBindingType::SampledImage:
+	case ShaderBindingType::SampledImage:
 		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	case aka::ShaderBindingType::StorageImage:
+	case ShaderBindingType::StorageImage:
 		return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	case aka::ShaderBindingType::UniformBuffer:
+	case ShaderBindingType::UniformBuffer:
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	case aka::ShaderBindingType::StorageBuffer:
+	case ShaderBindingType::StorageBuffer:
 		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	case aka::ShaderBindingType::AccelerationStructure:
+	case ShaderBindingType::AccelerationStructure:
 		return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 	}
 }
@@ -48,9 +49,9 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 {
 	switch (binding)
 	{
-	case aka::ShaderBindingType::UniformBuffer:
+	case ShaderBindingType::UniformBuffer:
 		return buffer == BufferType::Uniform;
-	case aka::ShaderBindingType::StorageBuffer:
+	case ShaderBindingType::StorageBuffer:
 		return buffer == BufferType::ShaderStorage;
 	default:
 		return false;
@@ -307,4 +308,5 @@ VulkanShader* VulkanGraphicDevice::makeShader(ShaderType type, VkShaderModule mo
 	return shader;
 }
 
+};
 };

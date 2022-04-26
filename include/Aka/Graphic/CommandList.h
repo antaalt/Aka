@@ -11,6 +11,7 @@
 #include <Aka/Graphic/DescriptorSet.h>
 
 namespace aka {
+namespace gfx {
 
 enum class QueueType : uint8_t
 {
@@ -69,4 +70,5 @@ struct AKA_NO_VTABLE CommandList
 	virtual void blit(const Texture* src, const Texture* dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) = 0;
 };
 
+};
 };

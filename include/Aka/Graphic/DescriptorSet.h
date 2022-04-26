@@ -6,6 +6,7 @@
 #include <Aka/Graphic/Sampler.h>
 
 namespace aka {
+namespace gfx {
 
 struct DescriptorSet
 {
@@ -25,4 +26,5 @@ struct DescriptorSet
 	static void destroy(DescriptorSet* set);
 };
 
+};
 };

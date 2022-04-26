@@ -7,6 +7,7 @@
 #include <Aka/Graphic/Buffer.h>
 
 namespace aka {
+namespace gfx {
 
 enum class ShaderBindingType : uint8_t
 {
@@ -59,4 +60,5 @@ struct Program
 	static void destroy(Program* program);
 };
 
+};
 };

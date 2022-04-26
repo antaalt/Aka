@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 namespace aka {
+namespace gfx {
 
 enum class Filter : uint8_t
 {
@@ -51,4 +52,5 @@ struct Sampler
 	static void destroy(Sampler* sampler);
 };
 
+};
 };

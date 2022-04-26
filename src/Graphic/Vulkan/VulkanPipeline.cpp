@@ -5,19 +5,20 @@
 #if defined(AKA_USE_VULKAN)
 
 namespace aka {
+namespace gfx {
 
 VkCullModeFlags tovk(CullMode mode)
 {
 	switch (mode)
 	{
 	default:
-	case aka::CullMode::None:
+	case CullMode::None:
 		return VK_CULL_MODE_NONE;
-	case aka::CullMode::FrontFace:
+	case CullMode::FrontFace:
 		return VK_CULL_MODE_FRONT_BIT;
-	case aka::CullMode::BackFace:
+	case CullMode::BackFace:
 		return VK_CULL_MODE_BACK_BIT;
-	case aka::CullMode::AllFace:
+	case CullMode::AllFace:
 		return VK_CULL_MODE_FRONT_AND_BACK;
 	}
 }
@@ -26,11 +27,11 @@ VkPolygonMode tovk(FillMode mode)
 	switch (mode)
 	{
 	default:
-	case aka::FillMode::Fill:
+	case FillMode::Fill:
 		return VK_POLYGON_MODE_FILL;
-	case aka::FillMode::Line:
+	case FillMode::Line:
 		return VK_POLYGON_MODE_LINE;
-	case aka::FillMode::Point:
+	case FillMode::Point:
 		return VK_POLYGON_MODE_POINT;
 	}
 }
@@ -38,10 +39,10 @@ VkFrontFace tovk(CullOrder order)
 {
 	switch (order)
 	{
-	case aka::CullOrder::ClockWise:
+	case CullOrder::ClockWise:
 		return VK_FRONT_FACE_CLOCKWISE;
 	default:
-	case aka::CullOrder::CounterClockWise:
+	case CullOrder::CounterClockWise:
 		return VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	}
 }
@@ -49,22 +50,22 @@ VkCompareOp tovk(DepthOp compare)
 {
 	switch (compare)
 	{
-	case aka::DepthOp::Always:
+	case DepthOp::Always:
 		return VK_COMPARE_OP_ALWAYS;
-	case aka::DepthOp::Never:
+	case DepthOp::Never:
 		return VK_COMPARE_OP_NEVER;
 	default:
-	case aka::DepthOp::Less:
+	case DepthOp::Less:
 		return VK_COMPARE_OP_LESS;
-	case aka::DepthOp::Equal:
+	case DepthOp::Equal:
 		return VK_COMPARE_OP_EQUAL;
-	case aka::DepthOp::LessOrEqual:
+	case DepthOp::LessOrEqual:
 		return VK_COMPARE_OP_LESS_OR_EQUAL;
-	case aka::DepthOp::Greater:
+	case DepthOp::Greater:
 		return VK_COMPARE_OP_GREATER;
-	case aka::DepthOp::NotEqual:
+	case DepthOp::NotEqual:
 		return VK_COMPARE_OP_NOT_EQUAL;
-	case aka::DepthOp::GreaterOrEqual:
+	case DepthOp::GreaterOrEqual:
 		return VK_COMPARE_OP_GREATER_OR_EQUAL;
 	}
 }
@@ -73,43 +74,43 @@ VkBlendFactor tovk(BlendMode mode)
 	switch (mode)
 	{
 	default:
-	case aka::BlendMode::Zero:
+	case BlendMode::Zero:
 		return VK_BLEND_FACTOR_ZERO;
-	case aka::BlendMode::One:
+	case BlendMode::One:
 		return VK_BLEND_FACTOR_ONE;
-	case aka::BlendMode::SrcColor:
+	case BlendMode::SrcColor:
 		return VK_BLEND_FACTOR_SRC_COLOR;
-	case aka::BlendMode::OneMinusSrcColor:
+	case BlendMode::OneMinusSrcColor:
 		return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-	case aka::BlendMode::DstColor:
+	case BlendMode::DstColor:
 		return VK_BLEND_FACTOR_DST_COLOR;
-	case aka::BlendMode::OneMinusDstColor:
+	case BlendMode::OneMinusDstColor:
 		return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-	case aka::BlendMode::SrcAlpha:
+	case BlendMode::SrcAlpha:
 		return VK_BLEND_FACTOR_SRC_ALPHA;
-	case aka::BlendMode::OneMinusSrcAlpha:
+	case BlendMode::OneMinusSrcAlpha:
 		return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-	case aka::BlendMode::DstAlpha:
+	case BlendMode::DstAlpha:
 		return VK_BLEND_FACTOR_DST_ALPHA;
-	case aka::BlendMode::OneMinusDstAlpha:
+	case BlendMode::OneMinusDstAlpha:
 		return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-	case aka::BlendMode::ConstantColor:
+	case BlendMode::ConstantColor:
 		return VK_BLEND_FACTOR_CONSTANT_COLOR;
-	case aka::BlendMode::OneMinusConstantColor:
+	case BlendMode::OneMinusConstantColor:
 		return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
-	case aka::BlendMode::ConstantAlpha:
+	case BlendMode::ConstantAlpha:
 		return VK_BLEND_FACTOR_CONSTANT_ALPHA;
-	case aka::BlendMode::OneMinusConstantAlpha:
+	case BlendMode::OneMinusConstantAlpha:
 		return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
-	case aka::BlendMode::SrcAlphaSaturate:
+	case BlendMode::SrcAlphaSaturate:
 		return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-	case aka::BlendMode::Src1Color:
+	case BlendMode::Src1Color:
 		return VK_BLEND_FACTOR_SRC1_COLOR;
-	case aka::BlendMode::OneMinusSrc1Color:
+	case BlendMode::OneMinusSrc1Color:
 		return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
-	case aka::BlendMode::Src1Alpha:
+	case BlendMode::Src1Alpha:
 		return VK_BLEND_FACTOR_SRC1_ALPHA;
-	case aka::BlendMode::OneMinusSrc1Alpha:
+	case BlendMode::OneMinusSrc1Alpha:
 		return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
 	}
 }
@@ -131,15 +132,15 @@ VkBlendOp tovk(BlendOp compare)
 	switch (compare)
 	{
 	default:
-	case aka::BlendOp::Add:
+	case BlendOp::Add:
 		return VK_BLEND_OP_ADD;
-	case aka::BlendOp::Subtract:
+	case BlendOp::Subtract:
 		return VK_BLEND_OP_SUBTRACT;
-	case aka::BlendOp::ReverseSubtract:
+	case BlendOp::ReverseSubtract:
 		return VK_BLEND_OP_REVERSE_SUBTRACT;
-	case aka::BlendOp::Min:
+	case BlendOp::Min:
 		return VK_BLEND_OP_MIN;
-	case aka::BlendOp::Max:
+	case BlendOp::Max:
 		return VK_BLEND_OP_MAX;
 	}
 }
@@ -205,21 +206,21 @@ VkPrimitiveTopology tovk(PrimitiveType primitive)
 {
 	switch (primitive)
 	{
-	case aka::PrimitiveType::Points:
+	case PrimitiveType::Points:
 		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-	case aka::PrimitiveType::LineStrip:
+	case PrimitiveType::LineStrip:
 		return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-	case aka::PrimitiveType::LineLoop:
+	case PrimitiveType::LineLoop:
 		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-	case aka::PrimitiveType::Lines:
+	case PrimitiveType::Lines:
 		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-	case aka::PrimitiveType::TriangleStrip:
+	case PrimitiveType::TriangleStrip:
 		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	case aka::PrimitiveType::TriangleFan:
+	case PrimitiveType::TriangleFan:
 		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
 	default:
-	case aka::PrimitiveType::Unknown:
-	case aka::PrimitiveType::Triangles:
+	case PrimitiveType::Unknown:
+	case PrimitiveType::Triangles:
 		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	}
 }
@@ -229,13 +230,13 @@ VkShaderStageFlagBits tovk(ShaderType type)
 	switch (type)
 	{
 	default:
-	case aka::ShaderType::Vertex:
+	case ShaderType::Vertex:
 		return VK_SHADER_STAGE_VERTEX_BIT;
-	case aka::ShaderType::Fragment:
+	case ShaderType::Fragment:
 		return VK_SHADER_STAGE_FRAGMENT_BIT;
-	case aka::ShaderType::Compute:
+	case ShaderType::Compute:
 		return VK_SHADER_STAGE_COMPUTE_BIT;
-	case aka::ShaderType::Geometry:
+	case ShaderType::Geometry:
 		return VK_SHADER_STAGE_GEOMETRY_BIT;
 	}
 }
@@ -492,6 +493,7 @@ void VulkanGraphicDevice::destroy(Pipeline* pipeline)
 	m_pipelinePool.release(vk_pipeline);
 }
 
+};
 };
 
 #endif

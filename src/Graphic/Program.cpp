@@ -3,6 +3,7 @@
 #include <Aka/Core/Application.h>
 
 namespace aka {
+namespace gfx {
 
 ShaderBindingState ShaderBindingState::merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 {
@@ -61,4 +62,5 @@ void Program::destroy(Program* program)
 	Application::app()->graphic()->destroy(program);
 }
 
+};
 };

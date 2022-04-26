@@ -18,7 +18,7 @@ private:
 	void onLayerDestroy() override;
 
 	void onLayerFrame() override;
-	void onLayerRender(Frame* frame) override;
+	void onLayerRender(gfx::Frame* frame) override;
 	void onLayerPresent() override;
 private:
 	ImGuiRenderData* m_renderData;

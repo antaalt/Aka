@@ -34,7 +34,7 @@ protected:
 	virtual void onLayerUpdate(Time deltaTime) {}
 	virtual void onLayerFixedUpdate(Time deltaTime) {}
 	virtual void onLayerFrame() {}
-	virtual void onLayerRender(Frame* frame) {}
+	virtual void onLayerRender(gfx::Frame* frame) {}
 	virtual void onLayerPresent() {}
 
 	virtual void onLayerResize(uint32_t width, uint32_t height) {}

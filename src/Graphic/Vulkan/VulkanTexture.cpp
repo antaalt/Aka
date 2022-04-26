@@ -4,6 +4,7 @@
 #include "VulkanGraphicDevice.h"
 
 namespace aka {
+namespace gfx {
 
 VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 {
@@ -232,15 +233,15 @@ Texture* VulkanGraphicDevice::createTexture(
 	VkImageViewType vk_type = VK_IMAGE_VIEW_TYPE_2D;
 	switch (type)
 	{
-	case aka::TextureType::Texture2D:
+	case TextureType::Texture2D:
 		vk_type = VK_IMAGE_VIEW_TYPE_2D;
 		break;
-	case aka::TextureType::TextureCubeMap:
+	case TextureType::TextureCubeMap:
 		AKA_ASSERT(width == height, "");
 		vk_type = VK_IMAGE_VIEW_TYPE_CUBE;
 		vk_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 		break;
-	case aka::TextureType::Texture2DArray:
+	case TextureType::Texture2DArray:
 		vk_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		break;
 	default:
@@ -688,6 +689,7 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 	vk_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
+};
 };
 
 #endif

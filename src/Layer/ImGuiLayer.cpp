@@ -63,8 +63,8 @@ void ImGuiLayer::onLayerCreate()
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
 #elif defined(AKA_USE_VULKAN)
-	VulkanGraphicDevice* device = reinterpret_cast<VulkanGraphicDevice*>(Application::app()->graphic());
-	VulkanContext& context = device->context();
+	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
+	gfx::VulkanContext& context = device->context();
 
 	{ // Custom descriptor pool for imgui
 		VkDescriptorPoolSize pool_sizes[] =
@@ -107,9 +107,9 @@ void ImGuiLayer::onLayerCreate()
 
 	ImGui_ImplVulkan_Init(&info, device->swapchain().backbuffers[0]->vk_renderpass);
 
-	VkCommandBuffer cmdBuffer = VulkanCommandList::createSingleTime(context.device, context.commandPool);
+	VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(context.device, context.commandPool);
 	ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
-	VulkanCommandList::endSingleTime(context.device, context.commandPool, cmdBuffer, context.graphicQueue.queue);
+	gfx::VulkanCommandList::endSingleTime(context.device, context.commandPool, cmdBuffer, context.graphicQueue.queue);
 
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 #endif
@@ -207,9 +207,9 @@ void ImGuiLayer::onLayerCreate()
 
 void ImGuiLayer::onLayerDestroy()
 {
-	GraphicDevice* device = Application::app()->graphic();
-	VulkanGraphicDevice * vk_device = reinterpret_cast<VulkanGraphicDevice*>(device);
-	VulkanContext& vk_context = vk_device->context();
+	gfx::GraphicDevice* device = Application::app()->graphic();
+	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(device);
+	gfx::VulkanContext& vk_context = vk_device->context();
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
 #elif defined(AKA_USE_D3D11)
@@ -237,11 +237,11 @@ void ImGuiLayer::onLayerFrame()
 	ImGui::NewFrame();
 }
 
-void ImGuiLayer::onLayerRender(Frame* frame)
+void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 {
-	CommandList* cmd = frame->commandList;
-	VulkanCommandList* vk_cmd = reinterpret_cast<VulkanCommandList*>(cmd);
-	GraphicDevice* device = Application::app()->graphic();
+	gfx::CommandList* cmd = frame->commandList;
+	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
+	gfx::GraphicDevice* device = Application::app()->graphic();
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
 	// TODO do not enforce backbuffer
@@ -256,7 +256,7 @@ void ImGuiLayer::onLayerRender(Frame* frame)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
-	cmd->beginRenderPass(device->backbuffer(frame), ClearState{});
+	cmd->beginRenderPass(device->backbuffer(frame), gfx::ClearState{});
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->vk_command);
 	cmd->endRenderPass();
 #endif

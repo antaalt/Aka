@@ -8,11 +8,11 @@
 
 namespace aka {
 
-template struct Resource<Buffer>;
-template class ResourceAllocator<Buffer>;
+template struct Resource<gfx::Buffer>;
+template class ResourceAllocator<gfx::Buffer>;
 
 template <>
-std::unique_ptr<IStorage<Buffer>> IStorage<Buffer>::create()
+std::unique_ptr<IStorage<gfx::Buffer>> IStorage<gfx::Buffer>::create()
 {
 	return std::make_unique<BufferStorage>();
 }
@@ -30,9 +30,9 @@ bool BufferStorage::load(const Path& path)
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read buffer
-	type = (BufferType)archive.read<uint8_t>();
-	usage = (BufferUsage)archive.read<uint8_t>();
-	access = (BufferCPUAccess)archive.read<uint8_t>();
+	type = (gfx::BufferType)archive.read<uint8_t>();
+	usage = (gfx::BufferUsage)archive.read<uint8_t>();
+	access = (gfx::BufferCPUAccess)archive.read<uint8_t>();
 	bytes.resize(archive.read<uint32_t>());
 	archive.read<uint8_t>(bytes.data(), bytes.size());
 	return true;
@@ -54,17 +54,17 @@ bool BufferStorage::save(const Path& path) const
 	return true;
 }
 
-Buffer* BufferStorage::allocate() const
+gfx::Buffer* BufferStorage::allocate() const
 {
 	return Application::app()->graphic()->createBuffer(type, (uint32_t)bytes.size(), usage, access, bytes.data());
 }
 
-void BufferStorage::deallocate(Buffer* buffer) const
+void BufferStorage::deallocate(gfx::Buffer* buffer) const
 {
 	Application::app()->graphic()->destroy(buffer);
 }
 
-void BufferStorage::serialize(const Buffer* buffer)
+void BufferStorage::serialize(const gfx::Buffer* buffer)
 {
 	type = buffer->type;
 	usage = buffer->usage;
@@ -73,7 +73,7 @@ void BufferStorage::serialize(const Buffer* buffer)
 	Application::app()->graphic()->download(buffer, bytes.data(), 0, buffer->size);
 }
 
-size_t BufferStorage::size(const Buffer* buffer)
+size_t BufferStorage::size(const gfx::Buffer* buffer)
 {
 	return buffer->size;
 }

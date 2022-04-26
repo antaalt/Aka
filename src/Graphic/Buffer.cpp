@@ -3,6 +3,7 @@
 #include <Aka/Core/Application.h>
 
 namespace aka {
+namespace gfx {
 
 Buffer* Buffer::createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
@@ -29,4 +30,5 @@ void Buffer::destroy(Buffer* buffer)
 	return Application::app()->graphic()->destroy(buffer);
 }
 
+};
 };

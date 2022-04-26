@@ -4,6 +4,7 @@
 #include <Aka/Core/Application.h>
 
 namespace aka {
+namespace gfx {
 
 uint32_t Sampler::mipLevelCount(uint32_t width, uint32_t height)
 {
@@ -26,4 +27,5 @@ void Sampler::destroy(Sampler* sampler)
 	Application::app()->graphic()->destroy(sampler);
 }
 
+};
 };

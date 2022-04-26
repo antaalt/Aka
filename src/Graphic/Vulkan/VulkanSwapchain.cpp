@@ -6,6 +6,7 @@
 #include "../../Platform/GLFW3/PlatformGLFW3.h"
 
 namespace aka {
+namespace gfx {
 
 VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
@@ -430,4 +431,5 @@ void VulkanFrame::wait(VkDevice device)
 	));
 }
 
+};
 };

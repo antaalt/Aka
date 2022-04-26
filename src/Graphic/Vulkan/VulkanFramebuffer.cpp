@@ -4,6 +4,7 @@
 #include "VulkanGraphicDevice.h"
 
 namespace aka {
+namespace gfx {
 
 VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const FramebufferState& framebufferDesc, VulkanRenderPassLayout layout)
 {
@@ -240,4 +241,5 @@ Framebuffer* VulkanGraphicDevice::backbuffer(Frame* frame)
 	return m_swapchain.backbuffers[frame->image.value];
 }
 
+};
 };

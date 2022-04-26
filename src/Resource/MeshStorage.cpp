@@ -33,9 +33,9 @@ bool MeshStorage::load(const Path& path)
 	vertices.resize(archive.read<uint32_t>());
 	for (VertexBinding& vertex : vertices)
 	{
-		vertex.attribute.semantic = (VertexSemantic)archive.read<uint8_t>();
-		vertex.attribute.format = (VertexFormat)archive.read<uint8_t>();
-		vertex.attribute.type = (VertexType)archive.read<uint8_t>();
+		vertex.attribute.semantic = (gfx::VertexSemantic)archive.read<uint8_t>();
+		vertex.attribute.format = (gfx::VertexFormat)archive.read<uint8_t>();
+		vertex.attribute.type = (gfx::VertexType)archive.read<uint8_t>();
 		vertex.vertexCount = archive.read<uint32_t>();
 		vertex.vertexOffset = archive.read<uint32_t>();
 		vertex.vertexBufferOffset = archive.read<uint32_t>();
@@ -45,7 +45,7 @@ bool MeshStorage::load(const Path& path)
 		archive.read<char>(vertex.vertexBufferName.cstr(), vertex.vertexBufferName.length() + 1);
 	}
 	// Read indices
-	indexFormat = (IndexFormat)archive.read<uint8_t>();
+	indexFormat = (gfx::IndexFormat)archive.read<uint8_t>();
 	indexCount = archive.read<uint32_t>();
 	indexBufferOffset = archive.read<uint32_t>();
 	indexBufferName.resize(archive.read<uint16_t>());
@@ -98,7 +98,7 @@ Mesh* MeshStorage::allocate() const
 		
 		//mesh->bindings.offsets[i] = vertices[i].vertexCount;
 
-		mesh->vertices[i] = resources->get<Buffer>(vertices[i].vertexBufferName);
+		mesh->vertices[i] = resources->get<gfx::Buffer>(vertices[i].vertexBufferName);
 		AKA_ASSERT(mesh->vertices[i] != nullptr, "No vertex buffer");
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferOffset;
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferSize;
@@ -107,7 +107,7 @@ Mesh* MeshStorage::allocate() const
 	mesh->count = indexCount;
 	mesh->format = indexFormat;
 
-	mesh->indices = resources->get<Buffer>(indexBufferName);
+	mesh->indices = resources->get<gfx::Buffer>(indexBufferName);
 	AKA_ASSERT(mesh->indices != nullptr, "No index buffer");
 	return mesh;
 }

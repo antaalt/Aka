@@ -14,7 +14,81 @@
 
 #if defined(AKA_USE_VULKAN)
 
+const char* vkGetErrorString(VkResult result)
+{
+	switch (result) {
+	case VK_SUCCESS:
+		return "VK_SUCCESS";
+	case VK_NOT_READY:
+		return "VK_NOT_READY";
+	case VK_TIMEOUT:
+		return "VK_TIMEOUT";
+	case VK_EVENT_SET:
+		return "VK_EVENT_SET";
+	case VK_EVENT_RESET:
+		return "VK_EVENT_RESET";
+	case VK_INCOMPLETE:
+		return "VK_INCOMPLETE";
+	case VK_ERROR_OUT_OF_HOST_MEMORY:
+		return "VK_ERROR_OUT_OF_HOST_MEMORY";
+	case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+	case VK_ERROR_INITIALIZATION_FAILED:
+		return "VK_ERROR_INITIALIZATION_FAILED";
+	case VK_ERROR_DEVICE_LOST:
+		return "VK_ERROR_DEVICE_LOST";
+	case VK_ERROR_MEMORY_MAP_FAILED:
+		return "VK_ERROR_MEMORY_MAP_FAILED";
+	case VK_ERROR_LAYER_NOT_PRESENT:
+		return "VK_ERROR_LAYER_NOT_PRESENT";
+	case VK_ERROR_EXTENSION_NOT_PRESENT:
+		return "VK_ERROR_EXTENSION_NOT_PRESENT";
+	case VK_ERROR_FEATURE_NOT_PRESENT:
+		return "VK_ERROR_FEATURE_NOT_PRESENT";
+	case VK_ERROR_INCOMPATIBLE_DRIVER:
+		return "VK_ERROR_INCOMPATIBLE_DRIVER";
+	case VK_ERROR_TOO_MANY_OBJECTS:
+		return "VK_ERROR_TOO_MANY_OBJECTS";
+	case VK_ERROR_FORMAT_NOT_SUPPORTED:
+		return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+	case VK_ERROR_FRAGMENTED_POOL:
+		return "VK_ERROR_FRAGMENTED_POOL";
+	case VK_ERROR_OUT_OF_POOL_MEMORY:
+		return "VK_ERROR_OUT_OF_POOL_MEMORY";
+	case VK_ERROR_INVALID_EXTERNAL_HANDLE:
+		return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
+	case VK_ERROR_SURFACE_LOST_KHR:
+		return "VK_ERROR_SURFACE_LOST_KHR";
+	case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+		return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+	case VK_SUBOPTIMAL_KHR:
+		return "VK_SUBOPTIMAL_KHR";
+	case VK_ERROR_OUT_OF_DATE_KHR:
+		return "VK_ERROR_OUT_OF_DATE_KHR";
+	case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
+		return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+	case VK_ERROR_VALIDATION_FAILED_EXT:
+		return "VK_ERROR_VALIDATION_FAILED_EXT";
+	case VK_ERROR_INVALID_SHADER_NV:
+		return "VK_ERROR_INVALID_SHADER_NV";
+	case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
+		return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+	case VK_ERROR_FRAGMENTATION_EXT:
+		return "VK_ERROR_FRAGMENTATION_EXT";
+	case VK_ERROR_NOT_PERMITTED_EXT:
+		return "VK_ERROR_NOT_PERMITTED_EXT";
+	case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT:
+		return "VK_ERROR_INVALID_DEVICE_ADDRESS_EXT";
+	case VK_RESULT_MAX_ENUM:
+		return "VK_RESULT_MAX_ENUM";
+	default:
+		return "VK_UNKNOWN";
+	}
+}
+
+
 namespace aka {
+namespace gfx {
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -535,63 +609,63 @@ VkFormat VulkanContext::tovk(TextureFormat format)
 	{
 	default:
 		return VK_FORMAT_UNDEFINED;
-	case aka::TextureFormat::R8:
-	case aka::TextureFormat::R8U:
+	case TextureFormat::R8:
+	case TextureFormat::R8U:
 		return VK_FORMAT_R8_UNORM; // VK_FORMAT_R8_UINT
-	case aka::TextureFormat::R16:
-	case aka::TextureFormat::R16U:
+	case TextureFormat::R16:
+	case TextureFormat::R16U:
 		return VK_FORMAT_R16_UNORM;
-	case aka::TextureFormat::R16F:
+	case TextureFormat::R16F:
 		return VK_FORMAT_R16_SFLOAT;
-	case aka::TextureFormat::R32F:
+	case TextureFormat::R32F:
 		return VK_FORMAT_R32_SFLOAT;
-	case aka::TextureFormat::RG8:
-	case aka::TextureFormat::RG8U:
+	case TextureFormat::RG8:
+	case TextureFormat::RG8U:
 		return VK_FORMAT_R8G8_UNORM;
-	case aka::TextureFormat::RG16:
-	case aka::TextureFormat::RG16U:
+	case TextureFormat::RG16:
+	case TextureFormat::RG16U:
 		return VK_FORMAT_R16G16_UNORM;
-	case aka::TextureFormat::RG16F:
+	case TextureFormat::RG16F:
 		return VK_FORMAT_R16G16_SFLOAT;
-	case aka::TextureFormat::RG32F:
+	case TextureFormat::RG32F:
 		return VK_FORMAT_R32G32_SFLOAT;
-	case aka::TextureFormat::RGB8:
-	case aka::TextureFormat::RGB8U:
+	case TextureFormat::RGB8:
+	case TextureFormat::RGB8U:
 		return VK_FORMAT_R8G8B8_UNORM;
-	case aka::TextureFormat::RGB16:
-	case aka::TextureFormat::RGB16U:
+	case TextureFormat::RGB16:
+	case TextureFormat::RGB16U:
 		return VK_FORMAT_R16G16B16_UNORM;
-	case aka::TextureFormat::RGB16F:
+	case TextureFormat::RGB16F:
 		return VK_FORMAT_R16G16B16_SFLOAT;
-	case aka::TextureFormat::RGB32F:
+	case TextureFormat::RGB32F:
 		return VK_FORMAT_R32G32B32_SFLOAT;
-	case aka::TextureFormat::RGBA8:
-	case aka::TextureFormat::RGBA8U:
+	case TextureFormat::RGBA8:
+	case TextureFormat::RGBA8U:
 		return VK_FORMAT_R8G8B8A8_UNORM;
-	case aka::TextureFormat::RGBA16:
-	case aka::TextureFormat::RGBA16U:
+	case TextureFormat::RGBA16:
+	case TextureFormat::RGBA16U:
 		return VK_FORMAT_R16G16B16A16_UNORM;
-	case aka::TextureFormat::RGBA16F:
+	case TextureFormat::RGBA16F:
 		return VK_FORMAT_R16G16B16A16_SFLOAT;
-	case aka::TextureFormat::RGBA32F:
+	case TextureFormat::RGBA32F:
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
-	case aka::TextureFormat::BGRA:
-	case aka::TextureFormat::BGRA8:
+	case TextureFormat::BGRA:
+	case TextureFormat::BGRA8:
 		return VK_FORMAT_B8G8R8A8_UNORM;
-	case aka::TextureFormat::Depth16:
+	case TextureFormat::Depth16:
 		return VK_FORMAT_D16_UNORM;
-	case aka::TextureFormat::Depth24:
+	case TextureFormat::Depth24:
 		return VK_FORMAT_D24_UNORM_S8_UINT;
-	case aka::TextureFormat::Depth:
-	case aka::TextureFormat::Depth32:
-	case aka::TextureFormat::Depth32F:
+	case TextureFormat::Depth:
+	case TextureFormat::Depth32:
+	case TextureFormat::Depth32F:
 		return VK_FORMAT_D32_SFLOAT;
-	case aka::TextureFormat::Depth0Stencil8:
+	case TextureFormat::Depth0Stencil8:
 		return VK_FORMAT_S8_UINT;
-	case aka::TextureFormat::DepthStencil:
-	case aka::TextureFormat::Depth24Stencil8:
+	case TextureFormat::DepthStencil:
+	case TextureFormat::Depth24Stencil8:
 		return VK_FORMAT_D24_UNORM_S8_UINT;
-	case aka::TextureFormat::Depth32FStencil8:
+	case TextureFormat::Depth32FStencil8:
 		return VK_FORMAT_D32_SFLOAT_S8_UINT;
 	}
 	return VK_FORMAT_UNDEFINED;
@@ -602,9 +676,9 @@ VkFilter VulkanContext::tovk(Filter filter)
 	switch (filter)
 	{
 	default:
-	case aka::Filter::Nearest:
+	case Filter::Nearest:
 		return VK_FILTER_NEAREST;
-	case aka::Filter::Linear:
+	case Filter::Linear:
 		return VK_FILTER_LINEAR;
 	}
 }
@@ -613,12 +687,12 @@ VkIndexType VulkanContext::tovk(IndexFormat format)
 {
 	switch (format)
 	{
-	case aka::IndexFormat::UnsignedByte:
+	case IndexFormat::UnsignedByte:
 		return VK_INDEX_TYPE_UINT8_EXT;
-	case aka::IndexFormat::UnsignedShort:
+	case IndexFormat::UnsignedShort:
 		return VK_INDEX_TYPE_UINT16;
 	default:
-	case aka::IndexFormat::UnsignedInt:
+	case IndexFormat::UnsignedInt:
 		return VK_INDEX_TYPE_UINT32;
 	}
 }
@@ -627,90 +701,19 @@ VkBufferUsageFlagBits VulkanContext::tovk(BufferType type)
 {
 	switch (type)
 	{
-	case aka::BufferType::Vertex:
+	case BufferType::Vertex:
 		return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	case aka::BufferType::Index:
+	case BufferType::Index:
 		return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	default:
-	case aka::BufferType::Uniform:
+	case BufferType::Uniform:
 		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	case aka::BufferType::ShaderStorage:
+	case BufferType::ShaderStorage:
 		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	}
 }
 
 };
+};
 
 #endif
-
-const char* vkGetErrorString(VkResult result)
-{
-	switch (result) {
-	case VK_SUCCESS:
-		return "VK_SUCCESS";
-	case VK_NOT_READY:
-		return "VK_NOT_READY";
-	case VK_TIMEOUT:
-		return "VK_TIMEOUT";
-	case VK_EVENT_SET:
-		return "VK_EVENT_SET";
-	case VK_EVENT_RESET:
-		return "VK_EVENT_RESET";
-	case VK_INCOMPLETE:
-		return "VK_INCOMPLETE";
-	case VK_ERROR_OUT_OF_HOST_MEMORY:
-		return "VK_ERROR_OUT_OF_HOST_MEMORY";
-	case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-		return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-	case VK_ERROR_INITIALIZATION_FAILED:
-		return "VK_ERROR_INITIALIZATION_FAILED";
-	case VK_ERROR_DEVICE_LOST:
-		return "VK_ERROR_DEVICE_LOST";
-	case VK_ERROR_MEMORY_MAP_FAILED:
-		return "VK_ERROR_MEMORY_MAP_FAILED";
-	case VK_ERROR_LAYER_NOT_PRESENT:
-		return "VK_ERROR_LAYER_NOT_PRESENT";
-	case VK_ERROR_EXTENSION_NOT_PRESENT:
-		return "VK_ERROR_EXTENSION_NOT_PRESENT";
-	case VK_ERROR_FEATURE_NOT_PRESENT:
-		return "VK_ERROR_FEATURE_NOT_PRESENT";
-	case VK_ERROR_INCOMPATIBLE_DRIVER:
-		return "VK_ERROR_INCOMPATIBLE_DRIVER";
-	case VK_ERROR_TOO_MANY_OBJECTS:
-		return "VK_ERROR_TOO_MANY_OBJECTS";
-	case VK_ERROR_FORMAT_NOT_SUPPORTED:
-		return "VK_ERROR_FORMAT_NOT_SUPPORTED";
-	case VK_ERROR_FRAGMENTED_POOL:
-		return "VK_ERROR_FRAGMENTED_POOL";
-	case VK_ERROR_OUT_OF_POOL_MEMORY:
-		return "VK_ERROR_OUT_OF_POOL_MEMORY";
-	case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-		return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-	case VK_ERROR_SURFACE_LOST_KHR:
-		return "VK_ERROR_SURFACE_LOST_KHR";
-	case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-		return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-	case VK_SUBOPTIMAL_KHR:
-		return "VK_SUBOPTIMAL_KHR";
-	case VK_ERROR_OUT_OF_DATE_KHR:
-		return "VK_ERROR_OUT_OF_DATE_KHR";
-	case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
-		return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-	case VK_ERROR_VALIDATION_FAILED_EXT:
-		return "VK_ERROR_VALIDATION_FAILED_EXT";
-	case VK_ERROR_INVALID_SHADER_NV:
-		return "VK_ERROR_INVALID_SHADER_NV";
-	case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
-		return "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
-	case VK_ERROR_FRAGMENTATION_EXT:
-		return "VK_ERROR_FRAGMENTATION_EXT";
-	case VK_ERROR_NOT_PERMITTED_EXT:
-		return "VK_ERROR_NOT_PERMITTED_EXT";
-	case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT:
-		return "VK_ERROR_INVALID_DEVICE_ADDRESS_EXT";
-	case VK_RESULT_MAX_ENUM:
-		return "VK_RESULT_MAX_ENUM";
-	default:
-		return "VK_UNKNOWN";
-	}
-}

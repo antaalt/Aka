@@ -7,26 +7,26 @@
 
 namespace aka {
 
-using BufferAllocator = ResourceAllocator<Buffer>;
+using BufferAllocator = ResourceAllocator<gfx::Buffer>;
 
-struct BufferStorage : IStorage<Buffer>
+struct BufferStorage : IStorage<gfx::Buffer>
 {
 	static constexpr uint16_t major = 0;
 	static constexpr uint16_t minor = 1;
 
-	BufferType type;
-	BufferUsage usage;
-	BufferCPUAccess access;
+	gfx::BufferType type;
+	gfx::BufferUsage usage;
+	gfx::BufferCPUAccess access;
 	std::vector<uint8_t> bytes;
 
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	Buffer* allocate() const override;
-	void deallocate(Buffer* buffer) const override;
-	void serialize(const Buffer* mesh) override;
+	gfx::Buffer* allocate() const override;
+	void deallocate(gfx::Buffer* buffer) const override;
+	void serialize(const gfx::Buffer* mesh) override;
 
-	size_t size(const Buffer* mesh) override;
+	size_t size(const gfx::Buffer* mesh) override;
 };
 
 };

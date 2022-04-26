@@ -15,6 +15,7 @@
 #include <spirv_msl.hpp>
 
 namespace aka {
+namespace gfx {
 
 const TBuiltInResource defaultConf = {
 	32, // .MaxLights
@@ -285,12 +286,12 @@ Blob Compiler::compile(GraphicAPI api)
 {
 	switch (api)
 	{
-	case aka::GraphicAPI::OpenGL3:
+	case GraphicAPI::OpenGL3:
 		return compileGLSL330();
-	case aka::GraphicAPI::DirectX11:
+	case GraphicAPI::DirectX11:
 		VertexBindingState v = getVertexBindings();
 		return compileHLSL50(v.attributes, v.count);
-	case aka::GraphicAPI::Vulkan:
+	case GraphicAPI::Vulkan:
 		return compileSPV();
 	default:
 		Logger::error("Unsupported API.");
@@ -547,4 +548,5 @@ Blob Compiler::compileSPV()
 }
 
 
+};
 };

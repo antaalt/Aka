@@ -6,6 +6,7 @@
 #include <vector>
 
 namespace aka {
+namespace gfx {
 
 class Compiler
 {
@@ -34,4 +35,5 @@ private:
 };
 
 
+};
 };

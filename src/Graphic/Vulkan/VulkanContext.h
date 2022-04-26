@@ -34,6 +34,7 @@
 const char* vkGetErrorString(VkResult result);
 
 namespace aka {
+namespace gfx {
 
 enum class VulkanRenderPassLayout
 {
@@ -175,6 +176,7 @@ private:
 	VkDevice createLogicalDevice(const char** deviceExtensions, size_t deviceExtensionCount);
 };
 
+};
 };
 
 #endif

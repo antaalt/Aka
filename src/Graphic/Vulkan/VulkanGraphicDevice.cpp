@@ -3,6 +3,7 @@
 #if defined(AKA_USE_VULKAN)
 
 namespace aka {
+namespace gfx {
 
 VulkanGraphicDevice::VulkanGraphicDevice(PlatformDevice* platform, const GraphicConfig& cfg) :
 	m_context(),
@@ -62,6 +63,7 @@ void VulkanGraphicDevice::screenshot(void* data)
 	// TODO
 }
 
+};
 };
 
 #endif

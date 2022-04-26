@@ -9,11 +9,11 @@
 
 namespace aka {
 
-template struct Resource<Texture>;
-template class ResourceAllocator<Texture>;
+template struct Resource<gfx::Texture>;
+template class ResourceAllocator<gfx::Texture>;
 
 template <>
-std::unique_ptr<IStorage<Texture>> IStorage<Texture>::create()
+std::unique_ptr<IStorage<gfx::Texture>> IStorage<gfx::Texture>::create()
 {
 	return std::make_unique<TextureStorage>();
 }
@@ -32,15 +32,15 @@ bool TextureStorage::load(const Path& path)
 	if (version != ((major << 8) | (minor)))
 		return false; // Incompatible version
 	// Read texture
-	type = (TextureType)archive.read<uint8_t>();
-	format = (TextureFormat)archive.read<uint8_t>();
-	flags = (TextureFlag)archive.read<uint8_t>();
+	type = (gfx::TextureType)archive.read<uint8_t>();
+	format = (gfx::TextureFormat)archive.read<uint8_t>();
+	flags = (gfx::TextureFlag)archive.read<uint8_t>();
 	levels = archive.read<uint8_t>();
 
 	bool isHDR = archive.read<bool>();
 	switch (type)
 	{
-	case TextureType::Texture2D: {
+	case gfx::TextureType::Texture2D: {
 		std::vector<uint8_t> bytes(archive.read<uint32_t>());
 		archive.read<uint8_t>(bytes.data(), bytes.size());
 		if (isHDR)
@@ -49,7 +49,7 @@ bool TextureStorage::load(const Path& path)
 			images.push_back(Image::load(bytes.data(), bytes.size()));
 		break;
 	}
-	case TextureType::TextureCubeMap: {
+	case gfx::TextureType::TextureCubeMap: {
 		std::vector<uint8_t> bytes;
 		for (size_t i = 0; i < 6; i++)
 		{
@@ -86,7 +86,7 @@ bool TextureStorage::save(const Path& path) const
 	archive.write<bool>(isHDR);
 	switch (type)
 	{
-	case TextureType::Texture2D: {
+	case gfx::TextureType::Texture2D: {
 		if (isHDR)
 		{
 			// encode to .hdr
@@ -103,7 +103,7 @@ bool TextureStorage::save(const Path& path) const
 		}
 		break;
 	}
-	case TextureType::TextureCubeMap:
+	case gfx::TextureType::TextureCubeMap:
 		for (size_t i = 0; i < 6; i++)
 		{
 			if (isHDR)
@@ -129,12 +129,12 @@ bool TextureStorage::save(const Path& path) const
 	return true;
 }
 
-Texture* TextureStorage::allocate() const
+gfx::Texture* TextureStorage::allocate() const
 {
-	GraphicDevice* device = Application::app()->graphic();
+	gfx::GraphicDevice* device = Application::app()->graphic();
 	switch (type)
 	{
-	case TextureType::Texture2D: {
+	case gfx::TextureType::Texture2D: {
 		if (images.size() != 1)
 			return nullptr;
 		const void* data = images[0].data();
@@ -142,7 +142,7 @@ Texture* TextureStorage::allocate() const
 			images[0].width(),
 			images[0].height(),
 			1,
-			TextureType::Texture2D,
+			gfx::TextureType::Texture2D,
 			levels,
 			1,
 			format,
@@ -150,7 +150,7 @@ Texture* TextureStorage::allocate() const
 			&data
 		);
 	}
-	case TextureType::TextureCubeMap: {
+	case gfx::TextureType::TextureCubeMap: {
 		if (images.size() != 6)
 			return nullptr;
 		const void* data[6] = {
@@ -163,7 +163,7 @@ Texture* TextureStorage::allocate() const
 		};
 		return device->createTexture(
 			images[0].width(), images[0].height(), 1,
-			TextureType::TextureCubeMap,
+			gfx::TextureType::TextureCubeMap,
 			levels,
 			6,
 			format, flags,
@@ -175,25 +175,25 @@ Texture* TextureStorage::allocate() const
 	}
 }
 
-void TextureStorage::deallocate(Texture* texture) const
+void TextureStorage::deallocate(gfx::Texture* texture) const
 {
-	Texture::destroy(texture);
+	gfx::Texture::destroy(texture);
 }
-void TextureStorage::serialize(const Texture* texture)
+void TextureStorage::serialize(const gfx::Texture* texture)
 {
-	GraphicDevice* device = Application::app()->graphic();
+	gfx::GraphicDevice* device = Application::app()->graphic();
 	switch (texture->type)
 	{
-	case TextureType::Texture2D: {
+	case gfx::TextureType::Texture2D: {
 		images.resize(1);
 		ImageFormat format = ImageFormat::None;
 		switch (texture->format)
 		{
-		case TextureFormat::RGBA32F:
+		case gfx::TextureFormat::RGBA32F:
 			format = ImageFormat::Float;
 			break;
-		case TextureFormat::RGBA8:
-		case TextureFormat::RGBA8U:
+		case gfx::TextureFormat::RGBA8:
+		case gfx::TextureFormat::RGBA8U:
 			format = ImageFormat::UnsignedByte;
 			break;
 		default:
@@ -205,16 +205,16 @@ void TextureStorage::serialize(const Texture* texture)
 		device->download(texture, images[0].data(), 0, 0, texture->width, texture->height);
 		break;
 	}
-	case TextureType::TextureCubeMap: {
+	case gfx::TextureType::TextureCubeMap: {
 		images.resize(6);
 		ImageFormat format = ImageFormat::None;
 		switch (texture->format)
 		{
-		case TextureFormat::RGBA32F:
+		case gfx::TextureFormat::RGBA32F:
 			format = ImageFormat::Float;
 			break;
-		case TextureFormat::RGBA8:
-		case TextureFormat::RGBA8U:
+		case gfx::TextureFormat::RGBA8:
+		case gfx::TextureFormat::RGBA8U:
 			format = ImageFormat::UnsignedByte;
 			break;
 		default:
@@ -236,9 +236,9 @@ void TextureStorage::serialize(const Texture* texture)
 	
 }
 
-size_t TextureStorage::size(const Texture* texture)
+size_t TextureStorage::size(const gfx::Texture* texture)
 {
-	return texture->width * texture->height * Texture::size(texture->format);
+	return texture->width * texture->height * gfx::Texture::size(texture->format);
 }
 
 }; // namespace aka

@@ -7,7 +7,9 @@
 namespace aka {
 
 class World;
+namespace gfx {
 struct Frame;
+};
 
 class System
 {
@@ -22,7 +24,7 @@ protected:
 
 	virtual void onFixedUpdate(World& world, Time deltaTime) {}
 	virtual void onUpdate(World& world, Time deltaTime) {}
-	virtual void onRender(World& world, Frame* frame) {}
+	virtual void onRender(World& world, gfx::Frame* frame) {}
 };
 
 }

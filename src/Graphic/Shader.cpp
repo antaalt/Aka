@@ -5,6 +5,7 @@
 #include <type_traits>
 
 namespace aka {
+namespace gfx {
 
 bool has(ShaderType flags, ShaderType flag)
 {
@@ -36,4 +37,5 @@ void Shader::destroy(Shader* shader)
 	Application::app()->graphic()->destroy(shader);
 }
 
+};
 };

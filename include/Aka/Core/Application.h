@@ -17,7 +17,7 @@ class ResourceManager;
 
 struct Config
 {
-	GraphicConfig graphic = {};
+	gfx::GraphicConfig graphic = {};
 	AudioConfig audio = {};
 	PlatformConfig platform = {};
 	Application* app = nullptr;
@@ -49,7 +49,7 @@ struct AppUpdateEvent
 {
 	Time deltaTime;
 };
-struct AppRenderEvent { Frame* frame; };
+struct AppRenderEvent { gfx::Frame* frame; };
 struct AppFrameEvent {};
 struct AppPresentEvent {};
 struct AppResizeEvent { uint32_t width; uint32_t height; };
@@ -76,7 +76,7 @@ private:
 	// Called before render for the app.
 	void frame();
 	// Render the app.
-	void render(Frame* frame);
+	void render(gfx::Frame* frame);
 	// Called before present of the frame
 	void present();
 	// Last function called in a loop
@@ -97,7 +97,7 @@ protected:
 	// Called before app render
 	virtual void onFrame() {}
 	// Called on app render
-	virtual void onRender(Frame* frame) {}
+	virtual void onRender(gfx::Frame* frame) {}
 	// Called before present of the app
 	virtual void onPresent() {}
 	// Called on app resize
@@ -113,7 +113,7 @@ public:
 	// Get the application
 	static Application* app();
 	// Get the graphic device
-	GraphicDevice* graphic();
+	gfx::GraphicDevice* graphic();
 	// Get the platform device
 	PlatformDevice* platform();
 	// Get the audio device
@@ -125,7 +125,7 @@ public:
 private:
 	static Application* s_app;
 	PlatformDevice* m_platform;
-	GraphicDevice* m_graphic;
+	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;
 	ProgramManager* m_program;
 	ResourceManager* m_resource;

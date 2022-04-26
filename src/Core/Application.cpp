@@ -39,7 +39,7 @@ void Application::create(const Config& config)
 	OS::setcwd(config.directory);
 	m_platform = PlatformDevice::create(config.platform);
 	AKA_ASSERT(m_platform != nullptr, "No platform");
-	m_graphic = GraphicDevice::create(m_platform, config.graphic);
+	m_graphic = gfx::GraphicDevice::create(m_platform, config.graphic);
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
 	m_audio = AudioDevice::create(config.audio);
 	AKA_ASSERT(m_audio != nullptr, "No audio");
@@ -58,7 +58,7 @@ void Application::destroy()
 	delete m_program;
 	delete m_resource;
 	AudioDevice::destroy(m_audio);
-	GraphicDevice::destroy(m_graphic);
+	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
 	
 	m_audio = nullptr;
@@ -85,7 +85,7 @@ void Application::frame()
 	onFrame();
 	EventDispatcher<AppFrameEvent>::trigger(AppFrameEvent{});
 }
-void Application::render(Frame* frame)
+void Application::render(gfx::Frame* frame)
 {
 	onRender(frame);
 	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{ frame });
@@ -125,7 +125,7 @@ Application* Application::app()
 	return s_app;
 }
 
-GraphicDevice* Application::graphic()
+gfx::GraphicDevice* Application::graphic()
 {
 	return m_graphic;
 }
@@ -163,7 +163,7 @@ void Application::run(const Config& config)
 
 	app->create(config);
 
-	GraphicDevice* graphic = app->m_graphic;
+	gfx::GraphicDevice* graphic = app->m_graphic;
 	PlatformDevice* platform = app->m_platform;
 	
 	Time lastTick = Time::now();
@@ -184,7 +184,7 @@ void Application::run(const Config& config)
 		platform->poll();
 		app->update(deltaTime);
 		// Rendering
-		Frame* frame = graphic->frame();
+		gfx::Frame* frame = graphic->frame();
 		app->frame();
 		app->render(frame);
 		app->present();

@@ -2,6 +2,7 @@
 #include <Aka/Core/Application.h>
 
 namespace aka {
+namespace gfx {
 
 void DescriptorSet::setUniformBuffer(uint32_t slot, Buffer* buffer)
 {
@@ -47,4 +48,5 @@ void DescriptorSet::destroy(DescriptorSet* descriptorSet)
 	Application::app()->graphic()->destroy(descriptorSet);
 }
 
+};
 };

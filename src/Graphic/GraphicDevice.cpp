@@ -3,6 +3,7 @@
 #include "Vulkan/VulkanGraphicDevice.h"
 
 namespace aka {
+namespace gfx {
 
 GraphicDevice* GraphicDevice::create(PlatformDevice* device, const GraphicConfig& cfg)
 {
@@ -20,4 +21,5 @@ void GraphicDevice::destroy(GraphicDevice* device)
 	delete device;
 }
 
+};
 };

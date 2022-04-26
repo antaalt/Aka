@@ -11,6 +11,7 @@
 #include "VulkanSampler.h"
 
 namespace aka {
+namespace gfx {
 
 class VulkanGraphicDevice : public GraphicDevice
 {
@@ -152,4 +153,5 @@ private:
 	//GraphicPool<VulkanCommandList> m_commandPool;
 };
 
+};
 };

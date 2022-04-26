@@ -7,7 +7,7 @@
 #include "VulkanContext.h"
 
 namespace aka {
-
+namespace gfx {
 
 struct VulkanShader : Shader
 {
@@ -32,4 +32,5 @@ struct VulkanDescriptorSet : DescriptorSet
 };
 
 
+};
 };

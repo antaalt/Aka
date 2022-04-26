@@ -5,6 +5,7 @@
 #include <type_traits>
 
 namespace aka {
+namespace gfx {
 
 bool has(ClearMask flags, ClearMask flag) 
 { 
@@ -55,4 +56,5 @@ void Framebuffer::destroy(Framebuffer* framebuffer)
 	return Application::app()->graphic()->destroy(framebuffer);
 }
 
+};
 };

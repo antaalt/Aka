@@ -1,6 +1,7 @@
 #include <Aka/Graphic/Pipeline.h>
 
 namespace aka {
+namespace gfx {
 
 uint32_t VertexBindingState::stride() const
 {
@@ -17,23 +18,23 @@ uint32_t VertexBindingState::size(VertexFormat format)
 {
 	switch (format)
 	{
-	case aka::VertexFormat::Half:
+	case VertexFormat::Half:
 		return 2;
-	case aka::VertexFormat::Float:
+	case VertexFormat::Float:
 		return 4;
-	case aka::VertexFormat::Double:
+	case VertexFormat::Double:
 		return 8;
-	case aka::VertexFormat::Byte:
+	case VertexFormat::Byte:
 		return 1;
-	case aka::VertexFormat::UnsignedByte:
+	case VertexFormat::UnsignedByte:
 		return 1;
-	case aka::VertexFormat::Short:
+	case VertexFormat::Short:
 		return 2;
-	case aka::VertexFormat::UnsignedShort:
+	case VertexFormat::UnsignedShort:
 		return 2;
-	case aka::VertexFormat::Int:
+	case VertexFormat::Int:
 		return 4;
-	case aka::VertexFormat::UnsignedInt:
+	case VertexFormat::UnsignedInt:
 		return 4;
 	}
 	return 0;
@@ -42,19 +43,19 @@ uint32_t VertexBindingState::size(VertexType type)
 {
 	switch (type)
 	{
-	case aka::VertexType::Vec2:
+	case VertexType::Vec2:
 		return 2;
-	case aka::VertexType::Vec3:
+	case VertexType::Vec3:
 		return 3;
-	case aka::VertexType::Vec4:
+	case VertexType::Vec4:
 		return 4;
-	case aka::VertexType::Mat2:
+	case VertexType::Mat2:
 		return 4;
-	case aka::VertexType::Mat3:
+	case VertexType::Mat3:
 		return 12;
-	case aka::VertexType::Mat4:
+	case VertexType::Mat4:
 		return 16;
-	case aka::VertexType::Scalar:
+	case VertexType::Scalar:
 		return 1;
 	}
 	return 0;
@@ -63,11 +64,11 @@ uint32_t VertexBindingState::size(IndexFormat format)
 {
 	switch (format)
 	{
-	case aka::IndexFormat::UnsignedByte:
+	case IndexFormat::UnsignedByte:
 		return 1;
-	case aka::IndexFormat::UnsignedShort:
+	case IndexFormat::UnsignedShort:
 		return 2;
-	case aka::IndexFormat::UnsignedInt:
+	case IndexFormat::UnsignedInt:
 		return 4;
 	}
 	return 0;
@@ -109,4 +110,5 @@ bool StencilState::isEnabled() const
 }
 
 
+};
 };

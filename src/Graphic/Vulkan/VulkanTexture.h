@@ -8,6 +8,7 @@
 
 
 namespace aka {
+namespace gfx {
 
 struct VulkanTexture : Texture
 {
@@ -64,6 +65,7 @@ struct VulkanTexture : Texture
 
 };
 
+};
 };
 
 #endif

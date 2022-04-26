@@ -5,6 +5,7 @@
 #include <Aka/Graphic/Texture.h>
 
 namespace aka {
+namespace gfx {
 
 enum class ClearMask : uint8_t
 {
@@ -76,4 +77,5 @@ struct Framebuffer
 	static void destroy(Framebuffer* framebuffer);
 };
 
+};
 };

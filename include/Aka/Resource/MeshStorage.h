@@ -16,7 +16,7 @@ struct MeshStorage : IStorage<Mesh>
 
 	// Vertices
 	struct VertexBinding {
-		VertexAttribute attribute;
+		gfx::VertexAttribute attribute;
 		String vertexBufferName;
 		uint32_t vertexCount;
 		uint32_t vertexOffset;
@@ -27,7 +27,7 @@ struct MeshStorage : IStorage<Mesh>
 	std::vector<VertexBinding> vertices;
 
 	// Indices
-	IndexFormat indexFormat;
+	gfx::IndexFormat indexFormat;
 	uint32_t indexCount;
 	uint32_t indexBufferOffset;
 	String indexBufferName;

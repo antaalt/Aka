@@ -5,6 +5,7 @@
 #include "VulkanContext.h"
 
 namespace aka {
+namespace gfx {
 
 struct VulkanSampler : Sampler
 {
@@ -23,6 +24,7 @@ struct VulkanSampler : Sampler
 	);
 };
 
-}
+};
+};
 
 #endif

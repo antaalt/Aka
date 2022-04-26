@@ -2,6 +2,7 @@
 #include "VulkanGraphicDevice.h"
 
 namespace aka {
+namespace gfx {
 
 VkBuffer VulkanBuffer::createVkBuffer(VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage)
 {
@@ -128,4 +129,5 @@ VulkanBuffer* VulkanGraphicDevice::makeBuffer(BufferType type, uint32_t size, Bu
 	return buffer;
 }
 
+};
 };

@@ -5,6 +5,7 @@
 #include <type_traits>
 
 namespace aka {
+namespace gfx {
 
 bool has(TextureFlag flags, TextureFlag flag)
 {
@@ -34,16 +35,16 @@ bool Texture::hasLayers() const
 	switch (type)
 	{
 	default:
-	case aka::TextureType::Texture1D:
-	case aka::TextureType::Texture2D:
-	case aka::TextureType::Texture3D:
-	case aka::TextureType::Texture2DMultisample:
+	case TextureType::Texture1D:
+	case TextureType::Texture2D:
+	case TextureType::Texture3D:
+	case TextureType::Texture2DMultisample:
 		return false;
-	case aka::TextureType::TextureCubeMap:
-	case aka::TextureType::Texture1DArray:
-	case aka::TextureType::Texture2DArray:
-	case aka::TextureType::TextureCubeMapArray:
-	case aka::TextureType::Texture2DMultisampleArray:
+	case TextureType::TextureCubeMap:
+	case TextureType::Texture1DArray:
+	case TextureType::Texture2DArray:
+	case TextureType::TextureCubeMapArray:
+	case TextureType::Texture2DMultisampleArray:
 		return layers > 1;
 	}
 }
@@ -60,36 +61,36 @@ bool Texture::isColor(TextureFormat format)
 {
 	switch (format)
 	{
-	case aka::TextureFormat::R8:
-	case aka::TextureFormat::R8U:
-	case aka::TextureFormat::R16:
-	case aka::TextureFormat::R16U:
-	case aka::TextureFormat::R16F:
-	case aka::TextureFormat::R32F:
-	case aka::TextureFormat::RG8:
-	case aka::TextureFormat::RG8U:
-	case aka::TextureFormat::RG16U:
-	case aka::TextureFormat::RG16:
-	case aka::TextureFormat::RG16F:
-	case aka::TextureFormat::RG32F:
-	case aka::TextureFormat::RGB8:
-	case aka::TextureFormat::RGB8U:
-	case aka::TextureFormat::RGB16:
-	case aka::TextureFormat::RGB16U:
-	case aka::TextureFormat::RGB16F:
-	case aka::TextureFormat::RGB32F:
-	case aka::TextureFormat::RGBA8:
-	case aka::TextureFormat::RGBA8U:
-	case aka::TextureFormat::RGBA16:
-	case aka::TextureFormat::RGBA16U:
-	case aka::TextureFormat::RGBA16F:
-	case aka::TextureFormat::RGBA32F:
-	case aka::TextureFormat::BGRA:
-	case aka::TextureFormat::BGRA8:
-	case aka::TextureFormat::BGRA16:
-	case aka::TextureFormat::BGRA16U:
-	case aka::TextureFormat::BGRA16F:
-	case aka::TextureFormat::BGRA32F:
+	case TextureFormat::R8:
+	case TextureFormat::R8U:
+	case TextureFormat::R16:
+	case TextureFormat::R16U:
+	case TextureFormat::R16F:
+	case TextureFormat::R32F:
+	case TextureFormat::RG8:
+	case TextureFormat::RG8U:
+	case TextureFormat::RG16U:
+	case TextureFormat::RG16:
+	case TextureFormat::RG16F:
+	case TextureFormat::RG32F:
+	case TextureFormat::RGB8:
+	case TextureFormat::RGB8U:
+	case TextureFormat::RGB16:
+	case TextureFormat::RGB16U:
+	case TextureFormat::RGB16F:
+	case TextureFormat::RGB32F:
+	case TextureFormat::RGBA8:
+	case TextureFormat::RGBA8U:
+	case TextureFormat::RGBA16:
+	case TextureFormat::RGBA16U:
+	case TextureFormat::RGBA16F:
+	case TextureFormat::RGBA32F:
+	case TextureFormat::BGRA:
+	case TextureFormat::BGRA8:
+	case TextureFormat::BGRA16:
+	case TextureFormat::BGRA16U:
+	case TextureFormat::BGRA16F:
+	case TextureFormat::BGRA32F:
 		return true;
 	default:
 		return false;
@@ -163,53 +164,53 @@ uint32_t Texture::size(TextureFormat format)
 {
 	switch (format)
 	{
-	case aka::TextureFormat::Unknown:
+	case TextureFormat::Unknown:
 		break;
-	case aka::TextureFormat::R8:
-	case aka::TextureFormat::R8U:
+	case TextureFormat::R8:
+	case TextureFormat::R8U:
 		return 1;
 
-	case aka::TextureFormat::R16:
-	case aka::TextureFormat::R16U:
-	case aka::TextureFormat::R16F:
+	case TextureFormat::R16:
+	case TextureFormat::R16U:
+	case TextureFormat::R16F:
 		return 2;
-	case aka::TextureFormat::R32F:
+	case TextureFormat::R32F:
 		return 4;
-	case aka::TextureFormat::RG8:
-	case aka::TextureFormat::RG8U:
+	case TextureFormat::RG8:
+	case TextureFormat::RG8U:
 		return 2;
-	case aka::TextureFormat::RG16U:
-	case aka::TextureFormat::RG16:
-	case aka::TextureFormat::RG16F:
+	case TextureFormat::RG16U:
+	case TextureFormat::RG16:
+	case TextureFormat::RG16F:
 		return 4;
-	case aka::TextureFormat::RG32F:
+	case TextureFormat::RG32F:
 		return 8;
-	case aka::TextureFormat::RGB8:
-	case aka::TextureFormat::RGB8U:
+	case TextureFormat::RGB8:
+	case TextureFormat::RGB8U:
 		return 3;
-	case aka::TextureFormat::RGB16:
-	case aka::TextureFormat::RGB16U:
-	case aka::TextureFormat::RGB16F:
+	case TextureFormat::RGB16:
+	case TextureFormat::RGB16U:
+	case TextureFormat::RGB16F:
 		return 6;
-	case aka::TextureFormat::RGB32F:
+	case TextureFormat::RGB32F:
 		return 12;
-	case aka::TextureFormat::RGBA8:
-	case aka::TextureFormat::RGBA8U:
+	case TextureFormat::RGBA8:
+	case TextureFormat::RGBA8U:
 		return 4;
-	case aka::TextureFormat::RGBA16:
-	case aka::TextureFormat::RGBA16U:
-	case aka::TextureFormat::RGBA16F:
+	case TextureFormat::RGBA16:
+	case TextureFormat::RGBA16U:
+	case TextureFormat::RGBA16F:
 		return 8;
-	case aka::TextureFormat::RGBA32F:
+	case TextureFormat::RGBA32F:
 		return 16;
-	case aka::TextureFormat::BGRA:
-	case aka::TextureFormat::BGRA8:
+	case TextureFormat::BGRA:
+	case TextureFormat::BGRA8:
 		return 4;
-	case aka::TextureFormat::BGRA16:
-	case aka::TextureFormat::BGRA16U:
-	case aka::TextureFormat::BGRA16F:
+	case TextureFormat::BGRA16:
+	case TextureFormat::BGRA16U:
+	case TextureFormat::BGRA16F:
 		return 8;
-	case aka::TextureFormat::BGRA32F:
+	case TextureFormat::BGRA32F:
 		return 16;
 	default:
 		return 0;
@@ -234,4 +235,5 @@ void Texture::destroy(Texture* texture)
 	return Application::app()->graphic()->destroy(texture);
 }
 
+};
 };

@@ -58,15 +58,15 @@ Font::Font(const byte_t* bytes, size_t count, uint32_t height)
             vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top),
             static_cast<uint32_t>(face->glyph->advance.x >> 6), // bitshift by 6 to get value in pixels (2^6 = 64)
-            SubTexture()
+			gfx::SubTexture()
         };
     }
     // Generate the atlas and store it.
     Image atlas = packer.pack();
-	m_atlas = Texture::create2D(
+	m_atlas = gfx::Texture::create2D(
         atlas.width(), atlas.height(),
-        TextureFormat::RGBA8,
-        TextureFlag::ShaderResource,
+		gfx::TextureFormat::RGBA8,
+		gfx::TextureFlag::ShaderResource,
         atlas.data()
     );
 
@@ -138,7 +138,7 @@ uint32_t Font::advance() const
     return m_advance;
 }
 
-const Texture* Font::atlas() const
+const gfx::Texture* Font::atlas() const
 {
 	return m_atlas;
 }

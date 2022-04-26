@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 namespace aka {
+namespace gfx {
 
 enum class BufferType : uint8_t
 {
@@ -54,4 +55,5 @@ struct Buffer
 	static void destroy(Buffer* buffer);
 };
 
+};
 };

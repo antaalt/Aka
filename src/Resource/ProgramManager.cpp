@@ -12,6 +12,7 @@
 
 
 namespace aka {
+using namespace gfx;
 
 ProgramManager::~ProgramManager()
 {

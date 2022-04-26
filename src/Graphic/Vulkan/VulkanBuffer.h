@@ -7,6 +7,7 @@
 #include "VulkanContext.h"
 
 namespace aka {
+namespace gfx {
 
 struct VulkanBuffer : Buffer
 {
@@ -17,6 +18,7 @@ struct VulkanBuffer : Buffer
 	static VkDeviceMemory createVkDeviceMemory(VkDevice device, VkPhysicalDevice physicalDevice, VkBuffer buffer, VkMemoryPropertyFlags properties);
 };
 
+};
 };
 
 #endif

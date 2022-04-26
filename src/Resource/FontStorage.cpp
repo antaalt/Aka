@@ -64,7 +64,7 @@ void FontStorage::serialize(const Font* font)
 
 size_t FontStorage::size(const Font* font)
 {
-	return font->atlas()->width * font->atlas()->height * Texture::size(font->atlas()->format);
+	return font->atlas()->width * font->atlas()->height * gfx::Texture::size(font->atlas()->format);
 }
 
 }; // namespace aka

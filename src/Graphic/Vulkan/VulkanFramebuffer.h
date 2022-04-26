@@ -5,6 +5,7 @@
 #include <Aka/Graphic/Framebuffer.h>
 
 namespace aka {
+namespace gfx {
 
 struct VulkanFramebuffer : Framebuffer
 {
@@ -16,4 +17,5 @@ struct VulkanFramebuffer : Framebuffer
 	static VkFramebuffer createVkFramebuffer(VkDevice device, VkRenderPass renderpass, const Framebuffer* framebuffer);
 };
 
+};
 };

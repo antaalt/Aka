@@ -5,6 +5,7 @@
 #include <Aka/OS/Image.h>
 
 namespace aka {
+namespace gfx {
 
 enum class TextureFlag : uint8_t
 {
@@ -124,6 +125,7 @@ struct SubTexture
 	void update() {} // TODO
 };
 
-using TextureHandle = Texture*;
+using TextureHandle = const Texture*;
 
+};
 };

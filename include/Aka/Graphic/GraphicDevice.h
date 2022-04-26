@@ -18,6 +18,7 @@
 #include <Aka/Graphic/PhysicalDevice.h>
 
 namespace aka {
+namespace gfx {
 
 enum class GraphicAPI : uint8_t
 {
@@ -32,7 +33,7 @@ struct GraphicConfig
 	GraphicAPI api;
 };
 
-struct FrameIndex 
+struct FrameIndex
 {
 	void next() { value = (value + 1) % MaxInFlight; }
 
@@ -42,7 +43,7 @@ struct FrameIndex
 
 };
 
-struct ImageIndex 
+struct ImageIndex
 {
 	uint32_t value;
 };
@@ -107,10 +108,10 @@ public:
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
-		const ViewportState& viewport, 
-		const DepthState& depth, 
+		const ViewportState& viewport,
+		const DepthState& depth,
 		const StencilState& stencil,
-		const CullState& culling, 
+		const CullState& culling,
 		const BlendState& blending,
 		const FillState& fill
 	) = 0;
@@ -131,4 +132,5 @@ public:
 	virtual void present(Frame* frame) = 0;
 };
 
+};
 };
