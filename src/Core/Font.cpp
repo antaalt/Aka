@@ -138,7 +138,7 @@ uint32_t Font::advance() const
     return m_advance;
 }
 
-const gfx::Texture* Font::atlas() const
+gfx::TextureHandle Font::atlas() const
 {
 	return m_atlas;
 }

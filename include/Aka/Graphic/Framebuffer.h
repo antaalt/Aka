@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Resource.h>
 
 namespace aka {
 namespace gfx {
@@ -39,7 +40,7 @@ AttachmentFlag operator|(AttachmentFlag lhs, AttachmentFlag rhs);
 
 struct Attachment
 {
-	Texture* texture; // Texture used as attachment
+	TextureHandle texture; // Texture used as attachment
 	AttachmentFlag flag; // Attachment flag
 	AttachmentLoadOp loadOp; // LoadOp setting
 	uint32_t layer; // Layer of the texture used as attachment (if AttachmentFlag::AttachTextureObject not set)
@@ -62,7 +63,7 @@ struct FramebufferState
 	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
 };
 
-struct Framebuffer
+struct Framebuffer : Resource
 {
 	uint32_t width, height;
 	
@@ -71,10 +72,10 @@ struct Framebuffer
 	Attachment colors[FramebufferState::MaxColorAttachmentCount];
 	Attachment depth;
 
-	bool hasDepthStencil() const { return depth.texture != nullptr; }
+	bool hasDepthStencil() const { return depth.texture.data != nullptr; }
 
-	static Framebuffer* create(const Attachment* attachments, uint32_t count, const Attachment* depth);
-	static void destroy(Framebuffer* framebuffer);
+	static const Framebuffer* create(const Attachment* attachments, uint32_t count, const Attachment* depth);
+	static void destroy(const Framebuffer* framebuffer);
 };
 
 };

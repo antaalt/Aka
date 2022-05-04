@@ -21,9 +21,9 @@ struct FontStorage : IStorage<Font>
 
 	Font* allocate() const override;
 	void deallocate(Font* font) const override;
-	void serialize(const Font* font) override;
+	void serialize(const Font& font) override;
 
-	size_t size(const Font* mesh) override;
+	size_t size(const Font& mesh) override;
 };
 
 };

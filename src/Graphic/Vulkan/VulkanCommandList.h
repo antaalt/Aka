@@ -22,8 +22,8 @@ struct VulkanCommandList : CommandList
 	void endRenderPass() override;
 
 	void bindPipeline(const Pipeline* pipeline) override;
-	void bindDescriptorSet(uint32_t index, const DescriptorSet* set) override;
-	void bindDescriptorSets(const DescriptorSet* const* sets, uint32_t count) override;
+	void bindDescriptorSet(uint32_t index, DescriptorSetHandle set) override;
+	void bindDescriptorSets(DescriptorSetHandle* sets, uint32_t count) override;
 
 	void bindVertexBuffer(const Buffer* const* buffer, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) override;
 	void bindIndexBuffer(const Buffer* buffer, IndexFormat format, uint32_t offset) override;

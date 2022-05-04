@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include <Aka/Graphic/Resource.h>
+
 namespace aka {
 namespace gfx {
 
@@ -20,14 +22,12 @@ bool has(ShaderType flags, ShaderType flag);
 ShaderType operator&(ShaderType lhs, ShaderType rhs);
 ShaderType operator|(ShaderType lhs, ShaderType rhs);
 
-struct Shader
+struct Shader : Resource
 {
-	void* native;
-
 	ShaderType type;
 
-	static Shader* compile(ShaderType type, const uint8_t* content, size_t size);
-	static void destroy(Shader* shader);
+	static const Shader* compile(ShaderType type, const uint8_t* content, size_t size);
+	static void destroy(const Shader* shader);
 };
 
 };

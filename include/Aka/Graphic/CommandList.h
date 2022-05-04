@@ -53,8 +53,8 @@ struct AKA_NO_VTABLE CommandList
 	virtual void endRenderPass() = 0;
 
 	virtual void bindPipeline(const Pipeline* handle) = 0;
-	virtual void bindDescriptorSet(uint32_t index, const DescriptorSet* material) = 0;
-	virtual void bindDescriptorSets(const DescriptorSet* const* material, uint32_t count) = 0;
+	virtual void bindDescriptorSet(uint32_t index, DescriptorSetHandle material) = 0;
+	virtual void bindDescriptorSets(DescriptorSetHandle* material, uint32_t count) = 0;
 
 	virtual void bindVertexBuffer(const Buffer* const* handle, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) = 0;
 	virtual void bindIndexBuffer(const Buffer* buffer, IndexFormat format, uint32_t offset) = 0;

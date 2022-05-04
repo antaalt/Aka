@@ -51,11 +51,11 @@ AudioStream* AudioStorage::allocate() const
 void AudioStorage::deallocate(AudioStream* audio) const
 {
 }
-void AudioStorage::serialize(const AudioStream* mesh)
+void AudioStorage::serialize(const AudioStream& mesh)
 {
 }
 
-size_t AudioStorage::size(const AudioStream* mesh)
+size_t AudioStorage::size(const AudioStream& mesh)
 {
 	return 0;
 }

@@ -19,7 +19,7 @@ struct VulkanPipeline : Pipeline
 		VkDevice device,
 		VkRenderPass renderpass,
 		VkPipelineLayout pipelineLayout,
-		VulkanShader** shaders,
+		const VulkanShader** shaders,
 		uint32_t shaderCount,
 		PrimitiveType primitive,
 		const VertexBindingState& vertices,

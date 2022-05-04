@@ -5,6 +5,7 @@
 #include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/Texture.h>
 #include <Aka/Graphic/Buffer.h>
+#include <Aka/Graphic/Resource.h>
 
 namespace aka {
 namespace gfx {
@@ -36,14 +37,12 @@ struct ShaderBindingState
 	static ShaderBindingState merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 };
 
-struct Program
+struct Program : Resource
 {
-	void* native;
-
-	Shader* vertex;
-	Shader* fragment;
-	Shader* geometry;
-	Shader* compute;
+	const Shader* vertex;
+	const Shader* fragment;
+	const Shader* geometry;
+	const Shader* compute;
 
 	ShaderBindingState bindings[ShaderBindingState::MaxSetCount]; // TODO rename sets
 
@@ -54,10 +53,10 @@ struct Program
 	bool hasGeometryStage() const;
 	bool hasComputeStage() const;
 
-	static Program* createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static Program* createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static Program* createCompute(Shader* compute);
-	static void destroy(Program* program);
+	static const Program* createVertex(const Shader* vertex, const Shader* fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static const Program* createGeometry(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static const Program* createCompute(const Shader* compute);
+	static void destroy(const Program* program);
 };
 
 };

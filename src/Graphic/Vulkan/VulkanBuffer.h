@@ -1,6 +1,5 @@
 #pragma once
 #include <Aka/Graphic/GraphicDevice.h>
-#include <Aka/Graphic/GraphicPool.h>
 
 #if defined(AKA_USE_VULKAN)
 

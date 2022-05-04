@@ -39,7 +39,7 @@ public:
 	// Get the advance of the font
 	uint32_t advance() const;
 	// Get the texture atlas
-	const gfx::Texture* atlas() const;
+	gfx::TextureHandle atlas() const;
 
 	// Iterator
 	using CharacterIterator = std::vector<Character>::iterator;
@@ -53,7 +53,7 @@ private:
 	uint32_t m_advance;
 	String m_familyName;
 	String m_styleName;
-	gfx::Texture* m_atlas;
+	gfx::TextureHandle m_atlas;
 	std::vector<Character> m_characters;
 };
 

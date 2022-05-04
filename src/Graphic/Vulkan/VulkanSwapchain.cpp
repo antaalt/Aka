@@ -209,17 +209,17 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		backbuffers[i]->colors[0].level = 0;
 		backbuffers[i]->colors[0].flag = AttachmentFlag::None;
 		backbuffers[i]->colors[0].loadOp = backbuffers[i]->framebuffer.colors[0].loadOp;
-		backbuffers[i]->colors[0].texture = device->makeTexture(
+		backbuffers[i]->colors[0].texture = TextureHandle{ device->makeTexture(
 			extent.width, extent.height, 1,
 			1, 1,
-			colorFormat, 
+			colorFormat,
 			TextureType::Texture2D,
 			TextureFlag::RenderTarget,
 			vk_images[i],
 			view,
 			VK_NULL_HANDLE,
 			VK_IMAGE_LAYOUT_UNDEFINED
-		);
+		) };
 		backbuffers[i]->isSwapchain = true;
 	}
 
@@ -295,7 +295,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		backbuffers[i]->depth.level = 0;
 		backbuffers[i]->depth.flag = AttachmentFlag::None;
 		backbuffers[i]->depth.loadOp = backbuffers[i]->framebuffer.depth.loadOp;
-		backbuffers[i]->depth.texture = device->makeTexture(
+		backbuffers[i]->depth.texture = TextureHandle{ device->makeTexture(
 			extent.width, extent.height, 1,
 			1, 1,
 			depthFormat,
@@ -305,7 +305,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			depthImageView,
 			depthImageMemory,
 			VK_IMAGE_LAYOUT_UNDEFINED
-		);
+		) };
 		backbuffers[i]->vk_renderpass = vk_renderPass;
 		backbuffers[i]->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(context->device, vk_renderPass, backbuffers[i]);
 	}
@@ -317,10 +317,10 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 	for (VulkanFramebuffer* backbuffer : backbuffers)
 	{
 		// vk_renderpass is cached.
-		vkDestroyFramebuffer(context->device, reinterpret_cast<VulkanFramebuffer*>(backbuffer)->vk_framebuffer, nullptr);
-		vkDestroyImageView(context->device, reinterpret_cast<VulkanTexture*>(backbuffer->colors[0].texture)->vk_view, nullptr);
-		device->destroy(backbuffer->depth.texture);
-		device->m_framebufferPool.release(backbuffer);
+		// Resources alredy destroyed by pool release
+		//device->destroy(backbuffer);
+		//device->destroy(backbuffer->colors[0].texture);
+		//device->destroy(backbuffer->depth.texture);
 	}
 
 	vkDestroySwapchainKHR(context->device, swapchain, nullptr);

@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include <Aka/Graphic/Resource.h>
 #include <Aka/OS/Image.h>
 
 namespace aka {
@@ -83,10 +84,11 @@ enum class TextureType : uint8_t
 	Texture2DMultisampleArray, // no mip map
 };
 
-struct Texture
-{
-	void* native; // Native handle to the texture
+struct Texture;
+using TextureHandle = ResourceHandle<Texture>;
 
+struct Texture : Resource
+{
 	uint32_t width; // Width of the texture
 	uint32_t height; // Height of the texture
 	uint32_t depth; // Depth of the texture
@@ -112,20 +114,18 @@ struct Texture
 
 	static uint32_t size(TextureFormat format);
 
-	static Texture* create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data = nullptr);
-	static Texture* createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
-	static Texture* create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
-	static void destroy(Texture* texture);
+	static TextureHandle create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data = nullptr);
+	static TextureHandle createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static TextureHandle create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static void destroy(TextureHandle texture);
 };
 
 struct SubTexture
 {
-	Texture* texture;
+	TextureHandle texture;
 	Rect region;
 	void update() {} // TODO
 };
-
-using TextureHandle = const Texture*;
 
 };
 };

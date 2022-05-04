@@ -4,6 +4,7 @@
 
 #include <Aka/Graphic/Program.h>
 #include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/Resource.h>
 #include <Aka/Core/Container/Vector.h>
 #include <Aka/OS/Image.h>
 
@@ -275,9 +276,9 @@ struct ViewportState
 	Rect scissor;
 };
 
-struct Pipeline
+struct Pipeline : Resource
 {
-	Program* program;
+	const Program* program;
 
 	PrimitiveType primitive;
 	VertexBindingState vertices;

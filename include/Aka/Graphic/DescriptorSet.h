@@ -4,26 +4,41 @@
 #include <Aka/Graphic/Texture.h>
 #include <Aka/Graphic/Buffer.h>
 #include <Aka/Graphic/Sampler.h>
+#include <Aka/Graphic/Resource.h>
 
 namespace aka {
 namespace gfx {
 
-struct DescriptorSet
+struct DescriptorSet;
+using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
+
+struct DescriptorSetData
+{
+	union {
+		const Buffer* buffers[ShaderBindingState::MaxBindingCount];
+		struct {
+			TextureHandle images[ShaderBindingState::MaxBindingCount];
+			const Sampler* samplers[ShaderBindingState::MaxBindingCount];
+		};
+	};
+
+	void setUniformBuffer(uint32_t slot, const Buffer* buffer);
+	void setStorageBuffer(uint32_t slot, const Buffer* buffer);
+	void setSampledImage(uint32_t slot, TextureHandle texture, const Sampler* sampler);
+	void setStorageImage(uint32_t slot, TextureHandle texture);
+};
+
+struct DescriptorSet;
+using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
+
+struct DescriptorSet : Resource
 {
 	ShaderBindingState bindings;
 
-	Buffer* buffers[ShaderBindingState::MaxBindingCount];
-	Texture* images[ShaderBindingState::MaxBindingCount];
-	Sampler* samplers[ShaderBindingState::MaxBindingCount];
+	void update(const DescriptorSetData& data);
 
-
-	void setUniformBuffer(uint32_t slot, Buffer* buffer);
-	void setStorageBuffer(uint32_t slot, Buffer* buffer);
-	void setSampledImage(uint32_t slot, Texture* texture, Sampler* sampler);
-	void setStorageImage(uint32_t slot, Texture* texture);
-
-	static DescriptorSet* create(const ShaderBindingState& state);
-	static void destroy(DescriptorSet* set);
+	static DescriptorSetHandle create(const ShaderBindingState& state);
+	static void destroy(DescriptorSetHandle set);
 };
 
 };

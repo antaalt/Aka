@@ -28,7 +28,7 @@ ProgramManager::~ProgramManager()
 	}
 }
 
-Program* ProgramManager::get(const String& name)
+const Program* ProgramManager::get(const String& name)
 {
 	for (ProgramInfo& info : m_programs)
 		if (info.name == name)
@@ -36,7 +36,7 @@ Program* ProgramManager::get(const String& name)
 	return nullptr;
 }
 
-Shader* ProgramManager::getShader(const String& name)
+const Shader* ProgramManager::getShader(const String& name)
 {
 	for (ShaderInfo& info : m_shaders)
 		if (info.name == name)
@@ -50,7 +50,7 @@ bool ProgramManager::reload(const String& name)
 	{
 		if (info.name == name)
 		{
-			Shader* out = compile(info.path, info.type, info.sets, &info.setCount, &info.vertices);
+			const Shader* out = compile(info.path, info.type, info.sets, &info.setCount, &info.vertices);
 			if (out == nullptr)
 				return false;
 			info.shader = out;
@@ -239,7 +239,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (vertUpdated)
 				{
 					AKA_ASSERT(vertInfo.type == ShaderType::Vertex, "Invalid shader type");
-					Shader* shader = compile(vertInfo.path, vertInfo.type, vertInfo.sets, &vertInfo.setCount, &vertInfo.vertices);
+					const Shader* shader = compile(vertInfo.path, vertInfo.type, vertInfo.sets, &vertInfo.setCount, &vertInfo.vertices);
 					if (shader != nullptr)
 					{
 						compiled = true;
@@ -250,7 +250,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (fragUpdated)
 				{
 					AKA_ASSERT(fragInfo.type == ShaderType::Fragment, "Invalid shader type");
-					Shader* shader = compile(fragInfo.path, fragInfo.type, fragInfo.sets, &fragInfo.setCount, &fragInfo.vertices);
+					const Shader* shader = compile(fragInfo.path, fragInfo.type, fragInfo.sets, &fragInfo.setCount, &fragInfo.vertices);
 					if (shader != nullptr)
 					{
 						compiled = true;
@@ -279,7 +279,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
 				ShaderBindingState bindings{};
 				uint32_t setCount = 0;
-				Shader* shader = compile(compInfo.path, compInfo.type, &bindings, &setCount, nullptr);
+				const Shader* shader = compile(compInfo.path, compInfo.type, &bindings, &setCount, nullptr);
 				if (shader != nullptr)
 				{
 					compInfo.shader = shader;
@@ -293,7 +293,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 	EventDispatcher<ProgramReloadedEvent>::dispatch();
 }
 
-Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, uint32_t* setCount, VertexBindingState* vertices)
+const Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, uint32_t* setCount, VertexBindingState* vertices)
 {
 	Application* app = Application::app();
 	GraphicDevice* device = app->graphic();

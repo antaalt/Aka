@@ -127,7 +127,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 	std::vector<VkImageView> vk_attachments(framebuffer->framebuffer.count);
 	for (size_t i = 0; i < framebuffer->framebuffer.count; i++)
 	{
-		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(framebuffer->colors[i].texture);
+		const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(framebuffer->colors[i].texture.data);
 		// View dependent on flag.
 		if (!vk_texture->hasLayers() || has(framebuffer->colors[i].flag, AttachmentFlag::AttachTextureObject))
 		{
@@ -150,7 +150,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 	}
 	if (framebuffer->hasDepthStencil())
 	{
-		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(framebuffer->depth.texture);
+		const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(framebuffer->depth.texture.data);
 		// View dependent on flag.
 		if (!vk_texture->hasLayers() || has(framebuffer->depth.flag, AttachmentFlag::AttachTextureObject))
 		{
@@ -188,7 +188,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 	return vk_framebuffer;
 }
 
-Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth)
+const Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
 	if ((attachments == nullptr && depth == nullptr) || count > FramebufferState::MaxColorAttachmentCount)
 		return nullptr;
@@ -201,12 +201,12 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 	framebuffer->height = ~0U;
 	for (uint32_t i = 0; i < count; i++)
 	{
-		if (attachments[i].texture == nullptr)
+		if (attachments[i].texture.data == nullptr)
 			continue;
-		framebuffer->width = min(attachments[i].texture->width, framebuffer->width);
-		framebuffer->height = min(attachments[i].texture->height, framebuffer->height);
+		framebuffer->width = min(attachments[i].texture.data->width, framebuffer->width);
+		framebuffer->height = min(attachments[i].texture.data->height, framebuffer->height);
 		framebuffer->colors[i] = attachments[i];
-		framebuffer->framebuffer.colors[i].format = attachments[i].texture->format;
+		framebuffer->framebuffer.colors[i].format = attachments[i].texture.data->format;
 		framebuffer->framebuffer.colors[i].loadOp = attachments[i].loadOp;
 	}
 	if (depth == nullptr)
@@ -217,10 +217,10 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 	else
 	{
 		framebuffer->depth = *depth;
-		framebuffer->framebuffer.depth.format = depth->texture->format;
+		framebuffer->framebuffer.depth.format = depth->texture.data->format;
 		framebuffer->framebuffer.depth.loadOp = depth->loadOp;
-		framebuffer->width = min(depth->texture->width, framebuffer->width);
-		framebuffer->height = min(depth->texture->height, framebuffer->height);
+		framebuffer->width = min(depth->texture.data->width, framebuffer->width);
+		framebuffer->height = min(depth->texture.data->height, framebuffer->height);
 	}
 
 	framebuffer->isSwapchain = false;
@@ -228,15 +228,15 @@ Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachment
 	framebuffer->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(m_context.device, framebuffer->vk_renderpass, framebuffer);
 	return framebuffer;
 }
-void VulkanGraphicDevice::destroy(Framebuffer* framebuffer)
+void VulkanGraphicDevice::destroy(const Framebuffer* framebuffer)
 {
-	VulkanFramebuffer* vk_framebuffer = reinterpret_cast<VulkanFramebuffer*>(framebuffer);
+	const VulkanFramebuffer* vk_framebuffer = reinterpret_cast<const VulkanFramebuffer*>(framebuffer);
 	vkDestroyFramebuffer(m_context.device, vk_framebuffer->vk_framebuffer, nullptr);
 	vk_framebuffer->vk_renderpass; // Cached. do not destroy here
-	m_framebufferPool.release(vk_framebuffer);
+	m_framebufferPool.release(const_cast<VulkanFramebuffer*>(vk_framebuffer));
 }
 
-Framebuffer* VulkanGraphicDevice::backbuffer(Frame* frame)
+const Framebuffer* VulkanGraphicDevice::backbuffer(const Frame* frame)
 {
 	return m_swapchain.backbuffers[frame->image.value];
 }

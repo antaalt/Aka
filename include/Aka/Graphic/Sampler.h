@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include <Aka/Graphic/Resource.h>
+
 namespace aka {
 namespace gfx {
 
@@ -26,7 +28,7 @@ enum class SamplerMipMapMode : uint8_t
 	Linear,
 };
 
-struct Sampler
+struct Sampler : Resource
 {
 	Filter filterMin;
 	Filter filterMag;
@@ -39,7 +41,7 @@ struct Sampler
 
 	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
 
-	static Sampler* create(
+	static const Sampler* create(
 		Filter filterMin,
 		Filter filterMag,
 		SamplerMipMapMode mipmapMode,
@@ -49,7 +51,7 @@ struct Sampler
 		SamplerAddressMode wrapW,
 		float anisotropy
 	);
-	static void destroy(Sampler* sampler);
+	static void destroy(const Sampler* sampler);
 };
 
 };

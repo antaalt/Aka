@@ -5,6 +5,7 @@
 #include <Aka/OS/Stream/FileStream.h>
 #include <Aka/Core/Application.h>
 #include <Aka/Resource/ResourceManager.h>
+#include <Aka/Resource/BufferStorage.h>
 
 namespace aka {
 
@@ -98,7 +99,7 @@ Mesh* MeshStorage::allocate() const
 		
 		//mesh->bindings.offsets[i] = vertices[i].vertexCount;
 
-		mesh->vertices[i] = resources->get<gfx::Buffer>(vertices[i].vertexBufferName);
+		mesh->vertices[i] = resources->get<Buffer>(vertices[i].vertexBufferName)->buffer;
 		AKA_ASSERT(mesh->vertices[i] != nullptr, "No vertex buffer");
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferOffset;
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferSize;
@@ -107,17 +108,18 @@ Mesh* MeshStorage::allocate() const
 	mesh->count = indexCount;
 	mesh->format = indexFormat;
 
-	mesh->indices = resources->get<gfx::Buffer>(indexBufferName);
+	mesh->indices = resources->get<Buffer>(indexBufferName)->buffer;
 	AKA_ASSERT(mesh->indices != nullptr, "No index buffer");
 	return mesh;
 }
 
 void MeshStorage::deallocate(Mesh* mesh) const
 {
-	Mesh::destroy(mesh);
+	delete mesh;
+	//Mesh::destroy(mesh);
 }
 
-void MeshStorage::serialize(const Mesh* mesh)
+void MeshStorage::serialize(const Mesh& mesh)
 {
 	/*Application* app = Application::app();
 	ResourceManager* resources = app->resource();
@@ -142,11 +144,11 @@ void MeshStorage::serialize(const Mesh* mesh)
 	indexFormat = mesh->getIndexFormat();*/
 }
 
-size_t MeshStorage::size(const Mesh* mesh)
+size_t MeshStorage::size(const Mesh& mesh)
 {
-	size_t size = mesh->indices->size;
-	for (uint32_t i = 0; i < mesh->bindings.count; i++)
-		size += mesh->vertices[i]->size;
+	size_t size = mesh.indices->size;
+	for (uint32_t i = 0; i < mesh.bindings.count; i++)
+		size += mesh.vertices[i]->size;
 	return size;
 }
 

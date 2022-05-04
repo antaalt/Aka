@@ -1,0 +1,36 @@
+#pragma once
+
+namespace aka {
+namespace gfx {
+
+enum class ResourceType : uint8_t
+{
+	Unknown,
+
+	Buffer,
+	Texture,
+	Framebuffer,
+	Pipeline,
+	DescriptorSet,
+	Program,
+	Shader,
+};
+
+using ResourceNativeHandle = uint64_t;
+
+struct Resource
+{
+	char name[256]; // Debug name of the resource.
+	ResourceNativeHandle native; // Native handle of the resource for external API
+	ResourceType type; // Type of the resource
+};
+
+template <typename T>
+struct ResourceHandle
+{
+	//static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
+	const T* data; // TODO should be obfuscated
+};
+
+};
+};

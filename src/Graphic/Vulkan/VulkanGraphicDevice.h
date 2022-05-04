@@ -10,6 +10,8 @@
 #include "VulkanSwapchain.h"
 #include "VulkanSampler.h"
 
+#include <Aka/Memory/Pool.h>
+
 namespace aka {
 namespace gfx {
 
@@ -21,23 +23,25 @@ public:
 
 	GraphicAPI api() const override;
 
+	void name(const Resource* resource, const char* name) override;
+
 	// Device
 	uint32_t getPhysicalDeviceCount() override;
-	PhysicalDevice* getPhysicalDevice(uint32_t index) override;
+	const PhysicalDevice* getPhysicalDevice(uint32_t index) override;
 
 	// Shaders
-	Shader* compile(ShaderType type, const uint8_t* data, size_t size) override;
-	void destroy(Shader* handle) override;
+	const Shader* compile(ShaderType type, const uint8_t* data, size_t size) override;
+	void destroy(const Shader* handle) override;
 
 	// Programs
-	Program* createProgram(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
-	void destroy(Program* handle) override;
-	DescriptorSet* createDescriptorSet(const ShaderBindingState& bindings) override;
-	void update(DescriptorSet* set) override;
-	void destroy(DescriptorSet* set) override;
+	const Program* createProgram(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
+	void destroy(const Program* handle) override;
+	DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) override;
+	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
+	void destroy(DescriptorSetHandle set) override;
 
 	// Textures
-	Texture* createTexture(
+	TextureHandle createTexture(
 		uint32_t width, uint32_t height, uint32_t depth,
 		TextureType type,
 		uint32_t levels, uint32_t layers,
@@ -45,13 +49,13 @@ public:
 		TextureFlag flags,
 		const void* const* data
 	) override;
-	void upload(const Texture* texture, const void*const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
-	void download(const Texture* texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) override;
-	void copy(const Texture* lhs, const Texture* rhs) override;
-	void destroy(Texture* texture) override;
+	void upload(TextureHandle texture, const void*const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
+	void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) override;
+	void copy(TextureHandle lhs, TextureHandle rhs) override;
+	void destroy(TextureHandle texture) override;
 
 	// Sampler
-	Sampler* createSampler(
+	const Sampler* createSampler(
 		Filter filterMin, 
 		Filter filterMag, 
 		SamplerMipMapMode mipmapMode, 
@@ -61,24 +65,24 @@ public:
 		SamplerAddressMode wrapW, 
 		float anisotropy
 	) override;
-	void destroy(Sampler* sampler) override;
+	void destroy(const Sampler* sampler) override;
 
 	// Buffer
-	Buffer* createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
+	const Buffer* createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
 	void upload(const Buffer* buffer, const void* data, uint32_t offset, uint32_t size) override;
 	void download(const Buffer* buffer, void* data, uint32_t offset, uint32_t size) override;
-	void* map(Buffer* buffer, BufferMap map) override;
-	void unmap(Buffer* buffer) override;
-	void destroy(Buffer* buffer) override;
+	void* map(const Buffer* buffer, BufferMap map) override;
+	void unmap(const Buffer* buffer) override;
+	void destroy(const Buffer* buffer) override;
 
 	// Framebuffer
-	Framebuffer* createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) override;
-	void destroy(Framebuffer* handle) override;
-	Framebuffer* backbuffer(Frame* frame) override;
+	const Framebuffer* createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) override;
+	void destroy(const Framebuffer* handle) override;
+	const Framebuffer* backbuffer(const Frame* frame) override;
 
 	// Pipeline
-	Pipeline* createPipeline(
-		Program *program,
+	const Pipeline* createPipeline(
+		const Program *program,
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
@@ -89,7 +93,7 @@ public:
 		const BlendState& blending,
 		const FillState& fill
 	) override;
-	void destroy(Pipeline* handle) override;
+	void destroy(const Pipeline* handle) override;
 
 	// Command list
 	CommandList* acquireCommandList() override;
@@ -142,15 +146,15 @@ private:
 	VulkanSwapchain m_swapchain;
 
 	// Pools
-	GraphicPool<VulkanTexture> m_texturePool;
-	GraphicPool<VulkanSampler> m_samplerPool;
-	GraphicPool<VulkanBuffer> m_bufferPool;
-	GraphicPool<VulkanShader> m_shaderPool;
-	GraphicPool<VulkanProgram> m_programPool;
-	GraphicPool<VulkanFramebuffer> m_framebufferPool;
-	GraphicPool<VulkanPipeline> m_pipelinePool;
-	GraphicPool<VulkanDescriptorSet> m_descriptorPool;
-	//GraphicPool<VulkanCommandList> m_commandPool;
+	Pool<VulkanTexture> m_texturePool;
+	Pool<VulkanSampler> m_samplerPool;
+	Pool<VulkanBuffer> m_bufferPool;
+	Pool<VulkanShader> m_shaderPool;
+	Pool<VulkanProgram> m_programPool;
+	Pool<VulkanFramebuffer> m_framebufferPool;
+	Pool<VulkanPipeline> m_pipelinePool;
+	Pool<VulkanDescriptorSet> m_descriptorPool;
+	//Pool<VulkanCommandList> m_commandPool;
 };
 
 };

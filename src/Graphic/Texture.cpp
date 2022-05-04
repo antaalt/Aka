@@ -218,19 +218,19 @@ uint32_t Texture::size(TextureFormat format)
 	return 0;
 }
 
-Texture* Texture::create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data)
+TextureHandle Texture::create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data)
 {
 	return Application::app()->graphic()->createTexture(width, height, 1, TextureType::Texture2D, 1, 1, format, flags, &data);
 }
-Texture* Texture::createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data)
+TextureHandle Texture::createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data)
 {
 	return Application::app()->graphic()->createTexture(width, height, 1, TextureType::TextureCubeMap, 1, 6, format, flags, data);
 }
-Texture* Texture::create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data)
+TextureHandle Texture::create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data)
 {
 	return Application::app()->graphic()->createTexture(width, height, 1, TextureType::Texture2DArray, 1, layers, format, flags, data);
 }
-void Texture::destroy(Texture* texture)
+void Texture::destroy(TextureHandle texture)
 {
 	return Application::app()->graphic()->destroy(texture);
 }

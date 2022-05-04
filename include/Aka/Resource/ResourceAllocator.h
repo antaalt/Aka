@@ -73,7 +73,7 @@ inline Resource<T> Resource<T>::load(const Path& path)
 		Resource<T> res;
 		res.resource = std::shared_ptr<T>(storage->allocate(), [](T* data) { IStorage<T>::create()->deallocate(data); });
 		res.path = path;
-		res.size = storage->size(res.resource.get());
+		res.size = storage->size(*res.resource.get());
 		res.loaded = Time::now();
 		return res;
 	}
@@ -89,7 +89,7 @@ template<typename T>
 inline bool Resource<T>::save(const Resource<T>& resource)
 {
 	auto storage = IStorage<T>::create();
-	storage->serialize(resource.resource.get());
+	storage->serialize(*resource.resource.get());
 	return storage->save(resource.path);
 }
 

@@ -57,14 +57,14 @@ void FontStorage::deallocate(Font* font) const
 {
 	throw std::runtime_error("Not supported");
 }
-void FontStorage::serialize(const Font* font)
+void FontStorage::serialize(const Font& font)
 {
 	throw std::runtime_error("Not supported");
 }
 
-size_t FontStorage::size(const Font* font)
+size_t FontStorage::size(const Font& font)
 {
-	return font->atlas()->width * font->atlas()->height * gfx::Texture::size(font->atlas()->format);
+	return font.atlas().data->width * font.atlas().data->height * gfx::Texture::size(font.atlas().data->format);
 }
 
 }; // namespace aka

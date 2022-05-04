@@ -8,11 +8,11 @@
 
 namespace aka {
 
-template struct Resource<gfx::Buffer>;
-template class ResourceAllocator<gfx::Buffer>;
+template struct Resource<Buffer>;
+template class ResourceAllocator<Buffer>;
 
 template <>
-std::unique_ptr<IStorage<gfx::Buffer>> IStorage<gfx::Buffer>::create()
+std::unique_ptr<IStorage<Buffer>> IStorage<Buffer>::create()
 {
 	return std::make_unique<BufferStorage>();
 }
@@ -54,28 +54,29 @@ bool BufferStorage::save(const Path& path) const
 	return true;
 }
 
-gfx::Buffer* BufferStorage::allocate() const
+Buffer* BufferStorage::allocate() const
 {
-	return Application::app()->graphic()->createBuffer(type, (uint32_t)bytes.size(), usage, access, bytes.data());
+	return new Buffer{ Application::app()->graphic()->createBuffer(type, (uint32_t)bytes.size(), usage, access, bytes.data()) };
 }
 
-void BufferStorage::deallocate(gfx::Buffer* buffer) const
+void BufferStorage::deallocate(Buffer* buffer) const
 {
-	Application::app()->graphic()->destroy(buffer);
+	Application::app()->graphic()->destroy(buffer->buffer);
+	delete buffer;
 }
 
-void BufferStorage::serialize(const gfx::Buffer* buffer)
+void BufferStorage::serialize(const Buffer& buffer)
 {
-	type = buffer->type;
-	usage = buffer->usage;
-	access = buffer->access;
-	bytes.resize(buffer->size);
-	Application::app()->graphic()->download(buffer, bytes.data(), 0, buffer->size);
+	type = buffer.buffer->type;
+	usage = buffer.buffer->usage;
+	access = buffer.buffer->access;
+	bytes.resize(buffer.buffer->size);
+	Application::app()->graphic()->download(buffer.buffer, bytes.data(), 0, buffer.buffer->size);
 }
 
-size_t BufferStorage::size(const gfx::Buffer* buffer)
+size_t BufferStorage::size(const Buffer& buffer)
 {
-	return buffer->size;
+	return buffer.buffer->size;
 }
 
 }; // namespace aka

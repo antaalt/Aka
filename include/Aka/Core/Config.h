@@ -47,4 +47,10 @@
 
 namespace aka {
 
+template <typename T>
+inline constexpr std::underlying_type_t<T> EnumToIntegral(T value)
+{
+	return static_cast<std::underlying_type_t<T>>(value);
+}
+
 };

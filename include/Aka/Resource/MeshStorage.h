@@ -38,9 +38,9 @@ struct MeshStorage : IStorage<Mesh>
 
 	Mesh* allocate() const override;
 	void deallocate(Mesh* mesh) const override;
-	void serialize(const Mesh* mesh) override;
+	void serialize(const Mesh& mesh) override;
 
-	size_t size(const Mesh* mesh) override;
+	size_t size(const Mesh& mesh) override;
 };
 
 };

@@ -21,7 +21,7 @@ struct VulkanProgram : Program
 	//VkDescriptorSet vk_descriptorSet;
 	//VkPipelineLayout vk_pipelineLayout; // soft reference
 
-	static void updateDescriptorSet(VkDevice device, const DescriptorSet* set);
+	static void updateDescriptorSet(VkDevice device, const DescriptorSet* set, const DescriptorSetData& data);
 	static VkDescriptorSetLayout createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings, VkDescriptorPool* pool);
 	static VkDescriptorSet createVkDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout* layouts, uint32_t count);
 };

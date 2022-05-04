@@ -7,9 +7,13 @@
 
 namespace aka {
 
-using BufferAllocator = ResourceAllocator<gfx::Buffer>;
+struct Buffer {
+	const gfx::Buffer* buffer;
+};
 
-struct BufferStorage : IStorage<gfx::Buffer>
+using BufferAllocator = ResourceAllocator<Buffer>;
+
+struct BufferStorage : IStorage<Buffer>
 {
 	static constexpr uint16_t major = 0;
 	static constexpr uint16_t minor = 1;
@@ -22,11 +26,11 @@ struct BufferStorage : IStorage<gfx::Buffer>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	gfx::Buffer* allocate() const override;
-	void deallocate(gfx::Buffer* buffer) const override;
-	void serialize(const gfx::Buffer* mesh) override;
+	Buffer* allocate() const override;
+	void deallocate(Buffer* buffer) const override;
+	void serialize(const Buffer& mesh) override;
 
-	size_t size(const gfx::Buffer* mesh) override;
+	size_t size(const Buffer& mesh) override;
 };
 
 };

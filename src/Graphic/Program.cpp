@@ -45,19 +45,19 @@ bool Program::hasComputeStage() const
 	return compute != nullptr;
 }
 
-Program* Program::createVertex(Shader* vertex, Shader* fragment, const ShaderBindingState* bindings, uint32_t count)
+const Program* Program::createVertex(const Shader* vertex, const Shader* fragment, const ShaderBindingState* bindings, uint32_t count)
 {
 	return Application::app()->graphic()->createProgram(vertex, fragment, nullptr, bindings, count);
 }
-Program* Program::createGeometry(Shader* vertex, Shader* fragment, Shader* geometry, const ShaderBindingState* bindings, uint32_t count)
+const Program* Program::createGeometry(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t count)
 {
 	return Application::app()->graphic()->createProgram(vertex, fragment, geometry, bindings, count);
 }
-Program* Program::createCompute(Shader* compute)
+const Program* Program::createCompute(const Shader* compute)
 {
 	return nullptr;
 }
-void Program::destroy(Program* program)
+void Program::destroy(const Program* program)
 {
 	Application::app()->graphic()->destroy(program);
 }

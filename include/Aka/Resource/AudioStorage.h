@@ -20,9 +20,9 @@ struct AudioStorage : IStorage<AudioStream>
 
 	AudioStream* allocate() const override;
 	void deallocate(AudioStream* buffer) const override;
-	void serialize(const AudioStream* mesh) override;
+	void serialize(const AudioStream& mesh) override;
 
-	size_t size(const AudioStream* mesh) override;
+	size_t size(const AudioStream& mesh) override;
 };
 
 };

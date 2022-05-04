@@ -9,11 +9,11 @@
 
 namespace aka {
 
-template struct Resource<gfx::Texture>;
-template class ResourceAllocator<gfx::Texture>;
+template struct Resource<Texture>;
+template class ResourceAllocator<Texture>;
 
 template <>
-std::unique_ptr<IStorage<gfx::Texture>> IStorage<gfx::Texture>::create()
+std::unique_ptr<IStorage<Texture>> IStorage<Texture>::create()
 {
 	return std::make_unique<TextureStorage>();
 }
@@ -129,7 +129,7 @@ bool TextureStorage::save(const Path& path) const
 	return true;
 }
 
-gfx::Texture* TextureStorage::allocate() const
+Texture* TextureStorage::allocate() const
 {
 	gfx::GraphicDevice* device = Application::app()->graphic();
 	switch (type)
@@ -138,7 +138,7 @@ gfx::Texture* TextureStorage::allocate() const
 		if (images.size() != 1)
 			return nullptr;
 		const void* data = images[0].data();
-		return device->createTexture(
+		return new Texture{ device->createTexture(
 			images[0].width(),
 			images[0].height(),
 			1,
@@ -148,7 +148,7 @@ gfx::Texture* TextureStorage::allocate() const
 			format,
 			flags,
 			&data
-		);
+		) };
 	}
 	case gfx::TextureType::TextureCubeMap: {
 		if (images.size() != 6)
@@ -161,33 +161,34 @@ gfx::Texture* TextureStorage::allocate() const
 			images[4].data(),
 			images[5].data()
 		};
-		return device->createTexture(
+		return new Texture{ device->createTexture(
 			images[0].width(), images[0].height(), 1,
 			gfx::TextureType::TextureCubeMap,
 			levels,
 			6,
 			format, flags,
 			data
-		);
+		) };
 	}
 	default:
 		return nullptr;
 	}
 }
 
-void TextureStorage::deallocate(gfx::Texture* texture) const
+void TextureStorage::deallocate(Texture* texture) const
 {
-	gfx::Texture::destroy(texture);
+	gfx::Texture::destroy(texture->texture);
+	delete texture;
 }
-void TextureStorage::serialize(const gfx::Texture* texture)
+void TextureStorage::serialize(const Texture& texture)
 {
 	gfx::GraphicDevice* device = Application::app()->graphic();
-	switch (texture->type)
+	switch (texture.texture.data->type)
 	{
 	case gfx::TextureType::Texture2D: {
 		images.resize(1);
 		ImageFormat format = ImageFormat::None;
-		switch (texture->format)
+		switch (texture.texture.data->format)
 		{
 		case gfx::TextureFormat::RGBA32F:
 			format = ImageFormat::Float;
@@ -201,14 +202,14 @@ void TextureStorage::serialize(const gfx::Texture* texture)
 			Logger::error("Texture format not supported.");
 			return;
 		}
-		images[0] = Image(texture->width, texture->height, 4, format);
-		device->download(texture, images[0].data(), 0, 0, texture->width, texture->height);
+		images[0] = Image(texture.texture.data->width, texture.texture.data->height, 4, format);
+		device->download(texture.texture, images[0].data(), 0, 0, texture.texture.data->width, texture.texture.data->height);
 		break;
 	}
 	case gfx::TextureType::TextureCubeMap: {
 		images.resize(6);
 		ImageFormat format = ImageFormat::None;
-		switch (texture->format)
+		switch (texture.texture.data->format)
 		{
 		case gfx::TextureFormat::RGBA32F:
 			format = ImageFormat::Float;
@@ -224,8 +225,8 @@ void TextureStorage::serialize(const gfx::Texture* texture)
 		}
 		for (uint32_t i = 0; i < 6; i++)
 		{
-			images[i] = Image(texture->width, texture->height, 4, format);
-			device->download(texture, images[i].data(), 0, 0, texture->width, texture->height, 0, i);
+			images[i] = Image(texture.texture.data->width, texture.texture.data->height, 4, format);
+			device->download(texture.texture, images[i].data(), 0, 0, texture.texture.data->width, texture.texture.data->height, 0, i);
 		}
 		break;
 	}
@@ -236,9 +237,9 @@ void TextureStorage::serialize(const gfx::Texture* texture)
 	
 }
 
-size_t TextureStorage::size(const gfx::Texture* texture)
+size_t TextureStorage::size(const Texture& texture)
 {
-	return texture->width * texture->height * gfx::Texture::size(texture->format);
+	return texture.texture.data->width * texture.texture.data->height * gfx::Texture::size(texture.texture.data->format);
 }
 
 }; // namespace aka

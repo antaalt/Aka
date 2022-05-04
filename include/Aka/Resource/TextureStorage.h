@@ -8,9 +8,14 @@
 
 namespace aka {
 
-using TextureAllocator = ResourceAllocator<gfx::Texture>;
+struct Texture
+{
+	gfx::TextureHandle texture;
+};
 
-struct TextureStorage : IStorage<gfx::Texture>
+using TextureAllocator = ResourceAllocator<Texture>;
+
+struct TextureStorage : IStorage<Texture>
 {
 	static constexpr uint16_t major = 0;
 	static constexpr uint16_t minor = 2;
@@ -25,11 +30,11 @@ struct TextureStorage : IStorage<gfx::Texture>
 	bool load(const Path& path) override;
 	bool save(const Path& path) const override;
 
-	gfx::Texture* allocate() const override;
-	void deallocate(gfx::Texture* texture) const override;
-	void serialize(const gfx::Texture* texture) override;
+	Texture* allocate() const override;
+	void deallocate(Texture* texture) const override;
+	void serialize(const Texture& texture) override;
 
-	size_t size(const gfx::Texture* texture) override;
+	size_t size(const Texture& texture) override;
 };
 
 };

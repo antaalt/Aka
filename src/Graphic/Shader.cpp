@@ -27,12 +27,12 @@ ShaderType operator|(ShaderType lhs, ShaderType rhs)
 	);
 }
 
-Shader* Shader::compile(ShaderType type, const uint8_t* content, size_t size)
+const Shader* Shader::compile(ShaderType type, const uint8_t* content, size_t size)
 {
 	return Application::app()->graphic()->compile(type, content, size);
 }
 
-void Shader::destroy(Shader* shader)
+void Shader::destroy(const Shader* shader)
 {
 	Application::app()->graphic()->destroy(shader);
 }

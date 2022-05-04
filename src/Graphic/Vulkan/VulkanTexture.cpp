@@ -214,7 +214,7 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 	);
 }
 
-Texture* VulkanGraphicDevice::createTexture(
+TextureHandle VulkanGraphicDevice::createTexture(
 	uint32_t width, uint32_t height, uint32_t depth,
 	TextureType type,
 	uint32_t levels, uint32_t layers,
@@ -411,15 +411,15 @@ Texture* VulkanGraphicDevice::createTexture(
 		texture->vk_layout = layout;
 	}
 
-	return texture;
+	return TextureHandle{ texture };
 }
 
-void VulkanGraphicDevice::upload(const Texture* texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(texture);
+	const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(texture.data);
 	// Create staging buffer
-	VkDeviceSize imageSize = texture->width * texture->height * Texture::size(texture->format);
-	VkDeviceSize bufferSize = imageSize * texture->layers;
+	VkDeviceSize imageSize = texture.data->width * texture.data->height * Texture::size(texture.data->format);
+	VkDeviceSize bufferSize = imageSize * texture.data->layers;
 	VkBuffer stagingBuffer = VulkanBuffer::createVkBuffer(
 		m_context.device,
 		bufferSize,
@@ -434,7 +434,7 @@ void VulkanGraphicDevice::upload(const Texture* texture, const void* const* data
 	// Upload to staging buffer
 	void* stagingData;
 	vkMapMemory(m_context.device, stagingBufferMemory, 0, bufferSize, 0, &stagingData);
-	for (uint32_t iLayer = 0; iLayer < texture->layers; iLayer++)
+	for (uint32_t iLayer = 0; iLayer < texture.data->layers; iLayer++)
 	{
 		void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
 		memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
@@ -467,15 +467,15 @@ void VulkanGraphicDevice::upload(const Texture* texture, const void* const* data
 	vkDestroyBuffer(m_context.device, stagingBuffer, nullptr);
 }
 
-void VulkanGraphicDevice::download(const Texture* texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel, uint32_t layer)
+void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel, uint32_t layer)
 {
 	// TODO
 }
 
-void VulkanGraphicDevice::copy(const Texture* lhs, const Texture* rhs)
+void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 {
-	const VulkanTexture* vk_src = reinterpret_cast<const VulkanTexture*>(lhs);
-	const VulkanTexture* vk_dst = reinterpret_cast<const VulkanTexture*>(rhs);
+	const VulkanTexture* vk_src = reinterpret_cast<const VulkanTexture*>(lhs.data);
+	const VulkanTexture* vk_dst = reinterpret_cast<const VulkanTexture*>(rhs.data);
 
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
 	const_cast<VulkanTexture*>(vk_dst)->copyFrom(cmd, const_cast<VulkanTexture*>(vk_src));
@@ -510,19 +510,21 @@ VulkanTexture* VulkanGraphicDevice::makeTexture(
 	texture->vk_layout = layout;
 
 	// Set native handle for others API
-	texture->native = image;
+	texture->native = reinterpret_cast<std::uintptr_t>(image);
 	return texture;
 }
 
-void VulkanGraphicDevice::destroy(Texture* texture)
+void VulkanGraphicDevice::destroy(TextureHandle texture)
 {
-	if (texture == nullptr) return;
-	// TODO ensure its a vk texture
-	VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(texture);
-	vkDestroyImageView(m_context.device, vk_texture->vk_view, nullptr);
-	vkFreeMemory(m_context.device, vk_texture->vk_memory, nullptr);
-	vkDestroyImage(m_context.device, vk_texture->vk_image, nullptr);
-	m_texturePool.release(vk_texture);
+	if (texture.data == nullptr) return;
+
+	const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(texture.data);
+	if (vk_texture->vk_memory != 0)
+	{
+		vkFreeMemory(m_context.device, vk_texture->vk_memory, nullptr);
+		vkDestroyImage(m_context.device, vk_texture->vk_image, nullptr);
+	}
+	m_texturePool.release(const_cast<VulkanTexture*>(vk_texture));
 }
 
 VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags)

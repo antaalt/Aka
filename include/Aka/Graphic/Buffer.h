@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include <Aka/Graphic/Resource.h>
+
 namespace aka {
 namespace gfx {
 
@@ -38,21 +40,19 @@ enum class BufferMap : uint8_t
 	WriteNoOverwrite
 };
 
-struct Buffer
+struct Buffer : Resource
 {
-	void* native;
-
 	uint32_t size;
 
 	BufferType type;
 	BufferUsage usage;
 	BufferCPUAccess access;
 
-	static Buffer* createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static Buffer* createVertexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static Buffer* createUniformBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static Buffer* createStagingBuffer(uint32_t size, const void* data = nullptr);
-	static void destroy(Buffer* buffer);
+	static const Buffer* createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static const Buffer* createVertexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static const Buffer* createUniformBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static const Buffer* createStagingBuffer(uint32_t size, const void* data = nullptr);
+	static void destroy(const Buffer* buffer);
 };
 
 };

@@ -27,9 +27,9 @@ struct IStorage
 	// Deallocate the resource from GPU
 	virtual void deallocate(T* resource) const = 0;
 	// Convert the resource to a storage
-	virtual void serialize(const T* resource) = 0;
+	virtual void serialize(const T& resource) = 0;
 	// Get the size of a resource
-	virtual size_t size(const T* resource) = 0;
+	virtual size_t size(const T& resource) = 0;
 	// Create the storage from type
 	static std::unique_ptr<IStorage<T>> create();
 };

@@ -149,13 +149,13 @@ void VulkanCommandList::beginRenderPass(const Framebuffer* framebuffer, const Cl
 	// Transition to attachment optimal if shader resource
 	if (vk_framebuffer->hasDepthStencil())
 	{
-		AKA_ASSERT(has(vk_framebuffer->depth.texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(vk_framebuffer->depth.texture->flags, TextureFlag::ShaderResource))
+		AKA_ASSERT(has(vk_framebuffer->depth.texture.data->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(vk_framebuffer->depth.texture.data->flags, TextureFlag::ShaderResource))
 		{
-			VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
+			const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(vk_framebuffer->depth.texture.data);
 			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 			{
-				vk_texture->transitionImageLayout(
+				const_cast<VulkanTexture*>(vk_texture)->transitionImageLayout(
 					vk_command,
 					VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 					VkImageSubresourceRange{ 
@@ -170,14 +170,14 @@ void VulkanCommandList::beginRenderPass(const Framebuffer* framebuffer, const Cl
 	for ( uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
 	{
 		const Attachment& att = vk_framebuffer->colors[i];
-		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(att.texture);
+		const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(att.texture.data);
 		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
 		if (has(vk_texture->flags, TextureFlag::ShaderResource))
 		{
 			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
 			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 			{
-				vk_texture->transitionImageLayout(
+				const_cast<VulkanTexture*>(vk_texture)->transitionImageLayout(
 					vk_command,
 					VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 					VkImageSubresourceRange{
@@ -210,13 +210,13 @@ void VulkanCommandList::endRenderPass()
 	// Transition to shader resource optimal
 	if (vk_framebuffer->hasDepthStencil())
 	{
-		AKA_ASSERT(has(vk_framebuffer->depth.texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(vk_framebuffer->depth.texture->flags, TextureFlag::ShaderResource))
+		AKA_ASSERT(has(vk_framebuffer->depth.texture.data->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(vk_framebuffer->depth.texture.data->flags, TextureFlag::ShaderResource))
 		{
-			VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(vk_framebuffer->depth.texture);
+			const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(vk_framebuffer->depth.texture.data);
 			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
 			{
-				vk_texture->insertMemoryBarrier(
+				const_cast<VulkanTexture*>(vk_texture)->insertMemoryBarrier(
 					vk_command,
 					VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
 					VkImageSubresourceRange{
@@ -235,7 +235,7 @@ void VulkanCommandList::endRenderPass()
 	for (uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
 	{
 		const Attachment& att = vk_framebuffer->colors[i];
-		VulkanTexture* vk_texture = reinterpret_cast<VulkanTexture*>(att.texture);
+		const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(att.texture.data);
 		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
 		if (has(vk_texture->flags, TextureFlag::ShaderResource))
 		{
@@ -243,7 +243,7 @@ void VulkanCommandList::endRenderPass()
 			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
 			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 			{
-				vk_texture->insertMemoryBarrier(
+				const_cast<VulkanTexture*>(vk_texture)->insertMemoryBarrier(
 					vk_command,
 					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // vk_framebuffer->isSwapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 					VkImageSubresourceRange{
@@ -273,26 +273,26 @@ void VulkanCommandList::bindPipeline(const Pipeline* pipeline)
 	this->vk_pipeline = vk_pipeline;
 
 }
-void VulkanCommandList::bindDescriptorSet(uint32_t index, const DescriptorSet* set)
+void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle set)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_pipeline != nullptr, "Invalid pipeline");
 
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
-	if (set->bindings.count > 0)
+	if (set.data->bindings.count > 0)
 	{
 		// TODO This might be done only once, when switching buffer / texture...
 		// Check for dirty
 		// if (material->dirty)
 		//if (vk_material != material)
-		VulkanProgram::updateDescriptorSet(vk_device, set);
+		//VulkanProgram::updateDescriptorSet(vk_device, set.data);
 
-		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(set);
+		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(set.data);
 		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipeline->vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
 		this->vk_sets[index] = vk_material;
 	}
 }
-void VulkanCommandList::bindDescriptorSets(const DescriptorSet* const* sets, uint32_t count)
+void VulkanCommandList::bindDescriptorSets(DescriptorSetHandle* sets, uint32_t count)
 {
 	if (count < 1)
 		return;
@@ -304,7 +304,7 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSet* const* sets, uin
 	VkPipelineLayout vk_layout = vk_pipeline->vk_pipelineLayout;
 	for (uint32_t i = 0; i < count; i++)
 	{
-		if (sets[i]->bindings.count > 0)
+		if (sets[i].data->bindings.count > 0)
 		{
 			// TODO This might be done only once, when switching buffer / texture...
 			// Check for dirty
@@ -312,7 +312,7 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSet* const* sets, uin
 			//if (vk_material != material)
 			//VulkanProgram::updateDescriptorSet(vk_device, materials[i]);
 
-			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(sets[i]);
+			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(sets[i].data);
 			vk_sets[i] = vk_set->vk_descriptorSet;
 			this->vk_sets[i] = vk_set;
 		}
