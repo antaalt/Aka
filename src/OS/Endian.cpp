@@ -36,42 +36,9 @@ void Endian::swap64(uint64_t& value)
 #endif
 }
 
-constexpr bool Endian::isBigEndian()
-{
-	constexpr uint32_t ui = 0x01020304;
-	constexpr uint8_t ub = (const uint8_t&)ui;
-	return ub == 0x01;
-}
-
-constexpr bool Endian::isMiddleEndian()
-{
-	constexpr uint32_t ui = 0x01020304;
-	constexpr uint8_t ub = (const uint8_t&)ui;
-	return ub == 0x02;
-}
-
-constexpr bool Endian::isLittleEndian()
-{
-	constexpr uint32_t ui = 0x01020304;
-	constexpr uint8_t ub = (const uint8_t&)ui;
-	return ub == 0x04;
-}
-
 bool Endian::same(Endianess order)
 {
 	return Endian::native() == order;
-}
-
-constexpr Endianess Endian::native()
-{
-	if constexpr (Endian::isBigEndian())
-		return Endianess::Big;
-	else if constexpr (Endian::isLittleEndian())
-		return Endianess::Little;
-	else if constexpr (Endian::isMiddleEndian())
-		return Endianess::Middle;
-	else
-		return Endianess::Unknown;
 }
 
 };

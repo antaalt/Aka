@@ -40,6 +40,40 @@ struct Endian
 	static constexpr Endianess native();
 };
 
+
+constexpr bool Endian::isBigEndian()
+{
+	constexpr uint32_t ui = 0x01020304;
+	constexpr uint8_t ub = (const uint8_t&)ui;
+	return ub == 0x01;
+}
+
+constexpr bool Endian::isMiddleEndian()
+{
+	constexpr uint32_t ui = 0x01020304;
+	constexpr uint8_t ub = (const uint8_t&)ui;
+	return ub == 0x02;
+}
+
+constexpr bool Endian::isLittleEndian()
+{
+	constexpr uint32_t ui = 0x01020304;
+	constexpr uint8_t ub = (const uint8_t&)ui;
+	return ub == 0x04;
+}
+
+constexpr Endianess Endian::native()
+{
+	if constexpr (Endian::isBigEndian())
+		return Endianess::Big;
+	else if constexpr (Endian::isLittleEndian())
+		return Endianess::Little;
+	else if constexpr (Endian::isMiddleEndian())
+		return Endianess::Middle;
+	else
+		return Endianess::Unknown;
+}
+
 template <typename T> inline void Endian::swap(T& value) {} // Do not swap if not needed.
 template <> inline void Endian::swap(int16_t& value) { Endian::swap16(reinterpret_cast<uint16_t&>(value)); }
 template <> inline void Endian::swap(int32_t& value) { Endian::swap32(reinterpret_cast<uint32_t&>(value)); }
