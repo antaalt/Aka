@@ -122,7 +122,7 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 	return renderPass;
 }
 
-VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPass renderpass, const Framebuffer* framebuffer)
+VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPass renderpass, const Framebuffer* framebuffer, std::vector<VkImageView>& views)
 {
 	std::vector<VkImageView> vk_attachments(framebuffer->framebuffer.count);
 	for (size_t i = 0; i < framebuffer->framebuffer.count; i++)
@@ -135,8 +135,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 		}
 		else
 		{
-			// TODO fix leak here, store the new view somewhere
-			// Create new view, where do we store it ?
+			// Create new view for framebuffer.
 			vk_attachments[i] = VulkanTexture::createVkImageView(
 				device,
 				vk_texture->vk_image,
@@ -146,6 +145,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 				framebuffer->colors[i].level,
 				framebuffer->colors[i].layer
 			);
+			views.push_back(vk_attachments[i]);
 		}
 	}
 	if (framebuffer->hasDepthStencil())
@@ -158,8 +158,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 		}
 		else
 		{
-			// TODO fix leak here, store the new view somewhere
-			// Create new view, where do we store it ?
+			// Create new view for framebuffer.
 			vk_attachments.push_back(VulkanTexture::createVkImageView(
 				device,
 				vk_texture->vk_image,
@@ -171,6 +170,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 				framebuffer->depth.level, 
 				framebuffer->depth.layer
 			));
+			views.push_back(vk_attachments.back());
 		}
 	}
 
@@ -225,7 +225,7 @@ FramebufferHandle VulkanGraphicDevice::createFramebuffer(const Attachment* attac
 
 	framebuffer->isSwapchain = false;
 	framebuffer->vk_renderpass = m_context.getRenderPass(framebuffer->framebuffer, VulkanRenderPassLayout::Framebuffer);
-	framebuffer->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(m_context.device, framebuffer->vk_renderpass, framebuffer);
+	framebuffer->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(m_context.device, framebuffer->vk_renderpass, framebuffer, framebuffer->vk_views);
 	return FramebufferHandle{ framebuffer };
 }
 void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
@@ -234,7 +234,10 @@ void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 		return;
 	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
 	vkDestroyFramebuffer(m_context.device, vk_framebuffer->vk_framebuffer, nullptr);
+	for (VkImageView view : vk_framebuffer->vk_views)
+		vkDestroyImageView(m_context.device, view, nullptr);
 	vk_framebuffer->vk_renderpass; // Cached. do not destroy here
+
 	m_framebufferPool.release(vk_framebuffer);
 }
 

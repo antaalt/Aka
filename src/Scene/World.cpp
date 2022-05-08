@@ -33,6 +33,11 @@ void World::destroyEntity(Entity entity)
 	m_registry.destroy(entity.handle());
 }
 
+void World::clear()
+{
+	m_registry.clear();
+}
+
 void World::save(const Path& path)
 {
 	String str = Serializer::serialize(*this);

@@ -20,14 +20,15 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	wait();
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
-	//AKA_ASSERT(m_texturePool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_samplerPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_bufferPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_shaderPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_programPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_pipelinePool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_descriptorPool.count() == 0, "Resource destroy missing");
+	// We still check if resources where cleanly destroyed before releasing the remains.
+	AKA_ASSERT(m_texturePool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_samplerPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_bufferPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_shaderPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_programPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_pipelinePool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_descriptorPool.count() == 0, "Resource destroy missing");
 	m_texturePool.release([this](VulkanTexture& res) { this->destroy(TextureHandle{ &res }); });
 	m_samplerPool.release([this](VulkanSampler& res) { this->destroy(SamplerHandle{ &res }); });
 	m_bufferPool.release([this](VulkanBuffer& res) { this->destroy(BufferHandle{ &res }); });

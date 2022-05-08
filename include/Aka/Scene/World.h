@@ -40,6 +40,8 @@ public:
 	Entity createEntity(const String& name);
 	// Destroy an entity
 	void destroyEntity(Entity entity);
+	// Destroy all entities from the world
+	void clear();
 
 	// Attach a system to the world.
 	template <typename T, typename... Args> void attach(Args&&... args);
