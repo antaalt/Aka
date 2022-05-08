@@ -26,7 +26,7 @@ public:
 	// Allocate memory for given size
 	static void* alloc(size_t size);
 	// Deallocate memory
-	static void free(void* data);
+	static void (free)(void* data);
 	// Copy memory 
 	static void* copy(void* dst, const void* src, size_t count);
 	// Copy memory

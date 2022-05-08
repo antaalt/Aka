@@ -81,6 +81,11 @@ Font::Font(const byte_t* bytes, size_t count, uint32_t height)
     FT_Done_FreeType(ft);
 }
 
+Font::~Font()
+{
+	gfx::Texture::destroy(m_atlas);
+}
+
 Font* Font::create(const byte_t* bytes, size_t count, uint32_t height)
 {
 	// TODO use font pool ? resource pool ?

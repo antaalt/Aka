@@ -18,15 +18,15 @@ struct VulkanCommandList : CommandList
 
 	void reset() override;
 
-	void beginRenderPass(const Framebuffer* framebuffer, const ClearState& clear) override;
+	void beginRenderPass(FramebufferHandle framebuffer, const ClearState& clear) override;
 	void endRenderPass() override;
 
-	void bindPipeline(const Pipeline* pipeline) override;
+	void bindPipeline(PipelineHandle pipeline) override;
 	void bindDescriptorSet(uint32_t index, DescriptorSetHandle set) override;
 	void bindDescriptorSets(DescriptorSetHandle* sets, uint32_t count) override;
 
-	void bindVertexBuffer(const Buffer* const* buffer, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) override;
-	void bindIndexBuffer(const Buffer* buffer, IndexFormat format, uint32_t offset) override;
+	void bindVertexBuffer(BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) override;
+	void bindIndexBuffer(BufferHandle buffer, IndexFormat format, uint32_t offset) override;
 
 	void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) override;
 
@@ -34,8 +34,8 @@ struct VulkanCommandList : CommandList
 	void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
 	void dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) override;
 
-	void copy(const Texture* src, const Texture* dst) override;
-	void blit(const Texture* src, const Texture* dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) override;
+	void copy(TextureHandle src, TextureHandle dst) override;
+	void blit(TextureHandle src, TextureHandle dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) override;
 
 	static VkCommandBuffer createSingleTime(VkDevice device, VkCommandPool pool);
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);

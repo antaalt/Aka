@@ -188,14 +188,14 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 	return vk_framebuffer;
 }
 
-const Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth)
+FramebufferHandle VulkanGraphicDevice::createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
 	if ((attachments == nullptr && depth == nullptr) || count > FramebufferState::MaxColorAttachmentCount)
-		return nullptr;
+		return FramebufferHandle::null;
 
 	VulkanFramebuffer* framebuffer = m_framebufferPool.acquire();
 	if (framebuffer == nullptr)
-		return nullptr;
+		return FramebufferHandle::null;
 	framebuffer->framebuffer.count = count;
 	framebuffer->width = ~0U;
 	framebuffer->height = ~0U;
@@ -226,17 +226,19 @@ const Framebuffer* VulkanGraphicDevice::createFramebuffer(const Attachment* atta
 	framebuffer->isSwapchain = false;
 	framebuffer->vk_renderpass = m_context.getRenderPass(framebuffer->framebuffer, VulkanRenderPassLayout::Framebuffer);
 	framebuffer->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(m_context.device, framebuffer->vk_renderpass, framebuffer);
-	return framebuffer;
+	return FramebufferHandle{ framebuffer };
 }
-void VulkanGraphicDevice::destroy(const Framebuffer* framebuffer)
+void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 {
-	const VulkanFramebuffer* vk_framebuffer = reinterpret_cast<const VulkanFramebuffer*>(framebuffer);
+	if (framebuffer.data == nullptr)
+		return;
+	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
 	vkDestroyFramebuffer(m_context.device, vk_framebuffer->vk_framebuffer, nullptr);
 	vk_framebuffer->vk_renderpass; // Cached. do not destroy here
-	m_framebufferPool.release(const_cast<VulkanFramebuffer*>(vk_framebuffer));
+	m_framebufferPool.release(vk_framebuffer);
 }
 
-const Framebuffer* VulkanGraphicDevice::backbuffer(const Frame* frame)
+FramebufferHandle VulkanGraphicDevice::backbuffer(const Frame* frame)
 {
 	return m_swapchain.backbuffers[frame->image.value];
 }

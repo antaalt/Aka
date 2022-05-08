@@ -9,11 +9,19 @@
 #include "VulkanCommandList.h"
 #include "VulkanSwapchain.h"
 #include "VulkanSampler.h"
+#include "VulkanDebug.h"
 
 #include <Aka/Memory/Pool.h>
 
 namespace aka {
 namespace gfx {
+
+template <typename T, typename Base>
+static T* get(ResourceHandle<Base> handle)
+{
+	static_assert(std::is_base_of<Base, T>::value, "Handle is not valid for specified type.");
+	return const_cast<T*>(reinterpret_cast<const T*>(handle.data));
+}
 
 class VulkanGraphicDevice : public GraphicDevice
 {
@@ -30,12 +38,12 @@ public:
 	const PhysicalDevice* getPhysicalDevice(uint32_t index) override;
 
 	// Shaders
-	const Shader* compile(ShaderType type, const uint8_t* data, size_t size) override;
-	void destroy(const Shader* handle) override;
+	ShaderHandle compile(ShaderType type, const uint8_t* data, size_t size) override;
+	void destroy(ShaderHandle handle) override;
 
 	// Programs
-	const Program* createProgram(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
-	void destroy(const Program* handle) override;
+	ProgramHandle createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
+	void destroy(ProgramHandle handle) override;
 	DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) override;
 	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
 	void destroy(DescriptorSetHandle set) override;
@@ -55,7 +63,7 @@ public:
 	void destroy(TextureHandle texture) override;
 
 	// Sampler
-	const Sampler* createSampler(
+	SamplerHandle createSampler(
 		Filter filterMin, 
 		Filter filterMag, 
 		SamplerMipMapMode mipmapMode, 
@@ -65,24 +73,24 @@ public:
 		SamplerAddressMode wrapW, 
 		float anisotropy
 	) override;
-	void destroy(const Sampler* sampler) override;
+	void destroy(SamplerHandle sampler) override;
 
 	// Buffer
-	const Buffer* createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
-	void upload(const Buffer* buffer, const void* data, uint32_t offset, uint32_t size) override;
-	void download(const Buffer* buffer, void* data, uint32_t offset, uint32_t size) override;
-	void* map(const Buffer* buffer, BufferMap map) override;
-	void unmap(const Buffer* buffer) override;
-	void destroy(const Buffer* buffer) override;
+	BufferHandle createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
+	void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) override;
+	void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) override;
+	void* map(BufferHandle buffer, BufferMap map) override;
+	void unmap(BufferHandle buffer) override;
+	void destroy(BufferHandle buffer) override;
 
 	// Framebuffer
-	const Framebuffer* createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) override;
-	void destroy(const Framebuffer* handle) override;
-	const Framebuffer* backbuffer(const Frame* frame) override;
+	FramebufferHandle createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) override;
+	void destroy(FramebufferHandle handle) override;
+	FramebufferHandle backbuffer(const Frame* frame) override;
 
 	// Pipeline
-	const Pipeline* createPipeline(
-		const Program *program,
+	PipelineHandle createPipeline(
+		ProgramHandle program,
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
@@ -93,7 +101,7 @@ public:
 		const BlendState& blending,
 		const FillState& fill
 	) override;
-	void destroy(const Pipeline* handle) override;
+	void destroy(PipelineHandle handle) override;
 
 	// Command list
 	CommandList* acquireCommandList() override;
@@ -105,6 +113,7 @@ public:
 	// Frame
 	Frame* frame() override;
 	void present(Frame* frame) override;
+	void wait() override;
 
 	// Tools
 	void screenshot(void* data) override;

@@ -63,6 +63,9 @@ struct FramebufferState
 	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
 };
 
+struct Framebuffer;
+using FramebufferHandle = ResourceHandle<Framebuffer>;
+
 struct Framebuffer : Resource
 {
 	uint32_t width, height;
@@ -74,8 +77,8 @@ struct Framebuffer : Resource
 
 	bool hasDepthStencil() const { return depth.texture.data != nullptr; }
 
-	static const Framebuffer* create(const Attachment* attachments, uint32_t count, const Attachment* depth);
-	static void destroy(const Framebuffer* framebuffer);
+	static FramebufferHandle create(const Attachment* attachments, uint32_t count, const Attachment* depth);
+	static void destroy(FramebufferHandle framebuffer);
 };
 
 };

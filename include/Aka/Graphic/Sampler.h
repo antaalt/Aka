@@ -28,6 +28,9 @@ enum class SamplerMipMapMode : uint8_t
 	Linear,
 };
 
+struct Sampler;
+using SamplerHandle = ResourceHandle<Sampler>;
+
 struct Sampler : Resource
 {
 	Filter filterMin;
@@ -41,7 +44,7 @@ struct Sampler : Resource
 
 	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
 
-	static const Sampler* create(
+	static SamplerHandle create(
 		Filter filterMin,
 		Filter filterMag,
 		SamplerMipMapMode mipmapMode,
@@ -51,7 +54,7 @@ struct Sampler : Resource
 		SamplerAddressMode wrapW,
 		float anisotropy
 	);
-	static void destroy(const Sampler* sampler);
+	static void destroy(SamplerHandle sampler);
 };
 
 };

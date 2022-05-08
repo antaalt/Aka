@@ -37,12 +37,15 @@ struct ShaderBindingState
 	static ShaderBindingState merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 };
 
+struct Program;
+using ProgramHandle = ResourceHandle<Program>;
+
 struct Program : Resource
 {
-	const Shader* vertex;
-	const Shader* fragment;
-	const Shader* geometry;
-	const Shader* compute;
+	ShaderHandle vertex;
+	ShaderHandle fragment;
+	ShaderHandle geometry;
+	ShaderHandle compute;
 
 	ShaderBindingState bindings[ShaderBindingState::MaxSetCount]; // TODO rename sets
 
@@ -53,10 +56,10 @@ struct Program : Resource
 	bool hasGeometryStage() const;
 	bool hasComputeStage() const;
 
-	static const Program* createVertex(const Shader* vertex, const Shader* fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static const Program* createGeometry(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static const Program* createCompute(const Shader* compute);
-	static void destroy(const Program* program);
+	static ProgramHandle createVertex(ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static ProgramHandle createGeometry(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static ProgramHandle createCompute(ShaderHandle compute);
+	static void destroy(ProgramHandle program);
 };
 
 };

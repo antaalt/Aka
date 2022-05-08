@@ -8,7 +8,7 @@ namespace aka {
 struct ProgramReloadedEvent
 {
 	String name;
-	const gfx::Program* program;
+	gfx::ProgramHandle program;
 };
 
 class ProgramManager :
@@ -19,9 +19,9 @@ public:
 	~ProgramManager();
 
 	// Get a program from its name
-	const gfx::Program* get(const String& name);
+	gfx::ProgramHandle get(const String& name);
 	// Get a shader from its name
-	const gfx::Shader* getShader(const String& name);
+	gfx::ShaderHandle getShader(const String& name);
 	// Reload a specific shader.
 	bool reload(const String& name);
 
@@ -35,12 +35,12 @@ private:
 	void onReceive(const AppUpdateEvent& event);
 private:
 	// Compile a shader using GLSLCC for currently used graphic API
-	const gfx::Shader* compile(const Path& path, gfx::ShaderType type, gfx::ShaderBindingState* bindings, uint32_t* setCount, gfx::VertexBindingState* vertices);
+	gfx::ShaderHandle compile(const Path& path, gfx::ShaderType type, gfx::ShaderBindingState* bindings, uint32_t* setCount, gfx::VertexBindingState* vertices);
 private:
 	struct ShaderInfo {
 		String name;
 		gfx::ShaderType type;
-		const gfx::Shader* shader;
+		gfx::ShaderHandle shader;
 		Path path;
 		uint32_t setCount;
 		gfx::ShaderBindingState sets[gfx::ShaderBindingState::MaxSetCount];
@@ -49,7 +49,7 @@ private:
 	};
 	struct ProgramInfo {
 		String name;
-		const gfx::Program* program;
+		gfx::ProgramHandle program;
 		String vert;
 		String frag;
 		String comp;

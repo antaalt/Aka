@@ -9,22 +9,19 @@
 namespace aka {
 namespace gfx {
 
-struct DescriptorSet;
-using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
-
 struct DescriptorSetData
 {
 	union {
-		const Buffer* buffers[ShaderBindingState::MaxBindingCount];
+		BufferHandle buffers[ShaderBindingState::MaxBindingCount];
 		struct {
 			TextureHandle images[ShaderBindingState::MaxBindingCount];
-			const Sampler* samplers[ShaderBindingState::MaxBindingCount];
+			SamplerHandle samplers[ShaderBindingState::MaxBindingCount];
 		};
 	};
 
-	void setUniformBuffer(uint32_t slot, const Buffer* buffer);
-	void setStorageBuffer(uint32_t slot, const Buffer* buffer);
-	void setSampledImage(uint32_t slot, TextureHandle texture, const Sampler* sampler);
+	void setUniformBuffer(uint32_t slot, BufferHandle buffer);
+	void setStorageBuffer(uint32_t slot, BufferHandle buffer);
+	void setSampledImage(uint32_t slot, TextureHandle texture, SamplerHandle sampler);
 	void setStorageImage(uint32_t slot, TextureHandle texture);
 };
 

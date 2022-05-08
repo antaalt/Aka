@@ -58,11 +58,12 @@ add_library (Aka
 	"src/Graphic/Vulkan/VulkanProgram.cpp"
 	"src/Graphic/Vulkan/VulkanPipeline.cpp"
 	"src/Graphic/Vulkan/VulkanSampler.cpp"
+	"src/Graphic/Vulkan/VulkanDebug.cpp"
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
 	
 	"src/Rendering/Mesh.cpp" 
 	 
-
+	"src/Graphic/Resource.cpp"
 	"src/Graphic/Compiler.cpp"
 	"src/Graphic/Program.cpp"
 	"src/Graphic/GraphicDevice.cpp"

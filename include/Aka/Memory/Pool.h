@@ -21,10 +21,10 @@ public:
 	template<typename ...Args> T* acquire(Args&&... args);
 	// Release an element acquired from this pool.
 	void release(T* element);
-	// Release all elements and return number of elements released
+	// Release all elements
 	void release();
-	// Release all elements with custom deleter and return number of elements released
-	void release(std::function<void(const T&)>&& deleter);
+	// Release all elements with custom deleter
+	void release(std::function<void(T&)>&& deleter);
 	// Return number of acquired elements
 	size_t count() const;
 private:
@@ -126,8 +126,9 @@ inline void Pool<T, BlockCount>::release(T* element)
 	Block* block = m_block;
 	while (block != nullptr && (((uintptr_t)element < (uintptr_t)block->chunks) || ((uintptr_t)element > ((uintptr_t)&block->chunks[BlockCount - 1]))))
 		block = block->next;
-	if (block == nullptr)
-		return; // Element not from pool
+	AKA_ASSERT(block != nullptr, "m_freeList not in any block");
+	//if (block == nullptr)
+	//	return; // Element not from pool
 
 	Chunk* chunk = reinterpret_cast<Chunk*>(element);
 	size_t index = chunk - block->chunks;
@@ -177,10 +178,11 @@ inline void Pool<T, BlockCount>::release()
 
 	// Reset freelist start
 	m_freeList = m_block->chunks;
+	AKA_ASSERT(m_count == count, "Invalid count");
 	m_count = 0;
 }
 template <typename T, size_t BlockCount>
-inline void Pool<T, BlockCount>::release(std::function<void(const T&)>&& deleter)
+inline void Pool<T, BlockCount>::release(std::function<void(T&)>&& deleter)
 {
 	size_t count = 0;
 	Block* currentBlock = m_block;
@@ -212,6 +214,7 @@ inline void Pool<T, BlockCount>::release(std::function<void(const T&)>&& deleter
 
 	// Reset freelist start
 	m_freeList = m_block->chunks;
+	AKA_ASSERT(m_count == count, "Invalid count");
 	m_count = 0;
 }
 
@@ -220,5 +223,4 @@ inline size_t aka::Pool<T, BlockCount>::count() const
 {
 	return m_count;
 }
-
 };

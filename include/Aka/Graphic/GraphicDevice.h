@@ -68,12 +68,12 @@ public:
 	virtual void name(const Resource* resource, const char* name) = 0;
 
 	// Shaders
-	virtual const Shader* compile(ShaderType type, const uint8_t* data, size_t size) = 0;
-	virtual void destroy(const Shader* handle) = 0;
+	virtual ShaderHandle compile(ShaderType type, const uint8_t* data, size_t size) = 0;
+	virtual void destroy(ShaderHandle handle) = 0;
 
 	// Programs
-	virtual const Program* createProgram(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
-	virtual void destroy(const Program* program) = 0;
+	virtual ProgramHandle createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
+	virtual void destroy(ProgramHandle program) = 0;
 
 	// Descriptor sets
 	virtual DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) = 0;
@@ -85,17 +85,17 @@ public:
 	virtual const PhysicalDevice* getPhysicalDevice(uint32_t index) = 0;
 
 	// Framebuffer
-	virtual const Framebuffer* createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
-	virtual void destroy(const Framebuffer* framebuffer) = 0;
-	virtual const Framebuffer* backbuffer(const Frame* frame) = 0;
+	virtual FramebufferHandle createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
+	virtual void destroy(FramebufferHandle framebuffer) = 0;
+	virtual FramebufferHandle backbuffer(const Frame* frame) = 0;
 
 	// Buffers
-	virtual const Buffer* createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
-	virtual void upload(const Buffer* buffer, const void* data, uint32_t offset, uint32_t size) = 0;
-	virtual void download(const Buffer* buffer, void* data, uint32_t offset, uint32_t size) = 0;
-	virtual void* map(const Buffer* buffer, BufferMap map) = 0;
-	virtual void unmap(const Buffer* buffer) = 0;
-	virtual void destroy(const Buffer* buffer) = 0;
+	virtual BufferHandle createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
+	virtual void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) = 0;
+	virtual void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) = 0;
+	virtual void* map(BufferHandle buffer, BufferMap map) = 0;
+	virtual void unmap(BufferHandle buffer) = 0;
+	virtual void destroy(BufferHandle buffer) = 0;
 
 	// Textures
 	virtual TextureHandle createTexture(uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr) = 0;
@@ -104,12 +104,12 @@ public:
 	virtual void copy(TextureHandle lhs, TextureHandle rhs) = 0;
 	virtual void destroy(TextureHandle texture) = 0;
 
-	virtual const Sampler* createSampler(Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, uint32_t mipLevels, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
-	virtual void destroy(const Sampler* sampler) = 0;
+	virtual SamplerHandle createSampler(Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, uint32_t mipLevels, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
+	virtual void destroy(SamplerHandle sampler) = 0;
 
 	// Pass
-	virtual const Pipeline* createPipeline(
-		const Program* program,
+	virtual PipelineHandle createPipeline(
+		ProgramHandle program,
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
 		const VertexBindingState& vertices,
@@ -120,7 +120,7 @@ public:
 		const BlendState& blending,
 		const FillState& fill
 	) = 0;
-	virtual void destroy(const Pipeline* handle) = 0;
+	virtual void destroy(PipelineHandle handle) = 0;
 
 	// Command
 	virtual CommandList* acquireCommandList() = 0;
@@ -135,6 +135,7 @@ public:
 	// Frame
 	virtual Frame* frame() = 0;
 	virtual void present(Frame* frame) = 0;
+	virtual void wait() = 0;
 };
 
 };

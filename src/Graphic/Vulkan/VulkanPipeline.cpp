@@ -404,8 +404,8 @@ VkVertexInputBindingDescription VulkanPipeline::getVertexBindings(const VertexBi
 	return verticesBindings;
 }
 
-const Pipeline* VulkanGraphicDevice::createPipeline(
-	const Program* program,
+PipelineHandle VulkanGraphicDevice::createPipeline(
+	ProgramHandle program,
 	PrimitiveType primitive,
 	const FramebufferState& framebuffer,
 	const VertexBindingState& vertices,
@@ -417,8 +417,8 @@ const Pipeline* VulkanGraphicDevice::createPipeline(
 	const FillState& fill
 )
 {
-	if (program == nullptr)
-		return nullptr;
+	if (program.data == nullptr)
+		return PipelineHandle::null;
 
 	VulkanPipeline* pipeline = m_pipelinePool.acquire();
 	pipeline->program = program;
@@ -432,36 +432,40 @@ const Pipeline* VulkanGraphicDevice::createPipeline(
 
 	pipeline->framebuffer = framebuffer;
 	pipeline->vertices = vertices;
-	memcpy(pipeline->bindings, program->bindings, program->setCount * sizeof(ShaderBindingState));
+	memcpy(pipeline->bindings, program.data->bindings, program.data->setCount * sizeof(ShaderBindingState));
 
-	const VulkanProgram* vk_program = reinterpret_cast<const VulkanProgram*>(program);
+	VulkanProgram* vk_program = get<VulkanProgram>(program);
 	VkDescriptorSetLayout layouts[ShaderBindingState::MaxSetCount];
-	for (uint32_t i = 0; i < program->setCount; i++)
+	for (uint32_t i = 0; i < program.data->setCount; i++)
 	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program->bindings[i]);
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->bindings[i]);
 		layouts[i] = data.layout;
 	}
-	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program->setCount);
+	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program.data->setCount);
 	// Create Pipeline
 	std::vector<const VulkanShader*> vk_shaders;
 	uint32_t shaderCount = 0;
-	if (vk_program->vertex)
+	VulkanShader* vertex = get<VulkanShader>(vk_program->vertex);
+	if (vertex)
 	{
-		vk_shaders.push_back(reinterpret_cast<const VulkanShader*>(vk_program->vertex));
+		vk_shaders.push_back(vertex);
 	}
-	if (vk_program->fragment)
+	VulkanShader* fragment = get<VulkanShader>(vk_program->fragment);
+	if (fragment)
 	{
-		vk_shaders.push_back(reinterpret_cast<const VulkanShader*>(vk_program->fragment));
+		vk_shaders.push_back(fragment);
 		AKA_ASSERT(vk_shaders.size() == 2, "Missing vertex shader");
 	}
-	if (vk_program->geometry)
+	VulkanShader* geometry = get<VulkanShader>(vk_program->geometry);
+	if (geometry)
 	{
-		vk_shaders.push_back(reinterpret_cast<const VulkanShader*>(vk_program->geometry));
+		vk_shaders.push_back(geometry);
 		AKA_ASSERT(vk_shaders.size() == 3, "Missing vertex or fragment shader");
 	}
-	if (vk_program->compute)
+	VulkanShader* compute = get<VulkanShader>(vk_program->compute);
+	if (compute)
 	{
-		vk_shaders.push_back(reinterpret_cast<const VulkanShader*>(vk_program->compute));
+		vk_shaders.push_back(compute);
 		AKA_ASSERT(vk_shaders.size() == 1, "Compute should only have 1 shader");
 	}
 	pipeline->vk_pipeline = VulkanPipeline::createVkPipeline(
@@ -480,17 +484,19 @@ const Pipeline* VulkanGraphicDevice::createPipeline(
 		pipeline->blend,
 		pipeline->fill
 	);
-	return pipeline;
+	return PipelineHandle{ pipeline };
 }
-void VulkanGraphicDevice::destroy(const Pipeline* pipeline)
+void VulkanGraphicDevice::destroy(PipelineHandle pipeline)
 {
-	const VulkanPipeline* vk_pipeline = reinterpret_cast<const VulkanPipeline*>(pipeline);
+	if (pipeline.data == nullptr) return;
+
+	VulkanPipeline* vk_pipeline = get<VulkanPipeline>(pipeline);
 
 	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
 	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
 
-	m_pipelinePool.release(const_cast<VulkanPipeline*>(vk_pipeline));
+	m_pipelinePool.release(vk_pipeline);
 }
 
 };

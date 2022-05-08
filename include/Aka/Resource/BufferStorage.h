@@ -8,7 +8,7 @@
 namespace aka {
 
 struct Buffer {
-	const gfx::Buffer* buffer;
+	gfx::BufferHandle buffer;
 };
 
 using BufferAllocator = ResourceAllocator<Buffer>;

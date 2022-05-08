@@ -28,20 +28,20 @@ ProgramManager::~ProgramManager()
 	}
 }
 
-const Program* ProgramManager::get(const String& name)
+ProgramHandle ProgramManager::get(const String& name)
 {
 	for (ProgramInfo& info : m_programs)
 		if (info.name == name)
 			return info.program;
-	return nullptr;
+	return ProgramHandle::null;
 }
 
-const Shader* ProgramManager::getShader(const String& name)
+ShaderHandle ProgramManager::getShader(const String& name)
 {
 	for (ShaderInfo& info : m_shaders)
 		if (info.name == name)
 			return info.shader;
-	return nullptr;
+	return ShaderHandle::null;
 }
 
 bool ProgramManager::reload(const String& name)
@@ -50,8 +50,8 @@ bool ProgramManager::reload(const String& name)
 	{
 		if (info.name == name)
 		{
-			const Shader* out = compile(info.path, info.type, info.sets, &info.setCount, &info.vertices);
-			if (out == nullptr)
+			ShaderHandle out = compile(info.path, info.type, info.sets, &info.setCount, &info.vertices);
+			if (out.data == nullptr)
 				return false;
 			info.shader = out;
 			return true;
@@ -239,8 +239,8 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (vertUpdated)
 				{
 					AKA_ASSERT(vertInfo.type == ShaderType::Vertex, "Invalid shader type");
-					const Shader* shader = compile(vertInfo.path, vertInfo.type, vertInfo.sets, &vertInfo.setCount, &vertInfo.vertices);
-					if (shader != nullptr)
+					ShaderHandle shader = compile(vertInfo.path, vertInfo.type, vertInfo.sets, &vertInfo.setCount, &vertInfo.vertices);
+					if (shader.data != nullptr)
 					{
 						compiled = true;
 						vertInfo.shader = shader;
@@ -250,8 +250,8 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				if (fragUpdated)
 				{
 					AKA_ASSERT(fragInfo.type == ShaderType::Fragment, "Invalid shader type");
-					const Shader* shader = compile(fragInfo.path, fragInfo.type, fragInfo.sets, &fragInfo.setCount, &fragInfo.vertices);
-					if (shader != nullptr)
+					ShaderHandle shader = compile(fragInfo.path, fragInfo.type, fragInfo.sets, &fragInfo.setCount, &fragInfo.vertices);
+					if (shader.data != nullptr)
 					{
 						compiled = true;
 						fragInfo.shader = shader;
@@ -279,8 +279,8 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				AKA_ASSERT(compInfo.type == ShaderType::Compute, "Invalid shader type");
 				ShaderBindingState bindings{};
 				uint32_t setCount = 0;
-				const Shader* shader = compile(compInfo.path, compInfo.type, &bindings, &setCount, nullptr);
-				if (shader != nullptr)
+				ShaderHandle shader = compile(compInfo.path, compInfo.type, &bindings, &setCount, nullptr);
+				if (shader.data != nullptr)
 				{
 					compInfo.shader = shader;
 					programInfo.program = Program::createCompute(compInfo.shader);
@@ -293,7 +293,7 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 	EventDispatcher<ProgramReloadedEvent>::dispatch();
 }
 
-const Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, uint32_t* setCount, VertexBindingState* vertices)
+ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, ShaderBindingState* bindings, uint32_t* setCount, VertexBindingState* vertices)
 {
 	Application* app = Application::app();
 	GraphicDevice* device = app->graphic();
@@ -314,7 +314,7 @@ const Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderB
 		fileName = OS::File::name(path) + ".spv";
 		break;
 	default:
-		return nullptr;
+		return ShaderHandle::null;
 	}
 	String finalPath = compiledPath + fileName;
 	Blob shader;
@@ -324,7 +324,7 @@ const Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderB
 		if (!compiler.parse(path, type))
 		{
 			Logger::error("Shader ", OS::File::name(path), " failed to compiled.");
-			return nullptr;
+			return ShaderHandle::null;
 		}
 		if (vertices && type == ShaderType::Vertex)
 			*vertices = compiler.getVertexBindings();
@@ -349,7 +349,7 @@ const Shader* ProgramManager::compile(const Path& path, ShaderType type, ShaderB
 		if (!OS::File::read(finalPath, &shader))
 		{
 			Logger::error("Could not read ", finalPath);
-			return nullptr;
+			return ShaderHandle::null;
 		}
 		Compiler compiler;
 		compiler.set(shader.data(), shader.size());

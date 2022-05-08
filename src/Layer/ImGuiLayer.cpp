@@ -105,7 +105,7 @@ void ImGuiLayer::onLayerCreate()
 		VK_CHECK_RESULT(err);
 	};
 
-	ImGui_ImplVulkan_Init(&info, device->swapchain().backbuffers[0]->vk_renderpass);
+	ImGui_ImplVulkan_Init(&info, gfx::get<gfx::VulkanFramebuffer>(device->swapchain().backbuffers[0])->vk_renderpass);
 
 	VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(context.device, context.commandPool);
 	ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);

@@ -27,7 +27,7 @@ Mesh* Mesh::createInterleaved(const gfx::VertexBindingState& state, const void* 
 	mesh->bindings = state;
 	//for (uint32_t i = 0; i < bindings.)
 	mesh->vertices[0] = gfx::Buffer::createVertexBuffer(state.stride() * vertexCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, vertices);
-	mesh->indices = nullptr;
+	mesh->indices = gfx::BufferHandle::null;
 	mesh->count = vertexCount;
 	mesh->format = gfx::IndexFormat::Unknown;
 	return mesh;

@@ -276,9 +276,12 @@ struct ViewportState
 	Rect scissor;
 };
 
+struct Pipeline;
+using PipelineHandle = ResourceHandle<Pipeline>;
+
 struct Pipeline : Resource
 {
-	const Program* program;
+	ProgramHandle program;
 
 	PrimitiveType primitive;
 	VertexBindingState vertices;

@@ -67,16 +67,16 @@ void BufferStorage::deallocate(Buffer* buffer) const
 
 void BufferStorage::serialize(const Buffer& buffer)
 {
-	type = buffer.buffer->type;
-	usage = buffer.buffer->usage;
-	access = buffer.buffer->access;
-	bytes.resize(buffer.buffer->size);
-	Application::app()->graphic()->download(buffer.buffer, bytes.data(), 0, buffer.buffer->size);
+	type = buffer.buffer.data->type;
+	usage = buffer.buffer.data->usage;
+	access = buffer.buffer.data->access;
+	bytes.resize(buffer.buffer.data->size);
+	Application::app()->graphic()->download(buffer.buffer, bytes.data(), 0, buffer.buffer.data->size);
 }
 
 size_t BufferStorage::size(const Buffer& buffer)
 {
-	return buffer.buffer->size;
+	return buffer.buffer.data->size;
 }
 
 }; // namespace aka

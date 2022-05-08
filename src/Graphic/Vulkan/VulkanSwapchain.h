@@ -41,7 +41,7 @@ struct VulkanSwapchain :
 	FrameIndex currentFrameIndex;
 	VulkanFrame frames[FrameIndex::MaxInFlight];
 
-	std::vector<VulkanFramebuffer*> backbuffers;
+	std::vector<FramebufferHandle> backbuffers;
 
 };
 

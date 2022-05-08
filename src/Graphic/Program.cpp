@@ -30,34 +30,34 @@ ShaderBindingState ShaderBindingState::merge(const ShaderBindingState& lhs, cons
 
 bool Program::hasVertexStage() const
 {
-	return vertex != nullptr;
+	return vertex.data != nullptr;
 }
 bool Program::hasFragmentStage() const
 {
-	return fragment != nullptr;
+	return fragment.data != nullptr;
 }
 bool Program::hasGeometryStage() const
 {
-	return geometry != nullptr;
+	return geometry.data != nullptr;
 }
 bool Program::hasComputeStage() const
 {
-	return compute != nullptr;
+	return compute.data != nullptr;
 }
 
-const Program* Program::createVertex(const Shader* vertex, const Shader* fragment, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createVertex(ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count)
 {
-	return Application::app()->graphic()->createProgram(vertex, fragment, nullptr, bindings, count);
+	return Application::app()->graphic()->createProgram(vertex, fragment, ShaderHandle::null, bindings, count);
 }
-const Program* Program::createGeometry(const Shader* vertex, const Shader* fragment, const Shader* geometry, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createGeometry(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t count)
 {
 	return Application::app()->graphic()->createProgram(vertex, fragment, geometry, bindings, count);
 }
-const Program* Program::createCompute(const Shader* compute)
+ProgramHandle Program::createCompute(ShaderHandle compute)
 {
-	return nullptr;
+	return ProgramHandle::null;
 }
-void Program::destroy(const Program* program)
+void Program::destroy(ProgramHandle program)
 {
 	Application::app()->graphic()->destroy(program);
 }

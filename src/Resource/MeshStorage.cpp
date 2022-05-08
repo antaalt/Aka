@@ -100,7 +100,7 @@ Mesh* MeshStorage::allocate() const
 		//mesh->bindings.offsets[i] = vertices[i].vertexCount;
 
 		mesh->vertices[i] = resources->get<Buffer>(vertices[i].vertexBufferName)->buffer;
-		AKA_ASSERT(mesh->vertices[i] != nullptr, "No vertex buffer");
+		AKA_ASSERT(mesh->vertices[i].data!= nullptr, "No vertex buffer");
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferOffset;
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferSize;
 		//mesh->bindings.offsets[i] = vertices[i].vertexBufferStride;
@@ -109,7 +109,7 @@ Mesh* MeshStorage::allocate() const
 	mesh->format = indexFormat;
 
 	mesh->indices = resources->get<Buffer>(indexBufferName)->buffer;
-	AKA_ASSERT(mesh->indices != nullptr, "No index buffer");
+	AKA_ASSERT(mesh->indices.data != nullptr, "No index buffer");
 	return mesh;
 }
 
@@ -146,9 +146,9 @@ void MeshStorage::serialize(const Mesh& mesh)
 
 size_t MeshStorage::size(const Mesh& mesh)
 {
-	size_t size = mesh.indices->size;
+	size_t size = mesh.indices.data->size;
 	for (uint32_t i = 0; i < mesh.bindings.count; i++)
-		size += mesh.vertices[i]->size;
+		size += mesh.vertices[i].data->size;
 	return size;
 }
 

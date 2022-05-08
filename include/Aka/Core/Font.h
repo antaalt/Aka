@@ -20,6 +20,7 @@ class Font
 public:
 
 	Font(const byte_t* bytes, size_t count, uint32_t height);
+	~Font();
 
 	static Font* create(const byte_t* bytes, size_t count, uint32_t height);
 	static void destroy(Font* font);

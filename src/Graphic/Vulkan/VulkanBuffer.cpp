@@ -34,7 +34,7 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	return vk_memory;
 }
 
-const Buffer* VulkanGraphicDevice::createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+BufferHandle VulkanGraphicDevice::createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // TODO depend on access
 	VkBufferUsageFlags usages = VulkanContext::tovk(type); // VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
@@ -53,15 +53,15 @@ const Buffer* VulkanGraphicDevice::createBuffer(BufferType type, uint32_t size, 
 
 	if (data != nullptr)
 	{
-		upload(buffer, data, 0, size);
+		upload(BufferHandle{ buffer }, data, 0, size);
 	}
-	return buffer;
+	return BufferHandle{ buffer };
 }
 
-void VulkanGraphicDevice::upload(const Buffer* buffer, const void* data, uint32_t offset, uint32_t size)
+void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size)
 {
 	// TODO staging buffer for device local buffers
-	const VulkanBuffer* vk_buffer = reinterpret_cast<const VulkanBuffer*>(buffer);
+	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
 	void* mapped = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(m_context.device, vk_buffer->vk_memory, offset, size, 0, &mapped));
 	if (mapped == nullptr)
@@ -73,9 +73,9 @@ void VulkanGraphicDevice::upload(const Buffer* buffer, const void* data, uint32_
 	vkUnmapMemory(m_context.device, vk_buffer->vk_memory);
 }
 
-void VulkanGraphicDevice::download(const Buffer* buffer, void* data, uint32_t offset, uint32_t size)
+void VulkanGraphicDevice::download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size)
 {
-	const VulkanBuffer* vk_buffer = reinterpret_cast<const VulkanBuffer*>(buffer);
+	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
 	void* mapped = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(m_context.device, vk_buffer->vk_memory, offset, size, 0, &mapped));
 	if (mapped == nullptr)
@@ -87,29 +87,29 @@ void VulkanGraphicDevice::download(const Buffer* buffer, void* data, uint32_t of
 	vkUnmapMemory(m_context.device, vk_buffer->vk_memory);
 }
 
-void* VulkanGraphicDevice::map(const Buffer* buffer, BufferMap map)
+void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)
 {
-	const VulkanBuffer* vk_buffer = reinterpret_cast<const VulkanBuffer*>(buffer);
+	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
 	void* data = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(m_context.device, vk_buffer->vk_memory, 0, vk_buffer->size, 0, &data));
 	return data;
 }
 
-void VulkanGraphicDevice::unmap(const Buffer* buffer)
+void VulkanGraphicDevice::unmap(BufferHandle buffer)
 {
 	// TODO ensure its a vk texture
-	const VulkanBuffer* vk_buffer = reinterpret_cast<const VulkanBuffer*>(buffer);
+	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
 	vkUnmapMemory(m_context.device, vk_buffer->vk_memory);
 }
 
-void VulkanGraphicDevice::destroy(const Buffer* buffer)
+void VulkanGraphicDevice::destroy(BufferHandle buffer)
 {
-	if (buffer == nullptr)
-		return;
-	const VulkanBuffer* vk_buffer = reinterpret_cast<const VulkanBuffer*>(buffer);
+	if (buffer.data == nullptr) return;
+
+	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
 	vkFreeMemory(m_context.device, vk_buffer->vk_memory, nullptr);
 	vkDestroyBuffer(m_context.device, vk_buffer->vk_buffer, nullptr);
-	m_bufferPool.release(const_cast<VulkanBuffer*>(vk_buffer));
+	m_bufferPool.release(vk_buffer);
 }
 
 VulkanBuffer* VulkanGraphicDevice::makeBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, VkBuffer vk_buffer, VkDeviceMemory vk_memory)

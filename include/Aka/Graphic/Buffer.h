@@ -40,6 +40,9 @@ enum class BufferMap : uint8_t
 	WriteNoOverwrite
 };
 
+struct Buffer;
+using BufferHandle = ResourceHandle<Buffer>;
+
 struct Buffer : Resource
 {
 	uint32_t size;
@@ -48,11 +51,11 @@ struct Buffer : Resource
 	BufferUsage usage;
 	BufferCPUAccess access;
 
-	static const Buffer* createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static const Buffer* createVertexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static const Buffer* createUniformBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static const Buffer* createStagingBuffer(uint32_t size, const void* data = nullptr);
-	static void destroy(const Buffer* buffer);
+	static BufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static BufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static BufferHandle createUniformBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static BufferHandle createStagingBuffer(uint32_t size, const void* data = nullptr);
+	static void destroy(BufferHandle buffer);
 };
 
 };

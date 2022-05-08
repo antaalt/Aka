@@ -49,15 +49,15 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void reset() = 0;
 
-	virtual void beginRenderPass(const Framebuffer* framebuffer, const ClearState& clear) = 0;
+	virtual void beginRenderPass(FramebufferHandle framebuffer, const ClearState& clear) = 0;
 	virtual void endRenderPass() = 0;
 
-	virtual void bindPipeline(const Pipeline* handle) = 0;
+	virtual void bindPipeline(PipelineHandle handle) = 0;
 	virtual void bindDescriptorSet(uint32_t index, DescriptorSetHandle material) = 0;
 	virtual void bindDescriptorSets(DescriptorSetHandle* material, uint32_t count) = 0;
 
-	virtual void bindVertexBuffer(const Buffer* const* handle, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) = 0;
-	virtual void bindIndexBuffer(const Buffer* buffer, IndexFormat format, uint32_t offset) = 0;
+	virtual void bindVertexBuffer(BufferHandle* handles, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) = 0;
+	virtual void bindIndexBuffer(BufferHandle handle, IndexFormat format, uint32_t offset) = 0;
 
 	virtual void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
 
@@ -65,9 +65,9 @@ struct AKA_NO_VTABLE CommandList
 	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) = 0;
 	virtual void dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) = 0;
 
-	virtual void copy(const Texture* src, const Texture* dst) = 0;
+	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 
-	virtual void blit(const Texture* src, const Texture* dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) = 0;
+	virtual void blit(TextureHandle src, TextureHandle dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) = 0;
 };
 
 };

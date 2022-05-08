@@ -47,11 +47,11 @@ AttachmentFlag operator|(AttachmentFlag lhs, AttachmentFlag rhs)
 }
 
 
-const Framebuffer* Framebuffer::create(const Attachment* attachments, uint32_t count, const Attachment* depth)
+FramebufferHandle Framebuffer::create(const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
 	return Application::app()->graphic()->createFramebuffer(attachments, count, depth);
 }
-void Framebuffer::destroy(const Framebuffer* framebuffer)
+void Framebuffer::destroy(FramebufferHandle framebuffer)
 {
 	return Application::app()->graphic()->destroy(framebuffer);
 }

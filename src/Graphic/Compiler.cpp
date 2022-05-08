@@ -301,7 +301,9 @@ Blob Compiler::compile(GraphicAPI api)
 
 void Compiler::set(const byte_t* bytes, size_t count)
 {
-	m_spirv = std::vector<uint32_t>(bytes, bytes + count);
+	AKA_ASSERT(count % sizeof(uint32_t) == 0, "Invalid size");
+	const uint32_t* data = reinterpret_cast<const uint32_t*>(bytes);
+	m_spirv = std::vector<uint32_t>(data, data + count / sizeof(uint32_t));
 }
 
 ShaderType getShaderType(spv::ExecutionModel executionModel)

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <type_traits>
+
 namespace aka {
 namespace gfx {
 
@@ -28,9 +31,13 @@ struct Resource
 template <typename T>
 struct ResourceHandle
 {
-	//static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
-	const T* data; // TODO should be obfuscated
+	static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
+	const T* data; // TODO should be obfuscated & renamed desc.
+	static const ResourceHandle<T> null;
 };
+
+template <typename T>
+const ResourceHandle<T> ResourceHandle<T>::null = { nullptr };
 
 };
 };

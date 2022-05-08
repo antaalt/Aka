@@ -19,14 +19,19 @@ struct Sprite {
 		uint32_t width = 0;
 		uint32_t height = 0;
 
-		static Frame create(gfx::TextureHandle texture, Time duration)
+		static Frame create(gfx::TextureHandle texture, uint32_t width, uint32_t height, Time duration)
 		{ 
 			Frame frame; 
 			frame.texture = texture; 
 			frame.duration = duration; 
-			frame.width = texture.data->width;
-			frame.height = texture.data->height;
+			frame.width = width;
+			frame.height = height;
 			return frame; 
+		}
+		static void destroy(Frame& frame)
+		{
+			gfx::Texture::destroy(frame.texture);
+			frame.texture = gfx::TextureHandle::null;
 		}
 	};
 	struct Animation {

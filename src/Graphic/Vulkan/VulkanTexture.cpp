@@ -156,7 +156,7 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 	VkImageLayout srcLayout = vk_src->vk_layout;
 	VkImageLayout dstLayout = vk_dst->vk_layout;
 
-	const_cast<VulkanTexture*>(vk_src)->insertMemoryBarrier(
+	vk_src->insertMemoryBarrier(
 		cmd,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		srcSubresource,
@@ -165,7 +165,7 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 		VK_ACCESS_TRANSFER_WRITE_BIT, // TODO color or depth, attachment or shader resource
 		VK_ACCESS_TRANSFER_READ_BIT
 	);
-	const_cast<VulkanTexture*>(vk_dst)->insertMemoryBarrier(
+	vk_dst->insertMemoryBarrier(
 		cmd,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		dstSubresource,
@@ -194,7 +194,7 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 		vkCmdCopyImage(cmd, vk_src->vk_image, vk_src->vk_layout, vk_dst->vk_image, vk_dst->vk_layout, 1, &region);
 	}
 
-	const_cast<VulkanTexture*>(vk_src)->insertMemoryBarrier(
+	vk_src->insertMemoryBarrier(
 		cmd,
 		srcLayout,
 		srcSubresource,
@@ -203,7 +203,7 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 		VK_ACCESS_TRANSFER_READ_BIT,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT // TODO color or depth, attachment or shader resource
 	);
-	const_cast<VulkanTexture*>(vk_dst)->insertMemoryBarrier(
+	vk_dst->insertMemoryBarrier(
 		cmd,
 		dstLayout,
 		dstSubresource,
@@ -416,7 +416,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 
 void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(texture.data);
+	VulkanTexture* vk_texture = get<VulkanTexture>(texture);
 	// Create staging buffer
 	VkDeviceSize imageSize = texture.data->width * texture.data->height * Texture::size(texture.data->format);
 	VkDeviceSize bufferSize = imageSize * texture.data->layers;
@@ -442,7 +442,7 @@ void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data,
 	vkUnmapMemory(m_context.device, stagingBufferMemory);
 
 	// Copy buffer to image
-	VulkanTexture* vk_ctexture = const_cast<VulkanTexture*>(vk_texture);
+	VulkanTexture* vk_ctexture = vk_texture;
 	VkImageSubresourceRange subresource{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers };
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
 	vk_ctexture->transitionImageLayout(
@@ -474,11 +474,11 @@ void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x
 
 void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 {
-	const VulkanTexture* vk_src = reinterpret_cast<const VulkanTexture*>(lhs.data);
-	const VulkanTexture* vk_dst = reinterpret_cast<const VulkanTexture*>(rhs.data);
+	VulkanTexture* vk_src = get<VulkanTexture>(lhs);
+	VulkanTexture* vk_dst = get<VulkanTexture>(rhs);
 
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-	const_cast<VulkanTexture*>(vk_dst)->copyFrom(cmd, const_cast<VulkanTexture*>(vk_src));
+	vk_dst->copyFrom(cmd, vk_src);
 	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
 }
 
@@ -518,13 +518,14 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 {
 	if (texture.data == nullptr) return;
 
-	const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(texture.data);
-	if (vk_texture->vk_memory != 0)
+	VulkanTexture* vk_texture = get<VulkanTexture>(texture);
+	vkDestroyImageView(m_context.device, vk_texture->vk_view, nullptr);
+	if (vk_texture->vk_memory != 0) // If no memory used, image not allocated here (swapchain)
 	{
 		vkFreeMemory(m_context.device, vk_texture->vk_memory, nullptr);
 		vkDestroyImage(m_context.device, vk_texture->vk_image, nullptr);
 	}
-	m_texturePool.release(const_cast<VulkanTexture*>(vk_texture));
+	m_texturePool.release(vk_texture);
 }
 
 VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags)

@@ -4,7 +4,7 @@
 namespace aka {
 namespace gfx {
 
-void DescriptorSetData::setUniformBuffer(uint32_t slot, const Buffer* buffer)
+void DescriptorSetData::setUniformBuffer(uint32_t slot, BufferHandle buffer)
 {
 	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::UniformBuffer)
@@ -12,7 +12,7 @@ void DescriptorSetData::setUniformBuffer(uint32_t slot, const Buffer* buffer)
 	buffers[slot] = buffer;
 }
 
-void DescriptorSetData::setStorageBuffer(uint32_t slot, const Buffer* buffer)
+void DescriptorSetData::setStorageBuffer(uint32_t slot, BufferHandle buffer)
 {
 	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::UniformBuffer)
@@ -20,7 +20,7 @@ void DescriptorSetData::setStorageBuffer(uint32_t slot, const Buffer* buffer)
 	buffers[slot] = buffer;
 }
 
-void DescriptorSetData::setSampledImage(uint32_t slot, TextureHandle texture, const Sampler* sampler)
+void DescriptorSetData::setSampledImage(uint32_t slot, TextureHandle texture, SamplerHandle sampler)
 {
 	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
 	if (bindings.bindings[slot].type != ShaderBindingType::SampledImage)
@@ -35,7 +35,7 @@ void DescriptorSetData::setStorageImage(uint32_t slot, TextureHandle texture)
 	if (bindings.bindings[slot].type != ShaderBindingType::StorageImage)
 		return;*/
 	images[slot] = texture;
-	samplers[slot] = nullptr;
+	samplers[slot] = SamplerHandle::null;
 }
 
 DescriptorSetHandle DescriptorSet::create(const ShaderBindingState& bindings)

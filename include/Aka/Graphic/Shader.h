@@ -22,12 +22,15 @@ bool has(ShaderType flags, ShaderType flag);
 ShaderType operator&(ShaderType lhs, ShaderType rhs);
 ShaderType operator|(ShaderType lhs, ShaderType rhs);
 
+struct Shader;
+using ShaderHandle = ResourceHandle<Shader>;
+
 struct Shader : Resource
 {
 	ShaderType type;
 
-	static const Shader* compile(ShaderType type, const uint8_t* content, size_t size);
-	static void destroy(const Shader* shader);
+	static ShaderHandle compile(ShaderType type, const uint8_t* content, size_t size);
+	static void destroy(ShaderHandle shader);
 };
 
 };

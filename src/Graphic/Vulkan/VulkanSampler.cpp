@@ -46,7 +46,7 @@ VkSamplerAddressMode tovk(SamplerAddressMode mode)
 	}
 }
 
-const Sampler* VulkanGraphicDevice::createSampler(
+SamplerHandle VulkanGraphicDevice::createSampler(
 	Filter filterMin,
 	Filter filterMag,
 	SamplerMipMapMode mipmapMode,
@@ -88,14 +88,16 @@ const Sampler* VulkanGraphicDevice::createSampler(
 		anisotropy
 	);
 
-	return vk_sampler;
+	return SamplerHandle{ vk_sampler };
 }
 
-void VulkanGraphicDevice::destroy(const Sampler* sampler)
+void VulkanGraphicDevice::destroy(SamplerHandle sampler)
 {
-	const VulkanSampler* vk_sampler = reinterpret_cast<const VulkanSampler*>(sampler);
+	if (sampler.data == nullptr) return;
+
+	VulkanSampler* vk_sampler = get<VulkanSampler>(sampler);
 	vkDestroySampler(m_context.device, vk_sampler->vk_sampler, nullptr);
-	m_samplerPool.release(const_cast<VulkanSampler*>(vk_sampler));
+	m_samplerPool.release(vk_sampler);
 }
 
 VkSampler VulkanSampler::createVkSampler(
