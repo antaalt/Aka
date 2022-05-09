@@ -8,6 +8,11 @@
 namespace aka {
 namespace gfx {
 
+struct Framebuffer;
+using FramebufferHandle = ResourceHandle<Framebuffer>;
+
+static constexpr uint32_t FramebufferMaxColorAttachmentCount = 8;
+
 enum class ClearMask : uint8_t
 {
 	None    = 0,
@@ -27,12 +32,14 @@ enum class AttachmentFlag : uint8_t
 	AttachTextureObject = (1 << 2), // Attach the object instead of the layer
 };
 
-enum class AttachmentLoadOp : uint8_t
+enum class AttachmentOp : uint8_t
 {
 	Load,
 	Clear,
 	DontCare,
 };
+using AttachmentLoadOp = AttachmentOp;
+using AttachmentStoreOp = AttachmentOp;
 
 bool has(AttachmentFlag flags, AttachmentFlag flag);
 AttachmentFlag operator&(AttachmentFlag lhs, AttachmentFlag rhs);
@@ -53,26 +60,23 @@ struct FramebufferState
 	{
 		TextureFormat format;
 		AttachmentLoadOp loadOp;
+		// TODO store op
 	};
-	static constexpr uint32_t MaxColorAttachmentCount = 8;
 
 	uint32_t count; // color attachment count
-	Attachment colors[MaxColorAttachmentCount];
+	Attachment colors[FramebufferMaxColorAttachmentCount];
 	Attachment depth;
 
 	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
 };
 
-struct Framebuffer;
-using FramebufferHandle = ResourceHandle<Framebuffer>;
-
 struct Framebuffer : Resource
 {
-	uint32_t width, height;
+	uint32_t width, height; // TODO this is not really interesting to store this.
 	
 	FramebufferState framebuffer;
 
-	Attachment colors[FramebufferState::MaxColorAttachmentCount];
+	Attachment colors[FramebufferMaxColorAttachmentCount];
 	Attachment depth;
 
 	bool hasDepthStencil() const { return depth.texture.data != nullptr; }
@@ -81,5 +85,28 @@ struct Framebuffer : Resource
 	static void destroy(FramebufferHandle framebuffer);
 };
 
+bool operator<(const FramebufferState& lhs, const FramebufferState& rhs);
+bool operator>(const FramebufferState& lhs, const FramebufferState& rhs);
+bool operator==(const FramebufferState& lhs, const FramebufferState& rhs);
+bool operator!=(const FramebufferState& lhs, const FramebufferState& rhs);
+
 };
+};
+
+template <>
+struct std::hash<aka::gfx::FramebufferState>
+{
+	size_t operator()(const aka::gfx::FramebufferState& data) const
+	{
+		size_t hash = 0;
+		aka::hashCombine(hash, data.count);
+		for (size_t i = 0; i < data.count; i++)
+		{
+			aka::hashCombine(hash, aka::EnumToIntegral(data.colors[i].format));
+			aka::hashCombine(hash, aka::EnumToIntegral(data.colors[i].loadOp));
+		}
+		aka::hashCombine(hash, aka::EnumToIntegral(data.depth.format));
+		aka::hashCombine(hash, aka::EnumToIntegral(data.depth.loadOp));
+		return hash;
+	}
 };

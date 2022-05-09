@@ -10,28 +10,9 @@
 #include <vulkan/vulkan.h>
 
 #include <type_traits>
+#include <unordered_map>
 
-#define VK_CHECK_RESULT(result)				\
-{											\
-	VkResult res = (result);				\
-	if (VK_SUCCESS != res) {				\
-		char buffer[256];					\
-		snprintf(							\
-			buffer,							\
-			256,							\
-			"%s (%s at %s:%d)",				\
-			vkGetErrorString(res),	        \
-			AKA_STRINGIFY(result),			\
-			__FILE__,						\
-			__LINE__						\
-		);									\
-		::aka::Logger::error(buffer);       \
-		AKA_DEBUG_BREAK;                    \
-	}										\
-}
-
-
-const char* vkGetErrorString(VkResult result);
+#include "VulkanDebug.h"
 
 namespace aka {
 namespace gfx {
@@ -101,7 +82,7 @@ struct VulkanContext
 public:
 	struct VertexInputData {
 		VkVertexInputBindingDescription bindings;
-		VkVertexInputAttributeDescription attributes[VertexBindingState::MaxAttributes];
+		VkVertexInputAttributeDescription attributes[VertexMaxAttributeCount];
 	};
 	struct ShaderInputData {
 		VkDescriptorPool pool;
@@ -114,60 +95,10 @@ public:
 	VertexInputData getVertexInputData(const VertexBindingState& verticesDesc);
 
 private:
-	struct CacheComparator {
-		// TODO use hash instead ?
-		bool operator()(const FramebufferState& lhs, const FramebufferState& rhs) const {
-			if (lhs.count < rhs.count) return true;
-			else if (lhs.count > rhs.count) return false;
-			for (uint32_t i = 0; i < lhs.count; i++)
-			{
-				if (lhs.colors[i].format < rhs.colors[i].format) return true;
-				else if (lhs.colors[i].format > rhs.colors[i].format) return false;
-				if (lhs.colors[i].loadOp < rhs.colors[i].loadOp) return true;
-				else if (lhs.colors[i].loadOp > rhs.colors[i].loadOp) return false;
-			}
-			if (lhs.depth.format < rhs.depth.format) return true;
-			else if (lhs.depth.format > rhs.depth.format) return false;
-			if (lhs.depth.loadOp < rhs.depth.loadOp) return true;
-			else if (lhs.depth.loadOp > rhs.depth.loadOp) return false;
-			return false; // equal
-		}
-		bool operator()(const ShaderBindingState& lhs, const ShaderBindingState& rhs) const {
-			if (lhs.count < rhs.count) return true;
-			else if (lhs.count > rhs.count) return false;
-			for (uint32_t i = 0; i < lhs.count; i++)
-			{
-				if (lhs.bindings[i].count < rhs.bindings[i].count) return true;
-				else if (lhs.bindings[i].count > rhs.bindings[i].count) return false;
-				if (lhs.bindings[i].shaderType < rhs.bindings[i].shaderType) return true;
-				else if (lhs.bindings[i].shaderType > rhs.bindings[i].shaderType) return false;
-				if (lhs.bindings[i].type < rhs.bindings[i].type) return true;
-				else if (lhs.bindings[i].type > rhs.bindings[i].type) return false;
-			}
-			return false; // equal
-		}
-		bool operator()(const VertexBindingState& lhs, const VertexBindingState& rhs) const {
-
-			if (lhs.count < rhs.count) return true;
-			else if (lhs.count > rhs.count) return false;
-			for (uint32_t i = 0; i < lhs.count; i++)
-			{
-				if (lhs.attributes[i].semantic < rhs.attributes[i].semantic) return true;
-				else if (lhs.attributes[i].semantic > rhs.attributes[i].semantic) return false;
-				if (lhs.attributes[i].format < rhs.attributes[i].format) return true;
-				else if (lhs.attributes[i].format > rhs.attributes[i].format) return false;
-				if (lhs.attributes[i].type < rhs.attributes[i].type) return true;
-				else if (lhs.attributes[i].type > rhs.attributes[i].type) return false;
-				if (lhs.offsets[i] < rhs.offsets[i]) return true;
-				else if (lhs.offsets[i] > rhs.offsets[i]) return false;
-			}
-			return false; // equal
-		}
-	};
-	std::map<FramebufferState, VkRenderPass, CacheComparator> m_framebufferDesc;
-	std::map<ShaderBindingState, ShaderInputData, CacheComparator> m_bindingDesc;
+	std::unordered_map<FramebufferState, VkRenderPass> m_framebufferDesc;
+	std::unordered_map<ShaderBindingState, ShaderInputData> m_bindingDesc;
 	std::map<std::vector<VkDescriptorSetLayout>, VkPipelineLayout> m_pipelineLayout;
-	std::map<VertexBindingState, VertexInputData, CacheComparator> m_verticesDesc;
+	std::unordered_map<VertexBindingState, VertexInputData> m_verticesDesc;
 
 private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);

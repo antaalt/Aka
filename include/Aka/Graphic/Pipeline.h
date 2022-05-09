@@ -11,6 +11,14 @@
 namespace aka {
 namespace gfx {
 
+struct GraphicPipeline;
+struct ComputePipeline;
+
+using GraphicPipelineHandle = ResourceHandle<GraphicPipeline>;
+using ComputePipelineHandle = ResourceHandle<ComputePipeline>;
+
+static constexpr uint32_t VertexMaxAttributeCount = 8;
+
 enum class IndexFormat : uint8_t
 {
 	Unknown,
@@ -82,10 +90,8 @@ struct VertexAttribute
 
 struct VertexBindingState
 {
-	static constexpr uint32_t MaxAttributes = 8;
-
-	VertexAttribute attributes[MaxAttributes]; // Attributes
-	uint32_t offsets[MaxAttributes]; // Offsets of the attributes in a buffer
+	VertexAttribute attributes[VertexMaxAttributeCount]; // Attributes
+	uint32_t offsets[VertexMaxAttributeCount]; // Offsets of the attributes in a buffer
 	uint32_t count; // Number of attributes
 	//uint32_t stride; // Stride of the attributes
 
@@ -276,9 +282,6 @@ struct ViewportState
 	Rect scissor;
 };
 
-struct GraphicPipeline;
-using GraphicPipelineHandle = ResourceHandle<GraphicPipeline>;
-
 struct GraphicPipeline : Resource
 {
 	ProgramHandle program;
@@ -295,9 +298,6 @@ struct GraphicPipeline : Resource
 	ViewportState viewport;
 };
 
-struct ComputePipeline;
-using ComputePipelineHandle = ResourceHandle<ComputePipeline>;
-
 struct ComputePipeline : Resource
 {
 	ProgramHandle program;
@@ -309,5 +309,28 @@ struct RaytracingPipeline : Resource
 	// ...
 };
 
+bool operator<(const VertexBindingState& lhs, const VertexBindingState& rhs);
+bool operator>(const VertexBindingState& lhs, const VertexBindingState& rhs);
+bool operator==(const VertexBindingState& lhs, const VertexBindingState& rhs);
+bool operator!=(const VertexBindingState& lhs, const VertexBindingState& rhs);
+
 };
+};
+
+template <>
+struct std::hash<aka::gfx::VertexBindingState>
+{
+	size_t operator()(const aka::gfx::VertexBindingState& data) const
+	{
+		size_t hash = 0;
+		aka::hashCombine(hash, data.count);
+		for (size_t i = 0; i < data.count; i++)
+		{
+			aka::hashCombine(hash, aka::EnumToIntegral(data.attributes[i].format));
+			aka::hashCombine(hash, aka::EnumToIntegral(data.attributes[i].semantic));
+			aka::hashCombine(hash, aka::EnumToIntegral(data.attributes[i].type));
+			aka::hashCombine(hash, data.offsets[i]);
+		}
+		return hash;
+	}
 };

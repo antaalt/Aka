@@ -336,8 +336,8 @@ void VulkanCommandList::bindDescriptorSets(DescriptorSetHandle* sets, uint32_t c
 void VulkanCommandList::bindVertexBuffer(BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VkBuffer vk_buffers[VertexBindingState::MaxAttributes]{};
-	VkDeviceSize vk_offsets[VertexBindingState::MaxAttributes]{};
+	VkBuffer vk_buffers[VertexMaxAttributeCount]{};
+	VkDeviceSize vk_offsets[VertexMaxAttributeCount]{};
 	for (size_t i = 0; i < bindingCount; i++)
 	{
 		VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffers[i]);

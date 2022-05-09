@@ -190,7 +190,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 
 FramebufferHandle VulkanGraphicDevice::createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
-	if ((attachments == nullptr && depth == nullptr) || count > FramebufferState::MaxColorAttachmentCount)
+	if ((attachments == nullptr && depth == nullptr) || count > FramebufferMaxColorAttachmentCount)
 		return FramebufferHandle::null;
 
 	VulkanFramebuffer* framebuffer = m_framebufferPool.acquire();

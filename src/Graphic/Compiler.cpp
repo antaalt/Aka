@@ -470,7 +470,7 @@ VertexBindingState Compiler::getVertexBindings()
 		uint32_t location = compiler.get_decoration(id, spv::Decoration::DecorationLocation);
 		spirv_cross::SPIRType type = compiler.get_type_from_variable(id);
 		
-		AKA_ASSERT(location < VertexBindingState::MaxAttributes, "");
+		AKA_ASSERT(location < VertexMaxAttributeCount, "");
 		
 		bindings.attributes[location].format = getType(type.basetype); 
 		bindings.attributes[location].semantic = VertexSemantic::Unknown; // store somewhere

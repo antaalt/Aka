@@ -5,7 +5,7 @@ namespace gfx {
 
 uint32_t VertexBindingState::stride() const
 {
-	if (count > MaxAttributes)
+	if (count > VertexMaxAttributeCount)
 		return 0;
 	uint32_t stride = 0;
 	for (uint32_t i = 0; i < count; i++)
@@ -107,6 +107,68 @@ bool StencilState::isEnabled() const
 {
 	// TODO mask ?
 	return (front.compare != StencilOp::None) || (back.compare != StencilOp::None);
+}
+
+bool operator<(const VertexBindingState& lhs, const VertexBindingState& rhs)
+{
+	if (lhs.count < rhs.count) return true;
+	else if (lhs.count > rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.attributes[i].semantic < rhs.attributes[i].semantic) return true;
+		else if (lhs.attributes[i].semantic > rhs.attributes[i].semantic) return false;
+		if (lhs.attributes[i].format < rhs.attributes[i].format) return true;
+		else if (lhs.attributes[i].format > rhs.attributes[i].format) return false;
+		if (lhs.attributes[i].type < rhs.attributes[i].type) return true;
+		else if (lhs.attributes[i].type > rhs.attributes[i].type) return false;
+		if (lhs.offsets[i] < rhs.offsets[i]) return true;
+		else if (lhs.offsets[i] > rhs.offsets[i]) return false;
+	}
+	return false; // equal 
+}
+
+bool operator>(const VertexBindingState& lhs, const VertexBindingState& rhs)
+{
+	if (lhs.count > rhs.count) return true;
+	else if (lhs.count < rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.attributes[i].semantic > rhs.attributes[i].semantic) return true;
+		else if (lhs.attributes[i].semantic < rhs.attributes[i].semantic) return false;
+		if (lhs.attributes[i].format > rhs.attributes[i].format) return true;
+		else if (lhs.attributes[i].format < rhs.attributes[i].format) return false;
+		if (lhs.attributes[i].type > rhs.attributes[i].type) return true;
+		else if (lhs.attributes[i].type < rhs.attributes[i].type) return false;
+		if (lhs.offsets[i] > rhs.offsets[i]) return true;
+		else if (lhs.offsets[i] < rhs.offsets[i]) return false;
+	}
+	return false; // equal
+}
+
+bool operator==(const VertexBindingState& lhs, const VertexBindingState& rhs)
+{
+	if (lhs.count != rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.attributes[i].semantic != rhs.attributes[i].semantic) return false;
+		if (lhs.attributes[i].format != rhs.attributes[i].format) return false;
+		if (lhs.attributes[i].type != rhs.attributes[i].type) return false;
+		if (lhs.offsets[i] != rhs.offsets[i]) return false;
+	}
+	return true; // equal
+}
+
+bool operator!=(const VertexBindingState& lhs, const VertexBindingState& rhs)
+{
+	if (lhs.count != rhs.count) return true;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.attributes[i].semantic != rhs.attributes[i].semantic) return true;
+		if (lhs.attributes[i].format != rhs.attributes[i].format) return true;
+		if (lhs.attributes[i].type != rhs.attributes[i].type) return true;
+		if (lhs.offsets[i] != rhs.offsets[i]) return true;
+	}
+	return false; // equal
 }
 
 

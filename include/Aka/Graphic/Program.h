@@ -63,14 +63,17 @@ struct Program : Resource
 };
 
 bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
+bool operator>(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
+bool operator!=(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 
 };
 };
 
 template<> struct std::hash<aka::gfx::ShaderBindingState>
 {
-	size_t operator()(const aka::gfx::ShaderBindingState& data) {
+	size_t operator()(const aka::gfx::ShaderBindingState& data) const
+	{
 		size_t hash = 0;
 		aka::hashCombine(hash, data.count);
 		for (size_t i = 0; i < data.count; i++)
