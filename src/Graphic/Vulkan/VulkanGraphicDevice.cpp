@@ -27,7 +27,8 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	AKA_ASSERT(m_shaderPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_programPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_pipelinePool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_graphicPipelinePool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_descriptorPool.count() == 0, "Resource destroy missing");
 	m_texturePool.release([this](VulkanTexture& res) { this->destroy(TextureHandle{ &res }); });
 	m_samplerPool.release([this](VulkanSampler& res) { this->destroy(SamplerHandle{ &res }); });
@@ -35,7 +36,8 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	m_shaderPool.release([this](VulkanShader& res) { this->destroy(ShaderHandle{ &res }); });
 	m_programPool.release([this](VulkanProgram& res) { this->destroy(ProgramHandle{ &res }); });
 	m_framebufferPool.release([this](VulkanFramebuffer& res) { this->destroy(FramebufferHandle{ &res }); });
-	m_pipelinePool.release([this](VulkanPipeline& res) { this->destroy(PipelineHandle{ &res }); });
+	m_graphicPipelinePool.release([this](VulkanGraphicPipeline& res) { this->destroy(GraphicPipelineHandle{ &res }); });
+	m_computePipelinePool.release([this](VulkanComputePipeline& res) { this->destroy(ComputePipelineHandle{ &res }); });
 	m_descriptorPool.release([this](const VulkanDescriptorSet& res) { this->destroy(DescriptorSetHandle{ &res }); });
 	// Destroy context
 	m_context.shutdown();

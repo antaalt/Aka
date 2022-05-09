@@ -107,8 +107,8 @@ public:
 	virtual SamplerHandle createSampler(Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, uint32_t mipLevels, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
 	virtual void destroy(SamplerHandle sampler) = 0;
 
-	// Pass
-	virtual PipelineHandle createPipeline(
+	// Pipelines
+	virtual GraphicPipelineHandle createGraphicPipeline(
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
@@ -120,7 +120,14 @@ public:
 		const BlendState& blending,
 		const FillState& fill
 	) = 0;
-	virtual void destroy(PipelineHandle handle) = 0;
+	virtual ComputePipelineHandle createComputePipeline(
+		ProgramHandle program,
+		uint32_t groupCountX,
+		uint32_t groupCountY,
+		uint32_t groupCountZ
+	) = 0;
+	virtual void destroy(GraphicPipelineHandle handle) = 0;
+	virtual void destroy(ComputePipelineHandle handle) = 0;
 
 	// Command
 	virtual CommandList* acquireCommandList() = 0;

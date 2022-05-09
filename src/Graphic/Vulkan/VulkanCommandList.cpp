@@ -92,7 +92,8 @@ VkQueue VulkanGraphicDevice::getQueue(QueueType type)
 }
 
 VulkanCommandList::VulkanCommandList(VkDevice device, VkCommandBuffer command) :
-	vk_pipeline(nullptr),
+	vk_graphicPipeline(nullptr),
+	vk_computePipeline(nullptr),
 	vk_framebuffer(nullptr),
 	vk_indices(nullptr),
 	vk_vertices(nullptr),
@@ -130,7 +131,7 @@ void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const Cle
 {
 	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	AKA_ASSERT(vk_framebuffer != nullptr && vk_pipeline != nullptr, "No bound pipeline");
+	AKA_ASSERT(vk_framebuffer != nullptr && vk_graphicPipeline != nullptr, "No bound pipeline");
 
 	// TODO clear mask should be set at renderpass level.
 	std::vector<VkClearValue> clearValues(vk_framebuffer->framebuffer.count);
@@ -263,32 +264,43 @@ void VulkanCommandList::endRenderPass()
 	this->vk_framebuffer = nullptr;
 }
 
-void VulkanCommandList::bindPipeline(PipelineHandle pipeline)
+void VulkanCommandList::bindPipeline(GraphicPipelineHandle pipeline)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanPipeline* vk_pipeline = get<VulkanPipeline>(pipeline);
-	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
+	VulkanGraphicPipeline* vk_pipeline = get<VulkanGraphicPipeline>(pipeline);
+	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	vkCmdBindPipeline(vk_command, bindPoint, vk_pipeline->vk_pipeline);
 	
-	this->vk_pipeline = vk_pipeline;
-
+	this->vk_graphicPipeline = vk_pipeline;
+	this->vk_computePipeline = nullptr;
 }
+
+void VulkanCommandList::bindPipeline(ComputePipelineHandle pipeline)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	VulkanComputePipeline* vk_pipeline = get<VulkanComputePipeline>(pipeline);
+	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+	vkCmdBindPipeline(vk_command, bindPoint, vk_pipeline->vk_pipeline);
+
+	this->vk_graphicPipeline = nullptr;
+	this->vk_computePipeline = vk_pipeline;
+}
+
 void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle set)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	AKA_ASSERT(vk_pipeline != nullptr, "Invalid pipeline");
+	AKA_ASSERT(vk_graphicPipeline != nullptr || vk_computePipeline != nullptr, "Invalid pipeline");
 
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
 	if (set.data->bindings.count > 0)
 	{
-		// TODO This might be done only once, when switching buffer / texture...
-		// Check for dirty
-		// if (material->dirty)
-		//if (vk_material != material)
-		//VulkanProgram::updateDescriptorSet(vk_device, set.data);
-
+		VkPipelineLayout vk_layout = VK_NULL_HANDLE;
+		if (vk_graphicPipeline)
+			vk_layout = vk_graphicPipeline->vk_pipelineLayout;
+		else if (vk_computePipeline)
+			vk_layout = vk_computePipeline->vk_pipelineLayout;
 		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(set.data);
-		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipeline->vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_layout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
 		this->vk_sets[index] = vk_material;
 	}
 }
@@ -297,21 +309,19 @@ void VulkanCommandList::bindDescriptorSets(DescriptorSetHandle* sets, uint32_t c
 	if (count < 1)
 		return;
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	AKA_ASSERT(vk_pipeline != nullptr, "Invalid pipeline");
+	AKA_ASSERT(vk_graphicPipeline != nullptr || vk_computePipeline != nullptr, "Invalid pipeline");
 
 	VkPipelineBindPoint vk_bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
 	VkDescriptorSet vk_sets[8]{}; // Max bindings
-	VkPipelineLayout vk_layout = vk_pipeline->vk_pipelineLayout;
+	VkPipelineLayout vk_layout = VK_NULL_HANDLE;
+	if (vk_graphicPipeline)
+		vk_layout = vk_graphicPipeline->vk_pipelineLayout;
+	else if (vk_computePipeline)
+		vk_layout = vk_computePipeline->vk_pipelineLayout;
 	for (uint32_t i = 0; i < count; i++)
 	{
 		if (sets[i].data->bindings.count > 0)
 		{
-			// TODO This might be done only once, when switching buffer / texture...
-			// Check for dirty
-			// if (material->dirty)
-			//if (vk_material != material)
-			//VulkanProgram::updateDescriptorSet(vk_device, materials[i]);
-
 			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(sets[i].data);
 			vk_sets[i] = vk_set->vk_descriptorSet;
 			this->vk_sets[i] = vk_set;

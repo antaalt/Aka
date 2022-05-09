@@ -52,7 +52,8 @@ struct AKA_NO_VTABLE CommandList
 	virtual void beginRenderPass(FramebufferHandle framebuffer, const ClearState& clear) = 0;
 	virtual void endRenderPass() = 0;
 
-	virtual void bindPipeline(PipelineHandle handle) = 0;
+	virtual void bindPipeline(GraphicPipelineHandle handle) = 0;
+	virtual void bindPipeline(ComputePipelineHandle handle) = 0;
 	virtual void bindDescriptorSet(uint32_t index, DescriptorSetHandle material) = 0;
 	virtual void bindDescriptorSets(DescriptorSetHandle* material, uint32_t count) = 0;
 
@@ -63,7 +64,7 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1) = 0;
 	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) = 0;
-	virtual void dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) = 0;
+	virtual void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 

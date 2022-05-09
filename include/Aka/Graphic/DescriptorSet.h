@@ -12,10 +12,10 @@ namespace gfx {
 struct DescriptorSetData
 {
 	union {
-		BufferHandle buffers[ShaderBindingState::MaxBindingCount];
+		BufferHandle buffers[ShaderMaxBindingCount];
 		struct {
-			TextureHandle images[ShaderBindingState::MaxBindingCount];
-			SamplerHandle samplers[ShaderBindingState::MaxBindingCount];
+			TextureHandle images[ShaderMaxBindingCount];
+			SamplerHandle samplers[ShaderMaxBindingCount];
 		};
 	};
 

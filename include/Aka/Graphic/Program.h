@@ -10,6 +10,12 @@
 namespace aka {
 namespace gfx {
 
+struct Program;
+using ProgramHandle = ResourceHandle<Program>;
+
+static constexpr uint32_t ShaderMaxBindingCount = 16; // TODO increase / Retrieve from API
+static constexpr uint32_t ShaderMaxSetCount = 8;
+
 enum class ShaderBindingType : uint8_t
 {
 	None,
@@ -29,25 +35,19 @@ struct ShaderBindingLayout
 
 struct ShaderBindingState
 {
-	static constexpr uint32_t MaxBindingCount = 16; // TODO increase
-	static constexpr uint32_t MaxSetCount = 8;
-	ShaderBindingLayout bindings[MaxBindingCount];
+	ShaderBindingLayout bindings[ShaderMaxBindingCount];
 	uint32_t count;
-
-	static ShaderBindingState merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 };
-
-struct Program;
-using ProgramHandle = ResourceHandle<Program>;
 
 struct Program : Resource
 {
+	// TODO replace by ShaderType flag as we could delete shader after program creation.
 	ShaderHandle vertex;
 	ShaderHandle fragment;
 	ShaderHandle geometry;
 	ShaderHandle compute;
 
-	ShaderBindingState bindings[ShaderBindingState::MaxSetCount]; // TODO rename sets
+	ShaderBindingState sets[ShaderMaxSetCount];
 
 	uint32_t setCount;
 
@@ -62,5 +62,23 @@ struct Program : Resource
 	static void destroy(ProgramHandle program);
 };
 
+bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
+bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
+
 };
+};
+
+template<> struct std::hash<aka::gfx::ShaderBindingState>
+{
+	size_t operator()(const aka::gfx::ShaderBindingState& data) {
+		size_t hash = 0;
+		aka::hashCombine(hash, data.count);
+		for (size_t i = 0; i < data.count; i++)
+		{
+			aka::hashCombine(hash, data.bindings[i].count);
+			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].shaderType));
+			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].type));
+		}
+		return hash;
+	}
 };

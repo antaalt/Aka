@@ -14,6 +14,29 @@
 namespace aka {
 using namespace gfx;
 
+ShaderBindingState merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
+{
+	ShaderBindingState bindings = lhs;
+	for (uint32_t i = 0; i < rhs.count; i++)
+	{
+		if (rhs.bindings[i].type != ShaderBindingType::None)
+		{
+			if (lhs.bindings[i].type == ShaderBindingType::None)
+			{
+				bindings.bindings[i] = rhs.bindings[i];
+				bindings.count = max(bindings.count, i + 1);
+			}
+			else
+			{
+				AKA_ASSERT(rhs.bindings[i].type == lhs.bindings[i].type, "Mismatching bindings");
+				AKA_ASSERT(rhs.bindings[i].count == lhs.bindings[i].count, "Mismatching count");
+				bindings.bindings[i].shaderType = bindings.bindings[i].shaderType | rhs.bindings[i].shaderType;
+			}
+		}
+	}
+	return bindings;
+}
+
 ProgramManager::~ProgramManager()
 {
 	Application* app = Application::app();
@@ -118,13 +141,13 @@ bool ProgramManager::parse(const Path& path)
 				info.comp = element.value()["compute"].get<std::string>();
 			if (info.vert.length() > 0 && info.frag.length() > 0)
 			{
-				ShaderBindingState sets[ShaderBindingState::MaxSetCount]{};
+				ShaderBindingState sets[ShaderMaxSetCount]{};
 				uint32_t setCount = max(getShaderInfo(info.vert).setCount, getShaderInfo(info.frag).setCount);
 				for (uint32_t i = 0; i < setCount; i++)
 				{
 					ShaderBindingState vertBindings = getShaderInfo(info.vert).sets[i];
 					ShaderBindingState fragBindings = getShaderInfo(info.frag).sets[i];
-					sets[i] = ShaderBindingState::merge(vertBindings, fragBindings);
+					sets[i] = merge(vertBindings, fragBindings);
 				}
 				info.program = Program::createVertex(
 					getShaderInfo(info.vert).shader,
@@ -260,11 +283,11 @@ void ProgramManager::onReceive(const AppUpdateEvent& event)
 				}
 				if (compiled)
 				{
-					ShaderBindingState bindings[ShaderBindingState::MaxSetCount]{};
+					ShaderBindingState bindings[ShaderMaxSetCount]{};
 					uint32_t bindingCount = max(vertInfo.setCount, fragInfo.setCount);
 					for (uint32_t i = 0; i < bindingCount; i++)
 					{
-						bindings[i] = ShaderBindingState::merge(vertInfo.sets[i], fragInfo.sets[i]);
+						bindings[i] = merge(vertInfo.sets[i], fragInfo.sets[i]);
 					}
 					programInfo.program = Program::createVertex(vertInfo.shader, fragInfo.shader, bindings, bindingCount);
 					EventDispatcher<ProgramReloadedEvent>::emit(ProgramReloadedEvent{ programInfo.name, programInfo.program });
@@ -330,7 +353,7 @@ ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, ShaderBi
 			*vertices = compiler.getVertexBindings();
 		if (bindings)
 		{
-			for (uint32_t i = 0; i < ShaderBindingState::MaxSetCount; i++)
+			for (uint32_t i = 0; i < ShaderMaxSetCount; i++)
 			{
 				bindings[i] = compiler.getShaderBindings(i);
 				if (bindings[i].count > 0)
@@ -357,7 +380,7 @@ ShaderHandle ProgramManager::compile(const Path& path, ShaderType type, ShaderBi
 			*vertices = compiler.getVertexBindings();
 		if (bindings)
 		{
-			for (uint32_t i = 0; i < ShaderBindingState::MaxSetCount; i++)
+			for (uint32_t i = 0; i < ShaderMaxSetCount; i++)
 			{
 				bindings[i] = compiler.getShaderBindings(i);
 				if (bindings[i].count > 0)

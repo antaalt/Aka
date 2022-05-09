@@ -43,7 +43,7 @@ private:
 		gfx::ShaderHandle shader;
 		Path path;
 		uint32_t setCount;
-		gfx::ShaderBindingState sets[gfx::ShaderBindingState::MaxSetCount];
+		gfx::ShaderBindingState sets[gfx::ShaderMaxSetCount];
 		gfx::VertexBindingState vertices;
 		Timestamp loaded;
 	};

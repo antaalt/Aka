@@ -241,7 +241,7 @@ VkShaderStageFlagBits tovk(ShaderType type)
 	}
 }
 
-VkPipeline VulkanPipeline::createVkPipeline(
+VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	VkDevice device, 
 	VkRenderPass renderpass,
 	VkPipelineLayout pipelineLayout,
@@ -384,7 +384,7 @@ VkPipeline VulkanPipeline::createVkPipeline(
 	return pipeline;
 }
 
-VkVertexInputBindingDescription VulkanPipeline::getVertexBindings(const VertexBindingState& verticesDesc, VkVertexInputAttributeDescription* attributes, uint32_t count)
+VkVertexInputBindingDescription VulkanGraphicPipeline::getVertexBindings(const VertexBindingState& verticesDesc, VkVertexInputAttributeDescription* attributes, uint32_t count)
 {
 	AKA_ASSERT(count == verticesDesc.count, "");
 	VkVertexInputBindingDescription verticesBindings{};
@@ -404,7 +404,7 @@ VkVertexInputBindingDescription VulkanPipeline::getVertexBindings(const VertexBi
 	return verticesBindings;
 }
 
-PipelineHandle VulkanGraphicDevice::createPipeline(
+GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	ProgramHandle program,
 	PrimitiveType primitive,
 	const FramebufferState& framebuffer,
@@ -418,9 +418,9 @@ PipelineHandle VulkanGraphicDevice::createPipeline(
 )
 {
 	if (program.data == nullptr)
-		return PipelineHandle::null;
+		return GraphicPipelineHandle::null;
 
-	VulkanPipeline* pipeline = m_pipelinePool.acquire();
+	VulkanGraphicPipeline* pipeline = m_graphicPipelinePool.acquire();
 	pipeline->program = program;
 	pipeline->primitive = primitive;
 	pipeline->viewport = viewport;
@@ -432,13 +432,13 @@ PipelineHandle VulkanGraphicDevice::createPipeline(
 
 	pipeline->framebuffer = framebuffer;
 	pipeline->vertices = vertices;
-	memcpy(pipeline->bindings, program.data->bindings, program.data->setCount * sizeof(ShaderBindingState));
+	memcpy(pipeline->sets, program.data->sets, program.data->setCount * sizeof(ShaderBindingState));
 
 	VulkanProgram* vk_program = get<VulkanProgram>(program);
-	VkDescriptorSetLayout layouts[ShaderBindingState::MaxSetCount];
+	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
 	for (uint32_t i = 0; i < program.data->setCount; i++)
 	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->bindings[i]);
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->sets[i]);
 		layouts[i] = data.layout;
 	}
 	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program.data->setCount);
@@ -462,13 +462,7 @@ PipelineHandle VulkanGraphicDevice::createPipeline(
 		vk_shaders.push_back(geometry);
 		AKA_ASSERT(vk_shaders.size() == 3, "Missing vertex or fragment shader");
 	}
-	VulkanShader* compute = get<VulkanShader>(vk_program->compute);
-	if (compute)
-	{
-		vk_shaders.push_back(compute);
-		AKA_ASSERT(vk_shaders.size() == 1, "Compute should only have 1 shader");
-	}
-	pipeline->vk_pipeline = VulkanPipeline::createVkPipeline(
+	pipeline->vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
 		m_context.device,
 		m_context.getRenderPass(framebuffer, VulkanRenderPassLayout::Unknown),
 		pipeline->vk_pipelineLayout,
@@ -484,19 +478,81 @@ PipelineHandle VulkanGraphicDevice::createPipeline(
 		pipeline->blend,
 		pipeline->fill
 	);
-	return PipelineHandle{ pipeline };
+	return GraphicPipelineHandle{ pipeline };
 }
-void VulkanGraphicDevice::destroy(PipelineHandle pipeline)
+ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(ProgramHandle program, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+	if (program.data == nullptr)
+		return ComputePipelineHandle::null;
+
+	VulkanComputePipeline* pipeline = m_computePipelinePool.acquire();
+	pipeline->program = program;
+
+	memcpy(pipeline->sets, program.data->sets, program.data->setCount * sizeof(ShaderBindingState));
+
+	VulkanProgram* vk_program = get<VulkanProgram>(program);
+	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
+	for (uint32_t i = 0; i < program.data->setCount; i++)
+	{
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->sets[i]);
+		layouts[i] = data.layout;
+	}
+	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program.data->setCount);
+	// Create Pipeline
+	pipeline->vk_pipeline = VulkanComputePipeline::createVkComputePipeline(
+		m_context.device,
+		pipeline->vk_pipelineLayout,
+		get<VulkanShader>(vk_program->compute)
+	);
+	return ComputePipelineHandle{ pipeline };
+}
+void VulkanGraphicDevice::destroy(GraphicPipelineHandle pipeline)
 {
 	if (pipeline.data == nullptr) return;
 
-	VulkanPipeline* vk_pipeline = get<VulkanPipeline>(pipeline);
+	VulkanGraphicPipeline* vk_pipeline = get<VulkanGraphicPipeline>(pipeline);
 
 	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
 	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
 
-	m_pipelinePool.release(vk_pipeline);
+	m_graphicPipelinePool.release(vk_pipeline);
+}
+
+void VulkanGraphicDevice::destroy(ComputePipelineHandle handle)
+{
+	if (handle.data == nullptr) return;
+
+	VulkanComputePipeline* vk_pipeline = get<VulkanComputePipeline>(handle);
+
+	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
+	// TODO unref.
+	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
+
+	m_computePipelinePool.release(vk_pipeline);
+}
+
+VkPipeline VulkanComputePipeline::createVkComputePipeline(VkDevice device, VkPipelineLayout pipelineLayout, const VulkanShader* shader)
+{
+	AKA_ASSERT(shader->type == ShaderType::Compute, "Invalid shader type");
+
+	VkPipelineShaderStageCreateInfo shaderStage{};
+	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStage.stage = tovk(ShaderType::Compute);
+	shaderStage.module = shader->vk_module;
+	shaderStage.pName = "main"; // This member has to be 'main', regardless of the actual entry point of the shader
+
+	VkComputePipelineCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	createInfo.flags = 0;
+	createInfo.basePipelineIndex = -1;
+	createInfo.basePipelineHandle = VK_NULL_HANDLE;
+	createInfo.layout = pipelineLayout;
+	createInfo.stage = shaderStage;
+
+	VkPipeline pipeline;
+	VK_CHECK_RESULT(vkCreateComputePipelines(device, nullptr, 1, &createInfo, nullptr, &pipeline));
+	return pipeline;
 }
 
 };

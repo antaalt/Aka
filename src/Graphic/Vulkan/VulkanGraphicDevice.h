@@ -89,7 +89,7 @@ public:
 	FramebufferHandle backbuffer(const Frame* frame) override;
 
 	// Pipeline
-	PipelineHandle createPipeline(
+	GraphicPipelineHandle createGraphicPipeline(
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const FramebufferState& framebuffer,
@@ -101,7 +101,14 @@ public:
 		const BlendState& blending,
 		const FillState& fill
 	) override;
-	void destroy(PipelineHandle handle) override;
+	ComputePipelineHandle createComputePipeline(
+		ProgramHandle program,
+		uint32_t groupCountX,
+		uint32_t groupCountY,
+		uint32_t groupCountZ
+	) override;
+	void destroy(GraphicPipelineHandle handle) override;
+	void destroy(ComputePipelineHandle handle) override;
 
 	// Command list
 	CommandList* acquireCommandList() override;
@@ -161,7 +168,8 @@ private:
 	Pool<VulkanShader> m_shaderPool;
 	Pool<VulkanProgram> m_programPool;
 	Pool<VulkanFramebuffer> m_framebufferPool;
-	Pool<VulkanPipeline> m_pipelinePool;
+	Pool<VulkanGraphicPipeline> m_graphicPipelinePool;
+	Pool<VulkanComputePipeline> m_computePipelinePool;
 	Pool<VulkanDescriptorSet> m_descriptorPool;
 	//Pool<VulkanCommandList> m_commandPool;
 };

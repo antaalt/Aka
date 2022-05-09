@@ -276,16 +276,16 @@ struct ViewportState
 	Rect scissor;
 };
 
-struct Pipeline;
-using PipelineHandle = ResourceHandle<Pipeline>;
+struct GraphicPipeline;
+using GraphicPipelineHandle = ResourceHandle<GraphicPipeline>;
 
-struct Pipeline : Resource
+struct GraphicPipeline : Resource
 {
 	ProgramHandle program;
 
 	PrimitiveType primitive;
 	VertexBindingState vertices;
-	ShaderBindingState bindings[ShaderBindingState::MaxSetCount];
+	ShaderBindingState sets[ShaderMaxSetCount];
 	FramebufferState framebuffer;
 	CullState cull;
 	FillState fill;
@@ -295,14 +295,18 @@ struct Pipeline : Resource
 	ViewportState viewport;
 };
 
-struct ComputePipeline
-{
+struct ComputePipeline;
+using ComputePipelineHandle = ResourceHandle<ComputePipeline>;
 
+struct ComputePipeline : Resource
+{
+	ProgramHandle program;
+	ShaderBindingState sets[ShaderMaxSetCount];
 };
 
-struct RaytracingPipeline
+struct RaytracingPipeline : Resource
 {
-
+	// ...
 };
 
 };

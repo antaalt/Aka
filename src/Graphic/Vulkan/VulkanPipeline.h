@@ -10,12 +10,12 @@
 namespace aka {
 namespace gfx {
 
-struct VulkanPipeline : Pipeline
+struct VulkanGraphicPipeline : GraphicPipeline
 {
 	VkPipeline vk_pipeline;
 	VkPipelineLayout vk_pipelineLayout;
 
-	static VkPipeline VulkanPipeline::createVkPipeline(
+	static VkPipeline createVkGraphicPipeline(
 		VkDevice device,
 		VkRenderPass renderpass,
 		VkPipelineLayout pipelineLayout,
@@ -33,6 +33,18 @@ struct VulkanPipeline : Pipeline
 	);
 
 	static VkVertexInputBindingDescription getVertexBindings(const VertexBindingState& vertices, VkVertexInputAttributeDescription* attributes, uint32_t count);
+};
+
+struct VulkanComputePipeline : ComputePipeline
+{
+	VkPipeline vk_pipeline;
+	VkPipelineLayout vk_pipelineLayout;
+
+	static VkPipeline createVkComputePipeline(
+		VkDevice device,
+		VkPipelineLayout pipelineLayout,
+		const VulkanShader* shader	
+	);
 };
 
 };

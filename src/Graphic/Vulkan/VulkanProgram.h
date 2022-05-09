@@ -16,8 +16,8 @@ struct VulkanShader : Shader
 
 struct VulkanProgram : Program
 {
-	VkDescriptorSetLayout vk_descriptorSetLayout[ShaderBindingState::MaxSetCount];
-	VkDescriptorPool vk_descriptorPool[ShaderBindingState::MaxSetCount];
+	VkDescriptorSetLayout vk_descriptorSetLayout[ShaderMaxSetCount];
+	VkDescriptorPool vk_descriptorPool[ShaderMaxSetCount];
 	//VkDescriptorSet vk_descriptorSet;
 	//VkPipelineLayout vk_pipelineLayout; // soft reference
 

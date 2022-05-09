@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 #define AKA_NO_VTABLE __declspec(novtable)
 
@@ -47,10 +48,39 @@
 
 namespace aka {
 
+// Hash
+template <typename T> struct Hash;
+template <typename T> void hashCombine(std::size_t& s, const T& v);
+
+// Type traits
+template <typename T> using UnderlyingType = ::std::underlying_type_t<T>;
+template <typename T> constexpr UnderlyingType<T> EnumToIntegral(T value);
+
+// Containers
+//template <typename T> using Vector = ::std::vector<T>;
+//template <typename T> using TreeMap = ::std::map<T>;
+//template <typename T> using HashMap = ::std::unordered_map<T>;
+
 template <typename T>
-inline constexpr std::underlying_type_t<T> EnumToIntegral(T value)
+void hashCombine(std::size_t& s, const T& v)
 {
-	return static_cast<std::underlying_type_t<T>>(value);
+	std::hash<T> h;
+	s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+}
+
+template <typename T>
+struct Hash
+{
+	size_t operator()(const T& data)
+	{
+		return std::hash<T>(data);
+	}
+};
+
+template <typename T>
+inline constexpr UnderlyingType<T> EnumToIntegral(T value)
+{
+	return static_cast<UnderlyingType<T>>(value);
 }
 
 };

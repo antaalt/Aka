@@ -220,24 +220,24 @@ void VulkanGraphicDevice::destroy(ShaderHandle shader)
 }
 
 // Programs
-ProgramHandle VulkanGraphicDevice::createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts)
+ProgramHandle VulkanGraphicDevice::createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts)
 {
 	// TODO check shaders
-	if (bindingCounts == 0 || bindingCounts > ShaderBindingState::MaxSetCount)
+	if (bindingCounts == 0 || bindingCounts > ShaderMaxSetCount)
 		return ProgramHandle::null;
-	if (bindings[0].count > ShaderBindingState::MaxBindingCount)
+	if (sets[0].count > ShaderMaxBindingCount)
 		return ProgramHandle::null;
 	VulkanProgram* vk_program = m_programPool.acquire();
 	vk_program->vertex = vertex;
 	vk_program->fragment = fragment;
 	vk_program->compute = ShaderHandle::null;
 	vk_program->geometry = geometry;
-	memcpy(vk_program->bindings, bindings, bindingCounts * sizeof(ShaderBindingState));
+	memcpy(vk_program->sets, sets, bindingCounts * sizeof(ShaderBindingState));
 
 	vk_program->setCount = bindingCounts;
 	for (uint32_t i = 0; i < bindingCounts; i++)
 	{
-		auto data = m_context.getDescriptorLayout(vk_program->bindings[i]);
+		auto data = m_context.getDescriptorLayout(vk_program->sets[i]);
 		vk_program->vk_descriptorPool[i] = data.pool;
 		vk_program->vk_descriptorSetLayout[i] = data.layout;
 		//vk_program->vk_pipelineLayout = m_context.getPipelineLayout(vk_program->vk_descriptorSetLayout);

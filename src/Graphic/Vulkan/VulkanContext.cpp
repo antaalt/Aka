@@ -247,7 +247,7 @@ VulkanContext::VertexInputData VulkanContext::getVertexInputData(const VertexBin
 		return it->second;
 
 	VertexInputData vertices{};
-	vertices.bindings = VulkanPipeline::getVertexBindings(verticesDesc, vertices.attributes, VertexBindingState::MaxAttributes);
+	vertices.bindings = VulkanGraphicPipeline::getVertexBindings(verticesDesc, vertices.attributes, VertexBindingState::MaxAttributes);
 
 	m_verticesDesc.insert(std::make_pair(verticesDesc, vertices));
 	return vertices;

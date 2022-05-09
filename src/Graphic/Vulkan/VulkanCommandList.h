@@ -21,7 +21,8 @@ struct VulkanCommandList : CommandList
 	void beginRenderPass(FramebufferHandle framebuffer, const ClearState& clear) override;
 	void endRenderPass() override;
 
-	void bindPipeline(PipelineHandle pipeline) override;
+	void bindPipeline(GraphicPipelineHandle pipeline) override;
+	void bindPipeline(ComputePipelineHandle handle) override;
 	void bindDescriptorSet(uint32_t index, DescriptorSetHandle set) override;
 	void bindDescriptorSets(DescriptorSetHandle* sets, uint32_t count) override;
 
@@ -32,7 +33,7 @@ struct VulkanCommandList : CommandList
 
 	void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
 	void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
-	void dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) override;
+	void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
 
 	void copy(TextureHandle src, TextureHandle dst) override;
 	void blit(TextureHandle src, TextureHandle dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) override;
@@ -40,8 +41,9 @@ struct VulkanCommandList : CommandList
 	static VkCommandBuffer createSingleTime(VkDevice device, VkCommandPool pool);
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
-	const VulkanPipeline* vk_pipeline;
-	const DescriptorSet* vk_sets[ShaderBindingState::MaxSetCount];
+	const VulkanGraphicPipeline* vk_graphicPipeline;
+	const VulkanComputePipeline* vk_computePipeline;
+	const DescriptorSet* vk_sets[ShaderMaxSetCount];
 	const VulkanFramebuffer* vk_framebuffer;
 	const VulkanBuffer* vk_indices;
 	const VulkanBuffer* vk_vertices;

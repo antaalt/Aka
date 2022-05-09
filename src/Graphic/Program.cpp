@@ -5,27 +5,31 @@
 namespace aka {
 namespace gfx {
 
-ShaderBindingState ShaderBindingState::merge(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
+bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 {
-	ShaderBindingState bindings = lhs;
-	for (uint32_t i = 0; i < rhs.count; i++)
+	if (lhs.count < rhs.count) return true;
+	else if (lhs.count > rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
 	{
-		if (rhs.bindings[i].type != ShaderBindingType::None)
-		{
-			if (lhs.bindings[i].type == ShaderBindingType::None)
-			{
-				bindings.bindings[i] = rhs.bindings[i];
-				bindings.count = max(bindings.count, i + 1);
-			}
-			else
-			{
-				AKA_ASSERT(rhs.bindings[i].type == lhs.bindings[i].type, "Mismatching bindings");
-				AKA_ASSERT(rhs.bindings[i].count == lhs.bindings[i].count, "Mismatching count");
-				bindings.bindings[i].shaderType = bindings.bindings[i].shaderType | rhs.bindings[i].shaderType;
-			}
-		}
+		if (lhs.bindings[i].count < rhs.bindings[i].count) return true;
+		else if (lhs.bindings[i].count > rhs.bindings[i].count) return false;
+		if (lhs.bindings[i].shaderType < rhs.bindings[i].shaderType) return true;
+		else if (lhs.bindings[i].shaderType > rhs.bindings[i].shaderType) return false;
+		if (lhs.bindings[i].type < rhs.bindings[i].type) return true;
+		else if (lhs.bindings[i].type > rhs.bindings[i].type) return false;
 	}
-	return bindings;
+	return false; // equal
+}
+bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
+{
+	if (lhs.count != rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.bindings[i].count != rhs.bindings[i].count) return false;
+		if (lhs.bindings[i].shaderType != rhs.bindings[i].shaderType) return false;
+		if (lhs.bindings[i].type != rhs.bindings[i].type) return false;
+	}
+	return true; // equal
 }
 
 bool Program::hasVertexStage() const

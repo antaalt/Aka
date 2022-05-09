@@ -337,7 +337,7 @@ ShaderBindingState Compiler::getShaderBindings(uint32_t inSet)
 		if (set != inSet)
 			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		AKA_ASSERT(binding < ShaderMaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
 		bindings.bindings[binding].shaderType = getShaderType(executionModel);
 		bindings.bindings[binding].type = ShaderBindingType::SampledImage;
@@ -350,7 +350,7 @@ ShaderBindingState Compiler::getShaderBindings(uint32_t inSet)
 		if (set != inSet)
 			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		AKA_ASSERT(binding < ShaderMaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
 		bindings.bindings[binding].shaderType = getShaderType(executionModel);
 		bindings.bindings[binding].type = ShaderBindingType::StorageImage;
@@ -363,7 +363,7 @@ ShaderBindingState Compiler::getShaderBindings(uint32_t inSet)
 		if (set != inSet)
 			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		AKA_ASSERT(binding < ShaderMaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
 		bindings.bindings[binding].shaderType = getShaderType(executionModel);
 		bindings.bindings[binding].type = ShaderBindingType::UniformBuffer;
@@ -376,7 +376,7 @@ ShaderBindingState Compiler::getShaderBindings(uint32_t inSet)
 		if (set != inSet)
 			continue;
 		uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-		AKA_ASSERT(binding < ShaderBindingState::MaxBindingCount, "not enough binding storage.");
+		AKA_ASSERT(binding < ShaderMaxBindingCount, "not enough binding storage.");
 		bindings.bindings[binding].count = 1; // TODO
 		bindings.bindings[binding].shaderType = getShaderType(executionModel);
 		bindings.bindings[binding].type = ShaderBindingType::StorageBuffer;

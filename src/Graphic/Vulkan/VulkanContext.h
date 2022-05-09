@@ -65,7 +65,8 @@ struct VulkanQueue
 };
 
 struct VulkanSwapchain;
-struct VulkanPipeline;
+struct VulkanGraphicPipeline;
+struct VulkanComputePipeline;
 struct VulkanFramebuffer;
 struct VulkanBuffer;
 
