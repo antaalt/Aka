@@ -8,6 +8,8 @@
 #include <Aka/Core/Event.h>
 #include <Aka/Core/View.h>
 
+#include <Aka/Resource/AssetRegistry.h>
+
 namespace aka {
 
 class Application;
@@ -121,14 +123,14 @@ public:
 	// Get the program manager
 	ProgramManager* program();
 	// Get the resource manager
-	ResourceManager* resource();
+	AssetRegistry* resource();
 private:
 	static Application* s_app;
 	PlatformDevice* m_platform;
 	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;
 	ProgramManager* m_program;
-	ResourceManager* m_resource;
+	AssetRegistry* m_registry;
 private:
 	std::vector<Layer*> m_layers;
 	uint32_t m_width, m_height;

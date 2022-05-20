@@ -51,23 +51,29 @@ void World::load(const Path& path)
 	//*this = Parser::parse(str);
 }
 
-void World::onReceive(const AppUpdateEvent& event)
+void World::fixedUpdate(Time deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onUpdate(*this, event.deltaTime);
+		system->onUpdate(*this, deltaTime);
 	m_dispatcher.update();
 }
 
-void World::onReceive(const AppFixedUpdateEvent& event)
+void World::update(Time deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onFixedUpdate(*this, event.deltaTime);
+		system->onFixedUpdate(*this, deltaTime);
 }
 
-void World::onReceive(const AppRenderEvent& event)
+void World::render(gfx::Frame* frame)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onRender(*this, event.frame);
+		system->onRender(*this, frame);
+}
+
+void World::resize(uint32_t width, uint32_t height)
+{
+	for (std::unique_ptr<System>& system : m_systems)
+		system->onResize(*this, width, height);
 }
 
 entt::registry& World::registry()

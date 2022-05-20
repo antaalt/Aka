@@ -18,9 +18,7 @@ enum class ShaderType : uint8_t
 	//TessEvaluation  = (1 << 5),
 };
 
-bool has(ShaderType flags, ShaderType flag);
-ShaderType operator&(ShaderType lhs, ShaderType rhs);
-ShaderType operator|(ShaderType lhs, ShaderType rhs);
+AKA_IMPLEMENT_BITMASK_OPERATOR(ShaderType)
 
 struct Shader;
 using ShaderHandle = ResourceHandle<Shader>;
@@ -29,7 +27,7 @@ struct Shader : Resource
 {
 	ShaderType type;
 
-	static ShaderHandle compile(ShaderType type, const uint8_t* content, size_t size);
+	static ShaderHandle compile(ShaderType type, const void* content, size_t size);
 	static void destroy(ShaderHandle shader);
 };
 

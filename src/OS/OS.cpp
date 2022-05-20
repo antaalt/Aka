@@ -54,7 +54,7 @@ bool OS::File::write(const Path& path, const String& str)
 	return write(path, str.cstr());
 }
 
-bool OS::File::write(const Path& path, const uint8_t* bytes, size_t size)
+bool OS::File::write(const Path& path, const void* bytes, size_t size)
 {
 	FILE* file = open(path, FileMode::Write, FileType::Binary);
 	if (file == nullptr)

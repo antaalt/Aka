@@ -53,7 +53,7 @@ struct OS
 		// Write a string to a file
 		static bool write(const Path& path, const String& str);
 		// Write binary data to a file
-		static bool write(const Path& path, const uint8_t* bytes, size_t size);
+		static bool write(const Path& path, const void* bytes, size_t size);
 		// Write a blob to a file
 		static bool write(const Path& path, const Blob& blob);
 

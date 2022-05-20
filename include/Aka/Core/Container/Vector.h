@@ -105,8 +105,8 @@ inline Vector<T>::Vector(size_t size, const T& value) :
 	m_size(size),
 	m_capacity(size)
 {
-	for (T& data : m_data)
-		data = value;
+	for (uint32_t i = 0; i < m_size; i++)
+		m_data[i] = value;
 }
 template <typename T>
 inline Vector<T>::Vector(size_t size) :
@@ -140,6 +140,7 @@ inline Vector<T>& Vector<T>::operator=(const Vector& vector)
 	// Can't memcpy for type that need a constructor.
 	for (size_t i = 0; i < m_size; i++)
 		m_data[i] = vector[i];
+	return *this;
 }
 template <typename T>
 inline Vector<T>& Vector<T>::operator=(Vector&& vector)
@@ -195,6 +196,7 @@ inline Vector<T>& Vector<T>::append(const T* start, const T*end)
 	size_t range = (end - start);
 	resize(m_size + range);
 	// Can't memcpy for type that need a constructor.
+	// TODO memcpy and call new and destruct.
 	for (size_t i = size; i < range; i++)
 		m_data[i] = start[i];
 	return *this;

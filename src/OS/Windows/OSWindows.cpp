@@ -323,9 +323,14 @@ FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	FILE* file = nullptr;
 	errno_t err = _wfopen_s(&file, wstr.cstr(), fileMode(mode, type));
-	if (err == 0)
-		return file;
-	return nullptr;
+	if (err != 0)
+	{
+		char error[256];
+		err = strerror_s(error, 256, err);
+		Logger::error("Failed to open file ", path, " with error : ", error);
+		return nullptr;
+	}
+	return file;
 }
 
 };

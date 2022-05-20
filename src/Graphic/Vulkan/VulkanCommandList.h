@@ -24,9 +24,9 @@ struct VulkanCommandList : CommandList
 	void bindPipeline(GraphicPipelineHandle pipeline) override;
 	void bindPipeline(ComputePipelineHandle handle) override;
 	void bindDescriptorSet(uint32_t index, DescriptorSetHandle set) override;
-	void bindDescriptorSets(DescriptorSetHandle* sets, uint32_t count) override;
+	void bindDescriptorSets(const DescriptorSetHandle* sets, uint32_t count) override;
 
-	void bindVertexBuffer(BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) override;
+	void bindVertexBuffer(const BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) override;
 	void bindIndexBuffer(BufferHandle buffer, IndexFormat format, uint32_t offset) override;
 
 	void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) override;
@@ -36,7 +36,7 @@ struct VulkanCommandList : CommandList
 	void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
 
 	void copy(TextureHandle src, TextureHandle dst) override;
-	void blit(TextureHandle src, TextureHandle dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) override;
+	void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) override;
 
 	static VkCommandBuffer createSingleTime(VkDevice device, VkCommandPool pool);
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);

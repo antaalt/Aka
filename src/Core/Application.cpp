@@ -4,9 +4,6 @@
 #include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Resource/ProgramManager.h>
-#include <Aka/Resource/ResourceManager.h>
-#include <Aka/Drawing/Renderer2D.h>
-#include <Aka/Drawing/Renderer3D.h>
 #include <Aka/Audio/AudioDevice.h>
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
@@ -44,11 +41,11 @@ void Application::create(const Config& config)
 	m_audio = AudioDevice::create(config.audio);
 	AKA_ASSERT(m_audio != nullptr, "No audio");
 	m_program = new ProgramManager;
-	m_resource = new ResourceManager;
+	m_registry = new AssetRegistry;
 	m_width = config.platform.width;
 	m_height = config.platform.height;
-	onCreate(config.argc, config.argv);
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
+	onCreate(config.argc, config.argv);
 }
 void Application::destroy()
 {
@@ -56,7 +53,7 @@ void Application::destroy()
 	onDestroy();
 
 	delete m_program;
-	delete m_resource;
+	delete m_registry;
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
@@ -65,7 +62,7 @@ void Application::destroy()
 	m_graphic = nullptr;
 	m_platform = nullptr;
 	m_program = nullptr;
-	m_resource = nullptr;
+	m_registry = nullptr;
 }
 void Application::start()
 {
@@ -145,9 +142,9 @@ ProgramManager* Application::program()
 	return m_program;
 }
 
-ResourceManager* Application::resource()
+AssetRegistry* Application::resource()
 {
-	return m_resource;
+	return m_registry;
 }
 
 void Application::run(const Config& config)

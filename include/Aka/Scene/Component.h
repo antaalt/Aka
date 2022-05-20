@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Aka/Core/Geometry.h>
-#include <Aka/Core/Sprite.h>
 #include <Aka/Scene/Camera.h>
 #include <Aka/Scene/Entity.h>
 

@@ -55,9 +55,9 @@ struct AKA_NO_VTABLE CommandList
 	virtual void bindPipeline(GraphicPipelineHandle handle) = 0;
 	virtual void bindPipeline(ComputePipelineHandle handle) = 0;
 	virtual void bindDescriptorSet(uint32_t index, DescriptorSetHandle material) = 0;
-	virtual void bindDescriptorSets(DescriptorSetHandle* material, uint32_t count) = 0;
+	virtual void bindDescriptorSets(const DescriptorSetHandle* material, uint32_t count) = 0;
 
-	virtual void bindVertexBuffer(BufferHandle* handles, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) = 0;
+	virtual void bindVertexBuffer(const BufferHandle* handles, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets) = 0;
 	virtual void bindIndexBuffer(BufferHandle handle, IndexFormat format, uint32_t offset) = 0;
 
 	virtual void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
@@ -68,7 +68,7 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 
-	virtual void blit(TextureHandle src, TextureHandle dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter) = 0;
+	virtual void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) = 0;
 };
 
 };

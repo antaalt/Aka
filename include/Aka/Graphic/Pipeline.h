@@ -88,7 +88,7 @@ struct VertexAttribute
 	VertexType type; // Type of the attribute
 };
 
-struct VertexBindingState
+struct VertexBindingState 
 {
 	VertexAttribute attributes[VertexMaxAttributeCount]; // Attributes
 	uint32_t offsets[VertexMaxAttributeCount]; // Offsets of the attributes in a buffer
@@ -102,6 +102,7 @@ struct VertexBindingState
 	static uint32_t size(IndexFormat format);
 };
 
+using VertexAttributeState = VertexBindingState; // TODO rename all VertexBindingState to VertexAttributeState. binding is buffers
 
 struct ClearState
 {
@@ -187,6 +188,7 @@ struct BlendState
 	uint32_t blendColor;
 
 	bool isEnabled() const;
+
 };
 
 enum class CullMode : uint8_t
@@ -229,6 +231,7 @@ struct DepthState
 	bool mask;
 
 	bool isEnabled() const;
+
 };
 
 enum class StencilOp
@@ -274,6 +277,8 @@ struct StencilState
 	uint32_t writeMask;
 
 	bool isEnabled() const;
+
+	static const StencilState default;
 };
 
 struct ViewportState
@@ -308,6 +313,32 @@ struct RaytracingPipeline : Resource
 {
 	// ...
 };
+
+// Blending
+const BlendState BlendStateNormal = BlendState{ BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMask::Rgba, 0xffffffff };
+const BlendState BlendStateAdditive = BlendState{ BlendMode::One, BlendMode::One, BlendOp::Add, BlendMode::One, BlendMode::One, BlendOp::Add, BlendMask::Rgb, 0xffffffff };
+const BlendState BlendStatePremultiplied = BlendState{ BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, BlendMask::Rgba, 0xffffffff };
+const BlendState BlendStateDefault = BlendStateNormal;
+
+// Filling
+const FillState FillStateFill = FillState{ FillMode::Fill, 1.f };
+const FillState FillStateLine = FillState{ FillMode::Line, 1.f };
+
+// Culling
+const CullState CullStateDisabled = CullState{ CullMode::None, CullOrder::Unknown };
+const CullState CullStateCCW = CullState{ CullMode::BackFace, CullOrder::CounterClockWise };
+const CullState CullStateDefault = CullStateDisabled;
+
+// Depth
+const DepthState DepthStateDisabled = DepthState{ DepthOp::None, true };
+const DepthState DepthStateLess = DepthState{ DepthOp::Less, true };
+const DepthState DepthStateLessEqual = DepthState{ DepthOp::LessOrEqual, true };
+const DepthState DepthStateDefault = DepthStateDisabled;
+
+// Stencil
+const StencilState StencilStateDisabled = StencilState{ StencilState::Face{ StencilMode::Keep, StencilMode::Keep, StencilMode::Keep, StencilOp::None}, StencilState::Face{ StencilMode::Keep, StencilMode::Keep, StencilMode::Keep, StencilOp::None}, 0xffffffff, 0xffffffff };
+const StencilState StencilStateDefault = StencilStateDisabled;
+
 
 bool operator<(const VertexBindingState& lhs, const VertexBindingState& rhs);
 bool operator>(const VertexBindingState& lhs, const VertexBindingState& rhs);

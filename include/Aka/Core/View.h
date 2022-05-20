@@ -3,6 +3,7 @@
 #include <memory>
 
 #include <Aka/OS/Time.h>
+#include <Aka/Graphic/GraphicDevice.h>
 
 namespace aka {
 
@@ -28,7 +29,7 @@ public:
 	// Called on view frame beginning
 	virtual void onFrame() {}
 	// Called on view frame render
-	virtual void onRender() {}
+	virtual void onRender(gfx::Frame* frame) {}
 	// Called on view frame end
 	virtual void onPresent() {}
 	// Called on view resize

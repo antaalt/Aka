@@ -307,12 +307,12 @@ ImageFormat Image::format() const
 	return m_format;
 }
 
-void* Image::data()
+byte_t* Image::data()
 {
 	return m_bytes.data();
 }
 
-const void* Image::data() const
+const byte_t* Image::data() const
 {
 	return m_bytes.data();
 }

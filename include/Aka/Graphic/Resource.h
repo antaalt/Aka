@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <type_traits>
 
+#include <Aka/Core/Enum.h>
+
 namespace aka {
 namespace gfx {
 
@@ -35,6 +37,9 @@ struct ResourceHandle
 	const T* data; // TODO should be obfuscated & renamed desc.
 	static const ResourceHandle<T> null;
 };
+
+template <typename T> 
+bool operator==(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.data == rhs.data; }
 
 template <typename T>
 const ResourceHandle<T> ResourceHandle<T>::null = { nullptr };

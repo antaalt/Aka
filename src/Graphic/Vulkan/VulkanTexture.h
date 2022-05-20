@@ -61,6 +61,7 @@ struct VulkanTexture : Texture
 	void copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer);
 
 	void copyFrom(VkCommandBuffer cmd, VulkanTexture* texture);
+	void blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const BlitRegion& src, const BlitRegion& dst, Filter filter);
 
 };
 

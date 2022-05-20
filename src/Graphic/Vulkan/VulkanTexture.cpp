@@ -8,16 +8,16 @@ namespace gfx {
 
 VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 {
-	VkImageAspectFlags aspect;
 	if (Texture::isColor(format))
-		aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+		return VK_IMAGE_ASPECT_COLOR_BIT;
 	else if (Texture::isDepthStencil(format))
-		aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+		return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 	else if (Texture::isDepth(format))
-		aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+		return VK_IMAGE_ASPECT_DEPTH_BIT;
 	else if (Texture::isStencil(format))
-		aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-	return aspect;
+		return VK_IMAGE_ASPECT_STENCIL_BIT;
+	else
+		return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 VkAccessFlags VulkanTexture::accessFlagForLayout(VkImageLayout layout)
 {
@@ -98,14 +98,14 @@ void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImageLayout newLa
 
 void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer)
 {
-	VkImageSubresourceRange subresource { getAspectFlag(format), 0, levels, 0, layers };
-
+	VkImageAspectFlags aspectMask = getAspectFlag(format);
 	// Copy buffer to image
 	{
-		AKA_ASSERT((width & (width - 1)) == 0, "Width not a power of two");
-		AKA_ASSERT((height & (height - 1)) == 0, "Height not a power of two");
+		AKA_ASSERT((width & (width - 1)) == 0 && levels > 1 || levels == 1, "Width not a power of two");
+		AKA_ASSERT((height & (height - 1)) == 0 && levels > 1 || levels == 1, "Height not a power of two");
 		for (uint32_t iLayer = 0; iLayer < layers; iLayer++)
 		{
+			// TODO restore levels
 			//for (uint32_t iLevel = 0; iLevel < levels; iLevel++)
 			uint32_t iLevel = 0;
 			{
@@ -114,7 +114,7 @@ void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffe
 				region.bufferRowLength = 0;
 				region.bufferImageHeight = 0;
 
-				region.imageSubresource.aspectMask = subresource.aspectMask;
+				region.imageSubresource.aspectMask = aspectMask;
 				region.imageSubresource.mipLevel = iLevel;
 				region.imageSubresource.baseArrayLayer = iLayer;
 				region.imageSubresource.layerCount = 1;
@@ -212,6 +212,103 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 		VK_ACCESS_TRANSFER_WRITE_BIT,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT // TODO color or depth, attachment or shader resource
 	);
+}
+
+void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter)
+{
+	VulkanTexture* vk_src = texture;
+	VulkanTexture* vk_dst = this;
+
+	VkImageSubresourceRange srcSubresource{};
+	VkImageSubresourceRange dstSubresource{};
+	srcSubresource.aspectMask = getAspectFlag(vk_src->format);
+	srcSubresource.baseArrayLayer = srcRegion.layer;
+	srcSubresource.layerCount = srcRegion.layerCount;
+	srcSubresource.baseMipLevel = srcRegion.mipLevel;
+	srcSubresource.levelCount = 1;
+
+	dstSubresource.aspectMask = getAspectFlag(vk_dst->format);
+	dstSubresource.baseArrayLayer = dstRegion.layer;
+	dstSubresource.layerCount = dstRegion.layerCount;
+	dstSubresource.baseMipLevel = dstRegion.mipLevel;
+	dstSubresource.levelCount = 1;
+
+	VkImageLayout srcLayout = vk_src->vk_layout;
+	VkImageLayout dstLayout = vk_dst->vk_layout;
+
+	vk_src->insertMemoryBarrier(
+		cmd,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		srcSubresource,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_ACCESS_TRANSFER_WRITE_BIT, // TODO color or depth, attachment or shader resource
+		VK_ACCESS_TRANSFER_READ_BIT
+	);
+	vk_dst->insertMemoryBarrier(
+		cmd,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		dstSubresource,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_ACCESS_TRANSFER_READ_BIT, // TODO color or depth, attachment or shader resource
+		VK_ACCESS_TRANSFER_WRITE_BIT
+	);
+
+	{
+		VkImageBlit blit;
+		blit.srcOffsets[0].x = srcRegion.x;
+		blit.srcOffsets[0].y = srcRegion.y;
+		blit.srcOffsets[0].z = srcRegion.z;
+		blit.srcOffsets[1].x = srcRegion.w;
+		blit.srcOffsets[1].y = srcRegion.h;
+		blit.srcOffsets[1].z = srcRegion.d;
+		blit.srcSubresource = VkImageSubresourceLayers{ srcSubresource.aspectMask, srcRegion.mipLevel, srcRegion.layer, srcRegion.layerCount };
+
+		blit.dstOffsets[0].x = dstRegion.x;
+		blit.dstOffsets[0].y = dstRegion.y;
+		blit.dstOffsets[0].z = dstRegion.z;
+		blit.dstOffsets[1].x = dstRegion.w;
+		blit.dstOffsets[1].y = dstRegion.h;
+		blit.dstOffsets[1].z = dstRegion.d;
+		blit.dstSubresource = VkImageSubresourceLayers{ dstSubresource.aspectMask, dstRegion.mipLevel, dstRegion.layer, dstRegion.layerCount };
+
+		vkCmdBlitImage(cmd,
+			vk_src->vk_image,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			vk_dst->vk_image,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&blit,
+			VulkanContext::tovk(filter)
+		);
+	}
+	{
+		// Restore layout
+		bool depthStencil = gfx::Texture::hasDepth(vk_dst->format) || gfx::Texture::hasStencil(vk_dst->format);
+		vk_src->insertMemoryBarrier(
+			cmd,
+			srcLayout,
+			srcSubresource,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			depthStencil ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_ACCESS_TRANSFER_READ_BIT,
+			depthStencil ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+		);
+	}
+	{
+		// Restore layout
+		bool depthStencil = gfx::Texture::hasDepth(vk_dst->format) || gfx::Texture::hasStencil(vk_dst->format);
+		vk_dst->insertMemoryBarrier(
+			cmd,
+			dstLayout,
+			dstSubresource,
+			VK_PIPELINE_STAGE_TRANSFER_BIT,
+			depthStencil ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
+			depthStencil ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+		);
+	}
 }
 
 TextureHandle VulkanGraphicDevice::createTexture(
@@ -469,7 +566,7 @@ void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data,
 
 void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel, uint32_t layer)
 {
-	// TODO
+	AKA_NOT_IMPLEMENTED;
 }
 
 void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)

@@ -9,6 +9,9 @@
 #define AKA_STRINGIFY(x) #x
 #define AKA_TOSTRING(x) AKA_STRINGIFY(x)
 
+#define AKA_PPCAT_EXPANDED(A, B) A ## B
+#define AKA_PPCAT(A, B) AKA_PPCAT_EXPANDED(A, B)
+
 // Check for debug compiler define
 #if defined(_DEBUG) || defined(DEBUG) || defined(DBG)
 #define AKA_DEBUG
@@ -46,6 +49,8 @@
 	#define AKA_ASSERT(condition, message) ((void)0)
 #endif
 
+#define AKA_NOT_IMPLEMENTED throw std::runtime_error("Feature Not implemented");
+
 namespace aka {
 
 // Hash
@@ -66,21 +71,6 @@ void hashCombine(std::size_t& s, const T& v)
 {
 	std::hash<T> h;
 	s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
-}
-
-template <typename T>
-struct Hash
-{
-	size_t operator()(const T& data)
-	{
-		return std::hash<T>(data);
-	}
-};
-
-template <typename T>
-inline constexpr UnderlyingType<T> EnumToIntegral(T value)
-{
-	return static_cast<UnderlyingType<T>>(value);
 }
 
 };

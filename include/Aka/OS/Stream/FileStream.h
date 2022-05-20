@@ -34,6 +34,8 @@ public:
 	size_t size() const override;
 	size_t offset() override;
 	void rewind() override;
+
+	void close();
 protected:
 	void unserialize(void* data, size_t size) override;
 	void serialize(const void* data, size_t size) override;

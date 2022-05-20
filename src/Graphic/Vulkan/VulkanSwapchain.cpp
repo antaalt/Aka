@@ -144,6 +144,9 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	
+	if (true)
+		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; // For blitting operations.
 
 	uint32_t queueFamilyIndices[] = {
 		context->graphicQueue.index,
@@ -173,15 +176,16 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	VkFormat vk_depthFormat = findDepthFormat(context->physicalDevice);
 	VkFormat vk_colorFormat = surfaceFormat.format;
 	// TODO convert vulkan format to aka format
-	TextureFormat colorFormat = TextureFormat::BGRA8; 
-	TextureFormat depthFormat = TextureFormat::Depth32F;
+	const TextureFormat colorFormat = TextureFormat::BGRA8;
+	const TextureFormat depthFormat = TextureFormat::Depth32F;
+	const bool hasDepth = true;
+	const bool hasStencil = false;
 	// Get images & layout
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, nullptr));
 	std::vector<VkImage> vk_images(imageCount);
 	backbuffers.resize(imageCount);
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, vk_images.data()));
 
-	bool hasDepth = true;
 	FramebufferState fbState{};
 	fbState.depth.format = depthFormat;
 	fbState.depth.loadOp = AttachmentLoadOp::Load;
@@ -189,6 +193,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	fbState.colors[0].loadOp = AttachmentLoadOp::Load;
 	fbState.count = 1;
 
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context->device, context->commandPool);
 	VkRenderPass vk_renderPass = context->getRenderPass(fbState, VulkanRenderPassLayout::Backbuffer);
 	for (size_t i = 0; i < imageCount; i++)
 	{
@@ -216,9 +221,16 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			TextureFlag::RenderTarget,
 			vk_images[i],
 			view,
-			VK_NULL_HANDLE,
+			VK_NULL_HANDLE, // No memory as its owned by swapchain.
 			VK_IMAGE_LAYOUT_UNDEFINED
 		) };
+		// Transition swapchain color image
+		VulkanTexture* vk_colorTexture = get<VulkanTexture>(colorTexture);
+		vk_colorTexture->transitionImageLayout(
+			cmd,
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		);
 		// Create depth texture
 		gfx::TextureHandle depthTexture;
 		if (hasDepth)
@@ -232,52 +244,21 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 				TextureFlag::RenderTarget,
 				nullptr
 			);
+			// Transition swapchain depth image
+			VulkanTexture* vk_depthTexture = get<VulkanTexture>(depthTexture);
+			AKA_ASSERT(!hasStencil, "Invalid layout");
+			vk_depthTexture->transitionImageLayout(
+				cmd,
+				VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+				VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 }
+			);
 		}
+		
 		// Create framebuffer
 		Attachment color{ colorTexture, AttachmentFlag::None, fbState.colors[0].loadOp, 0, 0 };
 		Attachment depth{ depthTexture, AttachmentFlag::None, fbState.depth.loadOp, 0, 0 };
 		backbuffers[i] = device->createFramebuffer(&color, 1, hasDepth ? &depth : nullptr);
 		get<VulkanFramebuffer>(backbuffers[i])->isSwapchain = true;
-
-		/*backbuffers[i] = device->m_framebufferPool.acquire();
-		// Framebuffer
-		backbuffers[i]->framebuffer.depth.format = depthFormat;
-		backbuffers[i]->framebuffer.depth.loadOp = AttachmentLoadOp::Load;
-		backbuffers[i]->framebuffer.colors[0].format = colorFormat;
-		backbuffers[i]->framebuffer.colors[0].loadOp = AttachmentLoadOp::Load;
-		backbuffers[i]->framebuffer.count = 1;
-
-
-		VkImageViewCreateInfo viewInfo{};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = vk_images[i];
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = vk_colorFormat;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-
-		VkImageView view = VK_NULL_HANDLE;
-		VK_CHECK_RESULT(vkCreateImageView(context->device, &viewInfo, nullptr, &view));
-
-		backbuffers[i]->colors[0].layer = 0;
-		backbuffers[i]->colors[0].level = 0;
-		backbuffers[i]->colors[0].flag = AttachmentFlag::None;
-		backbuffers[i]->colors[0].loadOp = backbuffers[i]->framebuffer.colors[0].loadOp;
-		backbuffers[i]->colors[0].texture = TextureHandle{ device->makeTexture(
-			extent.width, extent.height, 1,
-			1, 1,
-			colorFormat,
-			TextureType::Texture2D,
-			TextureFlag::RenderTarget,
-			vk_images[i],
-			view,
-			VK_NULL_HANDLE,
-			VK_IMAGE_LAYOUT_UNDEFINED
-		) };
-		backbuffers[i]->isSwapchain = true;*/
 	}
 
 	// Frames
@@ -294,43 +275,6 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		VK_CHECK_RESULT(vkCreateSemaphore(context->device, &semaphoreInfo, nullptr, &frame.acquireSemaphore));
 		VK_CHECK_RESULT(vkCreateFence(context->device, &fenceInfo, nullptr, &frame.presentFence));
 		VK_CHECK_RESULT(vkCreateFence(context->device, &fenceInfo, nullptr, &frame.acquireFence));
-	}
-
-	// Create depth buffer
-	// TODO make it optional
-	for (size_t i = 0; i < imageCount; i++)
-	{
-		/*gfx::TextureHandle depthTexture = device->createTexture(
-			extent.width, extent.height, 1,
-			TextureType::Texture2D,
-			1,
-			1,
-			depthFormat,
-			TextureFlag::RenderTarget,
-			nullptr
-		);
-		Attachment color{ texture, AttachmentFlag::None, AttachmentLoadOp::Load, 0, 0 };
-		Attachment depth{ texture, AttachmentFlag::None, AttachmentLoadOp::Load, 0, 0 };
-
-
-
-		/*backbuffers[i]->width = extent.width;
-		backbuffers[i]->height = extent.height;
-		backbuffers[i]->depth.layer = 0;
-		backbuffers[i]->depth.level = 0;
-		backbuffers[i]->depth.flag = AttachmentFlag::None;
-		backbuffers[i]->depth.loadOp = backbuffers[i]->framebuffer.depth.loadOp;
-		backbuffers[i]->depth.texture = device->createTexture(
-			extent.width, extent.height, 1,
-			TextureType::Texture2D,
-			1,
-			1,
-			depthFormat,
-			TextureFlag::RenderTarget,
-			nullptr
-		);
-		backbuffers[i]->vk_renderpass = vk_renderPass;
-		backbuffers[i]->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(context->device, vk_renderPass, backbuffers[i]); */
 	}
 }
 

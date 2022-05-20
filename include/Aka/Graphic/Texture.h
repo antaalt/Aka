@@ -4,6 +4,7 @@
 
 #include <Aka/Graphic/Resource.h>
 #include <Aka/OS/Image.h>
+#include <Aka/Core/Enum.h>
 
 namespace aka {
 namespace gfx {
@@ -16,9 +17,7 @@ enum class TextureFlag : uint8_t
 	GenerateMips = (1 << 3),
 };
 
-bool has(TextureFlag flags, TextureFlag flag);
-TextureFlag operator&(TextureFlag lhs, TextureFlag rhs);
-TextureFlag operator|(TextureFlag lhs, TextureFlag rhs);
+AKA_IMPLEMENT_BITMASK_OPERATOR(TextureFlag);
 
 enum class TextureFormat : uint8_t
 {
@@ -124,7 +123,23 @@ struct SubTexture
 {
 	TextureHandle texture;
 	Rect region;
-	void update() {} // TODO
+
+	uv2f getStart() const {
+		uv2f uv;
+		if (region.x == 0) uv.u = 0.f;
+		else uv.u = 1.f / (texture.data->width / (float)region.x);
+		if (region.y == 0) uv.v = 0.f;
+		else uv.v = 1.f / (texture.data->height / (float)region.y);
+		return uv;
+	}
+	uv2f getEnd() const {
+		uv2f uv;
+		if (region.w == 0) uv.u = 1.f / (texture.data->width / (float)region.x);
+		else uv.u = 1.f / (texture.data->width / (float)region.x) + 1.f / (texture.data->width / (float)region.w);
+		if (region.h == 0) uv.v = 1.f / (texture.data->height / (float)region.y);
+		else uv.v = 1.f / (texture.data->height / (float)region.y) + 1.f / (texture.data->height / (float)region.h);
+		return uv;
+	}
 };
 
 };

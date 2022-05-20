@@ -131,7 +131,6 @@ void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const Cle
 {
 	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	AKA_ASSERT(vk_framebuffer != nullptr && vk_graphicPipeline != nullptr, "No bound pipeline");
 
 	// TODO clear mask should be set at renderpass level.
 	std::vector<VkClearValue> clearValues(vk_framebuffer->framebuffer.count);
@@ -304,7 +303,7 @@ void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle se
 		this->vk_sets[index] = vk_material;
 	}
 }
-void VulkanCommandList::bindDescriptorSets(DescriptorSetHandle* sets, uint32_t count)
+void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint32_t count)
 {
 	if (count < 1)
 		return;
@@ -333,7 +332,7 @@ void VulkanCommandList::bindDescriptorSets(DescriptorSetHandle* sets, uint32_t c
 	}
 	vkCmdBindDescriptorSets(vk_command, vk_bindPoint, vk_layout, 0, count, vk_sets, 0, nullptr);
 }
-void VulkanCommandList::bindVertexBuffer(BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
+void VulkanCommandList::bindVertexBuffer(const BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	VkBuffer vk_buffers[VertexMaxAttributeCount]{};
@@ -405,46 +404,20 @@ void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t grou
 
 void VulkanCommandList::copy(TextureHandle src, TextureHandle dst)
 {
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	VulkanTexture* vk_src = get<VulkanTexture>(src);
 	VulkanTexture* vk_dst = get<VulkanTexture>(dst);
 
 	vk_dst->copyFrom(vk_command, vk_src);
 }
 
-void VulkanCommandList::blit(TextureHandle src, TextureHandle dst, BlitRegion srcRegion, BlitRegion dstRegion, Filter filter)
+void VulkanCommandList::blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	VulkanTexture* vk_src = get<VulkanTexture>(src);
 	VulkanTexture* vk_dst = get<VulkanTexture>(dst);
 
-	VkImageBlit blit;
-	blit.srcOffsets[0].x = srcRegion.x;
-	blit.srcOffsets[0].y = srcRegion.y;
-	blit.srcOffsets[0].z = srcRegion.z;
-	blit.srcOffsets[1].x = srcRegion.w;
-	blit.srcOffsets[1].y = srcRegion.h;
-	blit.srcOffsets[1].z = srcRegion.d;
-	// TODO COLOR / DEPTH / STENCIL
-	blit.srcSubresource = VkImageSubresourceLayers{ VK_IMAGE_ASPECT_COLOR_BIT, srcRegion.mipLevel, srcRegion.layer, srcRegion.layerCount };
-
-	blit.dstOffsets[0].x = dstRegion.x;
-	blit.dstOffsets[0].y = dstRegion.y;
-	blit.dstOffsets[0].z = dstRegion.z;
-	blit.dstOffsets[1].x = dstRegion.w;
-	blit.dstOffsets[1].y = dstRegion.h;
-	blit.dstOffsets[1].z = dstRegion.d;
-	blit.dstSubresource = VkImageSubresourceLayers{ VK_IMAGE_ASPECT_COLOR_BIT, dstRegion.mipLevel, dstRegion.layer, dstRegion.layerCount };
-
-	// TODO store layout and change it
-	vkCmdBlitImage(vk_command,
-		vk_src->vk_image,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		vk_dst->vk_image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		1,
-		&blit,
-		VulkanContext::tovk(filter)
-	);
+	vk_dst->blitFrom(vk_command, vk_src, srcRegion, dstRegion, filter);
 }
 
 VkCommandBuffer VulkanCommandList::createSingleTime(VkDevice device, VkCommandPool commandPool)

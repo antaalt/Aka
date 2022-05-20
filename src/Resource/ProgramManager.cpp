@@ -6,7 +6,6 @@
 #include <Aka/OS/Logger.h>
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Graphic/Compiler.h>
-#include <Aka/Resource/ResourceManager.h>
 
 #include <nlohmann/json.hpp>
 

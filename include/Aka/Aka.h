@@ -13,8 +13,6 @@
 #include "Core/Application.h"
 #include "Core/View.h"
 #include "Core/Config.h"
-#include "Core/Font.h"
-#include "Core/Sprite.h"
 #include "Core/Physic.h"
 #include "Core/Controller.h"
 #include "Core/Event.h"
@@ -24,8 +22,6 @@
 #include "Memory/Allocator.h"
 #include "Memory/Allocator/LinearAllocator.h"
 #include "Memory/Allocator/PoolAllocator.h"
-
-#include "Rendering/Mesh.h"
 
 #include "Graphic/Compiler.h"
 #include "Graphic/GraphicDevice.h"
@@ -37,11 +33,6 @@
 #include "Graphic/Pipeline.h"
 #include "Graphic/Program.h"
 #include "Graphic/Shader.h"
-
-#include "Drawing/Batch2D.h"
-#include "Drawing/Batch3D.h"
-#include "Drawing/Renderer2D.h"
-#include "Drawing/Renderer3D.h"
 
 #include "Audio/Audio.h"
 #include "Audio/AudioStream.h"
@@ -62,17 +53,18 @@
 #include "Scene/System.h"
 #include "Scene/Component.h"
 
-#include "Resource/Storage.h"
-#include "Resource/TextureStorage.h"
-#include "Resource/BufferStorage.h"
-#include "Resource/MeshStorage.h"
-#include "Resource/FontStorage.h"
-#include "Resource/AudioStorage.h"
-#include "Resource/ProgramManager.h"
-#include "Resource/ResourceManager.h"
-#include "Resource/ResourceManager.h"
-#include "Resource/ResourceAllocator.h"
-#include "Resource/ResourceManager.h"
+#include "Resource/Asset.h"
+#include "Resource/AssetRegistry.h"
+#include "Resource/AssetImporter.h"
+#include "Resource/Resource.h"
+#include "Resource/ResourceArchive.h"
+#include "Resource/Resource/Font.h"
+#include "Resource/Resource/Buffer.h"
+#include "Resource/Resource/Texture.h"
+#include "Resource/Resource/Sprite.h"
+#include "Resource/Resource/Audio.h"
+#include "Resource/Resource/StaticMesh.h"
+#include "Resource/Resource/Material.h"
 
 
 namespace aka {

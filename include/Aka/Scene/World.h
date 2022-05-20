@@ -24,10 +24,7 @@ private:
 	World& m_world;
 };
 
-class World final :
-	EventListener<AppUpdateEvent>,
-	EventListener<AppFixedUpdateEvent>,
-	EventListener<AppRenderEvent>
+class World final
 {
 	template <typename T>
 	friend class WorldEventListener;
@@ -68,16 +65,18 @@ public:
 	template <typename Func>
 	void each(Func func) const;
 
+	// Update all systems
+	void fixedUpdate(Time deltaTime);
+	// Update all systems
+	void update(Time deltaTime);
+	// Render all systems
+	void render(gfx::Frame* frame);
+	// Resize all systems
+	void resize(uint32_t width, uint32_t height);
+
 	// Get entt registry
 	entt::registry& registry();
 	const entt::registry& registry() const;
-private:
-	// Update all systems
-	void onReceive(const AppFixedUpdateEvent& event) override;
-	// Update all systems
-	void onReceive(const AppUpdateEvent& event) override;
-	// Render all systems
-	void onReceive(const AppRenderEvent& event) override;
 private:
 	std::vector<std::unique_ptr<System>> m_systems;
 	entt::dispatcher m_dispatcher;

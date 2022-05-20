@@ -420,32 +420,34 @@ template <>
 template <typename ...Args>
 inline Str<char> Str<char>::format(const char* string, Args ...args)
 {
-	const size_t fmtSize = 256;
-	char buffer[fmtSize];
-	int error = snprintf(buffer, fmtSize, string, args...);
-	AKA_ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
-	return String(buffer);
+	int size = snprintf(nullptr, 0, string, args...);
+	String formattedString(size);
+	int newSize = snprintf(formattedString.cstr(), size + 1, string, args...);
+	AKA_ASSERT(newSize == size, "Invalid formatting");
+	return formattedString;
 }
 template <>
 template <typename ...Args>
 inline Str<wchar_t> Str<wchar_t>::format(const wchar_t* string, Args ...args)
 {
-	const size_t fmtSize = 256;
-	wchar_t buffer[fmtSize];
-	int error = swprintf(buffer, fmtSize, string, args...);
-	AKA_ASSERT(error > 0 && error < fmtSize, "Invalid formatting");
-	return StringWide(buffer);
+	int size = snprintf(nullptr, 0, string, args...);
+	StringWide formattedString(size);
+	int newSize = swprintf(formattedString.cstr(), size + 1, string, args...);
+	AKA_ASSERT(newSize == size, "Invalid formatting");
+	return formattedString;
 }
 template <>
 template <typename ...Args>
 inline Str<char16_t> Str<char16_t>::format(const char16_t* string, Args ...args)
 {
+	AKA_NOT_IMPLEMENTED;
 	return String16();
 }
 template <>
 template <typename ...Args>
 inline Str<char32_t> Str<char32_t>::format(const char32_t* string, Args ...args)
 {
+	AKA_NOT_IMPLEMENTED;
 	return String32();
 }
 template <typename T>

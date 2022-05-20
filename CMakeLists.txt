@@ -14,10 +14,10 @@ add_library (Aka
 	"src/Core/Application.cpp"
 	"src/Core/View.cpp"
 	"src/Core/Debug.cpp"
-	"src/Core/Font.cpp"
+	
 	"src/Core/Physic.cpp"
-	"src/Core/Aseprite.cpp"
-	"src/Core/Sprite.cpp"
+	
+	
 	"src/Core/Encoding.cpp"
 	"src/Core/Controller.cpp"
 
@@ -35,18 +35,23 @@ add_library (Aka
 	"src/Scene/Serializer.cpp"
 	"src/Scene/Camera.cpp"
 
+	
+	"src/Resource/Asset.cpp" 
+	"src/Resource/Resource.cpp" 
+	"src/Resource/AssetImporter.cpp" 
+	"src/Resource/AssetRegistry.cpp" 
+	"src/Resource/ResourceArchive.cpp" 
 	"src/Resource/ProgramManager.cpp"
-	"src/Resource/ResourceManager.cpp"
-	"src/Resource/MeshStorage.cpp"
-	"src/Resource/FontStorage.cpp"
-	"src/Resource/AudioStorage.cpp"
-	"src/Resource/TextureStorage.cpp"
-	"src/Resource/BufferStorage.cpp"
-
-	"src/Drawing/Renderer2D.cpp"
-	"src/Drawing/Renderer3D.cpp"
-	"src/Drawing/Batch2D.cpp"
-	"src/Drawing/Batch3D.cpp"
+	"src/Resource/Archive/TextureArchive.cpp" 
+	"src/Resource/Archive/StaticMeshArchive.cpp" 
+	"src/Resource/Archive/SpriteArchive.cpp"
+	"src/Resource/Archive/NullArchive.cpp"
+	"src/Resource/Importer/TextureImporter.cpp"
+	"src/Resource/Importer/SpriteImporter.cpp"
+	"src/Resource/Resource/Texture.cpp" 
+	"src/Resource/Resource/StaticMesh.cpp" 
+	"src/Resource/Resource/Sprite.cpp"
+	"src/Resource/Resource/Font.cpp"
 
 	"src/Graphic/Vulkan/VulkanContext.cpp"
 	"src/Graphic/Vulkan/VulkanGraphicDevice.cpp"
@@ -60,8 +65,6 @@ add_library (Aka
 	"src/Graphic/Vulkan/VulkanSampler.cpp"
 	"src/Graphic/Vulkan/VulkanDebug.cpp"
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
-	
-	"src/Rendering/Mesh.cpp" 
 	 
 	"src/Graphic/Resource.cpp"
 	"src/Graphic/Compiler.cpp"

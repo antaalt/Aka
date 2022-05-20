@@ -7,25 +7,6 @@
 namespace aka {
 namespace gfx {
 
-bool has(TextureFlag flags, TextureFlag flag)
-{
-	return (flags & flag) == flag;
-}
-TextureFlag operator&(TextureFlag lhs, TextureFlag rhs)
-{
-	return static_cast<TextureFlag>(
-		static_cast<std::underlying_type<TextureFlag>::type>(lhs) & 
-		static_cast<std::underlying_type<TextureFlag>::type>(rhs)
-	);
-}
-TextureFlag operator|(TextureFlag lhs, TextureFlag rhs)
-{
-	return static_cast<TextureFlag>(
-		static_cast<std::underlying_type<TextureFlag>::type>(lhs) |
-		static_cast<std::underlying_type<TextureFlag>::type>(rhs)
-	);
-}
-
 bool Texture::hasMips() const
 {
 	return has(flags, TextureFlag::GenerateMips);

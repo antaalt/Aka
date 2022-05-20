@@ -22,9 +22,8 @@ enum class ClearMask : uint8_t
 	All = Color | Depth | Stencil
 };
 
-bool has(ClearMask flags, ClearMask flag);
-ClearMask operator&(ClearMask lhs, ClearMask rhs);
-ClearMask operator|(ClearMask lhs, ClearMask rhs);
+
+AKA_IMPLEMENT_BITMASK_OPERATOR(ClearMask)
 
 enum class AttachmentFlag : uint8_t
 {
@@ -41,9 +40,7 @@ enum class AttachmentOp : uint8_t
 using AttachmentLoadOp = AttachmentOp;
 using AttachmentStoreOp = AttachmentOp;
 
-bool has(AttachmentFlag flags, AttachmentFlag flag);
-AttachmentFlag operator&(AttachmentFlag lhs, AttachmentFlag rhs);
-AttachmentFlag operator|(AttachmentFlag lhs, AttachmentFlag rhs);
+AKA_IMPLEMENT_BITMASK_OPERATOR(AttachmentFlag)
 
 struct Attachment
 {

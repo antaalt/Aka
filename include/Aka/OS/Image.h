@@ -85,9 +85,9 @@ public:
 	// Get the image format.
 	ImageFormat format() const;
 	// Get raw data 
-	void* data();
+	byte_t* data();
 	// Get raw data 
-	const void* data() const;
+	const byte_t* data() const;
 	// Get data size
 	size_t size() const;
 

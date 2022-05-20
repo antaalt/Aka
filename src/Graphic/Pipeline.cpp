@@ -13,7 +13,6 @@ uint32_t VertexBindingState::stride() const
 	return stride;
 }
 
-
 uint32_t VertexBindingState::size(VertexFormat format)
 {
 	switch (format)

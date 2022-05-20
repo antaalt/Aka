@@ -31,8 +31,7 @@ FileStream::FileStream(const Path& path, FileMode mode, FileType type) :
 
 FileStream::~FileStream()
 {
-	if (m_file)
-		fclose(m_file);
+	close();
 }
 
 void FileStream::skim(size_t size) 
@@ -65,6 +64,13 @@ void FileStream::rewind()
 { 
 	AKA_ASSERT(m_file != nullptr, "File not opened");
 	::rewind(m_file);
+}
+
+void FileStream::close()
+{
+	if (m_file)
+		fclose(m_file);
+	m_file = nullptr;
 }
 
 void FileStream::unserialize(void* data, size_t size)

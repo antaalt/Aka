@@ -54,15 +54,16 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 		Logger::error(message, pCallbackData->pMessage);
+		AKA_DEBUG_BREAK;
 		break;
 	}
 	return VK_FALSE;
 }
 
-#if !defined(_DEBUG)
-static constexpr const bool enableValidationLayers = false;
-#else
+#if defined(AKA_DEBUG)
 static constexpr const bool enableValidationLayers = true;
+#else
+static constexpr const bool enableValidationLayers = false;
 #endif
 static constexpr const char* validationLayers[] = {
 	"VK_LAYER_KHRONOS_validation"
