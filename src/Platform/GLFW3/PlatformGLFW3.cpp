@@ -432,8 +432,6 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 	glfwGetWindowPos(m_window, reinterpret_cast<int*>(&m_x), reinterpret_cast<int*>(&m_y));
 	glfwSetWindowUserPointer(m_window, this);
 	//glfwSetMonitorUserPointer(monitor, this);
-	for (int jid = GLFW_JOYSTICK_1; jid < GLFW_JOYSTICK_LAST; ++jid)
-		glfwSetJoystickUserPointer(jid, this);
 	if (config.icon.size > 0)
 	{
 		GLFWimage img{ (int)config.icon.size, (int)config.icon.size, config.icon.bytes };
@@ -588,6 +586,7 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 			onGamepadConnected(gid, name);
 			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ gid, name });
 		}
+		glfwSetJoystickUserPointer(jid, this);
 	}
 }
 

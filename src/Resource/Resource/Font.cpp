@@ -116,6 +116,8 @@ void Font::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuild
 
 void Font::destroyRenderData(gfx::GraphicDevice* device)
 {
+	if (m_renderData == nullptr)
+		return;
 	FontRenderData* data = reinterpret_cast<FontRenderData*>(m_renderData);
 	device->destroy(data->texture);
 	data->texture = gfx::TextureHandle::null;

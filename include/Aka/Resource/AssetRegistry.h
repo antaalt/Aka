@@ -25,6 +25,8 @@ public:
 	void add(const char* name, Asset asset);
 	// Remove an asset
 	void remove(const char* name);
+	// Clear the registry
+	void clear();
 
 	//template <typename T>
 	//void forEach(std::function<void(T* resource)>&& callback) {}
@@ -46,8 +48,8 @@ public:
 		Iterator& operator++() { m_iterator++; return *this; }
 		Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
 
-		friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_iterator->first == b.m_iterator->first; };
-		friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_iterator->first != b.m_iterator->first; };
+		friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_iterator == b.m_iterator; };
+		friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_iterator != b.m_iterator; };
 	private:
 		IteratorType m_iterator;
 	};
@@ -68,15 +70,15 @@ public:
 		ConstIterator& operator++() { m_iterator++; return *this; }
 		ConstIterator operator++(int) { ConstIterator tmp = *this; ++(*this); return tmp; }
 
-		friend bool operator== (const ConstIterator& a, const ConstIterator& b) { return a.m_iterator->first == b.m_iterator->first; };
-		friend bool operator!= (const ConstIterator& a, const ConstIterator& b) { return a.m_iterator->first != b.m_iterator->first; };
+		friend bool operator== (const ConstIterator& a, const ConstIterator& b) { return a.m_iterator == b.m_iterator; };
+		friend bool operator!= (const ConstIterator& a, const ConstIterator& b) { return a.m_iterator != b.m_iterator; };
 	private:
 		IteratorType m_iterator;
 	};
 	Iterator begin() { return Iterator(m_assets.begin()); };
-	Iterator end() { return Iterator(m_assets.begin()); };
+	Iterator end() { return Iterator(m_assets.end()); };
 	ConstIterator begin() const { return ConstIterator(m_assets.begin()); };
-	ConstIterator end() const { return ConstIterator(m_assets.begin()); };
+	ConstIterator end() const { return ConstIterator(m_assets.end()); };
 private:
 	std::map<String, Asset> m_assets;
 };

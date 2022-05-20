@@ -1,5 +1,6 @@
 #include <Aka/Resource/AssetRegistry.h>
 
+#include <Aka/Core/Application.h>
 #include <Aka/Resource/Asset.h>
 #include <Aka/Core/Config.h>
 #include <Aka/OS/OS.h>
@@ -128,6 +129,16 @@ void AssetRegistry::remove(const char* name)
 	if (itFind == m_assets.end())
 		return; // Does not exist
 	auto it = m_assets.erase(itFind);
+}
+
+void AssetRegistry::clear()
+{
+	gfx::GraphicDevice* device = Application::app()->graphic();
+	for (auto& asset : m_assets)
+	{
+		asset.second.unload(device);
+	}
+	m_assets.clear();
 }
 
 };
