@@ -195,7 +195,7 @@ VkDescriptorSet VulkanProgram::createVkDescriptorSet(VkDevice device, VkDescript
 	return set;
 }
 
-ShaderHandle VulkanGraphicDevice::compile(ShaderType type, const void* bytes, size_t size)
+ShaderHandle VulkanGraphicDevice::createShader(ShaderType type, const void* bytes, size_t size)
 {	
 	if (size == 0 || bytes == nullptr)
 		return ShaderHandle::null;

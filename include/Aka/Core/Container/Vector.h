@@ -97,7 +97,9 @@ inline Vector<T>::Vector(const T* data, size_t size) :
 	m_size(size),
 	m_capacity(size)
 {
-	memcpy(m_data, data, sizeof(T) * size);
+	// Can't memcpy for type that need a constructor.
+	for (size_t i = 0; i < m_size; i++)
+		m_data[i] = data[i];
 }
 template <typename T>
 inline Vector<T>::Vector(size_t size, const T& value) :
@@ -175,14 +177,31 @@ inline const T& Vector<T>::operator[](size_t index) const
 template <typename T>
 inline bool Vector<T>::operator==(const Vector<T>& value) const
 {
+	if (size() != value.size())
+		return false;
+	for (size_t i = 0; i < size(); i++)
+	{
+		if (m_data[i] != value.m_data[i])
+			return false;
+	}
+	return true;
 }
 template <typename T>
 inline bool Vector<T>::operator!=(const Vector<T>& value) const
 {
+	if (size() != value.size())
+		return true;
+	for (size_t i = 0; i < size(); i++)
+	{
+		if (m_data[i] != value.m_data[i])
+			return true;
+	}
+	return false;
 }
 template <typename T>
 inline bool Vector<T>::operator<(const Vector<T>& value) const
 {
+	AKA_NOT_IMPLEMENTED;
 }
 template <typename T>
 inline Vector<T>& Vector<T>::append(const Vector<T>& vector)

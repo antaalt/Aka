@@ -360,7 +360,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStage.stage = tovk(shaders[i]->type);
 		shaderStage.module = shaders[i]->vk_module;
-		shaderStage.pName = "main"; // This member has to be 'main', regardless of the actual entry point of the shader
+		shaderStage.pName = "main";
 	}
 
 	VkGraphicsPipelineCreateInfo gfxPipelineInfo{};

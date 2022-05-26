@@ -7,9 +7,9 @@
 namespace aka {
 namespace gfx {
 
-ShaderHandle Shader::compile(ShaderType type, const void* content, size_t size)
+ShaderHandle Shader::create(ShaderType type, const void* content, size_t size)
 {
-	return Application::app()->graphic()->compile(type, content, size);
+	return Application::app()->graphic()->createShader(type, content, size);
 }
 
 void Shader::destroy(ShaderHandle shader)

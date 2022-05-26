@@ -3,7 +3,6 @@
 #include <Aka/Core/Layer.h>
 #include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Graphic/GraphicDevice.h>
-#include <Aka/Resource/ProgramManager.h>
 #include <Aka/Audio/AudioDevice.h>
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
@@ -42,7 +41,7 @@ void Application::create(const Config& config)
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
 	m_audio = AudioDevice::create(config.audio);
 	AKA_ASSERT(m_audio != nullptr, "No audio");
-	m_program = new ProgramManager;
+	m_program = new ShaderRegistry;
 	m_registry = new AssetRegistry;
 	m_width = config.platform.width;
 	m_height = config.platform.height;
@@ -139,7 +138,7 @@ AudioDevice* Application::audio()
 	return m_audio;
 }
 
-ProgramManager* Application::program()
+ShaderRegistry* Application::program()
 {
 	return m_program;
 }

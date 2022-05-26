@@ -68,7 +68,7 @@ public:
 	virtual void name(const Resource* resource, const char* name) = 0;
 
 	// Shaders
-	virtual ShaderHandle compile(ShaderType type, const void* data, size_t size) = 0;
+	virtual ShaderHandle createShader(ShaderType type, const void* data, size_t size) = 0;
 	virtual void destroy(ShaderHandle handle) = 0;
 
 	// Programs

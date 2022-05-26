@@ -36,13 +36,12 @@ add_library (Aka
 	"src/Scene/Serializer.cpp"
 	"src/Scene/Camera.cpp"
 
-	
 	"src/Resource/Asset.cpp" 
 	"src/Resource/Resource.cpp" 
 	"src/Resource/AssetImporter.cpp" 
 	"src/Resource/AssetRegistry.cpp" 
 	"src/Resource/ResourceArchive.cpp" 
-	"src/Resource/ProgramManager.cpp"
+	
 	"src/Resource/Archive/TextureArchive.cpp" 
 	"src/Resource/Archive/StaticMeshArchive.cpp" 
 	"src/Resource/Archive/SpriteArchive.cpp"
@@ -53,6 +52,9 @@ add_library (Aka
 	"src/Resource/Resource/StaticMesh.cpp" 
 	"src/Resource/Resource/Sprite.cpp"
 	"src/Resource/Resource/Font.cpp"
+	"src/Resource/Shader/Shader.cpp"
+	"src/Resource/Shader/ShaderRegistry.cpp" 
+	"src/Resource/Shader/ShaderCompiler.cpp"
 
 	"src/Graphic/Vulkan/VulkanContext.cpp"
 	"src/Graphic/Vulkan/VulkanGraphicDevice.cpp"
@@ -68,7 +70,7 @@ add_library (Aka
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
 	 
 	"src/Graphic/Resource.cpp"
-	"src/Graphic/Compiler.cpp"
+	
 	"src/Graphic/Program.cpp"
 	"src/Graphic/GraphicDevice.cpp"
 	"src/Graphic/Framebuffer.cpp"
@@ -90,15 +92,13 @@ add_library (Aka
 	"src/OS/Stream/FileStream.cpp"
 	"src/OS/Archive.cpp"
 	"src/OS/OS.cpp"
-
 	"src/OS/Windows/OSWindows.cpp"
-
 	"src/OS/Linux/OSLinux.cpp"
 
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
-)
+ )
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

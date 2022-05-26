@@ -19,22 +19,29 @@ public:
 	// Serialize registry to file
 	void serialize(const Path& path);
 
+public:
 	// Find an asset from registry
 	Asset find(const char* name);
+	// Check if an asset exist in registry
+	bool has(const char* name) const;
 	// Add an asset to registry
 	void add(const char* name, Asset asset);
 	// Remove an asset
 	void remove(const char* name);
 	// Clear the registry
 	void clear();
+	// Iterate over every loaded resource of given type.
+	template <typename T>
+	void each(std::function<void(T* resource)>&& callback);
 
-	//template <typename T>
-	//void forEach(std::function<void(T* resource)>&& callback) {}
+public:
+	bool import(const Path& path);
 
+public:
 	// Iterator
 	struct Iterator
 	{
-		using IteratorType = std::map<String, Asset>::iterator;
+		using IteratorType = std::unordered_map<String, Asset>::iterator;
 		using iterator_category = std::forward_iterator_tag;
 		using difference_type = std::ptrdiff_t;
 		using value_type = Asset;
@@ -56,7 +63,7 @@ public:
 
 	struct ConstIterator
 	{
-		using IteratorType = std::map<String, Asset>::const_iterator;
+		using IteratorType = std::unordered_map<String, Asset>::const_iterator;
 		using iterator_category = std::forward_iterator_tag;
 		using difference_type = std::ptrdiff_t;
 		using value_type = Asset;
@@ -80,7 +87,22 @@ public:
 	ConstIterator begin() const { return ConstIterator(m_assets.begin()); };
 	ConstIterator end() const { return ConstIterator(m_assets.end()); };
 private:
-	std::map<String, Asset> m_assets;
+	std::unordered_map<String, Asset> m_assets;
 };
+
+template <typename T>
+void AssetRegistry::each(std::function<void(T* resource)>&& callback)
+{
+	static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
+	for (auto& asset : m_assets)
+	{
+		if (asset.second.resource == nullptr)
+			continue;
+		if (asset.second.resource->getType() == ResourceTrait<T>::type)
+		{
+			callback(asset.resource);
+		}
+	}
+}
 
 };

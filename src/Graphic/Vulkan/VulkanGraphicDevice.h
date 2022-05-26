@@ -39,7 +39,7 @@ public:
 	const PhysicalDevice* getPhysicalDevice(uint32_t index) override;
 
 	// Shaders
-	ShaderHandle compile(ShaderType type, const void* data, size_t size) override;
+	ShaderHandle createShader(ShaderType type, const void* data, size_t size) override;
 	void destroy(ShaderHandle handle) override;
 
 	// Programs

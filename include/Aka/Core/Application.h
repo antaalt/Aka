@@ -8,6 +8,8 @@
 #include <Aka/Core/Event.h>
 #include <Aka/Core/View.h>
 
+#include <Aka/Resource/Shader/Shader.h>
+#include <Aka/Resource/Shader/ShaderRegistry.h>
 #include <Aka/Resource/AssetRegistry.h>
 
 namespace aka {
@@ -121,7 +123,7 @@ public:
 	// Get the audio device
 	AudioDevice* audio();
 	// Get the program manager
-	ProgramManager* program();
+	ShaderRegistry* program();
 	// Get the resource manager
 	AssetRegistry* resource();
 private:
@@ -129,7 +131,7 @@ private:
 	PlatformDevice* m_platform;
 	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;
-	ProgramManager* m_program;
+	ShaderRegistry* m_program;
 	AssetRegistry* m_registry;
 private:
 	std::vector<Layer*> m_layers;

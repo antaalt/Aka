@@ -36,16 +36,18 @@ enum class ResourceType
 	Mesh,
 	Scene,
 
-	Count
+	Count,
+
+	Unknown
+};
+template <typename T>
+struct ResourceTrait
+{
+	static constexpr ResourceType type = ResourceType::Unknown;
 };
 
-struct BuildData 
-{
-};
-
-struct RenderData 
-{
-};
+struct BuildData {};
+struct RenderData {};
 
 struct ResourceArchive;
 
@@ -88,49 +90,5 @@ protected:
 	BuildData* m_buildData;
 	RenderData* m_renderData;
 };
-
-
-// --- Material
-// TODO shader node
-/*struct Material : Resource
-{
-	Texture* albedo; // AssetRef<String, Texture>
-	Texture* normal; // asset ref
-	Texture* texture; // asset ref
-	color4f color;
-};
-
-// --- Mesh
-struct Mesh : Resource
-{
-	Buffer* index; // Useless to store buffer here. Store mesh & material ref
-	Buffer* vertices[8];
-
-	Material* material;
-};
-struct MeshRenderData : RenderData
-{
-	gfx::Buffer indices;
-};
-
-struct MeshBuildData : BuildData
-{
-	Vector<vec3f> vertices;
-	Vector<uint32_t> indices;
-};
-
-// --- MeshInstance. Should be scene related...
-struct MeshInstance : Resource
-{
-	Mesh* mesh;
-	mat4f transform;
-};
-
-// --- Audio
-struct MeshInstance : Resource
-{
-	Mesh* mesh;
-	mat4f transform;
-};*/
 
 };

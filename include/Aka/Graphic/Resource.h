@@ -40,6 +40,8 @@ struct ResourceHandle
 
 template <typename T> 
 bool operator==(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.data == rhs.data; }
+template <typename T>
+bool operator!=(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.data != rhs.data; }
 
 template <typename T>
 const ResourceHandle<T> ResourceHandle<T>::null = { nullptr };

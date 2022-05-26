@@ -26,7 +26,6 @@
 #include "Memory/Allocator/LinearAllocator.h"
 #include "Memory/Allocator/PoolAllocator.h"
 
-#include "Graphic/Compiler.h"
 #include "Graphic/GraphicDevice.h"
 #include "Graphic/Framebuffer.h"
 #include "Graphic/DescriptorSet.h"
@@ -68,6 +67,9 @@
 #include "Resource/Resource/Audio.h"
 #include "Resource/Resource/StaticMesh.h"
 #include "Resource/Resource/Material.h"
+#include "Resource/Shader/Shader.h"
+#include "Resource/Shader/ShaderRegistry.h"
+#include "Resource/Shader/ShaderCompiler.h"
 
 
 namespace aka {
