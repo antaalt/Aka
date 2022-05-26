@@ -3,6 +3,7 @@
 #include <Aka/OS/OS.h>
 #include <Aka/Resource/Importer/TextureImporter.h>
 #include <Aka/Resource/Importer/SpriteImporter.h>
+#include <Aka/Resource/Importer/FontImporter.h>
 
 namespace aka {
 
@@ -11,7 +12,7 @@ std::shared_ptr<AssetImporter> AssetImporter::s_importers[EnumToIntegral(Resourc
 	nullptr,
 	std::make_shared<SpriteImporter>(),
 	nullptr,
-	nullptr,
+	std::make_shared<FontImporter>(),
 	nullptr,
 	nullptr,
 };
@@ -54,7 +55,7 @@ bool AssetImporter::import(const Path& path, ResourceType type, std::function<vo
 			asset.name = assetName;
 			asset.path = assetPath;
 			asset.type = type;
-			asset.resource = nullptr;
+			asset.resource = resource;
 			asset.diskSize = OS::File::size(assetPath);
 			callback(asset);
 			return true;

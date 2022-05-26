@@ -107,11 +107,6 @@ void ImGuiLayer::onLayerCreate()
 
 	ImGui_ImplVulkan_Init(&info, gfx::get<gfx::VulkanFramebuffer>(device->swapchain().backbuffers[0])->vk_renderpass);
 
-	VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(context.device, context.commandPool);
-	ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
-	gfx::VulkanCommandList::endSingleTime(context.device, context.commandPool, cmdBuffer, context.graphicQueue.queue);
-
-	ImGui_ImplVulkan_DestroyFontUploadObjects();
 #endif
 
     ImGui::StyleColorsClassic();
@@ -231,6 +226,16 @@ void ImGuiLayer::onLayerFrame()
 #elif defined(AKA_USE_D3D11)
 	ImGui_ImplDX11_NewFrame();
 #elif defined(AKA_USE_VULKAN)
+	if (!ImGui::GetIO().Fonts->TexID)
+	{
+		gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
+		gfx::VulkanContext& context = device->context();
+		VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(context.device, context.commandPool);
+		ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
+		gfx::VulkanCommandList::endSingleTime(context.device, context.commandPool, cmdBuffer, context.graphicQueue.queue);
+
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
+	}
 	ImGui_ImplVulkan_NewFrame(); // Nothing done
 #endif
 	ImGui_ImplGlfw_NewFrame();

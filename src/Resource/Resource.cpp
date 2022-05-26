@@ -4,6 +4,7 @@
 #include <Aka/Resource/Resource/Texture.h>
 #include <Aka/Resource/Resource/StaticMesh.h>
 #include <Aka/Resource/Resource/Sprite.h>
+#include <Aka/Resource/Resource/Font.h>
 
 namespace aka {
 
@@ -36,7 +37,7 @@ Resource* Resource::create(ResourceType type)
 	case ResourceType::Audio:
 		break;
 	case ResourceType::Font:
-		break;
+		return new Font;
 	case ResourceType::Mesh:
 		return new StaticMesh;
 	case ResourceType::Scene:

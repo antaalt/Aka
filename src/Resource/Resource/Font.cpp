@@ -2,6 +2,7 @@
 
 #include <freetype/freetype.h>
 
+#include <Aka/Resource/Archive/NullArchive.h>
 #include <Aka/Core/Config.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Packer.h>
@@ -103,6 +104,7 @@ void Font::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuild
 		gfx::TextureFlag::ShaderResource,
 		atlas.data()
 	);
+	fontRenderData->texture = m_atlas;
 
 	for (unsigned char c = 0; c < (unsigned char)m_characters.size(); c++)
 	{
@@ -121,11 +123,12 @@ void Font::destroyRenderData(gfx::GraphicDevice* device)
 	FontRenderData* data = reinterpret_cast<FontRenderData*>(m_renderData);
 	device->destroy(data->texture);
 	data->texture = gfx::TextureHandle::null;
+	m_atlas = data->texture;
 }
 
 ResourceArchive* Font::createResourceArchive()
 {
-	return nullptr;
+	return new NullArchive;
 }
 
 vec2i Font::size(const String& text) const
