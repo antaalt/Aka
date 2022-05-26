@@ -14,12 +14,13 @@ add_library (Aka
 	"src/Core/Application.cpp"
 	"src/Core/View.cpp"
 	"src/Core/Debug.cpp"
-	
 	"src/Core/Physic.cpp"
-	
-	
 	"src/Core/Encoding.cpp"
 	"src/Core/Controller.cpp"
+	"src/Core/Config.cpp" 
+	"src/Core/Worker/WorkerPool.cpp" 
+	"src/Core/Worker/Worker.cpp"
+	"src/Core/Worker/Job.cpp"
 
 	"src/Memory/Allocator.cpp"
 	"src/Memory/Memory.cpp"

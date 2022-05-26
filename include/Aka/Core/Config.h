@@ -4,6 +4,8 @@
 #include <string>
 #include <type_traits>
 
+#include <Aka/Platform/Platform.h>
+
 #define AKA_NO_VTABLE __declspec(novtable)
 
 #define AKA_STRINGIFY(x) #x
@@ -49,6 +51,7 @@
 	#define AKA_ASSERT(condition, message) ((void)0)
 #endif
 
+
 #define AKA_NOT_IMPLEMENTED throw std::runtime_error("Feature Not implemented");
 
 namespace aka {
@@ -65,6 +68,22 @@ template <typename T> constexpr UnderlyingType<T> EnumToIntegral(T value);
 //template <typename T> using Vector = ::std::vector<T>;
 //template <typename T> using TreeMap = ::std::map<T>;
 //template <typename T> using HashMap = ::std::unordered_map<T>;
+
+
+void hash(size_t& hash, const void* data, size_t size);
+size_t hash(const void* data, size_t size);
+
+template <typename T>
+void hash(size_t& s, const T& v)
+{
+	hash(s, &v, sizeof(T));
+}
+
+template <typename T>
+size_t hash(const T& v)
+{
+	return hash(&v, sizeof(T));
+}
 
 template <typename T>
 void hashCombine(std::size_t& s, const T& v)

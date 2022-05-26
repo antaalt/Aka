@@ -148,6 +148,7 @@ inline Vector<T>& Vector<T>::operator=(Vector&& vector)
 	std::swap(m_data, vector.m_data);
 	std::swap(m_size, vector.m_size);
 	std::swap(m_capacity, vector.m_capacity);
+	return *this;
 }
 template <typename T>
 inline Vector<T>::~Vector()

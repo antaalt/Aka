@@ -13,17 +13,19 @@ namespace aka {
 Application* Application::s_app = nullptr;
 
 Application::Application() :
-	m_width(0),
-	m_height(0),
-	m_running(true),
-	m_layers()
+	Application(std::vector<Layer*>{})
 {
 }
 Application::Application(const std::vector<Layer*> layers) :
+	m_platform(nullptr),
+	m_graphic(nullptr),
+	m_audio(nullptr),
+	m_program(nullptr),
+	m_registry(nullptr),
+	m_layers(layers),
 	m_width(0),
 	m_height(0),
-	m_running(true),
-	m_layers(layers)
+	m_running(true)
 {
 }
 Application::~Application()

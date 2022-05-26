@@ -16,6 +16,9 @@
 #include "Core/Physic.h"
 #include "Core/Controller.h"
 #include "Core/Event.h"
+#include "Core/Worker/Job.h"
+#include "Core/Worker/WorkerPool.h"
+#include "Core/Worker/Worker.h"
 
 #include "Memory/Memory.h"
 #include "Memory/Pool.h"

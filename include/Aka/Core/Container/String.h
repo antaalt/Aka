@@ -522,3 +522,12 @@ template <> const char16_t* Str<char16_t>::null();
 template <> const char32_t* Str<char32_t>::null();
 
 };
+
+template <>
+struct std::hash<aka::String>
+{
+	size_t operator()(const aka::String& string) const
+	{
+		return aka::hash(string.cstr(), string.length());
+	}
+};
