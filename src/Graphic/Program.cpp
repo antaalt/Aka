@@ -13,8 +13,8 @@ bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	{
 		if (lhs.bindings[i].count < rhs.bindings[i].count) return true;
 		else if (lhs.bindings[i].count > rhs.bindings[i].count) return false;
-		if (lhs.bindings[i].shaderType < rhs.bindings[i].shaderType) return true;
-		else if (lhs.bindings[i].shaderType > rhs.bindings[i].shaderType) return false;
+		if (lhs.bindings[i].stages < rhs.bindings[i].stages) return true;
+		else if (lhs.bindings[i].stages > rhs.bindings[i].stages) return false;
 		if (lhs.bindings[i].type < rhs.bindings[i].type) return true;
 		else if (lhs.bindings[i].type > rhs.bindings[i].type) return false;
 	}
@@ -28,8 +28,8 @@ bool operator>(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	{
 		if (lhs.bindings[i].count > rhs.bindings[i].count) return true;
 		else if (lhs.bindings[i].count < rhs.bindings[i].count) return false;
-		if (lhs.bindings[i].shaderType > rhs.bindings[i].shaderType) return true;
-		else if (lhs.bindings[i].shaderType < rhs.bindings[i].shaderType) return false;
+		if (lhs.bindings[i].stages > rhs.bindings[i].stages) return true;
+		else if (lhs.bindings[i].stages < rhs.bindings[i].stages) return false;
 		if (lhs.bindings[i].type > rhs.bindings[i].type) return true;
 		else if (lhs.bindings[i].type < rhs.bindings[i].type) return false;
 	}
@@ -41,7 +41,7 @@ bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	for (uint32_t i = 0; i < lhs.count; i++)
 	{
 		if (lhs.bindings[i].count != rhs.bindings[i].count) return false;
-		if (lhs.bindings[i].shaderType != rhs.bindings[i].shaderType) return false;
+		if (lhs.bindings[i].stages != rhs.bindings[i].stages) return false;
 		if (lhs.bindings[i].type != rhs.bindings[i].type) return false;
 	}
 	return true; // equal
@@ -52,7 +52,7 @@ bool operator!=(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	for (uint32_t i = 0; i < lhs.count; i++)
 	{
 		if (lhs.bindings[i].count != rhs.bindings[i].count) return true;
-		if (lhs.bindings[i].shaderType != rhs.bindings[i].shaderType) return true;
+		if (lhs.bindings[i].stages != rhs.bindings[i].stages) return true;
 		if (lhs.bindings[i].type != rhs.bindings[i].type) return true;
 	}
 	return false; // equal

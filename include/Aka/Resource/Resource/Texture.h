@@ -58,6 +58,7 @@ public:
 	uint32_t width() const;
 	uint32_t height() const;
 	gfx::TextureType type() const;
+	gfx::TextureHandle handle() const;
 };
 
 };

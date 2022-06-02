@@ -55,6 +55,8 @@ add_library (Aka
 	"src/Resource/Shader/Shader.cpp"
 	"src/Resource/Shader/ShaderRegistry.cpp" 
 	"src/Resource/Shader/ShaderCompiler.cpp"
+	"src/Resource/Importer/FontImporter.cpp"
+	"src/Resource/Archive/FontArchive.cpp"
 
 	"src/Graphic/Vulkan/VulkanContext.cpp"
 	"src/Graphic/Vulkan/VulkanGraphicDevice.cpp"
@@ -98,7 +100,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
- )
+)
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

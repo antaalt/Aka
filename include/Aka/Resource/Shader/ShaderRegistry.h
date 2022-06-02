@@ -9,6 +9,17 @@
 
 namespace aka {
 
+struct ShaderReloadedEvent 
+{
+	ShaderKey shader;
+	ProgramKey program;
+};
+
+struct ShaderFileData
+{
+	Timestamp timestamp;
+};
+
 class ShaderRegistry
 {
 public:
@@ -23,16 +34,22 @@ public:
 	void destroy(gfx::GraphicDevice* device);
 
 	// Get the program.
-	gfx::ProgramHandle get(const ProgramKey& key);
+	gfx::ProgramHandle get(const ProgramKey& key) const;
+	// Get the shader.
+	gfx::ShaderHandle getShader(const ShaderKey& key) const;
 
-	//on shader change, recompile all program that were using it
-	void update() {} // TODO hot reload
+	// Reload a specific shader
+	void reload(const ShaderKey& key, gfx::GraphicDevice* device);
+	// Reload all shaders that changed
+	void reloadIfChanged(gfx::GraphicDevice* device);
 
 	std::unordered_map<ProgramKey, gfx::ProgramHandle>::iterator begin() { return m_programs.begin(); }
 	std::unordered_map<ProgramKey, gfx::ProgramHandle>::iterator end() { return m_programs.end(); }
 	std::unordered_map<ProgramKey, gfx::ProgramHandle>::const_iterator begin() const { return m_programs.begin(); }
 	std::unordered_map<ProgramKey, gfx::ProgramHandle>::const_iterator end() const { return m_programs.end(); }
 private:
+	std::unordered_map<ShaderKey, ShaderFileData> m_shadersFileData;
+	std::unordered_map<ShaderKey, gfx::ShaderHandle> m_shaders;
 	std::unordered_map<ProgramKey, gfx::ProgramHandle> m_programs;
 };
 

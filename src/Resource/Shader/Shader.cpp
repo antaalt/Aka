@@ -9,8 +9,7 @@ bool ShaderKey::operator<(const ShaderKey& lhs) const
 }
 bool ShaderKey::operator==(const ShaderKey& lhs) const
 {
-	AKA_NOT_IMPLEMENTED;
-	return false;
+	return (entryPoint == lhs.entryPoint) && (macros == lhs.macros) && (type == lhs.type) && (path == lhs.path);
 }
 
 bool ProgramKey::operator<(const ProgramKey& lhs) const

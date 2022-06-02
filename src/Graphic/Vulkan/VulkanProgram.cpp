@@ -23,22 +23,22 @@ VkDescriptorType tovk(ShaderBindingType type)
 	}
 }
 
-VkShaderStageFlags tovk(ShaderType shaderType)
+VkShaderStageFlags tovk(ShaderMask shaderType)
 {
 	VkShaderStageFlags flags = 0;
-	if (has(shaderType, ShaderType::Vertex))
+	if (has(shaderType, ShaderMask::Vertex))
 	{
 		flags |= VK_SHADER_STAGE_VERTEX_BIT;
 	}
-	if (has(shaderType, ShaderType::Fragment))
+	if (has(shaderType, ShaderMask::Fragment))
 	{
 		flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
 	}
-	if (has(shaderType, ShaderType::Compute))
+	if (has(shaderType, ShaderMask::Compute))
 	{
 		flags |= VK_SHADER_STAGE_COMPUTE_BIT;
 	}
-	if (has(shaderType, ShaderType::Geometry))
+	if (has(shaderType, ShaderMask::Geometry))
 	{
 		flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
 	}
@@ -63,7 +63,6 @@ void VulkanProgram::updateDescriptorSet(VkDevice device, const DescriptorSet* se
 	const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(set);
 	if (vk_set->vk_descriptorSet == VK_NULL_HANDLE)
 		return;
-	// TODO create a bindDescriptor / bindProgram
 	std::vector<VkWriteDescriptorSet> descriptorWrites(vk_set->bindings.count, VkWriteDescriptorSet{});
 	std::vector<VkDescriptorImageInfo> imageDescriptors(vk_set->bindings.count, VkDescriptorImageInfo{});
 	std::vector<VkDescriptorBufferInfo> bufferDescriptors(vk_set->bindings.count, VkDescriptorBufferInfo{});
@@ -153,7 +152,7 @@ VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device
 		vk_bindings[i].descriptorCount = binding.count;
 		vk_bindings[i].descriptorType = tovk(binding.type);
 		vk_bindings[i].pImmutableSamplers = nullptr;
-		vk_bindings[i].stageFlags = tovk(binding.shaderType);
+		vk_bindings[i].stageFlags = tovk(binding.stages);
 
 		// Pool
 		vk_poolSizes[i].type = vk_bindings[i].descriptorType;

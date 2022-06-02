@@ -356,20 +356,20 @@ gfx::VertexType getSize(uint32_t rows, uint32_t cols)
 	}
 }
 
-ShaderType getShaderType(spv::ExecutionModel executionModel)
+gfx::ShaderMask getShaderMask(spv::ExecutionModel executionModel)
 {
 	switch (executionModel)
 	{
 	case spv::ExecutionModelVertex:
-		return ShaderType::Vertex;
+		return gfx::ShaderMask::Vertex;
 	case spv::ExecutionModelGeometry:
-		return ShaderType::Geometry;
+		return gfx::ShaderMask::Geometry;
 	case spv::ExecutionModelFragment:
-		return ShaderType::Fragment;
+		return gfx::ShaderMask::Fragment;
 	case spv::ExecutionModelGLCompute:
-		return ShaderType::Compute;
+		return gfx::ShaderMask::Compute;
 	default:
-		return ShaderType::None;
+		return gfx::ShaderMask::None;
 	}
 }
 
@@ -430,7 +430,7 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
 			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].shaderType = getShaderType(executionModel);
+			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
 			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::SampledImage;
 			data.sets[set].count = max(data.sets[set].count, binding + 1);
 		}
@@ -443,7 +443,7 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
 			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].shaderType = getShaderType(executionModel);
+			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
 			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::StorageImage;
 			data.sets[set].count = max(data.sets[set].count, binding + 1);
 		}
@@ -456,7 +456,7 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
 			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].shaderType = getShaderType(executionModel);
+			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
 			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::UniformBuffer;
 			data.sets[set].count = max(data.sets[set].count, binding + 1);
 		}
@@ -469,7 +469,7 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
 			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].shaderType = getShaderType(executionModel);
+			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
 			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::StorageBuffer;
 			data.sets[set].count = max(data.sets[set].count, binding + 1);
 		}

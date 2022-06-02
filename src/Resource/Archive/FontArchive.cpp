@@ -43,7 +43,7 @@ bool FontArchive::save(Stream& stream, const BuildData* data)
 	// Write sprite
 	const FontBuildData* fontData = reinterpret_cast<const FontBuildData*>(data);
 	archive.write<uint32_t>(fontData->height);
-	archive.write<uint32_t>(fontData->ttf.size());
+	archive.write<uint32_t>((uint32_t)fontData->ttf.size());
 	archive.write<uint8_t>(reinterpret_cast<const uint8_t*>(fontData->ttf.data()), fontData->ttf.size());
 	return true; // Always succeed
 }

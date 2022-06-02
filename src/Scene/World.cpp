@@ -54,14 +54,14 @@ void World::load(const Path& path)
 void World::fixedUpdate(Time deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onUpdate(*this, deltaTime);
+		system->onFixedUpdate(*this, deltaTime);
 	m_dispatcher.update();
 }
 
 void World::update(Time deltaTime)
 {
 	for (std::unique_ptr<System>& system : m_systems)
-		system->onFixedUpdate(*this, deltaTime);
+		system->onUpdate(*this, deltaTime);
 }
 
 void World::render(gfx::Frame* frame)

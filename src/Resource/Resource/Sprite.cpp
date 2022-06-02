@@ -199,6 +199,8 @@ const SpriteFrame& Sprite::getFrame(uint32_t index, uint32_t frame) const
 }
 gfx::TextureHandle Sprite::getTextureHandle() const
 {
+	if (getRenderData() == nullptr)
+		return gfx::TextureHandle::null;
 	return reinterpret_cast<const SpriteRenderData*>(getRenderData())->handle;
 }
 uint32_t Sprite::getTextureLayer(const char* name, uint32_t frameIndex) const

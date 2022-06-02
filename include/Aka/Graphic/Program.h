@@ -29,7 +29,7 @@ enum class ShaderBindingType : uint8_t
 struct ShaderBindingLayout
 {
 	ShaderBindingType type; // Type of binding
-	ShaderType shaderType; // Shader stage used
+	ShaderMask stages; // Shader stages used by this binding
 	uint32_t count; // Number of element for this binding
 };
 
@@ -79,7 +79,7 @@ template<> struct std::hash<aka::gfx::ShaderBindingState>
 		for (size_t i = 0; i < data.count; i++)
 		{
 			aka::hashCombine(hash, data.bindings[i].count);
-			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].shaderType));
+			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].stages));
 			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].type));
 		}
 		return hash;

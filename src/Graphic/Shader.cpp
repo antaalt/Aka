@@ -7,6 +7,13 @@
 namespace aka {
 namespace gfx {
 
+ShaderMask getShaderMask(ShaderType type)
+{
+	if (type > ShaderType::Count)
+		return ShaderMask::None;
+	return ShaderMask(1 << EnumToIntegral(type));
+}
+
 ShaderHandle Shader::create(ShaderType type, const void* content, size_t size)
 {
 	return Application::app()->graphic()->createShader(type, content, size);
