@@ -100,6 +100,12 @@ struct VertexBindingState
 	static uint32_t size(VertexFormat format);
 	static uint32_t size(VertexType type);
 	static uint32_t size(IndexFormat format);
+
+	VertexBindingState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset) {
+		offsets[count] = offset;
+		attributes[count++] = VertexAttribute{ semantic, format, type };
+		return *this;
+	}
 };
 
 using VertexAttributeState = VertexBindingState; // TODO rename all VertexBindingState to VertexAttributeState. binding is buffers

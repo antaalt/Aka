@@ -356,8 +356,10 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	if (has(flags, TextureFlag::ShaderResource))
 	{
 		vk_usage |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // Need to upload to it.
-		// TODO add support for storage images
-		//vk_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+	}
+	if (has(flags, TextureFlag::Storage))
+	{
+		vk_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 	}
 
 	{
@@ -617,10 +619,13 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 
 	VulkanTexture* vk_texture = get<VulkanTexture>(texture);
 	vkDestroyImageView(m_context.device, vk_texture->vk_view, nullptr);
+	vk_texture->vk_view = VK_NULL_HANDLE;
 	if (vk_texture->vk_memory != 0) // If no memory used, image not allocated here (swapchain)
 	{
 		vkFreeMemory(m_context.device, vk_texture->vk_memory, nullptr);
 		vkDestroyImage(m_context.device, vk_texture->vk_image, nullptr);
+		vk_texture->vk_memory = VK_NULL_HANDLE;
+		vk_texture->vk_image = VK_NULL_HANDLE;
 	}
 	m_texturePool.release(vk_texture);
 }

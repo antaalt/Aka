@@ -234,9 +234,14 @@ void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 		return;
 	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
 	vkDestroyFramebuffer(m_context.device, vk_framebuffer->vk_framebuffer, nullptr);
-	for (VkImageView view : vk_framebuffer->vk_views)
+	vk_framebuffer->vk_framebuffer = VK_NULL_HANDLE;
+	for (VkImageView& view : vk_framebuffer->vk_views)
+	{
 		vkDestroyImageView(m_context.device, view, nullptr);
-	vk_framebuffer->vk_renderpass; // Cached. do not destroy here
+		view = VK_NULL_HANDLE;
+	}
+	vk_framebuffer->vk_renderpass = VK_NULL_HANDLE; // Cached. do not destroy here
+
 
 	m_framebufferPool.release(vk_framebuffer);
 }

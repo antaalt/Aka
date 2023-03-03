@@ -8,6 +8,12 @@
 #include <iostream>
 #include <mutex>
 
+
+#if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+#include <sstream>
+void OutputDebugConsole(const char* string);
+#endif
+
 namespace aka {
 
 struct Logger {
@@ -91,6 +97,12 @@ inline void Logger::Channel::print(Args ...args)
 	AKA_ASSERT(result != 0, "Failed formatting of string.");
 	std::lock_guard<std::mutex> m(this->writeLock);
 	doPrint(this->ostream, this->color, buffer, args...);
+#if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+	std::stringstream sstr;
+	doPrint(sstr, this->color, buffer, args...);
+	sstr << Logger::Color::ForegroundWhite << std::endl;
+	OutputDebugConsole(sstr.str().c_str());
+#endif
 	ostream << Logger::Color::ForegroundWhite << std::endl; // Default color
 }
 

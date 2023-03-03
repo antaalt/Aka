@@ -62,9 +62,9 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
 
-	virtual void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1) = 0;
-	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) = 0;
-	virtual void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
+	virtual void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1U) = 0;
+	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1U) = 0;
+	virtual void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) = 0;
 
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 

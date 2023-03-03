@@ -97,6 +97,7 @@ void VulkanGraphicDevice::destroy(SamplerHandle sampler)
 
 	VulkanSampler* vk_sampler = get<VulkanSampler>(sampler);
 	vkDestroySampler(m_context.device, vk_sampler->vk_sampler, nullptr);
+	vk_sampler->vk_sampler = VK_NULL_HANDLE;
 	m_samplerPool.release(vk_sampler);
 }
 

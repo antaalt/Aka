@@ -77,7 +77,6 @@ VkQueue VulkanGraphicDevice::getQueue(QueueType type)
 	switch (type)
 	{
 	default:
-	case QueueType::Unknown:
 		return VK_NULL_HANDLE;
 	case QueueType::Graphic:
 		return m_context.graphicQueue.queue;
@@ -290,7 +289,9 @@ void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle se
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_graphicPipeline != nullptr || vk_computePipeline != nullptr, "Invalid pipeline");
 
-	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
+	bool graphicPipeline = this->vk_graphicPipeline != nullptr;
+	bool computePipeline = this->vk_computePipeline != nullptr;
+	VkPipelineBindPoint bindPoint = graphicPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_MAX_ENUM;
 	if (set.data->bindings.count > 0)
 	{
 		VkPipelineLayout vk_layout = VK_NULL_HANDLE;

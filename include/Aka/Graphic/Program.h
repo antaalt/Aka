@@ -37,6 +37,12 @@ struct ShaderBindingState
 {
 	ShaderBindingLayout bindings[ShaderMaxBindingCount];
 	uint32_t count;
+
+	ShaderBindingState& add(ShaderBindingType type, ShaderMask stages, uint32_t bindingCount)
+	{
+		bindings[count++] = ShaderBindingLayout{ type, stages, bindingCount };
+		return *this;
+	}
 };
 
 struct Program : Resource

@@ -11,10 +11,11 @@ namespace gfx {
 
 enum class TextureFlag : uint8_t
 {
-	None = (1 << 0),
-	RenderTarget = (1 << 1),
-	ShaderResource = (1 << 2),
-	GenerateMips = (1 << 3),
+	None			= 1 << 0,
+	RenderTarget	= 1 << 1,
+	ShaderResource	= 1 << 2,
+	Storage			= 1 << 3,
+	GenerateMips	= 1 << 4,
 };
 
 AKA_IMPLEMENT_BITMASK_OPERATOR(TextureFlag);

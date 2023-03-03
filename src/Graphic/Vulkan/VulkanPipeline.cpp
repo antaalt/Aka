@@ -314,7 +314,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	for (uint32_t i = 0; i < framebuffer.count; i++)
 	{
 		colorBlendAttachments[i].colorWriteMask = tovk(blend.mask);
-		colorBlendAttachments[i].blendEnable = blend.isEnabled() ? VK_TRUE : VK_FALSE;
+		colorBlendAttachments[i].blendEnable = blend.isEnabled() ? VK_TRUE : VK_FALSE; // is this ok ?
 		colorBlendAttachments[i].srcColorBlendFactor = tovk(blend.colorModeSrc);
 		colorBlendAttachments[i].dstColorBlendFactor = tovk(blend.colorModeDst);
 		colorBlendAttachments[i].colorBlendOp = tovk(blend.colorOp);
@@ -491,7 +491,7 @@ ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(ProgramHandle p
 	memcpy(pipeline->sets, program.data->sets, program.data->setCount * sizeof(ShaderBindingState));
 
 	VulkanProgram* vk_program = get<VulkanProgram>(program);
-	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
+	VkDescriptorSetLayout layouts[ShaderMaxSetCount]{};
 	for (uint32_t i = 0; i < program.data->setCount; i++)
 	{
 		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->sets[i]);
@@ -516,6 +516,8 @@ void VulkanGraphicDevice::destroy(GraphicPipelineHandle pipeline)
 	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
 
+	vk_pipeline->vk_pipeline = VK_NULL_HANDLE;
+
 	m_graphicPipelinePool.release(vk_pipeline);
 }
 
@@ -528,6 +530,8 @@ void VulkanGraphicDevice::destroy(ComputePipelineHandle handle)
 	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
 	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
+
+	vk_pipeline->vk_pipeline = VK_NULL_HANDLE;
 
 	m_computePipelinePool.release(vk_pipeline);
 }

@@ -109,6 +109,8 @@ void VulkanGraphicDevice::destroy(BufferHandle buffer)
 	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
 	vkFreeMemory(m_context.device, vk_buffer->vk_memory, nullptr);
 	vkDestroyBuffer(m_context.device, vk_buffer->vk_buffer, nullptr);
+	vk_buffer->vk_buffer = VK_NULL_HANDLE;
+	vk_buffer->vk_memory = VK_NULL_HANDLE;
 	m_bufferPool.release(vk_buffer);
 }
 

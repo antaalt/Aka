@@ -29,3 +29,15 @@ void Logger::Channel::unmute()
 }
 
 }
+
+#if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+#include <Windows.h>
+#include <Aka/Core/Container/String.h>
+void OutputDebugConsole(const char* string)
+{
+	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, string, -1, nullptr, 0);
+	aka::StringWide wstr(wstr_size - 1);
+	MultiByteToWideChar(CP_UTF8, 0, string, -1, wstr.cstr(), (int)wstr.length());
+	OutputDebugStringW(wstr.cstr());
+}
+#endif

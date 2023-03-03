@@ -25,6 +25,7 @@ using ResourceNativeHandle = uint64_t;
 
 struct Resource
 {
+	Resource() {} // TODO
 	char name[256]; // Debug name of the resource.
 	ResourceNativeHandle native; // Native handle of the resource for external API
 	ResourceType type; // Type of the resource

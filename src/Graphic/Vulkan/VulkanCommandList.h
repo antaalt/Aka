@@ -33,7 +33,7 @@ struct VulkanCommandList : CommandList
 
 	void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
 	void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
-	void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+	void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) override;
 
 	void copy(TextureHandle src, TextureHandle dst) override;
 	void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) override;

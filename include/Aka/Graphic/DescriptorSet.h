@@ -11,13 +11,9 @@ namespace gfx {
 
 struct DescriptorSetData
 {
-	union {
-		BufferHandle buffers[ShaderMaxBindingCount];
-		struct {
-			TextureHandle images[ShaderMaxBindingCount];
-			SamplerHandle samplers[ShaderMaxBindingCount];
-		};
-	};
+	BufferHandle buffers[ShaderMaxBindingCount];
+	TextureHandle images[ShaderMaxBindingCount];
+	SamplerHandle samplers[ShaderMaxBindingCount];
 
 	void setUniformBuffer(uint32_t slot, BufferHandle buffer);
 	void setStorageBuffer(uint32_t slot, BufferHandle buffer);

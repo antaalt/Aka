@@ -382,101 +382,108 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 	AKA_ASSERT(blob.size() % 4 == 0, "Invalid size");
 	const uint32_t* d = static_cast<const uint32_t*>(blob.data());
 	std::vector<uint32_t> spriv(d, d + blob.size() / 4);
-
-	spirv_cross::Compiler compiler(spriv); // TODO cache spirv to avoid reparsing
-	spv::ExecutionModel executionModel = compiler.get_execution_model();
-	// --- Reflect vertex bindings
-	if (executionModel == spv::ExecutionModel::ExecutionModelVertex)
+	try
 	{
-		auto e = compiler.get_entry_point(entryPoint, executionModel);
-		for (spirv_cross::VariableID id : e.interface_variables)
+		spirv_cross::Compiler compiler(spriv); // TODO cache spirv to avoid reparsing
+		spv::ExecutionModel executionModel = compiler.get_execution_model();
+		// --- Reflect vertex bindings
+		if (executionModel == spv::ExecutionModel::ExecutionModelVertex)
 		{
-			//std::string name = compiler.get_name(id);
-			spv::StorageClass storage = compiler.get_storage_class(id);
-			if (storage != spv::StorageClass::StorageClassInput)
-				continue;
-			uint32_t location = compiler.get_decoration(id, spv::Decoration::DecorationLocation);
-			spirv_cross::SPIRType type = compiler.get_type_from_variable(id);
+			auto e = compiler.get_entry_point(entryPoint, executionModel);
+			for (spirv_cross::VariableID id : e.interface_variables)
+			{
+				//std::string name = compiler.get_name(id);
+				spv::StorageClass storage = compiler.get_storage_class(id);
+				if (storage != spv::StorageClass::StorageClassInput)
+					continue;
+				uint32_t location = compiler.get_decoration(id, spv::Decoration::DecorationLocation);
+				spirv_cross::SPIRType type = compiler.get_type_from_variable(id);
 
-			AKA_ASSERT(location < gfx::VertexMaxAttributeCount, "");
+				AKA_ASSERT(location < gfx::VertexMaxAttributeCount, "");
 
-			data.vertices.attributes[location].format = getType(type.basetype);
-			data.vertices.attributes[location].semantic = gfx::VertexSemantic::Unknown; // store somewhere
-			data.vertices.attributes[location].type = getSize(type.vecsize, type.columns);
-			data.vertices.count = max(data.vertices.count, location + 1);
+				data.vertices.attributes[location].format = getType(type.basetype);
+				data.vertices.attributes[location].semantic = gfx::VertexSemantic::Unknown; // store somewhere
+				data.vertices.attributes[location].type = getSize(type.vecsize, type.columns);
+				data.vertices.count = max(data.vertices.count, location + 1);
+			}
+			// Compute offsets ? 
+			// TODO move them out of here.
+			uint32_t offset = 0;
+			for (uint32_t i = 0; i < data.vertices.count; i++)
+			{
+				data.vertices.offsets[i] = offset;
+				offset += gfx::VertexBindingState::size(data.vertices.attributes[i].format) * gfx::VertexBindingState::size(data.vertices.attributes[i].type);
+			}
 		}
-		// Compute offsets ? 
-		// TODO move them out of here.
-		uint32_t offset = 0;
-		for (uint32_t i = 0; i < data.vertices.count; i++)
+		else
 		{
-			data.vertices.offsets[i] = offset;
-			offset += gfx::VertexBindingState::size(data.vertices.attributes[i].format) * gfx::VertexBindingState::size(data.vertices.attributes[i].type);
+			data.vertices = {};
 		}
+		// --- Reflect shader bindings
+		{
+			spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+			for (spirv_cross::Resource& resource : resources.sampled_images)
+			{
+				std::string name = compiler.get_name(resource.id);
+				uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+				AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
+				while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
+				uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+				AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
+				data.sets[set].bindings[binding].count = 1; // TODO
+				data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
+				data.sets[set].bindings[binding].type = gfx::ShaderBindingType::SampledImage;
+				data.sets[set].count = max(data.sets[set].count, binding + 1);
+			}
+			for (spirv_cross::Resource& resource : resources.storage_images)
+			{
+				std::string name = compiler.get_name(resource.id);
+				uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+				AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
+				while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
+				uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+				AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
+				data.sets[set].bindings[binding].count = 1; // TODO
+				data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
+				data.sets[set].bindings[binding].type = gfx::ShaderBindingType::StorageImage;
+				data.sets[set].count = max(data.sets[set].count, binding + 1);
+			}
+			for (spirv_cross::Resource& resource : resources.uniform_buffers)
+			{
+				std::string name = compiler.get_name(resource.id);
+				uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+				AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
+				while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
+				uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+				AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
+				data.sets[set].bindings[binding].count = 1; // TODO
+				data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
+				data.sets[set].bindings[binding].type = gfx::ShaderBindingType::UniformBuffer;
+				data.sets[set].count = max(data.sets[set].count, binding + 1);
+			}
+			for (spirv_cross::Resource& resource : resources.storage_buffers)
+			{
+				std::string name = compiler.get_name(resource.id);
+				uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+				AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
+				while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
+				uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+				AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
+				data.sets[set].bindings[binding].count = 1; // TODO
+				data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
+				data.sets[set].bindings[binding].type = gfx::ShaderBindingType::StorageBuffer;
+				data.sets[set].count = max(data.sets[set].count, binding + 1);
+			}
+
+			resources.acceleration_structures;
+		}
+		return data;
 	}
-	else
+	catch (const spirv_cross::CompilerError& e)
 	{
-		data.vertices = {};
+		Logger::error("Failed to compile shader : ", e.what());
+		return ShaderData{};
 	}
-	// --- Reflect shader bindings
-	{
-		spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-		for (spirv_cross::Resource& resource : resources.sampled_images)
-		{
-			std::string name = compiler.get_name(resource.id);
-			uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-			AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
-			while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
-			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
-			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
-			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::SampledImage;
-			data.sets[set].count = max(data.sets[set].count, binding + 1);
-		}
-		for (spirv_cross::Resource& resource : resources.storage_images)
-		{
-			std::string name = compiler.get_name(resource.id);
-			uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-			AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
-			while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
-			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
-			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
-			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::StorageImage;
-			data.sets[set].count = max(data.sets[set].count, binding + 1);
-		}
-		for (spirv_cross::Resource& resource : resources.uniform_buffers)
-		{
-			std::string name = compiler.get_name(resource.id);
-			uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-			AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
-			while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
-			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
-			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
-			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::UniformBuffer;
-			data.sets[set].count = max(data.sets[set].count, binding + 1);
-		}
-		for (spirv_cross::Resource& resource : resources.storage_buffers)
-		{
-			std::string name = compiler.get_name(resource.id);
-			uint32_t set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
-			AKA_ASSERT(set < gfx::ShaderMaxSetCount, "not enough set storage.");
-			while (set >= data.sets.size()) data.sets.append(gfx::ShaderBindingState{});
-			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-			AKA_ASSERT(binding < gfx::ShaderMaxBindingCount, "not enough binding storage.");
-			data.sets[set].bindings[binding].count = 1; // TODO
-			data.sets[set].bindings[binding].stages = getShaderMask(executionModel);
-			data.sets[set].bindings[binding].type = gfx::ShaderBindingType::StorageBuffer;
-			data.sets[set].count = max(data.sets[set].count, binding + 1);
-		}
-
-		resources.acceleration_structures;
-	}
-	return data;
 }
 
 };

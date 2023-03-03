@@ -81,10 +81,13 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 			// TODO opti if same macro and path, merge compilation for multiple elements
 			// TODO cache blob for same file.
 			Blob blob = compiler.compile(shaderKey);
+			AKA_ASSERT(blob.size() > 0, "Failed to compile shader");
 			datas[index] = compiler.reflect(blob, shaderKey.entryPoint.cstr());
 			shaders[index] = device->createShader(shaderKey.type, blob.data(), blob.size());
-			m_shaders.insert(std::make_pair(shaderKey, shaders[index]));
-			m_shadersFileData.insert(std::make_pair(shaderKey, ShaderFileData{Timestamp::now()}));
+			auto itShader = m_shaders.insert(std::make_pair(shaderKey, shaders[index]));
+			AKA_ASSERT(itShader.second, "Failed to insert shader");
+			auto itShaderData = m_shadersFileData.insert(std::make_pair(shaderKey, ShaderFileData{Timestamp::now()}));
+			AKA_ASSERT(itShaderData.second, "Failed to insert shader data");
 		}
 	}
 	// Merge shader bindings
@@ -122,7 +125,11 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	}
 	else if (isComputeProgram)
 	{
-		AKA_NOT_IMPLEMENTED;
+		program = device->createProgram(
+			shaders[EnumToIntegral(gfx::ShaderType::Compute)],
+			states,
+			static_cast<uint32_t>(setCount)
+		);
 	}
 	if (program != gfx::ProgramHandle::null)
 		m_programs.insert(std::make_pair(key, program));
@@ -130,12 +137,91 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 
 void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 {
-	auto it = m_programs.find(key);
-	if (it != m_programs.end())
+	auto getRefCount = [&](const ShaderKey& key) -> uint32_t {
+		uint32_t refCount = 0;
+		for (auto& program : m_programs)
+		{
+			for (auto& shader : program.first.shaders)
+			{
+				if (shader == key)
+				{
+					refCount++;
+				}
+			}
+		}
+		return refCount;
+	};
+	auto itProgram = m_programs.find(key);
+	if (itProgram != m_programs.end())
 	{
-		device->destroy(it->second);
-		m_programs.erase(it);
-		// TODO delete shaders that are using this program ?
+		ProgramKey programKey = itProgram->first;
+		gfx::ProgramHandle program = itProgram->second;
+		device->destroy(program);
+		if (program.data->vertex != gfx::ShaderHandle::null)
+		{
+			for (auto shaderKey : programKey.shaders)
+			{
+				if (shaderKey.type == gfx::ShaderType::Vertex && getRefCount(shaderKey) == 1)
+				{
+					device->destroy(program.data->vertex);
+					auto itShader = m_shaders.find(shaderKey);
+					if (itShader != m_shaders.end())
+						m_shaders.erase(itShader);
+					auto itShaderData = m_shadersFileData.find(shaderKey);
+					if (itShaderData != m_shadersFileData.end())
+						m_shadersFileData.erase(itShaderData);
+				}
+			}
+		}
+		if (program.data->fragment != gfx::ShaderHandle::null)
+		{
+			for (auto shaderKey : programKey.shaders)
+			{
+				if (shaderKey.type == gfx::ShaderType::Fragment && getRefCount(shaderKey) == 1)
+				{
+					device->destroy(program.data->fragment);
+					auto itShader = m_shaders.find(shaderKey);
+					if (itShader != m_shaders.end())
+						m_shaders.erase(itShader);
+					auto itShaderData = m_shadersFileData.find(shaderKey);
+					if (itShaderData != m_shadersFileData.end())
+						m_shadersFileData.erase(itShaderData);
+				}
+			}
+		}
+		if (program.data->geometry != gfx::ShaderHandle::null)
+		{
+			for (auto shaderKey : programKey.shaders)
+			{
+				if (shaderKey.type == gfx::ShaderType::Geometry && getRefCount(shaderKey) == 1)
+				{
+					device->destroy(program.data->geometry);
+					auto itShader = m_shaders.find(shaderKey);
+					if (itShader != m_shaders.end())
+						m_shaders.erase(itShader);
+					auto itShaderData = m_shadersFileData.find(shaderKey);
+					if (itShaderData != m_shadersFileData.end())
+						m_shadersFileData.erase(itShaderData);
+				}
+			}
+		}
+		if (program.data->compute != gfx::ShaderHandle::null)
+		{
+			for (auto shaderKey : programKey.shaders)
+			{
+				if (shaderKey.type == gfx::ShaderType::Compute && getRefCount(shaderKey) == 1)
+				{
+					device->destroy(program.data->compute);
+					auto itShader = m_shaders.find(shaderKey);
+					if (itShader != m_shaders.end())
+						m_shaders.erase(itShader);
+					auto itShaderData = m_shadersFileData.find(shaderKey);
+					if (itShaderData != m_shadersFileData.end())
+						m_shadersFileData.erase(itShaderData);
+				}
+			}
+		}
+		m_programs.erase(itProgram);
 	}
 }
 
@@ -170,40 +256,37 @@ gfx::ShaderHandle ShaderRegistry::getShader(const ShaderKey& key) const
 	return it->second;
 }
 
-void ShaderRegistry::reload(const ShaderKey& shaderKey, gfx::GraphicDevice* device)
+void ShaderRegistry::reload(const ShaderKey& _shaderKey, gfx::GraphicDevice* device)
 {
-	auto it = m_shaders.find(shaderKey);
-	if (it == m_shaders.end())
+	ShaderKey shaderKey = _shaderKey; // Store shaderKey before it gets invalidated
+	// Check if shader compile before removing it and reloading it.
+	ShaderCompiler compiler;
+	Blob blob = compiler.compile(shaderKey);
+	if (blob.size() == 0)
 	{
-		// Shader does not exist.
+		Logger::error("Failed to compile shader at : ", shaderKey.path);
 		return;
 	}
-	else
-	{
-		// Rebuild shader
-		ShaderCompiler compiler;
-
-
-		Blob blob = compiler.compile(shaderKey);
-		ShaderData data = compiler.reflect(blob, shaderKey.entryPoint.cstr());
-		gfx::ShaderHandle shader = device->createShader(shaderKey.type, blob.data(), blob.size());
-		// Destroy old shader.
-		device->destroy(it->second);
-		m_shaders[shaderKey] = shader;
-		m_shadersFileData[shaderKey].timestamp = Timestamp::now();
-	}
-	// Send events.
+	// Get all dependent program to recompile.
+	std::vector<ProgramKey> programToReload;
 	for (auto& program : m_programs)
 	{
 		for (auto& shader : program.first.shaders)
 		{
-			if (shader == shaderKey)
+			if (shader.path == shaderKey.path)
 			{
-				EventDispatcher<ShaderReloadedEvent>::emit(ShaderReloadedEvent{ shader, program.first });
+				programToReload.push_back(program.first);
 			}
 		}
-		EventDispatcher<ShaderReloadedEvent>::dispatch();
 	}
+	// Send events.
+	for (auto program : programToReload)
+	{
+		remove(program, device);
+		add(program, device);
+		EventDispatcher<ShaderReloadedEvent>::emit(ShaderReloadedEvent{ shaderKey, program });
+	}
+	EventDispatcher<ShaderReloadedEvent>::dispatch();
 }
 
 void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
@@ -215,7 +298,11 @@ void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 		bool updated = OS::File::lastWrite(shader.first.path) > it->second.timestamp;
 		if (updated)
 		{
-			reload(shader.first, device);
+			ShaderKey key = shader.first;
+			Date date = Date::globaltime(m_shadersFileData[key].timestamp);
+			Logger::info(date.hour, "/", date.minute, "/", date.second);
+			reload(key, device);
+			break; // m_shaders is invalidated
 		}
 	}
 }

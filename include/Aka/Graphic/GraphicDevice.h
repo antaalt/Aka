@@ -55,6 +55,14 @@ struct Frame
 	CommandList* commandList;
 };
 
+enum class ResourceLayout {
+	ShaderResource,
+	ShaderStorage,
+	AttachmentColor,
+	AttachmentDepth,
+	Present,
+};
+
 class AKA_NO_VTABLE GraphicDevice
 {
 public:
@@ -73,6 +81,7 @@ public:
 
 	// Programs
 	virtual ProgramHandle createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
+	virtual ProgramHandle createProgram(ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
 	virtual void destroy(ProgramHandle program) = 0;
 
 	// Descriptor sets
