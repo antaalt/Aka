@@ -333,6 +333,7 @@ const FillState FillStateLine = FillState{ FillMode::Line, 1.f };
 // Culling
 const CullState CullStateDisabled = CullState{ CullMode::None, CullOrder::Unknown };
 const CullState CullStateCCW = CullState{ CullMode::BackFace, CullOrder::CounterClockWise };
+const CullState CullStateCW = CullState{ CullMode::BackFace, CullOrder::ClockWise };
 const CullState CullStateDefault = CullStateDisabled;
 
 // Depth

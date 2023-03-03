@@ -44,6 +44,7 @@ public:
 
 	// Programs
 	ProgramHandle createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
+	ProgramHandle createProgram(ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
 	void destroy(ProgramHandle handle) override;
 	DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) override;
 	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
