@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include <Aka/Core/Config.h>
 #include <Aka/Core/Geometry.h>
@@ -93,6 +94,12 @@ public:
 	// Format a raw string
 	template <typename ...Args>
 	static Str format(const T* string, Args ...args);
+	// Format a string
+	template<typename U, typename ...Args>
+	static Str from(U t, Args ...args);
+	// Format a string
+	template<typename U>
+	static Str from(U value);
 
 	// Find a character and return its position
 	size_t find(T character, size_t offset = 0) const;
@@ -405,7 +412,6 @@ template <typename T>
 inline size_t Str<T>::length(const T* string)
 {
 	if (string == nullptr) return 0;
-	size_t size = 0;
 	const T* tmp = string;
 	for (; (*tmp) != 0; ++tmp);
 	return tmp - string;
@@ -471,6 +477,23 @@ inline size_t Str<T>::findLast(T character, size_t offset) const
 			return i;
 	return invalid;
 }
+
+template<typename T>
+template<typename U, typename ...Args>
+inline Str<T> Str<T>::from(U t, Args ...args)
+{
+	return Str<T>::from(t) + Str<T>::from(args...);
+}
+
+template<typename T>
+template<typename U>
+inline Str<T> Str<T>::from(U value)
+{
+	std::basic_stringstream<T> sstr;
+	sstr << value;
+	return sstr.str();
+}
+
 template <typename T>
 inline std::vector<Str<T>> Str<T>::split(T c) const
 {

@@ -17,15 +17,18 @@ enum class ResourceType : uint8_t
 	Framebuffer,
 	Pipeline,
 	DescriptorSet,
+	Sampler,
 	Program,
 	Shader,
 };
 
 using ResourceNativeHandle = uint64_t;
+constexpr ResourceNativeHandle ResourceNativeHandleInvalid = ~0ULL;
 
 struct Resource
 {
-	Resource() {} // TODO
+	Resource(const char* name, ResourceType type);
+
 	char name[256]; // Debug name of the resource.
 	ResourceNativeHandle native; // Native handle of the resource for external API
 	ResourceType type; // Type of the resource

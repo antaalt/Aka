@@ -41,6 +41,8 @@ using ShaderHandle = ResourceHandle<Shader>;
 
 struct Shader : Resource
 {
+	Shader(const char* name, ShaderType type);
+
 	ShaderType type;
 
 	static ShaderHandle create(ShaderType type, const void* content, size_t size);

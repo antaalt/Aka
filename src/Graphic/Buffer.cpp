@@ -5,22 +5,31 @@
 namespace aka {
 namespace gfx {
 
-BufferHandle Buffer::createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+Buffer::Buffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access) :
+	Resource(name, ResourceType::Buffer),
+	type(type),
+	size(size),
+	usage(usage),
+	access(access)
 {
-	return Application::app()->graphic()->createBuffer(BufferType::Index, size, usage, access, data);
 }
 
-BufferHandle Buffer::createVertexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+BufferHandle Buffer::createIndexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
-	return Application::app()->graphic()->createBuffer(BufferType::Vertex, size, usage, access, data);
+	return Application::app()->graphic()->createBuffer(name, BufferType::Index, size, usage, access, data);
 }
 
-BufferHandle Buffer::createUniformBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+BufferHandle Buffer::createVertexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
-	return Application::app()->graphic()->createBuffer(BufferType::Uniform, size, usage, access, data);
+	return Application::app()->graphic()->createBuffer(name, BufferType::Vertex, size, usage, access, data);
 }
 
-BufferHandle Buffer::createStagingBuffer(uint32_t size, const void* data)
+BufferHandle Buffer::createUniformBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+{
+	return Application::app()->graphic()->createBuffer(name, BufferType::Uniform, size, usage, access, data);
+}
+
+BufferHandle Buffer::createStagingBuffer(const char* name, uint32_t size, const void* data)
 {
 	return BufferHandle::null;
 }

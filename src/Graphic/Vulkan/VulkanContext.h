@@ -45,6 +45,30 @@ struct VulkanQueue
 	VkQueue queue;
 };
 
+
+template <typename T> struct VulkanTypeTrait { static const VkObjectType debugType = VK_OBJECT_TYPE_UNKNOWN; };
+template <> struct VulkanTypeTrait<VkImage> { static const VkObjectType debugType = VK_OBJECT_TYPE_IMAGE; };
+template <> struct VulkanTypeTrait<VkDeviceMemory> { static const VkObjectType debugType = VK_OBJECT_TYPE_DEVICE_MEMORY; };
+template <> struct VulkanTypeTrait<VkImageView> { static const VkObjectType debugType = VK_OBJECT_TYPE_IMAGE_VIEW; };
+template <> struct VulkanTypeTrait<VkBuffer> { static const VkObjectType debugType = VK_OBJECT_TYPE_BUFFER; };
+template <> struct VulkanTypeTrait<VkCommandPool> { static const VkObjectType debugType = VK_OBJECT_TYPE_COMMAND_POOL; };
+template <> struct VulkanTypeTrait<VkRenderPass> { static const VkObjectType debugType = VK_OBJECT_TYPE_RENDER_PASS; };
+
+template <typename T, typename ...Args>
+void setDebugName(VkDevice device, T handle, Args ...args)
+{
+	AKA_ASSERT(handle != VK_NULL_HANDLE, "Invalid handle");
+	static_assert(VulkanTypeTrait<VkImage>::debugType != VK_OBJECT_TYPE_UNKNOWN);
+	String fmt_name = String::from(args...);
+	VkDebugUtilsObjectNameInfoEXT info{};
+	info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	info.objectHandle = (uint64_t)handle;
+	info.objectType = VulkanTypeTrait<VkImage>::debugType;
+	info.pObjectName = fmt_name.cstr();
+	VK_CHECK_RESULT(vkSetDebugUtilsObjectNameEXT(device, &info));
+}
+
+
 struct VulkanSwapchain;
 struct VulkanGraphicPipeline;
 struct VulkanComputePipeline;

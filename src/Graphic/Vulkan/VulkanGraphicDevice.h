@@ -43,8 +43,8 @@ public:
 	void destroy(ShaderHandle handle) override;
 
 	// Programs
-	ProgramHandle createProgram(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
-	ProgramHandle createProgram(ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
+	ProgramHandle createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
+	ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
 	void destroy(ProgramHandle handle) override;
 	DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) override;
 	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
@@ -52,6 +52,7 @@ public:
 
 	// Textures
 	TextureHandle createTexture(
+		const char* name,
 		uint32_t width, uint32_t height, uint32_t depth,
 		TextureType type,
 		uint32_t levels, uint32_t layers,
@@ -78,7 +79,7 @@ public:
 	void destroy(SamplerHandle sampler) override;
 
 	// Buffer
-	BufferHandle createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
+	BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
 	void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) override;
 	void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) override;
 	void* map(BufferHandle buffer, BufferMap map) override;
@@ -129,32 +130,6 @@ public:
 
 	VulkanContext& context() { return m_context; }
 	VulkanSwapchain& swapchain() { return m_swapchain; }
-private:
-	VulkanTexture* makeTexture(
-		uint32_t width, uint32_t height, uint32_t depth,
-		uint32_t levels, uint32_t layers,
-		TextureFormat format,
-		TextureType type,
-		TextureFlag flags,
-		VkImage image,
-		VkImageView view,
-		VkDeviceMemory memory,
-		VkImageLayout layout
-	);
-
-	VulkanBuffer* makeBuffer(
-		BufferType type,
-		uint32_t size,
-		BufferUsage usage,
-		BufferCPUAccess access,
-		VkBuffer buffer,
-		VkDeviceMemory memory
-	);
-
-	VulkanShader* makeShader(
-		ShaderType type,
-		VkShaderModule module
-	);
 private:
 	friend struct VulkanSwapchain;
 	// Context

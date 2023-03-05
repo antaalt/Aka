@@ -48,6 +48,10 @@ struct ShaderBindingState
 
 struct Program : Resource
 {
+	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts);
+	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts);
+	Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts);
+
 	// TODO replace by ShaderType flag as we could delete shader after program creation.
 	ShaderHandle vertex;
 	ShaderHandle fragment;
@@ -63,9 +67,9 @@ struct Program : Resource
 	bool hasGeometryStage() const;
 	bool hasComputeStage() const;
 
-	static ProgramHandle createVertex(ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static ProgramHandle createGeometry(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static ProgramHandle createCompute(ShaderHandle compute);
+	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static ProgramHandle createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
+	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count);
 	static void destroy(ProgramHandle program);
 };
 

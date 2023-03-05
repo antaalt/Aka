@@ -72,6 +72,7 @@ void StaticMesh::createRenderData(gfx::GraphicDevice* device, const BuildData* i
 	for (uint32_t i = 0; i < data->vertexBufferCount; i++)
 	{
 		meshRenderData->vertexBuffers[i] = device->createBuffer(
+			"FileVertexBuffer", // TODO id
 			gfx::BufferType::Vertex,
 			(uint32_t)data->vertexBuffers[i].size(),
 			gfx::BufferUsage::Default,
@@ -85,6 +86,7 @@ void StaticMesh::createRenderData(gfx::GraphicDevice* device, const BuildData* i
 	meshRenderData->indexOffset = 0; // TODO mutualise data with some scene allocator
 
 	meshRenderData->indexBuffer = device->createBuffer(
+		"FileIndexBuffer",
 		gfx::BufferType::Index,
 		(uint32_t)data->indicesBuffer.size(),
 		gfx::BufferUsage::Default,

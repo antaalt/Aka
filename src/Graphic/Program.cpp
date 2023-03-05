@@ -5,6 +5,44 @@
 namespace aka {
 namespace gfx {
 
+Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts) :
+	Resource(name, ResourceType::Program),
+	vertex(vertex),
+	fragment(fragment),
+	geometry(ShaderHandle::null),
+	compute(ShaderHandle::null),
+	sets{},
+	setCount(bindingCounts)
+{
+	AKA_ASSERT(bindingCounts < ShaderMaxBindingCount, "Too much bindings");
+	memcpy(this->sets, sets, bindingCounts * sizeof(ShaderBindingState));
+}
+
+Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts) :
+	Resource(name, ResourceType::Program),
+	vertex(vertex),
+	fragment(fragment),
+	geometry(geometry),
+	compute(ShaderHandle::null),
+	sets{},
+	setCount(bindingCounts)
+{
+	AKA_ASSERT(bindingCounts < ShaderMaxBindingCount, "Too much bindings");
+	memcpy(this->sets, sets, bindingCounts * sizeof(ShaderBindingState));
+}
+Program::Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts) :
+	Resource(name, ResourceType::Program),
+	vertex(ShaderHandle::null),
+	fragment(ShaderHandle::null),
+	geometry(ShaderHandle::null),
+	compute(compute),
+	sets{},
+	setCount(bindingCounts)
+{
+	AKA_ASSERT(bindingCounts < ShaderMaxBindingCount, "Too much bindings");
+	memcpy(this->sets, sets, bindingCounts * sizeof(ShaderBindingState));
+}
+
 bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 {
 	if (lhs.count < rhs.count) return true;
@@ -75,17 +113,17 @@ bool Program::hasComputeStage() const
 	return compute.data != nullptr;
 }
 
-ProgramHandle Program::createVertex(ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count)
 {
-	return Application::app()->graphic()->createProgram(vertex, fragment, ShaderHandle::null, bindings, count);
+	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, ShaderHandle::null, bindings, count);
 }
-ProgramHandle Program::createGeometry(ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t count)
 {
-	return Application::app()->graphic()->createProgram(vertex, fragment, geometry, bindings, count);
+	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, geometry, bindings, count);
 }
-ProgramHandle Program::createCompute(ShaderHandle compute)
+ProgramHandle Program::createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count)
 {
-	return ProgramHandle::null;
+	return Application::app()->graphic()->createComputeProgram(name, compute, bindings, count);
 }
 void Program::destroy(ProgramHandle program)
 {

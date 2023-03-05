@@ -11,6 +11,7 @@ namespace gfx {
 
 struct DescriptorSetData
 {
+	// TODO do not manipulate data directly
 	BufferHandle buffers[ShaderMaxBindingCount];
 	TextureHandle images[ShaderMaxBindingCount];
 	SamplerHandle samplers[ShaderMaxBindingCount];
@@ -26,6 +27,8 @@ using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
 
 struct DescriptorSet : Resource
 {
+	DescriptorSet() : Resource("", ResourceType::DescriptorSet) {}
+
 	ShaderBindingState bindings;
 
 	void update(const DescriptorSetData& data);

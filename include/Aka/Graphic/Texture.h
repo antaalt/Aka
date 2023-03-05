@@ -89,6 +89,8 @@ using TextureHandle = ResourceHandle<Texture>;
 
 struct Texture : Resource
 {
+	Texture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags);
+
 	uint32_t width; // Width of the texture
 	uint32_t height; // Height of the texture
 	uint32_t depth; // Depth of the texture
@@ -98,7 +100,7 @@ struct Texture : Resource
 
 	TextureFormat format; // Underlying format of the texture
 	TextureType type; // Type of the texture
-	TextureFlag flags; // Texture flags
+	TextureFlag flags; // Texture flags // TODO should be TextureUsage instead
 
 	bool hasMips() const;
 	bool hasLayers() const;
@@ -114,9 +116,9 @@ struct Texture : Resource
 
 	static uint32_t size(TextureFormat format);
 
-	static TextureHandle create2D(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data = nullptr);
-	static TextureHandle createCubemap(uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
-	static TextureHandle create2DArray(uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static TextureHandle create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data = nullptr);
+	static TextureHandle createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static TextureHandle create2DArray(const char* name, uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
 	static void destroy(TextureHandle texture);
 };
 

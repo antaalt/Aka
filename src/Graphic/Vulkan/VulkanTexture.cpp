@@ -312,6 +312,7 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 }
 
 TextureHandle VulkanGraphicDevice::createTexture(
+	const char* name,
 	uint32_t width, uint32_t height, uint32_t depth,
 	TextureType type,
 	uint32_t levels, uint32_t layers,
@@ -320,135 +321,19 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	const void* const* data
 )
 {
-	AKA_ASSERT(layers > 0, "Should have at least 1 layer");
-	AKA_ASSERT(levels > 0, "Should have at least 1 mips");
-	VkFormat vk_format = VulkanContext::tovk(format);
-	VkImageTiling vk_tiling = VK_IMAGE_TILING_OPTIMAL; // TODO control this (flag dependent ? staging ?)
-	VkImageUsageFlags vk_usage = 0;
-	VkImageCreateFlags vk_flags = 0;
-	VkImageAspectFlags vk_aspect = VulkanTexture::getAspectFlag(format);
-	VkImageViewType vk_type = VK_IMAGE_VIEW_TYPE_2D;
-	switch (type)
-	{
-	case TextureType::Texture2D:
-		vk_type = VK_IMAGE_VIEW_TYPE_2D;
-		break;
-	case TextureType::TextureCubeMap:
-		AKA_ASSERT(width == height, "");
-		vk_type = VK_IMAGE_VIEW_TYPE_CUBE;
-		vk_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-		break;
-	case TextureType::Texture2DArray:
-		vk_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-		break;
-	default:
-		AKA_ASSERT(false, "Invalid type.");
-		break;
-	}
-	// TODO rename textureFlag as TextureUsage
-	if (has(flags, TextureFlag::RenderTarget))
-	{
-		if (Texture::hasDepth(format))
-			vk_usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-		else
-			vk_usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	}
-	if (has(flags, TextureFlag::ShaderResource))
-	{
-		vk_usage |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // Need to upload to it.
-	}
-	if (has(flags, TextureFlag::Storage))
-	{
-		vk_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-	}
-
-	{
-		// TODO add flags for transfer SRC and DST
-		vk_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-		vk_usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	}
-	VkImage image = VulkanTexture::createVkImage(m_context.device, width, height, levels, layers, vk_format, vk_tiling, vk_usage, vk_flags);
-
-	// Create memory
-	VkMemoryRequirements memRequirements{};
-	vkGetImageMemoryRequirements(m_context.device, image, &memRequirements);
-
-	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	// TODO add settings to set host coherent
-	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = m_context.findMemoryType(memRequirements.memoryTypeBits, properties);
-
-	VkDeviceMemory memory;
-	VK_CHECK_RESULT(vkAllocateMemory(m_context.device, &allocInfo, nullptr, &memory));
-
-	VK_CHECK_RESULT(vkBindImageMemory(m_context.device, image, memory, 0));
-
-	// Create View
-	// View must only have one aspect flag
-	VkImageAspectFlags vk_viewAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-	if (Texture::hasDepth(format))
-		vk_viewAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-	else if (Texture::hasStencil(format))
-		vk_viewAspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-	VkImageView view = VulkanTexture::createVkImageView(m_context.device, image, vk_type, vk_format, vk_viewAspect, levels, layers);
-
-	// Make
-	VulkanTexture* texture = makeTexture(
-		width, height, depth,
-		levels, layers,
-		format,
-		type,
-		flags,
-		image,
-		view,
-		memory,
-		VK_IMAGE_LAYOUT_UNDEFINED
-	);
+	VulkanTexture* texture = m_texturePool.acquire(name, width, height, depth, type, levels, layers, format, flags);
+	texture->create(m_context);
 
 	// Upload
 	if (data != nullptr && data[0] != nullptr)
 	{
-		// Create staging buffer
-		VkDeviceSize imageSize = texture->width * texture->height * Texture::size(format);
-		VkDeviceSize bufferSize = imageSize * layers;
-		VkBuffer stagingBuffer = VulkanBuffer::createVkBuffer(
-			m_context.device,
-			bufferSize,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-		);
-		VkDeviceMemory stagingBufferMemory = VulkanBuffer::createVkDeviceMemory(
-			m_context.device,
-			m_context.physicalDevice,
-			stagingBuffer,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		);
-		// Upload to staging buffer
-		void* stagingData;
-		vkMapMemory(m_context.device, stagingBufferMemory, 0, bufferSize, 0, &stagingData);
-		for (uint32_t iLayer = 0; iLayer < layers; iLayer++)
-		{
-			void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
-			memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
-		}
-		vkUnmapMemory(m_context.device, stagingBufferMemory);
-
-		// Copy buffer to image
+		texture->upload(m_context, data, 0, 0, width, height);
 		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-		VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
-		texture->transitionImageLayout(cmd,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-			subresource,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			VK_PIPELINE_STAGE_TRANSFER_BIT
-		);
-		texture->copyBufferToImage(cmd, stagingBuffer);
+		// Generate mips
+		VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(texture->format), 0, texture->levels, 0, texture->layers };
 		if (has(flags, TextureFlag::GenerateMips))
 		{
-			texture->generateMips(cmd);
-			// Should be in SHADER_READ_ONLY
+			texture->generateMips(cmd); // Should be in SHADER_READ_ONLY
 		}
 		else
 		{
@@ -460,10 +345,6 @@ TextureHandle VulkanGraphicDevice::createTexture(
 			);
 		}
 		VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
-
-		// Free staging buffer
-		vkFreeMemory(m_context.device, stagingBufferMemory, nullptr);
-		vkDestroyBuffer(m_context.device, stagingBuffer, nullptr);
 	}
 	else
 	{
@@ -516,43 +397,11 @@ TextureHandle VulkanGraphicDevice::createTexture(
 void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
 	VulkanTexture* vk_texture = get<VulkanTexture>(texture);
-	// Create staging buffer
-	VkDeviceSize imageSize = texture.data->width * texture.data->height * Texture::size(texture.data->format);
-	VkDeviceSize bufferSize = imageSize * texture.data->layers;
-	VkBuffer stagingBuffer = VulkanBuffer::createVkBuffer(
-		m_context.device,
-		bufferSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-	);
-	VkDeviceMemory stagingBufferMemory = VulkanBuffer::createVkDeviceMemory(
-		m_context.device,
-		m_context.physicalDevice,
-		stagingBuffer,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	);
-	// Upload to staging buffer
-	void* stagingData;
-	vkMapMemory(m_context.device, stagingBufferMemory, 0, bufferSize, 0, &stagingData);
-	for (uint32_t iLayer = 0; iLayer < texture.data->layers; iLayer++)
-	{
-		void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
-		memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
-	}
-	vkUnmapMemory(m_context.device, stagingBufferMemory);
-
-	// Copy buffer to image
-	VulkanTexture* vk_ctexture = vk_texture;
+	vk_texture->upload(m_context, data, x, y, width, height);
+	// Transition back to shader read only
 	VkImageSubresourceRange subresource{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers };
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-	vk_ctexture->transitionImageLayout(
-		cmd,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresource,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT
-	);
-	vk_ctexture->copyBufferToImage(cmd, stagingBuffer);
-	vk_ctexture->transitionImageLayout(
+	vk_texture->transitionImageLayout(
 		cmd,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		subresource,
@@ -560,10 +409,6 @@ void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data,
 		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
 	);
 	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
-
-	// Free staging buffer
-	vkFreeMemory(m_context.device, stagingBufferMemory, nullptr);
-	vkDestroyBuffer(m_context.device, stagingBuffer, nullptr);
 }
 
 void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel, uint32_t layer)
@@ -581,38 +426,6 @@ void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
 }
 
-VulkanTexture* VulkanGraphicDevice::makeTexture(
-	uint32_t width, uint32_t height, uint32_t depth,
-	uint32_t levels, uint32_t layers,
-	TextureFormat format,
-	TextureType type,
-	TextureFlag flags,
-	VkImage image,
-	VkImageView view,
-	VkDeviceMemory memory,
-	VkImageLayout layout
-)
-{
-	VulkanTexture* texture = m_texturePool.acquire();
-	texture->width = width;
-	texture->height = height;
-	texture->depth = depth;
-	texture->levels = levels;
-	texture->layers = layers;
-	texture->format = format;
-	texture->type = type;
-	texture->flags = flags;
-
-	texture->vk_image = image;
-	texture->vk_view = view;
-	texture->vk_memory = memory;
-	texture->vk_layout = layout;
-
-	// Set native handle for others API
-	texture->native = reinterpret_cast<std::uintptr_t>(image);
-	return texture;
-}
-
 void VulkanGraphicDevice::destroy(TextureHandle texture)
 {
 	if (texture.data == nullptr) return;
@@ -628,6 +441,157 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 		vk_texture->vk_image = VK_NULL_HANDLE;
 	}
 	m_texturePool.release(vk_texture);
+}
+
+VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags) :
+	Texture(name, width, height, depth, type, levels, layers, format, flags),
+	vk_image(VK_NULL_HANDLE),
+	vk_memory(VK_NULL_HANDLE),
+	vk_view(VK_NULL_HANDLE),
+	vk_layout(VK_IMAGE_LAYOUT_UNDEFINED)
+{
+}
+
+void VulkanTexture::create(VulkanContext& context)
+{
+	AKA_ASSERT(layers > 0, "Should have at least 1 layer");
+	AKA_ASSERT(levels > 0, "Should have at least 1 mips");
+	VkFormat vk_format = VulkanContext::tovk(format);
+	VkImageTiling vk_tiling = VK_IMAGE_TILING_OPTIMAL; // TODO control this (flag dependent ? staging ?)
+	VkImageUsageFlags vk_usage = 0;
+	VkImageCreateFlags vk_flags = 0;
+	VkImageAspectFlags vk_aspect = VulkanTexture::getAspectFlag(format);
+	VkImageViewType vk_type = VK_IMAGE_VIEW_TYPE_2D;
+	switch (type)
+	{
+	case TextureType::Texture2D:
+		vk_type = VK_IMAGE_VIEW_TYPE_2D;
+		break;
+	case TextureType::TextureCubeMap:
+		AKA_ASSERT(width == height, "Cubemap need to be squared.");
+		vk_type = VK_IMAGE_VIEW_TYPE_CUBE;
+		vk_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		break;
+	case TextureType::Texture2DArray:
+		vk_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		break;
+	default:
+		AKA_ASSERT(false, "Invalid type.");
+		break;
+	}
+	if (has(flags, TextureFlag::RenderTarget))
+	{
+		if (Texture::hasDepth(format))
+			vk_usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		else
+			vk_usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	}
+	if (has(flags, TextureFlag::ShaderResource))
+	{
+		vk_usage |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // Need to upload to it.
+	}
+	if (has(flags, TextureFlag::Storage))
+	{
+		vk_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+	}
+
+	{
+		// TODO add flags for transfer SRC and DST
+		vk_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		vk_usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	}
+	vk_image = VulkanTexture::createVkImage(context.device, width, height, levels, layers, vk_format, vk_tiling, vk_usage, vk_flags);
+
+	// Create memory
+	VkMemoryRequirements memRequirements{};
+	vkGetImageMemoryRequirements(context.device, vk_image, &memRequirements);
+
+	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	// TODO add settings to set host coherent
+	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = context.findMemoryType(memRequirements.memoryTypeBits, properties);
+
+	VK_CHECK_RESULT(vkAllocateMemory(context.device, &allocInfo, nullptr, &vk_memory));
+
+	VK_CHECK_RESULT(vkBindImageMemory(context.device, vk_image, vk_memory, 0));
+
+	// Create View
+	// View must only have one aspect flag
+	VkImageAspectFlags vk_viewAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+	if (Texture::hasDepth(format))
+		vk_viewAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+	else if (Texture::hasStencil(format))
+		vk_viewAspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+	vk_view = VulkanTexture::createVkImageView(context.device, vk_image, vk_type, vk_format, vk_viewAspect, levels, layers);
+
+	setDebugName(context.device, vk_image, "VkImage_", name);
+	setDebugName(context.device, vk_view, "VkImageView_", name);
+	setDebugName(context.device, vk_memory, "VkDeviceMemory_", name);
+}
+
+void VulkanTexture::destroy(VulkanContext& context)
+{
+	vkDestroyImageView(context.device, vk_view, nullptr);
+	vk_view = VK_NULL_HANDLE;
+	if (vk_memory != 0) // If no memory used, image not allocated here (swapchain)
+	{
+		vkFreeMemory(context.device, vk_memory, nullptr);
+		vkDestroyImage(context.device, vk_image, nullptr);
+		vk_memory = VK_NULL_HANDLE;
+		vk_image = VK_NULL_HANDLE;
+	}
+}
+
+void VulkanTexture::upload(VulkanContext& context, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+{
+	AKA_ASSERT(x == 0 && y == 0 && width == this->width && height == this->height, "Subregion upload not supported yet. Should specify which layer / level to upload as well.");
+
+	if (data == nullptr || data[0] == nullptr)
+		return;
+
+	// Create staging buffer
+	VkDeviceSize imageSize = this->width * this->height * Texture::size(this->format);
+	VkDeviceSize bufferSize = imageSize * this->layers;
+	VkBuffer stagingBuffer = VulkanBuffer::createVkBuffer(
+		context.device,
+		bufferSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+	);
+	VkDeviceMemory stagingBufferMemory = VulkanBuffer::createVkDeviceMemory(
+		context.device,
+		context.physicalDevice,
+		stagingBuffer,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	);
+	// Upload to staging buffer
+	void* stagingData;
+	vkMapMemory(context.device, stagingBufferMemory, 0, bufferSize, 0, &stagingData);
+	for (uint32_t iLayer = 0; iLayer < this->layers; iLayer++)
+	{
+		void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
+		memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
+	}
+	vkUnmapMemory(context.device, stagingBufferMemory);
+
+	// Copy buffer to image
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context.device, context.commandPool);
+	VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(this->format), 0, this->levels, 0, this->layers };
+	transitionImageLayout(cmd,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		subresource,
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
+	copyBufferToImage(cmd, stagingBuffer);
+
+	VulkanCommandList::endSingleTime(context.device, context.commandPool, cmd, context.graphicQueue.queue);
+
+	// Free staging buffer
+	vkFreeMemory(context.device, stagingBufferMemory, nullptr);
+	vkDestroyBuffer(context.device, stagingBuffer, nullptr);
 }
 
 VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags)

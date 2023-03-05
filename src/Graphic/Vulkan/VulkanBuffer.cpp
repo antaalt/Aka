@@ -4,6 +4,32 @@
 namespace aka {
 namespace gfx {
 
+VulkanBuffer::VulkanBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access) :
+	Buffer(name, type, size, usage, access),
+	vk_buffer(VK_NULL_HANDLE),
+	vk_memory(VK_NULL_HANDLE)
+{
+}
+void VulkanBuffer::create(VulkanContext& context)
+{
+	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // TODO depend on access
+	VkBufferUsageFlags usages = VulkanContext::tovk(type); // VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+
+	vk_buffer = VulkanBuffer::createVkBuffer(context.device, size, usages);
+	vk_memory = VulkanBuffer::createVkDeviceMemory(context.device, context.physicalDevice, vk_buffer, properties);
+
+	//context.name("")
+	
+	setDebugName(context.device, vk_buffer, "VkBuffer_", name);
+	setDebugName(context.device, vk_buffer, "VkDeviceMemory_", name);
+}
+void VulkanBuffer::destroy(VulkanContext& context)
+{
+	vkFreeMemory(context.device, vk_memory, nullptr);
+	vkDestroyBuffer(context.device, vk_buffer, nullptr);
+	vk_buffer = VK_NULL_HANDLE;
+	vk_memory = VK_NULL_HANDLE;
+}
 VkBuffer VulkanBuffer::createVkBuffer(VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage)
 {
 	VkBufferCreateInfo bufferInfo = {};
@@ -34,22 +60,11 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	return vk_memory;
 }
 
-BufferHandle VulkanGraphicDevice::createBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
-{
-	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // TODO depend on access
-	VkBufferUsageFlags usages = VulkanContext::tovk(type); // VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-	
-	VkBuffer vk_buffer = VulkanBuffer::createVkBuffer(m_context.device, size, usages);
-	VkDeviceMemory vk_memory = VulkanBuffer::createVkDeviceMemory(m_context.device, m_context.physicalDevice, vk_buffer, properties);
-		
-	VulkanBuffer* buffer = makeBuffer(
-		type,
-		size,
-		usage,
-		access,
-		vk_buffer,
-		vk_memory
-	);
+BufferHandle VulkanGraphicDevice::createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+{		
+	VulkanBuffer* buffer = m_bufferPool.acquire(name, type, size, usage, access);
+
+	buffer->create(m_context);
 
 	if (data != nullptr)
 	{
@@ -107,28 +122,8 @@ void VulkanGraphicDevice::destroy(BufferHandle buffer)
 	if (buffer.data == nullptr) return;
 
 	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
-	vkFreeMemory(m_context.device, vk_buffer->vk_memory, nullptr);
-	vkDestroyBuffer(m_context.device, vk_buffer->vk_buffer, nullptr);
-	vk_buffer->vk_buffer = VK_NULL_HANDLE;
-	vk_buffer->vk_memory = VK_NULL_HANDLE;
+	vk_buffer->destroy(m_context);
 	m_bufferPool.release(vk_buffer);
-}
-
-VulkanBuffer* VulkanGraphicDevice::makeBuffer(BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, VkBuffer vk_buffer, VkDeviceMemory vk_memory)
-{
-	VulkanBuffer* buffer = m_bufferPool.acquire();
-	buffer->size = size;
-	buffer->usage = usage;
-	buffer->type = type;
-	buffer->access = access;
-	buffer->type = type;
-
-	buffer->vk_buffer = vk_buffer;
-	buffer->vk_memory = vk_memory;
-
-	// Set native handle for others API
-	buffer->native = reinterpret_cast<std::uintptr_t>(buffer);
-	return buffer;
 }
 
 };

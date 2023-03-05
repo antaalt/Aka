@@ -125,12 +125,17 @@ VkRenderPass VulkanContext::getRenderPass(const FramebufferState& fbDesc, Vulkan
 	{
 		VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, layout);
 		m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
+		size_t hash = std::hash<FramebufferState>()(fbDesc);
+		String str = layout == VulkanRenderPassLayout::Backbuffer ? "Backbuffer" : "Framebuffer";
+		setDebugName(device, vk_renderPass, "RenderPass", str.cstr(), hash);
 		return vk_renderPass;
 	}
 	else
 	{
 		VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, VulkanRenderPassLayout::Framebuffer);
 		m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
+		size_t hash = std::hash<FramebufferState>()(fbDesc);
+		setDebugName(device, vk_renderPass, "RenderPassFramebuffer", hash);
 		return vk_renderPass;
 	}
 }
@@ -143,6 +148,10 @@ VulkanContext::ShaderInputData VulkanContext::getDescriptorLayout(const ShaderBi
 	ShaderInputData s;
 	s.pool = VK_NULL_HANDLE;
 	s.layout = VulkanProgram::createVkDescriptorSetLayout(device, bindingsDesc, &s.pool);
+
+	size_t hash = std::hash<ShaderBindingState>()(bindingsDesc);
+	setDebugName(device, s.pool, "VkDescriptorPool_", hash);
+	setDebugName(device, s.layout, "VkDescriptorSetLayout_", hash);
 
 	m_bindingDesc.insert(std::make_pair(bindingsDesc, s));
 	return s;
@@ -452,7 +461,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 		instanceExtensions[requiredPlatformInstanceExtensionCount + i] = requiredPlatformInstanceExtensions[i];
 	// Device extensions
 	const char* deviceExtensions[] = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	};
 	const size_t deviceExtensionCount = sizeof(deviceExtensions) / sizeof(*deviceExtensions);
 	if (!hasValidationLayerSupport(validationLayers, validationLayerCount))
@@ -469,6 +478,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	device = createLogicalDevice(deviceExtensions, deviceExtensionCount);
 
 	commandPool = createCommandPool(device, graphicQueue.index);
+	setDebugName(device, commandPool, "MainCommandPool");
 }
 
 void VulkanContext::shutdown()

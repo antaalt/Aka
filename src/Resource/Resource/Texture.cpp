@@ -83,6 +83,7 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 			data->layerData(5)
 		};
 		textureRenderData->handle = device->createTexture(
+			"FileTextureCubemap", // TODO custom name based on path ?
 			data->width,
 			data->height,
 			1,
@@ -102,6 +103,7 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 			bytes[i] = data->layerData(i);
 		}
 		textureRenderData->handle = device->createTexture(
+			"FileTexture2DArray",
 			data->width,
 			data->height,
 			1,
@@ -119,6 +121,7 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 			return;
 		const void* bytes = data->data();
 		textureRenderData->handle = device->createTexture(
+			"FileTexture2D",
 			data->width,
 			data->height,
 			1,

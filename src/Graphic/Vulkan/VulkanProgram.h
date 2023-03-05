@@ -11,11 +11,17 @@ namespace gfx {
 
 struct VulkanShader : Shader
 {
+	VulkanShader(const char* name, ShaderType type);
+
 	VkShaderModule vk_module;
 };
 
 struct VulkanProgram : Program
 {
+	VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts);
+	VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts);
+	VulkanProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts);
+
 	VkDescriptorSetLayout vk_descriptorSetLayout[ShaderMaxSetCount];
 	VkDescriptorPool vk_descriptorPool[ShaderMaxSetCount];
 	//VkDescriptorSet vk_descriptorSet;

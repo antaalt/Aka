@@ -112,10 +112,17 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 		}
 	}
 	// Create shaders
+	String name;
+	for (auto shaders : key.shaders)
+	{
+		name += OS::File::name(shaders.path);
+	}
 	gfx::ProgramHandle program;
 	if (isVertexProgram)
 	{
-		program = device->createProgram(
+		name = "GraphicProgram" + name;
+		program = device->createGraphicProgram(
+			name.cstr(),
 			shaders[EnumToIntegral(gfx::ShaderType::Vertex)],
 			shaders[EnumToIntegral(gfx::ShaderType::Fragment)],
 			gfx::ShaderHandle::null,
@@ -125,7 +132,9 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	}
 	else if (isVertexGeometryProgram)
 	{
-		program = device->createProgram(
+		name = "GraphicProgram" + name;
+		program = device->createGraphicProgram(
+			name.cstr(),
 			shaders[EnumToIntegral(gfx::ShaderType::Vertex)],
 			shaders[EnumToIntegral(gfx::ShaderType::Fragment)],
 			shaders[EnumToIntegral(gfx::ShaderType::Geometry)],
@@ -135,7 +144,9 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	}
 	else if (isComputeProgram)
 	{
-		program = device->createProgram(
+		name = "ComputeProgram" + name;
+		program = device->createComputeProgram(
+			name.cstr(),
 			shaders[EnumToIntegral(gfx::ShaderType::Compute)],
 			states,
 			static_cast<uint32_t>(setCount)

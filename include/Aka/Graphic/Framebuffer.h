@@ -79,6 +79,7 @@ struct FramebufferState
 
 struct Framebuffer : Resource
 {
+	Framebuffer() : Resource("", ResourceType::Framebuffer) {}
 	uint32_t width, height; // TODO this is not really interesting to store this.
 	
 	FramebufferState framebuffer;

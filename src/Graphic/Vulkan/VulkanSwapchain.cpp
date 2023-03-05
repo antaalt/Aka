@@ -215,19 +215,21 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		VK_CHECK_RESULT(vkCreateImageView(context->device, &viewInfo, nullptr, &view));
 
 		// Create color texture
-		gfx::TextureHandle colorTexture = TextureHandle{ device->makeTexture(
-			extent.width, extent.height, 1,
+		String str = String::format("SwapChain%u", i);
+		VulkanTexture* vk_colorTexture = device->m_texturePool.acquire(str.cstr(), extent.width, extent.height, 1,
+			TextureType::Texture2D,
 			1, 1,
 			colorFormat,
-			TextureType::Texture2D,
-			TextureFlag::RenderTarget,
-			vk_images[i],
-			view,
-			VK_NULL_HANDLE, // No memory as its owned by swapchain.
-			VK_IMAGE_LAYOUT_UNDEFINED
-		) };
+			TextureFlag::RenderTarget
+		);
+		TextureHandle colorTexture = TextureHandle{ vk_colorTexture };
+		vk_colorTexture->vk_image = vk_images[i];
+		vk_colorTexture->vk_view = view;
+		setDebugName(context->device, vk_images[i], "VkImage_Swapchain", i);
+		setDebugName(context->device, view, "VkImageView_Swapchain", i);
+		// No memory
+
 		// Transition swapchain color image
-		VulkanTexture* vk_colorTexture = get<VulkanTexture>(colorTexture);
 		vk_colorTexture->transitionImageLayout(
 			cmd,
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -237,7 +239,9 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		gfx::TextureHandle depthTexture;
 		if (hasDepth)
 		{
+			String str = String::format("SwapchainDepthImage%u", i);
 			depthTexture = device->createTexture(
+				str.cstr(),
 				extent.width, extent.height, 1,
 				TextureType::Texture2D,
 				1,

@@ -7,6 +7,12 @@
 namespace aka {
 namespace gfx {
 
+Shader::Shader(const char* name, ShaderType type) : 
+	Resource(name, ResourceType::Shader),
+	type(type)
+{
+}
+
 ShaderMask getShaderMask(ShaderType type)
 {
 	if (type > ShaderType::Count)

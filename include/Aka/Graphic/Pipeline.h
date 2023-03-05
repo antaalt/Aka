@@ -372,6 +372,8 @@ struct ViewportState
 
 struct GraphicPipeline : Resource
 {
+	GraphicPipeline() : Resource("", ResourceType::Unknown) {}
+
 	ProgramHandle program;
 
 	PrimitiveType primitive;
@@ -388,12 +390,15 @@ struct GraphicPipeline : Resource
 
 struct ComputePipeline : Resource
 {
+	ComputePipeline() : Resource("", ResourceType::Unknown) {}
+
 	ProgramHandle program;
 	ShaderBindingState sets[ShaderMaxSetCount];
 };
 
 struct RaytracingPipeline : Resource
 {
+	RaytracingPipeline() : Resource("", ResourceType::Unknown) {}
 	// ...
 };
 

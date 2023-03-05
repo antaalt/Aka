@@ -33,6 +33,7 @@ using SamplerHandle = ResourceHandle<Sampler>;
 
 struct Sampler : Resource
 {
+	Sampler() : Resource("Sampler", ResourceType::Sampler) {}
 	Filter filterMin;
 	Filter filterMag;
 	SamplerMipMapMode mipmapMode;

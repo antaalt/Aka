@@ -77,6 +77,7 @@ void Sprite::createRenderData(gfx::GraphicDevice* device, const BuildData* inBui
 	}
 
 	spriteRenderData->handle = device->createTexture(
+		"SpriteTexture", // TODO name
 		width,
 		height,
 		1,

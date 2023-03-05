@@ -71,7 +71,7 @@ void Font::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuild
 	FT_Face face;
 	FREETYPE_CHECK_RESULT(FT_New_Memory_Face(ft, static_cast<const FT_Byte*>(data->ttf.data()), (FT_Long)data->ttf.size(), 0, &face));
 	FREETYPE_CHECK_RESULT(FT_Set_Pixel_Sizes(face, 0, data->height));
-
+	
 	m_familyName = face->family_name;
 	m_styleName = face->style_name;
 	m_height = (face->size->metrics.height >> 6) + 1;
@@ -98,7 +98,9 @@ void Font::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuild
 	}
 	// Generate the atlas and store it.
 	Image atlas = packer.pack();
+	String str = String::format("FontAtlas_%s", face->family_name);
 	m_atlas = gfx::Texture::create2D(
+		str.cstr(),
 		atlas.width(), atlas.height(),
 		gfx::TextureFormat::RGBA8,
 		gfx::TextureFlag::ShaderResource,

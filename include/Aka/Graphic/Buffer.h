@@ -45,16 +45,18 @@ using BufferHandle = ResourceHandle<Buffer>;
 
 struct Buffer : Resource
 {
+	Buffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access);
+
 	uint32_t size;
 
 	BufferType type;
 	BufferUsage usage;
 	BufferCPUAccess access;
 
-	static BufferHandle createIndexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static BufferHandle createVertexBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static BufferHandle createUniformBuffer(uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static BufferHandle createStagingBuffer(uint32_t size, const void* data = nullptr);
+	static BufferHandle createIndexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static BufferHandle createVertexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static BufferHandle createUniformBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
+	static BufferHandle createStagingBuffer(const char* name, uint32_t size, const void* data = nullptr);
 	static void destroy(BufferHandle buffer);
 };
 

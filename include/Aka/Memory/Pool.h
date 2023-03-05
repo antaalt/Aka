@@ -110,8 +110,7 @@ inline T* Pool<T, BlockCount>::acquire(Args&&... args)
 	}
 	Chunk* p = m_freeList;
 	m_freeList = m_freeList->next;
-	if constexpr (std::is_constructible<T>::value)
-		new (&p->element) T(std::forward<Args>(args)...); // Call constructor with new placement
+	new (&p->element) T(std::forward<Args>(args)...); // Call constructor with new placement
 	// Set used bitmask
 	size_t index = p - block->chunks;
 	block->used[index / 8] |= 0x01 << (index % 8);
