@@ -1,4 +1,6 @@
 #include <Aka/OS/OS.h>
+#include <Aka/Platform/PlatformDevice.h>
+#include <Aka/Core/Application.h>
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #define NOMINMAX
@@ -331,6 +333,42 @@ FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 		return nullptr;
 	}
 	return file;
+}
+
+AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const char* message)
+{
+	UINT type;
+	switch (modalType)
+	{
+	case AlertModalType::Information:
+		type = MB_ICONINFORMATION | MB_OK;
+		break;
+	case AlertModalType::Question:
+		type = MB_ICONQUESTION | MB_YESNO;
+		break;
+	case AlertModalType::Warning:
+		type = MB_ICONWARNING | MB_OK;
+		break;
+	case AlertModalType::Error:
+		type = MB_ICONERROR | MB_OK;
+		break;
+	}
+	PlatformDevice* platform = Application::app()->platform();
+	HWND handle = (HWND)platform->getNativeHandle();
+
+	StringWide wstr = Utf8ToWchar(message);
+	StringWide wstrTitle = Utf8ToWchar(title);
+	int value = MessageBoxW(handle, wstr.cstr(), wstrTitle.cstr(), type);
+	switch (value)
+	{
+	case IDYES:
+		return AlertModalMessage::Yes;
+	case IDNO:
+		return AlertModalMessage::No;
+	default:
+	case IDOK:
+		return AlertModalMessage::Ok;
+	}
 }
 
 };

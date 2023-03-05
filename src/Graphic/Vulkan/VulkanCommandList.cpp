@@ -369,19 +369,31 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	if (has(mask, ClearMask::Stencil))
 		flags |= VK_IMAGE_ASPECT_STENCIL_BIT;
 	//vk_pipeline->renderPass.
-	// TODO one VkClearAttachment & VkClearRect by attachment
-	VkClearAttachment attachments{};
-	attachments.aspectMask = flags;
-	attachments.clearValue.color = VkClearColorValue{ color[0], color[1], color[2], color[3] };
-	attachments.clearValue.depthStencil = VkClearDepthStencilValue{ depth, stencil };
-	attachments.colorAttachment = 0; // TODO color attachment index in current framebuffer
+	std::vector<VkClearAttachment> attachments;
+	for (uint32_t i = 0; i < this->vk_framebuffer->framebuffer.count; i++)
+	{
+		VkClearAttachment att{};
+		att.aspectMask = flags;
+		att.clearValue.color = VkClearColorValue{ color[0], color[1], color[2], color[3] };
+		att.colorAttachment = i;
+		attachments.push_back(att);
+
+	}
+	if (this->vk_framebuffer->depth.texture != gfx::TextureHandle::null)
+	{
+		VkClearAttachment att{};
+		att.aspectMask = flags;
+		att.clearValue.depthStencil = VkClearDepthStencilValue{ depth, stencil };
+		att.colorAttachment = this->vk_framebuffer->framebuffer.count; // depth is last
+		attachments.push_back(att);
+	}
 
 	VkClearRect clearRect{};
 	clearRect.baseArrayLayer = 0;
 	clearRect.layerCount = 1;
 	clearRect.rect.extent = VkExtent2D{ vk_framebuffer->width, vk_framebuffer->height };
 	clearRect.rect.offset = VkOffset2D{ 0, 0 };
-	vkCmdClearAttachments(vk_command, 1, &attachments, 1, &clearRect);
+	vkCmdClearAttachments(vk_command, (uint32_t)attachments.size(), attachments.data(), 1, &clearRect);
 }
 
 void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount) 

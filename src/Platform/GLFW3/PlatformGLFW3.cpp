@@ -6,6 +6,13 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+//#define GLFW_NATIVE_INCLUDE_NONE
+#include <GLFW/glfw3native.h>
+
 namespace aka {
 
 const KeyboardKey glfwKeyboardKeyMap[512] = {
@@ -742,6 +749,11 @@ void PlatformGLFW3::fullscreen(bool enable)
 GLFWwindow* PlatformGLFW3::getGLFW3Handle()
 {
 	return m_window;
+}
+
+void* PlatformGLFW3::getNativeHandle()
+{
+	return glfwGetWin32Window(m_window);
 }
 
 };

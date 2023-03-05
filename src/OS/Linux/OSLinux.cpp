@@ -207,6 +207,13 @@ FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 	return ::fopen(path.cstr(), fileMode(mode, type));
 }
 
+AlertModalMessage AlertModal(AlertModalType type, const char* title, const char* message)
+{
+	Logger::error("[", title,"] ", message);
+	getchar();
+	return AlertModalMessage::Ok;
+}
+
 };
 
 #endif

@@ -23,7 +23,9 @@ inline EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return st
 inline EnumClassType operator|(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(EnumToIntegral(lhs) | EnumToIntegral(rhs)); } \
 inline EnumClassType& operator|=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(EnumToIntegral(lhs) | EnumToIntegral(rhs)); return lhs; } \
 inline EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(EnumToIntegral(lhs) & EnumToIntegral(rhs));  return lhs; } \
-inline bool has(EnumClassType mask, EnumClassType flag) { return (mask & flag) == flag; }
+inline EnumClassType operator~(EnumClassType value) { return static_cast<EnumClassType>(~EnumToIntegral(value)); } \
+inline bool has(EnumClassType mask, EnumClassType flag) { return (mask & flag) == flag; } \
+inline bool isNull(EnumClassType mask) { return EnumToIntegral(mask) == 0; }
 // TODO << >> ^ ~ in BITWISE instead of bitmask
 
 

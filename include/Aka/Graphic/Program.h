@@ -40,6 +40,7 @@ struct ShaderBindingState
 
 	ShaderBindingState& add(ShaderBindingType type, ShaderMask stages, uint32_t bindingCount)
 	{
+		AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
 		bindings[count++] = ShaderBindingLayout{ type, stages, bindingCount };
 		return *this;
 	}

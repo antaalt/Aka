@@ -73,22 +73,6 @@ uint32_t VertexBindingState::size(IndexFormat format)
 	return 0;
 }
 
-BlendMask operator&(BlendMask lhs, BlendMask rhs)
-{
-	return static_cast<BlendMask>(
-		static_cast<std::underlying_type<BlendMask>::type>(lhs) &
-		static_cast<std::underlying_type<BlendMask>::type>(rhs)
-	);
-}
-
-BlendMask operator|(BlendMask lhs, BlendMask rhs)
-{
-	return static_cast<BlendMask>(
-		static_cast<std::underlying_type<BlendMask>::type>(lhs) &
-		static_cast<std::underlying_type<BlendMask>::type>(rhs)
-	);
-}
-
 bool BlendState::isEnabled() const
 {
 	return !(

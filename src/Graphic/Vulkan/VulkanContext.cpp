@@ -6,6 +6,8 @@
 #include "VulkanProgram.h"
 #include "VulkanPipeline.h"
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include "Platform/GLFW3/PlatformGLFW3.h"
 
 #include <Aka/Core/Container/String.h>

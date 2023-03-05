@@ -3,6 +3,8 @@
 #include "VulkanContext.h"
 #include "VulkanGraphicDevice.h"
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include "../../Platform/GLFW3/PlatformGLFW3.h"
 
 namespace aka {

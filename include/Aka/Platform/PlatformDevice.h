@@ -122,6 +122,8 @@ public:
 	virtual void setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight) = 0;
 	// Set fullscreen mode of the window
 	virtual void fullscreen(bool enabled) = 0;
+	// Get native handle to the window
+	virtual void* getNativeHandle() = 0;
 protected: // Inputs
 	void onInputsUpdate();
 	void onKeyboardKeyDown(KeyboardKey key);

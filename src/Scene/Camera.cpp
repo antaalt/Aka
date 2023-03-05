@@ -64,7 +64,7 @@ bool CameraArcball::update(Time deltaTime)
 		vec3f dir = vec3f::normalize(target - position);
 		float dist = point3f::distance(target, position);
 		float coeff = zoom * speed;
-		if (dist - coeff > 1.5f)
+		if (dist - coeff > 0.1f)
 		{
 			position = position + dir * coeff;
 			dirty = true;

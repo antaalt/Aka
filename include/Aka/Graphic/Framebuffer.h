@@ -65,6 +65,16 @@ struct FramebufferState
 	Attachment depth;
 
 	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
+
+	FramebufferState& addColor(TextureFormat format, AttachmentLoadOp loadOp) {
+		AKA_ASSERT(count + 1 < FramebufferMaxColorAttachmentCount, "Too many attachments");
+		colors[count++] = Attachment{ format, loadOp };
+		return *this;
+	}
+	FramebufferState& setDepth(TextureFormat format, AttachmentLoadOp loadOp) {
+		depth = Attachment{ format, loadOp };
+		return *this;
+	}
 };
 
 struct Framebuffer : Resource

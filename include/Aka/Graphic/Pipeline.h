@@ -100,9 +100,11 @@ struct VertexBindingState
 	static uint32_t size(VertexFormat format);
 	static uint32_t size(VertexType type);
 	static uint32_t size(IndexFormat format);
+	static VertexBindingState empty() { return VertexBindingState{}; }
 
 	VertexBindingState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset) {
-		offsets[count] = offset;
+		AKA_ASSERT(count + 1 < VertexMaxAttributeCount, "Too many vertex attributes");
+		offsets[count] = offset; // TODO compute offset here ?
 		attributes[count++] = VertexAttribute{ semantic, format, type };
 		return *this;
 	}
@@ -175,9 +177,7 @@ enum class BlendMask : uint8_t
 	Rgb = Red | Green | Blue,
 	Rgba = Red | Green | Blue | Alpha
 };
-
-BlendMask operator&(BlendMask lhs, BlendMask rhs);
-BlendMask operator|(BlendMask lhs, BlendMask rhs);
+AKA_IMPLEMENT_BITMASK_OPERATOR(BlendMask)
 
 struct BlendState
 {
@@ -194,6 +194,27 @@ struct BlendState
 	uint32_t blendColor;
 
 	bool isEnabled() const;
+
+	BlendState& setColor(BlendMode src, BlendMode dst, BlendOp op)
+	{
+		colorModeSrc = src;
+		colorModeDst = dst;
+		colorOp = op;
+		return *this;
+	}
+	BlendState& setAlpha(BlendMode src, BlendMode dst, BlendOp op)
+	{
+		alphaModeSrc = src;
+		alphaModeDst = dst;
+		alphaOp = op;
+		return *this;
+	}
+	BlendState& set(BlendMask mask, uint32_t blendColor)
+	{
+		this->mask = mask;
+		this->blendColor = blendColor;
+		return *this;
+	}
 
 };
 
@@ -216,6 +237,13 @@ struct CullState
 {
 	CullMode mode;
 	CullOrder order;
+
+	CullState& set(CullMode mode, CullOrder order)
+	{
+		this->mode = mode;
+		this->order = order;
+		return *this;
+	}
 };
 
 enum class DepthOp
@@ -237,6 +265,13 @@ struct DepthState
 	bool mask;
 
 	bool isEnabled() const;
+
+	DepthState& set(DepthOp compare, bool mask = true) 
+	{
+		this->compare = compare;
+		this->mask = mask;
+		return *this;
+	}
 
 };
 
@@ -284,13 +319,55 @@ struct StencilState
 
 	bool isEnabled() const;
 
-	static const StencilState default;
+	StencilState& setFront(StencilMode fail, StencilMode depthFail, StencilMode pass, StencilOp op) 
+	{
+		front.stencilFailed = fail;
+		front.stencilDepthFailed = depthFail;
+		front.stencilPassed = pass;
+		front.compare = op;
+		return *this;
+	}
+	StencilState& setBack(StencilMode fail, StencilMode depthFail, StencilMode pass, StencilOp op) 
+	{
+		back.stencilFailed = fail;
+		back.stencilDepthFailed = depthFail;
+		back.stencilPassed = pass;
+		back.compare = op;
+		return *this;
+	}
+	StencilState& read(uint32_t read) 
+	{
+		readMask = read;
+		return *this;
+	}
+	StencilState& write(uint32_t write) 
+	{
+		writeMask = write;
+		return *this;
+	}
 };
 
 struct ViewportState
 {
 	Rect viewport;
 	Rect scissor;
+
+	ViewportState& offset(int32_t x, int32_t y) 
+	{
+		viewport.x = x;
+		viewport.y = y;
+		scissor.x = x;
+		scissor.y = y;
+		return *this;
+	}
+	ViewportState& size(uint32_t w, uint32_t h)
+	{
+		viewport.w = w;
+		viewport.h = h;
+		scissor.w = w;
+		scissor.h = h;
+		return *this;
+	}
 };
 
 struct GraphicPipeline : Resource

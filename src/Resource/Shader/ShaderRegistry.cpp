@@ -79,8 +79,18 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 		else
 		{
 			// TODO opti if same macro and path, merge compilation for multiple elements
+			// TOOD use multiple entry points
 			// TODO cache blob for same file.
 			Blob blob = compiler.compile(shaderKey);
+#if defined(AKA_DEBUG)
+			while (blob.size() == 0)
+			{
+				String errorMessage = "Failed to compile shader :";
+				errorMessage += shaderKey.path.cstr();
+				AlertModalMessage result = AlertModal(AlertModalType::Warning, "Failed shader compilation", errorMessage.cstr());
+				blob = compiler.compile(shaderKey);
+			} 
+#endif
 			AKA_ASSERT(blob.size() > 0, "Failed to compile shader");
 			datas[index] = compiler.reflect(blob, shaderKey.entryPoint.cstr());
 			shaders[index] = device->createShader(shaderKey.type, blob.data(), blob.size());

@@ -74,4 +74,23 @@ struct OS
 
 std::ostream& operator<<(std::ostream& os, Logger::Color color);
 
+enum class AlertModalType
+{
+	Information,
+	Question,
+	Warning,
+	Error,
+};
+
+enum class AlertModalMessage
+{
+	Yes,
+	No,
+	Ok,
+};
+
+// Open a modal with a display message
+// Blocking.
+AlertModalMessage AlertModal(AlertModalType type, const char* title, const char* name);
+
 }; // namespace aka

@@ -2,8 +2,8 @@
 
 #include <Aka/Platform/PlatformDevice.h>
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+
+struct GLFWwindow;
 
 namespace aka {
 
@@ -19,6 +19,7 @@ public:
 	void setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight) override;
 	void fullscreen(bool enabled) override;
 	GLFWwindow* getGLFW3Handle();
+	void* getNativeHandle();
 private:
 	GLFWwindow* m_window;
 };
