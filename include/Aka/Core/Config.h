@@ -36,23 +36,25 @@
 		#define AKA_PRINT(...) fprintf(stderr, __VA_ARGS__);
 	#endif
 
-	#define AKA_ASSERT(condition, message)              \
-	if (!(condition))									\
+	#define AKA_ASSERT(condition, message)				\
+	do									\
 	{													\
-		AKA_PRINT(                                      \
+		if (condition) break;							\
+		AKA_PRINT(										\
 		"Error : %s\nAssertion (%s) failed at %s:%d\n", \
-		message,                                        \
-		(#condition),                                   \
-		__FILE__,                                       \
+		message,										\
+		(#condition),									\
+		__FILE__,										\
 		__LINE__);										\
 		AKA_DEBUG_BREAK;								\
-	}
+	} while(0)
 #else
 	#define AKA_ASSERT(condition, message) ((void)0)
 #endif
 
 
-#define AKA_NOT_IMPLEMENTED throw std::runtime_error("Feature Not implemented");
+#define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented")
+#define AKA_UNREACHABLE AKA_ASSERT(false, "Code unreachable reached.")
 
 namespace aka {
 

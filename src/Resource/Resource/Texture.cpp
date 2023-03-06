@@ -158,15 +158,18 @@ void Texture::createBuildData(gfx::GraphicDevice* device, RenderData* data)
 	TextureBuildData* textureBuildData = new TextureBuildData;
 	m_buildData = textureBuildData;
 
-	gfx::TextureHandle texture = reinterpret_cast<TextureRenderData*>(data)->handle;
+	gfx::TextureHandle handle = reinterpret_cast<TextureRenderData*>(data)->handle;
+
+	const gfx::Texture* texture = device->get(handle);
+
 	textureBuildData->channels = 4; // GPU textures only 4 channels.
 	const bool isSRGB = false; // TODO check flags
 	const bool isHDR = false; // TODO check format
 	Logger::warn("SRGB & HDR not supported.");
-	const bool generateMips = has(texture.data->flags, gfx::TextureFlag::GenerateMips);
+	const bool generateMips = has(texture->flags, gfx::TextureFlag::GenerateMips);
 	textureBuildData->flags = TextureBuildFlag::None;
-	textureBuildData->width = texture.data->width;
-	textureBuildData->height = texture.data->height;
+	textureBuildData->width = texture->width;
+	textureBuildData->height = texture->height;
 	uint32_t componentSize = 1;
 	if (generateMips)
 	{
@@ -181,12 +184,12 @@ void Texture::createBuildData(gfx::GraphicDevice* device, RenderData* data)
 	{
 		textureBuildData->flags |= TextureBuildFlag::ColorSpaceSRGB;
 	}
-	switch (texture.data->type)
+	switch (texture->type)
 	{
 	case gfx::TextureType::Texture2D: {
 		textureBuildData->layers = 1;
 		textureBuildData->bytes.resize(textureBuildData->width * textureBuildData->height * textureBuildData->channels * componentSize * textureBuildData->layers);
-		device->download(texture, textureBuildData->data(), 0, 0, texture.data->width, texture.data->height);
+		device->download(handle, textureBuildData->data(), 0, 0, texture->width, texture->height);
 		break;
 	}
 	case gfx::TextureType::TextureCubeMap: {
@@ -195,16 +198,16 @@ void Texture::createBuildData(gfx::GraphicDevice* device, RenderData* data)
 		textureBuildData->bytes.resize(textureBuildData->width * textureBuildData->height * textureBuildData->channels * componentSize * textureBuildData->layers);
 		for (uint32_t i = 0; i < 6; i++)
 		{
-			device->download(texture, textureBuildData->layerData(i), 0, 0, texture.data->width, texture.data->height, 0, i);
+			device->download(handle, textureBuildData->layerData(i), 0, 0, texture->width, texture->height, 0, i);
 		}
 		break;
 	}
 	case gfx::TextureType::Texture2DArray: {
-		textureBuildData->layers = texture.data->layers;
+		textureBuildData->layers = texture->layers;
 		textureBuildData->bytes.resize(textureBuildData->width * textureBuildData->height * textureBuildData->channels * componentSize * textureBuildData->layers);
 		for (uint32_t i = 0; i < textureBuildData->layers; i++)
 		{
-			device->download(texture, textureBuildData->layerData(i), 0, 0, texture.data->width, texture.data->height, 0, i);
+			device->download(handle, textureBuildData->layerData(i), 0, 0, texture->width, texture->height, 0, i);
 		}
 	}
 	default:
@@ -228,15 +231,15 @@ ResourceArchive* Texture::createResourceArchive()
 
 uint32_t Texture::width() const
 {
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.data->width;
+	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data->width; // TODO cache width / height
 }
 uint32_t Texture::height() const
 {
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.data->height;
+	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data->height;
 }
 gfx::TextureType Texture::type() const
 {
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.data->type;
+	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data->type;
 }
 gfx::TextureHandle Texture::handle() const
 {

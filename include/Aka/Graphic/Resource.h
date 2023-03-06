@@ -38,14 +38,14 @@ template <typename T>
 struct ResourceHandle
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
-	const T* data; // TODO should be obfuscated & renamed desc.
+	const T* __data; // TODO should be obfuscated & renamed desc.
 	static const ResourceHandle<T> null;
 };
 
 template <typename T> 
-bool operator==(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.data == rhs.data; }
+bool operator==(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.__data == rhs.__data; }
 template <typename T>
-bool operator!=(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.data != rhs.data; }
+bool operator!=(const ResourceHandle<T>& lhs, const ResourceHandle<T>& rhs) { return lhs.__data != rhs.__data; }
 
 template <typename T>
 const ResourceHandle<T> ResourceHandle<T>::null = { nullptr };

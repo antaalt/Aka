@@ -27,13 +27,13 @@ using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
 
 struct DescriptorSet : Resource
 {
-	DescriptorSet() : Resource("", ResourceType::DescriptorSet) {}
+	DescriptorSet(const char* name, const ShaderBindingState& bindings);
 
 	ShaderBindingState bindings;
 
 	void update(const DescriptorSetData& data);
 
-	static DescriptorSetHandle create(const ShaderBindingState& state);
+	static DescriptorSetHandle create(const char* name, const ShaderBindingState& state);
 	static void destroy(DescriptorSetHandle set);
 };
 

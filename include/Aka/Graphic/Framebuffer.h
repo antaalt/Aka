@@ -8,9 +8,6 @@
 namespace aka {
 namespace gfx {
 
-struct Framebuffer;
-using FramebufferHandle = ResourceHandle<Framebuffer>;
-
 static constexpr uint32_t FramebufferMaxColorAttachmentCount = 8;
 
 enum class ClearMask : uint8_t
@@ -77,19 +74,29 @@ struct FramebufferState
 	}
 };
 
+class GraphicDevice;
+
+uint32_t getWidth(GraphicDevice* device, const Attachment* colors, uint32_t count, const Attachment* depth);
+uint32_t getHeight(GraphicDevice* device, const Attachment* colors, uint32_t count, const Attachment* depth);
+FramebufferState getState(GraphicDevice* device, const Attachment* colors, uint32_t count, const Attachment* depth);
+
+struct Framebuffer;
+using FramebufferHandle = ResourceHandle<Framebuffer>;
+
 struct Framebuffer : Resource
 {
-	Framebuffer() : Resource("", ResourceType::Framebuffer) {}
-	uint32_t width, height; // TODO this is not really interesting to store this.
-	
+	Framebuffer(const char* name, uint32_t width, uint32_t height, const FramebufferState& state, const Attachment* colors, const Attachment* depth);
+
+	uint32_t width, height;
+
 	FramebufferState framebuffer;
 
 	Attachment colors[FramebufferMaxColorAttachmentCount];
 	Attachment depth;
 
-	bool hasDepthStencil() const { return depth.texture.data != nullptr; }
+	bool hasDepthStencil() const { return depth.texture != TextureHandle::null; }
 
-	static FramebufferHandle create(const Attachment* attachments, uint32_t count, const Attachment* depth);
+	static FramebufferHandle create(const char* name, const Attachment* attachments, uint32_t count, const Attachment* depth);
 	static void destroy(FramebufferHandle framebuffer);
 };
 

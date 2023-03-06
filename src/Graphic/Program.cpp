@@ -98,19 +98,19 @@ bool operator!=(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 
 bool Program::hasVertexStage() const
 {
-	return vertex.data != nullptr;
+	return vertex != ShaderHandle::null;
 }
 bool Program::hasFragmentStage() const
 {
-	return fragment.data != nullptr;
+	return fragment != ShaderHandle::null;
 }
 bool Program::hasGeometryStage() const
 {
-	return geometry.data != nullptr;
+	return geometry != ShaderHandle::null;
 }
 bool Program::hasComputeStage() const
 {
-	return compute.data != nullptr;
+	return compute != ShaderHandle::null;
 }
 
 ProgramHandle Program::createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count)

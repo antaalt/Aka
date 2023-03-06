@@ -33,11 +33,11 @@ using SamplerHandle = ResourceHandle<Sampler>;
 
 struct Sampler : Resource
 {
-	Sampler() : Resource("Sampler", ResourceType::Sampler) {}
+	Sampler(const char* name, Filter min, Filter mag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy);
+
 	Filter filterMin;
 	Filter filterMag;
 	SamplerMipMapMode mipmapMode;
-	uint32_t mipLevels;
 	SamplerAddressMode wrapU;
 	SamplerAddressMode wrapV;
 	SamplerAddressMode wrapW;
@@ -46,10 +46,10 @@ struct Sampler : Resource
 	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
 
 	static SamplerHandle create(
+		const char* name,
 		Filter filterMin,
 		Filter filterMag,
 		SamplerMipMapMode mipmapMode,
-		uint32_t mipLevels,
 		SamplerAddressMode wrapU,
 		SamplerAddressMode wrapV,
 		SamplerAddressMode wrapW,

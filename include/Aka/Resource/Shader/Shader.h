@@ -16,7 +16,7 @@ struct ShaderData
 	Vector<gfx::ShaderBindingState> sets;
 	gfx::VertexBindingState vertices;
 };
-
+// TODO define to create the key in shaders directly.
 struct ShaderKey
 {
 	Path path;

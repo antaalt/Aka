@@ -126,23 +126,6 @@ struct SubTexture
 {
 	TextureHandle texture;
 	Rect region;
-
-	uv2f getStart() const {
-		uv2f uv;
-		if (region.x == 0) uv.u = 0.f;
-		else uv.u = 1.f / (texture.data->width / (float)region.x);
-		if (region.y == 0) uv.v = 0.f;
-		else uv.v = 1.f / (texture.data->height / (float)region.y);
-		return uv;
-	}
-	uv2f getEnd() const {
-		uv2f uv;
-		if (region.w == 0) uv.u = 1.f / (texture.data->width / (float)region.x);
-		else uv.u = 1.f / (texture.data->width / (float)region.x) + 1.f / (texture.data->width / (float)region.w);
-		if (region.h == 0) uv.v = 1.f / (texture.data->height / (float)region.y);
-		else uv.v = 1.f / (texture.data->height / (float)region.y) + 1.f / (texture.data->height / (float)region.h);
-		return uv;
-	}
 };
 
 };

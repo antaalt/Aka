@@ -251,7 +251,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 				nullptr
 			);
 			// Transition swapchain depth image
-			VulkanTexture* vk_depthTexture = get<VulkanTexture>(depthTexture);
+			VulkanTexture* vk_depthTexture = device->getVk<VulkanTexture>(depthTexture);
 			AKA_ASSERT(!hasStencil, "Invalid layout");
 			vk_depthTexture->transitionImageLayout(
 				cmd,
@@ -261,10 +261,11 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		}
 		
 		// Create framebuffer
+		str = String::format("SwapchainFramebuffer%u", i);
 		Attachment color{ colorTexture, AttachmentFlag::None, fbState.colors[0].loadOp, 0, 0 };
 		Attachment depth{ depthTexture, AttachmentFlag::None, fbState.depth.loadOp, 0, 0 };
-		backbuffers[i] = device->createFramebuffer(&color, 1, hasDepth ? &depth : nullptr);
-		get<VulkanFramebuffer>(backbuffers[i])->isSwapchain = true;
+		backbuffers[i] = device->createFramebuffer(str.cstr(), &color, 1, hasDepth ? &depth : nullptr);
+		device->getVk<VulkanFramebuffer>(backbuffers[i])->isSwapchain = true;
 	}
 
 	// Frames
@@ -289,9 +290,10 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 	VulkanContext* context = &device->m_context;
 	for (FramebufferHandle backbuffer : backbuffers)
 	{
+		const Framebuffer* fb = device->get(backbuffer);
 		// vk_renderpass is cached.
-		device->destroy(backbuffer.data->colors[0].texture);
-		device->destroy(backbuffer.data->depth.texture);
+		device->destroy(fb->colors[0].texture);
+		device->destroy(fb->depth.texture);
 		device->destroy(backbuffer);
 	}
 

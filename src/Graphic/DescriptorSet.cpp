@@ -38,9 +38,15 @@ void DescriptorSetData::setStorageImage(uint32_t slot, TextureHandle texture)
 	samplers[slot] = SamplerHandle::null;
 }
 
-DescriptorSetHandle DescriptorSet::create(const ShaderBindingState& bindings)
+DescriptorSet::DescriptorSet(const char* name, const ShaderBindingState& bindings) :
+	Resource(name, ResourceType::DescriptorSet),
+	bindings(bindings)
 {
-	return Application::app()->graphic()->createDescriptorSet(bindings);
+}
+
+DescriptorSetHandle DescriptorSet::create(const char* name, const ShaderBindingState& bindings)
+{
+	return Application::app()->graphic()->createDescriptorSet(name, bindings);
 }
 
 void DescriptorSet::update(const DescriptorSetData& data)

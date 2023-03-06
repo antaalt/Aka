@@ -417,8 +417,10 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	const FillState& fill
 )
 {
-	if (program.data == nullptr)
+	if (get(program) == nullptr)
 		return GraphicPipelineHandle::null;
+
+	VulkanProgram* vk_program = getVk<VulkanProgram>(program);
 
 	VulkanGraphicPipeline* pipeline = m_graphicPipelinePool.acquire();
 	pipeline->program = program;
@@ -432,31 +434,31 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 
 	pipeline->framebuffer = framebuffer;
 	pipeline->vertices = vertices;
-	memcpy(pipeline->sets, program.data->sets, program.data->setCount * sizeof(ShaderBindingState));
+	memcpy(pipeline->sets, vk_program->sets, vk_program->setCount * sizeof(ShaderBindingState));
 
-	VulkanProgram* vk_program = get<VulkanProgram>(program);
+
 	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
-	for (uint32_t i = 0; i < program.data->setCount; i++)
+	for (uint32_t i = 0; i < vk_program->setCount; i++)
 	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->sets[i]);
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(vk_program->sets[i]);
 		layouts[i] = data.layout;
 	}
-	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program.data->setCount);
+	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, vk_program->setCount);
 	// Create Pipeline
 	std::vector<const VulkanShader*> vk_shaders;
 	uint32_t shaderCount = 0;
-	VulkanShader* vertex = get<VulkanShader>(vk_program->vertex);
+	VulkanShader* vertex = getVk<VulkanShader>(vk_program->vertex);
 	if (vertex)
 	{
 		vk_shaders.push_back(vertex);
 	}
-	VulkanShader* fragment = get<VulkanShader>(vk_program->fragment);
+	VulkanShader* fragment = getVk<VulkanShader>(vk_program->fragment);
 	if (fragment)
 	{
 		vk_shaders.push_back(fragment);
 		AKA_ASSERT(vk_shaders.size() == 2, "Missing vertex shader");
 	}
-	VulkanShader* geometry = get<VulkanShader>(vk_program->geometry);
+	VulkanShader* geometry = getVk<VulkanShader>(vk_program->geometry);
 	if (geometry)
 	{
 		vk_shaders.push_back(geometry);
@@ -482,35 +484,36 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 }
 ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(ProgramHandle program, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-	if (program.data == nullptr)
+	if (get(program) == nullptr)
 		return ComputePipelineHandle::null;
 
 	VulkanComputePipeline* pipeline = m_computePipelinePool.acquire();
 	pipeline->program = program;
 
-	memcpy(pipeline->sets, program.data->sets, program.data->setCount * sizeof(ShaderBindingState));
+	VulkanProgram* vk_program = getVk<VulkanProgram>(program);
 
-	VulkanProgram* vk_program = get<VulkanProgram>(program);
+	memcpy(pipeline->sets, vk_program->sets, vk_program->setCount * sizeof(ShaderBindingState));
+
 	VkDescriptorSetLayout layouts[ShaderMaxSetCount]{};
-	for (uint32_t i = 0; i < program.data->setCount; i++)
+	for (uint32_t i = 0; i < vk_program->setCount; i++)
 	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(program.data->sets[i]);
+		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(vk_program->sets[i]);
 		layouts[i] = data.layout;
 	}
-	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, program.data->setCount);
+	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, vk_program->setCount);
 	// Create Pipeline
 	pipeline->vk_pipeline = VulkanComputePipeline::createVkComputePipeline(
 		m_context.device,
 		pipeline->vk_pipelineLayout,
-		get<VulkanShader>(vk_program->compute)
+		getVk<VulkanShader>(vk_program->compute)
 	);
 	return ComputePipelineHandle{ pipeline };
 }
 void VulkanGraphicDevice::destroy(GraphicPipelineHandle pipeline)
 {
-	if (pipeline.data == nullptr) return;
+	if (get(pipeline) == nullptr) return;
 
-	VulkanGraphicPipeline* vk_pipeline = get<VulkanGraphicPipeline>(pipeline);
+	VulkanGraphicPipeline* vk_pipeline = getVk<VulkanGraphicPipeline>(pipeline);
 
 	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
 	// TODO unref.
@@ -523,9 +526,9 @@ void VulkanGraphicDevice::destroy(GraphicPipelineHandle pipeline)
 
 void VulkanGraphicDevice::destroy(ComputePipelineHandle handle)
 {
-	if (handle.data == nullptr) return;
+	if (get(handle) == nullptr) return;
 
-	VulkanComputePipeline* vk_pipeline = get<VulkanComputePipeline>(handle);
+	VulkanComputePipeline* vk_pipeline = getVk<VulkanComputePipeline>(handle);
 
 	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
 	// TODO unref.
@@ -534,6 +537,16 @@ void VulkanGraphicDevice::destroy(ComputePipelineHandle handle)
 	vk_pipeline->vk_pipeline = VK_NULL_HANDLE;
 
 	m_computePipelinePool.release(vk_pipeline);
+}
+
+const GraphicPipeline* VulkanGraphicDevice::get(GraphicPipelineHandle handle)
+{
+	return handle.__data;
+}
+
+const ComputePipeline* VulkanGraphicDevice::get(ComputePipelineHandle handle)
+{
+	return handle.__data;
 }
 
 VkPipeline VulkanComputePipeline::createVkComputePipeline(VkDevice device, VkPipelineLayout pipelineLayout, const VulkanShader* shader)

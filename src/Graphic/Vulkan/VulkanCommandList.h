@@ -9,9 +9,11 @@
 namespace aka {
 namespace gfx {
 
+class VulkanGraphicDevice;
+
 struct VulkanCommandList : CommandList
 {
-	VulkanCommandList(VkDevice device, VkCommandBuffer cmd);
+	VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer cmd);
 
 	void begin() override;
 	void end() override;
@@ -41,6 +43,9 @@ struct VulkanCommandList : CommandList
 	static VkCommandBuffer createSingleTime(VkDevice device, VkCommandPool pool);
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
+	VkCommandBuffer getCommandBuffer() { return vk_command; }
+
+private:
 	const VulkanGraphicPipeline* vk_graphicPipeline;
 	const VulkanComputePipeline* vk_computePipeline;
 	const DescriptorSet* vk_sets[ShaderMaxSetCount];
@@ -48,7 +53,10 @@ struct VulkanCommandList : CommandList
 	const VulkanBuffer* vk_indices;
 	const VulkanBuffer* vk_vertices;
 
-	VkDevice vk_device;
+private:
+	friend class VulkanGraphicDevice;
+
+	VulkanGraphicDevice* device;
 	VkCommandBuffer vk_command;
 
 	bool m_recording;

@@ -18,8 +18,6 @@ void VulkanBuffer::create(VulkanContext& context)
 	vk_buffer = VulkanBuffer::createVkBuffer(context.device, size, usages);
 	vk_memory = VulkanBuffer::createVkDeviceMemory(context.device, context.physicalDevice, vk_buffer, properties);
 
-	//context.name("")
-	
 	setDebugName(context.device, vk_buffer, "VkBuffer_", name);
 	setDebugName(context.device, vk_buffer, "VkDeviceMemory_", name);
 }
@@ -76,7 +74,7 @@ BufferHandle VulkanGraphicDevice::createBuffer(const char* name, BufferType type
 void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size)
 {
 	// TODO staging buffer for device local buffers
-	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	void* mapped = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(m_context.device, vk_buffer->vk_memory, offset, size, 0, &mapped));
 	if (mapped == nullptr)
@@ -90,7 +88,7 @@ void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, uint32_t
 
 void VulkanGraphicDevice::download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size)
 {
-	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	void* mapped = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(m_context.device, vk_buffer->vk_memory, offset, size, 0, &mapped));
 	if (mapped == nullptr)
@@ -104,7 +102,7 @@ void VulkanGraphicDevice::download(BufferHandle buffer, void* data, uint32_t off
 
 void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)
 {
-	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	void* data = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(m_context.device, vk_buffer->vk_memory, 0, vk_buffer->size, 0, &data));
 	return data;
@@ -113,17 +111,22 @@ void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)
 void VulkanGraphicDevice::unmap(BufferHandle buffer)
 {
 	// TODO ensure its a vk texture
-	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	vkUnmapMemory(m_context.device, vk_buffer->vk_memory);
 }
 
 void VulkanGraphicDevice::destroy(BufferHandle buffer)
 {
-	if (buffer.data == nullptr) return;
+	if (get(buffer) == nullptr) return;
 
-	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	vk_buffer->destroy(m_context);
 	m_bufferPool.release(vk_buffer);
+}
+
+const Buffer* VulkanGraphicDevice::get(BufferHandle buffer)
+{
+	return buffer.__data; // TODO map somehow
 }
 
 };

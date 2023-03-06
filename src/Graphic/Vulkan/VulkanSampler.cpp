@@ -47,27 +47,50 @@ VkSamplerAddressMode tovk(SamplerAddressMode mode)
 }
 
 SamplerHandle VulkanGraphicDevice::createSampler(
+	const char* name,
 	Filter filterMin,
 	Filter filterMag,
 	SamplerMipMapMode mipmapMode,
-	uint32_t mipLevels,
 	SamplerAddressMode wrapU,
 	SamplerAddressMode wrapV,
 	SamplerAddressMode wrapW,
 	float anisotropy
 )
 {
-	VulkanSampler* vk_sampler = m_samplerPool.acquire();
+	VulkanSampler* vk_sampler = m_samplerPool.acquire(
+		name,
+		filterMin, filterMag,
+		mipmapMode,
+		wrapU, wrapV, wrapW,
+		anisotropy
+	);
+	vk_sampler->create(m_context);
 
-	vk_sampler->filterMin = filterMin;
-	vk_sampler->filterMag = filterMag;
-	vk_sampler->mipmapMode = mipmapMode;
-	vk_sampler->mipLevels = mipLevels;
-	vk_sampler->wrapU = wrapU;
-	vk_sampler->wrapV = wrapV;
-	vk_sampler->wrapW = wrapW;
-	vk_sampler->anisotropy = anisotropy;
+	return SamplerHandle{ vk_sampler };
+}
 
+void VulkanGraphicDevice::destroy(SamplerHandle sampler)
+{
+	if (sampler.__data == nullptr) return;
+
+	VulkanSampler* vk_sampler = getVk<VulkanSampler>(sampler);
+	vk_sampler->destroy(m_context);
+	m_samplerPool.release(vk_sampler);
+}
+
+const Sampler* VulkanGraphicDevice::get(SamplerHandle handle)
+{
+	return handle.__data;
+}
+
+VulkanSampler::VulkanSampler(const char* name, Filter min, Filter mag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) :
+	Sampler(name, min, mag, mipmapMode, wrapU, wrapV, wrapW, anisotropy),
+	vk_sampler(VK_NULL_HANDLE)
+{
+}
+
+void VulkanSampler::create(VulkanContext& context)
+{
 	VkFilter vk_filterMin = tovk(filterMin);
 	VkFilter vk_filterMag = tovk(filterMag);
 	VkSamplerMipmapMode vk_mipmapMode = tovk(mipmapMode);
@@ -75,30 +98,25 @@ SamplerHandle VulkanGraphicDevice::createSampler(
 	VkSamplerAddressMode vk_wrapV = tovk(wrapV);
 	VkSamplerAddressMode vk_wrapW = tovk(wrapW);
 
-	vk_sampler->vk_sampler = VulkanSampler::createVkSampler(
-		m_context.device, 
-		m_context.physicalDevice,
+	vk_sampler = VulkanSampler::createVkSampler(
+		context.device,
+		context.physicalDevice,
 		vk_filterMin,
 		vk_filterMag,
 		vk_mipmapMode,
-		mipLevels,
+		10U,
 		vk_wrapU,
 		vk_wrapV,
 		vk_wrapW,
 		anisotropy
 	);
-
-	return SamplerHandle{ vk_sampler };
+	setDebugName(context.device, vk_sampler, "VkSampler_", name);
 }
 
-void VulkanGraphicDevice::destroy(SamplerHandle sampler)
+void VulkanSampler::destroy(VulkanContext& context)
 {
-	if (sampler.data == nullptr) return;
-
-	VulkanSampler* vk_sampler = get<VulkanSampler>(sampler);
-	vkDestroySampler(m_context.device, vk_sampler->vk_sampler, nullptr);
-	vk_sampler->vk_sampler = VK_NULL_HANDLE;
-	m_samplerPool.release(vk_sampler);
+	vkDestroySampler(context.device, vk_sampler, nullptr);
+	vk_sampler = VK_NULL_HANDLE;
 }
 
 VkSampler VulkanSampler::createVkSampler(

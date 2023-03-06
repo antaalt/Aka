@@ -176,15 +176,15 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 	if (itProgram != m_programs.end())
 	{
 		ProgramKey programKey = itProgram->first;
-		gfx::ProgramHandle program = itProgram->second;
-		device->destroy(program);
-		if (program.data->vertex != gfx::ShaderHandle::null)
+		gfx::ProgramHandle programHandle = itProgram->second;
+		const gfx::Program* program = device->get(programHandle);
+		if (program->vertex != gfx::ShaderHandle::null)
 		{
 			for (auto shaderKey : programKey.shaders)
 			{
 				if (shaderKey.type == gfx::ShaderType::Vertex && getRefCount(shaderKey) == 1)
 				{
-					device->destroy(program.data->vertex);
+					device->destroy(program->vertex);
 					auto itShader = m_shaders.find(shaderKey);
 					if (itShader != m_shaders.end())
 						m_shaders.erase(itShader);
@@ -194,13 +194,13 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 				}
 			}
 		}
-		if (program.data->fragment != gfx::ShaderHandle::null)
+		if (program->fragment != gfx::ShaderHandle::null)
 		{
 			for (auto shaderKey : programKey.shaders)
 			{
 				if (shaderKey.type == gfx::ShaderType::Fragment && getRefCount(shaderKey) == 1)
 				{
-					device->destroy(program.data->fragment);
+					device->destroy(program->fragment);
 					auto itShader = m_shaders.find(shaderKey);
 					if (itShader != m_shaders.end())
 						m_shaders.erase(itShader);
@@ -210,13 +210,13 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 				}
 			}
 		}
-		if (program.data->geometry != gfx::ShaderHandle::null)
+		if (program->geometry != gfx::ShaderHandle::null)
 		{
 			for (auto shaderKey : programKey.shaders)
 			{
 				if (shaderKey.type == gfx::ShaderType::Geometry && getRefCount(shaderKey) == 1)
 				{
-					device->destroy(program.data->geometry);
+					device->destroy(program->geometry);
 					auto itShader = m_shaders.find(shaderKey);
 					if (itShader != m_shaders.end())
 						m_shaders.erase(itShader);
@@ -226,13 +226,13 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 				}
 			}
 		}
-		if (program.data->compute != gfx::ShaderHandle::null)
+		if (program->compute != gfx::ShaderHandle::null)
 		{
 			for (auto shaderKey : programKey.shaders)
 			{
 				if (shaderKey.type == gfx::ShaderType::Compute && getRefCount(shaderKey) == 1)
 				{
-					device->destroy(program.data->compute);
+					device->destroy(program->compute);
 					auto itShader = m_shaders.find(shaderKey);
 					if (itShader != m_shaders.end())
 						m_shaders.erase(itShader);
@@ -242,6 +242,7 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 				}
 			}
 		}
+		device->destroy(programHandle);
 		m_programs.erase(itProgram);
 	}
 }

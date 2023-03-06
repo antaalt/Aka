@@ -6,6 +6,35 @@
 namespace aka {
 namespace gfx {
 
+VulkanFramebuffer::VulkanFramebuffer(const char* name, uint32_t width, uint32_t height, const FramebufferState& state, const Attachment* colors, const Attachment* depth) :
+	Framebuffer(name, width, height, state, colors, depth),
+	vk_renderpass(VK_NULL_HANDLE),
+	vk_framebuffer(VK_NULL_HANDLE),
+	isSwapchain(false),
+	vk_views{}
+{
+}
+
+void VulkanFramebuffer::create(VulkanGraphicDevice* device)
+{
+	isSwapchain = false;
+	vk_renderpass = device->context().getRenderPass(framebuffer, VulkanRenderPassLayout::Framebuffer);
+	vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(device, vk_renderpass, this, vk_views);
+}
+
+void VulkanFramebuffer::destroy(VulkanGraphicDevice* device)
+{
+	vkDestroyFramebuffer(device->context().device, vk_framebuffer, nullptr);
+	vk_framebuffer = VK_NULL_HANDLE;
+	for (VkImageView& view : vk_views)
+	{
+		vkDestroyImageView(device->context().device, view, nullptr);
+		view = VK_NULL_HANDLE;
+	}
+	vk_views.clear();
+	vk_renderpass = VK_NULL_HANDLE; // Cached. do not destroy here
+}
+
 VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const FramebufferState& framebufferDesc, VulkanRenderPassLayout layout)
 {
 	AKA_ASSERT(layout != VulkanRenderPassLayout::Unknown, "");
@@ -122,12 +151,12 @@ VkRenderPass VulkanFramebuffer::createVkRenderPass(VkDevice device, const Frameb
 	return renderPass;
 }
 
-VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPass renderpass, const Framebuffer* framebuffer, std::vector<VkImageView>& views)
+VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device, VkRenderPass renderpass, const Framebuffer* framebuffer, std::vector<VkImageView>& views)
 {
 	std::vector<VkImageView> vk_attachments(framebuffer->framebuffer.count);
 	for (size_t i = 0; i < framebuffer->framebuffer.count; i++)
 	{
-		const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(framebuffer->colors[i].texture.data);
+		const VulkanTexture* vk_texture = device->getVk<VulkanTexture>(framebuffer->colors[i].texture);
 		// View dependent on flag.
 		if (!vk_texture->hasLayers() || has(framebuffer->colors[i].flag, AttachmentFlag::AttachTextureObject))
 		{
@@ -137,7 +166,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 		{
 			// Create new view for framebuffer.
 			vk_attachments[i] = VulkanTexture::createVkImageView(
-				device,
+				device->context().device,
 				vk_texture->vk_image,
 				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				VulkanContext::tovk(vk_texture->format),
@@ -150,7 +179,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 	}
 	if (framebuffer->hasDepthStencil())
 	{
-		const VulkanTexture* vk_texture = reinterpret_cast<const VulkanTexture*>(framebuffer->depth.texture.data);
+		const VulkanTexture* vk_texture = device->getVk<VulkanTexture>(framebuffer->depth.texture);
 		// View dependent on flag.
 		if (!vk_texture->hasLayers() || has(framebuffer->depth.flag, AttachmentFlag::AttachTextureObject))
 		{
@@ -160,7 +189,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 		{
 			// Create new view for framebuffer.
 			vk_attachments.push_back(VulkanTexture::createVkImageView(
-				device,
+				device->context().device,
 				vk_texture->vk_image,
 				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				VulkanContext::tovk(vk_texture->format),
@@ -184,64 +213,35 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VkDevice device, VkRenderPa
 	framebufferInfo.layers = 1;
 
 	VkFramebuffer vk_framebuffer = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &vk_framebuffer));
+	VK_CHECK_RESULT(vkCreateFramebuffer(device->context().device, &framebufferInfo, nullptr, &vk_framebuffer));
 	return vk_framebuffer;
 }
 
-FramebufferHandle VulkanGraphicDevice::createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth)
+FramebufferHandle VulkanGraphicDevice::createFramebuffer(const char* name, const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
 	if ((attachments == nullptr && depth == nullptr) || count > FramebufferMaxColorAttachmentCount)
 		return FramebufferHandle::null;
 
-	VulkanFramebuffer* framebuffer = m_framebufferPool.acquire();
-	if (framebuffer == nullptr)
-		return FramebufferHandle::null;
-	framebuffer->framebuffer.count = count;
-	framebuffer->width = ~0U;
-	framebuffer->height = ~0U;
-	for (uint32_t i = 0; i < count; i++)
-	{
-		if (attachments[i].texture.data == nullptr)
-			continue;
-		framebuffer->width = min(attachments[i].texture.data->width, framebuffer->width);
-		framebuffer->height = min(attachments[i].texture.data->height, framebuffer->height);
-		framebuffer->colors[i] = attachments[i];
-		framebuffer->framebuffer.colors[i].format = attachments[i].texture.data->format;
-		framebuffer->framebuffer.colors[i].loadOp = attachments[i].loadOp;
-	}
-	if (depth == nullptr)
-	{
-		framebuffer->depth = {};
-		framebuffer->framebuffer.depth.format = TextureFormat::Unknown;
-	}
-	else
-	{
-		framebuffer->depth = *depth;
-		framebuffer->framebuffer.depth.format = depth->texture.data->format;
-		framebuffer->framebuffer.depth.loadOp = depth->loadOp;
-		framebuffer->width = min(depth->texture.data->width, framebuffer->width);
-		framebuffer->height = min(depth->texture.data->height, framebuffer->height);
-	}
+	FramebufferState state = getState(this, attachments, count, depth);
+	uint32_t width = getWidth(this, attachments, count, depth);
+	uint32_t height = getHeight(this, attachments, count, depth);
 
-	framebuffer->isSwapchain = false;
-	framebuffer->vk_renderpass = m_context.getRenderPass(framebuffer->framebuffer, VulkanRenderPassLayout::Framebuffer);
-	framebuffer->vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(m_context.device, framebuffer->vk_renderpass, framebuffer, framebuffer->vk_views);
-	return FramebufferHandle{ framebuffer };
+	VulkanFramebuffer* vk_framebuffer = m_framebufferPool.acquire(name, width, height, state, attachments, depth);
+
+	if (vk_framebuffer == nullptr)
+		return FramebufferHandle::null;
+
+	vk_framebuffer->create(this);
+
+	return FramebufferHandle{ vk_framebuffer };
 }
 void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 {
-	if (framebuffer.data == nullptr)
+	if (framebuffer.__data == nullptr)
 		return;
-	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
-	vkDestroyFramebuffer(m_context.device, vk_framebuffer->vk_framebuffer, nullptr);
-	vk_framebuffer->vk_framebuffer = VK_NULL_HANDLE;
-	for (VkImageView& view : vk_framebuffer->vk_views)
-	{
-		vkDestroyImageView(m_context.device, view, nullptr);
-		view = VK_NULL_HANDLE;
-	}
-	vk_framebuffer->vk_renderpass = VK_NULL_HANDLE; // Cached. do not destroy here
+	VulkanFramebuffer* vk_framebuffer = getVk<VulkanFramebuffer>(framebuffer);
 
+	vk_framebuffer->destroy(this);
 
 	m_framebufferPool.release(vk_framebuffer);
 }
@@ -249,6 +249,11 @@ void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 FramebufferHandle VulkanGraphicDevice::backbuffer(const Frame* frame)
 {
 	return m_swapchain.backbuffers[frame->image.value];
+}
+
+const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)
+{
+	return handle.__data;
 }
 
 };

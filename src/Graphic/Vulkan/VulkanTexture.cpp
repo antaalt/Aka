@@ -396,7 +396,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 
 void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	VulkanTexture* vk_texture = get<VulkanTexture>(texture);
+	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
 	vk_texture->upload(m_context, data, x, y, width, height);
 	// Transition back to shader read only
 	VkImageSubresourceRange subresource{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers };
@@ -418,8 +418,8 @@ void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x
 
 void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 {
-	VulkanTexture* vk_src = get<VulkanTexture>(lhs);
-	VulkanTexture* vk_dst = get<VulkanTexture>(rhs);
+	VulkanTexture* vk_src = getVk<VulkanTexture>(lhs);
+	VulkanTexture* vk_dst = getVk<VulkanTexture>(rhs);
 
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
 	vk_dst->copyFrom(cmd, vk_src);
@@ -428,9 +428,9 @@ void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 
 void VulkanGraphicDevice::destroy(TextureHandle texture)
 {
-	if (texture.data == nullptr) return;
+	if (texture.__data == nullptr) return;
 
-	VulkanTexture* vk_texture = get<VulkanTexture>(texture);
+	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
 	vkDestroyImageView(m_context.device, vk_texture->vk_view, nullptr);
 	vk_texture->vk_view = VK_NULL_HANDLE;
 	if (vk_texture->vk_memory != 0) // If no memory used, image not allocated here (swapchain)
@@ -441,6 +441,11 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 		vk_texture->vk_image = VK_NULL_HANDLE;
 	}
 	m_texturePool.release(vk_texture);
+}
+
+const Texture* VulkanGraphicDevice::get(TextureHandle texture)
+{
+	return texture.__data;
 }
 
 VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags) :

@@ -9,6 +9,8 @@
 namespace aka {
 namespace gfx {
 
+class VulkanGraphicDevice;
+
 struct VulkanShader : Shader
 {
 	VulkanShader(const char* name, ShaderType type);
@@ -27,14 +29,19 @@ struct VulkanProgram : Program
 	//VkDescriptorSet vk_descriptorSet;
 	//VkPipelineLayout vk_pipelineLayout; // soft reference
 
-	static void updateDescriptorSet(VkDevice device, const DescriptorSet* set, const DescriptorSetData& data);
+	static void updateDescriptorSet(VulkanGraphicDevice* device, const DescriptorSet* set, const DescriptorSetData& data);
 	static VkDescriptorSetLayout createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings, VkDescriptorPool* pool);
 	static VkDescriptorSet createVkDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout* layouts, uint32_t count);
 };
 
 struct VulkanDescriptorSet : DescriptorSet
 {
+	VulkanDescriptorSet(const char* name, const ShaderBindingState& bindings);
+
 	VkDescriptorSet vk_descriptorSet;
+
+	void create(VulkanContext& context);
+	void destroy(VulkanContext& context);
 };
 
 

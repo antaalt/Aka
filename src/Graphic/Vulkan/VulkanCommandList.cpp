@@ -22,7 +22,7 @@ CommandList* VulkanGraphicDevice::acquireCommandList()
 	if (result != VK_SUCCESS || cmd == VK_NULL_HANDLE)
 		return nullptr;
 	// TODO store a pool of vulkan command buffer
-	return new VulkanCommandList(m_context.device, cmd);
+	return new VulkanCommandList(this, cmd);
 }
 
 void VulkanGraphicDevice::release(CommandList* cmd)
@@ -90,13 +90,14 @@ VkQueue VulkanGraphicDevice::getQueue(QueueType type)
 	}
 }
 
-VulkanCommandList::VulkanCommandList(VkDevice device, VkCommandBuffer command) :
+VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer command) :
 	vk_graphicPipeline(nullptr),
 	vk_computePipeline(nullptr),
 	vk_framebuffer(nullptr),
 	vk_indices(nullptr),
+	vk_sets{},
 	vk_vertices(nullptr),
-	vk_device(device),
+	device(device),
 	vk_command(command),
 	m_recording(false)
 {
@@ -128,7 +129,7 @@ void VulkanCommandList::reset()
 
 void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const ClearState& clear)
 {
-	VulkanFramebuffer* vk_framebuffer = get<VulkanFramebuffer>(framebuffer);
+	VulkanFramebuffer* vk_framebuffer = device->getVk<VulkanFramebuffer>(framebuffer);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 
 	// TODO clear mask should be set at renderpass level.
@@ -148,10 +149,11 @@ void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const Cle
 	// Transition to attachment optimal if shader resource
 	if (vk_framebuffer->hasDepthStencil())
 	{
-		AKA_ASSERT(has(vk_framebuffer->depth.texture.data->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(vk_framebuffer->depth.texture.data->flags, TextureFlag::ShaderResource))
+		const Texture* depthTexture = device->get(vk_framebuffer->depth.texture);
+		AKA_ASSERT(has(depthTexture->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(depthTexture->flags, TextureFlag::ShaderResource))
 		{
-			VulkanTexture* vk_texture = get<VulkanTexture>(vk_framebuffer->depth.texture);
+			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
 			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 			{
 				vk_texture->transitionImageLayout(
@@ -169,7 +171,7 @@ void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const Cle
 	for ( uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
 	{
 		const Attachment& att = vk_framebuffer->colors[i];
-		VulkanTexture* vk_texture = get<VulkanTexture>(att.texture);
+		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(att.texture);
 		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
 		if (has(vk_texture->flags, TextureFlag::ShaderResource))
 		{
@@ -209,10 +211,11 @@ void VulkanCommandList::endRenderPass()
 	// Transition to shader resource optimal
 	if (vk_framebuffer->hasDepthStencil())
 	{
-		AKA_ASSERT(has(vk_framebuffer->depth.texture.data->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(vk_framebuffer->depth.texture.data->flags, TextureFlag::ShaderResource))
+		const Texture* depthTexture = device->get(vk_framebuffer->depth.texture);
+		AKA_ASSERT(has(depthTexture->flags, TextureFlag::RenderTarget), "Invalid attachment");
+		if (has(depthTexture->flags, TextureFlag::ShaderResource))
 		{
-			VulkanTexture* vk_texture = get<VulkanTexture>(vk_framebuffer->depth.texture);
+			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
 			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
 			{
 				vk_texture->insertMemoryBarrier(
@@ -234,7 +237,7 @@ void VulkanCommandList::endRenderPass()
 	for (uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
 	{
 		const Attachment& att = vk_framebuffer->colors[i];
-		VulkanTexture* vk_texture = get<VulkanTexture>(att.texture);
+		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(att.texture);
 		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
 		if (has(vk_texture->flags, TextureFlag::ShaderResource))
 		{
@@ -265,7 +268,7 @@ void VulkanCommandList::endRenderPass()
 void VulkanCommandList::bindPipeline(GraphicPipelineHandle pipeline)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanGraphicPipeline* vk_pipeline = get<VulkanGraphicPipeline>(pipeline);
+	VulkanGraphicPipeline* vk_pipeline = device->getVk<VulkanGraphicPipeline>(pipeline);
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	vkCmdBindPipeline(vk_command, bindPoint, vk_pipeline->vk_pipeline);
 	
@@ -276,7 +279,7 @@ void VulkanCommandList::bindPipeline(GraphicPipelineHandle pipeline)
 void VulkanCommandList::bindPipeline(ComputePipelineHandle pipeline)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanComputePipeline* vk_pipeline = get<VulkanComputePipeline>(pipeline);
+	VulkanComputePipeline* vk_pipeline = device->getVk<VulkanComputePipeline>(pipeline);
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 	vkCmdBindPipeline(vk_command, bindPoint, vk_pipeline->vk_pipeline);
 
@@ -292,14 +295,15 @@ void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle se
 	bool graphicPipeline = this->vk_graphicPipeline != nullptr;
 	bool computePipeline = this->vk_computePipeline != nullptr;
 	VkPipelineBindPoint bindPoint = graphicPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_MAX_ENUM;
-	if (set.data->bindings.count > 0)
+	const DescriptorSet* descriptorSet = device->get(set);
+	if (descriptorSet->bindings.count > 0)
 	{
 		VkPipelineLayout vk_layout = VK_NULL_HANDLE;
 		if (vk_graphicPipeline)
 			vk_layout = vk_graphicPipeline->vk_pipelineLayout;
 		else if (vk_computePipeline)
 			vk_layout = vk_computePipeline->vk_pipelineLayout;
-		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(set.data);
+		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(descriptorSet);
 		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_layout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
 		this->vk_sets[index] = vk_material;
 	}
@@ -320,9 +324,10 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 		vk_layout = vk_computePipeline->vk_pipelineLayout;
 	for (uint32_t i = 0; i < count; i++)
 	{
-		if (sets[i].data->bindings.count > 0)
+		const DescriptorSet* descriptorSet = device->get(sets[i]);
+		if (descriptorSet->bindings.count > 0)
 		{
-			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(sets[i].data);
+			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(descriptorSet);
 			vk_sets[i] = vk_set->vk_descriptorSet;
 			this->vk_sets[i] = vk_set;
 		}
@@ -340,7 +345,7 @@ void VulkanCommandList::bindVertexBuffer(const BufferHandle* buffers, uint32_t b
 	VkDeviceSize vk_offsets[VertexMaxAttributeCount]{};
 	for (size_t i = 0; i < bindingCount; i++)
 	{
-		VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffers[i]);
+		VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffers[i]);
 		vk_buffers[i] = vk_buffer->vk_buffer;
 		vk_offsets[i] = offsets[i];
 	}
@@ -350,7 +355,7 @@ void VulkanCommandList::bindVertexBuffer(const BufferHandle* buffers, uint32_t b
 void VulkanCommandList::bindIndexBuffer(BufferHandle buffer, IndexFormat format, uint32_t offset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanBuffer* vk_buffer = get<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffer);
 	VkBuffer buffers = vk_buffer->vk_buffer;
 	VkIndexType indexType = VulkanContext::tovk(format);
 	vkCmdBindIndexBuffer(vk_command, buffers, offset, indexType);
@@ -418,8 +423,8 @@ void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t grou
 void VulkanCommandList::copy(TextureHandle src, TextureHandle dst)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanTexture* vk_src = get<VulkanTexture>(src);
-	VulkanTexture* vk_dst = get<VulkanTexture>(dst);
+	VulkanTexture* vk_src = device->getVk<VulkanTexture>(src);
+	VulkanTexture* vk_dst = device->getVk<VulkanTexture>(dst);
 
 	vk_dst->copyFrom(vk_command, vk_src);
 }
@@ -427,8 +432,8 @@ void VulkanCommandList::copy(TextureHandle src, TextureHandle dst)
 void VulkanCommandList::blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanTexture* vk_src = get<VulkanTexture>(src);
-	VulkanTexture* vk_dst = get<VulkanTexture>(dst);
+	VulkanTexture* vk_src = device->getVk<VulkanTexture>(src);
+	VulkanTexture* vk_dst = device->getVk<VulkanTexture>(dst);
 
 	vk_dst->blitFrom(vk_command, vk_src, srcRegion, dstRegion, filter);
 }

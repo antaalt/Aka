@@ -17,13 +17,6 @@
 namespace aka {
 namespace gfx {
 
-template <typename T, typename Base>
-static T* get(ResourceHandle<Base> handle)
-{
-	static_assert(std::is_base_of<Base, T>::value, "Handle is not valid for specified type.");
-	return const_cast<T*>(reinterpret_cast<const T*>(handle.data));
-}
-
 class VulkanGraphicDevice : public GraphicDevice
 {
 public:
@@ -41,14 +34,19 @@ public:
 	// Shaders
 	ShaderHandle createShader(ShaderType type, const void* data, size_t size) override;
 	void destroy(ShaderHandle handle) override;
+	const Shader* get(ShaderHandle handle) override;
 
 	// Programs
 	ProgramHandle createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
 	ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
 	void destroy(ProgramHandle handle) override;
-	DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) override;
+	const Program* get(ProgramHandle handle) override;
+
+	// Descriptors
+	DescriptorSetHandle createDescriptorSet(const char* name, const ShaderBindingState& bindings) override;
 	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
 	void destroy(DescriptorSetHandle set) override;
+	const DescriptorSet* get(DescriptorSetHandle set) override;
 
 	// Textures
 	TextureHandle createTexture(
@@ -60,23 +58,25 @@ public:
 		TextureFlag flags,
 		const void* const* data
 	) override;
-	void upload(TextureHandle texture, const void*const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
+	void upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 	void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) override;
 	void copy(TextureHandle lhs, TextureHandle rhs) override;
 	void destroy(TextureHandle texture) override;
+	const Texture* get(TextureHandle texture) override;
 
 	// Sampler
 	SamplerHandle createSampler(
-		Filter filterMin, 
-		Filter filterMag, 
-		SamplerMipMapMode mipmapMode, 
-		uint32_t mipLevels,
-		SamplerAddressMode wrapU, 
-		SamplerAddressMode wrapV, 
-		SamplerAddressMode wrapW, 
+		const char* name,
+		Filter filterMin,
+		Filter filterMag,
+		SamplerMipMapMode mipmapMode,
+		SamplerAddressMode wrapU,
+		SamplerAddressMode wrapV,
+		SamplerAddressMode wrapW,
 		float anisotropy
 	) override;
 	void destroy(SamplerHandle sampler) override;
+	const Sampler* get(SamplerHandle handle) override;
 
 	// Buffer
 	BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
@@ -85,11 +85,13 @@ public:
 	void* map(BufferHandle buffer, BufferMap map) override;
 	void unmap(BufferHandle buffer) override;
 	void destroy(BufferHandle buffer) override;
+	const Buffer* get(BufferHandle buffer) override;
 
 	// Framebuffer
-	FramebufferHandle createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) override;
+	FramebufferHandle createFramebuffer(const char* name, const Attachment* attachments, uint32_t count, const Attachment* depth) override;
 	void destroy(FramebufferHandle handle) override;
 	FramebufferHandle backbuffer(const Frame* frame) override;
+	const Framebuffer* get(FramebufferHandle handle) override;
 
 	// Pipeline
 	GraphicPipelineHandle createGraphicPipeline(
@@ -112,6 +114,8 @@ public:
 	) override;
 	void destroy(GraphicPipelineHandle handle) override;
 	void destroy(ComputePipelineHandle handle) override;
+	const GraphicPipeline* get(GraphicPipelineHandle handle) override;
+	const ComputePipeline* get(ComputePipelineHandle handle) override;
 
 	// Command list
 	CommandList* acquireCommandList() override;
@@ -127,6 +131,14 @@ public:
 
 	// Tools
 	void screenshot(void* data) override;
+
+
+	template <typename T, typename Base>
+	T* getVk(ResourceHandle<Base> handle)
+	{
+		static_assert(std::is_base_of<Base, T>::value, "Handle is not valid for specified type.");
+		return const_cast<T*>(reinterpret_cast<const T*>(get(handle)));
+	}
 
 	VulkanContext& context() { return m_context; }
 	VulkanSwapchain& swapchain() { return m_swapchain; }

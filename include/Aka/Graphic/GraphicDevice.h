@@ -78,25 +78,29 @@ public:
 	// Shaders
 	virtual ShaderHandle createShader(ShaderType type, const void* data, size_t size) = 0;
 	virtual void destroy(ShaderHandle handle) = 0;
+	virtual const Shader* get(ShaderHandle handle) = 0;
 
 	// Programs
 	virtual ProgramHandle createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
 	virtual ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) = 0;
 	virtual void destroy(ProgramHandle program) = 0;
+	virtual const Program* get(ProgramHandle program) = 0;
 
 	// Descriptor sets
-	virtual DescriptorSetHandle createDescriptorSet(const ShaderBindingState& bindings) = 0;
+	virtual DescriptorSetHandle createDescriptorSet(const char* name, const ShaderBindingState& bindings) = 0;
 	virtual void update(DescriptorSetHandle set, const DescriptorSetData& data) = 0;
 	virtual void destroy(DescriptorSetHandle set) = 0;
+	virtual const DescriptorSet* get(DescriptorSetHandle set) = 0;
 
 	// Device
 	virtual uint32_t getPhysicalDeviceCount() = 0;
 	virtual const PhysicalDevice* getPhysicalDevice(uint32_t index) = 0;
 
 	// Framebuffer
-	virtual FramebufferHandle createFramebuffer(const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
+	virtual FramebufferHandle createFramebuffer(const char* name, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
 	virtual void destroy(FramebufferHandle framebuffer) = 0;
 	virtual FramebufferHandle backbuffer(const Frame* frame) = 0;
+	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
 
 	// Buffers
 	virtual BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
@@ -105,7 +109,7 @@ public:
 	virtual void* map(BufferHandle buffer, BufferMap map) = 0;
 	virtual void unmap(BufferHandle buffer) = 0;
 	virtual void destroy(BufferHandle buffer) = 0;
-	//virtual const Buffer* get(BufferHandle handle) = 0;
+	virtual const Buffer* get(BufferHandle handle) = 0;
 
 	// Textures
 	virtual TextureHandle createTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr) = 0;
@@ -113,10 +117,12 @@ public:
 	virtual void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) = 0;
 	virtual void copy(TextureHandle lhs, TextureHandle rhs) = 0;
 	virtual void destroy(TextureHandle texture) = 0;
-	//virtual const Texture* get(TextureHandle handle) = 0;
+	virtual const Texture* get(TextureHandle handle) = 0;
 
-	virtual SamplerHandle createSampler(Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, uint32_t mipLevels, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
+	// Samplers
+	virtual SamplerHandle createSampler(const char* name, Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
 	virtual void destroy(SamplerHandle sampler) = 0;
+	virtual const Sampler* get(SamplerHandle handle) = 0;
 
 	// Pipelines
 	virtual GraphicPipelineHandle createGraphicPipeline(
@@ -139,6 +145,8 @@ public:
 	) = 0;
 	virtual void destroy(GraphicPipelineHandle handle) = 0;
 	virtual void destroy(ComputePipelineHandle handle) = 0;
+	virtual const GraphicPipeline* get(GraphicPipelineHandle handle) = 0;
+	virtual const ComputePipeline* get(ComputePipelineHandle handle) = 0;
 
 	// Command
 	virtual CommandList* acquireCommandList() = 0;

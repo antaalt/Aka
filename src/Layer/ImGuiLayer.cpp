@@ -105,7 +105,7 @@ void ImGuiLayer::onLayerCreate()
 		VK_CHECK_RESULT(err);
 	};
 
-	ImGui_ImplVulkan_Init(&info, gfx::get<gfx::VulkanFramebuffer>(device->swapchain().backbuffers[0])->vk_renderpass);
+	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanFramebuffer>(device->swapchain().backbuffers[0])->vk_renderpass);
 
 #endif
 
@@ -262,7 +262,7 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
 	cmd->beginRenderPass(device->backbuffer(frame), gfx::ClearState{});
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->vk_command);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getCommandBuffer());
 	cmd->endRenderPass();
 #endif
 }
