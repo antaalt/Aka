@@ -142,7 +142,9 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 
 RenderPassHandle VulkanGraphicDevice::createRenderPass(const char* name, const RenderPassState& state)
 {
-	return RenderPassHandle();
+	VulkanRenderPass* vk_renderPass = m_renderPassPool.acquire(name, state);
+	vk_renderPass->create(this);
+	return RenderPassHandle{ vk_renderPass };
 }
 
 void VulkanGraphicDevice::destroy(RenderPassHandle handle)

@@ -191,13 +191,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	backbufferTextures.resize(imageCount);
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, vk_images.data()));
 
-	// Should be created at runtime depending on cost...
-	RenderPassState finalRenderPass{};
-	finalRenderPass.addColor(depthFormat, AttachmentLoadOp::Load, AttachmentStoreOp::Store, ResourceAccessType::Undefined, ResourceAccessType::Undefined);
-	finalRenderPass.addColor(colorFormat, AttachmentLoadOp::Load, AttachmentStoreOp::Store, ResourceAccessType::Undefined, ResourceAccessType::Undefined);
-
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context->device, context->commandPool);
-	VkRenderPass vk_renderPass = context->getRenderPass(finalRenderPass);
 	for (size_t i = 0; i < imageCount; i++)
 	{
 		// Create swapchain view
@@ -284,20 +278,27 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 
 void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 {
-	VulkanContext* context = &device->m_context;
+	for (auto backbuffer : backbuffers)
+	{
+		backbuffer.first; // TODO: Clear renderpass ref count
+		for (FramebufferHandle fb : backbuffer.second.handles)
+		{
+			device->destroy(fb);
+		}
+	}
 	for (BackBufferTextures backbuffer : backbufferTextures)
 	{
 		device->destroy(backbuffer.color);
 		device->destroy(backbuffer.depth);
 	}
 
-	vkDestroySwapchainKHR(context->device, swapchain, nullptr);
+	vkDestroySwapchainKHR(device->getVkDevice(), swapchain, nullptr);
 	for (VulkanFrame& frame : frames)
 	{
-		vkDestroySemaphore(context->device, frame.acquireSemaphore, nullptr);
-		vkDestroySemaphore(context->device, frame.presentSemaphore, nullptr);
-		vkDestroyFence(context->device, frame.acquireFence, nullptr);
-		vkDestroyFence(context->device, frame.presentFence, nullptr);
+		vkDestroySemaphore(device->getVkDevice(), frame.acquireSemaphore, nullptr);
+		vkDestroySemaphore(device->getVkDevice(), frame.presentSemaphore, nullptr);
+		vkDestroyFence(device->getVkDevice(), frame.acquireFence, nullptr);
+		vkDestroyFence(device->getVkDevice(), frame.presentFence, nullptr);
 	}
 }
 
@@ -397,11 +398,12 @@ BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, 
 		Attachment color = Attachment{ backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
 		Attachment depth = Attachment{ backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
 		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, &color, 1, &depth);
-		backbuffer.handles.append(fb);
+		backbuffer.handles.push_back(fb);
 	}
 	auto it = backbuffers.insert(std::make_pair(device->get(handle)->state, backbuffer));
 	AKA_ASSERT(it.second, "Failed to create backbuffer");
-	return BackbufferHandle{ handle.__data };
+	// TODO this might get invalidated when growing the map...
+	return BackbufferHandle{ &it.first->second }; // backbuffer handle use render pass handle for now
 }
 
 void VulkanFrame::wait(VkDevice device)

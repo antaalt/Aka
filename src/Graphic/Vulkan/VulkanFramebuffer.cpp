@@ -7,8 +7,8 @@
 namespace aka {
 namespace gfx {
 
-VulkanFramebuffer::VulkanFramebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle renderPass, const Attachment* colors, const Attachment* depth) :
-	Framebuffer(name, width, height, renderPass, colors, depth),
+VulkanFramebuffer::VulkanFramebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle renderPass, const Attachment* colors, uint32_t count, const Attachment* depth) :
+	Framebuffer(name, width, height, renderPass, colors, count, depth),
 	vk_framebuffer(VK_NULL_HANDLE),
 	vk_views{}
 {
@@ -100,13 +100,14 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device
 
 FramebufferHandle VulkanGraphicDevice::createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
+	AKA_ASSERT(handle != RenderPassHandle::null, "No render pass set.");
 	if ((attachments == nullptr && depth == nullptr) || count > FramebufferMaxColorAttachmentCount)
 		return FramebufferHandle::null;
 
 	uint32_t width = getWidth(this, attachments, count, depth);
 	uint32_t height = getHeight(this, attachments, count, depth);
 
-	VulkanFramebuffer* vk_framebuffer = m_framebufferPool.acquire(name, width, height, handle, attachments, depth);
+	VulkanFramebuffer* vk_framebuffer = m_framebufferPool.acquire(name, width, height, handle, attachments, count, depth);
 
 	if (vk_framebuffer == nullptr)
 		return FramebufferHandle::null;

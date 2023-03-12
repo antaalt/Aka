@@ -30,6 +30,7 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	AKA_ASSERT(m_graphicPipelinePool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_descriptorPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_renderPassPool.count() == 0, "Resource destroy missing");
 	m_texturePool.release([this](VulkanTexture& res) { this->destroy(TextureHandle{ &res }); });
 	m_samplerPool.release([this](VulkanSampler& res) { this->destroy(SamplerHandle{ &res }); });
 	m_bufferPool.release([this](VulkanBuffer& res) { this->destroy(BufferHandle{ &res }); });
@@ -39,6 +40,7 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	m_graphicPipelinePool.release([this](VulkanGraphicPipeline& res) { this->destroy(GraphicPipelineHandle{ &res }); });
 	m_computePipelinePool.release([this](VulkanComputePipeline& res) { this->destroy(ComputePipelineHandle{ &res }); });
 	m_descriptorPool.release([this](const VulkanDescriptorSet& res) { this->destroy(DescriptorSetHandle{ &res }); });
+	m_renderPassPool.release([this](const VulkanRenderPass& res) { this->destroy(RenderPassHandle{ &res }); });
 	// Destroy context
 	m_context.shutdown();
 }

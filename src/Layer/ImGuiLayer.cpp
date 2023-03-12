@@ -269,8 +269,9 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
 	gfx::FramebufferHandle framebuffer = device->get(m_renderData->backbuffer, frame);
-	//cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
-	//cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
+	const gfx::Framebuffer* fb = device->get(framebuffer);
+	cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
+	cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
 	cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getCommandBuffer());
 	cmd->endRenderPass();

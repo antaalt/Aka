@@ -11,7 +11,7 @@ class VulkanGraphicDevice;
 
 struct VulkanFramebuffer : Framebuffer
 {
-	VulkanFramebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, const Attachment* depth);
+	VulkanFramebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, uint32_t count, const Attachment* depth);
 
 	VkFramebuffer vk_framebuffer;
 	std::vector<VkImageView> vk_views; // specific views to delete with framebuffer

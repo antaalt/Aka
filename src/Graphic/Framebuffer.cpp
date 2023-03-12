@@ -44,11 +44,12 @@ uint32_t getHeight(GraphicDevice* device, const Attachment* colors, uint32_t cou
 	return height;
 }
 
-Framebuffer::Framebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, const Attachment* depth) :
+Framebuffer::Framebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, uint32_t count, const Attachment* depth) :
 	Resource(name, ResourceType::Framebuffer),
 	renderPass(handle),
 	width(width),
-	height(height)
+	height(height),
+	count(count)
 {
 	memcpy(this->colors, colors, sizeof(Attachment) * count);
 	if (depth)

@@ -51,7 +51,7 @@ struct RenderPassState
 
 	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
 
-	RenderPassState& addColor(TextureFormat format, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Attachment)
+	RenderPassState& addColor(TextureFormat format, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Attachment)
 	{
 		AKA_ASSERT(count + 1 < FramebufferMaxColorAttachmentCount, "Too many attachments");
 		colors[count++] = Attachment{ format, loadOp, storeOp, initialLayout, finalLayout };

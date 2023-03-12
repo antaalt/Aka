@@ -52,7 +52,10 @@ template <typename T>
 struct ResourceHandle
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
-	const void* __data; // TODO should be obfuscated & renamed desc.
+	union {
+		const void* __data; // TODO should be obfuscated & renamed desc.
+		const T* __typedData; // For debug
+	};
 	static const ResourceHandle<T> null;
 };
 

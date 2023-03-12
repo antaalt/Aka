@@ -60,7 +60,7 @@ struct Frame
 struct Backbuffer : Resource
 { 
 	Backbuffer(const char* name) : Resource(name, ResourceType::Framebuffer) {}
-	Vector<FramebufferHandle> handles;
+	std::vector<FramebufferHandle> handles;
 };
 using BackbufferHandle = ResourceHandle<Backbuffer>;
 

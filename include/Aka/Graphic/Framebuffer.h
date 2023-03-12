@@ -32,9 +32,9 @@ using FramebufferHandle = ResourceHandle<Framebuffer>;
 
 struct Framebuffer : Resource
 {
-	Framebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, const Attachment* depth);
+	Framebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, uint32_t count, const Attachment* depth);
 
-	uint32_t width, height;
+	uint32_t width, height; // TODO: Should move this out.
 
 	RenderPassHandle renderPass; // Pass linked to fb
 
