@@ -16,7 +16,7 @@ struct ShaderData
 	Vector<gfx::ShaderBindingState> sets;
 	gfx::VertexBindingState vertices;
 };
-// TODO define to create the key in shaders directly.
+
 struct ShaderKey
 {
 	Path path;
@@ -25,17 +25,20 @@ struct ShaderKey
 	ShaderType type;
 	String entryPoint;
 
-	bool operator<(const ShaderKey& lhs) const;
-	bool operator==(const ShaderKey& lhs) const;
+	static ShaderKey generate(const Path& path, ShaderType type);
+	static ShaderKey fromString(const String& shader, ShaderType type);
 };
 
 struct ProgramKey
 {
 	Vector<ShaderKey> shaders;
-
-	bool operator<(const ProgramKey& lhs) const;
-	bool operator==(const ProgramKey& lhs) const;
 };
+
+bool operator<(const ShaderKey& lhs, const ShaderKey& rhs);
+bool operator==(const ShaderKey& lhs, const ShaderKey& rhs);
+
+bool operator<(const ProgramKey& lhs, const ProgramKey& rhs);
+bool operator==(const ProgramKey& lhs, const ProgramKey& rhs);
 
 };
 

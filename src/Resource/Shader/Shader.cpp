@@ -1,35 +1,64 @@
 #include <Aka/Resource/Shader/Shader.h>
+#include <Aka/OS/OS.h>
 
 namespace aka {
 
-bool ShaderKey::operator<(const ShaderKey& lhs) const
+ShaderKey ShaderKey::generate(const Path& path, ShaderType type)
 {
-	AKA_NOT_IMPLEMENTED;
-	return false;
+	return ShaderKey{
+		path,
+		Vector<String>(),
+		type,
+		"main"
+	};
 }
-bool ShaderKey::operator==(const ShaderKey& lhs) const
+ShaderKey ShaderKey::fromString(const String& shader, ShaderType type)
 {
-	return (entryPoint == lhs.entryPoint) && (macros == lhs.macros) && (type == lhs.type) && (path == lhs.path);
+	// Save shader in temp folder to load it.
+	Path temporaryFile = OS::temp();
+	temporaryFile = temporaryFile / "tmp-shaders";
+	bool written = OS::Directory::create(temporaryFile);
+	AKA_ASSERT(written, "Failed to write folder");
+	std::string fileName = std::to_string(std::hash<String>()(shader)) + ".shader";
+	temporaryFile = temporaryFile / fileName.c_str();
+	written = OS::File::write(temporaryFile, shader);
+	AKA_ASSERT(written, "Failed to write shader");
+	return ShaderKey{
+		temporaryFile,
+		Vector<String>(),
+		type,
+		"main"
+	};
 }
 
-bool ProgramKey::operator<(const ProgramKey& lhs) const
+bool operator<(const ShaderKey& lhs, const ShaderKey& rhs)
 {
 	AKA_NOT_IMPLEMENTED;
 	return false;
 }
-bool ProgramKey::operator==(const ProgramKey& lhs) const
+bool operator==(const ShaderKey& lhs, const ShaderKey& rhs)
 {
-	if (shaders.size() != lhs.shaders.size())
+	return (rhs.entryPoint == lhs.entryPoint) && (rhs.macros == lhs.macros) && (rhs.type == lhs.type) && (rhs.path == lhs.path);
+}
+
+bool operator<(const ProgramKey& lhs, const ProgramKey& rhs)
+{
+	AKA_NOT_IMPLEMENTED;
+	return false;
+}
+bool operator==(const ProgramKey& lhs, const ProgramKey& rhs)
+{
+	if (rhs.shaders.size() != lhs.shaders.size())
 		return false;
-	for (uint32_t i = 0; i < shaders.size(); i++)
+	for (uint32_t i = 0; i < rhs.shaders.size(); i++)
 	{
-		if (shaders[i].entryPoint != lhs.shaders[i].entryPoint)
+		if (rhs.shaders[i].entryPoint != lhs.shaders[i].entryPoint)
 			return false;
-		if (shaders[i].type != lhs.shaders[i].type)
+		if (rhs.shaders[i].type != lhs.shaders[i].type)
 			return false;
-		if (shaders[i].macros != lhs.shaders[i].macros)
+		if (rhs.shaders[i].macros != lhs.shaders[i].macros)
 			return false;
-		if (shaders[i].path != lhs.shaders[i].path)
+		if (rhs.shaders[i].path != lhs.shaders[i].path)
 			return false;
 	}
 	return true;

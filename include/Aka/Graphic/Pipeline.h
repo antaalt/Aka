@@ -102,7 +102,8 @@ struct VertexBindingState
 	static uint32_t size(IndexFormat format);
 	static VertexBindingState empty() { return VertexBindingState{}; }
 
-	VertexBindingState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset) {
+	VertexBindingState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset = 0)
+	{
 		AKA_ASSERT(count + 1 < VertexMaxAttributeCount, "Too many vertex attributes");
 		offsets[count] = offset; // TODO compute offset here ?
 		attributes[count++] = VertexAttribute{ semantic, format, type };

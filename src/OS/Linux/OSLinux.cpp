@@ -176,6 +176,30 @@ bool OS::setcwd(const Path& path)
 	return chdir(path.cstr()) == 0;
 }
 
+Path OS::temp()
+{
+	static const uin32_t envNum = 4;
+	static const char* envVar[envNum] = {
+		"TMPDIR",
+		"TMP",
+		"TEMP",
+		"TEMPDIR",
+	}
+	String folder;
+	for (uin32_t i = 0; i < envNum; i++)
+	{
+		char* f = getenv(envVar[i]);
+		if (f != nullptr)
+		{
+			folder = f;
+			break;
+		}
+	}
+	if (folder.empty())
+		folder = "/tmp";
+	return Path(folder + "/aka/");
+}
+
 const char* fileMode(FileMode mode, FileType type)
 {
 	switch (type)

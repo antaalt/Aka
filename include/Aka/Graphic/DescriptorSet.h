@@ -11,15 +11,17 @@ namespace gfx {
 
 struct DescriptorSetData
 {
-	// TODO do not manipulate data directly
+	DescriptorSetData();
+
+	DescriptorSetData& addUniformBuffer(BufferHandle buffer);
+	DescriptorSetData& addStorageBuffer(BufferHandle buffer);
+	DescriptorSetData& addSampledImage(TextureHandle texture, SamplerHandle sampler);
+	DescriptorSetData& addStorageImage(TextureHandle texture);
+
+	uint32_t count;
 	BufferHandle buffers[ShaderMaxBindingCount];
 	TextureHandle images[ShaderMaxBindingCount];
 	SamplerHandle samplers[ShaderMaxBindingCount];
-
-	void setUniformBuffer(uint32_t slot, BufferHandle buffer);
-	void setStorageBuffer(uint32_t slot, BufferHandle buffer);
-	void setSampledImage(uint32_t slot, TextureHandle texture, SamplerHandle sampler);
-	void setStorageImage(uint32_t slot, TextureHandle texture);
 };
 
 struct DescriptorSet;

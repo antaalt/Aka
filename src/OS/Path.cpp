@@ -71,6 +71,11 @@ bool Path::operator!=(const Path& rhs) const
 	return OS::normalize(*this).m_string != OS::normalize(rhs).m_string;
 }
 
+Path Path::operator/(const Path& rhs)
+{
+	return Path(m_string + '/' + rhs.m_string);
+}
+
 Path Path::up() const
 {
 	const size_t separatorCount = std::count(m_string.begin(), m_string.end(), '/');

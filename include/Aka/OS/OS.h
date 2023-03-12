@@ -18,6 +18,8 @@ struct OS
 	static Path cwd();
 	// Set the current working directory
 	static bool setcwd(const Path& path);
+	// Get the temporary folder directory
+	static Path temp();
 	// Enumerate all path in a directory.
 	static std::vector<Path> enumerate(const Path& path);
 

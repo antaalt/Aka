@@ -82,7 +82,11 @@ bool OS::Directory::create(const Path& path)
 		if (pos == str.length() || pos == String::invalid)
 			return true;
 		String p = str.substr(0, pos);
+		if (p.length() == 2 && p[1] == ':') // skip C:/ D:/
+			continue;
 		if (p == "." || p == ".." || p == "/" || p == "\\")
+			continue;
+		if (OS::Directory::exist(p))
 			continue;
 		StringWide wstr = Utf8ToWchar(p.cstr());
 		if (!CreateDirectory(wstr.cstr(), NULL))
@@ -292,6 +296,25 @@ bool OS::setcwd(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	return _wchdir(wstr.cstr()) == 0;
+}
+
+Path OS::temp()
+{
+	// TODO should cache this path somehow ?
+	StringWide wstr;
+	DWORD length = GetTempPath2(0, nullptr);
+	AKA_ASSERT(length != 0, "Invalid temporary path");
+	wstr.resize(length);
+	DWORD length2 = GetTempPath2(length, wstr.cstr());
+	AKA_ASSERT(length == length2 + 1, "Invalid temporary path");
+	String str = WcharToUtf8(wstr.cstr()) + "/aka/";
+	Path path = OS::normalize(str);
+	if (!OS::Directory::exist(path))
+	{
+		bool created = OS::Directory::create(path);
+		AKA_ASSERT(created, "Failed to create temporary dir");
+	}
+	return path;
 }
 
 const wchar_t* fileMode(FileMode mode, FileType type)

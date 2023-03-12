@@ -23,6 +23,8 @@ struct Path
 	bool operator==(const Path& rhs) const;
 	bool operator!=(const Path& rhs) const;
 
+	Path operator/(const Path& rhs);
+
 	// Go to parent path
 	Path up() const;
 
