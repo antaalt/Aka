@@ -35,6 +35,8 @@ namespace aka {
 struct ImGuiRenderData
 {
 	VkDescriptorPool descriptorPool;
+	gfx::RenderPassHandle renderPass;
+	gfx::BackbufferHandle backbuffer;
 };
 #else
 struct ImGuiRenderData {};
@@ -87,16 +89,21 @@ void ImGuiLayer::onLayerCreate()
 		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
 		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
 		pool_info.pPoolSizes = pool_sizes;
-		VK_CHECK_RESULT(vkCreateDescriptorPool(context.device, &pool_info, nullptr, &m_renderData->descriptorPool));
+		VK_CHECK_RESULT(vkCreateDescriptorPool(device->getVkDevice(), &pool_info, nullptr, &m_renderData->descriptorPool));
+		//gfx::VulkanProgram::createVkDescriptorSet()
+	}
+	{
+		m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load);
+		m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
 	}
 
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplVulkan_InitInfo info{};
-	info.Instance = context.instance;
-	info.PhysicalDevice = context.physicalDevice;
-	info.Device = context.device;
-	info.QueueFamily = context.graphicQueue.index;
-	info.Queue = context.graphicQueue.queue;
+	info.Instance = device->getVkInstance();
+	info.PhysicalDevice = device->getVkPhysicalDevice();
+	info.Device = device->getVkDevice();
+	info.QueueFamily = device->getVkQueueIndex(gfx::QueueType::Graphic);
+	info.Queue = device->getQueue(gfx::QueueType::Graphic);
 	info.PipelineCache = VK_NULL_HANDLE;
 	info.DescriptorPool = m_renderData->descriptorPool;
 	info.MinImageCount = 2; // >= 2
@@ -105,7 +112,7 @@ void ImGuiLayer::onLayerCreate()
 		VK_CHECK_RESULT(err);
 	};
 
-	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanFramebuffer>(device->swapchain().backbuffers[0])->vk_renderpass);
+	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanRenderPass>(m_renderData->renderPass)->vk_renderpass);
 
 #endif
 
@@ -261,7 +268,10 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
-	cmd->beginRenderPass(device->backbuffer(frame), gfx::ClearState{});
+	gfx::FramebufferHandle framebuffer = device->get(m_renderData->backbuffer, frame);
+	//cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
+	//cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
+	cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getCommandBuffer());
 	cmd->endRenderPass();
 #endif

@@ -249,7 +249,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	uint32_t shaderCount,
 	PrimitiveType primitive,
 	const VertexBindingState& vertices,
-	const FramebufferState& framebuffer,
+	const RenderPassState& renderPass,
 	const DepthState& depth,
 	const StencilState& stencil,
 	const ViewportState& viewport,
@@ -310,8 +310,8 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	//depthStencilInfo.maxDepthBounds = 1.0f;
 	depthStencilInfo.stencilTestEnable = stencil.isEnabled() ? VK_TRUE : VK_FALSE;
 
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(framebuffer.count, VkPipelineColorBlendAttachmentState{});
-	for (uint32_t i = 0; i < framebuffer.count; i++)
+	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPass.count, VkPipelineColorBlendAttachmentState{});
+	for (uint32_t i = 0; i < renderPass.count; i++)
 	{
 		colorBlendAttachments[i].colorWriteMask = tovk(blend.mask);
 		colorBlendAttachments[i].blendEnable = blend.isEnabled() ? VK_TRUE : VK_FALSE; // is this ok ?
@@ -407,7 +407,7 @@ VkVertexInputBindingDescription VulkanGraphicPipeline::getVertexBindings(const V
 GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	ProgramHandle program,
 	PrimitiveType primitive,
-	const FramebufferState& framebuffer,
+	const RenderPassState& renderPass,
 	const VertexBindingState& vertices,
 	const ViewportState& viewport,
 	const DepthState& depth,
@@ -432,7 +432,7 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	pipeline->blend = blending;
 	pipeline->fill = fill;
 
-	pipeline->framebuffer = framebuffer;
+	pipeline->renderPass = renderPass;
 	pipeline->vertices = vertices;
 	memcpy(pipeline->sets, vk_program->sets, vk_program->setCount * sizeof(ShaderBindingState));
 
@@ -466,13 +466,13 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	}
 	pipeline->vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
 		m_context.device,
-		m_context.getRenderPass(framebuffer, VulkanRenderPassLayout::Unknown),
+		m_context.getRenderPass(renderPass),
 		pipeline->vk_pipelineLayout,
 		vk_shaders.data(),
 		(uint32_t)vk_shaders.size(),
 		pipeline->primitive,
 		pipeline->vertices,
-		pipeline->framebuffer,
+		pipeline->renderPass,
 		pipeline->depth,
 		pipeline->stencil,
 		pipeline->viewport,
@@ -541,12 +541,12 @@ void VulkanGraphicDevice::destroy(ComputePipelineHandle handle)
 
 const GraphicPipeline* VulkanGraphicDevice::get(GraphicPipelineHandle handle)
 {
-	return handle.__data;
+	return static_cast<const GraphicPipeline*>(handle.__data);
 }
 
 const ComputePipeline* VulkanGraphicDevice::get(ComputePipelineHandle handle)
 {
-	return handle.__data;
+	return static_cast<const ComputePipeline*>(handle.__data);
 }
 
 VkPipeline VulkanComputePipeline::createVkComputePipeline(VkDevice device, VkPipelineLayout pipelineLayout, const VulkanShader* shader)

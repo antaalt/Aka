@@ -53,15 +53,16 @@ struct Frame
 {
 	ImageIndex image;
 	CommandList* commandList;
-};
 
-enum class ResourceLayout {
-	ShaderResource,
-	ShaderStorage,
-	AttachmentColor,
-	AttachmentDepth,
-	Present,
+	ImageIndex getImageIndex() { return image; }
+	CommandList* getMainCommandList() { return commandList; }
 };
+struct Backbuffer : Resource
+{ 
+	Backbuffer(const char* name) : Resource(name, ResourceType::Framebuffer) {}
+	Vector<FramebufferHandle> handles;
+};
+using BackbufferHandle = ResourceHandle<Backbuffer>;
 
 class AKA_NO_VTABLE GraphicDevice
 {
@@ -97,10 +98,17 @@ public:
 	virtual const PhysicalDevice* getPhysicalDevice(uint32_t index) = 0;
 
 	// Framebuffer
-	virtual FramebufferHandle createFramebuffer(const char* name, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
+	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
 	virtual void destroy(FramebufferHandle framebuffer) = 0;
-	virtual FramebufferHandle backbuffer(const Frame* frame) = 0;
+	virtual BackbufferHandle createBackbuffer(RenderPassHandle handle) = 0;
+	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
+	virtual FramebufferHandle get(BackbufferHandle handle, Frame* frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
+
+	// RenderPass
+	virtual RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) = 0;
+	virtual void destroy(RenderPassHandle framebuffer) = 0;
+	virtual const RenderPass* get(RenderPassHandle handle) = 0;
 
 	// Buffers
 	virtual BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
@@ -117,6 +125,7 @@ public:
 	virtual void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) = 0;
 	virtual void copy(TextureHandle lhs, TextureHandle rhs) = 0;
 	virtual void destroy(TextureHandle texture) = 0;
+	virtual void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) = 0;
 	virtual const Texture* get(TextureHandle handle) = 0;
 
 	// Samplers
@@ -128,7 +137,7 @@ public:
 	virtual GraphicPipelineHandle createGraphicPipeline(
 		ProgramHandle program,
 		PrimitiveType primitive,
-		const FramebufferState& framebuffer,
+		const RenderPassState& renderPass,
 		const VertexBindingState& vertices,
 		const ViewportState& viewport,
 		const DepthState& depth,

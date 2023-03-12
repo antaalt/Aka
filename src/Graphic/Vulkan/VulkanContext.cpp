@@ -5,6 +5,7 @@
 #include "VulkanFrameBuffer.h"
 #include "VulkanProgram.h"
 #include "VulkanPipeline.h"
+#include "VulkanRenderPass.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -116,28 +117,16 @@ VkDebugUtilsMessengerEXT createDebugMessenger(VkInstance instance)
 	return messenger;
 }
 
-VkRenderPass VulkanContext::getRenderPass(const FramebufferState& fbDesc, VulkanRenderPassLayout layout)
+VkRenderPass VulkanContext::getRenderPass(const RenderPassState& state)
 {
-	auto it = m_framebufferDesc.find(fbDesc);
-	if (it != m_framebufferDesc.end())
+	auto it = m_renderPassState.find(state);
+	if (it != m_renderPassState.end())
 		return it->second;
-	if (layout != VulkanRenderPassLayout::Unknown)
-	{
-		VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, layout);
-		m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
-		size_t hash = std::hash<FramebufferState>()(fbDesc);
-		String str = layout == VulkanRenderPassLayout::Backbuffer ? "Backbuffer" : "Framebuffer";
-		setDebugName(device, vk_renderPass, "RenderPass", str.cstr(), hash);
-		return vk_renderPass;
-	}
-	else
-	{
-		VkRenderPass vk_renderPass = VulkanFramebuffer::createVkRenderPass(device, fbDesc, VulkanRenderPassLayout::Framebuffer);
-		m_framebufferDesc.insert(std::make_pair(fbDesc, vk_renderPass));
-		size_t hash = std::hash<FramebufferState>()(fbDesc);
-		setDebugName(device, vk_renderPass, "RenderPassFramebuffer", hash);
-		return vk_renderPass;
-	}
+	VkRenderPass vk_renderPass = VulkanRenderPass::createVkRenderPass(device, state);
+	m_renderPassState.insert(std::make_pair(state, vk_renderPass));
+	size_t hash = std::hash<RenderPassState>()(state);
+	setDebugName(device, vk_renderPass, "RenderPassFramebuffer", hash);
+	return vk_renderPass;
 }
 
 VulkanContext::ShaderInputData VulkanContext::getDescriptorLayout(const ShaderBindingState& bindingsDesc)
@@ -446,6 +435,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	// Platform extension
 	uint32_t requiredPlatformInstanceExtensionCount = 0;
 	const char** requiredPlatformInstanceExtensions = getPlatformRequiredInstanceExtension(platform, &requiredPlatformInstanceExtensionCount);
+	AKA_ASSERT(requiredPlatformInstanceExtensions != nullptr, "GLFW failed to initialize instance extensions.");
 	// Custom extensions
 	const char* requiredInstanceExtensions[] = {
 		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
@@ -454,11 +444,11 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	const size_t requiredInstanceExtensionCount = sizeof(requiredInstanceExtensions) / sizeof(*requiredInstanceExtensions);
 	// All extensions
 	const size_t instanceExtensionCount = requiredPlatformInstanceExtensionCount + requiredInstanceExtensionCount;
-	const char** instanceExtensions = new const char*[instanceExtensionCount];
+	Vector<const char*> instanceExtensions(instanceExtensionCount);
 	for (size_t i = 0; i < requiredPlatformInstanceExtensionCount; i++)
 		instanceExtensions[i] = requiredPlatformInstanceExtensions[i];
 	for (size_t i = 0; i < requiredInstanceExtensionCount; i++)
-		instanceExtensions[requiredPlatformInstanceExtensionCount + i] = requiredPlatformInstanceExtensions[i];
+		instanceExtensions[requiredPlatformInstanceExtensionCount + i] = requiredInstanceExtensions[i];
 	// Device extensions
 	const char* deviceExtensions[] = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -468,8 +458,8 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	{
 		Logger::warn("Validation layers unsupported");
 	}
-	instance = createInstance(instanceExtensions, instanceExtensionCount);
-	delete[] instanceExtensions;
+	instance = createInstance(instanceExtensions.data(), instanceExtensionCount);
+	debugMessenger = createDebugMessenger(instance);
 	surface = createSurface(platform);
 
 	physicalDevice = pickPhysicalDevice([](const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures& features) {
@@ -478,6 +468,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	device = createLogicalDevice(deviceExtensions, deviceExtensionCount);
 
 	commandPool = createCommandPool(device, graphicQueue.index);
+
 	setDebugName(device, commandPool, "MainCommandPool");
 }
 
@@ -497,7 +488,7 @@ void VulkanContext::shutdown()
 	{
 		vkDestroyPipelineLayout(device, rp.second, nullptr);
 	}
-	for (auto& rp : m_framebufferDesc)
+	for (auto& rp : m_renderPassState)
 	{
 		vkDestroyRenderPass(device, rp.second, nullptr);
 	}
@@ -505,6 +496,7 @@ void VulkanContext::shutdown()
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyDevice(device, nullptr);
 	// physical device
+	vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	vkDestroyInstance(instance, nullptr);
 }
 
@@ -548,6 +540,7 @@ VkFormat VulkanContext::tovk(TextureFormat format)
 	switch (format)
 	{
 	default:
+		AKA_ASSERT(false, "Invalid texture format");
 		return VK_FORMAT_UNDEFINED;
 	case TextureFormat::R8:
 	case TextureFormat::R8U:
@@ -616,6 +609,7 @@ VkFilter VulkanContext::tovk(Filter filter)
 	switch (filter)
 	{
 	default:
+		AKA_ASSERT(false, "Invalid filter");
 	case Filter::Nearest:
 		return VK_FILTER_NEAREST;
 	case Filter::Linear:
@@ -632,6 +626,7 @@ VkIndexType VulkanContext::tovk(IndexFormat format)
 	case IndexFormat::UnsignedShort:
 		return VK_INDEX_TYPE_UINT16;
 	default:
+		AKA_ASSERT(false, "Invalid index format");
 	case IndexFormat::UnsignedInt:
 		return VK_INDEX_TYPE_UINT32;
 	}
@@ -646,10 +641,64 @@ VkBufferUsageFlagBits VulkanContext::tovk(BufferType type)
 	case BufferType::Index:
 		return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	default:
+		AKA_ASSERT(false, "Invalid buffer type");
 	case BufferType::Uniform:
 		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	case BufferType::ShaderStorage:
 		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	}
+}
+
+VkImageLayout VulkanContext::tovk(ResourceAccessType type, bool depth)
+{
+	switch (type)
+	{
+	default:
+		AKA_ASSERT(false, "Invalid attachment load op");
+	case ResourceAccessType::Undefined:
+		return VK_IMAGE_LAYOUT_UNDEFINED;
+	case ResourceAccessType::Resource:
+		return depth ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	case ResourceAccessType::Attachment:
+		return depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	case ResourceAccessType::StorageRead:
+		return depth ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	case ResourceAccessType::StorageWrite:
+		return VK_IMAGE_LAYOUT_GENERAL;
+	case ResourceAccessType::StorageReadWrite:
+		return VK_IMAGE_LAYOUT_GENERAL;
+	case ResourceAccessType::CopySRC:
+		return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	case ResourceAccessType::CopyDST:
+		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	case ResourceAccessType::Present:
+		return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	}
+}
+VkAttachmentLoadOp VulkanContext::tovk(AttachmentLoadOp loadOp)
+{
+	switch (loadOp)
+	{
+	default:
+		AKA_ASSERT(false, "Invalid attachment load op");
+	case AttachmentLoadOp::Clear:
+		return VK_ATTACHMENT_LOAD_OP_CLEAR;
+	case AttachmentLoadOp::Load:
+		return VK_ATTACHMENT_LOAD_OP_LOAD;
+	case AttachmentLoadOp::DontCare:
+		return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	}
+}
+VkAttachmentStoreOp VulkanContext::tovk(AttachmentStoreOp loadOp)
+{
+	switch (loadOp)
+	{
+	default:
+		AKA_ASSERT(false, "Invalid attachment store op");
+	case AttachmentStoreOp::Store:
+		return VK_ATTACHMENT_STORE_OP_STORE;
+	case AttachmentStoreOp::DontCare:
+		return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	}
 }
 

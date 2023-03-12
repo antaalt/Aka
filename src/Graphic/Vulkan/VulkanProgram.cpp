@@ -242,7 +242,7 @@ void VulkanGraphicDevice::destroy(ShaderHandle shader)
 
 const Shader* VulkanGraphicDevice::get(ShaderHandle handle)
 {
-	return handle.__data;
+	return static_cast<const Shader*>(handle.__data);
 }
 
 // Programs
@@ -313,7 +313,7 @@ void VulkanGraphicDevice::destroy(ProgramHandle program)
 
 const Program* VulkanGraphicDevice::get(ProgramHandle handle)
 {
-	return handle.__data;
+	return static_cast<const Program*>(handle.__data);
 }
 
 DescriptorSetHandle VulkanGraphicDevice::createDescriptorSet(const char* name, const ShaderBindingState& bindings)
@@ -362,9 +362,9 @@ void VulkanGraphicDevice::destroy(DescriptorSetHandle descriptorSet)
 	m_descriptorPool.release(vk_descriptor);
 }
 
-const DescriptorSet* VulkanGraphicDevice::get(DescriptorSetHandle set)
+const DescriptorSet* VulkanGraphicDevice::get(DescriptorSetHandle handle)
 {
-	return set.__data;
+	return static_cast<const DescriptorSet*>(handle.__data);
 }
 
 VulkanShader::VulkanShader(const char* name, ShaderType type) :

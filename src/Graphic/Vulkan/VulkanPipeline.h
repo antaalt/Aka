@@ -23,7 +23,7 @@ struct VulkanGraphicPipeline : GraphicPipeline
 		uint32_t shaderCount,
 		PrimitiveType primitive,
 		const VertexBindingState& vertices,
-		const FramebufferState& framebuffer,
+		const RenderPassState& renderPass,
 		const DepthState& depth,
 		const StencilState& stencil,
 		const ViewportState& viewport,

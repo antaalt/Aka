@@ -443,9 +443,25 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 	m_texturePool.release(vk_texture);
 }
 
-const Texture* VulkanGraphicDevice::get(TextureHandle texture)
+void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
-	return texture.__data;
+	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+	VulkanTexture::transitionImageLayout(
+		cmd,
+		vk_texture->vk_image, 
+		VulkanContext::tovk(src, Texture::hasDepth(vk_texture->format)),
+		VulkanContext::tovk(dst, Texture::hasDepth(vk_texture->format)),
+		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers },
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // Default...
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
+	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+}
+
+const Texture* VulkanGraphicDevice::get(TextureHandle handle)
+{
+	return static_cast<const Texture*>(handle.__data);
 }
 
 VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags) :

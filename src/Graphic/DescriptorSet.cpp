@@ -4,38 +4,52 @@
 namespace aka {
 namespace gfx {
 
-void DescriptorSetData::setUniformBuffer(uint32_t slot, BufferHandle buffer)
+DescriptorSetData::DescriptorSetData() :
+	count(0),
+	buffers{},
+	images{},
+	samplers{}
 {
-	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
-	if (bindings.bindings[slot].type != ShaderBindingType::UniformBuffer)
-		return; */
-	buffers[slot] = buffer;
 }
 
-void DescriptorSetData::setStorageBuffer(uint32_t slot, BufferHandle buffer)
+DescriptorSetData& DescriptorSetData::addUniformBuffer(BufferHandle buffer)
 {
-	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
-	if (bindings.bindings[slot].type != ShaderBindingType::UniformBuffer)
-		return; */
-	buffers[slot] = buffer;
+	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
+	buffers[count] = buffer;
+	samplers[count] = gfx::SamplerHandle::null;
+	images[count] = gfx::TextureHandle::null;
+	count++;
+	return *this;
 }
 
-void DescriptorSetData::setSampledImage(uint32_t slot, TextureHandle texture, SamplerHandle sampler)
+DescriptorSetData& DescriptorSetData::addStorageBuffer(BufferHandle buffer)
 {
-	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
-	if (bindings.bindings[slot].type != ShaderBindingType::SampledImage)
-		return; */
-	images[slot] = texture;
-	samplers[slot] = sampler;
+	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
+	buffers[count] = buffer;
+	samplers[count] = gfx::SamplerHandle::null;
+	images[count] = gfx::TextureHandle::null;
+	count++;
+	return *this;
 }
 
-void DescriptorSetData::setStorageImage(uint32_t slot, TextureHandle texture)
+DescriptorSetData& DescriptorSetData::addSampledImage(TextureHandle texture, SamplerHandle sampler)
 {
-	/*AKA_ASSERT(slot < bindings.count, "Invalid slot.");
-	if (bindings.bindings[slot].type != ShaderBindingType::StorageImage)
-		return;*/
-	images[slot] = texture;
-	samplers[slot] = SamplerHandle::null;
+	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
+	images[count] = texture;
+	samplers[count] = sampler;
+	buffers[count] = gfx::BufferHandle::null;
+	count++;
+	return *this;
+}
+
+DescriptorSetData& DescriptorSetData::addStorageImage(TextureHandle texture)
+{
+	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
+	images[count] = texture;
+	samplers[count] = SamplerHandle::null;
+	buffers[count] = gfx::BufferHandle::null;
+	count++;
+	return *this;
 }
 
 DescriptorSet::DescriptorSet(const char* name, const ShaderBindingState& bindings) :

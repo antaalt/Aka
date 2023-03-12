@@ -17,13 +17,6 @@
 namespace aka {
 namespace gfx {
 
-enum class VulkanRenderPassLayout
-{
-	Unknown,
-	Backbuffer,
-	Framebuffer,
-};
-
 struct VulkanInstance
 {
 	VkInstance instance;
@@ -53,17 +46,22 @@ template <> struct VulkanTypeTrait<VkImageView> { static const VkObjectType debu
 template <> struct VulkanTypeTrait<VkBuffer> { static const VkObjectType debugType = VK_OBJECT_TYPE_BUFFER; };
 template <> struct VulkanTypeTrait<VkCommandPool> { static const VkObjectType debugType = VK_OBJECT_TYPE_COMMAND_POOL; };
 template <> struct VulkanTypeTrait<VkRenderPass> { static const VkObjectType debugType = VK_OBJECT_TYPE_RENDER_PASS; };
+template <> struct VulkanTypeTrait<VkSampler> { static const VkObjectType debugType = VK_OBJECT_TYPE_SAMPLER; };
+template <> struct VulkanTypeTrait<VkShaderModule> { static const VkObjectType debugType = VK_OBJECT_TYPE_SHADER_MODULE; };
+template <> struct VulkanTypeTrait<VkDescriptorSet> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_SET; };
+template <> struct VulkanTypeTrait<VkDescriptorSetLayout> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT; };
+template <> struct VulkanTypeTrait<VkDescriptorPool> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_POOL; };
 
 template <typename T, typename ...Args>
 void setDebugName(VkDevice device, T handle, Args ...args)
 {
 	AKA_ASSERT(handle != VK_NULL_HANDLE, "Invalid handle");
-	static_assert(VulkanTypeTrait<VkImage>::debugType != VK_OBJECT_TYPE_UNKNOWN);
+	static_assert(VulkanTypeTrait<T>::debugType != VK_OBJECT_TYPE_UNKNOWN);
 	String fmt_name = String::from(args...);
 	VkDebugUtilsObjectNameInfoEXT info{};
 	info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
 	info.objectHandle = (uint64_t)handle;
-	info.objectType = VulkanTypeTrait<VkImage>::debugType;
+	info.objectType = VulkanTypeTrait<T>::debugType;
 	info.pObjectName = fmt_name.cstr();
 	VK_CHECK_RESULT(vkSetDebugUtilsObjectNameEXT(device, &info));
 }
@@ -92,6 +90,9 @@ struct VulkanContext
 	static VkFilter tovk(Filter filter);
 	static VkIndexType tovk(IndexFormat format);
 	static VkBufferUsageFlagBits tovk(BufferType type);
+	static VkImageLayout tovk(ResourceAccessType type, bool depth);
+	static VkAttachmentLoadOp tovk(AttachmentLoadOp loadOp);
+	static VkAttachmentStoreOp tovk(AttachmentStoreOp storeOp);
 
 	VkInstance instance;
 	VkDevice device;
@@ -102,6 +103,7 @@ struct VulkanContext
 	VulkanQueue presentQueue;
 
 	VkCommandPool commandPool;
+	VkDebugUtilsMessengerEXT debugMessenger;
 
 public:
 	struct VertexInputData {
@@ -113,13 +115,13 @@ public:
 		VkDescriptorSetLayout layout;
 		//VkPipelineLayout pipelineLayout;
 	};
-	VkRenderPass getRenderPass(const FramebufferState& fbDesc, VulkanRenderPassLayout layout);
+	VkRenderPass getRenderPass(const RenderPassState& state);
 	ShaderInputData getDescriptorLayout(const ShaderBindingState& bindingsDesc);
 	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count);
 	VertexInputData getVertexInputData(const VertexBindingState& verticesDesc);
 
 private:
-	std::unordered_map<FramebufferState, VkRenderPass> m_framebufferDesc;
+	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
 	std::unordered_map<ShaderBindingState, ShaderInputData> m_bindingDesc;
 	std::map<std::vector<VkDescriptorSetLayout>, VkPipelineLayout> m_pipelineLayout;
 	std::unordered_map<VertexBindingState, VertexInputData> m_verticesDesc;

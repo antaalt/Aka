@@ -231,15 +231,15 @@ ResourceArchive* Texture::createResourceArchive()
 
 uint32_t Texture::width() const
 {
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data->width; // TODO cache width / height
+	return static_cast<const gfx::Texture*>(reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data)->width; // TODO cache width / height
 }
 uint32_t Texture::height() const
 {
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data->height;
+	return static_cast<const gfx::Texture*>(reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data)->height;
 }
 gfx::TextureType Texture::type() const
 {
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data->type;
+	return static_cast<const gfx::Texture*>(reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data)->type;
 }
 gfx::TextureHandle Texture::handle() const
 {

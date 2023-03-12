@@ -80,7 +80,7 @@ void VulkanGraphicDevice::destroy(SamplerHandle sampler)
 
 const Sampler* VulkanGraphicDevice::get(SamplerHandle handle)
 {
-	return handle.__data;
+	return static_cast<const Sampler*>(handle.__data);
 }
 
 VulkanSampler::VulkanSampler(const char* name, Filter min, Filter mag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) :

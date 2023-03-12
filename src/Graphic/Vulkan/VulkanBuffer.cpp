@@ -126,7 +126,7 @@ void VulkanGraphicDevice::destroy(BufferHandle buffer)
 
 const Buffer* VulkanGraphicDevice::get(BufferHandle buffer)
 {
-	return buffer.__data; // TODO map somehow
+	return static_cast<const Buffer*>(buffer.__data);
 }
 
 };

@@ -127,13 +127,14 @@ void VulkanCommandList::reset()
 	vkResetCommandBuffer(vk_command, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 }
 
-void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const ClearState& clear)
+void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear)
 {
 	VulkanFramebuffer* vk_framebuffer = device->getVk<VulkanFramebuffer>(framebuffer);
+	VulkanRenderPass* vk_renderPass = device->getVk<VulkanRenderPass>(renderPass);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 
 	// TODO clear mask should be set at renderpass level.
-	std::vector<VkClearValue> clearValues(vk_framebuffer->framebuffer.count);
+	std::vector<VkClearValue> clearValues(vk_framebuffer->count);
 	for (VkClearValue& vk_clear : clearValues)
 	{
 		vk_clear.depthStencil = VkClearDepthStencilValue{ clear.depth, clear.stencil };
@@ -168,7 +169,7 @@ void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const Cle
 			}
 		}
 	}
-	for ( uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
+	for ( uint32_t i = 0; i < vk_framebuffer->count; i++)
 	{
 		const Attachment& att = vk_framebuffer->colors[i];
 		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(att.texture);
@@ -193,7 +194,7 @@ void VulkanCommandList::beginRenderPass(FramebufferHandle framebuffer, const Cle
 
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.renderPass = vk_framebuffer->vk_renderpass;
+	beginInfo.renderPass = vk_renderPass->vk_renderpass;
 	beginInfo.framebuffer = vk_framebuffer->vk_framebuffer;
 	beginInfo.renderArea.offset = VkOffset2D{ 0, 0 };
 	beginInfo.renderArea.extent = VkExtent2D{ vk_framebuffer->width, vk_framebuffer->height };
@@ -234,14 +235,13 @@ void VulkanCommandList::endRenderPass()
 			}
 		}
 	}
-	for (uint32_t i = 0; i < vk_framebuffer->framebuffer.count; i++)
+	for (uint32_t i = 0; i < vk_framebuffer->count; i++)
 	{
 		const Attachment& att = vk_framebuffer->colors[i];
 		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(att.texture);
 		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
 		if (has(vk_texture->flags, TextureFlag::ShaderResource))
 		{
-			AKA_ASSERT(!vk_framebuffer->isSwapchain, "Swapchain should not be a shader resource.");
 			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
 			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 			{
@@ -338,7 +338,24 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 	}
 	vkCmdBindDescriptorSets(vk_command, vk_bindPoint, vk_layout, 0, count, vk_sets, 0, nullptr);
 }
-void VulkanCommandList::bindVertexBuffer(const BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
+void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
+{
+	VulkanTexture* vk_texture = device->getVk<VulkanTexture>(texture);
+	VulkanTexture::transitionImageLayout(
+		vk_command,
+		vk_texture->vk_image,
+		VulkanContext::tovk(src, Texture::hasDepth(vk_texture->format)),
+		VulkanContext::tovk(dst, Texture::hasDepth(vk_texture->format)),
+		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers },
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // Default...
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	);
+}
+void VulkanCommandList::bindVertexBuffer(const BufferHandle buffers, uint32_t binding, uint32_t offset)
+{
+	bindVertexBuffers(&buffers, binding, 1, &offset);
+}
+void VulkanCommandList::bindVertexBuffers(const BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	VkBuffer vk_buffers[VertexMaxAttributeCount]{};
@@ -347,7 +364,7 @@ void VulkanCommandList::bindVertexBuffer(const BufferHandle* buffers, uint32_t b
 	{
 		VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffers[i]);
 		vk_buffers[i] = vk_buffer->vk_buffer;
-		vk_offsets[i] = offsets[i];
+		vk_offsets[i] = offsets ? offsets[i] : 0;
 	}
 	vkCmdBindVertexBuffers(vk_command, binding, bindingCount, vk_buffers, vk_offsets);
 	//this->vk_vertices = vk_buffer;
@@ -375,7 +392,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 		flags |= VK_IMAGE_ASPECT_STENCIL_BIT;
 	//vk_pipeline->renderPass.
 	std::vector<VkClearAttachment> attachments;
-	for (uint32_t i = 0; i < this->vk_framebuffer->framebuffer.count; i++)
+	for (uint32_t i = 0; i < this->vk_framebuffer->count; i++)
 	{
 		VkClearAttachment att{};
 		att.aspectMask = flags;
@@ -389,7 +406,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 		VkClearAttachment att{};
 		att.aspectMask = flags;
 		att.clearValue.depthStencil = VkClearDepthStencilValue{ depth, stencil };
-		att.colorAttachment = this->vk_framebuffer->framebuffer.count; // depth is last
+		att.colorAttachment = this->vk_framebuffer->count; // depth is last
 		attachments.push_back(att);
 	}
 

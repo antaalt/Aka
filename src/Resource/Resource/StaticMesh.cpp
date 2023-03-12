@@ -165,7 +165,7 @@ void StaticMesh::bind(gfx::CommandList* cmd) const
 {
 	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
 	Vector<uint32_t> offset(data->vertexBufferCount, 0U);
-	cmd->bindVertexBuffer(data->vertexBuffers, 0, data->vertexBufferCount, offset.data());
+	cmd->bindVertexBuffers(data->vertexBuffers, 0, data->vertexBufferCount, offset.data());
 	cmd->bindIndexBuffer(data->indexBuffer, data->indexFormat, data->indexOffset);
 }
 
@@ -173,7 +173,7 @@ void StaticMesh::bindVertex(gfx::CommandList* cmd) const
 {
 	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
 	Vector<uint32_t> offset(data->vertexBufferCount, 0);
-	cmd->bindVertexBuffer(data->vertexBuffers, 0, data->vertexBufferCount, offset.data());
+	cmd->bindVertexBuffers(data->vertexBuffers, 0, data->vertexBufferCount, offset.data());
 }
 
 void StaticMesh::bindIndex(gfx::CommandList* cmd) const

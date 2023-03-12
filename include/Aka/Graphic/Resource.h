@@ -20,6 +20,20 @@ enum class ResourceType : uint8_t
 	Sampler,
 	Program,
 	Shader,
+	RenderPass,
+};
+
+enum class ResourceAccessType
+{
+	Undefined,			// No access
+	Resource,			// Access as SRV
+	Attachment,			// Access as attachment
+	StorageRead,		// Access as UAV
+	StorageWrite,		// Access as UAV
+	StorageReadWrite,	// Access as UAV
+	CopySRC,			// Access as copy
+	CopyDST,			// Access as copy
+	Present,			// Access as swapchain
 };
 
 using ResourceNativeHandle = uint64_t;
@@ -38,7 +52,7 @@ template <typename T>
 struct ResourceHandle
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
-	const T* __data; // TODO should be obfuscated & renamed desc.
+	const void* __data; // TODO should be obfuscated & renamed desc.
 	static const ResourceHandle<T> null;
 };
 

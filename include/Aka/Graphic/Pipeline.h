@@ -4,6 +4,7 @@
 
 #include <Aka/Graphic/Program.h>
 #include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/RenderPass.h>
 #include <Aka/Graphic/Resource.h>
 #include <Aka/Core/Container/Vector.h>
 #include <Aka/OS/Image.h>
@@ -380,7 +381,7 @@ struct GraphicPipeline : Resource
 	PrimitiveType primitive;
 	VertexBindingState vertices;
 	ShaderBindingState sets[ShaderMaxSetCount];
-	FramebufferState framebuffer;
+	RenderPassState renderPass;
 	CullState cull;
 	FillState fill;
 	DepthState depth;

@@ -9,6 +9,7 @@
 #include "VulkanCommandList.h"
 #include "VulkanSwapchain.h"
 #include "VulkanSampler.h"
+#include "VulkanRenderPass.h"
 #include "VulkanDebug.h"
 
 #include <Aka/Memory/Pool.h>
@@ -62,6 +63,7 @@ public:
 	void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) override;
 	void copy(TextureHandle lhs, TextureHandle rhs) override;
 	void destroy(TextureHandle texture) override;
+	void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) override;
 	const Texture* get(TextureHandle texture) override;
 
 	// Sampler
@@ -88,16 +90,23 @@ public:
 	const Buffer* get(BufferHandle buffer) override;
 
 	// Framebuffer
-	FramebufferHandle createFramebuffer(const char* name, const Attachment* attachments, uint32_t count, const Attachment* depth) override;
+	FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) override;
 	void destroy(FramebufferHandle handle) override;
-	FramebufferHandle backbuffer(const Frame* frame) override;
+	BackbufferHandle createBackbuffer(RenderPassHandle handle) override;
+	RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Present) override;
+	FramebufferHandle get(BackbufferHandle handle, Frame* frame) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
+
+	// RenderPass
+	RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) override;
+	void destroy(RenderPassHandle handle) override;
+	const RenderPass* get(RenderPassHandle handle) override;
 
 	// Pipeline
 	GraphicPipelineHandle createGraphicPipeline(
 		ProgramHandle program,
 		PrimitiveType primitive,
-		const FramebufferState& framebuffer,
+		const RenderPassState& renderPass,
 		const VertexBindingState& vertices,
 		const ViewportState& viewport,
 		const DepthState& depth,
@@ -142,6 +151,24 @@ public:
 
 	VulkanContext& context() { return m_context; }
 	VulkanSwapchain& swapchain() { return m_swapchain; }
+public:
+	VkInstance getVkInstance() { return m_context.instance; }
+	VkDevice getVkDevice() { return m_context.device; }
+	VkPhysicalDevice getVkPhysicalDevice() { return m_context.physicalDevice; }
+	VkQueue getVkQueue(QueueType queue) {
+		switch (queue) {
+		default:
+		case QueueType::Graphic:
+			return m_context.graphicQueue.queue;
+		}
+	}
+	uint32_t getVkQueueIndex(QueueType queue) {
+		switch (queue) {
+		default:
+		case QueueType::Graphic:
+			return m_context.graphicQueue.index;
+		}
+	}
 private:
 	friend struct VulkanSwapchain;
 	// Context
@@ -157,6 +184,7 @@ private:
 	Pool<VulkanShader> m_shaderPool;
 	Pool<VulkanProgram> m_programPool;
 	Pool<VulkanFramebuffer> m_framebufferPool;
+	Pool<VulkanRenderPass> m_renderPassPool;
 	Pool<VulkanGraphicPipeline> m_graphicPipelinePool;
 	Pool<VulkanComputePipeline> m_computePipelinePool;
 	Pool<VulkanDescriptorSet> m_descriptorPool;

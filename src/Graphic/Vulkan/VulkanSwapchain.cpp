@@ -180,23 +180,24 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	// TODO convert vulkan format to aka format
 	const TextureFormat colorFormat = TextureFormat::BGRA8;
 	const TextureFormat depthFormat = TextureFormat::Depth32F;
+	AKA_ASSERT(VulkanContext::tovk(colorFormat) == vk_colorFormat, "Invalid color format");
+	AKA_ASSERT(VulkanContext::tovk(depthFormat) == vk_depthFormat, "Invalid depth format");
+
 	const bool hasDepth = true;
 	const bool hasStencil = false;
 	// Get images & layout
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, nullptr));
 	std::vector<VkImage> vk_images(imageCount);
-	backbuffers.resize(imageCount);
+	backbufferTextures.resize(imageCount);
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, vk_images.data()));
 
-	FramebufferState fbState{};
-	fbState.depth.format = depthFormat;
-	fbState.depth.loadOp = AttachmentLoadOp::Load;
-	fbState.colors[0].format = colorFormat;
-	fbState.colors[0].loadOp = AttachmentLoadOp::Load;
-	fbState.count = 1;
+	// Should be created at runtime depending on cost...
+	RenderPassState finalRenderPass{};
+	finalRenderPass.addColor(depthFormat, AttachmentLoadOp::Load, AttachmentStoreOp::Store, ResourceAccessType::Undefined, ResourceAccessType::Undefined);
+	finalRenderPass.addColor(colorFormat, AttachmentLoadOp::Load, AttachmentStoreOp::Store, ResourceAccessType::Undefined, ResourceAccessType::Undefined);
 
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context->device, context->commandPool);
-	VkRenderPass vk_renderPass = context->getRenderPass(fbState, VulkanRenderPassLayout::Backbuffer);
+	VkRenderPass vk_renderPass = context->getRenderPass(finalRenderPass);
 	for (size_t i = 0; i < imageCount; i++)
 	{
 		// Create swapchain view
@@ -260,12 +261,8 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			);
 		}
 		
-		// Create framebuffer
-		str = String::format("SwapchainFramebuffer%u", i);
-		Attachment color{ colorTexture, AttachmentFlag::None, fbState.colors[0].loadOp, 0, 0 };
-		Attachment depth{ depthTexture, AttachmentFlag::None, fbState.depth.loadOp, 0, 0 };
-		backbuffers[i] = device->createFramebuffer(str.cstr(), &color, 1, hasDepth ? &depth : nullptr);
-		device->getVk<VulkanFramebuffer>(backbuffers[i])->isSwapchain = true;
+		backbufferTextures[i].color = colorTexture;
+		backbufferTextures[i].depth = depthTexture;
 	}
 
 	// Frames
@@ -288,13 +285,10 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 {
 	VulkanContext* context = &device->m_context;
-	for (FramebufferHandle backbuffer : backbuffers)
+	for (BackBufferTextures backbuffer : backbufferTextures)
 	{
-		const Framebuffer* fb = device->get(backbuffer);
-		// vk_renderpass is cached.
-		device->destroy(fb->colors[0].texture);
-		device->destroy(fb->depth.texture);
-		device->destroy(backbuffer);
+		device->destroy(backbuffer.color);
+		device->destroy(backbuffer.depth);
 	}
 
 	vkDestroySwapchainKHR(context->device, swapchain, nullptr);
@@ -392,6 +386,22 @@ void VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* frame)
 		Logger::error("Failed to present swap chain image!");
 	}
 	currentFrameIndex.next();
+}
+
+BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle)
+{
+	// Create a framebuffer for backbuffer compatible with given render pass.
+	Backbuffer backbuffer("Backbuffer"); // TODO add hash
+	for (uint32_t i = 0; i < imageCount; i++)
+	{
+		Attachment color = Attachment{ backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
+		Attachment depth = Attachment{ backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
+		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, &color, 1, &depth);
+		backbuffer.handles.append(fb);
+	}
+	auto it = backbuffers.insert(std::make_pair(device->get(handle)->state, backbuffer));
+	AKA_ASSERT(it.second, "Failed to create backbuffer");
+	return BackbufferHandle{ handle.__data };
 }
 
 void VulkanFrame::wait(VkDevice device)

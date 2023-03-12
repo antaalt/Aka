@@ -19,6 +19,14 @@ struct VulkanFrame : Frame
 	void wait(VkDevice device);
 };
 
+
+struct BackBufferTextures
+{
+	TextureHandle color;
+	TextureHandle depth; // TODO should not be here...
+};
+
+
 class VulkanGraphicDevice;
 
 struct VulkanSwapchain : 
@@ -28,10 +36,12 @@ struct VulkanSwapchain :
 	void shutdown(VulkanGraphicDevice* device);
 
 	void onReceive(const BackbufferResizeEvent& e) override;
-	void recreate(VulkanGraphicDevice* context);
+	void recreate(VulkanGraphicDevice* device);
 
 	VulkanFrame* acquireNextImage(VulkanGraphicDevice* context);
-	void present(VulkanGraphicDevice* context, VulkanFrame* frame);
+	void present(VulkanGraphicDevice* device, VulkanFrame* frame);
+
+	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle);
 
 	bool needRecreation;
 	PlatformDevice* platform;
@@ -41,8 +51,9 @@ struct VulkanSwapchain :
 	FrameIndex currentFrameIndex;
 	VulkanFrame frames[FrameIndex::MaxInFlight];
 
-	std::vector<FramebufferHandle> backbuffers;
+	std::unordered_map<RenderPassState, Backbuffer> backbuffers;
 
+	std::vector<BackBufferTextures> backbufferTextures;
 };
 
 };
