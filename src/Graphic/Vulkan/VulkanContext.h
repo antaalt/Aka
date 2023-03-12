@@ -90,7 +90,7 @@ struct VulkanContext
 	static VkFilter tovk(Filter filter);
 	static VkIndexType tovk(IndexFormat format);
 	static VkBufferUsageFlagBits tovk(BufferType type);
-	static VkImageLayout tovk(ResourceAccessType type, bool depth);
+	static VkImageLayout tovk(ResourceAccessType type, TextureFormat format);
 	static VkAttachmentLoadOp tovk(AttachmentLoadOp loadOp);
 	static VkAttachmentStoreOp tovk(AttachmentStoreOp storeOp);
 

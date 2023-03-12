@@ -17,7 +17,7 @@ struct VulkanTexture : Texture
 	VkDeviceMemory vk_memory;
 	VkImage vk_image;
 	VkImageView vk_view; // TODO vector to support multi view ?
-	VkImageLayout vk_layout; // TODO should not be tied to texture, but to command buffer somehow ?
+	//VkImageLayout vk_layout; // TODO should not be tied to texture, but to command buffer somehow ?
 
 	void create(VulkanContext& context);
 	void destroy(VulkanContext& context);
@@ -26,15 +26,17 @@ struct VulkanTexture : Texture
 	static VkImage createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags);
 	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips = 0, uint32_t baseLayer = 0);
 	static VkImageAspectFlags getAspectFlag(TextureFormat format);
-	static VkAccessFlags accessFlagForLayout(VkImageLayout layout);
+	//static VkAccessFlags accessFlagForLayout(VkImageLayout layout);
 	static void transitionImageLayout(
 		VkCommandBuffer cmd,
 		VkImage image,
-		VkImageLayout oldLayout,
-		VkImageLayout newLayout,
-		VkImageSubresourceRange subResource,
-		VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		ResourceAccessType oldLayout,
+		ResourceAccessType newLayout,
+		TextureFormat format,
+		uint32_t level = 0,
+		uint32_t levelCount = 1,
+		uint32_t layer = 0,
+		uint32_t layerCount = 1
 	);
 	static void insertMemoryBarrier(
 		VkCommandBuffer cmd,
@@ -48,8 +50,8 @@ struct VulkanTexture : Texture
 		VkAccessFlags dstAccess
 	);
 
-	void generateMips(VkCommandBuffer cmd);
-	void transitionImageLayout(
+	void generateMips(VkCommandBuffer cmd, VkImageLayout oldLayout, VkImageLayout newLayout);
+	/*void transitionImageLayout(
 		VkCommandBuffer cmd, 
 		VkImageLayout newLayout, 
 		VkImageSubresourceRange subResource,
@@ -64,7 +66,7 @@ struct VulkanTexture : Texture
 		VkPipelineStageFlags dstStage,
 		VkAccessFlags srcAccess,
 		VkAccessFlags dstAccess
-	);
+	);*/
 	void copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer);
 
 	void copyFrom(VkCommandBuffer cmd, VulkanTexture* texture);

@@ -19,81 +19,104 @@ VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 	else
 		return VK_IMAGE_ASPECT_COLOR_BIT;
 }
-VkAccessFlags VulkanTexture::accessFlagForLayout(VkImageLayout layout)
+
+// https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
+// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPipelineStageFlagBits.html
+// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
+VkAccessFlags accessFlagForLayout(ResourceAccessType type, TextureFormat format, bool src)
 {
-	switch (layout)
+	bool depth = Texture::hasDepth(format);
+	bool stencil = Texture::hasStencil(format);
+	switch (type)
 	{
-	case VK_IMAGE_LAYOUT_PREINITIALIZED:
-		return VK_ACCESS_HOST_WRITE_BIT;
-	case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-		return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-		return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-		return VK_ACCESS_TRANSFER_WRITE_BIT;
-	case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-		return VK_ACCESS_SHADER_READ_BIT;
-	case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-		return VK_ACCESS_TRANSFER_READ_BIT;
 	default:
+		AKA_ASSERT(false, "Invalid access type");
+		[[fallthrough]];
+	case ResourceAccessType::Undefined:
+#if defined(VK_VERSION_1_3)
+		return VK_ACCESS_NONE;
+#else
 		return 0;
+#endif
+	case ResourceAccessType::Resource: // Read only
+		return VK_ACCESS_SHADER_READ_BIT; // Only for shader read
+		//return VK_ACCESS_MEMORY_READ_BIT; // Most general purpose
+		//return VK_ACCESS_HOST_READ_BIT; // access on host (VK_PIPELINE_STAGE_HOST_BIT)
+	case ResourceAccessType::Attachment:
+		//if (depth || stencil) return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT; // VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT or VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT 
+		//else return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT; // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT 
+		if (depth || stencil) return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		else return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	case ResourceAccessType::Storage:
+		return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	case ResourceAccessType::CopySRC:
+		return VK_ACCESS_TRANSFER_READ_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
+	case ResourceAccessType::CopyDST:
+		return VK_ACCESS_TRANSFER_WRITE_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
+	case ResourceAccessType::Present:
+		return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 	}
 }
 
-void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subResource, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage)
+VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, TextureFormat format, bool src)
 {
+	// TODO for buffers also
+	// VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+	// VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+	bool depth = Texture::hasDepth(format);
+	bool stencil = Texture::hasStencil(format);
+	switch (type)
+	{
+	default:
+		AKA_ASSERT(false, "Invalid access type");
+		[[fallthrough]];
+	case ResourceAccessType::Undefined:
+		return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	case ResourceAccessType::Resource:
+		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+			|| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			|| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+#if 0 // Tesselation support...
+			|| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+			|| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+#endif
+			;
+	case ResourceAccessType::Attachment:
+		if (depth || stencil) return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // TODO: VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+		else return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	case ResourceAccessType::Storage:
+		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+			|| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			|| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+#if 0 // Tesselation support...
+			|| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+			|| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+#endif
+			;
+	case ResourceAccessType::CopySRC:
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	case ResourceAccessType::CopyDST:
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	case ResourceAccessType::Present:
+		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	}
+}
+
+void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, VkImage image, ResourceAccessType oldLayout, ResourceAccessType newLayout, TextureFormat format, uint32_t level,	uint32_t levelCount, uint32_t layer, uint32_t layerCount)
+{
+	if (oldLayout == newLayout)
+		return;
 	VulkanTexture::insertMemoryBarrier(
 		cmd, 
 		image,
-		oldLayout, newLayout,
-		subResource,
-		srcStage,
-		dstStage,
-		accessFlagForLayout(oldLayout),
-		accessFlagForLayout(newLayout)
+		VulkanContext::tovk(oldLayout, format), 
+		VulkanContext::tovk(newLayout, format),
+		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
+		pipelineStageForLayout(oldLayout, format, true),
+		pipelineStageForLayout(oldLayout, format, false),
+		accessFlagForLayout(oldLayout, format, true),
+		accessFlagForLayout(newLayout, format, false)
 	);
-}
-
-void VulkanTexture::transitionImageLayout(
-	VkCommandBuffer cmd,
-	VkImageLayout newLayout, 
-	VkImageSubresourceRange subResource,
-	VkPipelineStageFlags srcStage,
-	VkPipelineStageFlags dstStage
-)
-{
-	insertMemoryBarrier(
-		cmd, newLayout,
-		subResource,
-		srcStage,
-		dstStage,
-		accessFlagForLayout(vk_layout),
-		accessFlagForLayout(newLayout)
-	);
-}
-
-void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImageLayout newLayout, VkImageSubresourceRange subResource, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess)
-{
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = vk_layout;
-	barrier.newLayout = newLayout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = vk_image;
-	barrier.subresourceRange = subResource;
-	barrier.srcAccessMask = srcAccess;
-	barrier.dstAccessMask = dstAccess;
-
-	vkCmdPipelineBarrier(
-		cmd,
-		srcStage, dstStage,
-		0,
-		0, nullptr,
-		0, nullptr,
-		1, &barrier
-	);
-	vk_layout = newLayout;
 }
 
 void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer)
@@ -153,11 +176,10 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 	dstSubresource.baseMipLevel = 0;
 	dstSubresource.levelCount = vk_dst->levels;
 
-	VkImageLayout srcLayout = vk_src->vk_layout;
-	VkImageLayout dstLayout = vk_dst->vk_layout;
-
-	vk_src->insertMemoryBarrier(
+	/*VulkanTexture::insertMemoryBarrier(
 		cmd,
+		vk_src->vk_image,
+		srcSrcLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		srcSubresource,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -165,15 +187,17 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 		VK_ACCESS_TRANSFER_WRITE_BIT, // TODO color or depth, attachment or shader resource
 		VK_ACCESS_TRANSFER_READ_BIT
 	);
-	vk_dst->insertMemoryBarrier(
+	VulkanTexture::insertMemoryBarrier(
 		cmd,
+		vk_dst->vk_image,
+		dstSrcLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		dstSubresource,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_ACCESS_TRANSFER_READ_BIT, // TODO color or depth, attachment or shader resource
 		VK_ACCESS_TRANSFER_WRITE_BIT
-	);
+	);*/
 
 	{
 		VkImageCopy region{};
@@ -191,27 +215,30 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 		region.extent.height = min(vk_src->height, vk_dst->height);
 		region.extent.depth = 1;
 
-		vkCmdCopyImage(cmd, vk_src->vk_image, vk_src->vk_layout, vk_dst->vk_image, vk_dst->vk_layout, 1, &region);
+		vkCmdCopyImage(cmd, vk_src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_dst->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 	}
-
-	vk_src->insertMemoryBarrier(
+	/*VulkanTexture::insertMemoryBarrier(
 		cmd,
-		srcLayout,
+		vk_src->vk_image,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		srcDstLayout,
 		srcSubresource,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 		VK_ACCESS_TRANSFER_READ_BIT,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT // TODO color or depth, attachment or shader resource
 	);
-	vk_dst->insertMemoryBarrier(
+	VulkanTexture::insertMemoryBarrier(
 		cmd,
-		dstLayout,
+		vk_dst->vk_image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		dstDstLayout,
 		dstSubresource,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 		VK_ACCESS_TRANSFER_WRITE_BIT,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT // TODO color or depth, attachment or shader resource
-	);
+	);*/
 }
 
 void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter)
@@ -233,11 +260,10 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 	dstSubresource.baseMipLevel = dstRegion.mipLevel;
 	dstSubresource.levelCount = 1;
 
-	VkImageLayout srcLayout = vk_src->vk_layout;
-	VkImageLayout dstLayout = vk_dst->vk_layout;
-
-	vk_src->insertMemoryBarrier(
+	/*vk_src->insertMemoryBarrier(
 		cmd,
+		vk_src->vk_image,
+		srcLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		srcSubresource,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -247,13 +273,15 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 	);
 	vk_dst->insertMemoryBarrier(
 		cmd,
+		vk_dst->vk_image,
+		dstLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		dstSubresource,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_ACCESS_TRANSFER_READ_BIT, // TODO color or depth, attachment or shader resource
 		VK_ACCESS_TRANSFER_WRITE_BIT
-	);
+	);*/
 
 	{
 		VkImageBlit blit;
@@ -283,11 +311,13 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 			VulkanContext::tovk(filter)
 		);
 	}
-	{
+	/*{
 		// Restore layout
 		bool depthStencil = gfx::Texture::hasDepth(vk_dst->format) || gfx::Texture::hasStencil(vk_dst->format);
-		vk_src->insertMemoryBarrier(
+		VulkanTexture::insertMemoryBarrier(
 			cmd,
+			vk_src->vk_image,
+			srcLayout,
 			srcLayout,
 			srcSubresource,
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -299,8 +329,10 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 	{
 		// Restore layout
 		bool depthStencil = gfx::Texture::hasDepth(vk_dst->format) || gfx::Texture::hasStencil(vk_dst->format);
-		vk_dst->insertMemoryBarrier(
+		VulkanTexture::insertMemoryBarrier(
 			cmd,
+			vk_dst->vk_image,
+			dstLayout,
 			dstLayout,
 			dstSubresource,
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -308,6 +340,22 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 			VK_ACCESS_TRANSFER_WRITE_BIT,
 			depthStencil ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
 		);
+	}*/
+}
+
+ResourceAccessType getInitialResourceAccessType(TextureFormat format, TextureFlag flags)
+{
+	if (has(flags, TextureFlag::Storage))
+	{
+		return ResourceAccessType::Storage;
+	}
+	else if (has(flags, TextureFlag::ShaderResource))
+	{
+		return ResourceAccessType::Resource;
+	}
+	else if (has(flags, TextureFlag::RenderTarget))
+	{
+		return ResourceAccessType::Attachment;
 	}
 }
 
@@ -324,91 +372,54 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	VulkanTexture* texture = m_texturePool.acquire(name, width, height, depth, type, levels, layers, format, flags);
 	texture->create(m_context);
 
+	TextureHandle handle = TextureHandle{ texture };
+
+	ResourceAccessType accessType = getInitialResourceAccessType(format, flags);
+	VkImageLayout finalLayout = VulkanContext::tovk(accessType, format);
+
 	// Upload
+	VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
 	if (data != nullptr && data[0] != nullptr)
 	{
-		texture->upload(m_context, data, 0, 0, width, height);
+		// To transfer layout
 		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-		// Generate mips
-		VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(texture->format), 0, texture->levels, 0, texture->layers };
-		if (has(flags, TextureFlag::GenerateMips))
-		{
-			texture->generateMips(cmd); // Should be in SHADER_READ_ONLY
-		}
-		else
-		{
-			texture->transitionImageLayout(cmd,
-				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-				subresource,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			);
-		}
-		VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
-	}
-	else
-	{
-		VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
-		if (has(flags, TextureFlag::RenderTarget))
-		{
-			if (Texture::hasDepth(format) || Texture::hasStencil(format))
-			{
-				if (has(flags, TextureFlag::ShaderResource))
-				{
-					layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;// VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-					dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				}
-				else
-				{
-					layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-					dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-				}
-			}
-			else
-			{
-				if (has(flags, TextureFlag::ShaderResource))
-				{
-					layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				}
-				else
-				{
-					layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				}
-			}
-		}
-		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-		texture->transitionImageLayout(
-			cmd, layout,
-			subresource,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			dstStage
+		VulkanTexture::transitionImageLayout(cmd,
+			texture->vk_image,
+			accessType,
+			ResourceAccessType::CopyDST,
+			format
 		);
 		VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
-		texture->vk_layout = layout;
-	}
 
-	return TextureHandle{ texture };
+		// Upload (TODO: should use same command buffer than transition, but need to export staging buffer out of there for destruction)
+		texture->upload(m_context, data, 0, 0, width, height);
+
+		// Generate mips
+		if (has(flags, TextureFlag::GenerateMips))
+		{
+			VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+			texture->generateMips(cmd, finalLayout, finalLayout);
+			VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+		}
+	}
+	// Select depending on flags...
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+	VulkanTexture::transitionImageLayout(cmd,
+		texture->vk_image,
+		ResourceAccessType::CopyDST,
+		accessType,
+		format
+	);
+	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+
+	return handle;
 }
 
 void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
+	// TODO split staging buffer
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
 	vk_texture->upload(m_context, data, x, y, width, height);
-	// Transition back to shader read only
-	VkImageSubresourceRange subresource{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers };
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
-	vk_texture->transitionImageLayout(
-		cmd,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		subresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-	);
-	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
 }
 
 void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel, uint32_t layer)
@@ -450,11 +461,11 @@ void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType s
 	VulkanTexture::transitionImageLayout(
 		cmd,
 		vk_texture->vk_image, 
-		VulkanContext::tovk(src, Texture::hasDepth(vk_texture->format)),
-		VulkanContext::tovk(dst, Texture::hasDepth(vk_texture->format)),
-		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers },
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // Default...
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		src,
+		dst,
+		vk_texture->format,
+		0, vk_texture->levels, 
+		0, vk_texture->layers
 	);
 	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
 }
@@ -468,8 +479,8 @@ VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, 
 	Texture(name, width, height, depth, type, levels, layers, format, flags),
 	vk_image(VK_NULL_HANDLE),
 	vk_memory(VK_NULL_HANDLE),
-	vk_view(VK_NULL_HANDLE),
-	vk_layout(VK_IMAGE_LAYOUT_UNDEFINED)
+	vk_view(VK_NULL_HANDLE)//,
+	//vk_layout(VK_IMAGE_LAYOUT_UNDEFINED)
 {
 }
 
@@ -599,15 +610,7 @@ void VulkanTexture::upload(VulkanContext& context, const void* const* data, uint
 
 	// Copy buffer to image
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context.device, context.commandPool);
-	VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(this->format), 0, this->levels, 0, this->layers };
-	transitionImageLayout(cmd,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresource,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT
-	);
 	copyBufferToImage(cmd, stagingBuffer);
-
 	VulkanCommandList::endSingleTime(context.device, context.commandPool, cmd, context.graphicQueue.queue);
 
 	// Free staging buffer
@@ -627,7 +630,7 @@ VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t h
 	imageInfo.arrayLayers = layers;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_PREINITIALIZED
 	imageInfo.usage = usage;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -679,7 +682,7 @@ void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImage image, VkIm
 	);
 }
 
-void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
+void VulkanTexture::generateMips(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
 	// Check if image format supports linear blitting
 	/*VkFormatProperties formatProperties;
@@ -708,7 +711,7 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 	for (uint32_t iLevel = 1; iLevel < levels; iLevel++)
 	{
 		barrier.subresourceRange.baseMipLevel = iLevel - 1;
-		barrier.oldLayout = vk_layout;
+		barrier.oldLayout = oldLayout;
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -744,7 +747,7 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 		);
 
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.newLayout = newLayout;
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -763,8 +766,8 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 	}
 
 	barrier.subresourceRange.baseMipLevel = levels - 1;
-	barrier.oldLayout = vk_layout;
-	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
 	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -776,7 +779,7 @@ void VulkanTexture::generateMips(VkCommandBuffer commandBuffer)
 		1, &barrier
 	);
 
-	vk_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//vk_layout = newLayout;
 }
 
 };

@@ -610,6 +610,7 @@ VkFilter VulkanContext::tovk(Filter filter)
 	{
 	default:
 		AKA_ASSERT(false, "Invalid filter");
+		[[fallthrough]];
 	case Filter::Nearest:
 		return VK_FILTER_NEAREST;
 	case Filter::Linear:
@@ -627,6 +628,7 @@ VkIndexType VulkanContext::tovk(IndexFormat format)
 		return VK_INDEX_TYPE_UINT16;
 	default:
 		AKA_ASSERT(false, "Invalid index format");
+		[[fallthrough]];
 	case IndexFormat::UnsignedInt:
 		return VK_INDEX_TYPE_UINT32;
 	}
@@ -642,30 +644,43 @@ VkBufferUsageFlagBits VulkanContext::tovk(BufferType type)
 		return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 	default:
 		AKA_ASSERT(false, "Invalid buffer type");
+		[[fallthrough]];
 	case BufferType::Uniform:
 		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	case BufferType::ShaderStorage:
 		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	}
 }
-
-VkImageLayout VulkanContext::tovk(ResourceAccessType type, bool depth)
+//#define DEPTH_AND_STENCIL_SEPARATELY 1 // separateDepthStencilLayouts
+VkImageLayout VulkanContext::tovk(ResourceAccessType type, TextureFormat format)
 {
+	bool depth = Texture::hasDepth(format);
+	bool stencil = Texture::hasStencil(format);
+	// TODO should handle these somehow... (need DEPTH_AND_STENCIL_SEPARATELY)
+	// VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
+	// VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
 	switch (type)
 	{
 	default:
 		AKA_ASSERT(false, "Invalid attachment load op");
+		[[fallthrough]];
 	case ResourceAccessType::Undefined:
 		return VK_IMAGE_LAYOUT_UNDEFINED;
 	case ResourceAccessType::Resource:
-		return depth ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		AKA_ASSERT(!(depth && stencil), "Cannot have layout depth & stencil when reading"); // ¿ or general layout ?
+		if (depth) return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+		else if (stencil) return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+		else return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	case ResourceAccessType::Attachment:
-		return depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	case ResourceAccessType::StorageRead:
-		return depth ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	case ResourceAccessType::StorageWrite:
-		return VK_IMAGE_LAYOUT_GENERAL;
-	case ResourceAccessType::StorageReadWrite:
+#ifdef DEPTH_AND_STENCIL_SEPARATELY
+		if (depth && stencil) return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		else if (depth) return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+		else if (stencil) return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+#else
+		if (depth || stencil) return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+#endif
+		else return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	case ResourceAccessType::Storage:
 		return VK_IMAGE_LAYOUT_GENERAL;
 	case ResourceAccessType::CopySRC:
 		return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -681,6 +696,7 @@ VkAttachmentLoadOp VulkanContext::tovk(AttachmentLoadOp loadOp)
 	{
 	default:
 		AKA_ASSERT(false, "Invalid attachment load op");
+		[[fallthrough]];
 	case AttachmentLoadOp::Clear:
 		return VK_ATTACHMENT_LOAD_OP_CLEAR;
 	case AttachmentLoadOp::Load:
@@ -695,6 +711,7 @@ VkAttachmentStoreOp VulkanContext::tovk(AttachmentStoreOp loadOp)
 	{
 	default:
 		AKA_ASSERT(false, "Invalid attachment store op");
+		[[fallthrough]];
 	case AttachmentStoreOp::Store:
 		return VK_ATTACHMENT_STORE_OP_STORE;
 	case AttachmentStoreOp::DontCare:

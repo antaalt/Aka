@@ -225,9 +225,12 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		// No memory
 
 		// Transition swapchain color image
-		vk_colorTexture->transitionImageLayout(
+		VulkanTexture::transitionImageLayout(
 			cmd,
-			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			vk_colorTexture->vk_image,
+			ResourceAccessType::Undefined,
+			ResourceAccessType::Present,
+			colorFormat,
 			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		);
 		// Create depth texture
@@ -248,10 +251,13 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			// Transition swapchain depth image
 			VulkanTexture* vk_depthTexture = device->getVk<VulkanTexture>(depthTexture);
 			AKA_ASSERT(!hasStencil, "Invalid layout");
-			vk_depthTexture->transitionImageLayout(
+			VulkanTexture::transitionImageLayout(
 				cmd,
-				VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-				VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 }
+				vk_depthTexture->vk_image,
+				ResourceAccessType::Undefined,
+				ResourceAccessType::Present,
+				depthFormat,
+				VkImageSubresourceRange{ VulkanTexture::getAspectFlag(depthFormat), 0, 1, 0, 1}
 			);
 		}
 		

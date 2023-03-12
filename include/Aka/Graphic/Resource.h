@@ -28,9 +28,7 @@ enum class ResourceAccessType
 	Undefined,			// No access
 	Resource,			// Access as SRV
 	Attachment,			// Access as attachment
-	StorageRead,		// Access as UAV
-	StorageWrite,		// Access as UAV
-	StorageReadWrite,	// Access as UAV
+	Storage,			// Access as UAV
 	CopySRC,			// Access as copy
 	CopyDST,			// Access as copy
 	Present,			// Access as swapchain

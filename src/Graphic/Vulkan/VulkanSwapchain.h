@@ -43,6 +43,9 @@ struct VulkanSwapchain :
 
 	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle);
 
+	//uint32_t getImageCount();
+
+//private:
 	bool needRecreation;
 	PlatformDevice* platform;
 	VkSwapchainKHR swapchain;

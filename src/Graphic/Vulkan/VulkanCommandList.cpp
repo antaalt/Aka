@@ -148,7 +148,7 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 	}
 
 	// Transition to attachment optimal if shader resource
-	if (vk_framebuffer->hasDepthStencil())
+	/*if (vk_framebuffer->hasDepthStencil())
 	{
 		const Texture* depthTexture = device->get(vk_framebuffer->depth.texture);
 		AKA_ASSERT(has(depthTexture->flags, TextureFlag::RenderTarget), "Invalid attachment");
@@ -190,7 +190,7 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 				);
 			}
 		}
-	}
+	}*/
 
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -210,7 +210,7 @@ void VulkanCommandList::endRenderPass()
 	vkCmdEndRenderPass(vk_command);
 
 	// Transition to shader resource optimal
-	if (vk_framebuffer->hasDepthStencil())
+	/*if (vk_framebuffer->hasDepthStencil())
 	{
 		const Texture* depthTexture = device->get(vk_framebuffer->depth.texture);
 		AKA_ASSERT(has(depthTexture->flags, TextureFlag::RenderTarget), "Invalid attachment");
@@ -260,7 +260,7 @@ void VulkanCommandList::endRenderPass()
 				);
 			}
 		}
-	}
+	}*/
 	
 	this->vk_framebuffer = nullptr;
 }
@@ -298,13 +298,13 @@ void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle se
 	const DescriptorSet* descriptorSet = device->get(set);
 	if (descriptorSet->bindings.count > 0)
 	{
-		VkPipelineLayout vk_layout = VK_NULL_HANDLE;
+		VkPipelineLayout vk_pipelineLayout = VK_NULL_HANDLE;
 		if (vk_graphicPipeline)
-			vk_layout = vk_graphicPipeline->vk_pipelineLayout;
+			vk_pipelineLayout = vk_graphicPipeline->vk_pipelineLayout;
 		else if (vk_computePipeline)
-			vk_layout = vk_computePipeline->vk_pipelineLayout;
+			vk_pipelineLayout = vk_computePipeline->vk_pipelineLayout;
 		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(descriptorSet);
-		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_layout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
 		this->vk_sets[index] = vk_material;
 	}
 }
@@ -317,11 +317,11 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 
 	VkPipelineBindPoint vk_bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
 	VkDescriptorSet vk_sets[8]{}; // Max bindings
-	VkPipelineLayout vk_layout = VK_NULL_HANDLE;
+	VkPipelineLayout vk_pipelineLayout = VK_NULL_HANDLE;
 	if (vk_graphicPipeline)
-		vk_layout = vk_graphicPipeline->vk_pipelineLayout;
+		vk_pipelineLayout = vk_graphicPipeline->vk_pipelineLayout;
 	else if (vk_computePipeline)
-		vk_layout = vk_computePipeline->vk_pipelineLayout;
+		vk_pipelineLayout = vk_computePipeline->vk_pipelineLayout;
 	for (uint32_t i = 0; i < count; i++)
 	{
 		const DescriptorSet* descriptorSet = device->get(sets[i]);
@@ -336,7 +336,7 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 			vk_sets[i] = VK_NULL_HANDLE;
 		}
 	}
-	vkCmdBindDescriptorSets(vk_command, vk_bindPoint, vk_layout, 0, count, vk_sets, 0, nullptr);
+	vkCmdBindDescriptorSets(vk_command, vk_bindPoint, vk_pipelineLayout, 0, count, vk_sets, 0, nullptr);
 }
 void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
@@ -344,8 +344,9 @@ void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src
 	VulkanTexture::transitionImageLayout(
 		vk_command,
 		vk_texture->vk_image,
-		VulkanContext::tovk(src, Texture::hasDepth(vk_texture->format)),
-		VulkanContext::tovk(dst, Texture::hasDepth(vk_texture->format)),
+		src,
+		dst, 
+		vk_texture->format,
 		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers },
 		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // Default...
 		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT

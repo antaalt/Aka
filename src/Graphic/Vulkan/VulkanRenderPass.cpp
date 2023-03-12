@@ -38,8 +38,8 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 		vk_attachment.storeOp = VulkanContext::tovk(attachment.storeOp);
 		vk_attachment.stencilLoadOp = VulkanContext::tovk(attachment.loadOp);
 		vk_attachment.stencilStoreOp = VulkanContext::tovk(attachment.storeOp);
-		vk_attachment.initialLayout = VulkanContext::tovk(attachment.initialLayout, false);
-		vk_attachment.finalLayout = VulkanContext::tovk(attachment.finalLayout, false);
+		vk_attachment.initialLayout = VulkanContext::tovk(attachment.initialLayout, attachment.format);
+		vk_attachment.finalLayout = VulkanContext::tovk(attachment.finalLayout, attachment.format);
 
 		vk_colorAttachmentsReferences[i].attachment = static_cast<uint32_t>(i);
 		vk_colorAttachmentsReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -55,11 +55,11 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 		depthAttachment.storeOp = VulkanContext::tovk(attachment.storeOp);
 		depthAttachment.stencilLoadOp = VulkanContext::tovk(attachment.loadOp);
 		depthAttachment.stencilStoreOp = VulkanContext::tovk(attachment.storeOp);
-		depthAttachment.initialLayout = VulkanContext::tovk(attachment.initialLayout, true);
-		depthAttachment.finalLayout = VulkanContext::tovk(attachment.finalLayout, true);
+		depthAttachment.initialLayout = VulkanContext::tovk(attachment.initialLayout, attachment.format);
+		depthAttachment.finalLayout = VulkanContext::tovk(attachment.finalLayout, attachment.format);
 
 		vk_depthAttachment.attachment = static_cast<uint32_t>(vk_attachments.size());
-		vk_depthAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		vk_depthAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // TODO DEPTH_AND_STENCIL_SEPARATELY
 
 		vk_attachments.push_back(depthAttachment);
 	}

@@ -49,7 +49,7 @@ struct RenderPassState
 	Attachment colors[FramebufferMaxColorAttachmentCount];
 	Attachment depth;
 
-	bool hasDepth() const { return depth.format != TextureFormat::Unknown; }
+	bool hasDepthStencil() const { return depth.format != TextureFormat::Unknown; }
 
 	RenderPassState& addColor(TextureFormat format, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Attachment)
 	{
