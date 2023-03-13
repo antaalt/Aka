@@ -37,7 +37,7 @@
 	#endif
 
 	#define AKA_ASSERT(condition, message)				\
-	do									\
+	do													\
 	{													\
 		if (condition) break;							\
 		AKA_PRINT(										\

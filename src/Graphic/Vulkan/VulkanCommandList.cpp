@@ -34,60 +34,49 @@ void VulkanGraphicDevice::release(CommandList* cmd)
 	delete cmd;
 }
 
+void VulkanGraphicDevice::submit(CommandList* command, QueueType queue)
+{
+	submit(&command, 1, queue);
+}
+
 void VulkanGraphicDevice::submit(CommandList** commands, uint32_t count, QueueType queue)
 {
+	bool isMainCommandList = true; // TODO should move these data out of here to allow submit of any command list.
+	VkSemaphore signalSemaphore = VK_NULL_HANDLE;
+	VkSemaphore waitSemaphore = VK_NULL_HANDLE;
+	VkFence fence = VK_NULL_HANDLE;
+	if (isMainCommandList)
+	{
+		const VulkanFrame& vk_frame = m_swapchain.getVkFrame(m_swapchain.getCurrentFrameIndex());
+		signalSemaphore = vk_frame.presentSemaphore;
+		waitSemaphore = vk_frame.acquireSemaphore;
+		fence = vk_frame.presentFence;
+	}
 	VulkanCommandList** vk_commands = reinterpret_cast<VulkanCommandList**>(commands);
-	VkQueue vk_queue = getQueue(queue);
+	VkQueue vk_queue = getVkQueue(queue);
 
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
+
+	std::vector<VkCommandBuffer> cmds(count);
+	for (uint32_t i = 0; i < count; i++)
+		cmds[i] = vk_commands[i]->vk_command;
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = count;
-	std::vector<VkCommandBuffer> cmds(count);
-	for (uint32_t i = 0; i < count; i++)
-		cmds[i] = vk_commands[i]->vk_command;
 	submitInfo.pCommandBuffers = cmds.data();
 	submitInfo.pWaitDstStageMask = waitStages;
-
-	// Dirty temp hack
-	// TODO move semaphore & fence to command list.
-	// Cache them until we need them.
-	// problem : who own them ?
-	VkFence fence = m_swapchain.frames[m_swapchain.currentFrameIndex.value].presentFence;
-	VkSemaphore signalSemaphore = m_swapchain.frames[m_swapchain.currentFrameIndex.value].presentSemaphore;
-	VkSemaphore waitSemaphore = m_swapchain.frames[m_swapchain.currentFrameIndex.value].acquireSemaphore;
-	VK_CHECK_RESULT(vkResetFences(m_context.device, 1, &fence));
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &signalSemaphore;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &waitSemaphore;
-	// / Dirty temp hack
 
 	VK_CHECK_RESULT(vkQueueSubmit(vk_queue, 1, &submitInfo, fence));
 }
 
 void VulkanGraphicDevice::wait(QueueType queue)
 {
-	VK_CHECK_RESULT(vkQueueWaitIdle(getQueue(queue)));
-}
-
-VkQueue VulkanGraphicDevice::getQueue(QueueType type)
-{
-	switch (type)
-	{
-	default:
-		return VK_NULL_HANDLE;
-	case QueueType::Graphic:
-		return m_context.graphicQueue.queue;
-		break;
-	case QueueType::Compute:
-		return m_context.graphicQueue.queue;
-		break;
-	case QueueType::Copy:
-		return m_context.graphicQueue.queue;
-		break;
-	}
+	VK_CHECK_RESULT(vkQueueWaitIdle(getVkQueue(queue)));
 }
 
 VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer command) :
@@ -147,51 +136,6 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 		clearValues.push_back(depthClear);
 	}
 
-	// Transition to attachment optimal if shader resource
-	/*if (vk_framebuffer->hasDepthStencil())
-	{
-		const Texture* depthTexture = device->get(vk_framebuffer->depth.texture);
-		AKA_ASSERT(has(depthTexture->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(depthTexture->flags, TextureFlag::ShaderResource))
-		{
-			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
-			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-			{
-				vk_texture->transitionImageLayout(
-					vk_command,
-					VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-					VkImageSubresourceRange{ 
-						VulkanTexture::getAspectFlag(vk_texture->format),
-						0, vk_texture->levels,
-						0, vk_texture->layers
-					}
-				);
-			}
-		}
-	}
-	for ( uint32_t i = 0; i < vk_framebuffer->count; i++)
-	{
-		const Attachment& att = vk_framebuffer->colors[i];
-		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(att.texture);
-		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(vk_texture->flags, TextureFlag::ShaderResource))
-		{
-			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
-			if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			{
-				vk_texture->transitionImageLayout(
-					vk_command,
-					VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-					VkImageSubresourceRange{
-						VulkanTexture::getAspectFlag(vk_texture->format),
-						0, vk_texture->levels,
-						0, vk_texture->layers
-					}
-				);
-			}
-		}
-	}*/
-
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	beginInfo.renderPass = vk_renderPass->vk_renderpass;
@@ -209,59 +153,6 @@ void VulkanCommandList::endRenderPass()
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	vkCmdEndRenderPass(vk_command);
 
-	// Transition to shader resource optimal
-	/*if (vk_framebuffer->hasDepthStencil())
-	{
-		const Texture* depthTexture = device->get(vk_framebuffer->depth.texture);
-		AKA_ASSERT(has(depthTexture->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(depthTexture->flags, TextureFlag::ShaderResource))
-		{
-			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
-			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
-			{
-				vk_texture->insertMemoryBarrier(
-					vk_command,
-					VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-					VkImageSubresourceRange{
-						VulkanTexture::getAspectFlag(vk_texture->format),
-						0, vk_texture->levels,
-						0, vk_texture->layers
-					},
-					VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-					VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-					VK_ACCESS_SHADER_READ_BIT
-				);
-			}
-		}
-	}
-	for (uint32_t i = 0; i < vk_framebuffer->count; i++)
-	{
-		const Attachment& att = vk_framebuffer->colors[i];
-		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(att.texture);
-		AKA_ASSERT(has(vk_texture->flags, TextureFlag::RenderTarget), "Invalid attachment");
-		if (has(vk_texture->flags, TextureFlag::ShaderResource))
-		{
-			// TODO this check is not in sync with async command buffer and will work only when using a single cmd buffer
-			//if (vk_texture->vk_layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-			{
-				vk_texture->insertMemoryBarrier(
-					vk_command,
-					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // vk_framebuffer->isSwapchain ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-					VkImageSubresourceRange{
-						VulkanTexture::getAspectFlag(vk_texture->format),
-						0, vk_texture->levels,
-						0, vk_texture->layers
-					},
-					VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-					VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-					VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-					VK_ACCESS_SHADER_READ_BIT
-				);
-			}
-		}
-	}*/
-	
 	this->vk_framebuffer = nullptr;
 }
 
@@ -346,10 +237,7 @@ void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src
 		vk_texture->vk_image,
 		src,
 		dst, 
-		vk_texture->format,
-		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(vk_texture->format), 0, vk_texture->levels, 0, vk_texture->layers },
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // Default...
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		vk_texture->format
 	);
 }
 void VulkanCommandList::bindVertexBuffer(const BufferHandle buffers, uint32_t binding, uint32_t offset)
@@ -384,28 +272,32 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_framebuffer != nullptr, "Need an active render pass.");
-	VkImageAspectFlags flags = 0;
-	if (has(mask, ClearMask::Color))
-		flags |= VK_IMAGE_ASPECT_COLOR_BIT;
-	if (has(mask, ClearMask::Depth))
-		flags |= VK_IMAGE_ASPECT_DEPTH_BIT;
-	if (has(mask, ClearMask::Stencil))
-		flags |= VK_IMAGE_ASPECT_STENCIL_BIT;
-	//vk_pipeline->renderPass.
-	std::vector<VkClearAttachment> attachments;
-	for (uint32_t i = 0; i < this->vk_framebuffer->count; i++)
-	{
-		VkClearAttachment att{};
-		att.aspectMask = flags;
-		att.clearValue.color = VkClearColorValue{ color[0], color[1], color[2], color[3] };
-		att.colorAttachment = i;
-		attachments.push_back(att);
 
+	std::vector<VkClearAttachment> attachments;
+	if (!isNull(mask & ClearMask::Color))
+	{
+		for (uint32_t i = 0; i < this->vk_framebuffer->count; i++)
+		{
+			const Texture* tex = device->get(vk_framebuffer->colors[i].texture);
+			AKA_ASSERT(Texture::isColor(tex->format), "Texture is not color.");
+			VkClearAttachment att{};
+			att.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			att.clearValue.color = VkClearColorValue{ color[0], color[1], color[2], color[3] };
+			att.colorAttachment = i;
+			attachments.push_back(att);
+		}
 	}
 	if (this->vk_framebuffer->depth.texture != gfx::TextureHandle::null)
 	{
+		const Texture* tex = device->get(vk_framebuffer->depth.texture);
+		VkImageAspectFlags aspect = 0;
+		if (Texture::hasDepth(tex->format))
+			aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+		if (Texture::hasStencil(tex->format))
+			aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+		AKA_ASSERT(aspect != 0, "Invalid depth image.");
 		VkClearAttachment att{};
-		att.aspectMask = flags;
+		att.aspectMask = aspect;
 		att.clearValue.depthStencil = VkClearDepthStencilValue{ depth, stencil };
 		att.colorAttachment = this->vk_framebuffer->count; // depth is last
 		attachments.push_back(att);
@@ -489,6 +381,42 @@ void VulkanCommandList::endSingleTime(VkDevice device, VkCommandPool commandPool
 	VK_CHECK_RESULT(vkQueueWaitIdle(graphicsQueue));
 
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
+
+VkQueue VulkanGraphicDevice::getVkQueue(QueueType type)
+{
+	switch (type)
+	{
+	default:
+		return VK_NULL_HANDLE;
+	case QueueType::Graphic:
+		return m_context.graphicQueue.queue;
+		break;
+	case QueueType::Compute:
+		return m_context.graphicQueue.queue;
+		break;
+	case QueueType::Copy:
+		return m_context.graphicQueue.queue;
+		break;
+	}
+}
+
+uint32_t VulkanGraphicDevice::getVkQueueIndex(QueueType type)
+{
+	switch (type)
+	{
+	default:
+		return ~0U; // Invalid queue index.
+	case QueueType::Graphic:
+		return m_context.graphicQueue.index;
+		break;
+	case QueueType::Compute:
+		return m_context.graphicQueue.index;
+		break;
+	case QueueType::Copy:
+		return m_context.graphicQueue.index;
+		break;
+	}
 }
 
 };

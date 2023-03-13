@@ -92,8 +92,9 @@ public:
 	// Framebuffer
 	FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) override;
 	void destroy(FramebufferHandle handle) override;
+	void destroy(BackbufferHandle handle) override;
 	BackbufferHandle createBackbuffer(RenderPassHandle handle) override;
-	RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Present) override;
+	RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) override;
 	FramebufferHandle get(BackbufferHandle handle, Frame* frame) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
 
@@ -129,13 +130,13 @@ public:
 	// Command list
 	CommandList* acquireCommandList() override;
 	void release(CommandList* cmd) override;
+	void submit(CommandList* command, QueueType queue = QueueType::Default) override;
 	void submit(CommandList** commands, uint32_t count, QueueType queue = QueueType::Default) override;
 	void wait(QueueType queue) override;
-	VkQueue getQueue(QueueType type);
 
 	// Frame
 	Frame* frame() override;
-	void present(Frame* frame) override;
+	SwapchainStatus present(Frame* frame) override;
 	void wait() override;
 
 	// Tools
@@ -155,22 +156,11 @@ public:
 	VkInstance getVkInstance() { return m_context.instance; }
 	VkDevice getVkDevice() { return m_context.device; }
 	VkPhysicalDevice getVkPhysicalDevice() { return m_context.physicalDevice; }
-	VkQueue getVkQueue(QueueType queue) {
-		switch (queue) {
-		default:
-		case QueueType::Graphic:
-			return m_context.graphicQueue.queue;
-		}
-	}
-	uint32_t getVkQueueIndex(QueueType queue) {
-		switch (queue) {
-		default:
-		case QueueType::Graphic:
-			return m_context.graphicQueue.index;
-		}
-	}
+	VkCommandPool getVkCommandPool() { return m_context.commandPool; }
+	VkQueue getVkQueue(QueueType type);
+	uint32_t getVkQueueIndex(QueueType queue);
 private:
-	friend struct VulkanSwapchain;
+	friend class VulkanSwapchain;
 	// Context
 	VulkanContext m_context;
 	

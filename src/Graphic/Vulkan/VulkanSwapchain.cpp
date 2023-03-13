@@ -120,11 +120,27 @@ bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
+VulkanSwapchain::VulkanSwapchain() : 
+	m_needRecreation(false),
+	m_width(0),
+	m_height(0),
+	m_platform(nullptr),
+	m_swapchain(VK_NULL_HANDLE),
+	m_imageCount(0),
+	m_currentFrameIndex{ 0 },
+	m_frames{},
+	m_backbuffers{},
+	m_colorFormat(TextureFormat::Unknown),
+	m_depthFormat(TextureFormat::Unknown),
+	m_backbufferTextures{}
+{
+}
+
 void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* platform)
 {
 	VulkanContext* context = &device->m_context;
 	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(platform);
-	this->platform = platform;
+	m_platform = platform;
 
 	VkSurfaceCapabilitiesKHR capabilities;
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context->physicalDevice, context->surface, &capabilities));
@@ -132,15 +148,15 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	VkSurfaceFormatKHR surfaceFormat = getSurfaceFormat(context->physicalDevice, context->surface);
 	VkPresentModeKHR bestMode = getPresentMode(context->physicalDevice, context->surface);
 	VkExtent2D extent = getSurfaceExtent(capabilities, glfw3->getGLFW3Handle());
-	imageCount = capabilities.minImageCount + 1;
-	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
-		imageCount = capabilities.maxImageCount;
+	m_imageCount = capabilities.minImageCount + 1;
+	if (capabilities.maxImageCount > 0 && m_imageCount > capabilities.maxImageCount)
+		m_imageCount = capabilities.maxImageCount;
 
 	// Create swapchain
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = context->surface;
-	createInfo.minImageCount = imageCount;
+	createInfo.minImageCount = m_imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
@@ -173,26 +189,26 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	VK_CHECK_RESULT(vkCreateSwapchainKHR(context->device, &createInfo, nullptr, &swapchain));
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(context->device, &createInfo, nullptr, &m_swapchain));
 
 	VkFormat vk_depthFormat = findDepthFormat(context->physicalDevice);
 	VkFormat vk_colorFormat = surfaceFormat.format;
 	// TODO convert vulkan format to aka format
-	const TextureFormat colorFormat = TextureFormat::BGRA8;
-	const TextureFormat depthFormat = TextureFormat::Depth32F;
-	AKA_ASSERT(VulkanContext::tovk(colorFormat) == vk_colorFormat, "Invalid color format");
-	AKA_ASSERT(VulkanContext::tovk(depthFormat) == vk_depthFormat, "Invalid depth format");
+	m_colorFormat = TextureFormat::BGRA8;
+	m_depthFormat = TextureFormat::Depth32F;
+	AKA_ASSERT(VulkanContext::tovk(m_colorFormat) == vk_colorFormat, "Invalid color format");
+	AKA_ASSERT(VulkanContext::tovk(m_depthFormat) == vk_depthFormat, "Invalid depth format");
 
 	const bool hasDepth = true;
 	const bool hasStencil = false;
 	// Get images & layout
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, nullptr));
-	std::vector<VkImage> vk_images(imageCount);
-	backbufferTextures.resize(imageCount);
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, swapchain, &imageCount, vk_images.data()));
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, m_swapchain, &m_imageCount, nullptr));
+	std::vector<VkImage> vk_images(m_imageCount);
+	m_backbufferTextures.resize(m_imageCount);
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, m_swapchain, &m_imageCount, vk_images.data()));
 
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context->device, context->commandPool);
-	for (size_t i = 0; i < imageCount; i++)
+	for (size_t i = 0; i < m_imageCount; i++)
 	{
 		// Create swapchain view
 		VkImageViewCreateInfo viewInfo{};
@@ -214,77 +230,64 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		VulkanTexture* vk_colorTexture = device->m_texturePool.acquire(str.cstr(), extent.width, extent.height, 1,
 			TextureType::Texture2D,
 			1, 1,
-			colorFormat,
+			m_colorFormat,
 			TextureFlag::RenderTarget
 		);
+		// Cannot transition color images yet as they are not acquired.
 		TextureHandle colorTexture = TextureHandle{ vk_colorTexture };
 		vk_colorTexture->vk_image = vk_images[i];
 		vk_colorTexture->vk_view = view;
-		setDebugName(context->device, vk_images[i], "VkImage_Swapchain", i);
-		setDebugName(context->device, view, "VkImageView_Swapchain", i);
+		setDebugName(context->device, vk_images[i], "SwapchainColor", i);
+		setDebugName(context->device, view, "SwapchainColorView", i);
 		// No memory
-
-		// Transition swapchain color image
-		VulkanTexture::transitionImageLayout(
-			cmd,
-			vk_colorTexture->vk_image,
-			ResourceAccessType::Undefined,
-			ResourceAccessType::Present,
-			colorFormat,
-			VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
-		);
+		
 		// Create depth texture
 		gfx::TextureHandle depthTexture;
 		if (hasDepth)
 		{
 			String str = String::format("SwapchainDepthImage%u", i);
+			// Layout should be set to default.
 			depthTexture = device->createTexture(
 				str.cstr(),
 				extent.width, extent.height, 1,
 				TextureType::Texture2D,
 				1,
 				1,
-				depthFormat,
+				m_depthFormat,
 				TextureFlag::RenderTarget,
 				nullptr
 			);
-			// Transition swapchain depth image
-			VulkanTexture* vk_depthTexture = device->getVk<VulkanTexture>(depthTexture);
-			AKA_ASSERT(!hasStencil, "Invalid layout");
-			VulkanTexture::transitionImageLayout(
-				cmd,
-				vk_depthTexture->vk_image,
-				ResourceAccessType::Undefined,
-				ResourceAccessType::Present,
-				depthFormat,
-				VkImageSubresourceRange{ VulkanTexture::getAspectFlag(depthFormat), 0, 1, 0, 1}
-			);
 		}
 		
-		backbufferTextures[i].color = colorTexture;
-		backbufferTextures[i].depth = depthTexture;
+		m_backbufferTextures[i].color = colorTexture;
+		m_backbufferTextures[i].depth = depthTexture;
 	}
 
 	// Frames
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	VkFenceCreateInfo fenceInfo = {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	VkFenceCreateInfo fenceSignaledInfo = {};
+	fenceSignaledInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceSignaledInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	for (VulkanFrame& frame : frames)
+	for (VulkanFrame& frame : m_frames)
 	{
 		VK_CHECK_RESULT(vkCreateSemaphore(context->device, &semaphoreInfo, nullptr, &frame.presentSemaphore));
 		VK_CHECK_RESULT(vkCreateSemaphore(context->device, &semaphoreInfo, nullptr, &frame.acquireSemaphore));
-		VK_CHECK_RESULT(vkCreateFence(context->device, &fenceInfo, nullptr, &frame.presentFence));
-		VK_CHECK_RESULT(vkCreateFence(context->device, &fenceInfo, nullptr, &frame.acquireFence));
+		VK_CHECK_RESULT(vkCreateFence(context->device, &fenceSignaledInfo, nullptr, &frame.presentFence));
 	}
 }
 
 void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 {
-	for (auto backbuffer : backbuffers)
+	m_needRecreation = false;
+	m_imageCount = 0;
+	m_currentFrameIndex.value = 0;
+	m_colorFormat = TextureFormat::Unknown;
+	m_depthFormat = TextureFormat::Unknown;
+
+	for (auto backbuffer : m_backbuffers)
 	{
 		backbuffer.first; // TODO: Clear renderpass ref count
 		for (FramebufferHandle fb : backbuffer.second.handles)
@@ -292,57 +295,70 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 			device->destroy(fb);
 		}
 	}
-	for (BackBufferTextures backbuffer : backbufferTextures)
+	m_backbuffers.clear();
+	for (BackBufferTextures backbuffer : m_backbufferTextures)
 	{
 		device->destroy(backbuffer.color);
 		device->destroy(backbuffer.depth);
 	}
+	m_backbufferTextures.clear();
 
-	vkDestroySwapchainKHR(device->getVkDevice(), swapchain, nullptr);
-	for (VulkanFrame& frame : frames)
+	vkDestroySwapchainKHR(device->getVkDevice(), m_swapchain, nullptr);
+	m_swapchain = VK_NULL_HANDLE;
+	for (VulkanFrame& frame : m_frames)
 	{
 		vkDestroySemaphore(device->getVkDevice(), frame.acquireSemaphore, nullptr);
 		vkDestroySemaphore(device->getVkDevice(), frame.presentSemaphore, nullptr);
-		vkDestroyFence(device->getVkDevice(), frame.acquireFence, nullptr);
 		vkDestroyFence(device->getVkDevice(), frame.presentFence, nullptr);
+		frame.presentFence = VK_NULL_HANDLE;
+		frame.acquireSemaphore = VK_NULL_HANDLE;
+		frame.presentSemaphore = VK_NULL_HANDLE;
 	}
 }
 
 void VulkanSwapchain::onReceive(const BackbufferResizeEvent& e)
 {
-	needRecreation = true;
+	if (e.width != m_width || e.height != m_height)
+	{
+		m_needRecreation = true;
+	}
 }
 
 void VulkanSwapchain::recreate(VulkanGraphicDevice* device)
 {
-	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(platform);
+	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(m_platform);
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(glfw3->getGLFW3Handle(), &width, &height);
-	while (width == 0 || height == 0) {
+	while (width == 0 || height == 0) // Wait while window minimized
+	{
 		glfwGetFramebufferSize(glfw3->getGLFW3Handle(), &width, &height);
 		glfwWaitEvents();
 	}
 
-	vkDeviceWaitIdle(device->context().device);
-
+	device->wait();
+	// Destroy swapchain & recreate it.
 	shutdown(device);
-	initialize(device, platform);
+	bool changed = (m_width != width) || (m_height != height);
+	m_width = width;
+	m_height = height;
+	initialize(device, m_platform);
+	EventDispatcher<BackbufferResizeEvent>::trigger(BackbufferResizeEvent{ m_width, m_height });
 }
 
 VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 {
-	VulkanFrame& vk_frame = frames[currentFrameIndex.value];
+	VulkanFrame& vk_frame = m_frames[m_currentFrameIndex.value];
 
 	// Wait for the frame to complete before acquiring it.
-	vk_frame.wait(device->context().device);
+	vk_frame.wait(device->getVkDevice());
 
-	uint32_t imageIndex = 0;
+	uint32_t imageIndex; // Will be initialized by following call
 	VkResult result = vkAcquireNextImageKHR(
-		device->context().device,
-		swapchain,
+		device->getVkDevice(),
+		m_swapchain,
 		(std::numeric_limits<uint64_t>::max)(),
 		vk_frame.acquireSemaphore,
-		VK_NULL_HANDLE,//vk_frame.acquireFence,
+		VK_NULL_HANDLE,
 		&imageIndex
 	);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -352,26 +368,28 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
-		return nullptr;
+		throw std::runtime_error("Failed to acquire swapchain image");
 	}
+	AKA_ASSERT(imageIndex < getImageCount(), "Invalid image index");
+	AKA_ASSERT(FrameIndex::MaxInFlight <= getImageCount(), "More frames in flight than image available. May induce bugs in application.");
 
 	// Only reset the fence if we are submitting work
-	vkResetFences(device->context().device, 1, &vk_frame.presentFence);
+	vkResetFences(device->getVkDevice(), 1, &vk_frame.presentFence);
 	
 	// Set the index 
-	vk_frame.image.value = imageIndex;
+	vk_frame.setImageIndex(ImageIndex{ imageIndex });
 
-	AKA_ASSERT(FrameIndex::MaxInFlight <= imageCount, "more frames in flight than image available. May induce bugs in application.");
 	// TODO check image finished rendering ?
 	// If less image than frames in flight, might be necessary
 
 	return &vk_frame;
 }
 
-void VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* frame)
+SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* vk_frame)
 {
-	VkSemaphore waitSemaphores[] = { frame->presentSemaphore };
-	VkSwapchainKHR swapChains[] = { swapchain };
+	VkSemaphore waitSemaphores[] = { vk_frame->presentSemaphore };
+	VkSwapchainKHR swapChains[] = { m_swapchain };
+	uint32_t indices[] = { vk_frame->getImageIndex().value };
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -379,37 +397,59 @@ void VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* frame)
 	presentInfo.pWaitSemaphores = waitSemaphores;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &frame->image.value;
+	presentInfo.pImageIndices = indices;
 
 	VkResult result = vkQueuePresentKHR(device->context().presentQueue.queue, &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || needRecreation)
+	SwapchainStatus status = SwapchainStatus::Ok;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_needRecreation)
 	{
-		needRecreation = false;
+		m_needRecreation = false;
 		recreate(device);
+		status = SwapchainStatus::Recreated;
 	}
 	else if (result != VK_SUCCESS)
 	{
 		Logger::error("Failed to present swap chain image!");
+		status = SwapchainStatus::Error;
 	}
-	currentFrameIndex.next();
+	m_currentFrameIndex.next();
+	return status;
 }
 
 BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle)
 {
+	RenderPassState state = device->get(handle)->state;
+	auto it = m_backbuffers.find(state);
+	if (it != m_backbuffers.end())
+		return BackbufferHandle{ &it->second };
 	// Create a framebuffer for backbuffer compatible with given render pass.
 	Backbuffer backbuffer("Backbuffer"); // TODO add hash
-	for (uint32_t i = 0; i < imageCount; i++)
+	for (uint32_t i = 0; i < m_imageCount; i++)
 	{
-		Attachment color = Attachment{ backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
-		Attachment depth = Attachment{ backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
+		Attachment color = Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
+		Attachment depth = Attachment{ m_backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
 		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, &color, 1, &depth);
 		backbuffer.handles.push_back(fb);
 	}
-	auto it = backbuffers.insert(std::make_pair(device->get(handle)->state, backbuffer));
-	AKA_ASSERT(it.second, "Failed to create backbuffer");
+	auto itInsert = m_backbuffers.insert(std::make_pair(device->get(handle)->state, backbuffer));
+	AKA_ASSERT(itInsert.second, "Failed to create backbuffer");
 	// TODO this might get invalidated when growing the map...
-	return BackbufferHandle{ &it.first->second }; // backbuffer handle use render pass handle for now
+	return BackbufferHandle{ &itInsert.first->second }; // backbuffer handle use render pass handle for now
+}
+
+void VulkanSwapchain::destroyBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle)
+{
+	/*const Backbuffer* backbuffer = reinterpret_cast<const Backbuffer*>(handle.__data);
+	RenderPassState state;
+	for (FramebufferHandle handle : backbuffer->handles)
+	{
+		device->destroy(handle);
+		state = device->get(device->get(handle)->renderPass)->state;
+	}
+	m_backbuffers.erase(state);*/
+	// Should ref count state to do not destroy shared backbuffer.
+	// For now, do not destroy anything.
 }
 
 void VulkanFrame::wait(VkDevice device)

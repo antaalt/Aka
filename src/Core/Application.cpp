@@ -22,6 +22,7 @@ Application::Application(const std::vector<Layer*> layers) :
 	m_program(nullptr),
 	m_registry(nullptr),
 	m_layers(layers),
+	m_needClientResize(false),
 	m_width(0),
 	m_height(0),
 	m_running(true)
@@ -96,12 +97,31 @@ void Application::present()
 void Application::end()
 {
 }
+void Application::resize()
+{
+	m_needClientResize = false;
+	EventDispatcher<AppResizeEvent>::trigger(AppResizeEvent{ m_width, m_height });
+	onResize(m_width, m_height);
+
+}
 void Application::onReceive(const WindowResizeEvent& event)
 {
-	onResize(event.width, event.height);
-	EventDispatcher<AppResizeEvent>::trigger(AppResizeEvent{ event.width, event.height});
-	m_width = event.width;
-	m_height = event.height;
+	if (m_width != event.width || m_height != event.height)
+	{
+		m_needClientResize = true; // Do not resize now as swapchain not already resized...
+		m_width = event.width;
+		m_height = event.height;
+	}
+}
+void Application::onReceive(const BackbufferResizeEvent& event)
+{
+	if (m_width != event.width || m_height != event.height)
+	{
+		// Should handle backbuffer & window differently...
+		m_needClientResize = true; // Do not resize now as swapchain not already resized...
+		m_width = event.width;
+		m_height = event.height;
+	}
 }
 void Application::onReceive(const QuitEvent& event)
 {
@@ -183,10 +203,26 @@ void Application::run(const Config& config)
 		app->update(deltaTime);
 		// Rendering
 		gfx::Frame* frame = graphic->frame();
-		app->frame();
-		app->render(frame);
-		app->present();
-		graphic->present(frame);
+		if (frame != nullptr)
+		{
+			app->frame();
+			app->render(frame);
+			app->present();
+			gfx::SwapchainStatus status = graphic->present(frame);
+			if (status == gfx::SwapchainStatus::Recreated)
+			{
+				app->m_needClientResize = true;
+			}
+		}
+		else
+		{
+			app->m_needClientResize = true;
+		}
+
+		if (app->m_needClientResize)
+		{
+			app->resize();
+		}
 
 		app->end();
 		EventDispatcher<QuitEvent>::dispatch();

@@ -11,9 +11,12 @@ namespace gfx {
 
 struct VulkanFrame : Frame
 {
+	friend class VulkanGraphicDevice;
+	friend class VulkanSwapchain;
+
 	VkSemaphore acquireSemaphore;
 	VkSemaphore presentSemaphore;
-	VkFence acquireFence;
+	//VkFence acquireFence;
 	VkFence presentFence;
 
 	void wait(VkDevice device);
@@ -29,9 +32,12 @@ struct BackBufferTextures
 
 class VulkanGraphicDevice;
 
-struct VulkanSwapchain : 
+class VulkanSwapchain : 
 	EventListener<BackbufferResizeEvent>
 {
+public:
+	VulkanSwapchain();
+
 	void initialize(VulkanGraphicDevice* device, PlatformDevice* platform);
 	void shutdown(VulkanGraphicDevice* device);
 
@@ -39,24 +45,36 @@ struct VulkanSwapchain :
 	void recreate(VulkanGraphicDevice* device);
 
 	VulkanFrame* acquireNextImage(VulkanGraphicDevice* context);
-	void present(VulkanGraphicDevice* device, VulkanFrame* frame);
+	SwapchainStatus present(VulkanGraphicDevice* device, VulkanFrame* frame);
 
 	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle);
+	void destroyBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 
-	//uint32_t getImageCount();
+	uint32_t getImageCount() const { return m_imageCount; }
+	FrameIndex getCurrentFrameIndex() const { return m_currentFrameIndex; }
+	TextureFormat getColorFormat() const { return m_colorFormat; }
+	TextureFormat getDepthFormat() const { return m_depthFormat; }
 
-//private:
-	bool needRecreation;
-	PlatformDevice* platform;
-	VkSwapchainKHR swapchain;
-	//VkSurfaceKHR surface;
-	uint32_t imageCount;
-	FrameIndex currentFrameIndex;
-	VulkanFrame frames[FrameIndex::MaxInFlight];
+	// This is frame related, not swapchain.
+	/*VkFence getVkPresentFence(FrameIndex index) { return m_frames[index.value].presentFence; }
+	VkFence getVkAcquireFence(FrameIndex index) { return m_frames[index.value].acquireFence; }
+	VkSemaphore getVkAcquireSemaphore(FrameIndex index) { return m_frames[index.value].acquireSemaphore; }
+	VkSemaphore getVkPesentSemaphore(FrameIndex index) { return m_frames[index.value].presentSemaphore; }*/
+	const VulkanFrame& getVkFrame(FrameIndex index) const { return m_frames[index.value]; }
+private:
+	bool m_needRecreation;
+	uint32_t m_width, m_height;
+	PlatformDevice* m_platform;
+	VkSwapchainKHR m_swapchain;
+	//VkSurfaceKHR m_surface;
+	uint32_t m_imageCount;
+	FrameIndex m_currentFrameIndex;
+	VulkanFrame m_frames[FrameIndex::MaxInFlight];
 
-	std::unordered_map<RenderPassState, Backbuffer> backbuffers;
-
-	std::vector<BackBufferTextures> backbufferTextures;
+	std::unordered_map<RenderPassState, Backbuffer> m_backbuffers;
+	TextureFormat m_colorFormat;
+	TextureFormat m_depthFormat;
+	std::vector<BackBufferTextures> m_backbufferTextures;
 };
 
 };

@@ -93,7 +93,7 @@ void ImGuiLayer::onLayerCreate()
 		//gfx::VulkanProgram::createVkDescriptorSet()
 	}
 	{
-		m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load);
+		m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
 		m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
 	}
 
@@ -103,11 +103,11 @@ void ImGuiLayer::onLayerCreate()
 	info.PhysicalDevice = device->getVkPhysicalDevice();
 	info.Device = device->getVkDevice();
 	info.QueueFamily = device->getVkQueueIndex(gfx::QueueType::Graphic);
-	info.Queue = device->getQueue(gfx::QueueType::Graphic);
+	info.Queue = device->getVkQueue(gfx::QueueType::Graphic);
 	info.PipelineCache = VK_NULL_HANDLE;
 	info.DescriptorPool = m_renderData->descriptorPool;
 	info.MinImageCount = 2; // >= 2
-	info.ImageCount = static_cast<uint32_t>(device->swapchain().imageCount); // >= MinImageCount
+	info.ImageCount = static_cast<uint32_t>(device->swapchain().getImageCount()); // >= MinImageCount
 	info.CheckVkResultFn = [](VkResult err) {
 		VK_CHECK_RESULT(err);
 	};
@@ -222,6 +222,8 @@ void ImGuiLayer::onLayerDestroy()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 	vkDestroyDescriptorPool(vk_context.device, m_renderData->descriptorPool, nullptr);
+	device->destroy(m_renderData->renderPass);
+	device->destroy(m_renderData->backbuffer);
 	delete m_renderData;
 }
 
@@ -251,7 +253,7 @@ void ImGuiLayer::onLayerFrame()
 
 void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 {
-	gfx::CommandList* cmd = frame->commandList;
+	gfx::CommandList* cmd = frame->getMainCommandList();
 	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
 	gfx::GraphicDevice* device = Application::app()->graphic();
 	ImGui::Render();
@@ -270,8 +272,8 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 	// TODO do not enforce backbuffer
 	gfx::FramebufferHandle framebuffer = device->get(m_renderData->backbuffer, frame);
 	const gfx::Framebuffer* fb = device->get(framebuffer);
-	cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
-	cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Attachment);
+	cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
+	cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
 	cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getCommandBuffer());
 	cmd->endRenderPass();
@@ -280,6 +282,15 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 
 void ImGuiLayer::onLayerPresent()
 {
+}
+
+void ImGuiLayer::onLayerResize(uint32_t width, uint32_t height)
+{
+	gfx::GraphicDevice* device = Application::app()->graphic();
+	device->destroy(m_renderData->backbuffer);
+	device->destroy(m_renderData->renderPass);
+	m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
+	m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
 }
 
 };

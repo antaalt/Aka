@@ -85,11 +85,10 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 	if (vk_set->vk_descriptorSet == VK_NULL_HANDLE)
 		return;
 	std::vector<VkWriteDescriptorSet> descriptorWrites(vk_set->bindings.count, VkWriteDescriptorSet{});
-	std::vector<VkDescriptorImageInfo> imageDescriptors(vk_set->bindings.count, VkDescriptorImageInfo{});
-	std::vector<VkDescriptorBufferInfo> bufferDescriptors(vk_set->bindings.count, VkDescriptorBufferInfo{});
-	uint32_t imageIndex = 0;
-	uint32_t bufferIndex = 0;
-	uint32_t samplerIndex = 0;
+	std::vector<VkDescriptorImageInfo> imageDescriptors;
+	std::vector<VkDescriptorBufferInfo> bufferDescriptors;
+	imageDescriptors.reserve(vk_set->bindings.count);
+	bufferDescriptors.reserve(vk_set->bindings.count);
 
 	for (uint32_t iBinding = 0; iBinding < vk_set->bindings.count; iBinding++)
 	{
@@ -104,28 +103,28 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 		switch (binding.type)
 		{
 		case ShaderBindingType::SampledImage: {
-			VulkanTexture* texture = device->getVk<VulkanTexture>(data.images[iBinding]);
-			VulkanSampler* sampler = device->getVk<VulkanSampler>(data.samplers[iBinding]);
+			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(data.images[iBinding]);
+			VulkanSampler* vk_sampler = device->getVk<VulkanSampler>(data.samplers[iBinding]);
 			AKA_ASSERT(
-				texture->type == TextureType::Texture2D || 
-				texture->type == TextureType::TextureCubeMap || 
-				texture->type == TextureType::Texture2DArray,
+				vk_texture->type == TextureType::Texture2D ||
+				vk_texture->type == TextureType::TextureCubeMap ||
+				vk_texture->type == TextureType::Texture2DArray,
 				"Invalid texture binding, skipping."
 			);
-			VkDescriptorImageInfo& vk_image = imageDescriptors[imageIndex++];
-			vk_image.imageView = reinterpret_cast<const VulkanTexture*>(texture)->vk_view;
-			vk_image.sampler = reinterpret_cast<const VulkanSampler*>(sampler)->vk_sampler;
-			vk_image.imageLayout = Texture::hasDepth(texture->format) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;//reinterpret_cast<VulkanTexture*>(texture)->vk_layout;
+			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace_back();
+			vk_image.imageView = vk_texture->vk_view;
+			vk_image.sampler = vk_sampler->vk_sampler;
+			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Resource, vk_texture->format);
 			descriptorWrites[iBinding].pImageInfo = &vk_image;
 			break;
 		}
 		case ShaderBindingType::StorageImage: {
-			VulkanTexture* texture = device->getVk<VulkanTexture>(data.images[iBinding]);
-			AKA_ASSERT(texture->type == TextureType::Texture2D, "Invalid texture binding, skipping.");
-			VkDescriptorImageInfo& vk_image = imageDescriptors[imageIndex++];
-			vk_image.imageView = reinterpret_cast<const VulkanTexture*>(texture)->vk_view;
+			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(data.images[iBinding]);
+			AKA_ASSERT(vk_texture->type == TextureType::Texture2D, "Invalid texture binding, skipping.");
+			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace_back();
+			vk_image.imageView = vk_texture->vk_view;
 			vk_image.sampler = VK_NULL_HANDLE;
-			vk_image.imageLayout = VK_IMAGE_LAYOUT_GENERAL;//reinterpret_cast<VulkanTexture*>(texture)->vk_layout;
+			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Storage, vk_texture->format);
 			descriptorWrites[iBinding].pImageInfo = &vk_image;
 			break;
 		}
@@ -134,7 +133,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(data.buffers[iBinding]);
 			if (buffer == nullptr)
 			{
-				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors[bufferIndex++];
+				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = VK_NULL_HANDLE;
 				vk_buffer.offset = 0;
 				vk_buffer.range = 0;
@@ -143,7 +142,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 			else
 			{
 				AKA_ASSERT(valid(binding.type, buffer->type), "Invalid buffer binding, skipping.");
-				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors[bufferIndex++];
+				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = reinterpret_cast<const VulkanBuffer*>(buffer)->vk_buffer;
 				vk_buffer.offset = 0; // TODO use buffer view
 				vk_buffer.range = buffer->size;

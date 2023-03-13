@@ -66,8 +66,6 @@ void setDebugName(VkDevice device, T handle, Args ...args)
 	VK_CHECK_RESULT(vkSetDebugUtilsObjectNameEXT(device, &info));
 }
 
-
-struct VulkanSwapchain;
 struct VulkanGraphicPipeline;
 struct VulkanComputePipeline;
 struct VulkanFramebuffer;

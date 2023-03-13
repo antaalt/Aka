@@ -104,7 +104,7 @@ void VulkanSampler::create(VulkanContext& context)
 		vk_filterMin,
 		vk_filterMag,
 		vk_mipmapMode,
-		10U,
+		10U, // TODO: max mip count ?
 		vk_wrapU,
 		vk_wrapV,
 		vk_wrapW,

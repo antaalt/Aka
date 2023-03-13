@@ -75,26 +75,23 @@ const PhysicalDevice* VulkanGraphicDevice::getPhysicalDevice(uint32_t index)
 
 Frame* VulkanGraphicDevice::frame()
 {
-	// TODO wait then resize if require resize (shutdown and recreate)
-	Frame* frame = m_swapchain.acquireNextImage(this);
+	VulkanFrame* frame = m_swapchain.acquireNextImage(this);
 	if (frame == nullptr)
 	{
 		Logger::error("Failed to acquire next swapchain image.");
 		return nullptr;
 	}
-	frame->commandList = acquireCommandList();
-	frame->commandList->begin();
+	frame->begin(this);
 	return frame;
 }
 
-void VulkanGraphicDevice::present(Frame* frame)
+SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 {
-	// TODO wait then resize if require resize
 	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	frame->commandList->end();
-	submit(&vk_frame->commandList, 1);
-	m_swapchain.present(this, vk_frame);
-	release(vk_frame->commandList);
+	vk_frame->end(this);
+	SwapchainStatus status = m_swapchain.present(this, vk_frame);
+	release(vk_frame->getMainCommandList());
+	return status;
 }
 
 void VulkanGraphicDevice::wait()

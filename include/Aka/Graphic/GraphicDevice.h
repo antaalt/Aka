@@ -25,8 +25,8 @@ enum class GraphicAPI : uint8_t
 {
 	None,
 	Vulkan,
-	OpenGL3,
-	DirectX11
+	OpenGL3, // TODO reimplement ?
+	DirectX11 // TODO reimplement ?
 };
 
 struct GraphicConfig
@@ -51,18 +51,35 @@ struct ImageIndex
 
 struct Frame
 {
-	ImageIndex image;
-	CommandList* commandList;
+	ImageIndex getImageIndex() { return m_image; }
+	CommandList* getMainCommandList() { return m_commandList; }
 
-	ImageIndex getImageIndex() { return image; }
-	CommandList* getMainCommandList() { return commandList; }
+protected:
+	friend class GraphicDevice;
+	void setImageIndex(ImageIndex index);
+	void begin(GraphicDevice* device);
+	void end(GraphicDevice* device);
+private:
+	ImageIndex m_image;
+	CommandList* m_commandList;
 };
+
 struct Backbuffer : Resource
 { 
 	Backbuffer(const char* name) : Resource(name, ResourceType::Framebuffer) {}
 	std::vector<FramebufferHandle> handles;
 };
+
 using BackbufferHandle = ResourceHandle<Backbuffer>;
+
+
+enum class SwapchainStatus
+{
+	Ok,
+	Recreated,
+	Error,
+};
+
 
 class AKA_NO_VTABLE GraphicDevice
 {
@@ -100,8 +117,9 @@ public:
 	// Framebuffer
 	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
 	virtual void destroy(FramebufferHandle framebuffer) = 0;
+	virtual void destroy(BackbufferHandle backbuffer) = 0;
 	virtual BackbufferHandle createBackbuffer(RenderPassHandle handle) = 0;
-	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
+	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
 	virtual FramebufferHandle get(BackbufferHandle handle, Frame* frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
 
@@ -160,7 +178,8 @@ public:
 	// Command
 	virtual CommandList* acquireCommandList() = 0;
 	virtual void release(CommandList* cmd) = 0;
-	// Frame submit
+	// Command submit
+	virtual void submit(CommandList* command, QueueType queue = QueueType::Default) = 0;
 	virtual void submit(CommandList** cmds, uint32_t count, QueueType queue = QueueType::Default) = 0; // execute all command enqueued
 	virtual void wait(QueueType queue) = 0;
 
@@ -169,7 +188,7 @@ public:
 
 	// Frame
 	virtual Frame* frame() = 0;
-	virtual void present(Frame* frame) = 0;
+	virtual SwapchainStatus present(Frame* frame) = 0;
 	virtual void wait() = 0;
 };
 

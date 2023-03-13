@@ -60,7 +60,8 @@ struct AppResizeEvent { uint32_t width; uint32_t height; };
 
 class Application : 
 	EventListener<QuitEvent>,
-	EventListener<WindowResizeEvent>
+	EventListener<WindowResizeEvent>,
+	EventListener<BackbufferResizeEvent>
 {
 public:
 	Application();
@@ -85,8 +86,12 @@ private:
 	void present();
 	// Last function called in a loop
 	void end();
+	// Resize the app
+	void resize();
 	// Called on app resize
 	void onReceive(const WindowResizeEvent& event) override;
+	// Called on app backbuffer resize
+	void onReceive(const BackbufferResizeEvent& event) override;
 	// Called on app quit request
 	void onReceive(const QuitEvent& event) override;
 protected:
@@ -136,6 +141,7 @@ private:
 private:
 	std::vector<Layer*> m_layers;
 	uint32_t m_width, m_height;
+	bool m_needClientResize;
 	bool m_running;
 };
 

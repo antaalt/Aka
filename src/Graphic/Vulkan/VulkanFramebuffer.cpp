@@ -127,6 +127,11 @@ void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 	m_framebufferPool.release(vk_framebuffer);
 }
 
+void VulkanGraphicDevice::destroy(BackbufferHandle handle)
+{
+	m_swapchain.destroyBackbuffer(this, handle);
+}
+
 BackbufferHandle VulkanGraphicDevice::createBackbuffer(RenderPassHandle handle)
 {
 	return m_swapchain.createBackbuffer(this, handle);
@@ -134,15 +139,16 @@ BackbufferHandle VulkanGraphicDevice::createBackbuffer(RenderPassHandle handle)
 
 RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadOp loadOp, AttachmentStoreOp storeOp, ResourceAccessType initialLayout, ResourceAccessType finalLayout)
 {
+	AKA_ASSERT((loadOp == AttachmentLoadOp::Load) != (initialLayout == ResourceAccessType::Undefined), "Cannot load from undefined layout");
 	RenderPassState state{};
-	state.addColor(get(m_swapchain.backbufferTextures[0].color)->format, loadOp, storeOp, initialLayout, finalLayout);
-	state.setDepth(get(m_swapchain.backbufferTextures[0].depth)->format, loadOp, storeOp, initialLayout, finalLayout);
+	state.addColor(m_swapchain.getColorFormat(), loadOp, storeOp, initialLayout, finalLayout);
+	state.setDepth(m_swapchain.getDepthFormat(), loadOp, storeOp, initialLayout, finalLayout);
 	return createRenderPass("RenderPassBackbuffer", state);
 }
 
 FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, Frame* frame)
 {
-	return static_cast<const Backbuffer*>(handle.__data)->handles[frame->image.value];
+	return static_cast<const Backbuffer*>(handle.__data)->handles[frame->getImageIndex().value];
 }
 
 const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)

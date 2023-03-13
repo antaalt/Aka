@@ -667,9 +667,11 @@ VkImageLayout VulkanContext::tovk(ResourceAccessType type, TextureFormat format)
 	case ResourceAccessType::Undefined:
 		return VK_IMAGE_LAYOUT_UNDEFINED;
 	case ResourceAccessType::Resource:
-		AKA_ASSERT(!(depth && stencil), "Cannot have layout depth & stencil when reading"); // ¿ or general layout ?
+		if(depth && stencil) return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+#ifdef DEPTH_AND_STENCIL_SEPARATELY
 		if (depth) return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
 		else if (stencil) return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+#endif
 		else return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	case ResourceAccessType::Attachment:
 #ifdef DEPTH_AND_STENCIL_SEPARATELY

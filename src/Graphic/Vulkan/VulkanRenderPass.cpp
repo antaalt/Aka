@@ -24,7 +24,6 @@ void VulkanRenderPass::destroy(VulkanGraphicDevice* device)
 
 VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderPassState& state)
 {
-	bool hasDepth = state.depth.format != TextureFormat::Unknown;
 	std::vector<VkAttachmentDescription> vk_attachments(state.count, VkAttachmentDescription{});
 	std::vector<VkAttachmentReference> vk_colorAttachmentsReferences(state.count, VkAttachmentReference{});
 	VkAttachmentReference vk_depthAttachment{};
@@ -45,7 +44,7 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 		vk_colorAttachmentsReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
-	if (hasDepth)
+	if (state.hasDepthStencil())
 	{
 		const RenderPassState::Attachment& attachment = state.depth;
 		VkAttachmentDescription depthAttachment = {};
@@ -67,7 +66,7 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 	subpassInfo.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpassInfo.colorAttachmentCount = static_cast<uint32_t>(vk_colorAttachmentsReferences.size());
 	subpassInfo.pColorAttachments = vk_colorAttachmentsReferences.data();
-	if (hasDepth)
+	if (state.hasDepthStencil())
 		subpassInfo.pDepthStencilAttachment = &vk_depthAttachment;
 	subpassInfo.pResolveAttachments = nullptr; // For MSAA
 
@@ -83,7 +82,7 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 		dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		dependencies[0].dependencyFlags = 0;
 
-		if (hasDepth)
+		if (state.hasDepthStencil())
 		{
 			dependencies[0].srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 			dependencies[0].dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;

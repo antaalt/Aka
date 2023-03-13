@@ -16,8 +16,8 @@ VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 		return VK_IMAGE_ASPECT_DEPTH_BIT;
 	else if (Texture::isStencil(format))
 		return VK_IMAGE_ASPECT_STENCIL_BIT;
-	else
-		return VK_IMAGE_ASPECT_COLOR_BIT;
+	AKA_UNREACHABLE;
+	return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
 // https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
@@ -74,11 +74,11 @@ VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, TextureForm
 		return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 	case ResourceAccessType::Resource:
 		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			|| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			|| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
 #if 0 // Tesselation support...
-			|| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
-			|| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
 #endif
 			;
 	case ResourceAccessType::Attachment:
@@ -86,11 +86,11 @@ VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, TextureForm
 		else return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	case ResourceAccessType::Storage:
 		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			|| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			|| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
 #if 0 // Tesselation support...
-			|| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
-			|| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
 #endif
 			;
 	case ResourceAccessType::CopySRC:
@@ -113,7 +113,7 @@ void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, VkImage image, Re
 		VulkanContext::tovk(newLayout, format),
 		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
 		pipelineStageForLayout(oldLayout, format, true),
-		pipelineStageForLayout(oldLayout, format, false),
+		pipelineStageForLayout(newLayout, format, false),
 		accessFlagForLayout(oldLayout, format, true),
 		accessFlagForLayout(newLayout, format, false)
 	);
@@ -162,83 +162,22 @@ void VulkanTexture::copyFrom(VkCommandBuffer cmd, VulkanTexture* texture)
 	VulkanTexture* vk_src = texture;
 	VulkanTexture* vk_dst = this;
 
-	VkImageSubresourceRange srcSubresource{};
-	VkImageSubresourceRange dstSubresource{};
-	srcSubresource.aspectMask = getAspectFlag(vk_src->format);
-	srcSubresource.baseArrayLayer = 0;
-	srcSubresource.layerCount = vk_src->layers;
-	srcSubresource.baseMipLevel = 0;
-	srcSubresource.levelCount = vk_src->levels;
+	VkImageCopy region{};
+	region.srcSubresource.aspectMask = getAspectFlag(vk_src->format);
+	region.srcSubresource.mipLevel = 0;
+	region.srcSubresource.baseArrayLayer = 0;
+	region.srcSubresource.layerCount = vk_src->layers;
 
-	dstSubresource.aspectMask = getAspectFlag(vk_dst->format);
-	dstSubresource.baseArrayLayer = 0;
-	dstSubresource.layerCount = vk_dst->layers;
-	dstSubresource.baseMipLevel = 0;
-	dstSubresource.levelCount = vk_dst->levels;
+	region.dstSubresource.aspectMask = getAspectFlag(vk_dst->format);
+	region.dstSubresource.mipLevel = 0;
+	region.dstSubresource.baseArrayLayer = 0;
+	region.dstSubresource.layerCount = vk_dst->layers;
 
-	/*VulkanTexture::insertMemoryBarrier(
-		cmd,
-		vk_src->vk_image,
-		srcSrcLayout,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		srcSubresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_ACCESS_TRANSFER_WRITE_BIT, // TODO color or depth, attachment or shader resource
-		VK_ACCESS_TRANSFER_READ_BIT
-	);
-	VulkanTexture::insertMemoryBarrier(
-		cmd,
-		vk_dst->vk_image,
-		dstSrcLayout,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		dstSubresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_ACCESS_TRANSFER_READ_BIT, // TODO color or depth, attachment or shader resource
-		VK_ACCESS_TRANSFER_WRITE_BIT
-	);*/
+	region.extent.width = min(vk_src->width, vk_dst->width);
+	region.extent.height = min(vk_src->height, vk_dst->height);
+	region.extent.depth = 1;
 
-	{
-		VkImageCopy region{};
-		region.srcSubresource.aspectMask = srcSubresource.aspectMask;
-		region.srcSubresource.mipLevel = 0;
-		region.srcSubresource.baseArrayLayer = 0;
-		region.srcSubresource.layerCount = srcSubresource.layerCount;
-
-		region.dstSubresource.aspectMask = dstSubresource.aspectMask;
-		region.dstSubresource.mipLevel = 0;
-		region.dstSubresource.baseArrayLayer = 0;
-		region.dstSubresource.layerCount = dstSubresource.layerCount;
-
-		region.extent.width = min(vk_src->width, vk_dst->width);
-		region.extent.height = min(vk_src->height, vk_dst->height);
-		region.extent.depth = 1;
-
-		vkCmdCopyImage(cmd, vk_src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_dst->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-	}
-	/*VulkanTexture::insertMemoryBarrier(
-		cmd,
-		vk_src->vk_image,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		srcDstLayout,
-		srcSubresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-		VK_ACCESS_TRANSFER_READ_BIT,
-		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT // TODO color or depth, attachment or shader resource
-	);
-	VulkanTexture::insertMemoryBarrier(
-		cmd,
-		vk_dst->vk_image,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		dstDstLayout,
-		dstSubresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-		VK_ACCESS_TRANSFER_WRITE_BIT,
-		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT // TODO color or depth, attachment or shader resource
-	);*/
+	vkCmdCopyImage(cmd, vk_src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_dst->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
 void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter)
@@ -246,101 +185,32 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 	VulkanTexture* vk_src = texture;
 	VulkanTexture* vk_dst = this;
 
-	VkImageSubresourceRange srcSubresource{};
-	VkImageSubresourceRange dstSubresource{};
-	srcSubresource.aspectMask = getAspectFlag(vk_src->format);
-	srcSubresource.baseArrayLayer = srcRegion.layer;
-	srcSubresource.layerCount = srcRegion.layerCount;
-	srcSubresource.baseMipLevel = srcRegion.mipLevel;
-	srcSubresource.levelCount = 1;
+	VkImageBlit blit;
+	blit.srcOffsets[0].x = srcRegion.x;
+	blit.srcOffsets[0].y = srcRegion.y;
+	blit.srcOffsets[0].z = srcRegion.z;
+	blit.srcOffsets[1].x = srcRegion.w;
+	blit.srcOffsets[1].y = srcRegion.h;
+	blit.srcOffsets[1].z = srcRegion.d;
+	blit.srcSubresource = VkImageSubresourceLayers{ getAspectFlag(vk_src->format), srcRegion.mipLevel, srcRegion.layer, srcRegion.layerCount };
 
-	dstSubresource.aspectMask = getAspectFlag(vk_dst->format);
-	dstSubresource.baseArrayLayer = dstRegion.layer;
-	dstSubresource.layerCount = dstRegion.layerCount;
-	dstSubresource.baseMipLevel = dstRegion.mipLevel;
-	dstSubresource.levelCount = 1;
+	blit.dstOffsets[0].x = dstRegion.x;
+	blit.dstOffsets[0].y = dstRegion.y;
+	blit.dstOffsets[0].z = dstRegion.z;
+	blit.dstOffsets[1].x = dstRegion.w;
+	blit.dstOffsets[1].y = dstRegion.h;
+	blit.dstOffsets[1].z = dstRegion.d;
+	blit.dstSubresource = VkImageSubresourceLayers{ getAspectFlag(vk_dst->format), dstRegion.mipLevel, dstRegion.layer, dstRegion.layerCount };
 
-	/*vk_src->insertMemoryBarrier(
-		cmd,
+	vkCmdBlitImage(cmd,
 		vk_src->vk_image,
-		srcLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		srcSubresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_ACCESS_TRANSFER_WRITE_BIT, // TODO color or depth, attachment or shader resource
-		VK_ACCESS_TRANSFER_READ_BIT
-	);
-	vk_dst->insertMemoryBarrier(
-		cmd,
 		vk_dst->vk_image,
-		dstLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		dstSubresource,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_ACCESS_TRANSFER_READ_BIT, // TODO color or depth, attachment or shader resource
-		VK_ACCESS_TRANSFER_WRITE_BIT
-	);*/
-
-	{
-		VkImageBlit blit;
-		blit.srcOffsets[0].x = srcRegion.x;
-		blit.srcOffsets[0].y = srcRegion.y;
-		blit.srcOffsets[0].z = srcRegion.z;
-		blit.srcOffsets[1].x = srcRegion.w;
-		blit.srcOffsets[1].y = srcRegion.h;
-		blit.srcOffsets[1].z = srcRegion.d;
-		blit.srcSubresource = VkImageSubresourceLayers{ srcSubresource.aspectMask, srcRegion.mipLevel, srcRegion.layer, srcRegion.layerCount };
-
-		blit.dstOffsets[0].x = dstRegion.x;
-		blit.dstOffsets[0].y = dstRegion.y;
-		blit.dstOffsets[0].z = dstRegion.z;
-		blit.dstOffsets[1].x = dstRegion.w;
-		blit.dstOffsets[1].y = dstRegion.h;
-		blit.dstOffsets[1].z = dstRegion.d;
-		blit.dstSubresource = VkImageSubresourceLayers{ dstSubresource.aspectMask, dstRegion.mipLevel, dstRegion.layer, dstRegion.layerCount };
-
-		vkCmdBlitImage(cmd,
-			vk_src->vk_image,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			vk_dst->vk_image,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			1,
-			&blit,
-			VulkanContext::tovk(filter)
-		);
-	}
-	/*{
-		// Restore layout
-		bool depthStencil = gfx::Texture::hasDepth(vk_dst->format) || gfx::Texture::hasStencil(vk_dst->format);
-		VulkanTexture::insertMemoryBarrier(
-			cmd,
-			vk_src->vk_image,
-			srcLayout,
-			srcLayout,
-			srcSubresource,
-			VK_PIPELINE_STAGE_TRANSFER_BIT,
-			depthStencil ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_ACCESS_TRANSFER_READ_BIT,
-			depthStencil ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-		);
-	}
-	{
-		// Restore layout
-		bool depthStencil = gfx::Texture::hasDepth(vk_dst->format) || gfx::Texture::hasStencil(vk_dst->format);
-		VulkanTexture::insertMemoryBarrier(
-			cmd,
-			vk_dst->vk_image,
-			dstLayout,
-			dstLayout,
-			dstSubresource,
-			VK_PIPELINE_STAGE_TRANSFER_BIT,
-			depthStencil ? VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_ACCESS_TRANSFER_WRITE_BIT,
-			depthStencil ? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT : VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-		);
-	}*/
+		1,
+		&blit,
+		VulkanContext::tovk(filter)
+	);
 }
 
 ResourceAccessType getInitialResourceAccessType(TextureFormat format, TextureFlag flags)
@@ -356,6 +226,11 @@ ResourceAccessType getInitialResourceAccessType(TextureFormat format, TextureFla
 	else if (has(flags, TextureFlag::RenderTarget))
 	{
 		return ResourceAccessType::Attachment;
+	}
+	else
+	{
+		AKA_UNREACHABLE;
+		return ResourceAccessType::Undefined;
 	}
 }
 
@@ -374,22 +249,23 @@ TextureHandle VulkanGraphicDevice::createTexture(
 
 	TextureHandle handle = TextureHandle{ texture };
 
-	ResourceAccessType accessType = getInitialResourceAccessType(format, flags);
-	VkImageLayout finalLayout = VulkanContext::tovk(accessType, format);
+	ResourceAccessType currentAccessType = ResourceAccessType::Undefined;
+	ResourceAccessType finalAccessType = getInitialResourceAccessType(format, flags);
+	VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, format);
 
 	// Upload
 	VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
 	if (data != nullptr && data[0] != nullptr)
 	{
 		// To transfer layout
-		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool());
 		VulkanTexture::transitionImageLayout(cmd,
 			texture->vk_image,
-			accessType,
+			currentAccessType,
 			ResourceAccessType::CopyDST,
 			format
 		);
-		VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(), cmd, getVkQueue(QueueType::Graphic));
 
 		// Upload (TODO: should use same command buffer than transition, but need to export staging buffer out of there for destruction)
 		texture->upload(m_context, data, 0, 0, width, height);
@@ -397,20 +273,21 @@ TextureHandle VulkanGraphicDevice::createTexture(
 		// Generate mips
 		if (has(flags, TextureFlag::GenerateMips))
 		{
-			VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+			VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool());
 			texture->generateMips(cmd, finalLayout, finalLayout);
-			VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+			VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(), cmd, getVkQueue(QueueType::Graphic));
 		}
+		currentAccessType = ResourceAccessType::CopyDST;
 	}
 	// Select depending on flags...
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool());
 	VulkanTexture::transitionImageLayout(cmd,
 		texture->vk_image,
-		ResourceAccessType::CopyDST,
-		accessType,
+		currentAccessType,
+		finalAccessType,
 		format
 	);
-	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(), cmd, getVkQueue(QueueType::Graphic));
 
 	return handle;
 }
@@ -432,9 +309,9 @@ void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 	VulkanTexture* vk_src = getVk<VulkanTexture>(lhs);
 	VulkanTexture* vk_dst = getVk<VulkanTexture>(rhs);
 
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool());
 	vk_dst->copyFrom(cmd, vk_src);
-	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(), cmd, getVkQueue(QueueType::Graphic));
 }
 
 void VulkanGraphicDevice::destroy(TextureHandle texture)
@@ -442,12 +319,12 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 	if (texture.__data == nullptr) return;
 
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
-	vkDestroyImageView(m_context.device, vk_texture->vk_view, nullptr);
+	vkDestroyImageView(getVkDevice(), vk_texture->vk_view, nullptr);
 	vk_texture->vk_view = VK_NULL_HANDLE;
 	if (vk_texture->vk_memory != 0) // If no memory used, image not allocated here (swapchain)
 	{
-		vkFreeMemory(m_context.device, vk_texture->vk_memory, nullptr);
-		vkDestroyImage(m_context.device, vk_texture->vk_image, nullptr);
+		vkFreeMemory(getVkDevice(), vk_texture->vk_memory, nullptr);
+		vkDestroyImage(getVkDevice(), vk_texture->vk_image, nullptr);
 		vk_texture->vk_memory = VK_NULL_HANDLE;
 		vk_texture->vk_image = VK_NULL_HANDLE;
 	}
@@ -457,7 +334,7 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(m_context.device, m_context.commandPool);
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool());
 	VulkanTexture::transitionImageLayout(
 		cmd,
 		vk_texture->vk_image, 
@@ -467,7 +344,7 @@ void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType s
 		0, vk_texture->levels, 
 		0, vk_texture->layers
 	);
-	VulkanCommandList::endSingleTime(m_context.device, m_context.commandPool, cmd, m_context.graphicQueue.queue);
+	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(), cmd, getVkQueue(QueueType::Graphic));
 }
 
 const Texture* VulkanGraphicDevice::get(TextureHandle handle)
@@ -559,9 +436,9 @@ void VulkanTexture::create(VulkanContext& context)
 		vk_viewAspect = VK_IMAGE_ASPECT_STENCIL_BIT;
 	vk_view = VulkanTexture::createVkImageView(context.device, vk_image, vk_type, vk_format, vk_viewAspect, levels, layers);
 
-	setDebugName(context.device, vk_image, "VkImage_", name);
-	setDebugName(context.device, vk_view, "VkImageView_", name);
-	setDebugName(context.device, vk_memory, "VkDeviceMemory_", name);
+	setDebugName(context.device, vk_image, name, "Image");
+	setDebugName(context.device, vk_view, name, "ImageView");
+	setDebugName(context.device, vk_memory, name, "DeviceMemory");
 }
 
 void VulkanTexture::destroy(VulkanContext& context)
