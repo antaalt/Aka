@@ -75,23 +75,66 @@ const PhysicalDevice* VulkanGraphicDevice::getPhysicalDevice(uint32_t index)
 
 Frame* VulkanGraphicDevice::frame()
 {
-	VulkanFrame* frame = m_swapchain.acquireNextImage(this);
-	if (frame == nullptr)
+	VulkanFrame* vk_frame = m_swapchain.acquireNextImage(this);
+	if (vk_frame == nullptr)
 	{
 		Logger::error("Failed to acquire next swapchain image.");
 		return nullptr;
 	}
-	frame->begin(this);
-	return frame;
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		vk_frame->commandLists[i].begin();
+	return vk_frame;
 }
 
 SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 {
 	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	vk_frame->end(this);
-	SwapchainStatus status = m_swapchain.present(this, vk_frame);
-	release(vk_frame->getMainCommandList());
-	return status;
+
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		vk_frame->commandLists[i].end();
+
+	// Submit
+	VkQueue vk_queues[EnumCount<QueueType>()] = {
+		getVkQueue(QueueType::Graphic),
+		getVkQueue(QueueType::Compute),
+		getVkQueue(QueueType::Copy)
+	};
+
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
+
+	VkCommandBuffer cmds[EnumCount<QueueType>()] = {
+		vk_frame->commandLists[EnumToIndex(QueueType::Graphic)].vk_command,
+		vk_frame->commandLists[EnumToIndex(QueueType::Compute)].vk_command,
+		vk_frame->commandLists[EnumToIndex(QueueType::Copy)].vk_command,
+	};
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
+		VkSemaphore signalSemaphore = vk_frame->presentSemaphore[i];
+		VkSemaphore waitSemaphore = vk_frame->acquireSemaphore;
+		VkFence fence = vk_frame->presentFence[i];
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &cmds[i];
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &signalSemaphore; // Should have one per command
+		if (i == 0) // HACK //
+		{
+			// For now, only graphic queue wait for acquire semaphore cause only one queue can wait for it.
+			submitInfo.waitSemaphoreCount = 1;
+			submitInfo.pWaitSemaphores = &waitSemaphore;
+		}
+		else
+		{
+			submitInfo.waitSemaphoreCount = 0;
+			submitInfo.pWaitSemaphores = VK_NULL_HANDLE;
+		}
+
+		VK_CHECK_RESULT(vkQueueSubmit(vk_queues[i], 1, &submitInfo, fence));
+	}
+	// Present
+	return m_swapchain.present(this, vk_frame);
 }
 
 void VulkanGraphicDevice::wait()
@@ -101,7 +144,7 @@ void VulkanGraphicDevice::wait()
 
 void VulkanGraphicDevice::screenshot(void* data)
 {
-	// TODO
+	AKA_NOT_IMPLEMENTED;
 }
 
 };

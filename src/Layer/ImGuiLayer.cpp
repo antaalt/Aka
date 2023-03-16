@@ -210,6 +210,7 @@ void ImGuiLayer::onLayerCreate()
 void ImGuiLayer::onLayerDestroy()
 {
 	gfx::GraphicDevice* device = Application::app()->graphic();
+	device->wait();
 	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(device);
 	gfx::VulkanContext& vk_context = vk_device->context();
 #if defined(AKA_USE_OPENGL)
@@ -238,10 +239,9 @@ void ImGuiLayer::onLayerFrame()
 	if (!ImGui::GetIO().Fonts->TexID)
 	{
 		gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
-		gfx::VulkanContext& context = device->context();
-		VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(context.device, context.commandPool);
+		VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic));
 		ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
-		gfx::VulkanCommandList::endSingleTime(context.device, context.commandPool, cmdBuffer, context.graphicQueue.queue);
+		gfx::VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic), cmdBuffer, device->getVkQueue(gfx::QueueType::Graphic));
 
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
@@ -253,9 +253,9 @@ void ImGuiLayer::onLayerFrame()
 
 void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 {
-	gfx::CommandList* cmd = frame->getMainCommandList();
-	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
 	gfx::GraphicDevice* device = Application::app()->graphic();
+	gfx::CommandList* cmd = device->getGraphicCommandList(frame);
+	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
 	// TODO do not enforce backbuffer

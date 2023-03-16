@@ -13,7 +13,8 @@ class VulkanGraphicDevice;
 
 struct VulkanCommandList : CommandList
 {
-	VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer cmd);
+	VulkanCommandList();
+	VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer cmd, QueueType queue, bool oneTimeSubmit);
 
 	void begin() override;
 	void end() override;
@@ -46,6 +47,7 @@ struct VulkanCommandList : CommandList
 	static VkCommandBuffer createSingleTime(VkDevice device, VkCommandPool pool);
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
+public:
 	VkCommandBuffer getCommandBuffer() { return vk_command; }
 
 private:
@@ -61,8 +63,9 @@ private:
 
 	VulkanGraphicDevice* device;
 	VkCommandBuffer vk_command;
-
+	QueueType m_queue;
 	bool m_recording;
+	bool m_oneTimeSubmit;
 };
 
 };

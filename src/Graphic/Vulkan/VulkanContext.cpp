@@ -292,34 +292,83 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-	int32_t indexQueue = 0;
-	int32_t graphicFamilyQueueIndex = -1;
-	int32_t presentFamilyQueueIndex = -1;
-	for (const VkQueueFamilyProperties& queueFamily : queueFamilies)
+
+	std::vector<uint32_t> queueFamilySlotCount(queueFamilyCount, 0);
+	for (uint32_t iQueue = 0; iQueue < queueFamilyCount; ++iQueue)
 	{
+		const VkQueueFamilyProperties& queueFamily = queueFamilies[iQueue];
 		if (queueFamily.queueCount > 0)
 		{
 			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 			{
-				graphicFamilyQueueIndex = indexQueue;
+				queues[EnumToIndex(QueueType::Graphic)].familyIndex = iQueue;
+				queues[EnumToIndex(QueueType::Graphic)].index = queueFamilySlotCount[iQueue]++;
+				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
+			}
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			{
+				queues[EnumToIndex(QueueType::Compute)].familyIndex = iQueue;
+				queues[EnumToIndex(QueueType::Compute)].index = queueFamilySlotCount[iQueue]++;
+				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
+			}
+			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+			{
+				queues[EnumToIndex(QueueType::Copy)].familyIndex = iQueue;
+				queues[EnumToIndex(QueueType::Copy)].index = queueFamilySlotCount[iQueue]++;
+				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
 			}
 			if (hasSurface)
 			{
 				VkBool32 presentSupport = false;
-				VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, indexQueue, surface, &presentSupport));
+				VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, iQueue, surface, &presentSupport));
 				if (presentSupport)
 				{
-					presentFamilyQueueIndex = indexQueue;
+					presentQueue.familyIndex = iQueue;
+					presentQueue.index = queueFamilySlotCount[iQueue]++;
+					AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues for present slot");
 					break;
 				}
 			}
 		}
-		indexQueue++;
 	}
-	if (graphicFamilyQueueIndex == -1 || (hasSurface && presentFamilyQueueIndex == -1))
+	// Check standard queues
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
-		Logger::error("No valid queue found.");
+		if (queues[i].familyIndex == VulkanQueue::invalidFamilyIndex)
+		{
+			Logger::error("No valid queue found for queue ", i);
+			return VK_NULL_HANDLE;
+		}
+	}
+	// Check present queue
+	if (hasSurface && presentQueue.familyIndex == VulkanQueue::invalidFamilyIndex)
+	{
+		Logger::error("No valid present queue found.");
 		return VK_NULL_HANDLE;
+	}
+
+	// Queues
+	std::set<uint32_t> uniqueQueueFamilies;
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		uniqueQueueFamilies.insert(queues[i].familyIndex);
+	if (hasSurface)
+		uniqueQueueFamilies.insert(presentQueue.familyIndex);
+	Logger::info("Using ", uniqueQueueFamilies.size(), " queues for ", EnumCount<QueueType>(), " queue types.");
+
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	std::map<uint32_t, std::vector<float>> priorities;
+	for (uint32_t queueFamily : uniqueQueueFamilies) {
+		for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+			if (queues[i].familyIndex == queueFamily)
+				priorities[queueFamily].push_back(1.f); // TODO More prio for graphic ?
+		if (presentQueue.familyIndex == queueFamily)
+			priorities[queueFamily].push_back(1.f);
+		VkDeviceQueueCreateInfo queueCreateInfo = {};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = (uint32_t)priorities[queueFamily].size();
+		queueCreateInfo.pQueuePriorities = priorities[queueFamily].data();
+		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
 	// --- Create device
@@ -345,42 +394,38 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 			return VK_NULL_HANDLE;
 		}
 	}
-	// Queues
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies;
-	uniqueQueueFamilies.insert(graphicFamilyQueueIndex);
-	if (hasSurface)
-		uniqueQueueFamilies.insert(presentFamilyQueueIndex);
-	float queuePriority = 1.0f;
-	for (uint32_t queueFamily : uniqueQueueFamilies) {
-		VkDeviceQueueCreateInfo queueCreateInfo = {};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
-	}
-
-	VkPhysicalDeviceFeatures deviceFeatures = {};
-	deviceFeatures.samplerAnisotropy = VK_TRUE;
-	deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
-	deviceFeatures.shaderFloat64 = VK_TRUE;
-	deviceFeatures.multiDrawIndirect = VK_TRUE;
-
-	VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexingFeatures{};
-	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+	// VK_VERSION_1_2
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 	indexingFeatures.pNext = nullptr;
 	indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
 	indexingFeatures.runtimeDescriptorArray = VK_TRUE;
 	indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
 
+	// VK_VERSION_1_2
+	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
+	timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+	timelineSemaphoreFeatures.pNext = &indexingFeatures;
+	timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
+
+	// TODO: check these parameters are available with vkGetPhysicalDeviceFeatures2
+	// VK_VERSION_1_1
+	VkPhysicalDeviceFeatures2 deviceFeatures = {};
+	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures.pNext = &timelineSemaphoreFeatures;
+	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
+	deviceFeatures.features.shaderFloat64 = VK_TRUE;
+	deviceFeatures.features.multiDrawIndirect = VK_TRUE;
+
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pNext = &indexingFeatures;
+	createInfo.pNext = &deviceFeatures;
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
-	createInfo.pEnabledFeatures = &deviceFeatures;
+	createInfo.pEnabledFeatures = NULL; // VK_VERSION_1_0
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensionCount);
 	createInfo.ppEnabledExtensionNames = deviceExtensions;
 
@@ -394,15 +439,13 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 		createInfo.enabledLayerCount = 0;
 	}
 	VkDevice device;
-	VK_CHECK_RESULT(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device));
+	VK_CHECK_RESULT(vkCreateDevice(physicalDevice, &createInfo, NULL, &device));
 
-	vkGetDeviceQueue(device, graphicFamilyQueueIndex, 0, &graphicQueue.queue);
-	graphicQueue.index = graphicFamilyQueueIndex;
+	// Retrieve queues from device
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		vkGetDeviceQueue(device, queues[i].familyIndex, queues[i].index, &queues[i].queue);
 	if (hasSurface)
-	{
-		vkGetDeviceQueue(device, presentFamilyQueueIndex, 0, &presentQueue.queue);
-		presentQueue.index = presentFamilyQueueIndex;
-	}
+		vkGetDeviceQueue(device, presentQueue.familyIndex, presentQueue.index, &presentQueue.queue);
 	return device;
 }
 
@@ -411,7 +454,7 @@ VkCommandPool createCommandPool(VkDevice device, uint32_t queueIndex)
 	VkCommandPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	createInfo.queueFamilyIndex = queueIndex;
-	createInfo.flags = 0;
+	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	VkCommandPool commandPool;
 	vkCreateCommandPool(device, &createInfo, nullptr, &commandPool);
@@ -439,7 +482,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	// Custom extensions
 	const char* requiredInstanceExtensions[] = {
 		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 	};
 	const size_t requiredInstanceExtensionCount = sizeof(requiredInstanceExtensions) / sizeof(*requiredInstanceExtensions);
 	// All extensions
@@ -452,6 +495,8 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	// Device extensions
 	const char* deviceExtensions[] = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
 	};
 	const size_t deviceExtensionCount = sizeof(deviceExtensions) / sizeof(*deviceExtensions);
 	if (!hasValidationLayerSupport(validationLayers, validationLayerCount))
@@ -467,9 +512,12 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	});
 	device = createLogicalDevice(deviceExtensions, deviceExtensionCount);
 
-	commandPool = createCommandPool(device, graphicQueue.index);
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
+		commandPool[i] = createCommandPool(device, queues[i].familyIndex);
+		setDebugName(device, commandPool[i], "MainCommandPool", i);
+	}
 
-	setDebugName(device, commandPool, "MainCommandPool");
 }
 
 void VulkanContext::shutdown()
@@ -492,7 +540,8 @@ void VulkanContext::shutdown()
 	{
 		vkDestroyRenderPass(device, rp.second, nullptr);
 	}
-	vkDestroyCommandPool(device, commandPool, nullptr);
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		vkDestroyCommandPool(device, commandPool[i], nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyDevice(device, nullptr);
 	// physical device

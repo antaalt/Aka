@@ -17,6 +17,7 @@
 #include <Aka/Graphic/CommandList.h>
 #include <Aka/Graphic/DescriptorSet.h>
 #include <Aka/Graphic/PhysicalDevice.h>
+#include <Aka/Graphic/Fence.h>
 
 namespace aka {
 namespace gfx {
@@ -25,8 +26,7 @@ enum class GraphicAPI : uint8_t
 {
 	None,
 	Vulkan,
-	OpenGL3, // TODO reimplement ?
-	DirectX11 // TODO reimplement ?
+	DirectX12,
 };
 
 struct GraphicConfig
@@ -44,24 +44,17 @@ struct FrameIndex
 
 };
 
-struct ImageIndex
+struct ImageIndex // TODO StrictType
 {
 	uint32_t value;
 };
 
-struct Frame
+struct Frame // TODO FrameHandle instead.
 {
-	ImageIndex getImageIndex() { return m_image; }
-	CommandList* getMainCommandList() { return m_commandList; }
-
 protected:
 	friend class GraphicDevice;
-	void setImageIndex(ImageIndex index);
-	void begin(GraphicDevice* device);
-	void end(GraphicDevice* device);
-private:
+protected:
 	ImageIndex m_image;
-	CommandList* m_commandList;
 };
 
 struct Backbuffer : Resource
@@ -175,12 +168,23 @@ public:
 	virtual const GraphicPipeline* get(GraphicPipelineHandle handle) = 0;
 	virtual const ComputePipeline* get(ComputePipelineHandle handle) = 0;
 
+	// Fence
+	virtual FenceHandle createFence(const char* name) = 0;
+	virtual void destroy(FenceHandle handle) = 0;
+	virtual const Fence* get(FenceHandle handle) = 0;
+	virtual void wait(FenceHandle handle, FenceValue waitValue) = 0;
+	virtual void signal(FenceHandle handle, FenceValue value) = 0;
+	virtual FenceValue read(FenceHandle handle) = 0;
+
 	// Command
-	virtual CommandList* acquireCommandList() = 0;
+	virtual CommandList* acquireCommandList(QueueType queue) = 0;
 	virtual void release(CommandList* cmd) = 0;
+	// Frame command lists
+	virtual CommandList* getCopyCommandList(Frame* frame) = 0;
+	virtual CommandList* getGraphicCommandList(Frame* frame) = 0;
+	virtual CommandList* getComputeCommandList(Frame* frame) = 0;
 	// Command submit
-	virtual void submit(CommandList* command, QueueType queue = QueueType::Default) = 0;
-	virtual void submit(CommandList** cmds, uint32_t count, QueueType queue = QueueType::Default) = 0; // execute all command enqueued
+	virtual void submit(CommandList* command, QueueType queue, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
 	virtual void wait(QueueType queue) = 0;
 
 	// Screenshot of the backbuffer

@@ -34,8 +34,11 @@ struct VulkanPhysicalDevice
 
 struct VulkanQueue
 {
-	uint32_t index;
-	VkQueue queue;
+	static constexpr uint32_t invalidFamilyIndex = ~0;
+
+	uint32_t familyIndex = invalidFamilyIndex; // family index
+	uint32_t index = 0; // Index in family
+	VkQueue queue = VK_NULL_HANDLE;
 };
 
 
@@ -92,15 +95,16 @@ struct VulkanContext
 	static VkAttachmentLoadOp tovk(AttachmentLoadOp loadOp);
 	static VkAttachmentStoreOp tovk(AttachmentStoreOp storeOp);
 
+	// TODO vk_ + private
 	VkInstance instance;
 	VkDevice device;
 	VkPhysicalDevice physicalDevice;
 	VkSurfaceKHR surface;
 	// swapchain
-	VulkanQueue graphicQueue;
+	VulkanQueue queues[EnumCount<QueueType>()];
 	VulkanQueue presentQueue;
 
-	VkCommandPool commandPool;
+	VkCommandPool commandPool[EnumCount<QueueType>()];
 	VkDebugUtilsMessengerEXT debugMessenger;
 
 public:

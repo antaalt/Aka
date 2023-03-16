@@ -179,7 +179,7 @@ struct Game :
 		data->projection = mat4f::perspective(anglef::degree(60.f), width() / (float)height(), 0.1f, 100.f);
 		device->unmap(ubo);
 
-		gfx::CommandList* cmd = frame->getMainCommandList();
+		gfx::CommandList* cmd = device->getGraphicCommandList(frame);
 		//cmd->bindIndexBuffer(indexBuffer, gfx::IndexFormat::UnsignedInt);
 		cmd->bindVertexBuffer(vertexBuffer, 0);
 		cmd->bindPipeline(pipeline);

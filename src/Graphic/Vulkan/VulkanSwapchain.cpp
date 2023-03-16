@@ -138,15 +138,14 @@ VulkanSwapchain::VulkanSwapchain() :
 
 void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* platform)
 {
-	VulkanContext* context = &device->m_context;
 	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(platform);
 	m_platform = platform;
 
 	VkSurfaceCapabilitiesKHR capabilities;
-	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context->physicalDevice, context->surface, &capabilities));
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->getVkPhysicalDevice(), device->getVkSurface(), &capabilities));
 
-	VkSurfaceFormatKHR surfaceFormat = getSurfaceFormat(context->physicalDevice, context->surface);
-	VkPresentModeKHR bestMode = getPresentMode(context->physicalDevice, context->surface);
+	VkSurfaceFormatKHR surfaceFormat = getSurfaceFormat(device->getVkPhysicalDevice(), device->getVkSurface());
+	VkPresentModeKHR bestMode = getPresentMode(device->getVkPhysicalDevice(), device->getVkSurface());
 	VkExtent2D extent = getSurfaceExtent(capabilities, glfw3->getGLFW3Handle());
 	m_imageCount = capabilities.minImageCount + 1;
 	if (capabilities.maxImageCount > 0 && m_imageCount > capabilities.maxImageCount)
@@ -155,7 +154,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	// Create swapchain
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = context->surface;
+	createInfo.surface = device->getVkSurface();
 	createInfo.minImageCount = m_imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -166,16 +165,20 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	if (true)
 		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; // For blitting operations.
 
-	uint32_t queueFamilyIndices[] = {
-		context->graphicQueue.index,
-		context->presentQueue.index
-	};
+	std::set<uint32_t> singleImageFamilies;
+	for (QueueType queue : EnumRange<QueueType>())
+		singleImageFamilies.insert(device->getVkQueueIndex(queue));
+	singleImageFamilies.insert(device->getVkPresentQueueIndex());
 
-	if (context->graphicQueue.index != context->presentQueue.index)
+	std::vector<uint32_t> singleImageFamiliesData;
+	for (uint32_t f : singleImageFamilies)
+		singleImageFamiliesData.push_back(f);
+
+	if (singleImageFamilies.size() > 1)
 	{
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		createInfo.queueFamilyIndexCount = 2;
-		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+		createInfo.queueFamilyIndexCount = (uint32_t)singleImageFamilies.size();
+		createInfo.pQueueFamilyIndices = singleImageFamiliesData.data();
 	}
 	else
 	{
@@ -189,9 +192,9 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	VK_CHECK_RESULT(vkCreateSwapchainKHR(context->device, &createInfo, nullptr, &m_swapchain));
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(device->getVkDevice(), &createInfo, nullptr, &m_swapchain));
 
-	VkFormat vk_depthFormat = findDepthFormat(context->physicalDevice);
+	VkFormat vk_depthFormat = findDepthFormat(device->getVkPhysicalDevice());
 	VkFormat vk_colorFormat = surfaceFormat.format;
 	// TODO convert vulkan format to aka format
 	m_colorFormat = TextureFormat::BGRA8;
@@ -202,12 +205,12 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	const bool hasDepth = true;
 	const bool hasStencil = false;
 	// Get images & layout
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, m_swapchain, &m_imageCount, nullptr));
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device->getVkDevice(), m_swapchain, &m_imageCount, nullptr));
 	std::vector<VkImage> vk_images(m_imageCount);
 	m_backbufferTextures.resize(m_imageCount);
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(context->device, m_swapchain, &m_imageCount, vk_images.data()));
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device->getVkDevice(), m_swapchain, &m_imageCount, vk_images.data()));
 
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(context->device, context->commandPool);
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
 	for (size_t i = 0; i < m_imageCount; i++)
 	{
 		// Create swapchain view
@@ -223,7 +226,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		viewInfo.subresourceRange.layerCount = 1;
 
 		VkImageView view = VK_NULL_HANDLE;
-		VK_CHECK_RESULT(vkCreateImageView(context->device, &viewInfo, nullptr, &view));
+		VK_CHECK_RESULT(vkCreateImageView(device->getVkDevice(), &viewInfo, nullptr, &view));
 
 		// Create color texture
 		String str = String::format("SwapChain%u", i);
@@ -237,8 +240,8 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		TextureHandle colorTexture = TextureHandle{ vk_colorTexture };
 		vk_colorTexture->vk_image = vk_images[i];
 		vk_colorTexture->vk_view = view;
-		setDebugName(context->device, vk_images[i], "SwapchainColor", i);
-		setDebugName(context->device, view, "SwapchainColorView", i);
+		setDebugName(device->getVkDevice(), vk_images[i], "SwapchainColor", i);
+		setDebugName(device->getVkDevice(), view, "SwapchainColorView", i);
 		// No memory
 		
 		// Create depth texture
@@ -273,9 +276,23 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 
 	for (VulkanFrame& frame : m_frames)
 	{
-		VK_CHECK_RESULT(vkCreateSemaphore(context->device, &semaphoreInfo, nullptr, &frame.presentSemaphore));
-		VK_CHECK_RESULT(vkCreateSemaphore(context->device, &semaphoreInfo, nullptr, &frame.acquireSemaphore));
-		VK_CHECK_RESULT(vkCreateFence(context->device, &fenceSignaledInfo, nullptr, &frame.presentFence));
+		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &frame.acquireSemaphore));
+		for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		{
+			VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &frame.presentSemaphore[i]));
+			VK_CHECK_RESULT(vkCreateFence(device->getVkDevice(), &fenceSignaledInfo, nullptr, &frame.presentFence[i]));
+
+			// Allocate primary command buffers
+			VkCommandBufferAllocateInfo allocateInfo{};
+			allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			allocateInfo.commandBufferCount = 1;
+			allocateInfo.commandPool = device->getVkCommandPool(IndexToEnum<QueueType>(i));
+			allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+			VkCommandBuffer cmd;
+			VK_CHECK_RESULT(vkAllocateCommandBuffers(device->getVkDevice(), &allocateInfo, &cmd));
+			m_frames->commandLists[i] = VulkanCommandList(device, cmd, IndexToEnum<QueueType>(i), false);
+		}
 	}
 }
 
@@ -308,11 +325,14 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 	for (VulkanFrame& frame : m_frames)
 	{
 		vkDestroySemaphore(device->getVkDevice(), frame.acquireSemaphore, nullptr);
-		vkDestroySemaphore(device->getVkDevice(), frame.presentSemaphore, nullptr);
-		vkDestroyFence(device->getVkDevice(), frame.presentFence, nullptr);
-		frame.presentFence = VK_NULL_HANDLE;
 		frame.acquireSemaphore = VK_NULL_HANDLE;
-		frame.presentSemaphore = VK_NULL_HANDLE;
+		for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		{
+			vkDestroySemaphore(device->getVkDevice(), frame.presentSemaphore[i], nullptr);
+			vkDestroyFence(device->getVkDevice(), frame.presentFence[i], nullptr);
+			frame.presentFence[i] = VK_NULL_HANDLE;
+			frame.presentSemaphore[i] = VK_NULL_HANDLE;
+		}
 	}
 }
 
@@ -374,10 +394,15 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	AKA_ASSERT(FrameIndex::MaxInFlight <= getImageCount(), "More frames in flight than image available. May induce bugs in application.");
 
 	// Only reset the fence if we are submitting work
-	vkResetFences(device->getVkDevice(), 1, &vk_frame.presentFence);
-	
+	VkFence fences[EnumCount<QueueType>()] = {
+		vk_frame.presentFence[EnumToIndex(QueueType::Graphic)],
+		vk_frame.presentFence[EnumToIndex(QueueType::Compute)],
+		vk_frame.presentFence[EnumToIndex(QueueType::Copy)],
+	};
+	vkResetFences(device->getVkDevice(), EnumCount<QueueType>(), fences);
+
 	// Set the index 
-	vk_frame.setImageIndex(ImageIndex{ imageIndex });
+	vk_frame.m_image = ImageIndex{ imageIndex };
 
 	// TODO check image finished rendering ?
 	// If less image than frames in flight, might be necessary
@@ -387,19 +412,18 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 
 SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* vk_frame)
 {
-	VkSemaphore waitSemaphores[] = { vk_frame->presentSemaphore };
 	VkSwapchainKHR swapChains[] = { m_swapchain };
-	uint32_t indices[] = { vk_frame->getImageIndex().value };
+	uint32_t indices[] = { vk_frame->m_image.value };
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = waitSemaphores;
+	presentInfo.waitSemaphoreCount = EnumCount<QueueType>();
+	presentInfo.pWaitSemaphores = vk_frame->presentSemaphore;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = indices;
 
-	VkResult result = vkQueuePresentKHR(device->context().presentQueue.queue, &presentInfo);
+	VkResult result = vkQueuePresentKHR(device->getVkPresentQueue(), &presentInfo);
 
 	SwapchainStatus status = SwapchainStatus::Ok;
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_needRecreation)
@@ -457,7 +481,21 @@ void VulkanFrame::wait(VkDevice device)
 	VK_CHECK_RESULT(vkWaitForFences(
 		device,
 		1,
-		&this->presentFence,
+		&this->presentFence[0], // QueueType::Graphic
+		VK_TRUE,
+		(std::numeric_limits<uint64_t>::max)()
+	));
+	VK_CHECK_RESULT(vkWaitForFences(
+		device,
+		1,
+		&this->presentFence[1], // QueueType::Compute
+		VK_TRUE,
+		(std::numeric_limits<uint64_t>::max)()
+	));
+	VK_CHECK_RESULT(vkWaitForFences(
+		device,
+		1,
+		&this->presentFence[2], // QueueType::Copy
 		VK_TRUE,
 		(std::numeric_limits<uint64_t>::max)()
 	));

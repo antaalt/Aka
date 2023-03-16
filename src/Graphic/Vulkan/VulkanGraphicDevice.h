@@ -10,6 +10,7 @@
 #include "VulkanSwapchain.h"
 #include "VulkanSampler.h"
 #include "VulkanRenderPass.h"
+#include "VulkanFence.h"
 #include "VulkanDebug.h"
 
 #include <Aka/Memory/Pool.h>
@@ -127,12 +128,24 @@ public:
 	const GraphicPipeline* get(GraphicPipelineHandle handle) override;
 	const ComputePipeline* get(ComputePipelineHandle handle) override;
 
+	// Fence
+	FenceHandle createFence(const char* name) override;
+	void destroy(FenceHandle handle) override;
+	const Fence* get(FenceHandle handle) override;
+	void wait(FenceHandle handle, FenceValue waitValue) override;
+	void signal(FenceHandle handle, FenceValue value) override;
+	FenceValue read(FenceHandle handle) override;
+
 	// Command list
-	CommandList* acquireCommandList() override;
+	CommandList* acquireCommandList(QueueType queue) override;
 	void release(CommandList* cmd) override;
-	void submit(CommandList* command, QueueType queue = QueueType::Default) override;
-	void submit(CommandList** commands, uint32_t count, QueueType queue = QueueType::Default) override;
+	void submit(CommandList* command, QueueType queue, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
 	void wait(QueueType queue) override;
+
+	// Frame command lists
+	CommandList* getCopyCommandList(Frame* frame) override;
+	CommandList* getGraphicCommandList(Frame* frame) override;
+	CommandList* getComputeCommandList(Frame* frame) override;
 
 	// Frame
 	Frame* frame() override;
@@ -156,9 +169,13 @@ public:
 	VkInstance getVkInstance() { return m_context.instance; }
 	VkDevice getVkDevice() { return m_context.device; }
 	VkPhysicalDevice getVkPhysicalDevice() { return m_context.physicalDevice; }
-	VkCommandPool getVkCommandPool() { return m_context.commandPool; }
+	VkCommandPool getVkCommandPool(QueueType queue) { return m_context.commandPool[EnumToIndex(queue)]; }
 	VkQueue getVkQueue(QueueType type);
+	VkQueue getVkPresentQueue();
 	uint32_t getVkQueueIndex(QueueType queue);
+	uint32_t getVkPresentQueueIndex();
+	VkSurfaceKHR getVkSurface() { return m_context.surface; }
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
 	friend class VulkanSwapchain;
 	// Context
@@ -178,6 +195,7 @@ private:
 	Pool<VulkanGraphicPipeline> m_graphicPipelinePool;
 	Pool<VulkanComputePipeline> m_computePipelinePool;
 	Pool<VulkanDescriptorSet> m_descriptorPool;
+	Pool<VulkanFence> m_fencePool;
 	//Pool<VulkanCommandList> m_commandPool;
 };
 

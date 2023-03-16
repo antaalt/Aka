@@ -148,7 +148,8 @@ RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadO
 
 FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, Frame* frame)
 {
-	return static_cast<const Backbuffer*>(handle.__data)->handles[frame->getImageIndex().value];
+	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
+	return static_cast<const Backbuffer*>(handle.__data)->handles[vk_frame->m_image.value];
 }
 
 const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)

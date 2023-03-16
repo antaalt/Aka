@@ -9,69 +9,66 @@
 namespace aka {
 namespace gfx {
 
-CommandList* VulkanGraphicDevice::acquireCommandList()
+CommandList* VulkanGraphicDevice::acquireCommandList(QueueType queue)
 {
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandBufferCount = 1;
-	allocateInfo.commandPool = m_context.commandPool;
+	allocateInfo.commandPool = m_context.commandPool[EnumToIndex(queue)]; // Should use distinct pool for single use command buffer...
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 	VkCommandBuffer cmd = VK_NULL_HANDLE;
-	VkResult result = vkAllocateCommandBuffers(m_context.device, &allocateInfo, &cmd);
-	if (result != VK_SUCCESS || cmd == VK_NULL_HANDLE)
-		return nullptr;
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_context.device, &allocateInfo, &cmd));
 	// TODO store a pool of vulkan command buffer
-	return new VulkanCommandList(this, cmd);
+	return new VulkanCommandList(this, cmd, queue, true);
 }
 
 void VulkanGraphicDevice::release(CommandList* cmd)
 {
 	VulkanCommandList* vk_cmd = reinterpret_cast<VulkanCommandList*>(cmd);
-	VK_CHECK_RESULT(vkQueueWaitIdle(m_context.graphicQueue.queue)); // TODO check correct queue
-	vkFreeCommandBuffers(m_context.device, m_context.commandPool, 1, &vk_cmd->vk_command);
+	vkFreeCommandBuffers(m_context.device, getVkCommandPool(vk_cmd->m_queue), 1, &vk_cmd->vk_command);
 	// Release from pool
 	delete cmd;
 }
 
-void VulkanGraphicDevice::submit(CommandList* command, QueueType queue)
+void VulkanGraphicDevice::submit(CommandList* command, QueueType queue, FenceHandle handle, FenceValue waitValue, FenceValue signalValue)
 {
-	submit(&command, 1, queue);
-}
+	VulkanCommandList* vk_command = reinterpret_cast<VulkanCommandList*>(command);
+	VulkanFence* vk_fence = getVk<VulkanFence>(handle);
 
-void VulkanGraphicDevice::submit(CommandList** commands, uint32_t count, QueueType queue)
-{
-	bool isMainCommandList = true; // TODO should move these data out of here to allow submit of any command list.
-	VkSemaphore signalSemaphore = VK_NULL_HANDLE;
-	VkSemaphore waitSemaphore = VK_NULL_HANDLE;
-	VkFence fence = VK_NULL_HANDLE;
-	if (isMainCommandList)
-	{
-		const VulkanFrame& vk_frame = m_swapchain.getVkFrame(m_swapchain.getCurrentFrameIndex());
-		signalSemaphore = vk_frame.presentSemaphore;
-		waitSemaphore = vk_frame.acquireSemaphore;
-		fence = vk_frame.presentFence;
-	}
-	VulkanCommandList** vk_commands = reinterpret_cast<VulkanCommandList**>(commands);
 	VkQueue vk_queue = getVkQueue(queue);
 
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
 
-	std::vector<VkCommandBuffer> cmds(count);
-	for (uint32_t i = 0; i < count; i++)
-		cmds[i] = vk_commands[i]->vk_command;
+	VkTimelineSemaphoreSubmitInfo timelineInfo;
+	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+	timelineInfo.pNext = NULL;
+	timelineInfo.waitSemaphoreValueCount = 1;
+	timelineInfo.pWaitSemaphoreValues = &waitValue;
+	timelineInfo.signalSemaphoreValueCount = 1;
+	timelineInfo.pSignalSemaphoreValues = &signalValue;
+
+	uint32_t semaphoreCount = 0;
+	VkSemaphore waitSemaphore[1] = { VK_NULL_HANDLE };
+	VkSemaphore signalSemaphore[1] = { VK_NULL_HANDLE };
+	if (handle != FenceHandle::null)
+	{
+		semaphoreCount = 1;
+		waitSemaphore[0] = vk_fence->vk_sempahore;
+		signalSemaphore[0] = vk_fence->vk_sempahore; // TODO handle invalid values...
+	}
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = count;
-	submitInfo.pCommandBuffers = cmds.data();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &vk_command->vk_command;
 	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &signalSemaphore;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.signalSemaphoreCount = semaphoreCount;
+	submitInfo.pSignalSemaphores = signalSemaphore;
+	submitInfo.waitSemaphoreCount = semaphoreCount;
+	submitInfo.pWaitSemaphores = waitSemaphore;
 
-	VK_CHECK_RESULT(vkQueueSubmit(vk_queue, 1, &submitInfo, fence));
+	VK_CHECK_RESULT(vkQueueSubmit(vk_queue, 1, &submitInfo, VK_NULL_HANDLE));
 }
 
 void VulkanGraphicDevice::wait(QueueType queue)
@@ -79,7 +76,30 @@ void VulkanGraphicDevice::wait(QueueType queue)
 	VK_CHECK_RESULT(vkQueueWaitIdle(getVkQueue(queue)));
 }
 
-VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer command) :
+CommandList* VulkanGraphicDevice::getCopyCommandList(Frame* frame)
+{
+	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
+	return &vk_frame->commandLists[EnumToIndex(QueueType::Copy)];
+}
+
+CommandList* VulkanGraphicDevice::getGraphicCommandList(Frame* frame)
+{
+	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
+	return &vk_frame->commandLists[EnumToIndex(QueueType::Graphic)];
+}
+
+CommandList* VulkanGraphicDevice::getComputeCommandList(Frame* frame)
+{
+	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
+	return &vk_frame->commandLists[EnumToIndex(QueueType::Compute)];
+}
+
+VulkanCommandList::VulkanCommandList() :
+	VulkanCommandList(nullptr, VK_NULL_HANDLE, QueueType::Unknown, false)
+{
+}
+
+VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer command, QueueType queue, bool oneTimeSubmit) :
 	vk_graphicPipeline(nullptr),
 	vk_computePipeline(nullptr),
 	vk_framebuffer(nullptr),
@@ -88,7 +108,9 @@ VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffe
 	vk_vertices(nullptr),
 	device(device),
 	vk_command(command),
-	m_recording(false)
+	m_recording(false),
+	m_oneTimeSubmit(oneTimeSubmit),
+	m_queue(queue)
 {
 }
 
@@ -96,9 +118,11 @@ void VulkanCommandList::begin()
 {
 	AKA_ASSERT(!m_recording, "Trying to begin a command buffer that is already recording");
 
+	VK_CHECK_RESULT(vkResetCommandBuffer(vk_command, 0)); //VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT
+
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;// SIMULTANEOUS_USE_BIT;
+	beginInfo.flags = m_oneTimeSubmit ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 	VK_CHECK_RESULT(vkBeginCommandBuffer(vk_command, &beginInfo));
 	m_recording = true;
@@ -385,38 +409,24 @@ void VulkanCommandList::endSingleTime(VkDevice device, VkCommandPool commandPool
 
 VkQueue VulkanGraphicDevice::getVkQueue(QueueType type)
 {
-	switch (type)
-	{
-	default:
-		return VK_NULL_HANDLE;
-	case QueueType::Graphic:
-		return m_context.graphicQueue.queue;
-		break;
-	case QueueType::Compute:
-		return m_context.graphicQueue.queue;
-		break;
-	case QueueType::Copy:
-		return m_context.graphicQueue.queue;
-		break;
-	}
+	AKA_ASSERT(EnumToIndex(type) < EnumCount<QueueType>(), "Invalid queue");
+	return m_context.queues[EnumToIndex(type)].queue;
+}
+
+VkQueue VulkanGraphicDevice::getVkPresentQueue()
+{
+	return m_context.presentQueue.queue;
 }
 
 uint32_t VulkanGraphicDevice::getVkQueueIndex(QueueType type)
 {
-	switch (type)
-	{
-	default:
-		return ~0U; // Invalid queue index.
-	case QueueType::Graphic:
-		return m_context.graphicQueue.index;
-		break;
-	case QueueType::Compute:
-		return m_context.graphicQueue.index;
-		break;
-	case QueueType::Copy:
-		return m_context.graphicQueue.index;
-		break;
-	}
+	AKA_ASSERT(EnumToIndex(type) < EnumCount<QueueType>(), "Invalid queue");
+	return m_context.queues[EnumToIndex(type)].familyIndex;
+}
+
+uint32_t VulkanGraphicDevice::getVkPresentQueueIndex()
+{
+	return m_context.presentQueue.familyIndex;
 }
 
 };

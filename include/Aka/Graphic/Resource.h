@@ -21,6 +21,7 @@ enum class ResourceType : uint8_t
 	Program,
 	Shader,
 	RenderPass,
+	Fence,
 };
 
 enum class ResourceAccessType

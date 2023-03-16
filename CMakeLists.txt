@@ -70,6 +70,7 @@ add_library (Aka
 	"src/Graphic/Vulkan/VulkanSampler.cpp"
 	"src/Graphic/Vulkan/VulkanDebug.cpp"
 	"src/Graphic/Vulkan/VulkanRenderPass.cpp"
+	"src/Graphic/Vulkan/VulkanFence.cpp"
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
 	 
 	"src/Graphic/Resource.cpp"
@@ -84,6 +85,7 @@ add_library (Aka
 	"src/Graphic/Buffer.cpp"
 	"src/Graphic/DescriptorSet.cpp"
 	"src/Graphic/RenderPass.cpp" 
+	"src/Graphic/Fence.cpp"
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"

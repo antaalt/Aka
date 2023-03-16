@@ -5,6 +5,7 @@
 #include <Aka/Core/Event.h>
 
 #include "VulkanFramebuffer.h"
+#include "VulkanCommandList.h"
 
 namespace aka {
 namespace gfx {
@@ -15,9 +16,10 @@ struct VulkanFrame : Frame
 	friend class VulkanSwapchain;
 
 	VkSemaphore acquireSemaphore;
-	VkSemaphore presentSemaphore;
-	//VkFence acquireFence;
-	VkFence presentFence;
+	VkSemaphore presentSemaphore[EnumCount<QueueType>()];
+	VkFence presentFence[EnumCount<QueueType>()];
+
+	VulkanCommandList commandLists[EnumCount<QueueType>()];
 
 	void wait(VkDevice device);
 };

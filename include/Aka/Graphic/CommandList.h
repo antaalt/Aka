@@ -16,9 +16,13 @@ namespace gfx {
 enum class QueueType : uint8_t
 {
 	Unknown,
+
 	Graphic,
 	Compute,
 	Copy,
+
+	First = Graphic,
+	Last = Copy,
 
 	Default = Graphic
 };

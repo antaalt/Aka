@@ -9,6 +9,8 @@
 namespace aka {
 namespace gfx {
 
+class VulkanGraphicDevice;
+
 struct VulkanTexture : Texture
 {
 	VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags);
@@ -17,9 +19,9 @@ struct VulkanTexture : Texture
 	VkImage vk_image;
 	VkImageView vk_view; // TODO vector to support multi view ?
 
-	void create(VulkanContext& context);
-	void destroy(VulkanContext& context);
-	void upload(VulkanContext& context, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+	void create(VulkanGraphicDevice* context);
+	void destroy(VulkanGraphicDevice* context);
+	void upload(VulkanGraphicDevice* context, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
 	static VkImage createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags);
 	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips = 0, uint32_t baseLayer = 0);
