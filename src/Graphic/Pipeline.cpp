@@ -92,6 +92,39 @@ bool StencilState::isEnabled() const
 	return (front.compare != StencilOp::None) || (back.compare != StencilOp::None);
 }
 
+GraphicPipeline::GraphicPipeline(
+	const char* name,
+	ProgramHandle program,
+	PrimitiveType primitive,
+	const RenderPassState& renderPass,
+	const VertexAttributeState& vertices,
+	const ViewportState& viewport,
+	const DepthState& depth,
+	const StencilState& stencil,
+	const CullState& culling,
+	const BlendState& blending,
+	const FillState& fill
+) :
+	Resource(name, ResourceType::Pipeline),
+	program(program),
+	primitive(primitive),
+	vertices(vertices),
+	renderPass(renderPass),
+	cull(culling),
+	fill(fill),
+	depth(depth),
+	stencil(stencil),
+	blend(blending),
+	viewport(viewport)
+{
+}
+
+ComputePipeline::ComputePipeline(const char* name, ProgramHandle program) :
+	Resource(name, ResourceType::Pipeline),
+	program(program)
+{
+}
+
 bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 {
 	if (lhs.count < rhs.count) return true;

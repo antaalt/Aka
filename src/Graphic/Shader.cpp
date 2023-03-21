@@ -20,9 +20,9 @@ ShaderMask getShaderMask(ShaderType type)
 	return static_cast<ShaderMask>(1 << EnumToIndex(type));
 }
 
-ShaderHandle Shader::create(ShaderType type, const void* content, size_t size)
+ShaderHandle Shader::create(const char* name, ShaderType type, const void* content, size_t size)
 {
-	return Application::app()->graphic()->createShader(type, content, size);
+	return Application::app()->graphic()->createShader(name, type, content, size);
 }
 
 void Shader::destroy(ShaderHandle shader)

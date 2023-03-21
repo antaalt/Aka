@@ -34,7 +34,7 @@ public:
 	const PhysicalDevice* getPhysicalDevice(uint32_t index) override;
 
 	// Shaders
-	ShaderHandle createShader(ShaderType type, const void* data, size_t size) override;
+	ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) override;
 	void destroy(ShaderHandle handle) override;
 	const Shader* get(ShaderHandle handle) override;
 
@@ -106,6 +106,7 @@ public:
 
 	// Pipeline
 	GraphicPipelineHandle createGraphicPipeline(
+		const char* name,
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
@@ -118,10 +119,8 @@ public:
 		const FillState& fill
 	) override;
 	ComputePipelineHandle createComputePipeline(
-		ProgramHandle program,
-		uint32_t groupCountX,
-		uint32_t groupCountY,
-		uint32_t groupCountZ
+		const char* name,
+		ProgramHandle program
 	) override;
 	void destroy(GraphicPipelineHandle handle) override;
 	void destroy(ComputePipelineHandle handle) override;
@@ -176,6 +175,9 @@ public:
 	uint32_t getVkPresentQueueIndex();
 	VkSurfaceKHR getVkSurface() { return m_context.surface; }
 	VkRenderPass getVkRenderPass(const RenderPassState& state) { return m_context.getRenderPass(state); }
+	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).layout; }
+	VkDescriptorPool getVkDescriptorPool(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).pool; }
+	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count) { return m_context.getPipelineLayout(layouts, count); }
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
 	friend class VulkanSwapchain;

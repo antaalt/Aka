@@ -214,7 +214,7 @@ VkDescriptorSet VulkanProgram::createVkDescriptorSet(VkDevice device, VkDescript
 	return set;
 }
 
-ShaderHandle VulkanGraphicDevice::createShader(ShaderType type, const void* bytes, size_t size)
+ShaderHandle VulkanGraphicDevice::createShader(const char* name, ShaderType type, const void* bytes, size_t size)
 {	
 	if (size == 0 || bytes == nullptr)
 		return ShaderHandle::null;
@@ -223,10 +223,10 @@ ShaderHandle VulkanGraphicDevice::createShader(ShaderType type, const void* byte
 	createInfo.codeSize = size;
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(bytes);
 
-	VulkanShader* vk_shader = m_shaderPool.acquire("Shader", type);
+	VulkanShader* vk_shader = m_shaderPool.acquire(name, type);
 	VK_CHECK_RESULT(vkCreateShaderModule(m_context.device, &createInfo, nullptr, &vk_shader->vk_module));
 
-	setDebugName(m_context.device, vk_shader->vk_module, "Shader");
+	setDebugName(m_context.device, vk_shader->vk_module, name);
 	return ShaderHandle{ vk_shader };
 }
 void VulkanGraphicDevice::destroy(ShaderHandle shader)

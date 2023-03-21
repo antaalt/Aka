@@ -226,9 +226,9 @@ void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle se
 			vk_pipelineLayout = vk_graphicPipeline->vk_pipelineLayout;
 		else if (vk_computePipeline)
 			vk_pipelineLayout = vk_computePipeline->vk_pipelineLayout;
-		const VulkanDescriptorSet* vk_material = reinterpret_cast<const VulkanDescriptorSet*>(descriptorSet);
-		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipelineLayout, index, 1, &vk_material->vk_descriptorSet, 0, nullptr);
-		this->vk_sets[index] = vk_material;
+		const VulkanDescriptorSet* vk_descriptor = reinterpret_cast<const VulkanDescriptorSet*>(descriptorSet);
+		vkCmdBindDescriptorSets(vk_command, bindPoint, vk_pipelineLayout, index, 1, &vk_descriptor->vk_descriptorSet, 0, nullptr);
+		this->vk_sets[index] = vk_descriptor;
 	}
 }
 void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint32_t count)

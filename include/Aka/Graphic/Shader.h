@@ -45,7 +45,7 @@ struct Shader : Resource
 
 	ShaderType type;
 
-	static ShaderHandle create(ShaderType type, const void* content, size_t size);
+	static ShaderHandle create(const char* name, ShaderType type, const void* content, size_t size);
 	static void destroy(ShaderHandle shader);
 };
 

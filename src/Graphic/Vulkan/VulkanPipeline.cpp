@@ -241,6 +241,82 @@ VkShaderStageFlagBits tovk(ShaderType type)
 	}
 }
 
+VulkanGraphicPipeline::VulkanGraphicPipeline(
+	const char* name,
+	ProgramHandle program,
+	PrimitiveType primitive,
+	const RenderPassState& renderPass,
+	const VertexAttributeState& vertices,
+	const ViewportState& viewport,
+	const DepthState& depth,
+	const StencilState& stencil,
+	const CullState& culling,
+	const BlendState& blending,
+	const FillState& fill
+) :
+	GraphicPipeline(name, program, primitive, renderPass, vertices, viewport, depth, stencil, culling, blending, fill),
+	vk_pipeline(VK_NULL_HANDLE),
+	vk_pipelineLayout(VK_NULL_HANDLE)
+{
+}
+
+void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
+{
+	VulkanProgram* vk_program = device->getVk<VulkanProgram>(program);
+
+	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
+	for (uint32_t i = 0; i < vk_program->setCount; i++)
+	{
+		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(vk_program->sets[i]);
+		layouts[i] = vk_layout;
+	}
+	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount);
+	// Create Pipeline
+	std::vector<const VulkanShader*> vk_shaders;
+	uint32_t shaderCount = 0;
+	if (VulkanShader* vertex = device->getVk<VulkanShader>(vk_program->vertex))
+	{
+		vk_shaders.push_back(vertex);
+	}
+	if (VulkanShader* fragment = device->getVk<VulkanShader>(vk_program->fragment))
+	{
+		vk_shaders.push_back(fragment);
+		AKA_ASSERT(vk_shaders.size() == 2, "Missing vertex shader");
+	}
+	if (VulkanShader* geometry = device->getVk<VulkanShader>(vk_program->geometry))
+	{
+		vk_shaders.push_back(geometry);
+		AKA_ASSERT(vk_shaders.size() == 3, "Missing vertex or fragment shader");
+	}
+	vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
+		device->getVkDevice(),
+		device->getVkRenderPass(renderPass),
+		vk_pipelineLayout,
+		vk_shaders.data(),
+		(uint32_t)vk_shaders.size(),
+		primitive,
+		vertices,
+		renderPass,
+		depth,
+		stencil,
+		viewport,
+		cull,
+		blend,
+		fill
+	);
+}
+
+void VulkanGraphicPipeline::destroy(VulkanGraphicDevice* device)
+{
+	vkDestroyPipeline(device->getVkDevice(), vk_pipeline, nullptr);
+	// TODO unref.
+	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
+
+	vk_pipelineLayout = VK_NULL_HANDLE;
+	vk_pipeline = VK_NULL_HANDLE;
+
+}
+
 VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	VkDevice device, 
 	VkRenderPass renderpass,
@@ -405,6 +481,7 @@ VkVertexInputBindingDescription VulkanGraphicPipeline::getVertexBindings(const V
 }
 
 GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
+	const char* name,
 	ProgramHandle program,
 	PrimitiveType primitive,
 	const RenderPassState& renderPass,
@@ -420,106 +497,30 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	if (get(program) == nullptr)
 		return GraphicPipelineHandle::null;
 
-	VulkanProgram* vk_program = getVk<VulkanProgram>(program);
+	VulkanGraphicPipeline* vk_pipeline = m_graphicPipelinePool.acquire(name, program, primitive, renderPass, vertices, viewport, depth, stencil, culling, blending, fill);
+	vk_pipeline->create(this);
 
-	VulkanGraphicPipeline* pipeline = m_graphicPipelinePool.acquire();
-	pipeline->program = program;
-	pipeline->primitive = primitive;
-	pipeline->viewport = viewport;
-	pipeline->depth = depth;
-	pipeline->stencil = stencil;
-	pipeline->cull = culling;
-	pipeline->blend = blending;
-	pipeline->fill = fill;
-
-	pipeline->renderPass = renderPass;
-	pipeline->vertices = vertices;
-	memcpy(pipeline->sets, vk_program->sets, vk_program->setCount * sizeof(ShaderBindingState));
-
-
-	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
-	for (uint32_t i = 0; i < vk_program->setCount; i++)
-	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(vk_program->sets[i]);
-		layouts[i] = data.layout;
-	}
-	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, vk_program->setCount);
-	// Create Pipeline
-	std::vector<const VulkanShader*> vk_shaders;
-	uint32_t shaderCount = 0;
-	VulkanShader* vertex = getVk<VulkanShader>(vk_program->vertex);
-	if (vertex)
-	{
-		vk_shaders.push_back(vertex);
-	}
-	VulkanShader* fragment = getVk<VulkanShader>(vk_program->fragment);
-	if (fragment)
-	{
-		vk_shaders.push_back(fragment);
-		AKA_ASSERT(vk_shaders.size() == 2, "Missing vertex shader");
-	}
-	VulkanShader* geometry = getVk<VulkanShader>(vk_program->geometry);
-	if (geometry)
-	{
-		vk_shaders.push_back(geometry);
-		AKA_ASSERT(vk_shaders.size() == 3, "Missing vertex or fragment shader");
-	}
-	pipeline->vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
-		m_context.device,
-		m_context.getRenderPass(renderPass),
-		pipeline->vk_pipelineLayout,
-		vk_shaders.data(),
-		(uint32_t)vk_shaders.size(),
-		pipeline->primitive,
-		pipeline->vertices,
-		pipeline->renderPass,
-		pipeline->depth,
-		pipeline->stencil,
-		pipeline->viewport,
-		pipeline->cull,
-		pipeline->blend,
-		pipeline->fill
-	);
-	return GraphicPipelineHandle{ pipeline };
+	return GraphicPipelineHandle{ vk_pipeline };
 }
-ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(ProgramHandle program, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+
+ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(const char* name, ProgramHandle program)
 {
 	if (get(program) == nullptr)
 		return ComputePipelineHandle::null;
 
-	VulkanComputePipeline* pipeline = m_computePipelinePool.acquire();
-	pipeline->program = program;
+	VulkanComputePipeline* vk_pipeline = m_computePipelinePool.acquire(name, program);
+	vk_pipeline->create(this);
 
-	VulkanProgram* vk_program = getVk<VulkanProgram>(program);
-
-	memcpy(pipeline->sets, vk_program->sets, vk_program->setCount * sizeof(ShaderBindingState));
-
-	VkDescriptorSetLayout layouts[ShaderMaxSetCount]{};
-	for (uint32_t i = 0; i < vk_program->setCount; i++)
-	{
-		VulkanContext::ShaderInputData data = m_context.getDescriptorLayout(vk_program->sets[i]);
-		layouts[i] = data.layout;
-	}
-	pipeline->vk_pipelineLayout = m_context.getPipelineLayout(layouts, vk_program->setCount);
-	// Create Pipeline
-	pipeline->vk_pipeline = VulkanComputePipeline::createVkComputePipeline(
-		m_context.device,
-		pipeline->vk_pipelineLayout,
-		getVk<VulkanShader>(vk_program->compute)
-	);
-	return ComputePipelineHandle{ pipeline };
+	return ComputePipelineHandle{ vk_pipeline };
 }
+
 void VulkanGraphicDevice::destroy(GraphicPipelineHandle pipeline)
 {
 	if (get(pipeline) == nullptr) return;
 
 	VulkanGraphicPipeline* vk_pipeline = getVk<VulkanGraphicPipeline>(pipeline);
 
-	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
-	// TODO unref.
-	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
-
-	vk_pipeline->vk_pipeline = VK_NULL_HANDLE;
+	vk_pipeline->destroy(this);
 
 	m_graphicPipelinePool.release(vk_pipeline);
 }
@@ -530,11 +531,7 @@ void VulkanGraphicDevice::destroy(ComputePipelineHandle handle)
 
 	VulkanComputePipeline* vk_pipeline = getVk<VulkanComputePipeline>(handle);
 
-	vkDestroyPipeline(m_context.device, vk_pipeline->vk_pipeline, nullptr);
-	// TODO unref.
-	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
-
-	vk_pipeline->vk_pipeline = VK_NULL_HANDLE;
+	vk_pipeline->destroy(this);
 
 	m_computePipelinePool.release(vk_pipeline);
 }
@@ -547,6 +544,42 @@ const GraphicPipeline* VulkanGraphicDevice::get(GraphicPipelineHandle handle)
 const ComputePipeline* VulkanGraphicDevice::get(ComputePipelineHandle handle)
 {
 	return static_cast<const ComputePipeline*>(handle.__data);
+}
+
+VulkanComputePipeline::VulkanComputePipeline(const char* name, ProgramHandle program) :
+	ComputePipeline(name, program),
+	vk_pipeline(VK_NULL_HANDLE),
+	vk_pipelineLayout(VK_NULL_HANDLE)
+{
+}
+
+void VulkanComputePipeline::create(VulkanGraphicDevice* device)
+{
+	VulkanProgram* vk_program = device->getVk<VulkanProgram>(program);
+
+	VkDescriptorSetLayout layouts[ShaderMaxSetCount]{};
+	for (uint32_t i = 0; i < vk_program->setCount; i++)
+	{
+		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(vk_program->sets[i]);
+		layouts[i] = vk_layout;
+	}
+	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount);
+	// Create Pipeline
+	vk_pipeline = VulkanComputePipeline::createVkComputePipeline(
+		device->getVkDevice(),
+		vk_pipelineLayout,
+		device->getVk<VulkanShader>(vk_program->compute)
+	);
+}
+
+void VulkanComputePipeline::destroy(VulkanGraphicDevice* device)
+{
+	vkDestroyPipeline(device->getVkDevice(), vk_pipeline, nullptr);
+	// TODO unref.
+	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
+
+	vk_pipelineLayout = VK_NULL_HANDLE;
+	vk_pipeline = VK_NULL_HANDLE;
 }
 
 VkPipeline VulkanComputePipeline::createVkComputePipeline(VkDevice device, VkPipelineLayout pipelineLayout, const VulkanShader* shader)

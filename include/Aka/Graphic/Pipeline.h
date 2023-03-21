@@ -422,13 +422,24 @@ struct ViewportState
 
 struct GraphicPipeline : Resource
 {
-	GraphicPipeline() : Resource("", ResourceType::Pipeline) {}
+	GraphicPipeline(
+		const char* name, 
+		ProgramHandle program,
+		PrimitiveType primitive,
+		const RenderPassState& renderPass,
+		const VertexAttributeState& vertices,
+		const ViewportState& viewport,
+		const DepthState& depth,
+		const StencilState& stencil,
+		const CullState& culling,
+		const BlendState& blending,
+		const FillState& fill
+	);
 
 	ProgramHandle program;
 
 	PrimitiveType primitive;
 	VertexAttributeState vertices;
-	ShaderBindingState sets[ShaderMaxSetCount];
 	RenderPassState renderPass;
 	CullState cull;
 	FillState fill;
@@ -440,10 +451,10 @@ struct GraphicPipeline : Resource
 
 struct ComputePipeline : Resource
 {
-	ComputePipeline() : Resource("", ResourceType::Pipeline) {}
+	ComputePipeline(const char* name, ProgramHandle program);
 
 	ProgramHandle program;
-	ShaderBindingState sets[ShaderMaxSetCount];
+	//ShaderBindingState sets[ShaderMaxSetCount];
 };
 
 struct RaytracingPipeline : Resource

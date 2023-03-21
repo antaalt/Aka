@@ -85,7 +85,7 @@ public:
 	virtual void name(const Resource* resource, const char* name) = 0;
 
 	// Shaders
-	virtual ShaderHandle createShader(ShaderType type, const void* data, size_t size) = 0;
+	virtual ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) = 0;
 	virtual void destroy(ShaderHandle handle) = 0;
 	virtual const Shader* get(ShaderHandle handle) = 0;
 
@@ -144,6 +144,7 @@ public:
 
 	// Pipelines
 	virtual GraphicPipelineHandle createGraphicPipeline(
+		const char* name,
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
@@ -156,10 +157,8 @@ public:
 		const FillState& fill
 	) = 0;
 	virtual ComputePipelineHandle createComputePipeline(
-		ProgramHandle program,
-		uint32_t groupCountX,
-		uint32_t groupCountY,
-		uint32_t groupCountZ
+		const char* name,
+		ProgramHandle program
 	) = 0;
 	virtual void destroy(GraphicPipelineHandle handle) = 0;
 	virtual void destroy(ComputePipelineHandle handle) = 0;

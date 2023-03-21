@@ -76,7 +76,8 @@ struct VulkanContext
 	static VkFormat tovk(TextureFormat format);
 	static VkFilter tovk(Filter filter);
 	static VkIndexType tovk(IndexFormat format);
-	static VkBufferUsageFlagBits tovk(BufferType type);
+	static VkBufferUsageFlagBits tovk(BufferType type); 
+	static VkMemoryPropertyFlags tovk(BufferUsage type);
 	static VkImageLayout tovk(ResourceAccessType type, TextureFormat format);
 	static VkAttachmentLoadOp tovk(AttachmentLoadOp loadOp);
 	static VkAttachmentStoreOp tovk(AttachmentStoreOp storeOp);

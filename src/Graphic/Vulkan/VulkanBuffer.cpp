@@ -12,8 +12,14 @@ VulkanBuffer::VulkanBuffer(const char* name, BufferType type, uint32_t size, Buf
 }
 void VulkanBuffer::create(VulkanGraphicDevice* device)
 {
-	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // TODO depend on access
-	VkBufferUsageFlags usages = VulkanContext::tovk(type); // VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+	VkMemoryPropertyFlags properties = VulkanContext::tovk(usage);
+	VkBufferUsageFlags usages = VulkanContext::tovk(type);
+
+	if (usage != BufferUsage::Immutable)
+	{
+		usages |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		usages |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	}
 
 	vk_buffer = VulkanBuffer::createVkBuffer(device->getVkDevice(), size, usages);
 	vk_memory = VulkanBuffer::createVkDeviceMemory(device->getVkDevice(), device->getVkPhysicalDevice(), vk_buffer, properties);
@@ -58,6 +64,51 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	return vk_memory;
 }
 
+void VulkanBuffer::insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer, size_t size, size_t offset, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage)
+{
+	VkBufferMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.buffer = buffer;
+	barrier.offset = offset;
+	barrier.size = size;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.srcAccessMask = srcAccess;
+	barrier.dstAccessMask = dstAccess;
+
+	vkCmdPipelineBarrier(
+		command,
+		srcStage, dstStage,
+		0,
+		0, nullptr,
+		0, &barrier,
+		1, nullptr
+	);
+}
+
+bool VulkanBuffer::isMappable(BufferUsage usage)
+{
+	switch (usage)
+	{
+	case BufferUsage::Dynamic:
+	case BufferUsage::Staging:
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool VulkanBuffer::isTransferable(BufferUsage usage)
+{
+	switch (usage)
+	{
+	case BufferUsage::Immutable:
+		return false;
+	default:
+		return true;
+	}
+}
+
 BufferHandle VulkanGraphicDevice::createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {		
 	VulkanBuffer* buffer = m_bufferPool.acquire(name, type, size, usage, access);
@@ -73,36 +124,86 @@ BufferHandle VulkanGraphicDevice::createBuffer(const char* name, BufferType type
 
 void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size)
 {
-	// TODO staging buffer for device local buffers
 	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
-	void* mapped = nullptr;
-	VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_buffer->vk_memory, offset, size, 0, &mapped));
-	if (mapped == nullptr)
+	if (VulkanBuffer::isMappable(vk_buffer->usage))
 	{
-		Logger::error("Failed to map memory.");
-		return;
+		void* mapped = nullptr;
+		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_buffer->vk_memory, offset, size, 0, &mapped));
+		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
+		memcpy(mapped, data, static_cast<size_t>(size));
+		vkUnmapMemory(getVkDevice(), vk_buffer->vk_memory);
 	}
-	memcpy(mapped, data, static_cast<size_t>(size));
-	vkUnmapMemory(getVkDevice(), vk_buffer->vk_memory);
+	else if (VulkanBuffer::isTransferable(vk_buffer->usage))
+	{
+		VkBuffer vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+		VkDeviceMemory vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		
+		void* mapped = nullptr;
+		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_stagingMemory, 0, size, 0, &mapped));
+		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
+		memcpy(mapped, data, static_cast<size_t>(size));
+		vkUnmapMemory(getVkDevice(), vk_stagingMemory);
+
+		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
+		VkBufferCopy region{};
+		region.srcOffset = 0;
+		region.dstOffset = offset;
+		region.size = size;
+		vkCmdCopyBuffer(cmd, vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
+		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+
+		vkFreeMemory(getVkDevice(), vk_stagingMemory, nullptr);
+		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, nullptr);
+	}
+	else
+	{
+		throw std::runtime_error("Cannot upload to an immutable buffer");
+	}
 }
 
 void VulkanGraphicDevice::download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size)
 {
 	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
-	void* mapped = nullptr;
-	VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_buffer->vk_memory, offset, size, 0, &mapped));
-	if (mapped == nullptr)
+	if (VulkanBuffer::isMappable(vk_buffer->usage))
 	{
-		Logger::error("Failed to map memory.");
-		return;
+		void* mapped = nullptr;
+		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_buffer->vk_memory, offset, size, 0, &mapped));
+		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
+		memcpy(data, mapped, static_cast<size_t>(size));
+		vkUnmapMemory(getVkDevice(), vk_buffer->vk_memory);
 	}
-	memcpy(data, mapped, static_cast<size_t>(size));
-	vkUnmapMemory(getVkDevice(), vk_buffer->vk_memory);
+	else if (VulkanBuffer::isTransferable(vk_buffer->usage))
+	{
+		VkBuffer vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+		VkDeviceMemory vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		
+		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
+		VkBufferCopy region{};
+		region.srcOffset = offset;
+		region.dstOffset = 0;
+		region.size = size;// VK_WHOLE_SIZE ?
+		vkCmdCopyBuffer(cmd, vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
+		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+
+		void* mapped = nullptr;
+		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_stagingMemory, 0, size, 0, &mapped));
+		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
+		memcpy(mapped, data, static_cast<size_t>(size));
+		vkUnmapMemory(getVkDevice(), vk_stagingMemory);
+
+		vkFreeMemory(getVkDevice(), vk_stagingMemory, nullptr);
+		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, nullptr);
+	}
+	else
+	{
+		throw std::runtime_error("Cannot download from an immutable buffer");
+	}
 }
 
 void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)
 {
 	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
+	AKA_ASSERT(VulkanBuffer::isMappable(vk_buffer->usage), "Cannot map this buffer.");
 	void* data = nullptr;
 	VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_buffer->vk_memory, 0, vk_buffer->size, 0, &data));
 	return data;
@@ -111,6 +212,7 @@ void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)
 void VulkanGraphicDevice::unmap(BufferHandle buffer)
 {
 	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
+	AKA_ASSERT(VulkanBuffer::isMappable(vk_buffer->usage), "Cannot map this buffer.");
 	vkUnmapMemory(getVkDevice(), vk_buffer->vk_memory);
 }
 

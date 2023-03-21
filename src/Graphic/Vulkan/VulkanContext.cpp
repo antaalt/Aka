@@ -587,6 +587,7 @@ uint32_t VulkanContext::findMemoryType(VkPhysicalDevice physicalDevice, uint32_t
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
+	// Should check if device local if VkPhysicalDeviceMemoryProperties::memoryHeaps has VK_MEMORY_HEAP_DEVICE_LOCAL_BIT
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
@@ -706,6 +707,31 @@ VkBufferUsageFlagBits VulkanContext::tovk(BufferType type)
 		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	case BufferType::Indirect:
 		return VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+	}
+}
+
+// Resource usage	| Default	| Dynamic	| Immutable	| Staging
+// GPU-Read			| Yes		| Yes		| Yes		| Yes
+// GPU-Write		| Yes		| --		| --		| Yes
+// CPU-Read			| --		| --		| --		| Yes
+// CPU-Write		| --		| Yes		| --		| Yes
+VkMemoryPropertyFlags VulkanContext::tovk(BufferUsage type)
+{
+	// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT = can be mapped
+	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT = needed for map
+	switch (type)
+	{
+	case BufferUsage::Default:
+		return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	case BufferUsage::Dynamic: // Support map
+		// Should not be only host coherent
+		return VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	case BufferUsage::Staging:
+		return VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+	case BufferUsage::Immutable:
+		return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	default: 
+		return 0;
 	}
 }
 //#define DEPTH_AND_STENCIL_SEPARATELY 1 // separateDepthStencilLayouts

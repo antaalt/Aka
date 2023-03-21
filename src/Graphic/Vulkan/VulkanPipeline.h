@@ -12,8 +12,25 @@ namespace gfx {
 
 struct VulkanGraphicPipeline : GraphicPipeline
 {
+	VulkanGraphicPipeline(
+		const char* name,
+		ProgramHandle program,
+		PrimitiveType primitive,
+		const RenderPassState& renderPass,
+		const VertexAttributeState& vertices,
+		const ViewportState& viewport,
+		const DepthState& depth,
+		const StencilState& stencil,
+		const CullState& culling,
+		const BlendState& blending,
+		const FillState& fill
+	);
+
 	VkPipeline vk_pipeline;
 	VkPipelineLayout vk_pipelineLayout;
+
+	void create(VulkanGraphicDevice* device);
+	void destroy(VulkanGraphicDevice* device);
 
 	static VkPipeline createVkGraphicPipeline(
 		VkDevice device,
@@ -37,8 +54,13 @@ struct VulkanGraphicPipeline : GraphicPipeline
 
 struct VulkanComputePipeline : ComputePipeline
 {
+	VulkanComputePipeline(const char* name, ProgramHandle program);
+
 	VkPipeline vk_pipeline;
 	VkPipelineLayout vk_pipelineLayout;
+
+	void create(VulkanGraphicDevice* device);
+	void destroy(VulkanGraphicDevice* device);
 
 	static VkPipeline createVkComputePipeline(
 		VkDevice device,
