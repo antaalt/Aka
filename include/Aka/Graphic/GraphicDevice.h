@@ -4,6 +4,7 @@
 
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Config.h>
+#include <Aka/Core/StrictType.h>
 #include <Aka/Platform/PlatformDevice.h>
 
 #include <Aka/Graphic/Resource.h>
@@ -24,9 +25,13 @@ namespace gfx {
 
 enum class GraphicAPI : uint8_t
 {
-	None,
+	Unknown,
+
 	Vulkan,
 	DirectX12,
+
+	First = Vulkan,
+	Last = DirectX12,
 };
 
 struct GraphicConfig
@@ -34,25 +39,13 @@ struct GraphicConfig
 	GraphicAPI api;
 };
 
-struct FrameIndex
-{
-	void next() { value = (value + 1) % MaxInFlight; }
+CREATE_STRICT_TYPE(uint32_t, FrameIndex)
+CREATE_STRICT_TYPE(uint32_t, ImageIndex)
 
-	static const uint32_t MaxInFlight = 1;  // number of frames to deal with concurrently
-
-	uint32_t value;
-
-};
-
-struct ImageIndex // TODO StrictType
-{
-	uint32_t value;
-};
+static constexpr uint32_t MaxFrameInFlight = 1; // number of frames to deal with concurrently
 
 struct Frame // TODO FrameHandle instead.
 {
-protected:
-	friend class GraphicDevice;
 protected:
 	ImageIndex m_image;
 };
@@ -68,9 +61,14 @@ using BackbufferHandle = ResourceHandle<Backbuffer>;
 
 enum class SwapchainStatus
 {
+	Unknown,
+
 	Ok,
 	Recreated,
 	Error,
+
+	First = Ok,
+	Last = Error,
 };
 
 
@@ -131,7 +129,7 @@ public:
 	virtual const Buffer* get(BufferHandle handle) = 0;
 
 	// Textures
-	virtual TextureHandle createTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr) = 0;
+	virtual TextureHandle createTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags, const void* const* data = nullptr) = 0;
 	virtual void upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
 	virtual void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) = 0;
 	virtual void copy(TextureHandle lhs, TextureHandle rhs) = 0;
@@ -149,7 +147,7 @@ public:
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
-		const VertexBindingState& vertices,
+		const VertexAttributeState& vertices,
 		const ViewportState& viewport,
 		const DepthState& depth,
 		const StencilState& stencil,
@@ -184,7 +182,7 @@ public:
 	virtual CommandList* getGraphicCommandList(Frame* frame) = 0;
 	virtual CommandList* getComputeCommandList(Frame* frame) = 0;
 	// Command submit
-	virtual void submit(CommandList* command, QueueType queue, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
+	virtual void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
 	virtual void wait(QueueType queue) = 0;
 
 	// Screenshot of the backbuffer

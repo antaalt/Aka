@@ -90,8 +90,8 @@ template<> struct std::hash<aka::gfx::ShaderBindingState>
 		for (size_t i = 0; i < data.count; i++)
 		{
 			aka::hashCombine(hash, data.bindings[i].count);
-			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].stages));
-			aka::hashCombine(hash, aka::EnumToIntegral(data.bindings[i].type));
+			aka::hashCombine(hash, static_cast<uint32_t>(data.bindings[i].stages));
+			aka::hashCombine(hash, static_cast<uint32_t>(data.bindings[i].type));
 		}
 		return hash;
 	}

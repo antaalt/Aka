@@ -19,26 +19,24 @@ CommandList* VulkanGraphicDevice::acquireCommandList(QueueType queue)
 
 	VkCommandBuffer cmd = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_context.device, &allocateInfo, &cmd));
-	// TODO store a pool of vulkan command buffer
-	return new VulkanCommandList(this, cmd, queue, true);
+
+	return m_commandListPool.acquire(this, cmd, queue, true);
 }
 
 void VulkanGraphicDevice::release(CommandList* cmd)
 {
 	VulkanCommandList* vk_cmd = reinterpret_cast<VulkanCommandList*>(cmd);
 	vkFreeCommandBuffers(m_context.device, getVkCommandPool(vk_cmd->m_queue), 1, &vk_cmd->vk_command);
-	// Release from pool
-	delete cmd;
+
+	m_commandListPool.release();
 }
 
-void VulkanGraphicDevice::submit(CommandList* command, QueueType queue, FenceHandle handle, FenceValue waitValue, FenceValue signalValue)
+void VulkanGraphicDevice::submit(CommandList* command, FenceHandle handle, FenceValue waitValue, FenceValue signalValue)
 {
 	VulkanCommandList* vk_command = reinterpret_cast<VulkanCommandList*>(command);
 	VulkanFence* vk_fence = getVk<VulkanFence>(handle);
-	// TODO should not need queue in api...
-	AKA_ASSERT(vk_command->getQueueType() == queue, "Invalid queue");
 
-	VkQueue vk_queue = getVkQueue(queue);
+	VkQueue vk_queue = getVkQueue(vk_command->getQueueType());
 
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
 
@@ -157,7 +155,6 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 	VulkanRenderPass* vk_renderPass = device->getVk<VulkanRenderPass>(renderPass);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 
-	// TODO clear mask should be set at renderpass level.
 	std::vector<VkClearValue> clearValues(vk_framebuffer->count);
 	for (VkClearValue& vk_clear : clearValues)
 	{
@@ -356,7 +353,6 @@ void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32
 }
 void VulkanCommandList::drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount) 
 {
-	// TODO check binded render target are not also binded as input.
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	uint32_t instanceOffset = 0;
 	vkCmdDrawIndexed(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);

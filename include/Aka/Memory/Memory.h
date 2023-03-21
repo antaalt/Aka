@@ -25,8 +25,16 @@ public:
 public:
 	// Allocate memory for given size
 	static void* alloc(size_t size);
+	// Allocate aligned memory for given size
+	static void* alignedAlloc(size_t alignment, size_t size);
 	// Deallocate memory
 	static void (free)(void* data);
+	// Deallocate aligned memory
+	static void (alignedFree)(void* data);
+	// Reallocate memory
+	static void* (realloc)(void* data, size_t size);
+	// Reallocate aligned memory
+	static void* (alignedRealloc)(void* data, size_t alignment, size_t size);
 	// Copy memory 
 	static void* copy(void* dst, const void* src, size_t count);
 	// Copy memory

@@ -14,7 +14,7 @@ struct ShaderData
 {
 	String entryPoint;
 	Vector<gfx::ShaderBindingState> sets;
-	gfx::VertexBindingState vertices;
+	gfx::VertexAttributeState vertices;
 };
 
 struct ShaderKey

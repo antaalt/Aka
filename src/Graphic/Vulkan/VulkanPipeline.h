@@ -22,7 +22,7 @@ struct VulkanGraphicPipeline : GraphicPipeline
 		const VulkanShader** shaders,
 		uint32_t shaderCount,
 		PrimitiveType primitive,
-		const VertexBindingState& vertices,
+		const VertexAttributeState& vertices,
 		const RenderPassState& renderPass,
 		const DepthState& depth,
 		const StencilState& stencil,
@@ -32,7 +32,7 @@ struct VulkanGraphicPipeline : GraphicPipeline
 		const FillState& fill
 	);
 
-	static VkVertexInputBindingDescription getVertexBindings(const VertexBindingState& vertices, VkVertexInputAttributeDescription* attributes, uint32_t count);
+	static VkVertexInputBindingDescription getVertexBindings(const VertexAttributeState& vertices, VkVertexInputAttributeDescription* attributes, uint32_t count);
 };
 
 struct VulkanComputePipeline : ComputePipeline

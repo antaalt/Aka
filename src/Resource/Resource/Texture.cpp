@@ -62,11 +62,11 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 	const bool isSRGB = has(data->flags, TextureBuildFlag::ColorSpaceSRGB);
 	const bool hasMips = has(data->flags, TextureBuildFlag::GenerateMips);
 	gfx::TextureFormat format = getFormat(data->channels, isHDR, isSRGB);
-	gfx::TextureFlag flags = gfx::TextureFlag::ShaderResource;
+	gfx::TextureUsage flags = gfx::TextureUsage::ShaderResource;
 	uint32_t level = 1;
 	if (hasMips)
 	{
-		flags |= gfx::TextureFlag::GenerateMips;
+		flags |= gfx::TextureUsage::GenerateMips;
 		level = gfx::Sampler::mipLevelCount(data->width, data->height);
 	}
 
@@ -166,7 +166,7 @@ void Texture::createBuildData(gfx::GraphicDevice* device, RenderData* data)
 	const bool isSRGB = false; // TODO check flags
 	const bool isHDR = false; // TODO check format
 	Logger::warn("SRGB & HDR not supported.");
-	const bool generateMips = has(texture->flags, gfx::TextureFlag::GenerateMips);
+	const bool generateMips = has(texture->flags, gfx::TextureUsage::GenerateMips);
 	textureBuildData->flags = TextureBuildFlag::None;
 	textureBuildData->width = texture->width;
 	textureBuildData->height = texture->height;

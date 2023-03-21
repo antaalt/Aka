@@ -7,7 +7,7 @@
 namespace aka {
 namespace gfx {
 
-Texture::Texture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags) :
+Texture::Texture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags) :
 	Resource(name, ResourceType::Texture),
 	width(width),
 	height(height),
@@ -23,7 +23,7 @@ Texture::Texture(const char* name, uint32_t width, uint32_t height, uint32_t dep
 
 bool Texture::hasMips() const
 {
-	return has(flags, TextureFlag::GenerateMips);
+	return has(flags, TextureUsage::GenerateMips);
 }
 bool Texture::hasLayers() const
 {
@@ -45,11 +45,11 @@ bool Texture::hasLayers() const
 }
 bool Texture::isRenderTarget() const
 {
-	return has(flags, TextureFlag::RenderTarget);
+	return has(flags, TextureUsage::RenderTarget);
 }
 bool Texture::isShaderResource() const
 {
-	return has(flags, TextureFlag::ShaderResource);
+	return has(flags, TextureUsage::ShaderResource);
 }
 
 bool Texture::isColor(TextureFormat format)
@@ -213,15 +213,15 @@ uint32_t Texture::size(TextureFormat format)
 	return 0;
 }
 
-TextureHandle Texture::create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data)
+TextureHandle Texture::create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* data)
 {
 	return Application::app()->graphic()->createTexture(name, width, height, 1, TextureType::Texture2D, 1, 1, format, flags, &data);
 }
-TextureHandle Texture::createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data)
+TextureHandle Texture::createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* const* data)
 {
 	return Application::app()->graphic()->createTexture(name, width, height, 1, TextureType::TextureCubeMap, 1, 6, format, flags, data);
 }
-TextureHandle Texture::create2DArray(const char* name, uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data)
+TextureHandle Texture::create2DArray(const char* name, uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureUsage flags, const void* const* data)
 {
 	return Application::app()->graphic()->createTexture(name, width, height, 1, TextureType::Texture2DArray, 1, layers, format, flags, data);
 }

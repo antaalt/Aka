@@ -103,7 +103,7 @@ void Font::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuild
 		str.cstr(),
 		atlas.width(), atlas.height(),
 		gfx::TextureFormat::RGBA8,
-		gfx::TextureFlag::ShaderResource,
+		gfx::TextureUsage::ShaderResource,
 		atlas.data()
 	);
 	fontRenderData->texture = m_atlas;

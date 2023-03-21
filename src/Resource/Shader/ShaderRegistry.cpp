@@ -70,7 +70,7 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	Array<gfx::ShaderHandle, ShaderTypeCount> shaders;
 	for (auto& shaderKey : key.shaders)
 	{
-		uint32_t index = EnumToIntegral(shaderKey.type);
+		uint32_t index = EnumToIndex(shaderKey.type);
 		auto it = m_shaders.find(shaderKey);
 		if (it != m_shaders.end())
 		{
@@ -123,8 +123,8 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 		name = "GraphicProgram" + name;
 		program = device->createGraphicProgram(
 			name.cstr(),
-			shaders[EnumToIntegral(gfx::ShaderType::Vertex)],
-			shaders[EnumToIntegral(gfx::ShaderType::Fragment)],
+			shaders[EnumToIndex(gfx::ShaderType::Vertex)],
+			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
 			gfx::ShaderHandle::null,
 			states,
 			static_cast<uint32_t>(setCount)
@@ -135,9 +135,9 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 		name = "GraphicProgram" + name;
 		program = device->createGraphicProgram(
 			name.cstr(),
-			shaders[EnumToIntegral(gfx::ShaderType::Vertex)],
-			shaders[EnumToIntegral(gfx::ShaderType::Fragment)],
-			shaders[EnumToIntegral(gfx::ShaderType::Geometry)],
+			shaders[EnumToIndex(gfx::ShaderType::Vertex)],
+			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
+			shaders[EnumToIndex(gfx::ShaderType::Geometry)],
 			states,
 			static_cast<uint32_t>(setCount)
 		);
@@ -147,7 +147,7 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 		name = "ComputeProgram" + name;
 		program = device->createComputeProgram(
 			name.cstr(),
-			shaders[EnumToIntegral(gfx::ShaderType::Compute)],
+			shaders[EnumToIndex(gfx::ShaderType::Compute)],
 			states,
 			static_cast<uint32_t>(setCount)
 		);

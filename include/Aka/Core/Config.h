@@ -64,7 +64,6 @@ template <typename T> void hashCombine(std::size_t& s, const T& v);
 
 // Type traits
 template <typename T> using UnderlyingType = ::std::underlying_type_t<T>;
-template <typename T> constexpr UnderlyingType<T> EnumToIntegral(T value);
 
 // Containers
 //template <typename T> using Vector = ::std::vector<T>;

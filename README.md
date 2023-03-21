@@ -135,7 +135,7 @@ struct Game :
 		pipeline = graphic()->createGraphicPipeline(program,
 			gfx::PrimitiveType::Triangles,
 			graphic()->get(renderPass)->state,
-			gfx::VertexBindingState().
+			gfx::VertexAttributeState().
 				add(gfx::VertexSemantic::Position, gfx::VertexFormat::Float, gfx::VertexType::Vec3).
 				add(gfx::VertexSemantic::TexCoord0, gfx::VertexFormat::Float, gfx::VertexType::Vec2),
 			gfx::ViewportState().size(width(), height()),

@@ -13,7 +13,7 @@ class VulkanGraphicDevice;
 
 struct VulkanTexture : Texture
 {
-	VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags);
+	VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags);
 
 	VkDeviceMemory vk_memory;
 	VkImage vk_image;

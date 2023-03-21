@@ -28,6 +28,8 @@ namespace aka {
 
 enum class ResourceType
 {
+	Unknown,
+
 	Texture,
 	Buffer,
 	Sprite,
@@ -36,9 +38,8 @@ enum class ResourceType
 	Mesh,
 	Scene,
 
-	Count,
-
-	Unknown
+	First = Texture,
+	Last = Scene,
 };
 template <typename T>
 struct ResourceTrait

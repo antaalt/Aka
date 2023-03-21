@@ -213,17 +213,17 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 	);
 }
 
-ResourceAccessType getInitialResourceAccessType(TextureFormat format, TextureFlag flags)
+ResourceAccessType getInitialResourceAccessType(TextureFormat format, TextureUsage flags)
 {
-	if (has(flags, TextureFlag::Storage))
+	if (has(flags, TextureUsage::Storage))
 	{
 		return ResourceAccessType::Storage;
 	}
-	else if (has(flags, TextureFlag::ShaderResource))
+	else if (has(flags, TextureUsage::ShaderResource))
 	{
 		return ResourceAccessType::Resource;
 	}
-	else if (has(flags, TextureFlag::RenderTarget))
+	else if (has(flags, TextureUsage::RenderTarget))
 	{
 		return ResourceAccessType::Attachment;
 	}
@@ -240,7 +240,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	TextureType type,
 	uint32_t levels, uint32_t layers,
 	TextureFormat format,
-	TextureFlag flags,
+	TextureUsage flags,
 	const void* const* data
 )
 {
@@ -271,7 +271,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 		texture->upload(this, data, 0, 0, width, height);
 
 		// Generate mips
-		if (has(flags, TextureFlag::GenerateMips))
+		if (has(flags, TextureUsage::GenerateMips))
 		{
 			VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
 			texture->generateMips(cmd, finalLayout, finalLayout);
@@ -352,7 +352,7 @@ const Texture* VulkanGraphicDevice::get(TextureHandle handle)
 	return static_cast<const Texture*>(handle.__data);
 }
 
-VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags) :
+VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags) :
 	Texture(name, width, height, depth, type, levels, layers, format, flags),
 	vk_image(VK_NULL_HANDLE),
 	vk_memory(VK_NULL_HANDLE),
@@ -388,18 +388,18 @@ void VulkanTexture::create(VulkanGraphicDevice* device)
 		AKA_ASSERT(false, "Invalid type.");
 		break;
 	}
-	if (has(flags, TextureFlag::RenderTarget))
+	if (has(flags, TextureUsage::RenderTarget))
 	{
 		if (Texture::hasDepth(format))
 			vk_usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		else
 			vk_usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
-	if (has(flags, TextureFlag::ShaderResource))
+	if (has(flags, TextureUsage::ShaderResource))
 	{
 		vk_usage |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // Need to upload to it.
 	}
-	if (has(flags, TextureFlag::Storage))
+	if (has(flags, TextureUsage::Storage))
 	{
 		vk_usage |= VK_IMAGE_USAGE_STORAGE_BIT;
 	}

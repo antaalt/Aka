@@ -9,6 +9,8 @@ namespace gfx {
 
 enum class ShaderType : uint8_t
 {
+	Unknown,
+
 	Vertex,
 	Fragment,
 	Compute,
@@ -16,22 +18,20 @@ enum class ShaderType : uint8_t
 	TessControl,
 	TessEvaluation,
 
-	Count,
-
-	Undefined = 0,
+	First = Vertex,
+	Last = TessEvaluation,
 };
 
 enum class ShaderMask : uint8_t
 {
 	None            = 0,
-	Vertex          = (1 << EnumToIntegral(ShaderType::Vertex)),
-	Fragment        = (1 << EnumToIntegral(ShaderType::Fragment)),
-	Compute         = (1 << EnumToIntegral(ShaderType::Compute)),
-	Geometry        = (1 << EnumToIntegral(ShaderType::Geometry)),
-	TessControl     = (1 << EnumToIntegral(ShaderType::TessControl)),
-	TessEvaluation  = (1 << EnumToIntegral(ShaderType::TessEvaluation)),
+	Vertex          = 1 << EnumToIndex(ShaderType::Vertex),
+	Fragment        = 1 << EnumToIndex(ShaderType::Fragment),
+	Compute         = 1 << EnumToIndex(ShaderType::Compute),
+	Geometry        = 1 << EnumToIndex(ShaderType::Geometry),
+	TessControl     = 1 << EnumToIndex(ShaderType::TessControl),
+	TessEvaluation  = 1 << EnumToIndex(ShaderType::TessEvaluation),
 };
-
 AKA_IMPLEMENT_BITMASK_OPERATOR(ShaderMask)
 
 ShaderMask getShaderMask(ShaderType type);

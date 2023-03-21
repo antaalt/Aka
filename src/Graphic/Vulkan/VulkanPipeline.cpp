@@ -114,16 +114,16 @@ VkBlendFactor tovk(BlendMode mode)
 		return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
 	}
 }
-VkColorComponentFlags tovk(BlendMask mask)
+VkColorComponentFlags tovk(ColorMask mask)
 {
 	VkColorComponentFlags flags = 0;
-	if ((mask & BlendMask::Red) == BlendMask::Red)
+	if (has(mask, ColorMask::Red))
 		flags |= VK_COLOR_COMPONENT_R_BIT;
-	if ((mask & BlendMask::Green) == BlendMask::Green)
+	if (has(mask, ColorMask::Green))
 		flags |= VK_COLOR_COMPONENT_G_BIT;
-	if ((mask & BlendMask::Blue) == BlendMask::Blue)
+	if (has(mask, ColorMask::Blue))
 		flags |= VK_COLOR_COMPONENT_B_BIT;
-	if ((mask & BlendMask::Alpha) == BlendMask::Alpha)
+	if (has(mask, ColorMask::Alpha))
 		flags |= VK_COLOR_COMPONENT_A_BIT;
 	return flags;
 }
@@ -248,7 +248,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	const VulkanShader** shaders,
 	uint32_t shaderCount,
 	PrimitiveType primitive,
-	const VertexBindingState& vertices,
+	const VertexAttributeState& vertices,
 	const RenderPassState& renderPass,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -384,7 +384,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	return pipeline;
 }
 
-VkVertexInputBindingDescription VulkanGraphicPipeline::getVertexBindings(const VertexBindingState& verticesDesc, VkVertexInputAttributeDescription* attributes, uint32_t count)
+VkVertexInputBindingDescription VulkanGraphicPipeline::getVertexBindings(const VertexAttributeState& verticesDesc, VkVertexInputAttributeDescription* attributes, uint32_t count)
 {
 	AKA_ASSERT(count == verticesDesc.count, "");
 	VkVertexInputBindingDescription verticesBindings{};
@@ -408,7 +408,7 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	ProgramHandle program,
 	PrimitiveType primitive,
 	const RenderPassState& renderPass,
-	const VertexBindingState& vertices,
+	const VertexAttributeState& vertices,
 	const ViewportState& viewport,
 	const DepthState& depth,
 	const StencilState& stencil,

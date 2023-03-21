@@ -114,14 +114,14 @@ ResourceArchive* StaticMesh::createResourceArchive()
 	return new StaticMeshArchive;
 }
 
-StaticMesh* StaticMesh::createInterleaved(const gfx::VertexBindingState& state, const void* vertices, uint32_t vertexCount, gfx::IndexFormat indexFormat, const void* indices, uint32_t indexCount)
+StaticMesh* StaticMesh::createInterleaved(const gfx::VertexAttributeState& state, const void* vertices, uint32_t vertexCount, gfx::IndexFormat indexFormat, const void* indices, uint32_t indexCount)
 {
 	StaticMesh* mesh = new StaticMesh; // TODO pool
 	mesh->createBuildData();
 	StaticMeshBuildData* data = reinterpret_cast<StaticMeshBuildData*>(mesh->getBuildData());
 	data->flags = StaticMeshBuildFlag::None;
 	data->indexFormat = indexFormat;
-	data->indicesBuffer = Blob(indices, indexCount * gfx::VertexBindingState::size(indexFormat));
+	data->indicesBuffer = Blob(indices, indexCount * gfx::VertexAttributeState::size(indexFormat));
 	data->vertexAttributeCount = state.count;
 	for (uint32_t i = 0; i < state.count; i++)
 	{
@@ -137,7 +137,7 @@ StaticMesh* StaticMesh::createInterleaved(const gfx::VertexBindingState& state, 
 	return mesh;
 }
 
-StaticMesh* StaticMesh::createInterleaved(const gfx::VertexBindingState& state, const void* vertices, uint32_t vertexCount)
+StaticMesh* StaticMesh::createInterleaved(const gfx::VertexAttributeState& state, const void* vertices, uint32_t vertexCount)
 {
 	StaticMesh* mesh = new StaticMesh; // TODO pool
 	mesh->createBuildData();

@@ -62,9 +62,41 @@ void* Memory::alloc(size_t size)
 	return ::malloc(size);
 }
 
+void* Memory::alignedAlloc(size_t alignment, size_t size)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	return _aligned_malloc(size, alignment);
+#else // POSIX
+	return aligned_alloc(alignment, size);
+#endif
+}
+
 void Memory::free(void* data)
 {
 	::free(data); 
+}
+
+void Memory::alignedFree(void* data)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	_aligned_free(data);
+#else // POSIX
+	free(data);
+#endif
+}
+void* Memory::realloc(void* data, size_t size)
+{
+	return ::realloc(data, size);
+}
+
+void* Memory::alignedRealloc(void* data, size_t alignment, size_t size)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	return _aligned_realloc(data, alignment, size);
+#else // POSIX
+	free(data); // No aligned realloc for POSIX
+	return aligned_alloc(alignment, size);
+#endif
 }
 
 void* Memory::copy(void* dst, const void* src, size_t size)

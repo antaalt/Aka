@@ -3,17 +3,17 @@
 namespace aka {
 namespace gfx {
 
-uint32_t VertexBindingState::stride() const
+uint32_t VertexAttributeState::stride() const
 {
 	if (count > VertexMaxAttributeCount)
 		return 0;
 	uint32_t stride = 0;
 	for (uint32_t i = 0; i < count; i++)
-		stride += VertexBindingState::size(attributes[i].format) * VertexBindingState::size(attributes[i].type);
+		stride += VertexAttributeState::size(attributes[i].format) * VertexAttributeState::size(attributes[i].type);
 	return stride;
 }
 
-uint32_t VertexBindingState::size(VertexFormat format)
+uint32_t VertexAttributeState::size(VertexFormat format)
 {
 	switch (format)
 	{
@@ -38,7 +38,7 @@ uint32_t VertexBindingState::size(VertexFormat format)
 	}
 	return 0;
 }
-uint32_t VertexBindingState::size(VertexType type)
+uint32_t VertexAttributeState::size(VertexType type)
 {
 	switch (type)
 	{
@@ -59,7 +59,7 @@ uint32_t VertexBindingState::size(VertexType type)
 	}
 	return 0;
 }
-uint32_t VertexBindingState::size(IndexFormat format)
+uint32_t VertexAttributeState::size(IndexFormat format)
 {
 	switch (format)
 	{
@@ -92,7 +92,7 @@ bool StencilState::isEnabled() const
 	return (front.compare != StencilOp::None) || (back.compare != StencilOp::None);
 }
 
-bool operator<(const VertexBindingState& lhs, const VertexBindingState& rhs)
+bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 {
 	if (lhs.count < rhs.count) return true;
 	else if (lhs.count > rhs.count) return false;
@@ -110,7 +110,7 @@ bool operator<(const VertexBindingState& lhs, const VertexBindingState& rhs)
 	return false; // equal 
 }
 
-bool operator>(const VertexBindingState& lhs, const VertexBindingState& rhs)
+bool operator>(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 {
 	if (lhs.count > rhs.count) return true;
 	else if (lhs.count < rhs.count) return false;
@@ -128,7 +128,7 @@ bool operator>(const VertexBindingState& lhs, const VertexBindingState& rhs)
 	return false; // equal
 }
 
-bool operator==(const VertexBindingState& lhs, const VertexBindingState& rhs)
+bool operator==(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 {
 	if (lhs.count != rhs.count) return false;
 	for (uint32_t i = 0; i < lhs.count; i++)
@@ -141,7 +141,7 @@ bool operator==(const VertexBindingState& lhs, const VertexBindingState& rhs)
 	return true; // equal
 }
 
-bool operator!=(const VertexBindingState& lhs, const VertexBindingState& rhs)
+bool operator!=(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 {
 	if (lhs.count != rhs.count) return true;
 	for (uint32_t i = 0; i < lhs.count; i++)

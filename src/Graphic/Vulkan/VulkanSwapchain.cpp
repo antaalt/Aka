@@ -234,7 +234,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 			TextureType::Texture2D,
 			1, 1,
 			m_colorFormat,
-			TextureFlag::RenderTarget
+			TextureUsage::RenderTarget
 		);
 		// Cannot transition color images yet as they are not acquired.
 		TextureHandle colorTexture = TextureHandle{ vk_colorTexture };
@@ -257,7 +257,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 				1,
 				1,
 				m_depthFormat,
-				TextureFlag::RenderTarget,
+				TextureUsage::RenderTarget,
 				nullptr
 			);
 		}
@@ -307,7 +307,7 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* device)
 {
 	m_needRecreation = false;
 	m_imageCount = 0;
-	m_currentFrameIndex.value = 0;
+	m_currentFrameIndex = FrameIndex(0);
 	m_colorFormat = TextureFormat::Unknown;
 	m_depthFormat = TextureFormat::Unknown;
 
@@ -375,7 +375,7 @@ void VulkanSwapchain::recreate(VulkanGraphicDevice* device)
 
 VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 {
-	VulkanFrame& vk_frame = m_frames[m_currentFrameIndex.value];
+	VulkanFrame& vk_frame = m_frames[m_currentFrameIndex.value()];
 
 	// Wait for the frame to complete before acquiring it.
 	vk_frame.wait(device->getVkDevice());
@@ -399,7 +399,7 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 		throw std::runtime_error("Failed to acquire swapchain image");
 	}
 	AKA_ASSERT(imageIndex < getImageCount(), "Invalid image index");
-	AKA_ASSERT(FrameIndex::MaxInFlight <= getImageCount(), "More frames in flight than image available. May induce bugs in application.");
+	AKA_ASSERT(MaxFrameInFlight <= getImageCount(), "More frames in flight than image available. May induce bugs in application.");
 
 	// Only reset the fence if we are submitting work
 	VkFence fences[EnumCount<QueueType>()] = {
@@ -421,7 +421,7 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFrame* vk_frame)
 {
 	VkSwapchainKHR swapChains[] = { m_swapchain };
-	uint32_t indices[] = { vk_frame->m_image.value };
+	uint32_t indices[] = { vk_frame->m_image.value()};
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -445,7 +445,7 @@ SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFram
 		Logger::error("Failed to present swap chain image!");
 		status = SwapchainStatus::Error;
 	}
-	m_currentFrameIndex.next();
+	m_currentFrameIndex = FrameIndex((m_currentFrameIndex.value() + 1) % MaxFrameInFlight);
 	return status;
 }
 

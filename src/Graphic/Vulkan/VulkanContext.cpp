@@ -168,7 +168,7 @@ VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* l
 	return pipelineLayout;
 }
 
-VulkanContext::VertexInputData VulkanContext::getVertexInputData(const VertexBindingState& verticesDesc)
+VulkanContext::VertexInputData VulkanContext::getVertexInputData(const VertexAttributeState& verticesDesc)
 {
 	auto it = m_verticesDesc.find(verticesDesc);
 	if (it != m_verticesDesc.end())
@@ -409,12 +409,11 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	timelineSemaphoreFeatures.pNext = &indexingFeatures;
 	timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
 
-	// TODO: check these parameters are available with vkGetPhysicalDeviceFeatures2
 	// VK_VERSION_1_1
+	// Check physical device suitable for these features.
 	VkPhysicalDeviceFeatures2 deviceFeatures = {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext = &timelineSemaphoreFeatures;
-	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
 	deviceFeatures.features.shaderFloat64 = VK_TRUE;
@@ -508,7 +507,14 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	surface = createSurface(platform);
 
 	physicalDevice = pickPhysicalDevice([](const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures& features) {
-		return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader && features.samplerAnisotropy;
+		return 
+			properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+			features.geometryShader && 
+			features.samplerAnisotropy &&
+			features.fragmentStoresAndAtomics &&
+			features.shaderFloat64 &&
+			features.multiDrawIndirect
+			;
 	});
 	device = createLogicalDevice(deviceExtensions, deviceExtensionCount);
 
@@ -696,8 +702,10 @@ VkBufferUsageFlagBits VulkanContext::tovk(BufferType type)
 		[[fallthrough]];
 	case BufferType::Uniform:
 		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	case BufferType::ShaderStorage:
+	case BufferType::Storage:
 		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	case BufferType::Indirect:
+		return VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 	}
 }
 //#define DEPTH_AND_STENCIL_SEPARATELY 1 // separateDepthStencilLayouts

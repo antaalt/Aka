@@ -6,28 +6,37 @@
 
 namespace aka {
 
-template <typename T>
-inline constexpr UnderlyingType<T> EnumToIntegral(T value)
-{
-	return static_cast<UnderlyingType<T>>(value);
-}
-// TODO use strict type ?
+// An enum class in aka is expected to have this structure:
+//	enum class Type : uint32_t 
+// {
+//		Unknown,
+//		
+//		MyValue0,
+//		MyValue1,
+//		MyValue2,
+// 
+//		First = MyValue0,
+//		Last = MyValue2,
+//	}
+// If this structure is respected, it will work with all following helpers.
+// This way, when zero initialized, the enum is invalid. To cast it as an index, use EnumToIndex
+
 template <typename T>
 inline constexpr UnderlyingType<T> EnumToIndex(T value)
 {
-	return static_cast<UnderlyingType<T>>(value) - EnumToIntegral<T>(T::First);
+	return static_cast<UnderlyingType<T>>(value) - static_cast<UnderlyingType<T>>(T::First);
 }
 
 template <typename T>
 inline constexpr T IndexToEnum(UnderlyingType<T> value)
 {
-	return static_cast<T>(value + EnumToIntegral<T>(T::First));
+	return static_cast<UnderlyingType<T>>(value + static_cast<UnderlyingType<T>>(T::First));
 }
 
 template <typename T>
-inline constexpr UnderlyingType<T> EnumCount()
+inline constexpr uint32_t EnumCount()
 {
-	return EnumToIntegral<T>(T::Last) - EnumToIntegral(T::First) + static_cast<UnderlyingType<T>>(1);
+	return static_cast<uint32_t>(static_cast<UnderlyingType<T>>(T::Last) - static_cast<UnderlyingType<T>>(T::First) + static_cast<UnderlyingType<T>>(1));
 }
 
 template <typename T>
@@ -59,17 +68,17 @@ class EnumRange
 {
 public:
 	EnumIterator<T> begin() const { return EnumIterator<T>(T::First); }
-	EnumIterator<T> end() const { return EnumIterator<T>(static_cast<T>(EnumToIntegral<T>(T::Last) + 1)); }
+	EnumIterator<T> end() const { return EnumIterator<T>(static_cast<T>(static_cast<UnderlyingType<T>>(T::Last) + static_cast<UnderlyingType<T>>(1))); }
 };
 
 #define AKA_IMPLEMENT_BITMASK_OPERATOR(EnumClassType) \
-inline EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(EnumToIntegral(lhs) & EnumToIntegral(rhs)); }  \
-inline EnumClassType operator|(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(EnumToIntegral(lhs) | EnumToIntegral(rhs)); } \
-inline EnumClassType& operator|=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(EnumToIntegral(lhs) | EnumToIntegral(rhs)); return lhs; } \
-inline EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(EnumToIntegral(lhs) & EnumToIntegral(rhs));  return lhs; } \
-inline EnumClassType operator~(EnumClassType value) { return static_cast<EnumClassType>(~EnumToIntegral(value)); } \
+inline EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<UnderlyingType<EnumClassType>>(lhs) & static_cast<UnderlyingType<EnumClassType>>(rhs)); }  \
+inline EnumClassType operator|(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<UnderlyingType<EnumClassType>>(lhs) | static_cast<UnderlyingType<EnumClassType>>(rhs)); } \
+inline EnumClassType& operator|=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<UnderlyingType<EnumClassType>>(lhs) | static_cast<UnderlyingType<EnumClassType>>(rhs)); return lhs; } \
+inline EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<UnderlyingType<EnumClassType>>(lhs) & static_cast<UnderlyingType<EnumClassType>>(rhs));  return lhs; } \
+inline EnumClassType operator~(EnumClassType value) { return static_cast<EnumClassType>(~static_cast<UnderlyingType<EnumClassType>>(value)); } \
 inline bool has(EnumClassType mask, EnumClassType flag) { return (mask & flag) == flag; } \
-inline bool isNull(EnumClassType mask) { return EnumToIntegral(mask) == 0; }
+inline bool isNull(EnumClassType mask) { return static_cast<UnderlyingType<EnumClassType>>(mask) == 0; }
 // TODO << >> ^ ~ in BITWISE instead of bitmask
 
 };

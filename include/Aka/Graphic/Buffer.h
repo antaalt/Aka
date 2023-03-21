@@ -9,35 +9,51 @@ namespace gfx {
 
 enum class BufferType : uint8_t
 {
+	Unknown,
+
 	Vertex,
 	Index,
 	Uniform,
-	ShaderStorage,
+	Storage,
+	Indirect,
+
+	First = Vertex,
+	Last = Indirect,
 };
 
 enum class BufferUsage : uint8_t
 {
+	Unknown,
+
 	Default, // Read & write access GPU
 	Immutable, // GPU Read only, no CPU access
 	Dynamic, // GPU Read only CPU write only
 	Staging, // Support data transfer
+
+	First = Default,
+	Last = Staging,
 };
 
 enum class BufferCPUAccess : uint8_t
 {
-	None = 0,
-	Read = (1 << 0),
-	Write = (1 << 1),
-	ReadWrite = Read | Write
+	None		= 0,
+	Read		= 1 << 0,
+	Write		= 1 << 1,
+	ReadWrite	= Read | Write
 };
 
 enum class BufferMap : uint8_t
 {
+	Unknown,
+
 	Read,
 	Write,
 	ReadWrite,
 	WriteDiscard,
-	WriteNoOverwrite
+	WriteNoOverwrite,
+
+	First = Read,
+	Last = WriteNoOverwrite,
 };
 
 struct Buffer;

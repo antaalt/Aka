@@ -49,13 +49,13 @@ struct StaticMeshBuildData : BuildData
 		uint32_t vertexBufferOffset; // Offset in buffer
 		uint32_t vertexBufferSize; // Size in buffer
 		gfx::VertexAttribute attribute;
-		uint32_t getVertexCount(const Blob* buffers) const { return (uint32_t)buffers[vertexBufferIndex].size() / gfx::VertexBindingState::size(attribute.format) * gfx::VertexBindingState::size(attribute.type); }
+		uint32_t getVertexCount(const Blob* buffers) const { return (uint32_t)buffers[vertexBufferIndex].size() / gfx::VertexAttributeState::size(attribute.format) * gfx::VertexAttributeState::size(attribute.type); }
 	};
 
 	// Indices
 	Blob indicesBuffer;
 	gfx::IndexFormat indexFormat;
-	uint32_t getIndexCount() const { return (uint32_t)indicesBuffer.size() / gfx::VertexBindingState::size(indexFormat); }
+	uint32_t getIndexCount() const { return (uint32_t)indicesBuffer.size() / gfx::VertexAttributeState::size(indexFormat); }
 
 	// Vertices
 	Blob vertexBuffers[gfx::VertexMaxAttributeCount]; // Every buffers for vertices
@@ -87,8 +87,8 @@ public:
 	uint32_t getIndexCount() const;
 
 	// Create mesh
-	static StaticMesh* createInterleaved(const gfx::VertexBindingState& state, const void* vertices, uint32_t vertexCount, gfx::IndexFormat indexFormat, const void* indices, uint32_t indexCount);
-	static StaticMesh* createInterleaved(const gfx::VertexBindingState& state, const void* vertices, uint32_t vertexCount);
+	static StaticMesh* createInterleaved(const gfx::VertexAttributeState& state, const void* vertices, uint32_t vertexCount, gfx::IndexFormat indexFormat, const void* indices, uint32_t indexCount);
+	static StaticMesh* createInterleaved(const gfx::VertexAttributeState& state, const void* vertices, uint32_t vertexCount);
 
 	// Bind buffers
 	void bind(gfx::CommandList* cmd) const;

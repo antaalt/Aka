@@ -9,20 +9,25 @@
 namespace aka {
 namespace gfx {
 
-enum class TextureFlag : uint8_t
+enum class TextureUsage : uint8_t
 {
+	Unknown			= 0,
+
 	None			= 1 << 0,
 	RenderTarget	= 1 << 1,
 	ShaderResource	= 1 << 2,
 	Storage			= 1 << 3,
 	GenerateMips	= 1 << 4,
-};
 
-AKA_IMPLEMENT_BITMASK_OPERATOR(TextureFlag);
+	First			= None,
+	Last			= GenerateMips,
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(TextureUsage);
 
 enum class TextureFormat : uint8_t
 {
 	Unknown,
+
 	R8,
 	R8U,
 	R16,
@@ -67,12 +72,16 @@ enum class TextureFormat : uint8_t
 	DepthStencil,
 	Depth0Stencil8,
 	Depth24Stencil8,
-	Depth32FStencil8
+	Depth32FStencil8,
+
+	First = R8,
+	Last = Depth32FStencil8,
 };
 
 enum class TextureType : uint8_t
 {
 	Unknown,
+
 	Texture1D,
 	Texture2D,
 	Texture3D,
@@ -82,6 +91,9 @@ enum class TextureType : uint8_t
 	TextureCubeMapArray,
 	Texture2DMultisample, // no mip map
 	Texture2DMultisampleArray, // no mip map
+
+	First = Texture1D,
+	Last = Texture2DMultisampleArray,
 };
 
 struct Texture;
@@ -89,7 +101,7 @@ using TextureHandle = ResourceHandle<Texture>;
 
 struct Texture : Resource
 {
-	Texture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureFlag flags);
+	Texture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags);
 
 	uint32_t width; // Width of the texture
 	uint32_t height; // Height of the texture
@@ -100,7 +112,7 @@ struct Texture : Resource
 
 	TextureFormat format; // Underlying format of the texture
 	TextureType type; // Type of the texture
-	TextureFlag flags; // Texture flags // TODO should be TextureUsage instead
+	TextureUsage flags; // Texture flags
 
 	bool hasMips() const;
 	bool hasLayers() const;
@@ -116,9 +128,9 @@ struct Texture : Resource
 
 	static uint32_t size(TextureFormat format);
 
-	static TextureHandle create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* data = nullptr);
-	static TextureHandle createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
-	static TextureHandle create2DArray(const char* name, uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureFlag flags, const void* const* data = nullptr);
+	static TextureHandle create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* data = nullptr);
+	static TextureHandle createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* const* data = nullptr);
+	static TextureHandle create2DArray(const char* name, uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureUsage flags, const void* const* data = nullptr);
 	static void destroy(TextureHandle texture);
 };
 

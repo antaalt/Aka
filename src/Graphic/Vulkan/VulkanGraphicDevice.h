@@ -57,7 +57,7 @@ public:
 		TextureType type,
 		uint32_t levels, uint32_t layers,
 		TextureFormat format,
-		TextureFlag flags,
+		TextureUsage flags,
 		const void* const* data
 	) override;
 	void upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
@@ -109,7 +109,7 @@ public:
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
-		const VertexBindingState& vertices,
+		const VertexAttributeState& vertices,
 		const ViewportState& viewport,
 		const DepthState& depth,
 		const StencilState& stencil,
@@ -139,7 +139,7 @@ public:
 	// Command list
 	CommandList* acquireCommandList(QueueType queue) override;
 	void release(CommandList* cmd) override;
-	void submit(CommandList* command, QueueType queue, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
+	void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
 	void wait(QueueType queue) override;
 
 	// Frame command lists
@@ -163,8 +163,8 @@ public:
 		return const_cast<T*>(reinterpret_cast<const T*>(get(handle)));
 	}
 
-	VulkanContext& context() { return m_context; }
-	VulkanSwapchain& swapchain() { return m_swapchain; }
+public:
+	uint32_t getSwapchainImageCount() { return m_swapchain.getImageCount(); }
 public:
 	VkInstance getVkInstance() { return m_context.instance; }
 	VkDevice getVkDevice() { return m_context.device; }
@@ -175,6 +175,7 @@ public:
 	uint32_t getVkQueueIndex(QueueType queue);
 	uint32_t getVkPresentQueueIndex();
 	VkSurfaceKHR getVkSurface() { return m_context.surface; }
+	VkRenderPass getVkRenderPass(const RenderPassState& state) { return m_context.getRenderPass(state); }
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
 	friend class VulkanSwapchain;
@@ -196,7 +197,7 @@ private:
 	Pool<VulkanComputePipeline> m_computePipelinePool;
 	Pool<VulkanDescriptorSet> m_descriptorPool;
 	Pool<VulkanFence> m_fencePool;
-	//Pool<VulkanCommandList> m_commandPool;
+	Pool<VulkanCommandList> m_commandListPool;
 };
 
 };

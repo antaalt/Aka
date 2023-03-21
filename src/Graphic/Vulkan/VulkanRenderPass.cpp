@@ -14,7 +14,7 @@ VulkanRenderPass::VulkanRenderPass(const char* name, const RenderPassState& stat
 
 void VulkanRenderPass::create(VulkanGraphicDevice* device)
 {
-	vk_renderpass = device->context().getRenderPass(state);
+	vk_renderpass = device->getVkRenderPass(state);
 }
 
 void VulkanRenderPass::destroy(VulkanGraphicDevice* device)

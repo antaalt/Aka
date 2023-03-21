@@ -29,7 +29,7 @@ public:
 	virtual bool import(const Path& path, std::function<bool(Resource* resource)>&& callback) = 0;
 
 private:
-	static std::shared_ptr<AssetImporter> s_importers[EnumToIntegral(ResourceType::Count)]; // List of all importers by resource
+	static std::shared_ptr<AssetImporter> s_importers[EnumCount<ResourceType>()]; // List of all importers by resource
 };
 
 };

@@ -15,9 +15,9 @@ Shader::Shader(const char* name, ShaderType type) :
 
 ShaderMask getShaderMask(ShaderType type)
 {
-	if (type > ShaderType::Count)
+	if (static_cast<uint8_t>(type) > EnumCount<ShaderType>())
 		return ShaderMask::None;
-	return ShaderMask(1 << EnumToIntegral(type));
+	return static_cast<ShaderMask>(1 << EnumToIndex(type));
 }
 
 ShaderHandle Shader::create(ShaderType type, const void* content, size_t size)

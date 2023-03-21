@@ -52,7 +52,7 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 	case ShaderBindingType::UniformBuffer:
 		return buffer == BufferType::Uniform;
 	case ShaderBindingType::StorageBuffer:
-		return buffer == BufferType::ShaderStorage;
+		return buffer == BufferType::Storage;
 	default:
 		return false;
 	}
@@ -155,7 +155,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 			break;
 		}
 	}
-	vkUpdateDescriptorSets(device->context().device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	vkUpdateDescriptorSets(device->getVkDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings, VkDescriptorPool* pool)

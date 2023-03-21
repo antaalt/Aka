@@ -85,7 +85,7 @@ void Sprite::createRenderData(gfx::GraphicDevice* device, const BuildData* inBui
 		1, // TODO mips ?
 		layerCount,
 		gfx::TextureFormat::RGBA8, // TODO format ?
-		gfx::TextureFlag::ShaderResource,
+		gfx::TextureUsage::ShaderResource,
 		bytes.data()
 	);
 

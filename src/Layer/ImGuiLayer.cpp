@@ -9,6 +9,8 @@
 #include <imgui.h>
 #include <imguizmo.h>
 #include <backends/imgui_impl_glfw.h>
+
+// TODO rewrite imgui backend with aka
 #if defined(AKA_USE_OPENGL)
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -66,7 +68,6 @@ void ImGuiLayer::onLayerCreate()
 	ImGui_ImplDX11_Init(device->device(), device->context());
 #elif defined(AKA_USE_VULKAN)
 	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
-	gfx::VulkanContext& context = device->context();
 
 	{ // Custom descriptor pool for imgui
 		VkDescriptorPoolSize pool_sizes[] =
@@ -107,7 +108,7 @@ void ImGuiLayer::onLayerCreate()
 	info.PipelineCache = VK_NULL_HANDLE;
 	info.DescriptorPool = m_renderData->descriptorPool;
 	info.MinImageCount = 2; // >= 2
-	info.ImageCount = static_cast<uint32_t>(device->swapchain().getImageCount()); // >= MinImageCount
+	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount()); // >= MinImageCount
 	info.CheckVkResultFn = [](VkResult err) {
 		VK_CHECK_RESULT(err);
 	};
@@ -212,7 +213,6 @@ void ImGuiLayer::onLayerDestroy()
 	gfx::GraphicDevice* device = Application::app()->graphic();
 	device->wait();
 	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(device);
-	gfx::VulkanContext& vk_context = vk_device->context();
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
 #elif defined(AKA_USE_D3D11)
@@ -222,7 +222,7 @@ void ImGuiLayer::onLayerDestroy()
 #endif
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-	vkDestroyDescriptorPool(vk_context.device, m_renderData->descriptorPool, nullptr);
+	vkDestroyDescriptorPool(vk_device->getVkDevice(), m_renderData->descriptorPool, nullptr);
 	device->destroy(m_renderData->renderPass);
 	device->destroy(m_renderData->backbuffer);
 	delete m_renderData;

@@ -41,20 +41,6 @@ struct VulkanQueue
 	VkQueue queue = VK_NULL_HANDLE;
 };
 
-
-template <typename T> struct VulkanTypeTrait { static const VkObjectType debugType = VK_OBJECT_TYPE_UNKNOWN; };
-template <> struct VulkanTypeTrait<VkImage> { static const VkObjectType debugType = VK_OBJECT_TYPE_IMAGE; };
-template <> struct VulkanTypeTrait<VkDeviceMemory> { static const VkObjectType debugType = VK_OBJECT_TYPE_DEVICE_MEMORY; };
-template <> struct VulkanTypeTrait<VkImageView> { static const VkObjectType debugType = VK_OBJECT_TYPE_IMAGE_VIEW; };
-template <> struct VulkanTypeTrait<VkBuffer> { static const VkObjectType debugType = VK_OBJECT_TYPE_BUFFER; };
-template <> struct VulkanTypeTrait<VkCommandPool> { static const VkObjectType debugType = VK_OBJECT_TYPE_COMMAND_POOL; };
-template <> struct VulkanTypeTrait<VkRenderPass> { static const VkObjectType debugType = VK_OBJECT_TYPE_RENDER_PASS; };
-template <> struct VulkanTypeTrait<VkSampler> { static const VkObjectType debugType = VK_OBJECT_TYPE_SAMPLER; };
-template <> struct VulkanTypeTrait<VkShaderModule> { static const VkObjectType debugType = VK_OBJECT_TYPE_SHADER_MODULE; };
-template <> struct VulkanTypeTrait<VkDescriptorSet> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_SET; };
-template <> struct VulkanTypeTrait<VkDescriptorSetLayout> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT; };
-template <> struct VulkanTypeTrait<VkDescriptorPool> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_POOL; };
-
 template <typename T, typename ...Args>
 void setDebugName(VkDevice device, T handle, Args ...args)
 {
@@ -120,13 +106,13 @@ public:
 	VkRenderPass getRenderPass(const RenderPassState& state);
 	ShaderInputData getDescriptorLayout(const ShaderBindingState& bindingsDesc);
 	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count);
-	VertexInputData getVertexInputData(const VertexBindingState& verticesDesc);
+	VertexInputData getVertexInputData(const VertexAttributeState& verticesDesc);
 
 private:
 	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
 	std::unordered_map<ShaderBindingState, ShaderInputData> m_bindingDesc;
 	std::map<std::vector<VkDescriptorSetLayout>, VkPipelineLayout> m_pipelineLayout;
-	std::unordered_map<VertexBindingState, VertexInputData> m_verticesDesc;
+	std::unordered_map<VertexAttributeState, VertexInputData> m_verticesDesc;
 
 private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);

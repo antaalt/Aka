@@ -21,6 +21,7 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
+	AKA_ASSERT(m_commandListPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_texturePool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_samplerPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_bufferPool.count() == 0, "Resource destroy missing");
@@ -31,6 +32,8 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 	AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_descriptorPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_renderPassPool.count() == 0, "Resource destroy missing");
+	// TODO check recursive release issue
+	m_commandListPool.release([this](VulkanCommandList& res) { this->release(&res); });
 	m_texturePool.release([this](VulkanTexture& res) { this->destroy(TextureHandle{ &res }); });
 	m_samplerPool.release([this](VulkanSampler& res) { this->destroy(SamplerHandle{ &res }); });
 	m_bufferPool.release([this](VulkanBuffer& res) { this->destroy(BufferHandle{ &res }); });

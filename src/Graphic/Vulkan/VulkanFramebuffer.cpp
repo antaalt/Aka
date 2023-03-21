@@ -47,7 +47,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device
 		{
 			// Create new view for framebuffer.
 			vk_attachments[i] = VulkanTexture::createVkImageView(
-				device->context().device,
+				device->getVkDevice(),
 				vk_texture->vk_image,
 				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				VulkanContext::tovk(vk_texture->format),
@@ -70,7 +70,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device
 		{
 			// Create new view for framebuffer.
 			vk_attachments.push_back(VulkanTexture::createVkImageView(
-				device->context().device,
+				device->getVkDevice(),
 				vk_texture->vk_image,
 				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				VulkanContext::tovk(vk_texture->format),
@@ -94,7 +94,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device
 	framebufferInfo.layers = 1;
 
 	VkFramebuffer vk_framebufferHandle = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateFramebuffer(device->context().device, &framebufferInfo, nullptr, &vk_framebufferHandle));
+	VK_CHECK_RESULT(vkCreateFramebuffer(device->getVkDevice(), &framebufferInfo, nullptr, &vk_framebufferHandle));
 	return vk_framebufferHandle;
 }
 
@@ -149,7 +149,7 @@ RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadO
 FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, Frame* frame)
 {
 	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	return static_cast<const Backbuffer*>(handle.__data)->handles[vk_frame->m_image.value];
+	return static_cast<const Backbuffer*>(handle.__data)->handles[vk_frame->m_image.value()];
 }
 
 const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)

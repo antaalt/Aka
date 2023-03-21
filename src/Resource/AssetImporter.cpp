@@ -7,7 +7,7 @@
 
 namespace aka {
 
-std::shared_ptr<AssetImporter> AssetImporter::s_importers[EnumToIntegral(ResourceType::Count)]{
+std::shared_ptr<AssetImporter> AssetImporter::s_importers[EnumCount<ResourceType>()]{
 	std::make_shared<TextureImporter>(),
 	nullptr,
 	std::make_shared<SpriteImporter>(),
@@ -19,7 +19,7 @@ std::shared_ptr<AssetImporter> AssetImporter::s_importers[EnumToIntegral(Resourc
 
 void AssetImporter::attach(ResourceType type, AssetImporter* importer)
 {
-	s_importers[EnumToIntegral(type)] = std::shared_ptr<AssetImporter>(importer);
+	s_importers[EnumToIndex(type)] = std::shared_ptr<AssetImporter>(importer);
 }
 
 bool AssetImporter::import(const Path& path, ResourceType type, std::function<void(Asset& asset)>&& callback)
@@ -35,10 +35,10 @@ bool AssetImporter::import(const Path& path, ResourceType type, std::function<vo
 		// TODO add flag to override ?
 		//return false; // error, asset already exist.
 	}
-	AssetImporter* importer = s_importers[EnumToIntegral(type)].get();
+	AssetImporter* importer = s_importers[EnumToIndex(type)].get();
 	if (importer == nullptr)
 	{
-		Logger::error("Not importer for asset type : ", EnumToIntegral(type));
+		Logger::error("Not importer for asset type : ", EnumToIndex(type));
 		return false; // Invalid importer
 	}
 

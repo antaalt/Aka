@@ -23,14 +23,19 @@ static constexpr uint32_t VertexMaxAttributeCount = 8;
 enum class IndexFormat : uint8_t
 {
 	Unknown,
+
 	UnsignedByte, // D3D do not support it
 	UnsignedShort,
-	UnsignedInt
+	UnsignedInt,
+
+	First = UnsignedByte,
+	Last = UnsignedInt,
 };
 
 enum class VertexFormat : uint8_t
 {
 	Unknown,
+
 	Half,
 	Float,
 	Double,
@@ -39,12 +44,16 @@ enum class VertexFormat : uint8_t
 	Short,
 	UnsignedShort,
 	Int,
-	UnsignedInt
+	UnsignedInt,
+
+	First = Half,
+	Last = UnsignedInt,
 };
 
 enum class VertexType : uint8_t
 {
 	Unknown,
+
 	Vec2,
 	Vec3,
 	Vec4,
@@ -52,11 +61,15 @@ enum class VertexType : uint8_t
 	Mat3,
 	Mat4,
 	Scalar,
+
+	First = Vec2,
+	Last = Scalar,
 };
 
 enum class VertexSemantic : uint8_t
 {
 	Unknown,
+
 	Position,
 	Normal,
 	Tangent,
@@ -68,11 +81,15 @@ enum class VertexSemantic : uint8_t
 	Color1,
 	Color2,
 	Color3,
+
+	First = Position,
+	Last = Color3,
 };
 
 enum class PrimitiveType : uint8_t
 {
 	Unknown,
+
 	Points,
 	LineStrip,
 	LineLoop,
@@ -80,6 +97,9 @@ enum class PrimitiveType : uint8_t
 	TriangleStrip,
 	TriangleFan,
 	Triangles,
+
+	First = Points,
+	Last = Triangles,
 };
 
 struct VertexAttribute
@@ -89,21 +109,20 @@ struct VertexAttribute
 	VertexType type; // Type of the attribute
 };
 
-struct VertexBindingState 
+struct VertexAttributeState
 {
 	VertexAttribute attributes[VertexMaxAttributeCount]; // Attributes
 	uint32_t offsets[VertexMaxAttributeCount]; // Offsets of the attributes in a buffer
 	uint32_t count; // Number of attributes
-	//uint32_t stride; // Stride of the attributes
 
 	uint32_t stride() const;
 
 	static uint32_t size(VertexFormat format);
 	static uint32_t size(VertexType type);
 	static uint32_t size(IndexFormat format);
-	static VertexBindingState empty() { return VertexBindingState{}; }
+	static VertexAttributeState empty() { return VertexAttributeState{}; }
 
-	VertexBindingState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset = 0)
+	VertexAttributeState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset = 0)
 	{
 		AKA_ASSERT(count + 1 < VertexMaxAttributeCount, "Too many vertex attributes");
 		offsets[count] = offset; // TODO compute offset here ?
@@ -111,8 +130,6 @@ struct VertexBindingState
 		return *this;
 	}
 };
-
-using VertexAttributeState = VertexBindingState; // TODO rename all VertexBindingState to VertexAttributeState. binding is buffers
 
 struct ClearState
 {
@@ -138,6 +155,7 @@ struct FillState
 enum class BlendMode : uint8_t
 {
 	Unknown,
+
 	Zero,
 	One,
 	SrcColor,
@@ -156,30 +174,37 @@ enum class BlendMode : uint8_t
 	Src1Color,
 	OneMinusSrc1Color,
 	Src1Alpha,
-	OneMinusSrc1Alpha
+	OneMinusSrc1Alpha,
+
+	First = Zero,
+	Last = OneMinusSrc1Alpha,
 };
 
 enum class BlendOp : uint8_t
 {
 	Unknown,
+
 	Add,
 	Subtract,
 	ReverseSubtract,
 	Min,
-	Max
+	Max,
+
+	First = Add,
+	Last = Max,
 };
 
-enum class BlendMask : uint8_t
+enum class ColorMask : uint8_t
 {
-	None  = (0),
-	Red   = (1 << 0),
-	Green = (1 << 1),
-	Blue  = (1 << 2),
-	Alpha = (1 << 3),
-	Rgb = Red | Green | Blue,
-	Rgba = Red | Green | Blue | Alpha
+	None  = 0,
+	Red   = 1 << 0,
+	Green = 1 << 1,
+	Blue  = 1 << 2,
+	Alpha = 1 << 3,
+	Rgb   = Red | Green | Blue,
+	Rgba  = Rgb | Alpha
 };
-AKA_IMPLEMENT_BITMASK_OPERATOR(BlendMask)
+AKA_IMPLEMENT_BITMASK_OPERATOR(ColorMask)
 
 struct BlendState
 {
@@ -191,7 +216,7 @@ struct BlendState
 	BlendMode alphaModeDst;
 	BlendOp alphaOp;
 
-	BlendMask mask;
+	ColorMask mask;
 
 	uint32_t blendColor;
 
@@ -211,7 +236,7 @@ struct BlendState
 		alphaOp = op;
 		return *this;
 	}
-	BlendState& set(BlendMask mask, uint32_t blendColor)
+	BlendState& set(ColorMask mask, uint32_t blendColor)
 	{
 		this->mask = mask;
 		this->blendColor = blendColor;
@@ -222,17 +247,26 @@ struct BlendState
 
 enum class CullMode : uint8_t
 {
+	Unknown,
+
 	None,
 	FrontFace,
 	BackFace,
-	AllFace
+	AllFace,
+
+	First = None,
+	Last = AllFace,
 };
 
 enum class CullOrder : uint8_t
 {
 	Unknown,
+
 	ClockWise,
 	CounterClockWise,
+
+	First = ClockWise,
+	Last = CounterClockWise,
 };
 
 struct CullState
@@ -250,6 +284,8 @@ struct CullState
 
 enum class DepthOp
 {
+	Unknown,
+
 	None,
 	Always,
 	Never,
@@ -258,7 +294,10 @@ enum class DepthOp
 	LessOrEqual,
 	Greater,
 	NotEqual,
-	GreaterOrEqual
+	GreaterOrEqual,
+
+	First = None,
+	Last = GreaterOrEqual,
 };
 
 struct DepthState
@@ -279,6 +318,8 @@ struct DepthState
 
 enum class StencilOp
 {
+	Unknown,
+
 	None,
 	Never,
 	Less,
@@ -288,11 +329,15 @@ enum class StencilOp
 	Equal,
 	NotEqual,
 	Always,
+
+	First = None,
+	Last = Always,
 };
 
 enum class StencilMode
 {
 	Unknown,
+
 	Keep,
 	Zero,
 	Replace,
@@ -301,6 +346,9 @@ enum class StencilMode
 	Decrement,
 	DecrementWrap,
 	Invert,
+
+	First = Keep,
+	Last = Invert,
 };
 
 struct StencilState
@@ -379,7 +427,7 @@ struct GraphicPipeline : Resource
 	ProgramHandle program;
 
 	PrimitiveType primitive;
-	VertexBindingState vertices;
+	VertexAttributeState vertices;
 	ShaderBindingState sets[ShaderMaxSetCount];
 	RenderPassState renderPass;
 	CullState cull;
@@ -405,9 +453,9 @@ struct RaytracingPipeline : Resource
 };
 
 // Blending
-const BlendState BlendStateNormal = BlendState{ BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMask::Rgba, 0xffffffff };
-const BlendState BlendStateAdditive = BlendState{ BlendMode::One, BlendMode::One, BlendOp::Add, BlendMode::One, BlendMode::One, BlendOp::Add, BlendMask::Rgb, 0xffffffff };
-const BlendState BlendStatePremultiplied = BlendState{ BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, BlendMask::Rgba, 0xffffffff };
+const BlendState BlendStateNormal = BlendState{ BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMode::One, BlendMode::Zero, BlendOp::Add, ColorMask::Rgba, 0xffffffff };
+const BlendState BlendStateAdditive = BlendState{ BlendMode::One, BlendMode::One, BlendOp::Add, BlendMode::One, BlendMode::One, BlendOp::Add, ColorMask::Rgb, 0xffffffff };
+const BlendState BlendStatePremultiplied = BlendState{ BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, ColorMask::Rgba, 0xffffffff };
 const BlendState BlendStateDefault = BlendStateNormal;
 
 // Filling
@@ -431,26 +479,26 @@ const StencilState StencilStateDisabled = StencilState{ StencilState::Face{ Sten
 const StencilState StencilStateDefault = StencilStateDisabled;
 
 
-bool operator<(const VertexBindingState& lhs, const VertexBindingState& rhs);
-bool operator>(const VertexBindingState& lhs, const VertexBindingState& rhs);
-bool operator==(const VertexBindingState& lhs, const VertexBindingState& rhs);
-bool operator!=(const VertexBindingState& lhs, const VertexBindingState& rhs);
+bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
+bool operator>(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
+bool operator==(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
+bool operator!=(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
 
 };
 };
 
 template <>
-struct std::hash<aka::gfx::VertexBindingState>
+struct std::hash<aka::gfx::VertexAttributeState>
 {
-	size_t operator()(const aka::gfx::VertexBindingState& data) const
+	size_t operator()(const aka::gfx::VertexAttributeState& data) const
 	{
 		size_t hash = 0;
 		aka::hashCombine(hash, data.count);
 		for (size_t i = 0; i < data.count; i++)
 		{
-			aka::hashCombine(hash, aka::EnumToIntegral(data.attributes[i].format));
-			aka::hashCombine(hash, aka::EnumToIntegral(data.attributes[i].semantic));
-			aka::hashCombine(hash, aka::EnumToIntegral(data.attributes[i].type));
+			aka::hashCombine(hash, static_cast<uint32_t>(data.attributes[i].format));
+			aka::hashCombine(hash, static_cast<uint32_t>(data.attributes[i].semantic));
+			aka::hashCombine(hash, static_cast<uint32_t>(data.attributes[i].type));
 			aka::hashCombine(hash, data.offsets[i]);
 		}
 		return hash;

@@ -412,7 +412,7 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 			for (uint32_t i = 0; i < data.vertices.count; i++)
 			{
 				data.vertices.offsets[i] = offset;
-				offset += gfx::VertexBindingState::size(data.vertices.attributes[i].format) * gfx::VertexBindingState::size(data.vertices.attributes[i].type);
+				offset += gfx::VertexAttributeState::size(data.vertices.attributes[i].format) * gfx::VertexAttributeState::size(data.vertices.attributes[i].type);
 			}
 		}
 		else

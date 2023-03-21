@@ -58,12 +58,7 @@ public:
 	TextureFormat getColorFormat() const { return m_colorFormat; }
 	TextureFormat getDepthFormat() const { return m_depthFormat; }
 
-	// This is frame related, not swapchain.
-	/*VkFence getVkPresentFence(FrameIndex index) { return m_frames[index.value].presentFence; }
-	VkFence getVkAcquireFence(FrameIndex index) { return m_frames[index.value].acquireFence; }
-	VkSemaphore getVkAcquireSemaphore(FrameIndex index) { return m_frames[index.value].acquireSemaphore; }
-	VkSemaphore getVkPesentSemaphore(FrameIndex index) { return m_frames[index.value].presentSemaphore; }*/
-	const VulkanFrame& getVkFrame(FrameIndex index) const { return m_frames[index.value]; }
+	const VulkanFrame& getVkFrame(FrameIndex index) const { return m_frames[index.value()]; }
 private:
 	bool m_needRecreation;
 	uint32_t m_width, m_height;
@@ -72,7 +67,7 @@ private:
 	//VkSurfaceKHR m_surface;
 	uint32_t m_imageCount;
 	FrameIndex m_currentFrameIndex;
-	VulkanFrame m_frames[FrameIndex::MaxInFlight];
+	VulkanFrame m_frames[MaxFrameInFlight];
 
 	std::unordered_map<RenderPassState, Backbuffer> m_backbuffers;
 	TextureFormat m_colorFormat;
