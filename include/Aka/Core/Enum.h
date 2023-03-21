@@ -59,7 +59,7 @@ class EnumRange
 {
 public:
 	EnumIterator<T> begin() const { return EnumIterator<T>(T::First); }
-	EnumIterator<T> end() const { return EnumIterator<T>(T::Last); }
+	EnumIterator<T> end() const { return EnumIterator<T>(static_cast<T>(EnumToIntegral<T>(T::Last) + 1)); }
 };
 
 #define AKA_IMPLEMENT_BITMASK_OPERATOR(EnumClassType) \

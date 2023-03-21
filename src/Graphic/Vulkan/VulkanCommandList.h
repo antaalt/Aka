@@ -48,7 +48,8 @@ struct VulkanCommandList : CommandList
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
 public:
-	VkCommandBuffer getCommandBuffer() { return vk_command; }
+	VkCommandBuffer getVkCommandBuffer() { return vk_command; }
+	QueueType getQueueType() { return m_queue; }
 
 private:
 	const VulkanGraphicPipeline* vk_graphicPipeline;

@@ -15,8 +15,9 @@ struct VulkanFrame : Frame
 	friend class VulkanGraphicDevice;
 	friend class VulkanSwapchain;
 
-	VkSemaphore acquireSemaphore;
-	VkSemaphore presentSemaphore[EnumCount<QueueType>()];
+	static constexpr uint32_t SemaphoreCount = EnumCount<QueueType>() + 1;
+
+	VkSemaphore semaphore[SemaphoreCount];
 	VkFence presentFence[EnumCount<QueueType>()];
 
 	VulkanCommandList commandLists[EnumCount<QueueType>()];

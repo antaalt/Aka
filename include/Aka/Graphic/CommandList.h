@@ -36,14 +36,6 @@ struct BlitRegion
 	uint32_t mipLevel;
 };
 
-enum class SubmitFlag
-{
-	None = 0,
-	Primary = (1 << 0), // is it a primary command buffer ?
-	// TODO instead, pass a main command list in frame
-	// TODO BETTER create a useless & complex dependency system that will take me 3 years of my life
-};
-
 struct AKA_NO_VTABLE CommandList
 {
 	virtual ~CommandList() {}

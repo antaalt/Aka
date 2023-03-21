@@ -275,7 +275,7 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 	cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
 	cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
 	cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getCommandBuffer());
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getVkCommandBuffer());
 	cmd->endRenderPass();
 #endif
 }

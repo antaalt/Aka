@@ -52,15 +52,10 @@ GraphicAPI VulkanGraphicDevice::api() const
 
 void VulkanGraphicDevice::name(const Resource* resource, const char* name)
 {
-	VkDebugUtilsObjectNameInfoEXT nameInfo{};
-	nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
-	nameInfo.pNext = NULL;
-	nameInfo.objectType = VK_OBJECT_TYPE_UNKNOWN; // TODO
-	nameInfo.objectHandle = resource->native;
-	nameInfo.pObjectName = name;
-	VK_CHECK_RESULT(vkSetDebugUtilsObjectNameEXT(m_context.device, &nameInfo));
-
-	String::copy(const_cast<Resource*>(resource)->name, sizeof(resource->name), name);
+	//AKA_ASSERT(resource->native != ResourceNativeHandleInvalid, "Invalid native handle");
+	//resource->type; // Get type & induce vktype with it
+	//setDebugName<>(getVkDevice(), resource->native, name);
+	AKA_NOT_IMPLEMENTED;
 }
 
 uint32_t VulkanGraphicDevice::getPhysicalDeviceCount()
@@ -109,8 +104,8 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 	};
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
-		VkSemaphore signalSemaphore = vk_frame->presentSemaphore[i];
-		VkSemaphore waitSemaphore = vk_frame->acquireSemaphore;
+		VkSemaphore signalSemaphore = vk_frame->semaphore[i + 1];
+		VkSemaphore waitSemaphore = vk_frame->semaphore[i];
 		VkFence fence = vk_frame->presentFence[i];
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -118,18 +113,9 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 		submitInfo.pCommandBuffers = &cmds[i];
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &signalSemaphore; // Should have one per command
-		if (i == 0) // HACK //
-		{
-			// For now, only graphic queue wait for acquire semaphore cause only one queue can wait for it.
-			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores = &waitSemaphore;
-		}
-		else
-		{
-			submitInfo.waitSemaphoreCount = 0;
-			submitInfo.pWaitSemaphores = VK_NULL_HANDLE;
-		}
+		submitInfo.pSignalSemaphores = &signalSemaphore;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &waitSemaphore;
 
 		VK_CHECK_RESULT(vkQueueSubmit(vk_queues[i], 1, &submitInfo, fence));
 	}

@@ -14,7 +14,7 @@ CommandList* VulkanGraphicDevice::acquireCommandList(QueueType queue)
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandBufferCount = 1;
-	allocateInfo.commandPool = m_context.commandPool[EnumToIndex(queue)]; // Should use distinct pool for single use command buffer...
+	allocateInfo.commandPool = m_context.commandPool[EnumToIndex(queue)];
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 	VkCommandBuffer cmd = VK_NULL_HANDLE;
@@ -35,6 +35,8 @@ void VulkanGraphicDevice::submit(CommandList* command, QueueType queue, FenceHan
 {
 	VulkanCommandList* vk_command = reinterpret_cast<VulkanCommandList*>(command);
 	VulkanFence* vk_fence = getVk<VulkanFence>(handle);
+	// TODO should not need queue in api...
+	AKA_ASSERT(vk_command->getQueueType() == queue, "Invalid queue");
 
 	VkQueue vk_queue = getVkQueue(queue);
 
@@ -132,6 +134,15 @@ void VulkanCommandList::end()
 {
 	AKA_ASSERT(m_recording, "Trying to end a command buffer that is not recording");
 	VK_CHECK_RESULT(vkEndCommandBuffer(vk_command));
+	// Reset data
+	vk_graphicPipeline = nullptr;
+	vk_computePipeline = nullptr;
+	for (uint32_t i = 0; i < ShaderMaxSetCount; i++)
+		vk_sets[i] = nullptr;
+	vk_framebuffer = nullptr;
+	vk_indices = nullptr;
+	vk_vertices = nullptr;
+	// Stop recording
 	m_recording = false;
 }
 
@@ -230,8 +241,10 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_graphicPipeline != nullptr || vk_computePipeline != nullptr, "Invalid pipeline");
 
-	VkPipelineBindPoint vk_bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // TODO compute & RT
-	VkDescriptorSet vk_sets[8]{}; // Max bindings
+	bool graphicPipeline = this->vk_graphicPipeline != nullptr;
+	bool computePipeline = this->vk_computePipeline != nullptr;
+	VkPipelineBindPoint vk_bindPoint = graphicPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_MAX_ENUM;
+	VkDescriptorSet vk_sets[ShaderMaxSetCount]{};
 	VkPipelineLayout vk_pipelineLayout = VK_NULL_HANDLE;
 	if (vk_graphicPipeline)
 		vk_pipelineLayout = vk_graphicPipeline->vk_pipelineLayout;

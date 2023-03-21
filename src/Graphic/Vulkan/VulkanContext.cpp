@@ -353,7 +353,7 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 		uniqueQueueFamilies.insert(queues[i].familyIndex);
 	if (hasSurface)
 		uniqueQueueFamilies.insert(presentQueue.familyIndex);
-	Logger::info("Using ", uniqueQueueFamilies.size(), " queues for ", EnumCount<QueueType>(), " queue types.");
+	Logger::info("Using ", uniqueQueueFamilies.size(), " queues for ", static_cast<uint32_t>(EnumCount<QueueType>()), " queue types.");
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	std::map<uint32_t, std::vector<float>> priorities;
