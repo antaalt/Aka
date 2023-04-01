@@ -316,7 +316,7 @@ void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 
 void VulkanGraphicDevice::destroy(TextureHandle texture)
 {
-	if (texture.__data == nullptr) return;
+	if (texture == TextureHandle::null) return;
 
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
 	vkDestroyImageView(getVkDevice(), vk_texture->vk_view, nullptr);
@@ -356,8 +356,7 @@ VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, 
 	Texture(name, width, height, depth, type, levels, layers, format, flags),
 	vk_image(VK_NULL_HANDLE),
 	vk_memory(VK_NULL_HANDLE),
-	vk_view(VK_NULL_HANDLE)//,
-	//vk_layout(VK_IMAGE_LAYOUT_UNDEFINED)
+	vk_view(VK_NULL_HANDLE)
 {
 }
 

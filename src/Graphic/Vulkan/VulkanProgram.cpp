@@ -131,7 +131,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 		case ShaderBindingType::StorageBuffer:
 		case ShaderBindingType::UniformBuffer: {
 			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(data.buffers[iBinding]);
-			if (buffer == nullptr)
+			if (buffer == nullptr) // No buffer
 			{
 				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = VK_NULL_HANDLE;
@@ -145,7 +145,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = reinterpret_cast<const VulkanBuffer*>(buffer)->vk_buffer;
 				vk_buffer.offset = 0; // TODO use buffer view
-				vk_buffer.range = buffer->size;
+				vk_buffer.range = VK_WHOLE_SIZE;// buffer->size;
 				descriptorWrites[iBinding].pBufferInfo = &vk_buffer;
 			}
 			break;

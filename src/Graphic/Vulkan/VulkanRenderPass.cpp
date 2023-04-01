@@ -148,7 +148,7 @@ RenderPassHandle VulkanGraphicDevice::createRenderPass(const char* name, const R
 
 void VulkanGraphicDevice::destroy(RenderPassHandle handle)
 {
-	if (handle.__data == nullptr)
+	if (handle == RenderPassHandle::null)
 		return;
 	VulkanRenderPass* vk_renderPass = getVk<VulkanRenderPass>(handle);
 	vk_renderPass->destroy(this);

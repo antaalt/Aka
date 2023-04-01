@@ -452,11 +452,12 @@ SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFram
 BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle)
 {
 	RenderPassState state = device->get(handle)->state;
-	auto it = m_backbuffers.find(state);
+	BackbufferHandle bbhandle = BackbufferHandle{ (void*)std::hash<RenderPassState>{}(state) };
+	auto it = m_backbuffers.find(bbhandle);
 	if (it != m_backbuffers.end())
-		return BackbufferHandle{ &it->second };
+		return bbhandle;
 	// Create a framebuffer for backbuffer compatible with given render pass.
-	Backbuffer backbuffer("Backbuffer"); // TODO add hash
+	Backbuffer backbuffer(String::format("Backbuffer%ul", bbhandle).cstr());
 	for (uint32_t i = 0; i < m_imageCount; i++)
 	{
 		Attachment color = Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
@@ -464,24 +465,31 @@ BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, 
 		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, &color, 1, &depth);
 		backbuffer.handles.push_back(fb);
 	}
-	auto itInsert = m_backbuffers.insert(std::make_pair(device->get(handle)->state, backbuffer));
+	auto itInsert = m_backbuffers.insert(std::make_pair(bbhandle, backbuffer));
 	AKA_ASSERT(itInsert.second, "Failed to create backbuffer");
-	// TODO this might get invalidated when growing the map...
-	return BackbufferHandle{ &itInsert.first->second }; // backbuffer handle use render pass handle for now
+	return bbhandle;
+}
+
+Backbuffer* VulkanSwapchain::getBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle)
+{
+	auto it = m_backbuffers.find(handle);
+	if (it == m_backbuffers.end())
+		return nullptr;
+	return &it->second;
 }
 
 void VulkanSwapchain::destroyBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle)
 {
-	/*const Backbuffer* backbuffer = reinterpret_cast<const Backbuffer*>(handle.__data);
-	RenderPassState state;
-	for (FramebufferHandle handle : backbuffer->handles)
+	auto it = m_backbuffers.find(handle);
+	if (it == m_backbuffers.end())
+		return; // Does not exist
+	const Backbuffer& backbuffer = it->second;
+	for (FramebufferHandle handle : backbuffer.handles)
 	{
 		device->destroy(handle);
-		state = device->get(device->get(handle)->renderPass)->state;
 	}
-	m_backbuffers.erase(state);*/
+	m_backbuffers.erase(handle);
 	// Should ref count state to do not destroy shared backbuffer.
-	// For now, do not destroy anything.
 }
 
 void VulkanFrame::wait(VkDevice device)

@@ -71,7 +71,7 @@ SamplerHandle VulkanGraphicDevice::createSampler(
 
 void VulkanGraphicDevice::destroy(SamplerHandle sampler)
 {
-	if (sampler.__data == nullptr) return;
+	if (sampler == SamplerHandle::null) return;
 
 	VulkanSampler* vk_sampler = getVk<VulkanSampler>(sampler);
 	vk_sampler->destroy(m_context);

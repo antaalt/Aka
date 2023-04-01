@@ -121,10 +121,10 @@ struct Game :
 		ShaderCompiler compiler;
 		Blob vertexBlob = compiler.compile(ShaderKey::fromString(vertex_shader, ShaderType::Vertex));
 		Blob fragmentBlob = compiler.compile(ShaderKey::fromString(fragment_shader, ShaderType::Fragment));
-		vertex = graphic()->createShader(gfx::ShaderType::Vertex, vertexBlob.data(), vertexBlob.size());
-		fragment = graphic()->createShader(gfx::ShaderType::Fragment, fragmentBlob.data(), fragmentBlob.size());
+		vertex = graphic()->createShader("VertexShader", gfx::ShaderType::Vertex, vertexBlob.data(), vertexBlob.size());
+		fragment = graphic()->createShader("FragmentShader", gfx::ShaderType::Fragment, fragmentBlob.data(), fragmentBlob.size());
 		gfx::ShaderBindingState state = gfx::ShaderBindingState().add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
-		program = graphic()->createGraphicProgram("", vertex, fragment, gfx::ShaderHandle::null, &state, 1);
+		program = graphic()->createGraphicProgram("GraphicProgram", vertex, fragment, gfx::ShaderHandle::null, &state, 1);
 		// Descriptors
 		set = graphic()->createDescriptorSet("DescriptorSet", state);
 		graphic()->update(set, gfx::DescriptorSetData().addUniformBuffer(ubo));
@@ -132,7 +132,9 @@ struct Game :
 		renderPass = graphic()->createBackbufferRenderPass();
 		backbuffer = graphic()->createBackbuffer(renderPass);
 		// Pipeline
-		pipeline = graphic()->createGraphicPipeline(program,
+		pipeline = graphic()->createGraphicPipeline(
+			"GraphicPipeline", 
+			program,
 			gfx::PrimitiveType::Triangles,
 			graphic()->get(renderPass)->state,
 			gfx::VertexAttributeState().

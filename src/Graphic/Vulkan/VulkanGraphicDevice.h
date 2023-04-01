@@ -181,13 +181,9 @@ public:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
 	friend class VulkanSwapchain;
-	// Context
 	VulkanContext m_context;
-	
-	// Frame
 	VulkanSwapchain m_swapchain;
-
-	// Pools
+private: // Pools
 	Pool<VulkanTexture> m_texturePool;
 	Pool<VulkanSampler> m_samplerPool;
 	Pool<VulkanBuffer> m_bufferPool;

@@ -51,6 +51,7 @@ public:
 	SwapchainStatus present(VulkanGraphicDevice* device, VulkanFrame* frame);
 
 	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle);
+	Backbuffer* getBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 	void destroyBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 
 	uint32_t getImageCount() const { return m_imageCount; }
@@ -69,7 +70,7 @@ private:
 	FrameIndex m_currentFrameIndex;
 	VulkanFrame m_frames[MaxFrameInFlight];
 
-	std::unordered_map<RenderPassState, Backbuffer> m_backbuffers;
+	std::unordered_map<BackbufferHandle, Backbuffer> m_backbuffers;
 	TextureFormat m_colorFormat;
 	TextureFormat m_depthFormat;
 	std::vector<BackBufferTextures> m_backbufferTextures;

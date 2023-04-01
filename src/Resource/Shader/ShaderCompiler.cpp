@@ -229,7 +229,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	shader.setStringsWithLengthsAndNames(&shaderString, &shaderLength, &shaderName, 1);
 	// Glslang does not support multiple entry point, but SPIRV supports it.
 	// To support it, we would need a different backend.
-	//shader.setEntryPoint("");
+	shader.setEntryPoint(key.entryPoint.cstr());
 	shader.setInvertY(false);
 	shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, default_version);
 	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
@@ -262,7 +262,14 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 
 	if (!shader.parse(&defaultConf, default_version, false, messages, includer))
 	{
-		Logger::error("Failed to parse shader : ", shader.getInfoLog());
+		std::stringstream sstream;
+		sstream << "entryPoint(";
+		sstream << key.entryPoint;
+		sstream << "), macros(";
+		for (auto macro : key.macros)
+			sstream << macro + ",";
+		sstream << ")";
+		Logger::error("Failed to parse shader ", sstream.str(), " : ", shader.getInfoLog());
 		glslang::FinalizeProcess();
 		return ShaderBlob();
 	}

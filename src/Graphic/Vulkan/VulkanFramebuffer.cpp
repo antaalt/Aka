@@ -118,7 +118,7 @@ FramebufferHandle VulkanGraphicDevice::createFramebuffer(const char* name, Rende
 }
 void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 {
-	if (framebuffer.__data == nullptr)
+	if (framebuffer == FramebufferHandle::null)
 		return;
 	VulkanFramebuffer* vk_framebuffer = getVk<VulkanFramebuffer>(framebuffer);
 
@@ -149,7 +149,7 @@ RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadO
 FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, Frame* frame)
 {
 	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	return static_cast<const Backbuffer*>(handle.__data)->handles[vk_frame->m_image.value()];
+	return m_swapchain.getBackbuffer(this, handle)->handles[vk_frame->m_image.value()];
 }
 
 const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)

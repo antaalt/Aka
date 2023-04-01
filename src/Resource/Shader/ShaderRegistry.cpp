@@ -321,8 +321,8 @@ void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 		if (updated)
 		{
 			ShaderKey key = shader.first;
-			Date date = Date::globaltime(m_shadersFileData[key].timestamp);
-			Logger::info(date.hour, "/", date.minute, "/", date.second);
+			//Date date = Date::globaltime(m_shadersFileData[key].timestamp);
+			Logger::info("Shader reloaded : ", shader.first.path);
 			reload(key, device);
 			break; // m_shaders is invalidated
 		}

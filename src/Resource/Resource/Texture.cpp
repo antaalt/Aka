@@ -34,7 +34,10 @@ gfx::TextureFormat getFormat(uint32_t channels, bool isHDR, bool isSRGB)
 }
 
 Texture::Texture() :
-	Resource(ResourceType::Texture)
+	Resource(ResourceType::Texture),
+	m_width(0),
+	m_height(0),
+	m_textureType(gfx::TextureType::Texture2D)
 {
 }
 
@@ -94,6 +97,7 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 			flags,
 			bytes
 		);
+		m_textureType = gfx::TextureType::TextureCubeMap;
 	}
 	else if (isLayeredTexture2D)
 	{
@@ -107,13 +111,14 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 			data->width,
 			data->height,
 			1,
-			gfx::TextureType::TextureCubeMap,
+			gfx::TextureType::Texture2DArray,
 			level,
 			6,
 			format,
 			flags,
 			bytes.data()
 		);
+		m_textureType = gfx::TextureType::Texture2DArray;
 	}
 	else // isTexture2D
 	{
@@ -132,7 +137,10 @@ void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBu
 			flags,
 			&bytes
 		);
+		m_textureType = gfx::TextureType::Texture2D;
 	}
+	m_width = data->width;
+	m_height = data->height;
 }
 
 void Texture::destroyRenderData(gfx::GraphicDevice* device)
@@ -214,6 +222,9 @@ void Texture::createBuildData(gfx::GraphicDevice* device, RenderData* data)
 		Logger::error("Texture type not supported");
 		break;
 	}
+	m_width = texture->width;
+	m_height = texture->height;
+	m_textureType = texture->type;
 }
 
 void Texture::destroyBuildData()
@@ -231,15 +242,21 @@ ResourceArchive* Texture::createResourceArchive()
 
 uint32_t Texture::width() const
 {
-	return static_cast<const gfx::Texture*>(reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data)->width; // TODO cache width / height
+	if (m_renderData == nullptr)
+		return 0;
+	return m_width;
 }
 uint32_t Texture::height() const
 {
-	return static_cast<const gfx::Texture*>(reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data)->height;
+	if (m_renderData == nullptr)
+		return 0;
+	return m_height;
 }
 gfx::TextureType Texture::type() const
 {
-	return static_cast<const gfx::Texture*>(reinterpret_cast<const TextureRenderData*>(m_renderData)->handle.__data)->type;
+	if (m_renderData == nullptr)
+		return gfx::TextureType::Unknown;
+	return m_textureType;
 }
 gfx::TextureHandle Texture::handle() const
 {
