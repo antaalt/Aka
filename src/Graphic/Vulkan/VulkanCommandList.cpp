@@ -345,6 +345,26 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	vkCmdClearAttachments(vk_command, (uint32_t)attachments.size(), attachments.data(), 1, &clearRect);
 }
 
+void VulkanCommandList::push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	VkPipelineLayout layout = VK_NULL_HANDLE;
+	if (this->vk_graphicPipeline)
+	{
+		layout = this->vk_graphicPipeline->vk_pipelineLayout;
+	}
+	else if (this->vk_computePipeline)
+	{
+		layout = this->vk_computePipeline->vk_pipelineLayout;
+	}
+	else
+	{
+		AKA_ASSERT(false, "Invalid or no pipeline bound.");
+	}
+
+	vkCmdPushConstants(vk_command, layout, VulkanContext::tovk(mask), offset, range, data);
+}
+
 void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount) 
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");

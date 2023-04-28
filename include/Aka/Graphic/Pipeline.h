@@ -467,7 +467,8 @@ struct RaytracingPipeline : Resource
 const BlendState BlendStateNormal = BlendState{ BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMode::One, BlendMode::Zero, BlendOp::Add, ColorMask::Rgba, 0xffffffff };
 const BlendState BlendStateAdditive = BlendState{ BlendMode::One, BlendMode::One, BlendOp::Add, BlendMode::One, BlendMode::One, BlendOp::Add, ColorMask::Rgb, 0xffffffff };
 const BlendState BlendStatePremultiplied = BlendState{ BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, BlendMode::One, BlendMode::OneMinusSrcAlpha, BlendOp::Add, ColorMask::Rgba, 0xffffffff };
-const BlendState BlendStateDefault = BlendStateNormal;
+const BlendState BlendStateDisabled = BlendStateNormal;
+const BlendState BlendStateDefault = BlendStateDisabled;
 
 // Filling
 const FillState FillStateFill = FillState{ FillMode::Fill, 1.f };

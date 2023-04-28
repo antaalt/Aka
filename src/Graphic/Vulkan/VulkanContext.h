@@ -14,6 +14,69 @@
 
 #include "VulkanDebug.h"
 
+template <>
+struct std::hash<VkPushConstantRange>
+{
+	size_t operator()(const VkPushConstantRange& data) const
+	{
+		size_t hash = 0;
+		aka::hash(hash, &data.offset, sizeof(uint32_t));
+		aka::hash(hash, &data.size, sizeof(uint32_t));
+		aka::hash(hash, &data.stageFlags, sizeof(VkShaderStageFlags));
+		return hash;
+	}
+};
+using PipelineLayoutKey = std::pair<std::vector<VkDescriptorSetLayout>, std::vector<VkPushConstantRange>>;
+
+template <>
+struct std::less<VkPushConstantRange>
+{
+	bool operator()(const VkPushConstantRange& lhs, const VkPushConstantRange& rhs) const
+	{
+		if (lhs.offset < rhs.offset) return true;
+		else if (lhs.offset > rhs.offset) return false;
+
+		if (lhs.size < rhs.size) return true;
+		else if (lhs.size > rhs.size) return false;
+
+		if (lhs.stageFlags < rhs.stageFlags) return true;
+		else if (lhs.stageFlags > rhs.stageFlags) return false;
+
+		return false; // equal
+	}
+};
+
+struct PipelineLayoutKeyFunctor
+{
+	bool operator()(const PipelineLayoutKey& left, const PipelineLayoutKey& right) const
+	{
+		if (left.first != right.first) return false;
+		for (size_t i = 0; i < right.second.size(); i++)
+		{
+			if (right.second[i].offset != left.second[i].offset) return false;
+			if (right.second[i].size != left.second[i].size) return false;
+			if (right.second[i].stageFlags != left.second[i].stageFlags) return false;
+		}
+		return true;
+	}
+	size_t operator()(const PipelineLayoutKey& data) const
+	{
+		size_t hash = 0;
+		for (size_t i = 0; i < data.first.size(); i++)
+		{
+			aka::hash((uintptr_t)data.first[i]);
+		}
+		for (size_t i = 0; i < data.second.size(); i++)
+		{
+			aka::hash(hash, &data.second[i].offset, sizeof(uint32_t));
+			aka::hash(hash, &data.second[i].size, sizeof(uint32_t));
+			aka::hash(hash, &data.second[i].stageFlags, sizeof(VkShaderStageFlags));
+		}
+		return hash;
+	}
+};
+
+
 namespace aka {
 namespace gfx {
 
@@ -81,6 +144,8 @@ struct VulkanContext
 	static VkImageLayout tovk(ResourceAccessType type, TextureFormat format);
 	static VkAttachmentLoadOp tovk(AttachmentLoadOp loadOp);
 	static VkAttachmentStoreOp tovk(AttachmentStoreOp storeOp);
+	static VkDescriptorType tovk(ShaderBindingType type);
+	static VkShaderStageFlags tovk(ShaderMask shaderType);
 
 	// TODO vk_ + private
 	VkInstance instance;
@@ -106,13 +171,13 @@ public:
 	};
 	VkRenderPass getRenderPass(const RenderPassState& state);
 	ShaderInputData getDescriptorLayout(const ShaderBindingState& bindingsDesc);
-	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count);
+	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount);
 	VertexInputData getVertexInputData(const VertexAttributeState& verticesDesc);
 
 private:
 	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
 	std::unordered_map<ShaderBindingState, ShaderInputData> m_bindingDesc;
-	std::map<std::vector<VkDescriptorSetLayout>, VkPipelineLayout> m_pipelineLayout;
+	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout;
 	std::unordered_map<VertexAttributeState, VertexInputData> m_verticesDesc;
 
 private:

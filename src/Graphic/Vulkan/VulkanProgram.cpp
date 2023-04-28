@@ -5,7 +5,7 @@
 namespace aka {
 namespace gfx {
 
-VkDescriptorType tovk(ShaderBindingType type)
+VkDescriptorType VulkanContext::tovk(ShaderBindingType type)
 {
 	switch (type)
 	{
@@ -23,7 +23,7 @@ VkDescriptorType tovk(ShaderBindingType type)
 	}
 }
 
-VkShaderStageFlags tovk(ShaderMask shaderType)
+VkShaderStageFlags VulkanContext::tovk(ShaderMask shaderType)
 {
 	VkShaderStageFlags flags = 0;
 	if (has(shaderType, ShaderMask::Vertex))
@@ -58,22 +58,22 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 	}
 }
 
-VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts) :
-	Program(name, vertex, fragment, sets, bindingCounts),
+VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
+	Program(name, vertex, fragment, sets, bindingCounts, constants, constantCount),
 	vk_descriptorSetLayout { VK_NULL_HANDLE},
 	vk_descriptorPool { VK_NULL_HANDLE}
 {
 }
 
-VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts) :
-	Program(name, vertex, fragment, geometry, sets, bindingCounts),
+VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
+	Program(name, vertex, fragment, geometry, sets, bindingCounts, constants, constantCount),
 	vk_descriptorSetLayout{ VK_NULL_HANDLE },
 	vk_descriptorPool{ VK_NULL_HANDLE }
 {
 }
 
-VulkanProgram::VulkanProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts) :
-	Program(name, compute, sets, bindingCounts),
+VulkanProgram::VulkanProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
+	Program(name, compute, sets, bindingCounts, constants, constantCount),
 	vk_descriptorSetLayout{ VK_NULL_HANDLE },
 	vk_descriptorPool{ VK_NULL_HANDLE }
 {
@@ -97,7 +97,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 		descriptorWrites[iBinding].dstSet = vk_set->vk_descriptorSet;
 		descriptorWrites[iBinding].dstBinding = static_cast<uint32_t>(iBinding);
 		descriptorWrites[iBinding].dstArrayElement = 0;
-		descriptorWrites[iBinding].descriptorType = tovk(binding.type);
+		descriptorWrites[iBinding].descriptorType = VulkanContext::tovk(binding.type);
 		descriptorWrites[iBinding].descriptorCount = binding.count;
 
 		switch (binding.type)
@@ -170,9 +170,9 @@ VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device
 		const ShaderBindingLayout& binding = bindings.bindings[i];
 		vk_bindings[i].binding = i;
 		vk_bindings[i].descriptorCount = binding.count;
-		vk_bindings[i].descriptorType = tovk(binding.type);
+		vk_bindings[i].descriptorType = VulkanContext::tovk(binding.type);
 		vk_bindings[i].pImmutableSamplers = nullptr;
-		vk_bindings[i].stageFlags = tovk(binding.stages);
+		vk_bindings[i].stageFlags = VulkanContext::tovk(binding.stages);
 
 		// Pool
 		vk_poolSizes[i].type = vk_bindings[i].descriptorType;
@@ -245,14 +245,14 @@ const Shader* VulkanGraphicDevice::get(ShaderHandle handle)
 }
 
 // Programs
-ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts)
+ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
 {
 	// TODO check shaders
 	if (bindingCounts == 0 || bindingCounts > ShaderMaxSetCount)
 		return ProgramHandle::null;
 	if (sets[0].count > ShaderMaxBindingCount)
 		return ProgramHandle::null;
-	VulkanProgram* vk_program = m_programPool.acquire(name, vertex, fragment, geometry, sets, bindingCounts);
+	VulkanProgram* vk_program = m_programPool.acquire(name, vertex, fragment, geometry, sets, bindingCounts, constants, constantCount);
 
 	// Create vk data
 	for (uint32_t i = 0; i < bindingCounts; i++)
@@ -267,14 +267,14 @@ ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, Shader
 
 	return ProgramHandle{ vk_program };
 }
-ProgramHandle VulkanGraphicDevice::createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts)
+ProgramHandle VulkanGraphicDevice::createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
 {
 	// TODO check shaders
 	if (bindingCounts == 0 || bindingCounts > ShaderMaxSetCount)
 		return ProgramHandle::null;
 	if (sets[0].count > ShaderMaxBindingCount)
 		return ProgramHandle::null;
-	VulkanProgram* vk_program = m_programPool.acquire(name, compute, sets, bindingCounts);
+	VulkanProgram* vk_program = m_programPool.acquire(name, compute, sets, bindingCounts, constants, constantCount);
 
 	// Create vk data
 	for (uint32_t i = 0; i < bindingCounts; i++)

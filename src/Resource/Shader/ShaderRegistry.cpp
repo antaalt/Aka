@@ -42,6 +42,22 @@ gfx::ShaderBindingState merge(const gfx::ShaderBindingState& lhs, const gfx::Sha
 	return bindings;
 }
 
+gfx::ShaderConstant merge(const gfx::ShaderConstant& lhs, const gfx::ShaderConstant& rhs)
+{
+	gfx::ShaderConstant constant = lhs;
+	if (lhs.shader != gfx::ShaderMask::None || rhs.shader != gfx::ShaderMask::None)
+	{
+		if (lhs.shader != gfx::ShaderMask::None && rhs.shader != gfx::ShaderMask::None)
+		{
+			AKA_ASSERT(rhs.size == lhs.size, "Mismatching size");
+			AKA_ASSERT(rhs.offset == lhs.offset, "Mismatching offset");
+		}
+		constant.shader = lhs.shader | rhs.shader;
+		return constant;
+	}
+	return constant;
+}
+
 ShaderRegistry::ShaderRegistry()
 {
 }
@@ -111,6 +127,17 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 			states[iSet] = merge(data.sets[iSet], states[iSet]);
 		}
 	}
+	// Merge shader constants
+	size_t constantCount = 0;
+	gfx::ShaderConstant constants[gfx::ShaderMaxConstantCount]{};
+	for (const ShaderData& data : datas) // for each shader
+	{
+		constantCount = max(data.constants.size(), constantCount);
+		for (uint32_t iCst = 0; iCst < data.constants.size(); iCst++)
+		{
+			constants[iCst] = merge(data.constants[iCst], constants[iCst]);
+		}
+	}
 	// Create shaders
 	String name;
 	for (auto shaders : key.shaders)
@@ -127,7 +154,9 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
 			gfx::ShaderHandle::null,
 			states,
-			static_cast<uint32_t>(setCount)
+			static_cast<uint32_t>(setCount),
+			constants,
+			static_cast<uint32_t>(constantCount)
 		);
 	}
 	else if (isVertexGeometryProgram)
@@ -139,7 +168,9 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
 			shaders[EnumToIndex(gfx::ShaderType::Geometry)],
 			states,
-			static_cast<uint32_t>(setCount)
+			static_cast<uint32_t>(setCount),
+			constants,
+			static_cast<uint32_t>(constantCount)
 		);
 	}
 	else if (isComputeProgram)
@@ -149,7 +180,9 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 			name.cstr(),
 			shaders[EnumToIndex(gfx::ShaderType::Compute)],
 			states,
-			static_cast<uint32_t>(setCount)
+			static_cast<uint32_t>(setCount),
+			constants,
+			static_cast<uint32_t>(constantCount)
 		);
 	}
 	if (program != gfx::ProgramHandle::null)

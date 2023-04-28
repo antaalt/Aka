@@ -15,6 +15,7 @@ using ProgramHandle = ResourceHandle<Program>;
 
 static constexpr uint32_t ShaderMaxBindingCount = 16; // TODO increase / Retrieve from API
 static constexpr uint32_t ShaderMaxSetCount = 8;
+static constexpr uint32_t ShaderMaxConstantCount = 8;
 
 enum class ShaderBindingType : uint8_t
 {
@@ -46,11 +47,18 @@ struct ShaderBindingState
 	}
 };
 
+struct ShaderConstant
+{
+	uint32_t offset;
+	uint32_t size;
+	ShaderMask shader;
+};
+
 struct Program : Resource
 {
-	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts);
-	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts);
-	Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts);
+	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
 
 	// TODO replace by ShaderType flag as we could delete shader after program creation.
 	ShaderHandle vertex;
@@ -60,16 +68,19 @@ struct Program : Resource
 
 	ShaderBindingState sets[ShaderMaxSetCount];
 
+	ShaderConstant constants[ShaderMaxConstantCount];
+
 	uint32_t setCount;
+	uint32_t constantCount;
 
 	bool hasVertexStage() const;
 	bool hasFragmentStage() const;
 	bool hasGeometryStage() const;
 	bool hasComputeStage() const;
 
-	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static ProgramHandle createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts);
-	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count);
+	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	static ProgramHandle createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount);
 	static void destroy(ProgramHandle program);
 };
 

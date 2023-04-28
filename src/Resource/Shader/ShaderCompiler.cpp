@@ -484,6 +484,23 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 
 			resources.acceleration_structures;
 		}
+		{ // --- Reflect shader constants
+
+			spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+			for (spirv_cross::Resource& resource : resources.push_constant_buffers)
+			{
+				std::string name = compiler.get_name(resource.id);
+				auto ranges = compiler.get_active_buffer_ranges(resource.id);
+				for (auto& range : ranges)
+				{
+					AKA_ASSERT(range.index < gfx::ShaderMaxConstantCount, "Too many shader constants");
+					while (range.index >= data.constants.size()) data.constants.append(gfx::ShaderConstant{});
+					data.constants[range.index].offset = range.offset;
+					data.constants[range.index].size = range.range;
+					data.constants[range.index].shader = getShaderMask(executionModel);
+				}
+			}
+		}
 		return data;
 	}
 	catch (const spirv_cross::CompilerError& e)

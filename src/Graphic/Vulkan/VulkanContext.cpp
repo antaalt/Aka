@@ -146,24 +146,29 @@ VulkanContext::ShaderInputData VulkanContext::getDescriptorLayout(const ShaderBi
 	return s;
 }
 
-VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count)
+
+VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount)
 {
-	std::vector<VkDescriptorSetLayout> data(layouts, layouts + count);
-	auto it = m_pipelineLayout.find(data);
+	PipelineLayoutKey pair = std::make_pair(
+		std::vector<VkDescriptorSetLayout>(layouts, layouts + layoutCount),
+		std::vector<VkPushConstantRange>(constants, constants + constantCount)
+	);
+	auto it = m_pipelineLayout.find(pair);
 	if (it != m_pipelineLayout.end())
 		return it->second;
 
 	// Create the layout of the pipeline following the provided descriptor set layout
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = count;
+	pipelineLayoutCreateInfo.setLayoutCount = layoutCount;
 	pipelineLayoutCreateInfo.pSetLayouts = layouts;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = constantCount;
+	pipelineLayoutCreateInfo.pPushConstantRanges = constants;
 
 	VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 
-	m_pipelineLayout.insert(std::make_pair(data, pipelineLayout));
+	m_pipelineLayout.insert(std::make_pair(pair, pipelineLayout));
 
 	return pipelineLayout;
 }
@@ -410,7 +415,7 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
 
 	// VK_VERSION_1_1
-	// Check physical device suitable for these features.
+	// TODO: Check physical device suitable for these features.
 	VkPhysicalDeviceFeatures2 deviceFeatures = {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext = &timelineSemaphoreFeatures;
@@ -418,6 +423,7 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
 	deviceFeatures.features.shaderFloat64 = VK_TRUE;
 	deviceFeatures.features.multiDrawIndirect = VK_TRUE;
+	deviceFeatures.features.fillModeNonSolid = VK_TRUE; // VK_POLYGON_MODE_LINE
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

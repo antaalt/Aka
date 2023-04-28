@@ -5,42 +5,54 @@
 namespace aka {
 namespace gfx {
 
-Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts) :
+Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Resource(name, ResourceType::Program),
 	vertex(vertex),
 	fragment(fragment),
 	geometry(ShaderHandle::null),
 	compute(ShaderHandle::null),
 	sets{},
-	setCount(bindingCounts)
+	constants{},
+	setCount(bindingCounts),
+	constantCount(constantCount)
 {
 	AKA_ASSERT(bindingCounts < ShaderMaxBindingCount, "Too much bindings");
+	AKA_ASSERT(constantCount < ShaderMaxConstantCount, "Too much constants");
 	memcpy(this->sets, sets, bindingCounts * sizeof(ShaderBindingState));
+	memcpy(this->constants, constants, constantCount * sizeof(ShaderConstant));
 }
 
-Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts) :
+Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Resource(name, ResourceType::Program),
 	vertex(vertex),
 	fragment(fragment),
 	geometry(geometry),
 	compute(ShaderHandle::null),
 	sets{},
-	setCount(bindingCounts)
+	constants{},
+	setCount(bindingCounts),
+	constantCount(constantCount)
 {
 	AKA_ASSERT(bindingCounts < ShaderMaxBindingCount, "Too much bindings");
+	AKA_ASSERT(constantCount < ShaderMaxConstantCount, "Too much constants");
 	memcpy(this->sets, sets, bindingCounts * sizeof(ShaderBindingState));
+	memcpy(this->constants, constants, constantCount * sizeof(ShaderConstant));
 }
-Program::Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts) :
+Program::Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Resource(name, ResourceType::Program),
 	vertex(ShaderHandle::null),
 	fragment(ShaderHandle::null),
 	geometry(ShaderHandle::null),
 	compute(compute),
 	sets{},
-	setCount(bindingCounts)
+	constants{},
+	setCount(bindingCounts),
+	constantCount(constantCount)
 {
 	AKA_ASSERT(bindingCounts < ShaderMaxBindingCount, "Too much bindings");
+	AKA_ASSERT(constantCount < ShaderMaxConstantCount, "Too much constants");
 	memcpy(this->sets, sets, bindingCounts * sizeof(ShaderBindingState));
+	memcpy(this->constants, constants, constantCount * sizeof(ShaderConstant));
 }
 
 bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
@@ -113,17 +125,17 @@ bool Program::hasComputeStage() const
 	return compute != ShaderHandle::null;
 }
 
-ProgramHandle Program::createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
 {
-	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, ShaderHandle::null, bindings, count);
+	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, ShaderHandle::null, bindings, count, constants, constantCount);
 }
-ProgramHandle Program::createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
 {
-	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, geometry, bindings, count);
+	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, geometry, bindings, count, constants, constantCount);
 }
-ProgramHandle Program::createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count)
+ProgramHandle Program::createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
 {
-	return Application::app()->graphic()->createComputeProgram(name, compute, bindings, count);
+	return Application::app()->graphic()->createComputeProgram(name, compute, bindings, count, constants, constantCount);
 }
 void Program::destroy(ProgramHandle program)
 {

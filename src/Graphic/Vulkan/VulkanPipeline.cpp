@@ -270,7 +270,14 @@ void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(vk_program->sets[i]);
 		layouts[i] = vk_layout;
 	}
-	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount);
+	VkPushConstantRange constants[ShaderMaxConstantCount];
+	for (uint32_t i = 0; i < vk_program->constantCount; i++)
+	{
+		constants[i].offset = vk_program->constants[i].offset;
+		constants[i].size = vk_program->constants[i].size;
+		constants[i].stageFlags = VulkanContext::tovk(vk_program->constants[i].shader);
+	}
+	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount, constants, vk_program->constantCount);
 	// Create Pipeline
 	std::vector<const VulkanShader*> vk_shaders;
 	uint32_t shaderCount = 0;
@@ -563,7 +570,14 @@ void VulkanComputePipeline::create(VulkanGraphicDevice* device)
 		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(vk_program->sets[i]);
 		layouts[i] = vk_layout;
 	}
-	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount);
+	VkPushConstantRange constants[ShaderMaxConstantCount];
+	for (uint32_t i = 0; i < vk_program->constantCount; i++)
+	{
+		constants[i].offset = vk_program->constants[i].offset;
+		constants[i].size = vk_program->constants[i].size;
+		constants[i].stageFlags = VulkanContext::tovk(vk_program->constants[i].shader);
+	}
+	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount, constants, vk_program->constantCount);
 	// Create Pipeline
 	vk_pipeline = VulkanComputePipeline::createVkComputePipeline(
 		device->getVkDevice(),

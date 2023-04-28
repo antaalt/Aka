@@ -39,8 +39,8 @@ public:
 	const Shader* get(ShaderHandle handle) override;
 
 	// Programs
-	ProgramHandle createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
-	ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts) override;
+	ProgramHandle createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) override;
+	ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) override;
 	void destroy(ProgramHandle handle) override;
 	const Program* get(ProgramHandle handle) override;
 
@@ -177,7 +177,7 @@ public:
 	VkRenderPass getVkRenderPass(const RenderPassState& state) { return m_context.getRenderPass(state); }
 	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).layout; }
 	VkDescriptorPool getVkDescriptorPool(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).pool; }
-	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t count) { return m_context.getPipelineLayout(layouts, count); }
+	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount) { return m_context.getPipelineLayout(layouts, layoutCount, constants, constantCount); }
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
 	friend class VulkanSwapchain;
