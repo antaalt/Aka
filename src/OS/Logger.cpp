@@ -31,6 +31,8 @@ void Logger::Channel::unmute()
 }
 
 #if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <Aka/Core/Container/String.h>
 void OutputDebugConsole(const char* string)

@@ -6,7 +6,7 @@
 #include <Aka/OS/Logger.h>
 
 #if defined(AKA_USE_D3D12)
-
+#define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #if defined(min)

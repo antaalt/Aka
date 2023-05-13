@@ -495,8 +495,8 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 				{
 					AKA_ASSERT(range.index < gfx::ShaderMaxConstantCount, "Too many shader constants");
 					while (range.index >= data.constants.size()) data.constants.append(gfx::ShaderConstant{});
-					data.constants[range.index].offset = range.offset;
-					data.constants[range.index].size = range.range;
+					data.constants[range.index].offset = static_cast<uint32_t>(range.offset);
+					data.constants[range.index].size = static_cast<uint32_t>(range.range);
 					data.constants[range.index].shader = getShaderMask(executionModel);
 				}
 			}
