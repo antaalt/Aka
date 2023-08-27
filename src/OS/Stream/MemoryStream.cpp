@@ -18,6 +18,11 @@ MemoryStream::MemoryStream(const std::vector<uint8_t>& bytes) :
 {
 }
 
+MemoryStream::MemoryStream(const Blob& blob) :
+	MemoryStream(reinterpret_cast<const uint8_t*>(blob.data()), blob.size())
+{
+}
+
 MemoryStream::MemoryStream(uint8_t* bytes, size_t size) :
 	Stream(),
 	m_bytes(bytes), 
@@ -29,6 +34,11 @@ MemoryStream::MemoryStream(uint8_t* bytes, size_t size) :
 
 MemoryStream::MemoryStream(std::vector<uint8_t>& bytes) : 
 	MemoryStream(bytes.data(), bytes.size()) 
+{
+}
+
+MemoryStream::MemoryStream(Blob& blob) :
+	MemoryStream(reinterpret_cast<uint8_t*>(blob.data()), blob.size())
 {
 }
 

@@ -23,6 +23,11 @@ Path::Path(const String& path) : m_string(path)
 {
 }
 
+char* Path::cstr()
+{
+	return m_string.cstr();
+}
+
 const char* Path::cstr() const
 {
 	return m_string.cstr();

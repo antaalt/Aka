@@ -73,7 +73,7 @@ void BinaryArchive::read(T& data)
 template<typename T>
 void BinaryArchive::read(T* data, size_t count)
 {
-	static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value, "Do not support non arithmetic type");
+	//static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value, "Do not support non arithmetic type");
 	m_stream.unserialize(data, count * sizeof(T));
 	if (!Endian::same(m_endianess))
 	{
@@ -93,7 +93,7 @@ void BinaryArchive::write(const T& data)
 template<typename T>
 void BinaryArchive::write(const T* data, size_t count)
 {
-	static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value, "Do not support non arithmetic type");
+	//static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value, "Do not support non arithmetic type");
 	if (!Endian::same(m_endianess))
 	{
 		for (size_t i = 0; i < count; i++)

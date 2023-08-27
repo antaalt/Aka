@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Aka/OS/Stream/Stream.h>
+#include <Aka/Core/Container/Blob.h>
 
 namespace aka {
 
@@ -10,9 +11,11 @@ public:
 	// Read constructor
 	MemoryStream(const uint8_t* bytes, size_t size);
 	MemoryStream(const std::vector<uint8_t>& bytes);
+	MemoryStream(const Blob& blob);
 	// Write constructor
 	MemoryStream(uint8_t* bytes, size_t size);
 	MemoryStream(std::vector<uint8_t>& bytes);
+	MemoryStream(Blob& blob);
 	~MemoryStream();
 
 	void skim(size_t count) override;

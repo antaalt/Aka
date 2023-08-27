@@ -13,6 +13,7 @@ struct Path
 	Path(const char* path);
 	Path(const String& path);
 
+	char* cstr();
 	const char* cstr() const;
 	size_t size() const;
 	size_t length() const;
