@@ -18,7 +18,7 @@ public:
 	static Entity null();
 
 	template <typename T, typename... Args>
-	void add(Args&&... args);
+	T& add(Args&&... args);
 
 	template <typename T>
 	T& get() const;
@@ -44,12 +44,12 @@ private:
 };
 
 template <typename T, typename... Args>
-inline void Entity::add(Args&&... args)
+inline T& Entity::add(Args&&... args)
 {
 	if constexpr (sizeof...(Args) == 0)
-		m_world->registry().emplace<T>(m_handle);
+		return m_world->registry().emplace<T>(m_handle);
 	else
-		m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
+		return m_world->registry().emplace<T>(m_handle, std::forward<Args>(args)...);
 }
 
 template <typename T>
