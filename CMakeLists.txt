@@ -118,9 +118,9 @@ target_include_directories(Aka
 # Platform Backend
 set(PLATFORM_GLFW3 true CACHE BOOL "Set GLFW3 as platform backend")
 # Graphic Backend
-set(GRAPHIC_OPENGL true CACHE BOOL "Set OpenGL as graphic backend")
+set(GRAPHIC_OPENGL false CACHE BOOL "Set OpenGL as graphic backend")
 set(GRAPHIC_D3D11 false CACHE BOOL "Set DirectX11 as graphic backend")
-set(GRAPHIC_VULKAN false CACHE BOOL "Set Vulkan as graphic backend")
+set(GRAPHIC_VULKAN true CACHE BOOL "Set Vulkan as graphic backend")
 # Audio Backend
 set(AUDIO_RTAUDIO true CACHE BOOL "Set RtAudio as audio backend")
 
