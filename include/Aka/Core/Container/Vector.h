@@ -97,9 +97,7 @@ inline Vector<T>::Vector(const T* data, size_t size) :
 	m_size(size),
 	m_capacity(size)
 {
-	// Can't memcpy for type that need a constructor.
-	for (size_t i = 0; i < m_size; i++)
-		m_data[i] = data[i];
+	std::copy(data, data + size, begin());
 }
 template <typename T>
 inline Vector<T>::Vector(size_t size, const T& value) :
@@ -121,9 +119,7 @@ inline Vector<T>::Vector(const Vector& vector) :
 	m_size(vector.m_size),
 	m_capacity(vector.m_capacity)
 {
-	// Can't memcpy for type that need a constructor.
-	for (size_t i = 0; i < m_size; i++)
-		m_data[i] = vector[i];
+	std::copy(vector.data(), vector.data() + vector.size(), begin());
 }
 template <typename T>
 inline Vector<T>::Vector(Vector&& vector) :
@@ -139,9 +135,7 @@ template <typename T>
 inline Vector<T>& Vector<T>::operator=(const Vector& vector)
 {
 	resize(vector.size());
-	// Can't memcpy for type that need a constructor.
-	for (size_t i = 0; i < m_size; i++)
-		m_data[i] = vector[i];
+	std::copy(vector.data(), vector.data() + vector.size(), begin());
 	return *this;
 }
 template <typename T>
