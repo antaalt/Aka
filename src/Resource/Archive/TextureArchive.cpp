@@ -47,12 +47,12 @@ bool TextureArchive::load(Stream& stream, BuildData* data)
 		if (isHDR)
 		{
 			// TODO use stbi
-			Image image = Image::loadHDR(encodedBytes.data(), encodedBytes.size());
-			textureData->bytes.append(image.data(), image.data() + image.size());
+			ImageHdr image = ImageDecoder::fromMemoryHdr(encodedBytes.data(), encodedBytes.size());
+			textureData->bytes.append(reinterpret_cast<uint8_t*>(image.data()), reinterpret_cast<uint8_t*>(image.data()) + image.size() * sizeof(float));
 		}
 		else
 		{
-			Image image = Image::load(encodedBytes.data(), encodedBytes.size());
+			Image image = ImageDecoder::fromMemory(encodedBytes.data(), encodedBytes.size());
 			textureData->bytes.append(image.data(), image.data() + image.size());
 		}
 		break;
@@ -66,12 +66,12 @@ bool TextureArchive::load(Stream& stream, BuildData* data)
 			if (isHDR)
 			{
 				// TODO use stbi
-				Image image = Image::loadHDR(encodedBytes.data(), encodedBytes.size());
-				textureData->bytes.append(image.data(), image.data() + image.size());
+				ImageHdr image = ImageDecoder::fromMemoryHdr(encodedBytes.data(), encodedBytes.size());
+				textureData->bytes.append(reinterpret_cast<uint8_t*>(image.data()), reinterpret_cast<uint8_t*>(image.data()) + image.size() * sizeof(float));
 			}
 			else
 			{
-				Image image = Image::load(encodedBytes.data(), encodedBytes.size());
+				Image image = ImageDecoder::fromMemory(encodedBytes.data(), encodedBytes.size());
 				textureData->bytes.append(image.data(), image.data() + image.size());
 			}
 		}
@@ -112,7 +112,7 @@ bool TextureArchive::save(Stream& stream, const BuildData* data)
 	}
 	switch (type)
 	{
-	case gfx::TextureType::Texture2D: {
+	/*case gfx::TextureType::Texture2D: {
 		if (isHDR)
 		{
 			// encode to .hdr
@@ -152,7 +152,7 @@ bool TextureArchive::save(Stream& stream, const BuildData* data)
 					archive.write<uint8_t>(data.data(), data.size());
 				}
 			}
-			break;
+			break;*/
 	default:
 		Logger::error("Texture type not supported");
 		return false;

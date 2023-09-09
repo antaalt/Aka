@@ -101,7 +101,7 @@ void Font::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuild
 	String str = String::format("FontAtlas_%s", face->family_name);
 	m_atlas = gfx::Texture::create2D(
 		str.cstr(),
-		atlas.width(), atlas.height(),
+		atlas.width, atlas.height,
 		gfx::TextureFormat::RGBA8,
 		gfx::TextureUsage::ShaderResource,
 		atlas.data()

@@ -79,7 +79,8 @@ inline EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = 
 inline EnumClassType operator~(EnumClassType value) { return static_cast<EnumClassType>(~static_cast<UnderlyingType<EnumClassType>>(value)); } \
 inline bool has(EnumClassType mask, EnumClassType flag) { return (mask & flag) == flag; } \
 inline bool asBool(EnumClassType mask) { return mask != (EnumClassType)0; } \
-inline bool isNull(EnumClassType mask) { return static_cast<UnderlyingType<EnumClassType>>(mask) == 0; }
+inline bool isNull(EnumClassType mask) { return static_cast<UnderlyingType<EnumClassType>>(mask) == 0; } \
+inline UnderlyingType<EnumClassType> toMask(EnumClassType mask) { return static_cast<UnderlyingType<EnumClassType>>(mask); }
 // TODO << >> ^ ~ in BITWISE instead of bitmask
 
 };

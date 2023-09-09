@@ -639,7 +639,7 @@ bool SpriteImporter::import(const Path& path, std::function<bool(Resource* resou
 	auto convertFrame = [](const Aseprite& ase, const Aseprite::Frame& aseFrame) -> SpriteBuildData::Frame
 	{
 		Vector<Aseprite::Color32> aseImage = aseFrame.image(ase);
-		Image image(ase.width, ase.height, 4, ImageFormat::UnsignedByte);
+		Image image(ase.width, ase.height, ImageComponent::RGBA);
 		memcpy(image.data(), aseImage[0].data, image.size());
 		// Set frame
 		SpriteBuildData::Frame frame;
