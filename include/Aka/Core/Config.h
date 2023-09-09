@@ -21,6 +21,8 @@
 #define AKA_RELEASE
 #endif
 
+#define AKA_UNUSED(x) (void)(x)
+
 #if defined(AKA_DEBUG)
 	#if defined(_MSC_VER)
 		#include <cstdio>
@@ -49,10 +51,10 @@
 		AKA_DEBUG_BREAK;								\
 	} while(0)
 #else
-	#define AKA_ASSERT(condition, message) ((void)0)
+	#define AKA_ASSERT(condition, message) AKA_UNUSED(0)
+	#define AKA_DEBUG_BREAK AKA_UNUSED(0)
+	#define AKA_PRINT(...) AKA_UNUSED(0)
 #endif
-
-#define AKA_UNUSED(x) (void)(x)
 
 #define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented")
 #define AKA_UNREACHABLE AKA_ASSERT(false, "Code unreachable reached.")

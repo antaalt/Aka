@@ -122,7 +122,11 @@ struct VertexAttributeState
 	static uint32_t size(IndexFormat format);
 	static VertexAttributeState empty() { return VertexAttributeState{}; }
 
-	VertexAttributeState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset = 0)
+	VertexAttributeState& add(VertexSemantic semantic, VertexFormat format, VertexType type)
+	{
+		return add(semantic, format, type, stride());
+	}
+	VertexAttributeState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset)
 	{
 		AKA_ASSERT(count + 1 < VertexMaxAttributeCount, "Too many vertex attributes");
 		offsets[count] = offset; // TODO compute offset here ?
