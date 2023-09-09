@@ -12,6 +12,11 @@ struct Path
 	Path();
 	Path(const char* path);
 	Path(const String& path);
+	Path(const Path&) = default;
+	Path(Path&&) = default;
+	Path& operator=(const Path&) = default;
+	Path& operator=(Path&&) = default;
+	~Path() = default;
 
 	char* cstr();
 	const char* cstr() const;
@@ -25,6 +30,8 @@ struct Path
 	bool operator!=(const Path& rhs) const;
 
 	Path operator/(const Path& rhs);
+
+	Path& append(const Path& string);
 
 	// Go to parent path
 	Path up() const;

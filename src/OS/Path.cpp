@@ -81,6 +81,12 @@ Path Path::operator/(const Path& rhs)
 	return Path(m_string + '/' + rhs.m_string);
 }
 
+Path& Path::append(const Path& string)
+{
+	m_string.append(string.cstr());
+	return *this;
+}
+
 Path Path::up() const
 {
 	const size_t separatorCount = std::count(m_string.begin(), m_string.end(), '/');

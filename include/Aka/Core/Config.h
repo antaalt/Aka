@@ -52,6 +52,7 @@
 	#define AKA_ASSERT(condition, message) ((void)0)
 #endif
 
+#define AKA_UNUSED(x) (void)(x)
 
 #define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented")
 #define AKA_UNREACHABLE AKA_ASSERT(false, "Code unreachable reached.")

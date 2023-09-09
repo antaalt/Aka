@@ -209,16 +209,15 @@ inline Vector<T>& Vector<T>::append(const Vector<T>& vector)
 	return append(vector.data(), vector.data() + vector.size());
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const T* start, const T*end)
+inline Vector<T>& Vector<T>::append(const T* _start, const T* _end)
 {
-	AKA_ASSERT(end >= start, "Invalid range");
+	AKA_ASSERT(_end >= _start, "Invalid range");
+	T* b = begin();
+	T* e = end();
 	size_t size = m_size;
-	size_t range = (end - start);
+	size_t range = (_end - _start);
 	resize(m_size + range);
-	// Can't memcpy for type that need a constructor.
-	// TODO memcpy and call new and destruct.
-	for (size_t i = size; i < range; i++)
-		m_data[i] = start[i];
+	std::copy(_start, _end, m_data + size);
 	return *this;
 }
 template <typename T>
@@ -240,14 +239,11 @@ inline Vector<T>& Vector<T>::append(T&& value)
 template <typename T>
 inline void Vector<T>::remove(T* start, T* end)
 {
-	if (start < m_data && start >= m_data + m_size)
-		throw std::invalid_argument("Start not in range");
-	if (end <= m_data || end > m_data + m_size)
-		throw std::invalid_argument("End not in range");
-	if (end < start)
-		throw std::invalid_argument("Invalid range");
+	AKA_ASSERT(start >= m_data || start < m_data + m_size, "Start not in range");
+	AKA_ASSERT(end > m_data || end <= m_data + m_size, "End not in range");
+	AKA_ASSERT(end < start, "Invalid range");
 	size_t range = m_data + m_size - end;
-	memcpy(start, end, range * sizeof(T));
+	std::copy(end, m_data + m_size, start);
 	m_size -= (end - start);
 }
 template <typename T>
@@ -278,11 +274,13 @@ inline void Vector<T>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
+	T* b = begin();
+	T* e = end();
 	size_t oldCapacity = m_capacity;
 	while (m_capacity < size)
 		m_capacity *= 2;
 	T* buffer = new T[m_capacity]();
-	memcpy(buffer, m_data, oldCapacity * sizeof(T));
+	std::copy(b, e, buffer);
 	delete[] m_data;
 	m_data = buffer;
 }
