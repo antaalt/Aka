@@ -14,8 +14,8 @@
 
 namespace aka {
 
-template class Img<byte_t>;
-template class Img<float>;
+template struct Img<byte_t>;
+template struct Img<float>;
 
 #if defined(AKA_ORIGIN_BOTTOM_LEFT)
 constexpr const bool defaultFlipImageAtLoad = true;

@@ -501,12 +501,16 @@ inline std::vector<Str<T>> Str<T>::split(T c) const
 	std::vector<Str<T>> strings;
 	for (size_t i = 0; i < m_length; ++i)
 	{
+		// TODO handle multiple identical characters following.
 		if (m_string[i] == c && offset != i)
 		{
 			strings.push_back(substr(offset, i - offset));
 			offset = i + 1;
 		}
 	}
+	// Add last element if not empty
+	if (m_length > 0)
+		strings.push_back(substr(offset, m_length - offset));
 	return strings;
 }
 template <typename T>
