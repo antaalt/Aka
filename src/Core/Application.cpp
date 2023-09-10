@@ -109,22 +109,8 @@ void Application::resize()
 }
 void Application::onReceive(const WindowResizeEvent& event)
 {
-	if (m_width != event.width || m_height != event.height)
-	{
-		m_needClientResize = true; // Do not resize now as swapchain not already resized...
-		m_width = event.width;
-		m_height = event.height;
-	}
-}
-void Application::onReceive(const BackbufferResizeEvent& event)
-{
-	if (m_width != event.width || m_height != event.height)
-	{
-		// Should handle backbuffer & window differently...
-		m_needClientResize = true; // Do not resize now as swapchain not already resized...
-		m_width = event.width;
-		m_height = event.height;
-	}
+	// For now, we just ignore this event as window resizing is handle with swapchain recreation.
+	// But screen coordinates != pixel coordinates (aka backbuffer size)
 }
 void Application::onReceive(const QuitEvent& event)
 {
@@ -220,11 +206,13 @@ void Application::run(const Config& config)
 			if (status == gfx::SwapchainStatus::Recreated)
 			{
 				app->m_needClientResize = true;
+				graphic->getBackbufferSize(app->m_width, app->m_height);
 			}
 		}
 		else
 		{
 			app->m_needClientResize = true;
+			graphic->getBackbufferSize(app->m_width, app->m_height);
 		}
 
 		if (app->m_needClientResize)

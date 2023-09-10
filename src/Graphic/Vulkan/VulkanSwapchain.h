@@ -60,6 +60,9 @@ public:
 	TextureFormat getDepthFormat() const { return m_depthFormat; }
 
 	const VulkanFrame& getVkFrame(FrameIndex index) const { return m_frames[index.value()]; }
+
+	uint32_t width() const { return m_width; }
+	uint32_t height() const { return m_height; }
 private:
 	bool m_needRecreation;
 	uint32_t m_width, m_height;

@@ -151,6 +151,9 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	if (capabilities.maxImageCount > 0 && m_imageCount > capabilities.maxImageCount)
 		m_imageCount = capabilities.maxImageCount;
 
+	m_width = extent.width;
+	m_height = extent.height;
+
 	// Create swapchain
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -370,7 +373,6 @@ void VulkanSwapchain::recreate(VulkanGraphicDevice* device)
 	m_width = width;
 	m_height = height;
 	initialize(device, m_platform);
-	EventDispatcher<BackbufferResizeEvent>::trigger(BackbufferResizeEvent{ m_width, m_height });
 }
 
 VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)

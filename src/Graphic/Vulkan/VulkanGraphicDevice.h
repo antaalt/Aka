@@ -98,6 +98,7 @@ public:
 	RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) override;
 	FramebufferHandle get(BackbufferHandle handle, Frame* frame) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
+	void getBackbufferSize(uint32_t& width, uint32_t& height) override;
 
 	// RenderPass
 	RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) override;

@@ -157,5 +157,12 @@ const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)
 	return static_cast<const Framebuffer*>(handle.__data);
 }
 
+void VulkanGraphicDevice::getBackbufferSize(uint32_t& width, uint32_t& height)
+{
+	// TODO handle when rendering offscreen
+	width = m_swapchain.width();
+	height = m_swapchain.height();
+}
+
 };
 };

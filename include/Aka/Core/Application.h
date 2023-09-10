@@ -60,8 +60,7 @@ struct AppResizeEvent { uint32_t width; uint32_t height; };
 
 class Application : 
 	EventListener<QuitEvent>,
-	EventListener<WindowResizeEvent>,
-	EventListener<BackbufferResizeEvent>
+	EventListener<WindowResizeEvent>
 {
 public:
 	Application();
@@ -89,8 +88,6 @@ private:
 	void resize();
 	// Called on app resize
 	void onReceive(const WindowResizeEvent& event) override;
-	// Called on app backbuffer resize
-	void onReceive(const BackbufferResizeEvent& event) override;
 	// Called on app quit request
 	void onReceive(const QuitEvent& event) override;
 protected:

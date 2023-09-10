@@ -113,6 +113,7 @@ public:
 	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
 	virtual FramebufferHandle get(BackbufferHandle handle, Frame* frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
+	virtual void getBackbufferSize(uint32_t& width, uint32_t& height) = 0;
 
 	// RenderPass
 	virtual RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) = 0;
