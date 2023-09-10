@@ -156,9 +156,8 @@ void Img<T>::flip()
 {
 	// TODO could flip without a copy here.
 	const uint32_t c = getImageComponentCount(components);
-	Vector<uint8_t> flipped(bytes.size());
-	size_t componentSize = aka::size(m_format);
-	size_t stride = componentSize * width * c * sizeof(T);
+	Vector<T> flipped(bytes.size());
+	size_t stride = width * c * sizeof(T);
 	for (uint32_t i = 0; i < height; i++)
 		memcpy(flipped.data() + (height - 1 - i) * stride, bytes.data() + i * stride, stride);
 	bytes = std::move(flipped);

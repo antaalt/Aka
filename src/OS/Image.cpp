@@ -14,6 +14,9 @@
 
 namespace aka {
 
+template class Img<byte_t>;
+template class Img<float>;
+
 #if defined(AKA_ORIGIN_BOTTOM_LEFT)
 constexpr const bool defaultFlipImageAtLoad = true;
 constexpr const bool defaultFlipImageAtSave = true;
