@@ -65,7 +65,6 @@ class Application :
 {
 public:
 	Application();
-	Application(const std::vector<Layer*> layers);
 	virtual ~Application();
 private:
 	// Create the application and its resources.
@@ -116,6 +115,8 @@ public:
 	uint32_t width() const;
 	// Get the current app height
 	uint32_t height() const;
+	// Get the root layer
+	Layer& getRoot();
 public:
 	// Entry point of the application
 	static void run(const Config& config);
@@ -139,7 +140,7 @@ private:
 	ShaderRegistry* m_program;
 	AssetRegistry* m_registry;
 private:
-	std::vector<Layer*> m_layers;
+	Layer* m_root;
 	uint32_t m_width, m_height;
 	bool m_needClientResize;
 	bool m_running;

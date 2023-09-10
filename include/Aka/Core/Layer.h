@@ -5,28 +5,22 @@
 
 namespace aka {
 
-class Layer :
-	EventListener<AppCreateEvent>,
-	EventListener<AppDestroyEvent>,
-	EventListener<AppFixedUpdateEvent>,
-	EventListener<AppUpdateEvent>,
-	EventListener<AppRenderEvent>,
-	EventListener<AppFrameEvent>,
-	EventListener<AppPresentEvent>,
-	EventListener<AppResizeEvent>
+class Layer
 {
 public:
-	Layer() {}
-	virtual ~Layer() {}
+	Layer();
+	virtual ~Layer();
+	template <typename T, typename... Args> T* addLayer(Args&&... args);
 private:
-	void onReceive(const AppCreateEvent& event) { onLayerCreate(); }
-	void onReceive(const AppDestroyEvent& event) { onLayerDestroy(); }
-	void onReceive(const AppFixedUpdateEvent& event) { onLayerFixedUpdate(event.deltaTime); }
-	void onReceive(const AppUpdateEvent& event) { onLayerUpdate(event.deltaTime); }
-	void onReceive(const AppRenderEvent& event) { onLayerRender(event.frame); }
-	void onReceive(const AppFrameEvent& event) { onLayerFrame(); }
-	void onReceive(const AppPresentEvent& event) { onLayerPresent(); }
-	void onReceive(const AppResizeEvent& event) { onLayerResize(event.width, event.height); }
+	friend class Application;
+	void create();
+	void destroy();
+	void fixedUpdate(Time delta);
+	void update(Time delta);
+	void render(gfx::Frame* frame);
+	void frame();
+	void present();
+	void resize(uint32_t width, uint32_t height);
 protected:
 	virtual void onLayerCreate() {}
 	virtual void onLayerDestroy() {}
@@ -38,6 +32,20 @@ protected:
 	virtual void onLayerPresent() {}
 
 	virtual void onLayerResize(uint32_t width, uint32_t height) {}
+private:
+	Vector<Layer*> m_childrens;
 };
+
+
+template <typename T, typename... Args>
+inline T* Layer::addLayer(Args&&... args)
+{
+	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer");
+	T* layer = new T(std::forward<Args>(args)...);
+	m_childrens.append(layer);
+	// TODO should be called or prevent to call addLayer after constructor...
+	//layer->onLayerCreate(*this);
+	return layer;
+}
 
 };

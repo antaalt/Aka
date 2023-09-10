@@ -19,6 +19,7 @@ add_library (Aka
 	"src/Core/Controller.cpp"
 	"src/Core/Config.cpp" 
 	"src/Core/BitField.cpp"
+	"src/Core/Layer.cpp"
 	"src/Core/Worker/WorkerPool.cpp" 
 	"src/Core/Worker/Worker.cpp"
 	"src/Core/Worker/Job.cpp"
