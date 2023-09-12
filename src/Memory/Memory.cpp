@@ -133,6 +133,51 @@ bool Memory::operator!=(const Memory& rhs)
 	return Memory::compare(m_data, rhs.m_data, m_size) != 0;
 }
 
+namespace mem {
 
+// DArray
+//template <typename T, AllocatorCategory Category = AllocatorCategory::Default>
+//using TempVector = aka::Vector<T, RingAllocator, getAllocator(AllocatorMemoryType::Temporary, Category)
+//using PVector = aka::Vector<T, RingAllocator, getAllocator(AllocatorMemoryType::Temporary, Category)
 
+static MemoryAllocator GfxMemoryAllocator;
+static MemoryAllocator AudioMemoryAllocator;
+static MemoryAllocator DefaultMemoryAllocator;
+
+static DefaultAllocatorType GfxPersistentAllocator(&GfxMemoryAllocator, 1 << 16);
+static DefaultAllocatorType DefaultPersistentAllocator(&DefaultMemoryAllocator, 1LL << 31); // 512 MB
+
+static TemporaryAllocatorType GfxTemporaryAllocator(&GfxMemoryAllocator, 1 << 16);
+static TemporaryAllocatorType DefaultTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
+
+// There should be some memory manager running everyframe & updating all blocks.
+Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persistent, AllocatorCategory category = AllocatorCategory::Default)
+{
+	switch (memory)
+	{
+	case aka::mem::AllocatorMemoryType::Temporary: {
+		switch (category)
+		{
+		default:
+		case AllocatorCategory::Default:
+			return DefaultTemporaryAllocator;
+		case AllocatorCategory::Graphic:
+			return GfxTemporaryAllocator;
+		}
+	}
+	default:
+	case aka::mem::AllocatorMemoryType::Persistent: {
+		switch (category)
+		{
+		default:
+		case AllocatorCategory::Default:
+			return DefaultPersistentAllocator;
+		case AllocatorCategory::Graphic:
+			return GfxPersistentAllocator;
+		}
+	}
+	}
+}
+
+};
 };

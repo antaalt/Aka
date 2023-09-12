@@ -2,25 +2,26 @@
 
 namespace aka {
 
-LinearAllocator::LinearAllocator(const MemoryBlock& block) :
-	Allocator(block)
+LinearAllocator::LinearAllocator(Allocator* parent, size_t blockSize) :
+	Allocator(parent, blockSize),
+	m_offset(0)
 {
 
 }
 
 void* LinearAllocator::allocate(size_t size, AllocatorFlags flags)
 {
-	if (size + m_offset > m_memory.size)
-		throw std::bad_alloc(); // Out of memory
+	if (size + m_offset > m_memory->size)
+		request(); // Out of memory
 	size_t offset = m_offset;
 	m_offset += size;
-	return static_cast<char*>(m_memory.mem) + offset;
+	return static_cast<char*>(m_memory->mem) + offset;
 }
 void* LinearAllocator::alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags)
 {
-	if (size + m_offset > m_memory.size)
-		throw std::bad_alloc(); // Out of memory
-	size_t address = alignAdjustment((uintptr_t)m_memory.mem, alignement);
+	if (size + m_offset > m_memory->size)
+		request(); // Out of memory
+	size_t address = alignAdjustment((uintptr_t)m_memory->mem, alignement);
 
 	AKA_NOT_IMPLEMENTED;
 	return nullptr;

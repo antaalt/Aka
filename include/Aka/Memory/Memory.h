@@ -3,6 +3,7 @@
 #include <Aka/Core/Config.h>
 
 #include <Aka/Memory/Allocator/LinearAllocator.h>
+#include <Aka/Memory/Allocator/RingAllocator.h>
 #include <Aka/Memory/Allocator/DebugAllocator.h>
 
 namespace aka {
@@ -58,16 +59,21 @@ private:
 // Default allocator for whole app.
 namespace mem {
 
+enum class AllocatorMemoryType {
+	Temporary,
+	Persistent,
+};
+
+enum class AllocatorCategory {
+	Default,
+	Graphic,
+};
+
 // Until we create a better allocator, use linear
 using DefaultAllocatorType = DebugAllocator<LinearAllocator>;
+using TemporaryAllocatorType = DebugAllocator<LinearAllocator>;
 
-static MemoryBlock GfxMemoryBlock(1 << 16);
-static MemoryBlock AudioMemoryBlock(1 << 16);
-static MemoryBlock DefaultMemoryBlock(1 << 26);
-
-static DefaultAllocatorType GfxAllocator(GfxMemoryBlock);
-static DefaultAllocatorType AudioAllocator(AudioMemoryBlock);
-static DefaultAllocatorType DefaultAllocator(DefaultMemoryBlock);
+Allocator& getAllocator(AllocatorMemoryType memory, AllocatorCategory category);
 
 }
 

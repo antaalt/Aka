@@ -5,10 +5,10 @@
 
 namespace aka {
 
-class LinearAllocator : public Allocator
+class RingAllocator : public Allocator
 {
 public:
-	LinearAllocator(Allocator* parent, size_t blockSize);
+	RingAllocator(MemoryBlock& block);
 
 	void* allocate(size_t size, AllocatorFlags flags = AllocatorFlags::None) override;
 	void* alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags = AllocatorFlags::None)  override;
