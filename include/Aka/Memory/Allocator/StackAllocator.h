@@ -5,7 +5,7 @@
 
 namespace aka {
 
-class StackAllocator final : public Allocator
+/*class StackAllocator final : public Allocator
 {
 public:
 	StackAllocator(void* mem, size_t size) :
@@ -16,7 +16,7 @@ public:
 	~StackAllocator()
 	{
 	}
-	void* allocate(size_t size, size_t alignement = 0) override
+	void* allocate(size_t size, size_t alignement, size_t offset) override
 	{
 		uintptr_t current = (uintptr_t)m_mem + m_used;
 		size_t headerSize = sizeof(uint8_t);
@@ -48,6 +48,6 @@ public:
 	}
 private:
 	void* m_current;
-};
+};*/
 
 };

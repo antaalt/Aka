@@ -24,7 +24,12 @@ struct ShaderKey
 	Vector<String> macros;
 
 	ShaderType type;
-	String entryPoint;
+	String entryPoint = "main";
+
+	ShaderKey& setPath(const Path& _path) { path = _path; return *this; }
+	ShaderKey& setType(ShaderType _type) { type = _type; return *this; }
+	ShaderKey& setEntryPoint(const String& _entryPoint) { entryPoint = _entryPoint; return *this; }
+	ShaderKey& addMacro(const String& _macro) { macros.append(_macro); return *this; }
 
 	static ShaderKey generate(const Path& path, ShaderType type);
 	static ShaderKey fromString(const String& shader, ShaderType type);
@@ -33,6 +38,8 @@ struct ShaderKey
 struct ProgramKey
 {
 	Vector<ShaderKey> shaders;
+
+	ProgramKey& add(const ShaderKey& key) { shaders.append(key); return *this; }
 };
 
 bool operator<(const ShaderKey& lhs, const ShaderKey& rhs);

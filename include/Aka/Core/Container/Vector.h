@@ -1,39 +1,39 @@
 #pragma once
 
-#include <vector>
+#include <memory>
 
 #include <Aka/Core/Config.h>
+#include <Aka/Memory/Memory.h>
 
 namespace aka {
 
-template <typename T>
+template <typename T, class AllocatorType = mem::DefaultAllocatorType>
 class Vector final
 {
+	static const size_t defaultCapacity = 16;
 public:
 	Vector();
-	Vector(const std::vector<T>& vector);
-	Vector(const T* data, size_t size);
-	Vector(size_t size, const T& value);
-	explicit Vector(size_t size);
-	Vector(const Vector& vector);
+	explicit Vector(AllocatorType& allocator);
+	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::DefaultAllocator);
+	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::DefaultAllocator);
+	explicit Vector(size_t size, AllocatorType& allocator = mem::DefaultAllocator);
+	Vector(const Vector& vector, AllocatorType& allocator = mem::DefaultAllocator);
 	Vector(Vector&& vector);
 	Vector& operator=(const Vector& vector);
 	Vector& operator=(Vector&& vector);
 	~Vector();
 
-	operator std::vector<T>() const;
-
 	T& operator[](size_t index);
 	const T& operator[](size_t index) const;
 
-	bool operator==(const Vector<T>& vector) const;
-	bool operator!=(const Vector<T>& vector) const;
-	bool operator<(const Vector<T>& vector) const;
+	bool operator==(const Vector<T, AllocatorType>& vector) const;
+	bool operator!=(const Vector<T, AllocatorType>& vector) const;
+	bool operator<(const Vector<T, AllocatorType>& vector) const;
 
-	Vector<T>& append(const Vector<T>& vector);
-	Vector<T>& append(const T* start, const T* end);
-	Vector<T>& append(const T& value);
-	Vector<T>& append(T&& value);
+	Vector<T, AllocatorType>& append(const Vector<T, AllocatorType>& vector);
+	Vector<T, AllocatorType>& append(const T* start, const T* end);
+	Vector<T, AllocatorType>& append(const T& value);
+	Vector<T, AllocatorType>& append(T&& value);
 
 	void remove(T* start, T* end);
 	void remove(T* value);
@@ -73,106 +73,112 @@ public:
 	// Pointer to ending of vector
 	const T* end() const;
 private:
+	AllocatorType& m_allocator;
 	T* m_data;
 	size_t m_size;
 	size_t m_capacity;
 };
 
-
-template <typename T>
-inline Vector<T>::Vector() :
-	m_data(new T[16]),
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::Vector() :
+	Vector(mem::DefaultAllocator)
+{
+}
+template<typename T, class AllocatorType>
+inline Vector<T, AllocatorType>::Vector(AllocatorType& allocator) :
+	m_allocator(mem::DefaultAllocator),
+	m_data(static_cast<T*>(m_allocator.allocate(defaultCapacity * sizeof(T)))),
 	m_size(0),
-	m_capacity(16)
+	m_capacity(defaultCapacity)
 {
 }
-template <typename T>
-inline Vector<T>::Vector(const std::vector<T>& vector) :
-	Vector(vector.data(), vector.size())
-{
-}
-template <typename T>
-inline Vector<T>::Vector(const T* data, size_t size) :
-	m_data(new T[size]),
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::Vector(const T* data, size_t size, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(static_cast<T*>(m_allocator.allocate(size * sizeof(T)))),
 	m_size(size),
 	m_capacity(size)
 {
-	std::copy(data, data + size, begin());
+	std::uninitialized_copy(data, data + size, begin());
 }
-template <typename T>
-inline Vector<T>::Vector(size_t size, const T& value) :
-	m_data(new T[size]),
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::Vector(size_t size, const T& value, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(static_cast<T*>(m_allocator.allocate(size * sizeof(T)))),
 	m_size(size),
 	m_capacity(size)
 {
-	for (uint32_t i = 0; i < m_size; i++)
-		m_data[i] = value;
+	std::uninitialized_fill(begin(), end(), value);
 }
-template <typename T>
-inline Vector<T>::Vector(size_t size) :
-	Vector(size, T())
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::Vector(size_t size, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(static_cast<T*>(m_allocator.allocate(size * sizeof(T)))),
+	m_size(size),
+	m_capacity(size)
+{
+	std::uninitialized_default_construct(begin(), end());
+}
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::Vector(const Vector& vector, AllocatorType& allocator) :
+	Vector(vector.data(), vector.size(), allocator)
 {
 }
-template <typename T>
-inline Vector<T>::Vector(const Vector& vector) :
-	m_data(new T[vector.m_capacity]),
-	m_size(vector.m_size),
-	m_capacity(vector.m_capacity)
-{
-	std::copy(vector.data(), vector.data() + vector.size(), begin());
-}
-template <typename T>
-inline Vector<T>::Vector(Vector&& vector) :
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::Vector(Vector&& vector) :
+	m_allocator(mem::DefaultAllocator),
 	m_data(nullptr),
 	m_size(0),
 	m_capacity(0)
 {
+	//std::swap(m_allocator, vector.m_allocator);
 	std::swap(m_data, vector.m_data);
 	std::swap(m_size, vector.m_size);
 	std::swap(m_capacity, vector.m_capacity);
 }
-template <typename T>
-inline Vector<T>& Vector<T>::operator=(const Vector& vector)
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>& Vector<T, AllocatorType>::operator=(const Vector& vector)
 {
 	resize(vector.size());
 	std::copy(vector.data(), vector.data() + vector.size(), begin());
 	return *this;
 }
-template <typename T>
-inline Vector<T>& Vector<T>::operator=(Vector&& vector)
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>& Vector<T, AllocatorType>::operator=(Vector&& vector)
 {
+	//std::swap(m_allocator, vector.m_allocator);
 	std::swap(m_data, vector.m_data);
 	std::swap(m_size, vector.m_size);
 	std::swap(m_capacity, vector.m_capacity);
 	return *this;
 }
-template <typename T>
-inline Vector<T>::~Vector()
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>::~Vector()
 {
-	delete[] m_data;
+	if (m_capacity > 0)
+	{
+		std::destroy(begin(), end());
+		m_allocator.deallocate(m_data, m_capacity * sizeof(T));
+	}
 }
-template <typename T>
-inline Vector<T>::operator std::vector<T>() const
-{
-	return std::vector<T>(m_data, m_data + m_size);
-}
-template <typename T>
-inline T& Vector<T>::operator[](size_t index)
-{
-	AKA_ASSERT(index < m_size, "Out of range");
-	return m_data[index];
-}
-template <typename T>
-inline const T& Vector<T>::operator[](size_t index) const
+template <typename T, typename AllocatorType>
+inline T& Vector<T, AllocatorType>::operator[](size_t index)
 {
 	AKA_ASSERT(index < m_size, "Out of range");
 	return m_data[index];
 }
-template <typename T>
-inline bool Vector<T>::operator==(const Vector<T>& value) const
+template <typename T, typename AllocatorType>
+inline const T& Vector<T, AllocatorType>::operator[](size_t index) const
+{
+	AKA_ASSERT(index < m_size, "Out of range");
+	return m_data[index];
+}
+template <typename T, typename AllocatorType>
+inline bool Vector<T, AllocatorType>::operator==(const Vector<T, AllocatorType>& value) const
 {
 	if (size() != value.size())
 		return false;
+	// TODO: use std::equal
 	for (size_t i = 0; i < size(); i++)
 	{
 		if (m_data[i] != value.m_data[i])
@@ -180,8 +186,8 @@ inline bool Vector<T>::operator==(const Vector<T>& value) const
 	}
 	return true;
 }
-template <typename T>
-inline bool Vector<T>::operator!=(const Vector<T>& value) const
+template <typename T, typename AllocatorType>
+inline bool Vector<T, AllocatorType>::operator!=(const Vector<T, AllocatorType>& value) const
 {
 	if (size() != value.size())
 		return true;
@@ -192,18 +198,18 @@ inline bool Vector<T>::operator!=(const Vector<T>& value) const
 	}
 	return false;
 }
-template <typename T>
-inline bool Vector<T>::operator<(const Vector<T>& value) const
+template <typename T, typename AllocatorType>
+inline bool Vector<T, AllocatorType>::operator<(const Vector<T, AllocatorType>& value) const
 {
 	AKA_NOT_IMPLEMENTED;
 }
-template <typename T>
-inline Vector<T>& Vector<T>::append(const Vector<T>& vector)
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>& Vector<T, AllocatorType>::append(const Vector<T, AllocatorType>& vector)
 {
 	return append(vector.data(), vector.data() + vector.size());
 }
-template <typename T>
-inline Vector<T>& Vector<T>::append(const T* _start, const T* _end)
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>& Vector<T, AllocatorType>::append(const T* _start, const T* _end)
 {
 	AKA_ASSERT(_end >= _start, "Invalid range");
 	T* b = begin();
@@ -211,130 +217,131 @@ inline Vector<T>& Vector<T>::append(const T* _start, const T* _end)
 	size_t size = m_size;
 	size_t range = (_end - _start);
 	resize(m_size + range);
-	std::copy(_start, _end, m_data + size);
+	std::uninitialized_copy(_start, _end, m_data + size);
 	return *this;
 }
-template <typename T>
-inline Vector<T>& Vector<T>::append(const T& value)
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>& Vector<T, AllocatorType>::append(const T& value)
 {
 	size_t off = m_size;
 	resize(m_size + 1);
-	m_data[off] = value;
+	std::uninitialized_copy_n(&value, 1, m_data + off);
 	return *this;
 }
-template <typename T>
-inline Vector<T>& Vector<T>::append(T&& value)
+template <typename T, typename AllocatorType>
+inline Vector<T, AllocatorType>& Vector<T, AllocatorType>::append(T&& value)
 {
 	size_t off = m_size;
 	resize(m_size + 1);
-	m_data[off] = std::move(value);
+	std::uninitialized_move_n(&value, 1, m_data + off);
 	return *this;
 }
-template <typename T>
-inline void Vector<T>::remove(T* start, T* end)
+template <typename T, typename AllocatorType>
+inline void Vector<T, AllocatorType>::remove(T* start, T* end)
 {
 	AKA_ASSERT(start >= m_data || start < m_data + m_size, "Start not in range");
 	AKA_ASSERT(end > m_data || end <= m_data + m_size, "End not in range");
 	AKA_ASSERT(end < start, "Invalid range");
 	size_t range = m_data + m_size - end;
 	std::copy(end, m_data + m_size, start);
+	std::destroy(end, m_data + m_size);
 	m_size -= (end - start);
 }
-template <typename T>
-inline void Vector<T>::remove(T* value)
+template <typename T, typename AllocatorType>
+inline void Vector<T, AllocatorType>::remove(T* value)
 {
 	remove(value, value + 1);
 }
-template <typename T>
-inline size_t Vector<T>::size() const
+template <typename T, typename AllocatorType>
+inline size_t Vector<T, AllocatorType>::size() const
 {
 	return m_size;
 }
-template <typename T>
-inline size_t Vector<T>::capacity() const
+template <typename T, typename AllocatorType>
+inline size_t Vector<T, AllocatorType>::capacity() const
 {
 	return m_capacity;
 }
-template <typename T>
-inline void Vector<T>::resize(size_t size)
+template <typename T, typename AllocatorType>
+inline void Vector<T, AllocatorType>::resize(size_t size)
 {
 	if (m_size == size)
 		return;
 	reserve(size);
 	m_size = size;
 }
-template <typename T>
-inline void Vector<T>::reserve(size_t size)
+template <typename T, typename AllocatorType>
+inline void Vector<T, AllocatorType>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
 	T* b = begin();
 	T* e = end();
 	size_t oldCapacity = m_capacity;
-	while (m_capacity < size)
-		m_capacity *= 2;
-	T* buffer = new T[m_capacity]();
-	std::copy(b, e, buffer);
-	delete[] m_data;
+	m_capacity = size;
+	T* buffer = static_cast<T*>(m_allocator.allocate(m_capacity * sizeof(T)));
+	std::uninitialized_move(b, e, buffer);
+	std::destroy(b, e); // needed ?
+	m_allocator.deallocate(m_data, oldCapacity * sizeof(T));
 	m_data = buffer;
 }
-template <typename T>
-inline void Vector<T>::clear()
+template <typename T, typename AllocatorType>
+inline void Vector<T, AllocatorType>::clear()
 {
 	m_size = 0;
 }
-template <typename T>
-inline bool Vector<T>::empty() const
+template <typename T, typename AllocatorType>
+inline bool Vector<T, AllocatorType>::empty() const
 {
 	return m_size == 0;
 }
-template <typename T>
-inline T* Vector<T>::data()
+template <typename T, typename AllocatorType>
+inline T* Vector<T, AllocatorType>::data()
 {
 	return m_data;
 }
-template <typename T>
-inline const T* Vector<T>::data() const
+template <typename T, typename AllocatorType>
+inline const T* Vector<T, AllocatorType>::data() const
 {
 	return m_data;
 }
-template <typename T>
-inline T& Vector<T>::first()
+template <typename T, typename AllocatorType>
+inline T& Vector<T, AllocatorType>::first()
 {
 	return m_data[0];
 }
-template <typename T>
-inline const T& Vector<T>::first() const
+template <typename T, typename AllocatorType>
+inline const T& Vector<T, AllocatorType>::first() const
 {
 	return m_data[0];
 }
-template <typename T>
-inline T& Vector<T>::last()
+template <typename T, typename AllocatorType>
+inline T& Vector<T, AllocatorType>::last()
 {
 	return m_data[m_size - 1];
 }
-template <typename T>
-inline const T& Vector<T>::last() const
+template <typename T, typename AllocatorType>
+inline const T& Vector<T, AllocatorType>::last() const
 {
 	return m_data[m_size - 1];
 }
-template <typename T>
-inline T* Vector<T>::begin()
+template <typename T, typename AllocatorType>
+inline T* Vector<T, AllocatorType>::begin()
 {
 	return m_data;
 }
-template <typename T>
-inline T* Vector<T>::end()
+template <typename T, typename AllocatorType>
+inline T* Vector<T, AllocatorType>::end()
 {
 	return m_data + m_size;
 }
-template <typename T>
-inline const T* Vector<T>::begin() const
+template <typename T, typename AllocatorType>
+inline const T* Vector<T, AllocatorType>::begin() const
 {
 	return m_data;
 }
-template <typename T>
-inline const T* Vector<T>::end() const
+template <typename T, typename AllocatorType>
+inline const T* Vector<T, AllocatorType>::end() const
 {
 	return m_data + m_size;
 }

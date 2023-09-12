@@ -2,24 +2,28 @@
 
 namespace aka {
 
-LinearAllocator::LinearAllocator(void* chunk, size_t size) :
-	Allocator(chunk, size)
+LinearAllocator::LinearAllocator(const MemoryBlock& block) :
+	Allocator(block)
 {
+
 }
 
-LinearAllocator::~LinearAllocator()
+void* LinearAllocator::allocate(size_t size, AllocatorFlags flags)
 {
+	if (size + m_offset > m_memory.size)
+		throw std::bad_alloc(); // Out of memory
+	size_t offset = m_offset;
+	m_offset += size;
+	return static_cast<char*>(m_memory.mem) + offset;
 }
-
-void* LinearAllocator::allocate(size_t size, size_t alignement)
+void* LinearAllocator::alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags)
 {
-	uintptr_t current = (uintptr_t)m_mem + m_used;
-	size_t adjustment = Allocator::alignAdjustment(current, alignement);
-	if (m_used + adjustment + size > m_size)
-		return nullptr; // Not enough space in allocator
-	uintptr_t aligned = current + adjustment;
-	m_used += size + adjustment;
-	return (void*)aligned;
+	if (size + m_offset > m_memory.size)
+		throw std::bad_alloc(); // Out of memory
+	size_t address = alignAdjustment((uintptr_t)m_memory.mem, alignement);
+
+	AKA_NOT_IMPLEMENTED;
+	return nullptr;
 }
 
 void LinearAllocator::deallocate(void* address, size_t size)
@@ -27,14 +31,9 @@ void LinearAllocator::deallocate(void* address, size_t size)
 	// Linear allocator does not need to deallocate.
 }
 
-void LinearAllocator::reset()
+void LinearAllocator::alignedDeallocate(void* address, size_t size)
 {
-	m_used = 0;
-}
-
-bool LinearAllocator::contiguous() const
-{
-	return true;
+	// Linear allocator does not need to deallocate.
 }
 
 };

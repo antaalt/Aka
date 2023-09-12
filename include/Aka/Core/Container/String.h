@@ -1,13 +1,13 @@
 #pragma once
 
 #include <stdint.h>
-#include <vector>
 #include <string>
 #include <iostream>
 #include <sstream>
 
 #include <Aka/Core/Config.h>
 #include <Aka/Core/Geometry.h>
+#include <Aka/Core/Container/Vector.h>
 
 namespace aka {
 
@@ -108,7 +108,7 @@ public:
 	// Find the last occurence of the character and return its position
 	size_t findLast(T character, size_t offset = 0) const;
 	// Find a character and split the string
-	std::vector<Str> split(T c) const;
+	Vector<Str> split(T c) const;
 	// Create a new string from start to end of string
 	Str substr(size_t start) const;
 	// Create a new string from start to end
@@ -495,22 +495,22 @@ inline Str<T> Str<T>::from(U value)
 }
 
 template <typename T>
-inline std::vector<Str<T>> Str<T>::split(T c) const
+inline Vector<Str<T>> Str<T>::split(T c) const
 {
 	size_t offset = 0;
-	std::vector<Str<T>> strings;
+	Vector<Str<T>> strings;
 	for (size_t i = 0; i < m_length; ++i)
 	{
 		// TODO handle multiple identical characters following.
 		if (m_string[i] == c && offset != i)
 		{
-			strings.push_back(substr(offset, i - offset));
+			strings.append(substr(offset, i - offset));
 			offset = i + 1;
 		}
 	}
 	// Add last element if not empty
 	if (m_length > 0)
-		strings.push_back(substr(offset, m_length - offset));
+		strings.append(substr(offset, m_length - offset));
 	return strings;
 }
 template <typename T>

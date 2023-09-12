@@ -5,16 +5,17 @@
 
 namespace aka {
 
-class LinearAllocator final : public Allocator
+class LinearAllocator : public Allocator
 {
 public:
-	LinearAllocator(void* chunk, size_t size);
-	~LinearAllocator();
+	LinearAllocator(const MemoryBlock& block);
 
-	void* allocate(size_t size, size_t alignement = 0) override;
-	void deallocate(void* address, size_t size) override;
-	void reset() override;
-	bool contiguous() const override;
+	void* allocate(size_t size, AllocatorFlags flags = AllocatorFlags::None) override;
+	void* alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags = AllocatorFlags::None)  override;
+	void deallocate(void* elements, size_t size) override;
+	void alignedDeallocate(void* elements, size_t size) override;
+private:
+	size_t m_offset;
 };
 
 };

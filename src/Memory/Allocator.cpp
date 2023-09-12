@@ -1,31 +1,18 @@
 #include <Aka/Memory/Allocator.h>
 
+#include <Aka/Memory/Memory.h>
+
 namespace aka {
 
-Allocator::Allocator(void* mem, size_t size) :
-	m_mem(mem),
-	m_size(size),
-	m_used(0)
+MemoryBlock::MemoryBlock(size_t _size) :
+	mem(Memory::alloc(_size)),
+	size(_size)
 {
 }
 
-Allocator::~Allocator()
+MemoryBlock::~MemoryBlock()
 {
-}
-
-const void* Allocator::mem() const
-{
-	return m_mem;
-}
-
-size_t Allocator::size() const
-{
-	return m_size;
-}
-
-size_t Allocator::used() const
-{
-	return m_used;
+	Memory::free(mem);
 }
 
 uintptr_t Allocator::align(uintptr_t address, size_t alignment)

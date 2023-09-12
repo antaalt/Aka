@@ -2,7 +2,7 @@
 
 namespace aka {
 
-PoolAllocator::PoolAllocator(void* mem, size_t size, size_t objectSize, size_t objectAlignment) :
+/*PoolAllocator::PoolAllocator(void* mem, size_t size, size_t objectSize, size_t objectAlignment) :
 	Allocator(mem, size),
 	m_objectAlignment(objectAlignment),
 	m_objectCount(0),
@@ -54,6 +54,6 @@ void PoolAllocator::reset()
 bool PoolAllocator::contiguous() const
 {
 	return false;
-}
+}*/
 
 };

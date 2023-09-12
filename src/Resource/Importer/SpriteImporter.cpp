@@ -140,7 +140,7 @@ struct Aseprite {
 		std::vector<Cel> cels;
 
 		// Generate an image from all the cells
-		std::vector<Color32> image(const Aseprite& ase) const;
+		Vector<Color32> image(const Aseprite& ase) const;
 	};
 
 	Word width;
@@ -169,9 +169,9 @@ bool Aseprite::Layer::hasFlag(LayerFlags flag) const
 	return ((int)flag & (int)this->flags) == (int)flag;
 }
 
-std::vector<Aseprite::Color32> Aseprite::Frame::image(const Aseprite& ase) const
+Vector<Aseprite::Color32> Aseprite::Frame::image(const Aseprite& ase) const
 {
-	std::vector<Color32> pixels(ase.width * ase.height, Color32{ 0 });
+	Vector<Color32> pixels(ase.width * ase.height, Color32{ 0 });
 	for (const Cel& cel : cels)
 	{
 		const Layer& layer = ase.layers[cel.layerID];
