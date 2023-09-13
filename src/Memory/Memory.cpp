@@ -138,17 +138,18 @@ namespace mem {
 // DArray
 //template <typename T, AllocatorCategory Category = AllocatorCategory::Default>
 //using TempVector = aka::Vector<T, RingAllocator, getAllocator(AllocatorMemoryType::Temporary, Category)
-//using PVector = aka::Vector<T, RingAllocator, getAllocator(AllocatorMemoryType::Temporary, Category)
 
 static MemoryAllocator GfxMemoryAllocator;
 static MemoryAllocator AudioMemoryAllocator;
 static MemoryAllocator DefaultMemoryAllocator;
 
 static DefaultAllocatorType GfxPersistentAllocator(&GfxMemoryAllocator, 1 << 16);
-static DefaultAllocatorType DefaultPersistentAllocator(&DefaultMemoryAllocator, 1LL << 31); // 512 MB
+static DefaultAllocatorType DefaultPersistentAllocator(&DefaultMemoryAllocator, 1LL << 31);
+static DefaultAllocatorType StringPersistentAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
 
 static TemporaryAllocatorType GfxTemporaryAllocator(&GfxMemoryAllocator, 1 << 16);
 static TemporaryAllocatorType DefaultTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
+static TemporaryAllocatorType StringTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16);
 
 // There should be some memory manager running everyframe & updating all blocks.
 Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persistent, AllocatorCategory category = AllocatorCategory::Default)
@@ -160,9 +161,11 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 		{
 		default:
 		case AllocatorCategory::Default:
-			return DefaultTemporaryAllocator;
+			return DefaultMemoryAllocator;// DefaultTemporaryAllocator;
 		case AllocatorCategory::Graphic:
-			return GfxTemporaryAllocator;
+			return DefaultMemoryAllocator;//GfxTemporaryAllocator;
+		case AllocatorCategory::String:
+			return DefaultMemoryAllocator;//StringTemporaryAllocator;
 		}
 	}
 	default:
@@ -171,9 +174,11 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 		{
 		default:
 		case AllocatorCategory::Default:
-			return DefaultPersistentAllocator;
+			return DefaultMemoryAllocator;//DefaultPersistentAllocator;
 		case AllocatorCategory::Graphic:
-			return GfxPersistentAllocator;
+			return DefaultMemoryAllocator;//GfxPersistentAllocator;
+		case AllocatorCategory::String:
+			return DefaultMemoryAllocator;//StringPersistentAllocator;
 		}
 	}
 	}

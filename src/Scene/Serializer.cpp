@@ -12,16 +12,16 @@ struct Transform2D
 };
 
 
-std::string Serializer::serialize(const World& world)
+String Serializer::serialize(const World& world)
 {
 	Serializer serializer;
 	world.each([&](Entity entity) {
 		serializer.serialize(serializer, entity);
 	});
-	return std::string();
+	return String();
 }
 
-std::string Serializer::serialize(Serializer& s, Entity entity)
+String Serializer::serialize(Serializer& s, Entity entity)
 {
 	/*if (entity.has<Transform2D>()) s.serialize<Transform2D>(s, entity.get<Transform2D>());
 	if (entity.has<Transform2D>()) s.serialize<Transform2D>(s, entity.get<Transform2D>());
@@ -31,21 +31,21 @@ std::string Serializer::serialize(Serializer& s, Entity entity)
 	if (entity.has<Transform2D>()) s.serialize<Transform2D>(s, entity.get<Transform2D>());
 	if (entity.has<Transform2D>()) s.serialize<Transform2D>(s, entity.get<Transform2D>());
 	if (entity.has<Transform2D>()) s.serialize<Transform2D>(s, entity.get<Transform2D>());*/
-	return std::string();
+	return String();
 }
 
 template <typename T>
-std::string Serializer::serialize(Serializer& s, T& component)
+String Serializer::serialize(Serializer& s, T& component)
 {
 	Logger::warn("Component ", ComponentHandle<T>::name, " not serializable.");
-	return std::string();
+	return String();
 }
 
 template <>
-std::string Serializer::serialize<Transform2D>(Serializer& s, Transform2D& component)
+String Serializer::serialize<Transform2D>(Serializer& s, Transform2D& component)
 {
 	//serializer.write<vec2f>(component.pos);
-	return std::string();
+	return String();
 }
 
 };

@@ -6,14 +6,14 @@ namespace aka {
 
 struct Serializer
 {
-	static std::string serialize(const World& world);
+	static String serialize(const World& world);
 
 private:
 	// Serialize an entity
-	std::string serialize(Serializer& s, Entity entity);
+	String serialize(Serializer& s, Entity entity);
 	// Serialize an entity component
 	template <typename T>
-	std::string serialize(Serializer& s, T& component);
+	String serialize(Serializer& s, T& component);
 };
 
 

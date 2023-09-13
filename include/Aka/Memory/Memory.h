@@ -67,6 +67,7 @@ enum class AllocatorMemoryType {
 enum class AllocatorCategory {
 	Default,
 	Graphic,
+	String,
 };
 
 // Until we create a better allocator, use linear

@@ -26,7 +26,7 @@ void AssetRegistry::parse(const Path& path)
 			asset.type = ResourceType::Buffer;
 			for (auto& buffer : json["buffers"].items())
 			{
-				asset.path = Path(buffer.value().get<std::string>());
+				asset.path = Path(buffer.value().get<std::string>().c_str());
 				asset.diskSize = OS::File::size(asset.path);
 				add(buffer.key().c_str(), asset);
 			}
@@ -35,7 +35,7 @@ void AssetRegistry::parse(const Path& path)
 			asset.type = ResourceType::Mesh;
 			for (auto& mesh : json["meshes"].items())
 			{
-				asset.path = Path(mesh.value().get<std::string>());
+				asset.path = Path(mesh.value().get<std::string>().c_str());
 				asset.diskSize = OS::File::size(asset.path);
 				add(mesh.key().c_str(), asset);
 			}
@@ -44,7 +44,7 @@ void AssetRegistry::parse(const Path& path)
 			asset.type = ResourceType::Texture;
 			for (auto& texture : json["images"].items())
 			{
-				asset.path = Path(texture.value().get<std::string>());
+				asset.path = Path(texture.value().get<std::string>().c_str());
 				asset.diskSize = OS::File::size(asset.path);
 				add(texture.key().c_str(), asset);
 			}
@@ -53,7 +53,7 @@ void AssetRegistry::parse(const Path& path)
 			asset.type = ResourceType::Audio;
 			for (auto& audio : json["audios"].items())
 			{
-				asset.path = Path(audio.value().get<std::string>());
+				asset.path = Path(audio.value().get<std::string>().c_str());
 				asset.diskSize = OS::File::size(asset.path);
 				add(audio.key().c_str(), asset);
 			}
@@ -62,7 +62,7 @@ void AssetRegistry::parse(const Path& path)
 			asset.type = ResourceType::Font;
 			for (auto& font : json["fonts"].items())
 			{
-				asset.path = Path(font.value().get<std::string>());
+				asset.path = Path(font.value().get<std::string>().c_str());
 				asset.diskSize = OS::File::size(asset.path);
 				add(font.key().c_str(), asset);
 			}
@@ -98,10 +98,11 @@ void AssetRegistry::serialize(const Path& path)
 			json[typeString][name.cstr()] = asset.path.cstr();
 		}
 #if defined(AKA_DEBUG)
-		str = json.dump(4); // Pretty print
+		std::string stdstr = json.dump(4); // Pretty print
 #else
-		str = json.dump();
+		std::string stdstr = json.dump();
 #endif
+		str = String(stdstr.data(), stdstr.size());
 	}
 	catch (const nlohmann::json::exception& e)
 	{

@@ -101,14 +101,14 @@ struct Aseprite {
 	};
 
 	struct Tag {
-		std::string name;
+		String name;
 		Word from, to;
 		LoopAnimationDirection direction;
 		Byte rgb[3];
 	};
 
 	struct UserData {
-		std::string string;
+		String string;
 		Byte color[4];
 	};
 
@@ -121,11 +121,11 @@ struct Aseprite {
 		Short x, y;
 		Byte opacity;
 		Word width, height;
-		std::vector<Color32> pixels;
+		Vector<Color32> pixels;
 	};
 
 	struct Layer : UserData {
-		std::string name;
+		String name;
 		LayerType type;
 		LayerBlendMode blendMode;
 		LayerFlags flags;
@@ -137,7 +137,7 @@ struct Aseprite {
 
 	struct Frame {
 		Word duration;
-		std::vector<Cel> cels;
+		Vector<Cel> cels;
 
 		// Generate an image from all the cells
 		Vector<Color32> image(const Aseprite& ase) const;
@@ -148,11 +148,11 @@ struct Aseprite {
 	ColorDepth colorDepth;
 	DWord flags; // 1 = layer opacity has valid value
 	Word speed; // deprecated
-	std::vector<Frame> frames;
-	std::vector<Layer> layers;
-	std::vector<Tag> tags;
-	std::vector<Slice> slices;
-	std::vector<uint8_t> palette;
+	Vector<Frame> frames;
+	Vector<Layer> layers;
+	Vector<Tag> tags;
+	Vector<Slice> slices;
+	Vector<uint8_t> palette;
 
 	using BlendFunc = std::function<Color32(const Color32& src, const Color32& dst, Byte opacity)>;
 
@@ -296,8 +296,7 @@ Aseprite Aseprite::parse(Stream& reader)
 					break;
 				}
 				case Aseprite::ChunkType::LayerChunk: {
-					ase.layers.emplace_back();
-					Aseprite::Layer& layer = ase.layers.back();
+					Aseprite::Layer& layer = ase.layers.emplace();
 					layer.flags = archive.read<Aseprite::LayerFlags>();
 					layer.type = archive.read<Aseprite::LayerType>();
 					layer.childLevel = archive.read<Aseprite::Word>();
@@ -315,8 +314,7 @@ Aseprite Aseprite::parse(Stream& reader)
 					break;
 				}
 				case Aseprite::ChunkType::CelChunk: {
-					frame.cels.emplace_back();
-					Aseprite::Cel& cel = frame.cels.back();
+					Aseprite::Cel& cel = frame.cels.emplace();
 					cel.layerID = archive.read<Aseprite::Word>();
 					cel.x = archive.read<Aseprite::Short>();
 					cel.y = archive.read<Aseprite::Short>();

@@ -237,7 +237,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 
 	// Set define values
 	std::vector<std::string> processes;
-	std::string defs = "#extension GL_GOOGLE_include_directive : require\n";
+	String defs = "#extension GL_GOOGLE_include_directive : require\n";
 	// TODO move these defines in key.macro ? as mandatory macros
 #if defined(AKA_ORIGIN_TOP_LEFT)
 	defs += "#define AKA_FLIP_UV\n";
@@ -250,9 +250,9 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	for (const String& string : key.macros)
 	{
 		defs += "#define " + string + "\n";
-		processes.push_back("D" + string);
+		processes.push_back("D" + std::string(string.data(), string.size()));
 	}
-	shader.setPreamble(defs.c_str());
+	shader.setPreamble(defs.cstr());
 	shader.addProcesses(processes);
 
 	// Set include directories

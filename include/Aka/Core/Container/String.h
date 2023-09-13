@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <string>
 #include <iostream>
 #include <sstream>
 
@@ -14,26 +13,25 @@ namespace aka {
 template <typename T = char>
 class Str final
 {
+	using AllocatorType = Allocator;
+	static const size_t defaultCapacity = 16;
 public:
 	using Char = T;
 	static const size_t invalid = -1;
-private:
-	static const size_t defaultCapacity = 16;
 public:
 	Str();
-	Str(const std::basic_string<T>& string);
-	Str(const Str& string);
-	Str(Str&& string);
 	Str(const T* string);
-	Str(const T* string, size_t length);
-	Str(size_t length, T character);
-	explicit Str(size_t length);
+	explicit Str(AllocatorType& allocator);
+	explicit Str(const T* string, AllocatorType& allocator);
+	explicit Str(const T* string, size_t length, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
+	explicit Str(size_t length, T character, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
+	explicit Str(size_t length, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
+	Str(const Str& string, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
+	Str(Str&& string, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
 	Str& operator=(const Str& string);
 	Str& operator=(Str&& string);
 	Str& operator=(const T* string);
 	~Str();
-
-	operator std::basic_string<T>() const;
 
 	T& operator[](size_t index);
 	const T& operator[](size_t index) const;
@@ -41,6 +39,9 @@ public:
 	bool operator==(const Str& string) const;
 	bool operator!=(const Str& string) const;
 	bool operator<(const Str& string) const;
+	bool operator>(const Str& string) const;
+	bool operator<=(const Str& string) const;
+	bool operator>=(const Str& string) const;
 	bool operator==(const T* string) const;
 	bool operator!=(const T* string) const;
 
@@ -58,6 +59,8 @@ public:
 
 	// Get the size of the string
 	size_t length() const;
+	// Get the size of the string
+	size_t size() const;
 	// Get the capacity of the string
 	size_t capacity() const;
 	// Resize the string
@@ -72,6 +75,10 @@ public:
 	T* cstr();
 	// Pointer to the string
 	const T* cstr() const;
+	// Pointer to the string
+	T* data();
+	// Pointer to the string
+	const T* data() const;
 	// Last character of string
 	T last() const;
 	// Pointer to beginning of string
@@ -115,6 +122,7 @@ public:
 	Str substr(size_t start, size_t len) const;
 
 private:
+	AllocatorType& m_allocator;
 	T* m_string;
 	size_t m_length;
 	size_t m_capacity;
@@ -131,33 +139,24 @@ inline Str<T>::Str() :
 {
 }
 template<typename T>
-inline Str<T>::Str(const std::basic_string<T>& string) :
-	Str<T>(string.c_str(), string.length())
+inline Str<T>::Str(const T* string) :
+	Str<T>(string, Str<T>::length(string))
 {
 }
 template<typename T>
-inline Str<T>::Str(const Str<T>& str) :
-	Str<T>(str.m_string, str.m_length)
+inline Str<T>::Str(AllocatorType& allocator) :
+	Str<T>(Str<T>::null(), 0, allocator)
 {
 }
 template<typename T>
-inline Str<T>::Str(Str<T>&& string) :
-	m_string(nullptr),
-	m_length(0),
-	m_capacity(0)
-{
-	std::swap(m_string, string.m_string);
-	std::swap(m_length, string.m_length);
-	std::swap(m_capacity, string.m_capacity);
-}
-template<typename T>
-inline Str<T>::Str(const T* str) :
-	Str<T>(str, Str<T>::length(str))
+inline Str<T>::Str(const T* str, AllocatorType& allocator) :
+	Str<T>(str, Str<T>::length(str), allocator)
 {
 }
 template<typename T>
-inline Str<T>::Str(const T* str, size_t length) :
-	m_string(new T[max(length + 1, defaultCapacity)]),
+inline Str<T>::Str(const T* str, size_t length, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_string(static_cast<T*>(m_allocator.allocate(sizeof(T) * max(length + 1, defaultCapacity)))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -165,8 +164,9 @@ inline Str<T>::Str(const T* str, size_t length) :
 	m_string[length] = '\0';
 }
 template<typename T>
-inline Str<T>::Str(size_t length, T character) :
-	m_string(new T[max(length + 1, defaultCapacity)]),
+inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_string(static_cast<T*>(m_allocator.allocate(sizeof(T)* max(length + 1, defaultCapacity)))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -175,11 +175,29 @@ inline Str<T>::Str(size_t length, T character) :
 	m_string[length] = '\0';
 }
 template<typename T>
-inline Str<T>::Str(size_t length) :
-	m_string(new T[max(length + 1, defaultCapacity)]()),
+inline Str<T>::Str(size_t length, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_string(static_cast<T*>(m_allocator.allocate(sizeof(T)* max(length + 1, defaultCapacity)))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
+}
+template<typename T>
+inline Str<T>::Str(const Str<T>& str, AllocatorType& allocator) :
+	Str<T>(str.m_string, str.m_length)
+{
+}
+template<typename T>
+inline Str<T>::Str(Str<T>&& string, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_string(nullptr),
+	m_length(0),
+	m_capacity(0)
+{
+	//std::swap(m_allocator, string.m_allocator);
+	std::swap(m_string, string.m_string);
+	std::swap(m_length, string.m_length);
+	std::swap(m_capacity, string.m_capacity);
 }
 template<typename T>
 inline Str<T>& Str<T>::operator=(const Str<T>& str)
@@ -191,6 +209,7 @@ inline Str<T>& Str<T>::operator=(const Str<T>& str)
 template<typename T>
 inline Str<T>& Str<T>::operator=(Str<T>&& str)
 {
+	//std::swap(m_allocator, str.m_allocator);
 	std::swap(m_string, str.m_string);
 	std::swap(m_length, str.m_length);
 	std::swap(m_capacity, str.m_capacity);
@@ -207,12 +226,7 @@ inline Str<T>& Str<T>::operator=(const T* str)
 template<typename T>
 inline Str<T>::~Str()
 {
-	delete[] m_string;
-}
-template<typename T>
-inline Str<T>::operator std::basic_string<T>() const
-{
-	return std::basic_string<T>(m_string);
+	m_allocator.deallocate(m_string, sizeof(T) * m_capacity);
 }
 template<typename T>
 inline T& Str<T>::operator[](size_t index)
@@ -240,6 +254,21 @@ template<typename T>
 inline bool Str<T>::operator<(const Str<T>& str) const
 {
 	return std::lexicographical_compare(begin(), end(), str.begin(), str.end());
+}
+template<typename T>
+inline bool Str<T>::operator>(const Str<T>& str) const
+{
+	return str < *this;
+}
+template<typename T>
+inline bool Str<T>::operator<=(const Str<T>& str) const
+{
+	return !(str < *this);
+}
+template<typename T>
+inline bool Str<T>::operator>=(const Str<T>& str) const
+{
+	return !(*this < str);
 }
 template<typename T>
 inline bool Str<T>::operator==(const T* str) const
@@ -331,6 +360,11 @@ inline size_t Str<T>::length() const
 	return m_length;
 }
 template<typename T>
+inline size_t Str<T>::size() const
+{
+	return m_length;
+}
+template<typename T>
 inline size_t Str<T>::capacity() const
 {
 	return m_capacity;
@@ -348,11 +382,11 @@ inline void Str<T>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
-	while (m_capacity < size)
-		m_capacity *= 2;
-	T* buffer = new T[m_capacity];
-	Str<T>::copy(buffer, m_capacity, m_string);
-	delete[] m_string;
+	size_t oldCapacity = m_capacity;
+	T* buffer = static_cast<T*>(m_allocator.allocate(sizeof(T) * size));
+	Str<T>::copy(buffer, oldCapacity, m_string);
+	m_allocator.deallocate(m_string, sizeof(T) * oldCapacity);
+	m_capacity = size;
 	m_string = buffer;
 }
 template<typename T>
@@ -372,6 +406,16 @@ inline T* Str<T>::cstr()
 }
 template<typename T>
 inline const T* Str<T>::cstr() const
+{
+	return m_string;
+}
+template<typename T>
+inline T* Str<T>::data()
+{
+	return m_string;
+}
+template<typename T>
+inline const T* Str<T>::data() const
 {
 	return m_string;
 }
@@ -491,7 +535,8 @@ inline Str<T> Str<T>::from(U value)
 {
 	std::basic_stringstream<T> sstr;
 	sstr << value;
-	return sstr.str();
+	std::string str = sstr.str();
+	return Str<T>(str.c_str(), str.size());
 }
 
 template <typename T>

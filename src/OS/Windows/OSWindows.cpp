@@ -39,7 +39,8 @@ aka::StringWide Utf8ToWchar(const char* str)
 {
 	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str, -1, nullptr, 0);
 	aka::StringWide wstr(wstr_size - 1);
-	MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr.cstr(), (int)wstr.length());
+	int ret = MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr.cstr(), wstr_size);
+	AKA_ASSERT(ret != 0, "Failed to convert string"); // GetLastError()
 	return wstr;
 }
 
@@ -47,7 +48,8 @@ aka::String WcharToUtf8(const wchar_t* wstr)
 {
 	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, NULL, NULL);
 	aka::String str(str_size - 1);
-	WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str.cstr(), (int)str.length(), NULL, NULL);
+	int ret = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str.cstr(), str_size, NULL, NULL);
+	AKA_ASSERT(ret != 0, "Failed to convert string"); // GetLastError()
 	return str;
 }
 
@@ -176,7 +178,8 @@ String OS::File::basename(const Path& path)
 {
 	namespace fs = std::filesystem;
 	fs::path stem = fs::path(path.cstr()).stem();
-	return stem.string();
+	std::string str = stem.string();
+	return String(str.c_str(), str.size());
 }
 
 size_t OS::File::size(const Path& path)

@@ -19,7 +19,7 @@ public:
 	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
 	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
 	Vector(const Vector& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
-	Vector(Vector&& vector);
+	Vector(Vector&& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
 	Vector& operator=(const Vector& vector);
 	Vector& operator=(Vector&& vector);
 	~Vector();
@@ -30,11 +30,16 @@ public:
 	bool operator==(const Vector<T>& vector) const;
 	bool operator!=(const Vector<T>& vector) const;
 	bool operator<(const Vector<T>& vector) const;
+	bool operator>(const Vector<T>& vector) const;
+	bool operator<=(const Vector<T>& vector) const;
+	bool operator>=(const Vector<T>& vector) const;
 
-	Vector<T>& append(const Vector<T>& vector);
-	Vector<T>& append(const T* start, const T* end);
-	Vector<T>& append(const T& value);
-	Vector<T>& append(T&& value);
+	T& append(const Vector<T>& vector);
+	T& append(const T* start, const T* end);
+	T& append(const T& value);
+	T& append(T&& value);
+	template <typename ...Args>
+	T& emplace(Args ...args);
 
 	void remove(T* start, T* end);
 	void remove(T* value);
@@ -126,8 +131,8 @@ inline Vector<T>::Vector(const Vector& vector, AllocatorType& allocator) :
 {
 }
 template <typename T>
-inline Vector<T>::Vector(Vector&& vector) :
-	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default)),
+inline Vector<T>::Vector(Vector&& vector, AllocatorType& allocator) :
+	m_allocator(allocator),
 	m_data(nullptr),
 	m_size(0),
 	m_capacity(0)
@@ -177,40 +182,40 @@ inline const T& Vector<T>::operator[](size_t index) const
 template <typename T>
 inline bool Vector<T>::operator==(const Vector<T>& value) const
 {
-	if (size() != value.size())
-		return false;
-	// TODO: use std::equal
-	for (size_t i = 0; i < size(); i++)
-	{
-		if (m_data[i] != value.m_data[i])
-			return false;
-	}
-	return true;
+	return (size() == value.size()) && std::equal(begin(), end(), value.begin());
 }
 template <typename T>
 inline bool Vector<T>::operator!=(const Vector<T>& value) const
 {
-	if (size() != value.size())
-		return true;
-	for (size_t i = 0; i < size(); i++)
-	{
-		if (m_data[i] != value.m_data[i])
-			return true;
-	}
-	return false;
+	return (size() != value.size()) || !std::equal(begin(), end(), value.begin());
 }
 template <typename T>
 inline bool Vector<T>::operator<(const Vector<T>& value) const
 {
-	AKA_NOT_IMPLEMENTED;
+	return std::lexicographical_compare(begin(), end(), value.begin(), value.end());
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const Vector<T>& vector)
+inline bool Vector<T>::operator>(const Vector<T>& value) const
+{
+	return value < *this;
+}
+template <typename T>
+inline bool Vector<T>::operator<=(const Vector<T>& value) const
+{
+	return !(value < *this);
+}
+template <typename T>
+inline bool Vector<T>::operator>=(const Vector<T>& value) const
+{
+	return !(*this < value);
+}
+template <typename T>
+inline T& Vector<T>::append(const Vector<T>& vector)
 {
 	return append(vector.data(), vector.data() + vector.size());
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const T* _start, const T* _end)
+inline T& Vector<T>::append(const T* _start, const T* _end)
 {
 	AKA_ASSERT(_end >= _start, "Invalid range");
 	T* b = begin();
@@ -219,23 +224,32 @@ inline Vector<T>& Vector<T>::append(const T* _start, const T* _end)
 	size_t range = (_end - _start);
 	resize(m_size + range);
 	std::uninitialized_copy(_start, _end, m_data + size);
-	return *this;
+	return last();
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const T& value)
+inline T& Vector<T>::append(const T& value)
 {
 	size_t off = m_size;
 	resize(m_size + 1);
-	std::uninitialized_copy_n(&value, 1, m_data + off);
-	return *this;
+	new (m_data + off) T(value);
+	return last();
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(T&& value)
+inline T& Vector<T>::append(T&& value)
 {
 	size_t off = m_size;
 	resize(m_size + 1);
-	std::uninitialized_move_n(&value, 1, m_data + off);
-	return *this;
+	new (m_data + off) T(std::move(value));
+	return last();
+}
+template<typename T>
+template<typename ...Args>
+inline T& Vector<T>::emplace(Args ...args)
+{
+	size_t off = m_size;
+	resize(m_size + 1);
+	new (m_data + off) T(std::forward<Args>(args)...);
+	return last();
 }
 template <typename T>
 inline void Vector<T>::remove(T* start, T* end)
