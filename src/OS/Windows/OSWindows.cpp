@@ -17,7 +17,7 @@
 namespace aka {
 
 const WORD terminalColors[20] = {
-	0, // ForgeroundBlack
+	0, // ForegroundBlack
 	FOREGROUND_RED, // ForegroundRed
 	FOREGROUND_GREEN, // ForegroundGreen
 	FOREGROUND_RED | FOREGROUND_GREEN, // ForegroundYellow
@@ -25,7 +25,7 @@ const WORD terminalColors[20] = {
 	FOREGROUND_RED | FOREGROUND_BLUE, // ForegroundMagenta
 	FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundCyan
 	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundWhite
-	FOREGROUND_INTENSITY, // ForgeroundBrightBlack
+	FOREGROUND_INTENSITY, // ForegroundBrightBlack
 	FOREGROUND_RED | FOREGROUND_INTENSITY, // ForegroundBrightRed
 	FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightGreen
 	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightYellow

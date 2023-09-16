@@ -101,7 +101,8 @@ inline void Logger::Channel::print(Args ...args)
 	std::stringstream sstr;
 	doPrint(sstr, this->color, buffer, args...);
 	sstr << Logger::Color::ForegroundWhite << std::endl;
-	OutputDebugConsole(sstr.str().c_str());
+	std::string str = sstr.str();
+	OutputDebugConsole(str.c_str());
 #endif
 	ostream << Logger::Color::ForegroundWhite << std::endl; // Default color
 }

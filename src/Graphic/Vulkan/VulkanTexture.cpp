@@ -140,7 +140,7 @@ void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffe
 				region.imageSubresource.aspectMask = aspectMask;
 				region.imageSubresource.mipLevel = iLevel;
 				region.imageSubresource.baseArrayLayer = iLayer;
-				region.imageSubresource.layerCount = 1;
+				region.imageSubresource.layerCount = 1; // TODO: all layers
 
 				region.imageOffset = { 0, 0, 0 };
 				region.imageExtent = { width >> iLevel, height >> iLevel, 1 };
@@ -244,50 +244,89 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	const void* const* data
 )
 {
-	VulkanTexture* texture = m_texturePool.acquire(name, width, height, depth, type, levels, layers, format, flags);
-	texture->create(this);
+	VulkanTexture* vk_texture = m_texturePool.acquire(name, width, height, depth, type, levels, layers, format, flags);
+	vk_texture->create(this);
 
-	TextureHandle handle = TextureHandle{ texture };
+	TextureHandle handle = TextureHandle{ vk_texture };
 
-	ResourceAccessType currentAccessType = ResourceAccessType::Undefined;
 	ResourceAccessType finalAccessType = getInitialResourceAccessType(format, flags);
 	VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, format);
 
 	// Upload
-	VkImageSubresourceRange subresource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
+	VkBuffer stagingBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
+	VkImageSubresourceRange subResource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
 	if (data != nullptr && data[0] != nullptr)
 	{
-		// To transfer layout
-		VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
-		VulkanTexture::transitionImageLayout(cmd,
-			texture->vk_image,
-			currentAccessType,
-			ResourceAccessType::CopyDST,
-			format
+		// Create staging buffer
+		VkDeviceSize imageSize = vk_texture->width * vk_texture->height * Texture::size(vk_texture->format);
+		VkDeviceSize bufferSize = imageSize * vk_texture->layers;
+		stagingBuffer = VulkanBuffer::createVkBuffer(
+			getVkDevice(),
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 		);
-		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+		stagingBufferMemory = VulkanBuffer::createVkDeviceMemory(
+			getVkDevice(),
+			getVkPhysicalDevice(),
+			stagingBuffer,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		);
 
-		// Upload (TODO: should use same command buffer than transition, but need to export staging buffer out of there for destruction)
-		texture->upload(this, data, 0, 0, width, height);
+		// Upload to staging buffer
+		void* stagingData;
+		vkMapMemory(getVkDevice(), stagingBufferMemory, 0, bufferSize, 0, &stagingData);
+		for (uint32_t iLayer = 0; iLayer < vk_texture->layers; iLayer++)
+		{
+			void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
+			memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
+		}
+		vkUnmapMemory(getVkDevice(), stagingBufferMemory);
+
+		// Prepare for transfer
+		VulkanTexture::transitionImageLayout(cmd,
+			vk_texture->vk_image,
+			ResourceAccessType::Undefined,
+			ResourceAccessType::CopyDST,
+			format,
+			0U,
+			vk_texture->levels,
+			0U,
+			vk_texture->layers
+		);
+		// Copy buffer to image
+		vk_texture->copyBufferToImage(cmd, stagingBuffer);
 
 		// Generate mips
 		if (has(flags, TextureUsage::GenerateMips))
 		{
-			VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
-			texture->generateMips(cmd, finalLayout, finalLayout);
-			VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+			vk_texture->generateMips(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, finalLayout);
 		}
-		currentAccessType = ResourceAccessType::CopyDST;
+		else
+		{
+			VulkanTexture::transitionImageLayout(cmd,
+				vk_texture->vk_image,
+				ResourceAccessType::CopyDST,
+				finalAccessType,
+				format
+			);
+		}
 	}
-	// Select depending on flags...
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
-	VulkanTexture::transitionImageLayout(cmd,
-		texture->vk_image,
-		currentAccessType,
-		finalAccessType,
-		format
-	);
+	else
+	{
+		VulkanTexture::transitionImageLayout(cmd,
+			vk_texture->vk_image,
+			ResourceAccessType::Undefined,
+			finalAccessType,
+			format
+		);
+	}
 	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+
+	// Free staging buffer
+	vkFreeMemory(getVkDevice(), stagingBufferMemory, nullptr);
+	vkDestroyBuffer(getVkDevice(), stagingBuffer, nullptr);
 
 	return handle;
 }
