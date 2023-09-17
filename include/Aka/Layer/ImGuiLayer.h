@@ -2,6 +2,12 @@
 
 #include <Aka/Core/Layer.h>
 
+
+#if defined(AKA_USE_IMGUI_LAYER)
+#include <imgui.h>
+#include <imguizmo.h>
+#endif
+
 namespace aka {
 
 #if defined(AKA_USE_IMGUI_LAYER)
@@ -13,6 +19,13 @@ class ImGuiLayer final : public Layer
 public:
 	ImGuiLayer() : m_renderData(nullptr) {}
 	~ImGuiLayer() {}
+	struct Color {
+		static const ImVec4 red;
+		static const ImVec4 blue;
+		static const ImVec4 dark;
+		static const ImVec4 light;
+	};
+	static ImTextureID getTextureID(gfx::GraphicDevice* _device, gfx::DescriptorSetHandle _handle);
 private:
 	void onLayerCreate() override;
 	void onLayerDestroy() override;

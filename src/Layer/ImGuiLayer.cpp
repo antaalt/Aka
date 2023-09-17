@@ -44,6 +44,17 @@ struct ImGuiRenderData
 struct ImGuiRenderData {};
 #endif
 
+const ImVec4 ImGuiLayer::Color::red = ImVec4(0.93f, 0.04f, 0.26f, 1.f);
+const ImVec4 ImGuiLayer::Color::blue = ImVec4(0.01f, 0.47f, 0.96f, 1.f);
+const ImVec4 ImGuiLayer::Color::dark = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
+const ImVec4 ImGuiLayer::Color::light = ImVec4(0.9f, 0.9f, 0.9f, 1.f);
+
+ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::DescriptorSetHandle _texture)
+{
+	AKA_ASSERT(_device->api() == gfx::GraphicAPI::Vulkan, "Invalid API");
+	return ImTextureID{ reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet };
+}
+
 void ImGuiLayer::onLayerCreate()
 {
 	m_renderData = new ImGuiRenderData;
@@ -123,10 +134,6 @@ void ImGuiLayer::onLayerCreate()
     auto ImLerp = [](const ImVec4& a, const ImVec4& b, float t)->ImVec4 {
         return ImVec4(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
     };
-    ImVec4 red = ImVec4(0.93f, 0.04f, 0.26f, 1.f);
-    ImVec4 blue = ImVec4(0.01f, 0.47f, 0.96f, 1.f);
-    ImVec4 dark = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
-    ImVec4 light = ImVec4(0.9f, 0.9f, 0.9f, 1.f);
     colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
     colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.9f);
@@ -135,13 +142,13 @@ void ImGuiLayer::onLayerCreate()
     colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 
-    colors[ImGuiCol_FrameBg] = dark;
-    colors[ImGuiCol_FrameBgHovered] = ImLerp(dark, light, 0.5f);
-    colors[ImGuiCol_FrameBgActive] = red;
+    colors[ImGuiCol_FrameBg] = Color::dark;
+    colors[ImGuiCol_FrameBgHovered] = ImLerp(Color::dark, Color::light, 0.5f);
+    colors[ImGuiCol_FrameBgActive] = Color::red;
 
-    colors[ImGuiCol_TitleBg] = ImLerp(red, dark, 0.8f);
-    colors[ImGuiCol_TitleBgActive] = red;
-    colors[ImGuiCol_TitleBgCollapsed] = ImLerp(red, dark, 0.9f);
+    colors[ImGuiCol_TitleBg] = ImLerp(Color::red, Color::dark, 0.8f);
+    colors[ImGuiCol_TitleBgActive] = Color::red;
+    colors[ImGuiCol_TitleBgCollapsed] = ImLerp(Color::red, Color::dark, 0.9f);
 
     colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
 
@@ -150,14 +157,14 @@ void ImGuiLayer::onLayerCreate()
     colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
     colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
 
-    colors[ImGuiCol_CheckMark] = red;
+    colors[ImGuiCol_CheckMark] = Color::red;
 
-    colors[ImGuiCol_SliderGrab] = red;
-    colors[ImGuiCol_SliderGrabActive] = blue;
+    colors[ImGuiCol_SliderGrab] = Color::red;
+    colors[ImGuiCol_SliderGrabActive] = Color::blue;
     // Header
-    colors[ImGuiCol_Header] = red;
-    colors[ImGuiCol_HeaderHovered] = ImLerp(red, light, 0.1f);
-    colors[ImGuiCol_HeaderActive] = ImLerp(red, light, 0.3f);
+    colors[ImGuiCol_Header] = Color::red;
+    colors[ImGuiCol_HeaderHovered] = ImLerp(Color::red, Color::light, 0.1f);
+    colors[ImGuiCol_HeaderActive] = ImLerp(Color::red, Color::light, 0.3f);
     // Button
     colors[ImGuiCol_Button] = colors[ImGuiCol_Header];
     colors[ImGuiCol_ButtonHovered] = colors[ImGuiCol_HeaderHovered];
@@ -171,9 +178,9 @@ void ImGuiLayer::onLayerCreate()
     colors[ImGuiCol_ResizeGripHovered] = colors[ImGuiCol_HeaderHovered];
     colors[ImGuiCol_ResizeGripActive] = colors[ImGuiCol_HeaderActive];
     // Tab
-    colors[ImGuiCol_Tab] = ImLerp(red, dark, 0.80f);
+    colors[ImGuiCol_Tab] = ImLerp(Color::red, Color::dark, 0.80f);
     colors[ImGuiCol_TabHovered] = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_TabActive] = red;
+    colors[ImGuiCol_TabActive] = Color::red;
     colors[ImGuiCol_TabUnfocused] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
     colors[ImGuiCol_TabUnfocusedActive] = ImLerp(colors[ImGuiCol_TabActive], colors[ImGuiCol_TitleBg], 0.40f);
     // Plot
@@ -182,17 +189,17 @@ void ImGuiLayer::onLayerCreate()
     colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
     colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
 
-    colors[ImGuiCol_TableHeaderBg] = red;
+    colors[ImGuiCol_TableHeaderBg] = Color::red;
     colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
     colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
     colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
 
-    colors[ImGuiCol_TextSelectedBg] = red;
+    colors[ImGuiCol_TextSelectedBg] = Color::red;
 
     colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
 
-    colors[ImGuiCol_NavHighlight] = red;
+    colors[ImGuiCol_NavHighlight] = Color::red;
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 

@@ -47,6 +47,7 @@ void Application::create(const Config& config)
 }
 void Application::destroy()
 {
+	graphic()->wait();
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
 	m_root->destroy();
 	onDestroy();
