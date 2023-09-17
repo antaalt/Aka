@@ -17,14 +17,14 @@ struct VulkanTexture : Texture
 
 	VkDeviceMemory vk_memory;
 	VkImage vk_image;
-	VkImageView vk_view; // TODO vector to support multi view ?
+	Vector<VkImageView> vk_view;
 
 	void create(VulkanGraphicDevice* context);
 	void destroy(VulkanGraphicDevice* context);
 	void upload(VulkanGraphicDevice* context, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
 	static VkImage createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags);
-	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips = 0, uint32_t baseLayer = 0);
+	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipCount, uint32_t layerCount, uint32_t baseMips = 0, uint32_t baseLayer = 0);
 	static VkImageAspectFlags getAspectFlag(TextureFormat format);
 
 	static void transitionImageLayout(
@@ -49,6 +49,9 @@ struct VulkanTexture : Texture
 		VkAccessFlags srcAccess,
 		VkAccessFlags dstAccess
 	);
+
+	VkImageView getMainImageView() const;
+	VkImageView getImageView(VulkanGraphicDevice* device, uint32_t layer, uint32_t mipLevel);
 
 	void generateMips(VkCommandBuffer cmd, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer);

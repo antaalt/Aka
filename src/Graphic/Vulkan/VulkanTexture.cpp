@@ -8,6 +8,7 @@ namespace gfx {
 
 VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 {
+	// View must only have one aspect flag
 	if (Texture::isColor(format))
 		return VK_IMAGE_ASPECT_COLOR_BIT;
 	else if (Texture::isDepthStencil(format))
@@ -358,15 +359,8 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 	if (texture == TextureHandle::null) return;
 
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
-	vkDestroyImageView(getVkDevice(), vk_texture->vk_view, nullptr);
-	vk_texture->vk_view = VK_NULL_HANDLE;
-	if (vk_texture->vk_memory != 0) // If no memory used, image not allocated here (swapchain)
-	{
-		vkFreeMemory(getVkDevice(), vk_texture->vk_memory, nullptr);
-		vkDestroyImage(getVkDevice(), vk_texture->vk_image, nullptr);
-		vk_texture->vk_memory = VK_NULL_HANDLE;
-		vk_texture->vk_image = VK_NULL_HANDLE;
-	}
+	vk_texture->destroy(this);
+
 	m_texturePool.release(vk_texture);
 }
 
@@ -391,11 +385,34 @@ const Texture* VulkanGraphicDevice::get(TextureHandle handle)
 	return static_cast<const Texture*>(handle.__data);
 }
 
+VkImageViewType getVkImageViewType(TextureType type, VkImageCreateFlags& vk_flags, uint32_t width, uint32_t height)
+{
+	VkImageViewType vk_viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+	switch (type)
+	{
+	case TextureType::Texture2D:
+		vk_viewType = VK_IMAGE_VIEW_TYPE_2D;
+		break;
+	case TextureType::TextureCubeMap:
+		AKA_ASSERT(width == height, "Cubemap need to be squared.");
+		vk_viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+		vk_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		break;
+	case TextureType::Texture2DArray:
+		vk_viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		break;
+	default:
+		AKA_ASSERT(false, "Invalid type.");
+		break;
+	}
+	return vk_viewType;
+}
+
 VulkanTexture::VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags) :
 	Texture(name, width, height, depth, type, levels, layers, format, flags),
 	vk_image(VK_NULL_HANDLE),
 	vk_memory(VK_NULL_HANDLE),
-	vk_view(VK_NULL_HANDLE)
+	vk_view(layers * levels + 1, VK_NULL_HANDLE)
 {
 }
 
@@ -408,24 +425,8 @@ void VulkanTexture::create(VulkanGraphicDevice* device)
 	VkImageUsageFlags vk_usage = 0;
 	VkImageCreateFlags vk_flags = 0;
 	VkImageAspectFlags vk_aspect = VulkanTexture::getAspectFlag(format);
-	VkImageViewType vk_type = VK_IMAGE_VIEW_TYPE_2D;
-	switch (type)
-	{
-	case TextureType::Texture2D:
-		vk_type = VK_IMAGE_VIEW_TYPE_2D;
-		break;
-	case TextureType::TextureCubeMap:
-		AKA_ASSERT(width == height, "Cubemap need to be squared.");
-		vk_type = VK_IMAGE_VIEW_TYPE_CUBE;
-		vk_flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-		break;
-	case TextureType::Texture2DArray:
-		vk_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-		break;
-	default:
-		AKA_ASSERT(false, "Invalid type.");
-		break;
-	}
+	VkImageViewType vk_viewType = getVkImageViewType(type, vk_flags, width, height);
+
 	if (has(flags, TextureUsage::RenderTarget))
 	{
 		if (Texture::hasDepth(format))
@@ -465,24 +466,21 @@ void VulkanTexture::create(VulkanGraphicDevice* device)
 
 	VK_CHECK_RESULT(vkBindImageMemory(device->getVkDevice(), vk_image, vk_memory, 0));
 
-	// Create View
-	// View must only have one aspect flag
-	VkImageAspectFlags vk_viewAspect = VK_IMAGE_ASPECT_COLOR_BIT;
-	if (Texture::hasDepth(format))
-		vk_viewAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-	else if (Texture::hasStencil(format))
-		vk_viewAspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-	vk_view = VulkanTexture::createVkImageView(device->getVkDevice(), vk_image, vk_type, vk_format, vk_viewAspect, levels, layers);
+	// Create main view.
+	vk_view[0] = VulkanTexture::createVkImageView(device->getVkDevice(), vk_image, vk_viewType, vk_format, VulkanTexture::getAspectFlag(format), levels, layers);
 
 	setDebugName(device->getVkDevice(), vk_image, name, "Image");
-	setDebugName(device->getVkDevice(), vk_view, name, "ImageView");
+	setDebugName(device->getVkDevice(), vk_view[0], name, "ImageMainView");
 	setDebugName(device->getVkDevice(), vk_memory, name, "DeviceMemory");
 }
 
 void VulkanTexture::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroyImageView(device->getVkDevice(), vk_view, nullptr);
-	vk_view = VK_NULL_HANDLE;
+	for (VkImageView& view : vk_view)
+	{
+		vkDestroyImageView(device->getVkDevice(), view, nullptr);
+		view = VK_NULL_HANDLE;
+	}
 	if (vk_memory != 0) // If no memory used, image not allocated here (swapchain)
 	{
 		vkFreeMemory(device->getVkDevice(), vk_memory, nullptr);
@@ -556,7 +554,7 @@ VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t h
 	return image;
 }
 
-VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels, uint32_t layers, uint32_t baseMips, uint32_t baseLayer)
+VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipCount, uint32_t layerCount, uint32_t baseMips, uint32_t baseLayer)
 {
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -565,9 +563,9 @@ VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkI
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspect;
 	viewInfo.subresourceRange.baseMipLevel = baseMips;
-	viewInfo.subresourceRange.levelCount = mipLevels;
+	viewInfo.subresourceRange.levelCount = mipCount;
 	viewInfo.subresourceRange.baseArrayLayer = baseLayer;
-	viewInfo.subresourceRange.layerCount = layers;
+	viewInfo.subresourceRange.layerCount = layerCount;
 
 	VkImageView view;
 	VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, nullptr, &view));
@@ -595,6 +593,23 @@ void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImage image, VkIm
 		0, nullptr,
 		1, &barrier
 	);
+}
+
+VkImageView VulkanTexture::getMainImageView() const
+{
+	return vk_view[0]; // Main view always defined.
+}
+
+VkImageView VulkanTexture::getImageView(VulkanGraphicDevice* device, uint32_t layer, uint32_t mipLevel)
+{
+	uint32_t index = layer * mipLevel + mipLevel + 1;
+	VkImageCreateFlags vk_flags;
+	if (vk_view[index] == VK_NULL_HANDLE)
+	{
+		vk_view[index] = createVkImageView(device->getVkDevice(), vk_image, getVkImageViewType(type, vk_flags, width, height), VulkanContext::tovk(format), VulkanTexture::getAspectFlag(format), 1, 1, mipLevel, layer);
+		setDebugName(device->getVkDevice(), vk_view[index], name, "ImageView", index);
+	}
+	return vk_view[index];
 }
 
 void VulkanTexture::generateMips(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)

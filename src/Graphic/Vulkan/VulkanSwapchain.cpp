@@ -242,7 +242,7 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		// Cannot transition color images yet as they are not acquired.
 		TextureHandle colorTexture = TextureHandle{ vk_colorTexture };
 		vk_colorTexture->vk_image = vk_images[i];
-		vk_colorTexture->vk_view = view;
+		vk_colorTexture->vk_view[0] = view; // Set main image view
 		setDebugName(device->getVkDevice(), vk_images[i], "SwapchainColor", i);
 		setDebugName(device->getVkDevice(), view, "SwapchainColorView", i);
 		// No memory

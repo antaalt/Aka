@@ -92,6 +92,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 
 	for (uint32_t iBinding = 0; iBinding < vk_set->bindings.count; iBinding++)
 	{
+		const DescriptorSlot& slot = data.slots[iBinding];
 		const ShaderBindingLayout& binding = vk_set->bindings.bindings[iBinding];
 		descriptorWrites[iBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrites[iBinding].dstSet = vk_set->vk_descriptorSet;
@@ -103,8 +104,8 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 		switch (binding.type)
 		{
 		case ShaderBindingType::SampledImage: {
-			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(data.images[iBinding]);
-			VulkanSampler* vk_sampler = device->getVk<VulkanSampler>(data.samplers[iBinding]);
+			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(slot.texture.texture);
+			VulkanSampler* vk_sampler = device->getVk<VulkanSampler>(slot.texture.sampler);
 			AKA_ASSERT(
 				vk_texture->type == TextureType::Texture2D ||
 				vk_texture->type == TextureType::TextureCubeMap ||
@@ -112,17 +113,17 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 				"Invalid texture binding, skipping."
 			);
 			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace_back();
-			vk_image.imageView = vk_texture->vk_view;
+			vk_image.imageView = vk_texture->getImageView(device, slot.texture.layer, slot.texture.mipLevel);
 			vk_image.sampler = vk_sampler->vk_sampler;
 			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Resource, vk_texture->format);
 			descriptorWrites[iBinding].pImageInfo = &vk_image;
 			break;
 		}
 		case ShaderBindingType::StorageImage: {
-			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(data.images[iBinding]);
+			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(slot.texture.texture);
 			AKA_ASSERT(vk_texture->type == TextureType::Texture2D, "Invalid texture binding, skipping.");
 			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace_back();
-			vk_image.imageView = vk_texture->vk_view;
+			vk_image.imageView = vk_texture->getImageView(device, slot.texture.layer, slot.texture.mipLevel);
 			vk_image.sampler = VK_NULL_HANDLE;
 			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Storage, vk_texture->format);
 			descriptorWrites[iBinding].pImageInfo = &vk_image;
@@ -130,7 +131,7 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 		}
 		case ShaderBindingType::StorageBuffer:
 		case ShaderBindingType::UniformBuffer: {
-			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(data.buffers[iBinding]);
+			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(slot.buffer.handle);
 			if (buffer == nullptr) // No buffer
 			{
 				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
@@ -144,8 +145,8 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 				AKA_ASSERT(valid(binding.type, buffer->type), "Invalid buffer binding, skipping.");
 				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = reinterpret_cast<const VulkanBuffer*>(buffer)->vk_buffer;
-				vk_buffer.offset = 0; // TODO use buffer view
-				vk_buffer.range = VK_WHOLE_SIZE;// buffer->size;
+				vk_buffer.offset = slot.buffer.offset;
+				vk_buffer.range = (slot.buffer.range == ~0U) ? VK_WHOLE_SIZE : slot.buffer.range;
 				descriptorWrites[iBinding].pBufferInfo = &vk_buffer;
 			}
 			break;
@@ -328,23 +329,20 @@ void VulkanGraphicDevice::update(DescriptorSetHandle descriptorSet, const Descri
 	auto bindings = getVk<VulkanDescriptorSet>(descriptorSet)->bindings;
 	for (uint32_t i = 0; i < bindings.count; i++)
 	{
+		AKA_ASSERT(bindings.bindings[i].type == data.slots[i].bindingType, "Incompatible bindings");
 		switch (bindings.bindings[i].type)
 		{
 		case gfx::ShaderBindingType::StorageImage:
-			AKA_ASSERT(data.buffers[i] == gfx::BufferHandle::null, "Invalid shader input");
-			AKA_ASSERT(data.images[i] != gfx::TextureHandle::null, "Invalid shader input");
-			AKA_ASSERT(data.samplers[i] == gfx::SamplerHandle::null, "Invalid shader input");
+			AKA_ASSERT(data.slots[i].texture.texture != gfx::TextureHandle::null, "Invalid shader input");
+			AKA_ASSERT(data.slots[i].texture.sampler == gfx::SamplerHandle::null, "Invalid shader input");
 			break;
 		case gfx::ShaderBindingType::SampledImage:
-			AKA_ASSERT(data.buffers[i] == gfx::BufferHandle::null, "Invalid shader input");
-			AKA_ASSERT(data.images[i] != gfx::TextureHandle::null, "Invalid shader input");
-			AKA_ASSERT(data.samplers[i] != gfx::SamplerHandle::null, "Invalid shader input");
+			AKA_ASSERT(data.slots[i].texture.texture != gfx::TextureHandle::null, "Invalid shader input");
+			AKA_ASSERT(data.slots[i].texture.sampler != gfx::SamplerHandle::null, "Invalid shader input");
 			break;
 		case gfx::ShaderBindingType::UniformBuffer:
 		case gfx::ShaderBindingType::StorageBuffer:
-			AKA_ASSERT(data.buffers[i] != gfx::BufferHandle::null, "Invalid shader input");
-			AKA_ASSERT(data.images[i] == gfx::TextureHandle::null, "Invalid shader input");
-			AKA_ASSERT(data.samplers[i] == gfx::SamplerHandle::null, "Invalid shader input");
+			AKA_ASSERT(data.slots[i].buffer.handle != gfx::BufferHandle::null, "Invalid shader input");
 			break;
 		default:
 			AKA_NOT_IMPLEMENTED;

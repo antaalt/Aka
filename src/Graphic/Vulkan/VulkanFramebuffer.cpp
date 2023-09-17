@@ -9,78 +9,50 @@ namespace gfx {
 
 VulkanFramebuffer::VulkanFramebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle renderPass, const Attachment* colors, uint32_t count, const Attachment* depth) :
 	Framebuffer(name, width, height, renderPass, colors, count, depth),
-	vk_framebuffer(VK_NULL_HANDLE),
-	vk_views{}
+	vk_framebuffer(VK_NULL_HANDLE)
 {
 }
 
 void VulkanFramebuffer::create(VulkanGraphicDevice* device)
 {
 	VulkanRenderPass* vk_renderPass = device->getVk<VulkanRenderPass>(renderPass);
-	vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(device, vk_renderPass->vk_renderpass, this, vk_views);
+	vk_framebuffer = VulkanFramebuffer::createVkFramebuffer(device, vk_renderPass->vk_renderpass, this);
 }
 
 void VulkanFramebuffer::destroy(VulkanGraphicDevice* device)
 {
 	vkDestroyFramebuffer(device->getVkDevice(), vk_framebuffer, nullptr);
 	vk_framebuffer = VK_NULL_HANDLE;
-	for (VkImageView& view : vk_views)
-	{
-		vkDestroyImageView(device->getVkDevice(), view, nullptr);
-		view = VK_NULL_HANDLE;
-	}
-	vk_views.clear();
 }
 
-VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device, VkRenderPass renderpass, const VulkanFramebuffer* vk_framebuffer, std::vector<VkImageView>& views)
+VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device, VkRenderPass renderpass, const VulkanFramebuffer* vk_framebuffer)
 {
-	std::vector<VkImageView> vk_attachments(vk_framebuffer->count);
+	Vector<VkImageView> vk_attachments(vk_framebuffer->count);
 	for (size_t i = 0; i < vk_framebuffer->count; i++)
 	{
-		const VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->colors[i].texture);
+		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->colors[i].texture);
 		// View dependent on flag.
 		if (!vk_texture->hasLayers() || has(vk_framebuffer->colors[i].flag, AttachmentFlag::AttachTextureObject))
 		{
-			vk_attachments[i] = vk_texture->vk_view;
+			vk_attachments[i] = vk_texture->getMainImageView();
 		}
 		else
 		{
 			// Create new view for framebuffer.
-			vk_attachments[i] = VulkanTexture::createVkImageView(
-				device->getVkDevice(),
-				vk_texture->vk_image,
-				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-				VulkanContext::tovk(vk_texture->format),
-				VulkanTexture::getAspectFlag(vk_texture->format),
-				vk_framebuffer->colors[i].level,
-				vk_framebuffer->colors[i].layer
-			);
-			views.push_back(vk_attachments[i]);
+			vk_attachments[i] = vk_texture->getImageView(device, vk_framebuffer->colors[i].layer, vk_framebuffer->colors[i].level);
 		}
 	}
 	if (vk_framebuffer->hasDepthStencil())
 	{
-		const VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
+		VulkanTexture* vk_texture = device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
 		// View dependent on flag.
 		if (!vk_texture->hasLayers() || has(vk_framebuffer->depth.flag, AttachmentFlag::AttachTextureObject))
 		{
-			vk_attachments.push_back(vk_texture->vk_view);
+			vk_attachments.append(vk_texture->getMainImageView());
 		}
 		else
 		{
-			// Create new view for framebuffer.
-			vk_attachments.push_back(VulkanTexture::createVkImageView(
-				device->getVkDevice(),
-				vk_texture->vk_image,
-				VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-				VulkanContext::tovk(vk_texture->format),
-				VulkanTexture::getAspectFlag(vk_texture->format),
-				1,
-				1,
-				vk_framebuffer->depth.level,
-				vk_framebuffer->depth.layer
-			));
-			views.push_back(vk_attachments.back());
+			vk_attachments.append(vk_texture->getImageView(device, vk_framebuffer->depth.layer, vk_framebuffer->depth.level));
 		}
 	}
 

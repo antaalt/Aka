@@ -6,48 +6,52 @@ namespace gfx {
 
 DescriptorSetData::DescriptorSetData() :
 	count(0),
-	buffers{},
-	images{},
-	samplers{}
+	slots{}
 {
 }
 
-DescriptorSetData& DescriptorSetData::addUniformBuffer(BufferHandle buffer)
+DescriptorSetData& DescriptorSetData::addUniformBuffer(BufferHandle buffer, uint32_t offset, uint32_t range)
 {
 	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	buffers[count] = buffer;
-	samplers[count] = gfx::SamplerHandle::null;
-	images[count] = gfx::TextureHandle::null;
+	slots[count].bindingType = ShaderBindingType::UniformBuffer;
+	slots[count].buffer.handle = buffer;
+	slots[count].buffer.offset = offset;
+	slots[count].buffer.range = range;
 	count++;
 	return *this;
 }
 
-DescriptorSetData& DescriptorSetData::addStorageBuffer(BufferHandle buffer)
+DescriptorSetData& DescriptorSetData::addStorageBuffer(BufferHandle buffer, uint32_t offset, uint32_t range)
 {
 	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	buffers[count] = buffer;
-	samplers[count] = gfx::SamplerHandle::null;
-	images[count] = gfx::TextureHandle::null;
+	slots[count].bindingType = ShaderBindingType::StorageBuffer;
+	slots[count].buffer.handle = buffer;
+	slots[count].buffer.offset = offset;
+	slots[count].buffer.range = range;
 	count++;
 	return *this;
 }
 
-DescriptorSetData& DescriptorSetData::addSampledImage(TextureHandle texture, SamplerHandle sampler)
+DescriptorSetData& DescriptorSetData::addSampledTexture2D(TextureHandle texture, SamplerHandle sampler, uint32_t layer, uint32_t mipLevel)
 {
 	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	images[count] = texture;
-	samplers[count] = sampler;
-	buffers[count] = gfx::BufferHandle::null;
+	slots[count].bindingType = ShaderBindingType::SampledImage;
+	slots[count].texture.texture = texture;
+	slots[count].texture.sampler = sampler;
+	slots[count].texture.layer = layer;
+	slots[count].texture.mipLevel = mipLevel;
 	count++;
 	return *this;
 }
 
-DescriptorSetData& DescriptorSetData::addStorageImage(TextureHandle texture)
+DescriptorSetData& DescriptorSetData::addStorageTexture2D(TextureHandle texture, uint32_t layer, uint32_t mipLevel)
 {
 	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	images[count] = texture;
-	samplers[count] = SamplerHandle::null;
-	buffers[count] = gfx::BufferHandle::null;
+	slots[count].bindingType = ShaderBindingType::StorageImage;
+	slots[count].texture.texture = texture;
+	slots[count].texture.sampler = gfx::SamplerHandle::null;
+	slots[count].texture.layer = layer;
+	slots[count].texture.mipLevel = mipLevel;
 	count++;
 	return *this;
 }

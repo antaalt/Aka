@@ -9,19 +9,41 @@
 namespace aka {
 namespace gfx {
 
+
+
+struct DescriptorSlot
+{
+	ShaderBindingType bindingType;
+	struct Texture {
+		TextureHandle texture;
+		SamplerHandle sampler; // Can be null.
+		uint32_t layer;
+		uint32_t mipLevel;
+	};
+	struct Buffer {
+		BufferHandle handle;
+		uint32_t offset;
+		uint32_t range;
+	};
+	union
+	{
+		Texture texture;
+		Buffer buffer;
+	};
+};
+
 struct DescriptorSetData
 {
 	DescriptorSetData();
 
-	DescriptorSetData& addUniformBuffer(BufferHandle buffer);
-	DescriptorSetData& addStorageBuffer(BufferHandle buffer);
-	DescriptorSetData& addSampledImage(TextureHandle texture, SamplerHandle sampler);
-	DescriptorSetData& addStorageImage(TextureHandle texture);
+	DescriptorSetData& addUniformBuffer(BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0U);
+	DescriptorSetData& addStorageBuffer(BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0U);
+	DescriptorSetData& addSampledTexture2D(TextureHandle texture, SamplerHandle sampler, uint32_t layer = 0, uint32_t mipLevel = 0);
+	//DescriptorSetData& addSampledTextureCube2D(TextureHandle texture, SamplerHandle sampler);
+	DescriptorSetData& addStorageTexture2D(TextureHandle texture, uint32_t layer = 0, uint32_t mipLevel = 0);
 
 	uint32_t count;
-	BufferHandle buffers[ShaderMaxBindingCount];
-	TextureHandle images[ShaderMaxBindingCount];
-	SamplerHandle samplers[ShaderMaxBindingCount];
+	DescriptorSlot slots[ShaderMaxBindingCount];
 };
 
 struct DescriptorSet;
