@@ -42,14 +42,14 @@ void Application::create(const Config& config)
 	m_width = config.platform.width;
 	m_height = config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
-	m_root->create();
+	m_root->create(graphic());
 	onCreate(config.argc, config.argv);
 }
 void Application::destroy()
 {
 	graphic()->wait();
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
-	m_root->destroy();
+	m_root->destroy(graphic());
 	onDestroy();
 
 	delete m_program;

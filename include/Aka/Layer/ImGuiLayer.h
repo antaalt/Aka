@@ -27,8 +27,8 @@ public:
 	};
 	static ImTextureID getTextureID(gfx::GraphicDevice* _device, gfx::DescriptorSetHandle _handle);
 private:
-	void onLayerCreate() override;
-	void onLayerDestroy() override;
+	void onLayerCreate(gfx::GraphicDevice* _device) override;
+	void onLayerDestroy(gfx::GraphicDevice* _device) override;
 
 	void onLayerFrame() override;
 	void onLayerRender(gfx::Frame* frame) override;

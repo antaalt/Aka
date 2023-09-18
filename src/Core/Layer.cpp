@@ -10,17 +10,17 @@ Layer::~Layer()
 	for (Layer* layer : m_childrens)
 		delete layer;
 }
-void Layer::create()
+void Layer::create(gfx::GraphicDevice* _device)
 {
-	onLayerCreate();
+	onLayerCreate(_device);
 	for (Layer* children : m_childrens)
-		children->create();
+		children->create(_device);
 }
-void Layer::destroy() 
+void Layer::destroy(gfx::GraphicDevice* _device)
 {
 	for (Layer* children : m_childrens)
-		children->destroy();
-	onLayerDestroy();
+		children->destroy(_device);
+	onLayerDestroy(_device);
 }
 void Layer::fixedUpdate(Time deltaTime)
 {

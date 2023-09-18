@@ -55,7 +55,7 @@ ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::Descripto
 	return ImTextureID{ reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet };
 }
 
-void ImGuiLayer::onLayerCreate()
+void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 {
 	m_renderData = new ImGuiRenderData;
 	// Setup Dear ImGui context
@@ -78,7 +78,7 @@ void ImGuiLayer::onLayerCreate()
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
 #elif defined(AKA_USE_VULKAN)
-	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
+	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
 
 	{ // Custom descriptor pool for imgui
 		VkDescriptorPoolSize pool_sizes[] =
@@ -215,11 +215,10 @@ void ImGuiLayer::onLayerCreate()
     style.PopupBorderSize = 1.f;
 }
 
-void ImGuiLayer::onLayerDestroy()
+void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)
 {
-	gfx::GraphicDevice* device = Application::app()->graphic();
-	device->wait();
-	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(device);
+	_device->wait();
+	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
 #elif defined(AKA_USE_D3D11)
@@ -230,8 +229,8 @@ void ImGuiLayer::onLayerDestroy()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 	vkDestroyDescriptorPool(vk_device->getVkDevice(), m_renderData->descriptorPool, nullptr);
-	device->destroy(m_renderData->renderPass);
-	device->destroy(m_renderData->backbuffer);
+	_device->destroy(m_renderData->renderPass);
+	_device->destroy(m_renderData->backbuffer);
 	delete m_renderData;
 }
 
