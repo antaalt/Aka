@@ -252,15 +252,14 @@ inline T& Vector<T>::emplace(Args ...args)
 	return last();
 }
 template <typename T>
-inline void Vector<T>::remove(T* start, T* end)
+inline void Vector<T>::remove(T* _start, T* _end)
 {
-	AKA_ASSERT(start >= m_data || start < m_data + m_size, "Start not in range");
-	AKA_ASSERT(end > m_data || end <= m_data + m_size, "End not in range");
-	AKA_ASSERT(end < start, "Invalid range");
-	size_t range = m_data + m_size - end;
-	std::copy(end, m_data + m_size, start);
-	std::destroy(end, m_data + m_size);
-	m_size -= (end - start);
+	AKA_ASSERT(_start >= m_data || _start < m_data + m_size, "Start not in range");
+	AKA_ASSERT(_end > m_data || _end <= m_data + m_size, "End not in range");
+	AKA_ASSERT(_end >= _start, "Invalid range");
+	std::copy(_end, end(), _start);
+	std::destroy(_end, end());
+	m_size -= (_end - _start);
 }
 template <typename T>
 inline void Vector<T>::remove(T* value)

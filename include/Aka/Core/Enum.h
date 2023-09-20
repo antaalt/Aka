@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Aka/Core/Config.h>
+#include <Aka/Core/BitField.h>
 
 #include <type_traits>
 
@@ -37,6 +38,12 @@ template <typename T>
 inline constexpr uint32_t EnumCount()
 {
 	return static_cast<uint32_t>(static_cast<UnderlyingType<T>>(T::Last) - static_cast<UnderlyingType<T>>(T::First) + static_cast<UnderlyingType<T>>(1));
+}
+
+template <typename T>
+inline constexpr uint32_t EnumBitCount()
+{
+	return firstbithigh(static_cast<uint32_t>(T::Last));
 }
 
 template <typename T>

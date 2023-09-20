@@ -15,7 +15,7 @@ uint32_t firstbithigh(uint32_t x);
 uint32_t firstbitlow(uint32_t x);
 
 // Generate a bitmask from a bit count
-uint32_t bitmask(uint32_t bitcount);
+constexpr uint32_t bitmask(uint32_t bitcount);
 
 struct BitField
 {

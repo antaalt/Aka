@@ -44,9 +44,9 @@ uint32_t firstbitlow(uint32_t x)
 #endif
 }
 
-uint32_t bitmask(uint32_t bitcount)
+constexpr uint32_t bitmask(uint32_t bitCount)
 {
-	return (1 << bitcount) - 1;
+	return (1 << bitCount) - 1;
 }
 
 BitField::BitField() :
@@ -54,8 +54,8 @@ BitField::BitField() :
 {
 }
 
-BitField::BitField(uint32_t bitcount) :
-	m_container((bitcount + 7) / 8, 0)
+BitField::BitField(uint32_t bitCount) :
+	m_container((bitCount + 7) / 8, 0)
 {
 }
 
