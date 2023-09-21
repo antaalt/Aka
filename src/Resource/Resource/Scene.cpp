@@ -27,16 +27,22 @@ mat4f getParentTransform(Entity e)
 	}
 }
 
-SceneAvecUnNomChelou::SceneAvecUnNomChelou() :
-	Resource(ResourceType::Scene) 
+Scene::Scene() :
+	Resource(ResourceType::Scene),
+	m_world(new World)
 {
 }
-SceneAvecUnNomChelou::SceneAvecUnNomChelou(ResourceID _id, const String& _name) :
-	Resource(ResourceType::Scene, _id, _name) 
+Scene::Scene(ResourceID _id, const String& _name) :
+	Resource(ResourceType::Scene, _id, _name),
+	m_world(new World)
 {
+}
+Scene::~Scene()
+{
+	delete m_world;
 }
 
-void SceneAvecUnNomChelou::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive)
+void Scene::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive)
 {
 	AKA_ASSERT(_archive.type() == AssetType::Scene, "Invalid archive");
 	const ArchiveScene& scene = reinterpret_cast<const ArchiveScene&>(_archive);
@@ -102,12 +108,12 @@ void SceneAvecUnNomChelou::create_internal(AssetLibrary* _library, gfx::GraphicD
 	}
 }
 
-void SceneAvecUnNomChelou::save_internal(AssetLibrary* library, gfx::GraphicDevice* _device, Archive& _archive)
+void Scene::save_internal(AssetLibrary* library, gfx::GraphicDevice* _device, Archive& _archive)
 {
 	AKA_NOT_IMPLEMENTED;
 }
 
-void SceneAvecUnNomChelou::destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device)
+void Scene::destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device)
 {
 	m_world->registry().view<StaticMeshComponent>().each([_device](entt::entity entity, StaticMeshComponent& meshComp) {
 		_device->destroy(meshComp.descriptorSet);
@@ -116,7 +122,7 @@ void SceneAvecUnNomChelou::destroy_internal(AssetLibrary* _library, gfx::Graphic
 	m_world->clear();
 }
 
-void SceneAvecUnNomChelou::update(aka::Time time, gfx::GraphicDevice* _device)
+void Scene::update(aka::Time time, gfx::GraphicDevice* _device)
 {
 	// --- Update hierarchy transfom.
 	// TODO only update if a hierarchy node or transform node has been updated. use dirtyTransform ?
@@ -150,7 +156,7 @@ void SceneAvecUnNomChelou::update(aka::Time time, gfx::GraphicDevice* _device)
 
 }
 
-void SceneAvecUnNomChelou::render(gfx::GraphicDevice* _device, gfx::Frame* _frame)
+void Scene::render(gfx::GraphicDevice* _device, gfx::Frame* _frame)
 {
 }
 

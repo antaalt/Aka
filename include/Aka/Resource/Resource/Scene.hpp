@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <Aka/Resource/Resource/Resource.hpp>
+#include <Aka/Core/Container/String.h>
 
 namespace aka {
 
@@ -8,12 +9,12 @@ class World;
 struct ArchiveScene;
 class AssetLibrary;
 
-class SceneAvecUnNomChelou : public Resource 
+class Scene : public Resource 
 {
 public:
-	SceneAvecUnNomChelou();
-	SceneAvecUnNomChelou(ResourceID _id, const String& _name);
-
+	Scene();
+	Scene(ResourceID _id, const String& _name);
+	~Scene();
 private:
 	void create_internal(AssetLibrary* library, gfx::GraphicDevice* _device, const Archive& _archive) override;
 	void save_internal(AssetLibrary* library, gfx::GraphicDevice* _device, Archive& _archive) override;

@@ -174,7 +174,7 @@ AssetInfo AssetLibrary::getAssetInfo(AssetID _id)
 }
 
 template<> 
-AssetLibrary::ResourceMap<SceneAvecUnNomChelou>& AssetLibrary::getResourceMap()
+AssetLibrary::ResourceMap<Scene>& AssetLibrary::getResourceMap()
 { 
 	return m_scenes; 
 }

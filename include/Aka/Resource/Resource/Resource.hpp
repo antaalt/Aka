@@ -44,6 +44,7 @@ class Resource
 public:
 	Resource(ResourceType _type);
 	Resource(ResourceType _type, ResourceID id, const String& _name);
+	virtual ~Resource() {}
 
 	const String& getName() const { return m_name; }
 	ResourceID getID() const { return m_id; }

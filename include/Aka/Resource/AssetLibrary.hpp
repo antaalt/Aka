@@ -12,7 +12,7 @@
 namespace aka {
 
 template<typename T> struct ArchiveTrait { using Archive = Archive; };
-template<> struct ArchiveTrait<SceneAvecUnNomChelou> { using Archive = ArchiveScene; };
+template<> struct ArchiveTrait<Scene> { using Archive = ArchiveScene; };
 template<> struct ArchiveTrait<StaticMesh> { using Archive = ArchiveStaticMesh; };
 template<> struct ArchiveTrait<Texture> { using Archive = ArchiveImage; };
 
@@ -143,11 +143,11 @@ private:
 	std::map<ResourceID, AssetID> m_resources;
 private:
 	ResourceMap<StaticMesh> m_staticMeshes;
-	ResourceMap<SceneAvecUnNomChelou> m_scenes;
+	ResourceMap<Scene> m_scenes;
 	ResourceMap<Texture> m_textures;
 };
 
-template<> AssetLibrary::ResourceMap<SceneAvecUnNomChelou>& AssetLibrary::getResourceMap();
+template<> AssetLibrary::ResourceMap<Scene>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<StaticMesh>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<Texture>& AssetLibrary::getResourceMap();
 
