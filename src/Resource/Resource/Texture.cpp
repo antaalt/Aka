@@ -1,268 +1,66 @@
-#include <Aka/Resource/Resource/Texture.h>
-
-#include <Aka/Core/Enum.h>
-#include <Aka/OS/Logger.h>
-#include <Aka/Resource/Archive/TextureArchive.h>
+#include <Aka/Resource/Resource/Texture.hpp>
 
 namespace aka {
 
-gfx::TextureFormat getFormat(uint32_t channels, bool isHDR, bool isSRGB)
+Texture::Texture() : 
+	Resource(ResourceType::Texture),
+	m_width(0), 
+	m_height(0),
+	m_textureHandle(gfx::TextureHandle::null),
+	m_textureType(gfx::TextureType::Unknown),
+	m_textureUsage(gfx::TextureUsage::Unknown),
+	m_textureFormat(gfx::TextureFormat::Unknown),
+	m_layerCount(0),
+	m_mipCount(0)
 {
-	AKA_ASSERT(isSRGB == false, "SRGB not supported yet.");
-	if (isHDR)
-	{
-		gfx::TextureFormat formats[4]{
-			gfx::TextureFormat::R32F,
-			gfx::TextureFormat::RG32F,
-			gfx::TextureFormat::RGB32F,
-			gfx::TextureFormat::RGBA32F,
-		};
-		return formats[channels - 1];
-	}
-	else
-	{
-		gfx::TextureFormat formats[4]{
-			gfx::TextureFormat::R8U,
-			gfx::TextureFormat::RG8U,
-			gfx::TextureFormat::RGB8U,
-			gfx::TextureFormat::RGBA8U,
-		};
-		return formats[channels - 1];
-	}
-	// SRGB not supported for now
-	return gfx::TextureFormat::Unknown;
 }
 
-Texture::Texture() :
-	Resource(ResourceType::Texture),
+Texture::Texture(ResourceID _id, const String& _name) : 
+	Resource(ResourceType::Texture, _id, _name),
 	m_width(0),
 	m_height(0),
-	m_textureType(gfx::TextureType::Texture2D)
+	m_textureHandle(gfx::TextureHandle::null),
+	m_textureType(gfx::TextureType::Unknown),
+	m_textureUsage(gfx::TextureUsage::Unknown),
+	m_textureFormat(gfx::TextureFormat::Unknown),
+	m_layerCount(0),
+	m_mipCount(0)
 {
 }
 
-Texture::~Texture()
+void Texture::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive)
 {
+	AKA_ASSERT(_archive.type() == AssetType::Image, "Invalid archive");
+	const ArchiveImage& imageArchive = reinterpret_cast<const ArchiveImage&>(_archive);
+	
+	// TODO custom mips
+	const void* data = imageArchive.data.data();
+	m_width = imageArchive.width;
+	m_height = imageArchive.height;
+	m_textureType = gfx::TextureType::Texture2D;
+	m_textureFormat = gfx::TextureFormat::RGBA8;
+	m_textureUsage = gfx::TextureUsage::ShaderResource | gfx::TextureUsage::GenerateMips;
+	m_layerCount = 1; // TODO
+	m_mipCount = gfx::Sampler::mipLevelCount(imageArchive.width, imageArchive.height);
+	m_textureHandle = _device->createTexture(
+		"AlbedoTexture", 
+		imageArchive.width, imageArchive.height, 1, 
+		m_textureType,
+		m_mipCount, m_layerCount,
+		m_textureFormat,
+		m_textureUsage,
+		&data
+	);
 }
 
-void Texture::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuildData)
+void Texture::save_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive)
 {
-	if (m_renderData != nullptr)
-		return;
-	if (inBuildData == nullptr)
-		return;
-
-	TextureRenderData* textureRenderData = new TextureRenderData;
-	m_renderData = textureRenderData;
-
-	// Texture type
-	const TextureBuildData* data = reinterpret_cast<const TextureBuildData*>(inBuildData);
-	const bool isCubemapTexture2D = (data->layers == 6) && has(data->flags, TextureBuildFlag::Cubemap);
-	const bool isLayeredTexture2D = !isCubemapTexture2D && data->layers > 1;
-
-	// Texture data
-	const bool isHDR = has(data->flags, TextureBuildFlag::ColorSpaceHDR);
-	const bool isSRGB = has(data->flags, TextureBuildFlag::ColorSpaceSRGB);
-	const bool hasMips = has(data->flags, TextureBuildFlag::GenerateMips);
-	gfx::TextureFormat format = getFormat(data->channels, isHDR, isSRGB);
-	gfx::TextureUsage flags = gfx::TextureUsage::ShaderResource;
-	uint32_t level = 1;
-	if (hasMips)
-	{
-		flags |= gfx::TextureUsage::GenerateMips;
-		level = gfx::Sampler::mipLevelCount(data->width, data->height);
-	}
-
-	if (isCubemapTexture2D)
-	{
-		if (data->layers != 6)
-			return;
-		const void* bytes[6] = {
-			data->layerData(0),
-			data->layerData(1),
-			data->layerData(2),
-			data->layerData(3),
-			data->layerData(4),
-			data->layerData(5)
-		};
-		textureRenderData->handle = device->createTexture(
-			"FileTextureCubemap", // TODO custom name based on path ?
-			data->width,
-			data->height,
-			1,
-			gfx::TextureType::TextureCubeMap,
-			level,
-			6,
-			format,
-			flags,
-			bytes
-		);
-		m_textureType = gfx::TextureType::TextureCubeMap;
-	}
-	else if (isLayeredTexture2D)
-	{
-		Vector<const void*> bytes(data->layers);
-		for (uint32_t i = 0; i < data->layers; i++)
-		{
-			bytes[i] = data->layerData(i);
-		}
-		textureRenderData->handle = device->createTexture(
-			"FileTexture2DArray",
-			data->width,
-			data->height,
-			1,
-			gfx::TextureType::Texture2DArray,
-			level,
-			6,
-			format,
-			flags,
-			bytes.data()
-		);
-		m_textureType = gfx::TextureType::Texture2DArray;
-	}
-	else // isTexture2D
-	{
-		if (data->layers != 1)
-			return;
-		const void* bytes = data->data();
-		textureRenderData->handle = device->createTexture(
-			"FileTexture2D",
-			data->width,
-			data->height,
-			1,
-			gfx::TextureType::Texture2D,
-			level,
-			1,
-			format,
-			flags,
-			&bytes
-		);
-		m_textureType = gfx::TextureType::Texture2D;
-	}
-	m_width = data->width;
-	m_height = data->height;
+	AKA_NOT_IMPLEMENTED;
 }
 
-void Texture::destroyRenderData(gfx::GraphicDevice* device)
+void Texture::destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device)
 {
-	if (m_renderData == nullptr)
-		return;
-	TextureRenderData* textureRenderData = reinterpret_cast<TextureRenderData*>(m_renderData);
-	device->destroy(textureRenderData->handle);
-	textureRenderData->handle = gfx::TextureHandle::null;
+	_device->destroy(m_textureHandle);
 }
 
-void Texture::createBuildData()
-{
-	if (m_buildData != nullptr)
-		return;
-	m_buildData = new TextureBuildData;
 }
-
-void Texture::createBuildData(gfx::GraphicDevice* device, RenderData* data)
-{
-	if (m_buildData != nullptr)
-		return;
-	TextureBuildData* textureBuildData = new TextureBuildData;
-	m_buildData = textureBuildData;
-
-	gfx::TextureHandle handle = reinterpret_cast<TextureRenderData*>(data)->handle;
-
-	const gfx::Texture* texture = device->get(handle);
-
-	textureBuildData->channels = 4; // GPU textures only 4 channels.
-	const bool isSRGB = false; // TODO check flags
-	const bool isHDR = false; // TODO check format
-	Logger::warn("SRGB & HDR not supported.");
-	const bool generateMips = has(texture->flags, gfx::TextureUsage::GenerateMips);
-	textureBuildData->flags = TextureBuildFlag::None;
-	textureBuildData->width = texture->width;
-	textureBuildData->height = texture->height;
-	uint32_t componentSize = 1;
-	if (generateMips)
-	{
-		textureBuildData->flags |= TextureBuildFlag::GenerateMips;
-	}
-	if (isHDR)
-	{
-		textureBuildData->flags |= TextureBuildFlag::ColorSpaceHDR;
-		componentSize = 4;
-	}
-	if (isSRGB)
-	{
-		textureBuildData->flags |= TextureBuildFlag::ColorSpaceSRGB;
-	}
-	switch (texture->type)
-	{
-	case gfx::TextureType::Texture2D: {
-		textureBuildData->layers = 1;
-		textureBuildData->bytes.resize(textureBuildData->width * textureBuildData->height * textureBuildData->channels * componentSize * textureBuildData->layers);
-		device->download(handle, textureBuildData->data(), 0, 0, texture->width, texture->height);
-		break;
-	}
-	case gfx::TextureType::TextureCubeMap: {
-		textureBuildData->layers = 6;
-		textureBuildData->flags |= TextureBuildFlag::Cubemap;
-		textureBuildData->bytes.resize(textureBuildData->width * textureBuildData->height * textureBuildData->channels * componentSize * textureBuildData->layers);
-		for (uint32_t i = 0; i < 6; i++)
-		{
-			device->download(handle, textureBuildData->layerData(i), 0, 0, texture->width, texture->height, 0, i);
-		}
-		break;
-	}
-	case gfx::TextureType::Texture2DArray: {
-		textureBuildData->layers = texture->layers;
-		textureBuildData->bytes.resize(textureBuildData->width * textureBuildData->height * textureBuildData->channels * componentSize * textureBuildData->layers);
-		for (uint32_t i = 0; i < textureBuildData->layers; i++)
-		{
-			device->download(handle, textureBuildData->layerData(i), 0, 0, texture->width, texture->height, 0, i);
-		}
-	}
-	default:
-		Logger::error("Texture type not supported");
-		break;
-	}
-	m_width = texture->width;
-	m_height = texture->height;
-	m_textureType = texture->type;
-}
-
-void Texture::destroyBuildData()
-{
-	if (m_buildData == nullptr)
-		return;
-	delete m_buildData;
-	m_buildData = nullptr;
-}
-
-ResourceArchive* Texture::createResourceArchive()
-{
-	return new TextureArchive;
-}
-
-uint32_t Texture::width() const
-{
-	if (m_renderData == nullptr)
-		return 0;
-	return m_width;
-}
-uint32_t Texture::height() const
-{
-	if (m_renderData == nullptr)
-		return 0;
-	return m_height;
-}
-gfx::TextureType Texture::type() const
-{
-	if (m_renderData == nullptr)
-		return gfx::TextureType::Unknown;
-	return m_textureType;
-}
-gfx::TextureHandle Texture::handle() const
-{
-	if (m_renderData == nullptr)
-		return gfx::TextureHandle::null;
-	return reinterpret_cast<const TextureRenderData*>(m_renderData)->handle;
-}
-
-};

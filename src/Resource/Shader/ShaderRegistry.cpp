@@ -64,7 +64,8 @@ ShaderRegistry::ShaderRegistry()
 
 ShaderRegistry::~ShaderRegistry()
 {
-	destroy(Application::app()->graphic());
+	AKA_ASSERT(m_programs.size() == 0, "Missing programs");
+	AKA_ASSERT(m_shaders.size() == 0, "Missing shaders");
 }
 
 void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)

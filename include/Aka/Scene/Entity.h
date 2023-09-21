@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Aka/Scene/World.h>
-#include <Aka/Scene/Component.h>
+#include <entt.hpp>
+#include <Aka/Core/Geometry.h>
 
 namespace aka {
 
@@ -71,4 +71,9 @@ inline void Entity::remove()
 	m_world->registry().remove<T>(m_handle);
 }
 
+struct Hierarchy3DComponent
+{
+	Entity parent;
+	mat4f inverseTransform;
+};
 }

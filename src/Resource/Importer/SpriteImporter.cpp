@@ -625,7 +625,7 @@ Aseprite::BlendFunc Aseprite::blending(LayerBlendMode blendMode)
 
 
 
-bool SpriteImporter::import(const Path& path, std::function<bool(Resource* resource)>&& callback)
+ImportResult SpriteImporter::import(AssetLibrary * _library, const Path & path) 
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
 	Aseprite ase = Aseprite::parse(stream);
@@ -675,6 +675,10 @@ bool SpriteImporter::import(const Path& path, std::function<bool(Resource* resou
 		}
 	}
 	return callback(sprite);
+}
+ImportResult SpriteImporter::import(AssetLibrary * _library, const Blob & blob)
+{
+
 }
 
 };

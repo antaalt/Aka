@@ -15,8 +15,8 @@ Application::Application() :
 	m_platform(nullptr),
 	m_graphic(nullptr),
 	m_audio(nullptr),
-	m_program(nullptr),
-	m_registry(nullptr),
+	m_program(new ShaderRegistry),
+	m_library(new AssetLibrary),
 	m_root(new Layer),
 	m_needClientResize(false),
 	m_width(0),
@@ -27,6 +27,8 @@ Application::Application() :
 Application::~Application()
 {
 	delete m_root;
+	delete m_library;
+	delete m_program;
 }
 void Application::create(const Config& config)
 {
@@ -37,8 +39,6 @@ void Application::create(const Config& config)
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
 	m_audio = AudioDevice::create(config.audio);
 	AKA_ASSERT(m_audio != nullptr, "No audio");
-	m_program = new ShaderRegistry;
-	m_registry = new AssetRegistry;
 	m_width = config.platform.width;
 	m_height = config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
@@ -51,9 +51,8 @@ void Application::destroy()
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
 	m_root->destroy(graphic());
 	onDestroy();
-
-	delete m_program;
-	delete m_registry;
+	m_program->destroy(m_graphic);
+	m_library->destroy(m_graphic);
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
@@ -61,8 +60,6 @@ void Application::destroy()
 	m_audio = nullptr;
 	m_graphic = nullptr;
 	m_platform = nullptr;
-	m_program = nullptr;
-	m_registry = nullptr;
 }
 void Application::start()
 {
@@ -71,6 +68,7 @@ void Application::update(Time deltaTime)
 {
 	onUpdate(deltaTime);
 	m_root->update(deltaTime);
+	m_library->update();
 	EventDispatcher<AppUpdateEvent>::trigger(AppUpdateEvent{ deltaTime });
 }
 void Application::fixedUpdate(Time deltaTime)
@@ -158,9 +156,9 @@ ShaderRegistry* Application::program()
 	return m_program;
 }
 
-AssetRegistry* Application::resource()
+AssetLibrary* Application::assets()
 {
-	return m_registry;
+	return m_library;
 }
 
 void Application::run(const Config& config)

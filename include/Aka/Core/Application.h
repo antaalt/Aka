@@ -10,14 +10,13 @@
 
 #include <Aka/Resource/Shader/Shader.h>
 #include <Aka/Resource/Shader/ShaderRegistry.h>
-#include <Aka/Resource/AssetRegistry.h>
+#include <Aka/Resource/AssetLibrary.hpp>
 
 namespace aka {
 
 class Application;
 class Layer;
 class ProgramManager;
-class ResourceManager;
 
 struct Config
 {
@@ -127,15 +126,15 @@ public:
 	AudioDevice* audio();
 	// Get the program manager
 	ShaderRegistry* program();
-	// Get the resource manager
-	AssetRegistry* resource();
+	// Get the asset manager
+	AssetLibrary* assets();
 private:
 	static Application* s_app;
 	PlatformDevice* m_platform;
 	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;
 	ShaderRegistry* m_program;
-	AssetRegistry* m_registry;
+	AssetLibrary* m_library;
 private:
 	Layer* m_root;
 	uint32_t m_width, m_height;

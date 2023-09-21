@@ -1,209 +1,106 @@
-#include <Aka/Resource/Resource/StaticMesh.h>
+#include <Aka/Resource/Resource/StaticMesh.hpp>
 
-#include <Aka/Resource/Archive/StaticMeshArchive.h>
-
-#include <type_traits>
+#include <Aka/Resource/AssetLibrary.hpp>
 
 namespace aka {
 
+struct MaterialUniformBuffer {
+	color4f color;
+};
+
 StaticMesh::StaticMesh() :
-	Resource(ResourceType::Mesh)
+	Resource(ResourceType::StaticMesh)
 {
 }
 
-StaticMesh::~StaticMesh()
+StaticMesh::StaticMesh(ResourceID _id, const String& _name) : 
+	Resource(ResourceType::StaticMesh, _id, _name)
 {
 }
 
-void StaticMesh::createBuildData()
+void StaticMesh::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive)
 {
-	if (m_buildData != nullptr)
-		return;
-	m_buildData = new StaticMeshBuildData;
+	AKA_ASSERT(_archive.type() == AssetType::StaticMesh, "Invalid archive");
+	const ArchiveStaticMesh& meshArchive = reinterpret_cast<const ArchiveStaticMesh&>(_archive);
+	// TODO mutualize sampler in Renderer class (& pass renderer instead of device as argument, or renderer create class)
+	this->gfxAlbedoSampler = _device->createSampler(
+		"Sampler",
+		gfx::Filter::Linear, gfx::Filter::Linear,
+		gfx::SamplerMipMapMode::Linear,
+		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
+		1.0
+	);
+	this->gfxNormalSampler = _device->createSampler(
+		"Sampler",
+		gfx::Filter::Linear, gfx::Filter::Linear,
+		gfx::SamplerMipMapMode::Linear,
+		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
+		1.0
+	);
+	Vector<Vertex> vertices;
+	Vector<uint32_t> indices;
+	for (const ArchiveBatch& batch : meshArchive.batches)
+	{
+		// TODO should retrieve this from shader somehow...
+		gfx::ShaderBindingState bindings{};
+		bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment, 1);
+		bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
+		bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
+		// Material
+		// TODO mips
+		ResourceHandle<Texture> albedo = _library->load<Texture>(_library->getResourceID(batch.material.albedo.id()), batch.material.albedo, _device);
+		ResourceHandle<Texture> normal = _library->load<Texture>(_library->getResourceID(batch.material.normal.id()), batch.material.normal, _device);
+		
+		MaterialUniformBuffer ubo{};
+		ubo.color = batch.material.color;
+		gfx::BufferHandle gfxUniformBuffer = _device->createBuffer("MaterialUniformBuffer", gfx::BufferType::Uniform, sizeof(MaterialUniformBuffer), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, &ubo);
+		
+		gfx::DescriptorSetHandle gfxDescriptorSet = _device->createDescriptorSet("DescriptorSetMaterial", bindings);
+
+		gfx::DescriptorSetData data;
+		data.addUniformBuffer(gfxUniformBuffer);
+		data.addSampledTexture2D(albedo.get().getGfxHandle(), this->gfxAlbedoSampler);
+		data.addSampledTexture2D(normal.get().getGfxHandle(), this->gfxNormalSampler);
+		_device->update(gfxDescriptorSet, data);
+		
+		this->batches.append(DrawCallIndexed{
+			(uint32_t)(vertices.size() * sizeof(Vertex)),
+			(uint32_t)(indices.size() * sizeof(uint32_t)),
+			(uint32_t)batch.geometry.indices.size(),
+			albedo,
+			normal,
+			gfxUniformBuffer,
+			gfxDescriptorSet,
+		});
+
+		vertices.append(batch.geometry.vertices);
+		indices.append(batch.geometry.indices);
+		this->m_bounds.include(batch.geometry.bounds);
+	}
+	this->m_indexFormat = gfx::IndexFormat::UnsignedInt;
+	this->attributes = Vertex::getState();
+	this->gfxVertexBuffer = _device->createBuffer("VertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(Vertex) * vertices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, vertices.data());
+	this->gfxIndexBuffer = _device->createBuffer("IndexBuffer", gfx::BufferType::Index, (uint32_t)(sizeof(uint32_t) * indices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, indices.data());;
 }
 
-void StaticMesh::createBuildData(gfx::GraphicDevice* device, RenderData* data)
+void StaticMesh::save_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive)
 {
-	if (m_buildData != nullptr)
-		return;
-	StaticMeshBuildData* meshBuildData = new StaticMeshBuildData;
-	m_buildData = meshBuildData;
-
 	AKA_NOT_IMPLEMENTED;
 }
 
-void StaticMesh::destroyBuildData()
+void StaticMesh::destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device)
 {
-	if (m_buildData == nullptr)
-		return;
-	delete m_buildData;
-	m_buildData = nullptr;
-}
-
-void StaticMesh::createRenderData(gfx::GraphicDevice* device, const BuildData* inBuildData)
-{
-	if (m_renderData != nullptr)
-		return;
-	if (inBuildData == nullptr)
-		return;
-
-	StaticMeshRenderData* meshRenderData = new StaticMeshRenderData;
-	m_renderData = meshRenderData;
-	
-	// Mesh type
-	const StaticMeshBuildData* data = reinterpret_cast<const StaticMeshBuildData*>(inBuildData);
-
-	// Vertices
-	meshRenderData->attributeState.count = static_cast<uint32_t>(data->vertexAttributeCount);
-	meshRenderData->vertexCount = data->vertexCount;
-	meshRenderData->vertexOffset = data->vertexOffset;
-	for (uint32_t i = 0; i < data->vertexAttributeCount; i++)
+	_device->destroy(this->gfxAlbedoSampler);
+	_device->destroy(this->gfxNormalSampler);
+	_device->destroy(this->gfxIndexBuffer);
+	_device->destroy(this->gfxVertexBuffer);
+	for (const DrawCallIndexed& batch : batches)
 	{
-		const StaticMeshBuildData::VertexAttribute& bindings = data->vertexAttributes[i];
-		meshRenderData->attributeState.attributes[i] = bindings.attribute;
-		meshRenderData->attributeState.offsets[i] = bindings.vertexBufferOffset;
-		meshRenderData->vertexAttributes[i].offset = 0; // TODO
-		meshRenderData->vertexAttributes[i].count = bindings.getVertexCount(data->vertexBuffers);
-		meshRenderData->vertexAttributes[i].binding = bindings.vertexBufferIndex;
+		_device->destroy(batch.gfxDescriptorSet);
+		_device->destroy(batch.gfxUniformBuffer);
 	}
-
-	// Create all buffers
-	meshRenderData->vertexBufferCount = data->vertexBufferCount;
-	for (uint32_t i = 0; i < data->vertexBufferCount; i++)
-	{
-		meshRenderData->vertexBuffers[i] = device->createBuffer(
-			"FileVertexBuffer", // TODO id
-			gfx::BufferType::Vertex,
-			(uint32_t)data->vertexBuffers[i].size(),
-			gfx::BufferUsage::Default,
-			gfx::BufferCPUAccess::None,
-			data->vertexBuffers[i].data()
-		);
-	}
-
-	meshRenderData->indexCount = data->getIndexCount();
-	meshRenderData->indexFormat = data->indexFormat;
-	meshRenderData->indexOffset = 0; // TODO mutualise data with some scene allocator
-
-	meshRenderData->indexBuffer = device->createBuffer(
-		"FileIndexBuffer",
-		gfx::BufferType::Index,
-		(uint32_t)data->indicesBuffer.size(),
-		gfx::BufferUsage::Default,
-		gfx::BufferCPUAccess::None,
-		data->indicesBuffer.data()
-	);
+	this->attributes = gfx::VertexAttributeState{};
+	this->batches.clear();
 }
 
-void StaticMesh::destroyRenderData(gfx::GraphicDevice* device)
-{
-	if (m_renderData == nullptr)
-		return;
-	StaticMeshRenderData* meshRenderData = reinterpret_cast<StaticMeshRenderData*>(m_renderData);
-	for (uint32_t i = 0; i < meshRenderData->vertexBufferCount; i++)
-	{
-		device->destroy(meshRenderData->vertexBuffers[i]);
-		meshRenderData->vertexBuffers[i] = gfx::BufferHandle::null;
-	}
-	device->destroy(meshRenderData->indexBuffer);
-	meshRenderData->indexBuffer = gfx::BufferHandle::null;
 }
-
-ResourceArchive* StaticMesh::createResourceArchive()
-{
-	return new StaticMeshArchive;
-}
-
-StaticMesh* StaticMesh::createInterleaved(const gfx::VertexAttributeState& state, const void* vertices, uint32_t vertexCount, gfx::IndexFormat indexFormat, const void* indices, uint32_t indexCount)
-{
-	StaticMesh* mesh = new StaticMesh; // TODO pool
-	mesh->createBuildData();
-	StaticMeshBuildData* data = reinterpret_cast<StaticMeshBuildData*>(mesh->getBuildData());
-	data->flags = StaticMeshBuildFlag::None;
-	data->indexFormat = indexFormat;
-	data->indicesBuffer = Blob(indices, indexCount * gfx::VertexAttributeState::size(indexFormat));
-	data->vertexAttributeCount = state.count;
-	for (uint32_t i = 0; i < state.count; i++)
-	{
-		data->vertexAttributes[i].attribute = state.attributes[i];
-		data->vertexAttributes[i].vertexBufferIndex = 0;
-		data->vertexAttributes[i].vertexBufferOffset = 0;
-		data->vertexAttributes[i].vertexBufferSize = state.stride() * vertexCount;
-	}
-	data->vertexBufferCount = 1;
-	data->vertexBuffers[0] = Blob(vertices, state.stride() * vertexCount);
-	data->vertexCount = vertexCount;
-	data->vertexOffset = 0;
-	return mesh;
-}
-
-StaticMesh* StaticMesh::createInterleaved(const gfx::VertexAttributeState& state, const void* vertices, uint32_t vertexCount)
-{
-	StaticMesh* mesh = new StaticMesh; // TODO pool
-	mesh->createBuildData();
-	StaticMeshBuildData* data = reinterpret_cast<StaticMeshBuildData*>(mesh->getBuildData());
-	data->flags = StaticMeshBuildFlag::None;
-	data->indexFormat = gfx::IndexFormat::Unknown;
-	data->indicesBuffer = Blob();
-	data->vertexAttributeCount = state.count;
-	for (uint32_t i = 0; i < state.count; i++)
-	{
-		data->vertexAttributes[i].attribute = state.attributes[i];
-		data->vertexAttributes[i].vertexBufferIndex = 0;
-		data->vertexAttributes[i].vertexBufferOffset = 0;
-		data->vertexAttributes[i].vertexBufferSize = state.stride() * vertexCount;
-	}
-	data->vertexBufferCount = 1;
-	data->vertexBuffers[0] = Blob(vertices, state.stride() * vertexCount);
-	data->vertexCount = vertexCount;
-	data->vertexOffset = 0;
-	return mesh;
-}
-
-
-void StaticMesh::bind(gfx::CommandList* cmd) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	Vector<uint32_t> offset(data->vertexBufferCount, 0U);
-	cmd->bindVertexBuffers(data->vertexBuffers, 0, data->vertexBufferCount, offset.data());
-	cmd->bindIndexBuffer(data->indexBuffer, data->indexFormat, data->indexOffset);
-}
-
-void StaticMesh::bindVertex(gfx::CommandList* cmd) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	Vector<uint32_t> offset(data->vertexBufferCount, 0);
-	cmd->bindVertexBuffers(data->vertexBuffers, 0, data->vertexBufferCount, offset.data());
-}
-
-void StaticMesh::bindIndex(gfx::CommandList* cmd) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	cmd->bindIndexBuffer(data->indexBuffer, data->indexFormat, data->indexOffset);
-}
-
-void StaticMesh::draw(gfx::CommandList* cmd, uint32_t instanceCount) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	cmd->draw(data->vertexCount, data->vertexOffset, instanceCount);
-}
-
-void StaticMesh::drawIndexed(gfx::CommandList* cmd, uint32_t instanceCount) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	cmd->drawIndexed(data->indexCount, data->indexOffset, data->vertexOffset, instanceCount);
-}
-
-void StaticMesh::drawIndirect(gfx::CommandList* cmd, uint32_t instanceCount) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	//cmd->drawIndirect(data->indexCount, data->indexOffset, data->vertexOffset, instanceCount);
-}
-
-void StaticMesh::drawIndexedIndirect(gfx::CommandList* cmd, uint32_t instanceCount) const
-{
-	const StaticMeshRenderData* data = reinterpret_cast<const StaticMeshRenderData*>(getRenderData());
-	//cmd->drawIndexedIndirect(data->indexCount, data->indexOffset, data->vertexOffset, instanceCount);
-}
-
-};

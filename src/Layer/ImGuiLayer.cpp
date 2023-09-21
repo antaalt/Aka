@@ -3,6 +3,7 @@
 #include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Core/Application.h>
+#include <Aka/OS/OS.h>
 
 #if defined(AKA_USE_IMGUI_LAYER)
 
@@ -64,6 +65,108 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+
+	// --- Font
+	/*io.Fonts->AddFontDefault();
+	ImFontConfig config;
+	config.MergeMode = true;
+	config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	Path asset = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Regular-400.otf");
+	Path asset2 = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Solid-900.otf");
+	
+	ImFont* iconFont = io.Fonts->AddFontFromFileTTF(asset.cstr(), 13.0f, &config, icon_ranges);
+	ImFont* iconFont2 = io.Fonts->AddFontFromFileTTF(asset2.cstr(), 13.0f, &config, icon_ranges);
+	AKA_ASSERT(iconFont != nullptr, "Icon font not loaded");
+	AKA_ASSERT(iconFont2 != nullptr, "Icon font not loaded");*/
+
+	// --- Style
+	ImGui::StyleColorsClassic();
+	ImGuiStyle& style = ImGui::GetStyle();
+	ImVec4* colors = style.Colors;
+	auto ImLerp = [](const ImVec4& a, const ImVec4& b, float t)->ImVec4 {
+		return ImVec4(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
+		};
+	colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+	colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.9f);
+	colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+	colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+
+	colors[ImGuiCol_FrameBg] = Color::dark;
+	colors[ImGuiCol_FrameBgHovered] = ImLerp(Color::dark, Color::light, 0.5f);
+	colors[ImGuiCol_FrameBgActive] = Color::red;
+
+	colors[ImGuiCol_TitleBg] = ImLerp(Color::red, Color::dark, 0.8f);
+	colors[ImGuiCol_TitleBgActive] = Color::red;
+	colors[ImGuiCol_TitleBgCollapsed] = ImLerp(Color::red, Color::dark, 0.9f);
+
+	colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+
+	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+
+	colors[ImGuiCol_CheckMark] = Color::red;
+
+	colors[ImGuiCol_SliderGrab] = Color::red;
+	colors[ImGuiCol_SliderGrabActive] = Color::blue;
+	// Header
+	colors[ImGuiCol_Header] = Color::red;
+	colors[ImGuiCol_HeaderHovered] = ImLerp(Color::red, Color::light, 0.1f);
+	colors[ImGuiCol_HeaderActive] = ImLerp(Color::red, Color::light, 0.3f);
+	// Button
+	colors[ImGuiCol_Button] = colors[ImGuiCol_Header];
+	colors[ImGuiCol_ButtonHovered] = colors[ImGuiCol_HeaderHovered];
+	colors[ImGuiCol_ButtonActive] = colors[ImGuiCol_HeaderActive];
+	// Separator
+	colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
+	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
+	colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
+	// Resize
+	colors[ImGuiCol_ResizeGrip] = colors[ImGuiCol_Header];
+	colors[ImGuiCol_ResizeGripHovered] = colors[ImGuiCol_HeaderHovered];
+	colors[ImGuiCol_ResizeGripActive] = colors[ImGuiCol_HeaderActive];
+	// Tab
+	colors[ImGuiCol_Tab] = ImLerp(Color::red, Color::dark, 0.80f);
+	colors[ImGuiCol_TabHovered] = colors[ImGuiCol_HeaderHovered];
+	colors[ImGuiCol_TabActive] = Color::red;
+	colors[ImGuiCol_TabUnfocused] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
+	colors[ImGuiCol_TabUnfocusedActive] = ImLerp(colors[ImGuiCol_TabActive], colors[ImGuiCol_TitleBg], 0.40f);
+	// Plot
+	colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+	colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+	colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+
+	colors[ImGuiCol_TableHeaderBg] = Color::red;
+	colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
+	colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
+	colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+
+	colors[ImGuiCol_TextSelectedBg] = Color::red;
+
+	colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+
+	colors[ImGuiCol_NavHighlight] = Color::red;
+	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+
+	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.4f);
+
+	style.Alpha = 1.0f;
+	style.FrameRounding = 2;
+	style.WindowRounding = 4;
+	style.PopupRounding = 2;
+	style.ChildRounding = 2;
+	style.FrameBorderSize = 1.f;
+	style.WindowBorderSize = 1.f;
+	style.PopupBorderSize = 1.f;
+
 
 	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::app()->platform());
 #if defined(AKA_USE_OPENGL)
@@ -127,92 +230,6 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanRenderPass>(m_renderData->renderPass)->vk_renderpass);
 
 #endif
-
-    ImGui::StyleColorsClassic();
-    ImGuiStyle& style = ImGui::GetStyle();
-    ImVec4* colors = style.Colors;
-    auto ImLerp = [](const ImVec4& a, const ImVec4& b, float t)->ImVec4 {
-        return ImVec4(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
-    };
-    colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.9f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-
-    colors[ImGuiCol_FrameBg] = Color::dark;
-    colors[ImGuiCol_FrameBgHovered] = ImLerp(Color::dark, Color::light, 0.5f);
-    colors[ImGuiCol_FrameBgActive] = Color::red;
-
-    colors[ImGuiCol_TitleBg] = ImLerp(Color::red, Color::dark, 0.8f);
-    colors[ImGuiCol_TitleBgActive] = Color::red;
-    colors[ImGuiCol_TitleBgCollapsed] = ImLerp(Color::red, Color::dark, 0.9f);
-
-    colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-
-    colors[ImGuiCol_CheckMark] = Color::red;
-
-    colors[ImGuiCol_SliderGrab] = Color::red;
-    colors[ImGuiCol_SliderGrabActive] = Color::blue;
-    // Header
-    colors[ImGuiCol_Header] = Color::red;
-    colors[ImGuiCol_HeaderHovered] = ImLerp(Color::red, Color::light, 0.1f);
-    colors[ImGuiCol_HeaderActive] = ImLerp(Color::red, Color::light, 0.3f);
-    // Button
-    colors[ImGuiCol_Button] = colors[ImGuiCol_Header];
-    colors[ImGuiCol_ButtonHovered] = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_ButtonActive] = colors[ImGuiCol_HeaderActive];
-    // Separator
-    colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
-    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
-    colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
-    // Resize
-    colors[ImGuiCol_ResizeGrip] = colors[ImGuiCol_Header];
-    colors[ImGuiCol_ResizeGripHovered] = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_ResizeGripActive] = colors[ImGuiCol_HeaderActive];
-    // Tab
-    colors[ImGuiCol_Tab] = ImLerp(Color::red, Color::dark, 0.80f);
-    colors[ImGuiCol_TabHovered] = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_TabActive] = Color::red;
-    colors[ImGuiCol_TabUnfocused] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
-    colors[ImGuiCol_TabUnfocusedActive] = ImLerp(colors[ImGuiCol_TabActive], colors[ImGuiCol_TitleBg], 0.40f);
-    // Plot
-    colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-    colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-    colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-    colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-
-    colors[ImGuiCol_TableHeaderBg] = Color::red;
-    colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
-    colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
-    colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
-
-    colors[ImGuiCol_TextSelectedBg] = Color::red;
-
-    colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-
-    colors[ImGuiCol_NavHighlight] = Color::red;
-    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-
-    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.4f);
-
-    style.Alpha = 1.0f;
-    style.FrameRounding = 2;
-    style.WindowRounding = 4;
-    style.PopupRounding = 2;
-    style.ChildRounding = 2;
-    style.FrameBorderSize = 1.f;
-    style.WindowBorderSize = 1.f;
-    style.PopupBorderSize = 1.f;
 }
 
 void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)

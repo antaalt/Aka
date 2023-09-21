@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Aka/Core/Geometry.h>
+#include <Aka/Core/Container/String.h>
 #include <Aka/Scene/Camera.h>
-#include <Aka/Scene/Entity.h>
 
 #include <string_view>
 
@@ -37,7 +37,7 @@ struct ComponentHandle
 template <typename T>
 const ComponentID ComponentHandle<T>::id = ComponentType::get<T>();
 
-struct TagComponent
+/*struct TagComponent
 {
 	String name;
 };
@@ -46,15 +46,24 @@ struct TagComponent
 //template class ComponentHandle<Transform2D>;
 
 // Component
-/*struct Transform2DComponent
+struct Transform2DComponent
 {
 	vec2f position;
-	radianf rotation;
+	anglef rotation;
 	vec2f scale;
 
 	mat3f getTransform() const;
 };
 
+struct Hierarchy3DComponent {
+struct Transform3DComponent {
+	mat4f transform;
+};
+
+struct Hierarchy3DComponent {
+	Entity parent;
+	mat4f inverseTransform;
+};
 struct Transform3DComponent
 {
 	vec3f position;
@@ -66,7 +75,8 @@ struct Transform3DComponent
 
 struct CameraComponent
 {
-	Camera camera;
+	CameraController* controller;
+	CameraProjection* projection;
 	bool primary;
 };
 
@@ -101,7 +111,7 @@ struct Collider2DComponent
 
 struct SpriteAnimatorComponent
 {
-	Sprite* sprite;
+	//Sprite* sprite;
 	uint32_t currentAnimation;
 	uint32_t currentFrame;
 };
@@ -111,12 +121,12 @@ struct SpriteRenderComponent
 {
 	vec2f position;
 	vec2f size;
-	Texture::Ptr texture;
+	gfx::TextureHandle texture;
 };
 
 struct Atlas
 {
-	Texture::Ptr texture;
+	gfx::TextureHandle texture;
 };
 
 struct TileLayerRenderComponent

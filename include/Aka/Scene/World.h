@@ -4,6 +4,7 @@
 #include <Aka/OS/Time.h>
 #include <Aka/Core/Config.h>
 #include <Aka/Core/Application.h>
+#include <Aka/Scene/Entity.h>
 
 #include <entt.hpp>
 
@@ -24,7 +25,7 @@ private:
 	World& m_world;
 };
 
-class World final
+class World
 {
 	template <typename T>
 	friend class WorldEventListener;

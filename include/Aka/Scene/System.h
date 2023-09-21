@@ -4,7 +4,6 @@
 
 namespace aka {
 
-class World;
 namespace gfx {
 struct Frame;
 };

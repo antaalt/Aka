@@ -6,7 +6,7 @@
 
 namespace aka {
 
-class Component
+/*class Component
 {
 public:
 	virtual void onUpdate(Time deltaTime) {}
@@ -58,7 +58,7 @@ public:
 private:
 	
 	Vector<Component*> pools[5];
-};
+};*/
 
 
 
