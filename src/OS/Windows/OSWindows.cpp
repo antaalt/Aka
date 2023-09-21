@@ -53,6 +53,30 @@ aka::String WcharToUtf8(const wchar_t* wstr)
 	return str;
 }
 
+String GetLastErrorAsString()
+{
+	DWORD errorMessageID = ::GetLastError();
+	if (errorMessageID == 0) 
+	{
+		return String("No errors.");
+	}
+
+	LPWSTR messageBuffer = nullptr;
+
+	//Ask Win32 to give us the string version of that message ID.
+	//The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
+	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
+
+	//Copy the error message into a std::string.
+	StringWide message(messageBuffer, size);
+
+	//Free the Win32's string's buffer.
+	LocalFree(messageBuffer);
+
+	return WcharToUtf8(message.cstr());
+}
+
 std::ostream& operator<<(std::ostream& os, Logger::Color color)
 {
 	if (color == Logger::Color::ForegroundNone)
@@ -363,7 +387,7 @@ FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 
 AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const char* message)
 {
-	UINT type;
+	UINT type = 0;
 	switch (modalType)
 	{
 	case AlertModalType::Information:
@@ -395,6 +419,35 @@ AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const 
 	case IDOK:
 		return AlertModalMessage::Ok;
 	}
+}
+
+void* OS::Link::load(const Path& path)
+{
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	HMODULE mod = LoadLibraryW(wstr.cstr());
+	if (mod == NULL)
+		Logger::warn("Failed to load DLL with error : ", GetLastErrorAsString());
+	return mod;
+}
+
+void* OS::Link::open(const Path& path)
+{
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	HMODULE mod = GetModuleHandleW(wstr.cstr());
+	if (mod == NULL)
+		Logger::warn("Failed to open DLL with error : ", GetLastErrorAsString());
+	return mod;
+}
+
+void* OS::Link::getProc(void* dll, const char* proc)
+{
+	HMODULE mod = (HMODULE)dll;
+	return GetProcAddress(mod, proc);
+}
+
+void OS::Link::free(void* module)
+{
+	BOOL ret = FreeLibrary((HMODULE)module);
 }
 
 };

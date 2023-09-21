@@ -185,6 +185,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/lua)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/renderdoc)
 
 target_link_libraries(Aka PUBLIC
 	Geometry
@@ -195,6 +196,7 @@ target_link_libraries(Aka PUBLIC
 target_link_libraries(Aka PRIVATE
 	AkaMiniz
 	AkaUtfCpp
+	AkaRenderdoc
 	AkaMiniMp3
 	AkaStb
 	AkaJson

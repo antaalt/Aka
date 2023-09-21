@@ -469,6 +469,7 @@ VkCommandPool createCommandPool(VkDevice device, uint32_t queueIndex)
 
 void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& config)
 {
+	m_platform = platform;
 	// We are using Vulkan 1.2 in this backend.
 	/*m_settings.api = GraphicAPI::Vulkan;
 	m_settings.version.major = 1;

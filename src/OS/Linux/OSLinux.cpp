@@ -238,6 +238,16 @@ AlertModalMessage AlertModal(AlertModalType type, const char* title, const char*
 	return AlertModalMessage::Ok;
 }
 
+void* OS::Link::open(const Path& path)
+{
+	return dlopen(path.cstr(), RTLD_NOW | RTLD_NOLOAD);
+}
+
+void* OS::Link::getProc(void* mod, const char* proc)
+{
+	return dlsym(mod, proc);
+}
+
 };
 
 #endif

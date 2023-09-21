@@ -187,6 +187,8 @@ public:
 
 	// Screenshot of the backbuffer
 	virtual void screenshot(void* data) = 0;
+	// Capture the frame with render doc.
+	virtual void capture() = 0;
 
 	// Frame
 	virtual Frame* frame() = 0;

@@ -16,6 +16,12 @@
 #include <Aka/Memory/Pool.h>
 #include <Aka/Core/Config.h>
 
+#define ENABLE_RENDERDOC_CAPTURE 1
+
+#ifdef ENABLE_RENDERDOC_CAPTURE
+struct RENDERDOC_API_1_6_0;
+#endif
+
 namespace aka {
 namespace gfx {
 
@@ -154,6 +160,7 @@ public:
 
 	// Tools
 	void screenshot(void* data) override;
+	void capture() override;
 
 
 	template <typename T, typename Base>
@@ -180,6 +187,16 @@ public:
 	VkDescriptorPool getVkDescriptorPool(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).pool; }
 	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount) { return m_context.getPipelineLayout(layouts, layoutCount, constants, constantCount); }
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
+private:
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	void* m_renderDocDll = nullptr;
+	RENDERDOC_API_1_6_0* m_renderDocContext = nullptr;
+	enum class RenderDocCaptureState {
+		Idle,
+		PendingCapture,
+		Capturing,
+	} m_captureState = RenderDocCaptureState::Idle;
+#endif
 private:
 	friend class VulkanSwapchain;
 	VulkanContext m_context;

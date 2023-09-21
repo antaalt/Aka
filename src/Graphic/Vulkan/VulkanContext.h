@@ -159,6 +159,11 @@ struct VulkanContext
 	VkCommandPool commandPool[EnumCount<QueueType>()];
 	VkDebugUtilsMessengerEXT debugMessenger;
 
+	PlatformDevice* getPlatform() { return m_platform; }
+
+private:
+	PlatformDevice* m_platform;
+
 public:
 	struct VertexInputData {
 		VkVertexInputBindingDescription bindings;

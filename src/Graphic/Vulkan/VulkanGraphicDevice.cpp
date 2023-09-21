@@ -1,8 +1,14 @@
 #include "VulkanGraphicDevice.h"
 
 #include <Aka/Memory/Allocator.h>
+#include <Aka/OS/OS.h>
 
 #if defined(AKA_USE_VULKAN)
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <renderdoc_app.h>
 
 namespace aka {
 namespace gfx {
@@ -11,6 +17,26 @@ VulkanGraphicDevice::VulkanGraphicDevice(PlatformDevice* platform, const Graphic
 	m_context(),
 	m_swapchain()
 {
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	// Load renderdoc before any context creation.
+	m_renderDocDll = OS::Link::load("C:/Program Files/RenderDoc/renderdoc.dll");
+	// Try out some other basic path for renderdoc
+	if (m_renderDocDll)
+	{
+		if (void* mod = OS::Link::open("renderdoc.dll"))
+		{
+			// https://renderdoc.org/docs/in_application_api.html
+			pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)OS::Link::getProc(mod, "RENDERDOC_GetAPI");
+			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_renderDocContext);
+			AKA_ASSERT(ret == 1, "Failed to retrieve renderdoc dll");
+			m_renderDocContext->SetCaptureFilePathTemplate("captures/aka");
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials, true);
+			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+		}
+	}
+#endif
 	m_context.initialize(platform, cfg);
 	m_swapchain.initialize(this, platform);
 }
@@ -18,6 +44,9 @@ VulkanGraphicDevice::VulkanGraphicDevice(PlatformDevice* platform, const Graphic
 VulkanGraphicDevice::~VulkanGraphicDevice()
 {
 	wait();
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	OS::Link::free(m_renderDocDll);
+#endif
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
@@ -79,6 +108,14 @@ Frame* VulkanGraphicDevice::frame()
 		Logger::error("Failed to acquire next swapchain image.");
 		return nullptr;
 	}
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	if (m_renderDocContext && m_captureState == RenderDocCaptureState::PendingCapture)
+	{
+		m_captureState = RenderDocCaptureState::Capturing;
+		m_renderDocContext->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), m_context.getPlatform()->getNativeHandle());
+		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
+	}
+#endif
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 		vk_frame->commandLists[i].begin();
 	return vk_frame;
@@ -122,8 +159,46 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 
 		VK_CHECK_RESULT(vkQueueSubmit(vk_queues[i], 1, &submitInfo, fence));
 	}
+
 	// Present
-	return m_swapchain.present(this, vk_frame);
+	SwapchainStatus status = m_swapchain.present(this, vk_frame);
+
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	// Capture frame
+	// https://renderdoc.org/docs/in_application_api.html
+	if (m_renderDocContext && m_captureState == RenderDocCaptureState::Capturing)
+	{
+		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
+		uint32_t ret = m_renderDocContext->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), m_context.getPlatform()->getNativeHandle());
+		if (ret == 1)
+		{
+			m_captureState = RenderDocCaptureState::Idle;
+			ret = m_renderDocContext->GetCapture(m_renderDocContext->GetNumCaptures() - 1, NULL, NULL, NULL);
+			if (ret == 1) // if capture is valid
+			{
+				// With 1 as first arg, renderdoc will connect to process immediately, 
+				// so call ShowReplayUI after that.
+				if (m_renderDocContext->IsTargetControlConnected())
+				{
+					m_renderDocContext->ShowReplayUI();
+				}
+				else
+				{
+					m_renderDocContext->LaunchReplayUI(1, "");
+				}
+			}
+			else
+			{
+				Logger::error("Failed to retrieve renderdoc capture.");
+			}
+		}
+		else
+		{
+			Logger::error("Renderdoc capture failed.");
+		}
+	}
+#endif
+	return status;
 }
 
 void VulkanGraphicDevice::wait()
@@ -134,6 +209,16 @@ void VulkanGraphicDevice::wait()
 void VulkanGraphicDevice::screenshot(void* data)
 {
 	AKA_NOT_IMPLEMENTED;
+}
+
+void VulkanGraphicDevice::capture()
+{
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	if (m_renderDocContext)
+	{
+		m_captureState = RenderDocCaptureState::PendingCapture;
+	}
+#endif
 }
 
 };

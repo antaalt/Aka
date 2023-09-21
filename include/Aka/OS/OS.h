@@ -72,6 +72,18 @@ struct OS
 		// Remove a directory.
 		static bool remove(const Path& path, bool recurse = false);
 	};
+
+	struct Link
+	{
+		// Load a module
+		static void* load(const Path& path);
+		// Open a module that has been loaded
+		static void* open(const Path& path);
+		// Load a proccess
+		static void* getProc(void* dll, const char* proc);
+		// Free a module
+		static void free(void* module);
+	};
 };
 
 std::ostream& operator<<(std::ostream& os, Logger::Color color);
