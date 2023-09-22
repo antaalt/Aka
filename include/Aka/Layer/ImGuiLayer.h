@@ -6,6 +6,7 @@
 #if defined(AKA_USE_IMGUI_LAYER)
 #include <imgui.h>
 #include <imguizmo.h>
+#include <IconsFontAwesome6.h>
 #endif
 
 namespace aka {

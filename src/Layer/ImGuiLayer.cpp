@@ -7,9 +7,11 @@
 
 #if defined(AKA_USE_IMGUI_LAYER)
 
-#include <imgui.h>
-#include <imguizmo.h>
 #include <backends/imgui_impl_glfw.h>
+
+#include "Fonts/FontAwesomeRegular400.hpp"
+#include "Fonts/FontAwesomeSolid900.hpp"
+#include "Fonts/RobotoRegular.hpp"
 
 // TODO rewrite imgui backend with aka
 #if defined(AKA_USE_OPENGL)
@@ -66,19 +68,100 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
+
+	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::app()->platform());
+#if defined(AKA_USE_OPENGL)
+	ImGui_ImplGlfw_InitForOpenGL(platform->getGLFW3Handle(), true);
+
+	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+	std::stringstream ss;
+	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
+	ImGui_ImplOpenGL3_Init(ss.str().c_str());
+#elif defined(AKA_USE_D3D11)
+	D3D11Device* device = reinterpret_cast<D3D11Device*>(Application::graphic());
+	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
+	ImGui_ImplDX11_Init(device->device(), device->context());
+#elif defined(AKA_USE_VULKAN)
+	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
+
+	{ // Custom descriptor pool for imgui
+		VkDescriptorPoolSize pool_sizes[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
+		VK_CHECK_RESULT(vkCreateDescriptorPool(device->getVkDevice(), &pool_info, nullptr, &m_renderData->descriptorPool));
+		//gfx::VulkanProgram::createVkDescriptorSet()
+	}
+	{
+		m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
+		m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
+	}
+
+	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
+	ImGui_ImplVulkan_InitInfo info{};
+	info.Instance = device->getVkInstance();
+	info.PhysicalDevice = device->getVkPhysicalDevice();
+	info.Device = device->getVkDevice();
+	info.QueueFamily = device->getVkQueueIndex(gfx::QueueType::Graphic);
+	info.Queue = device->getVkQueue(gfx::QueueType::Graphic);
+	info.PipelineCache = VK_NULL_HANDLE;
+	info.DescriptorPool = m_renderData->descriptorPool;
+	info.MinImageCount = 2; // >= 2
+	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount()); // >= MinImageCount
+	info.CheckVkResultFn = [](VkResult err) {
+		VK_CHECK_RESULT(err);
+	};
+
+	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanRenderPass>(m_renderData->renderPass)->vk_renderpass);
+
+#endif
+
+
 	// --- Font
-	/*io.Fonts->AddFontDefault();
+	float baseFontSize = 22.0f; // 13.0f is the size of the default font. Change to the font size you use.
+	float iconFontSize = baseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+
 	ImFontConfig config;
+	//config.GlyphMinAdvanceX = iconFontSize;
+	config.PixelSnapH = true;
+	config.FontDataOwnedByAtlas = false; // We keep ownership of given data.
+	{
+		//io.Fonts->AddFontDefault();
+		Vector<unsigned char> data(font::RobotoRegular, sizeof(font::RobotoRegular));
+		ImFont* iconFont = io.Fonts->AddFontFromMemoryTTF(data.data(), sizeof(font::RobotoRegular), iconFontSize, &config);
+		AKA_ASSERT(iconFont != nullptr, "Roboto font not loaded");
+	}
+	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
 	config.MergeMode = true;
-	config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
-	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	Path asset = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Regular-400.otf");
-	Path asset2 = Asset::path("font/FontAwesome5.15.2/Font Awesome 5 Free-Solid-900.otf");
+	{
+		// For some reason, ImGui does not support const pointer, so copy it to non const...
+		Vector<unsigned char> data(font::FontAwesomeRegular400, sizeof(font::FontAwesomeRegular400));
+		ImFont* iconFont = io.Fonts->AddFontFromMemoryTTF(data.data(), sizeof(font::FontAwesomeRegular400), iconFontSize, &config, icon_ranges);
+		AKA_ASSERT(iconFont != nullptr, "Icon font not loaded");
+	}
+	{
+		// For some reason, ImGui does not support const pointer, so copy it to non const...
+		Vector<unsigned char> data(font::FontAwesomeSolid900, sizeof(font::FontAwesomeSolid900));
+		ImFont* iconFont = io.Fonts->AddFontFromMemoryTTF(data.data(), sizeof(font::FontAwesomeSolid900), iconFontSize, &config, icon_ranges);
+		AKA_ASSERT(iconFont != nullptr, "Icon font not loaded");
+	}
 	
-	ImFont* iconFont = io.Fonts->AddFontFromFileTTF(asset.cstr(), 13.0f, &config, icon_ranges);
-	ImFont* iconFont2 = io.Fonts->AddFontFromFileTTF(asset2.cstr(), 13.0f, &config, icon_ranges);
-	AKA_ASSERT(iconFont != nullptr, "Icon font not loaded");
-	AKA_ASSERT(iconFont2 != nullptr, "Icon font not loaded");*/
 
 	// --- Style
 	ImGui::StyleColorsClassic();
@@ -167,69 +250,6 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 	style.WindowBorderSize = 1.f;
 	style.PopupBorderSize = 1.f;
 
-
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::app()->platform());
-#if defined(AKA_USE_OPENGL)
-	ImGui_ImplGlfw_InitForOpenGL(platform->getGLFW3Handle(), true);
-
-	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-	std::stringstream ss;
-	ss << "#version " << (GLuint)(100.f * glLanguageVersion) << std::endl;
-	ImGui_ImplOpenGL3_Init(ss.str().c_str());
-#elif defined(AKA_USE_D3D11)
-	D3D11Device* device = reinterpret_cast<D3D11Device*>(Application::graphic());
-	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
-	ImGui_ImplDX11_Init(device->device(), device->context());
-#elif defined(AKA_USE_VULKAN)
-	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
-
-	{ // Custom descriptor pool for imgui
-		VkDescriptorPoolSize pool_sizes[] =
-		{
-			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-		};
-		VkDescriptorPoolCreateInfo pool_info = {};
-		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-		pool_info.pPoolSizes = pool_sizes;
-		VK_CHECK_RESULT(vkCreateDescriptorPool(device->getVkDevice(), &pool_info, nullptr, &m_renderData->descriptorPool));
-		//gfx::VulkanProgram::createVkDescriptorSet()
-	}
-	{
-		m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
-		m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
-	}
-
-	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
-	ImGui_ImplVulkan_InitInfo info{};
-	info.Instance = device->getVkInstance();
-	info.PhysicalDevice = device->getVkPhysicalDevice();
-	info.Device = device->getVkDevice();
-	info.QueueFamily = device->getVkQueueIndex(gfx::QueueType::Graphic);
-	info.Queue = device->getVkQueue(gfx::QueueType::Graphic);
-	info.PipelineCache = VK_NULL_HANDLE;
-	info.DescriptorPool = m_renderData->descriptorPool;
-	info.MinImageCount = 2; // >= 2
-	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount()); // >= MinImageCount
-	info.CheckVkResultFn = [](VkResult err) {
-		VK_CHECK_RESULT(err);
-	};
-
-	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanRenderPass>(m_renderData->renderPass)->vk_renderpass);
-
-#endif
 }
 
 void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)
