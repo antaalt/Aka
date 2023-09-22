@@ -77,12 +77,13 @@ class AKA_NO_VTABLE GraphicDevice
 public:
 	virtual ~GraphicDevice() {}
 
-	static GraphicDevice* create(PlatformDevice* device, const GraphicConfig& cfg);
+	static GraphicDevice* create(GraphicAPI api);
 	static void destroy(GraphicDevice* device);
 
+	virtual void initialize(PlatformDevice* platform, const GraphicConfig& cfg) = 0;
+	virtual void shutdown() = 0;
+
 	virtual GraphicAPI api() const = 0;
-	// Set resource name
-	virtual void name(const Resource* resource, const char* name) = 0;
 
 	// Shaders
 	virtual ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) = 0;
@@ -181,9 +182,12 @@ public:
 	virtual CommandList* getCopyCommandList(Frame* frame) = 0;
 	virtual CommandList* getGraphicCommandList(Frame* frame) = 0;
 	virtual CommandList* getComputeCommandList(Frame* frame) = 0;
+
 	// Command submit
 	virtual void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
 	virtual void wait(QueueType queue) = 0;
+	virtual void beginMarker(QueueType queue, const char* name, const float* color) = 0;
+	virtual void endMarker(QueueType queue) = 0;
 
 	// Screenshot of the backbuffer
 	virtual void screenshot(void* data) = 0;
@@ -194,6 +198,15 @@ public:
 	virtual Frame* frame() = 0;
 	virtual SwapchainStatus present(Frame* frame) = 0;
 	virtual void wait() = 0;
+};
+
+struct ScopedQueueMarker
+{
+	ScopedQueueMarker(GraphicDevice* device, QueueType type, const char* name, const float* colors) : m_device(device), m_queue(type) { m_device->beginMarker(m_queue, name, colors); }
+	~ScopedQueueMarker() { m_device->endMarker(m_queue); }
+private:
+	GraphicDevice* m_device;
+	QueueType m_queue;
 };
 
 };

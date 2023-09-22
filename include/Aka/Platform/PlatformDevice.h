@@ -92,6 +92,9 @@ public:
 	static PlatformDevice* create(const PlatformConfig& config);
 	static void destroy(PlatformDevice* device);
 
+	virtual void initialize(const PlatformConfig& config) = 0;
+	virtual void shutdown() = 0;
+
 	// Get the width of the window
 	uint32_t width() const;
 	// Get the height of the window

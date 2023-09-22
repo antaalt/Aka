@@ -13,6 +13,9 @@ public:
 	RtAudioDevice(const AudioConfig& config);
 	~RtAudioDevice();
 
+	void initialize(const AudioConfig& config) override;
+	void shutdown() override;
+
 	// Play an audio at path.
 	bool play(AudioStream* stream) override;
 	// Close an audio

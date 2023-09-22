@@ -257,7 +257,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	VkBuffer stagingBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 	VkImageSubresourceRange subResource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Uploading textures & mips", getVkDevice(), getVkCommandPool(QueueType::Graphic));
 	if (data != nullptr && data[0] != nullptr)
 	{
 		// Create staging buffer
@@ -349,7 +349,7 @@ void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
 	VulkanTexture* vk_src = getVk<VulkanTexture>(lhs);
 	VulkanTexture* vk_dst = getVk<VulkanTexture>(rhs);
 
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Copying textures", getVkDevice(), getVkCommandPool(QueueType::Graphic));
 	vk_dst->copyFrom(cmd, vk_src);
 	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
 }
@@ -367,7 +367,7 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic));
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Transition resource", getVkDevice(), getVkCommandPool(QueueType::Graphic));
 	VulkanTexture::transitionImageLayout(
 		cmd,
 		vk_texture->vk_image, 
@@ -522,7 +522,7 @@ void VulkanTexture::upload(VulkanGraphicDevice* device, const void* const* data,
 	vkUnmapMemory(device->getVkDevice(), stagingBufferMemory);
 
 	// Copy buffer to image
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Upload texture", device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
 	copyBufferToImage(cmd, stagingBuffer);
 	VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic), cmd, device->getVkQueue(QueueType::Graphic));
 

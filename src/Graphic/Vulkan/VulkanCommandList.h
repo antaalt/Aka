@@ -46,7 +46,10 @@ struct VulkanCommandList : CommandList
 	void copy(TextureHandle src, TextureHandle dst) override;
 	void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) override;
 
-	static VkCommandBuffer createSingleTime(VkDevice device, VkCommandPool pool);
+	void beginMarker(const char* name, const float* color) override;
+	void endMarker() override;
+
+	static VkCommandBuffer createSingleTime(const char* debugname, VkDevice device, VkCommandPool pool);
 	static void endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicQueue);
 
 public:

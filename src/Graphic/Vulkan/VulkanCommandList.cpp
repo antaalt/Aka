@@ -401,7 +401,22 @@ void VulkanCommandList::blit(TextureHandle src, TextureHandle dst, const BlitReg
 	vk_dst->blitFrom(vk_command, vk_src, srcRegion, dstRegion, filter);
 }
 
-VkCommandBuffer VulkanCommandList::createSingleTime(VkDevice device, VkCommandPool commandPool)
+void VulkanCommandList::beginMarker(const char* name, const float* color)
+{
+	VkDebugUtilsLabelEXT label{};
+	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	memcpy(label.color, color, sizeof(float) * 4);
+	label.pLabelName = name;
+
+	vkCmdBeginDebugUtilsLabelEXT(vk_command, &label);
+}
+
+void VulkanCommandList::endMarker()
+{
+	vkCmdEndDebugUtilsLabelEXT(vk_command);
+}
+
+VkCommandBuffer VulkanCommandList::createSingleTime(const char* debugName, VkDevice device, VkCommandPool commandPool)
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -418,11 +433,21 @@ VkCommandBuffer VulkanCommandList::createSingleTime(VkDevice device, VkCommandPo
 
 	VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
+	VkDebugUtilsLabelEXT label{};
+	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	label.color[0] = 0.f;
+	label.color[0] = 0.f;
+	label.color[0] = 0.f;
+	label.color[0] = 1.f;
+	label.pLabelName = debugName;
+	vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &label);
+
 	return commandBuffer;
 }
 
 void VulkanCommandList::endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicsQueue)
 {
+	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
 	VkSubmitInfo submitInfo{};

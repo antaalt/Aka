@@ -487,7 +487,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	AKA_ASSERT(requiredPlatformInstanceExtensions != nullptr, "GLFW failed to initialize instance extensions.");
 	// Custom extensions
 	const char* requiredInstanceExtensions[] = {
-		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+		VK_EXT_DEBUG_UTILS_EXTENSION_NAME, // Replace old VK_EXT_debug_marker & VK_EXT_debug_report 
 		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 	};
 	const size_t requiredInstanceExtensionCount = sizeof(requiredInstanceExtensions) / sizeof(*requiredInstanceExtensions);

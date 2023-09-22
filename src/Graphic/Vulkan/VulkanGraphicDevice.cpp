@@ -13,9 +13,17 @@
 namespace aka {
 namespace gfx {
 
-VulkanGraphicDevice::VulkanGraphicDevice(PlatformDevice* platform, const GraphicConfig& cfg) :
+VulkanGraphicDevice::VulkanGraphicDevice() :
 	m_context(),
 	m_swapchain()
+{
+}
+
+VulkanGraphicDevice::~VulkanGraphicDevice()
+{
+}
+
+void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConfig& cfg)
 {
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	// Load renderdoc before any context creation.
@@ -41,7 +49,7 @@ VulkanGraphicDevice::VulkanGraphicDevice(PlatformDevice* platform, const Graphic
 	m_swapchain.initialize(this, platform);
 }
 
-VulkanGraphicDevice::~VulkanGraphicDevice()
+void VulkanGraphicDevice::shutdown()
 {
 	wait();
 #ifdef ENABLE_RENDERDOC_CAPTURE
@@ -82,14 +90,6 @@ GraphicAPI VulkanGraphicDevice::api() const
 	return GraphicAPI::Vulkan;
 }
 
-void VulkanGraphicDevice::name(const Resource* resource, const char* name)
-{
-	//AKA_ASSERT(resource->native != ResourceNativeHandleInvalid, "Invalid native handle");
-	//resource->type; // Get type & induce vktype with it
-	//setDebugName<>(getVkDevice(), resource->native, name);
-	AKA_NOT_IMPLEMENTED;
-}
-
 uint32_t VulkanGraphicDevice::getPhysicalDeviceCount()
 {
 	return m_context.getPhysicalDeviceCount();
@@ -102,12 +102,6 @@ const PhysicalDevice* VulkanGraphicDevice::getPhysicalDevice(uint32_t index)
 
 Frame* VulkanGraphicDevice::frame()
 {
-	VulkanFrame* vk_frame = m_swapchain.acquireNextImage(this);
-	if (vk_frame == nullptr)
-	{
-		Logger::error("Failed to acquire next swapchain image.");
-		return nullptr;
-	}
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	if (m_renderDocContext && m_captureState == RenderDocCaptureState::PendingCapture)
 	{
@@ -116,8 +110,23 @@ Frame* VulkanGraphicDevice::frame()
 		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
 	}
 #endif
+	VulkanFrame* vk_frame = m_swapchain.acquireNextImage(this);
+	if (vk_frame == nullptr)
+	{
+		Logger::error("Failed to acquire next swapchain image.");
+		return nullptr;
+	}
+	static const char* s_commandName[EnumCount<QueueType>()] = {
+		"Graphic main command list",
+		"Compute main command list",
+		"Copy main command list",
+	};
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
+		color4f markerColor(0.6f, 0.6f, 0.6f, 1.f);
 		vk_frame->commandLists[i].begin();
+		vk_frame->commandLists[i].beginMarker(s_commandName[i], markerColor.data);
+	}
 	return vk_frame;
 }
 
@@ -126,7 +135,10 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
+		vk_frame->commandLists[i].endMarker();
 		vk_frame->commandLists[i].end();
+	}
 
 	// Submit
 	VkQueue vk_queues[EnumCount<QueueType>()] = {
@@ -142,8 +154,14 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 		vk_frame->commandLists[EnumToIndex(QueueType::Compute)].vk_command,
 		vk_frame->commandLists[EnumToIndex(QueueType::Copy)].vk_command,
 	};
-	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	static const char* s_queueName[EnumCount<QueueType>()] = {
+		"Graphic queue",
+		"Compute queue",
+		"Copy queue",
+	};
+	for (QueueType queue : EnumRange<QueueType>())
 	{
+		uint32_t i = EnumToIndex(queue);
 		VkSemaphore signalSemaphore = vk_frame->semaphore[i + 1];
 		VkSemaphore waitSemaphore = vk_frame->semaphore[i];
 		VkFence fence = vk_frame->presentFence[i];
@@ -157,7 +175,10 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &waitSemaphore;
 
+		color4f markerColor(0.8f, 0.8f, 0.8f, 1.f);
+		beginMarker(queue, s_queueName[i], markerColor.data);
 		VK_CHECK_RESULT(vkQueueSubmit(vk_queues[i], 1, &submitInfo, fence));
+		endMarker(queue);
 	}
 
 	// Present
@@ -200,6 +221,21 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 #endif
 	return status;
 }
+
+void VulkanGraphicDevice::beginMarker(QueueType queue, const char* name, const float* color)
+{
+	VkDebugUtilsLabelEXT label{};
+	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	memcpy(label.color, color, sizeof(float) * 4);
+	label.pLabelName = name;
+	vkQueueBeginDebugUtilsLabelEXT(getVkQueue(queue), &label);
+}
+
+void VulkanGraphicDevice::endMarker(QueueType queue)
+{
+	vkQueueEndDebugUtilsLabelEXT(getVkQueue(queue));
+}
+
 
 void VulkanGraphicDevice::wait()
 {

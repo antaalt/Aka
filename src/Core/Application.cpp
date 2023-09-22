@@ -11,10 +11,10 @@ namespace aka {
 
 Application* Application::s_app = nullptr;
 
-Application::Application() :
-	m_platform(nullptr),
-	m_graphic(nullptr),
-	m_audio(nullptr),
+Application::Application(const Config& config) :
+	m_platform(PlatformDevice::create(config.platform)),
+	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
+	m_audio(AudioDevice::create(config.audio)),
 	m_program(new ShaderRegistry),
 	m_library(new AssetLibrary),
 	m_root(new Layer),
@@ -26,6 +26,9 @@ Application::Application() :
 }
 Application::~Application()
 {
+	AudioDevice::destroy(m_audio);
+	gfx::GraphicDevice::destroy(m_graphic);
+	PlatformDevice::destroy(m_platform);
 	delete m_root;
 	delete m_library;
 	delete m_program;
@@ -33,12 +36,16 @@ Application::~Application()
 void Application::create(const Config& config)
 {
 	OS::setcwd(config.directory);
-	m_platform = PlatformDevice::create(config.platform);
 	AKA_ASSERT(m_platform != nullptr, "No platform");
-	m_graphic = gfx::GraphicDevice::create(m_platform, config.graphic);
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
-	m_audio = AudioDevice::create(config.audio);
 	AKA_ASSERT(m_audio != nullptr, "No audio");
+	AKA_ASSERT(m_program != nullptr, "No shaders");
+	AKA_ASSERT(m_library != nullptr, "No assets");
+	AKA_ASSERT(m_root != nullptr, "No layers");
+
+	m_platform->initialize(config.platform);
+	m_graphic->initialize(m_platform, config.graphic);
+	m_audio->initialize(config.audio);
 	m_width = config.platform.width;
 	m_height = config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
@@ -53,13 +60,10 @@ void Application::destroy()
 	onDestroy();
 	m_program->destroy(m_graphic);
 	m_library->destroy(m_graphic);
-	AudioDevice::destroy(m_audio);
-	gfx::GraphicDevice::destroy(m_graphic);
-	PlatformDevice::destroy(m_platform);
-	
-	m_audio = nullptr;
-	m_graphic = nullptr;
-	m_platform = nullptr;
+	m_audio->shutdown();
+	m_graphic->shutdown();
+	m_platform->shutdown();
+
 }
 void Application::start()
 {
@@ -161,15 +165,14 @@ AssetLibrary* Application::assets()
 	return m_library;
 }
 
-void Application::run(const Config& config)
+void Application::run(Application* app, const Config& config)
 {
-	if (config.app == nullptr)
+	if (app == nullptr)
 		throw std::invalid_argument("No app set.");
 	
 	const Time timestep = Time::milliseconds(10);
 	const Time maxUpdate = Time::milliseconds(100);
 
-	Application* app = config.app;
 	s_app = app;
 
 	app->create(config);

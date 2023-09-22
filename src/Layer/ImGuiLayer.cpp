@@ -282,7 +282,7 @@ void ImGuiLayer::onLayerFrame()
 	if (!ImGui::GetIO().Fonts->TexID)
 	{
 		gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
-		VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime(device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic));
+		VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime("Create ImGui fonts", device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic));
 		ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
 		gfx::VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic), cmdBuffer, device->getVkQueue(gfx::QueueType::Graphic));
 
@@ -314,11 +314,14 @@ void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* fra
 	// TODO do not enforce backbuffer
 	gfx::FramebufferHandle framebuffer = _device->get(m_renderData->backbuffer, frame);
 	const gfx::Framebuffer* fb = _device->get(framebuffer);
-	cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
-	cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
-	cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getVkCommandBuffer());
-	cmd->endRenderPass();
+	{
+		gfx::ScopedCmdMarker marker(cmd, "ImGui", &Color::red.x);
+		cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
+		cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
+		cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getVkCommandBuffer());
+		cmd->endRenderPass();
+	}
 #endif
 }
 

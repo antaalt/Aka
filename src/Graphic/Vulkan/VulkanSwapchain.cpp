@@ -213,7 +213,6 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 	m_backbufferTextures.resize(m_imageCount);
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device->getVkDevice(), m_swapchain, &m_imageCount, vk_images.data()));
 
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
 	for (size_t i = 0; i < m_imageCount; i++)
 	{
 		// Create swapchain view

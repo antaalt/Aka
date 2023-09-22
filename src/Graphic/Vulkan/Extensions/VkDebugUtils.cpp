@@ -1,7 +1,10 @@
 #if defined(AKA_USE_VULKAN)
 
 #include <vulkan/vulkan.h>
+#include "../VulkanGraphicDevice.h"
+#include <Aka/Core/Application.h>
 
+// TODO should store these instead of loading them everytime.
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(
 	VkInstance instance,
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -21,6 +24,16 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(
 	func(instance, debugMessenger, pAllocator);
 }
 
+VKAPI_ATTR void VKAPI_CALL vkSubmitDebugUtilsMessageEXT(
+	VkInstance instance, 
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+	VkDebugUtilsMessageTypeFlagsEXT messageTypes, 
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData
+) {
+	auto func = (PFN_vkSubmitDebugUtilsMessageEXT)vkGetInstanceProcAddr(instance, "vkSubmitDebugUtilsMessageEXT");
+	func(instance, messageSeverity, messageTypes, pCallbackData);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL vkSetDebugUtilsObjectNameEXT(
 	VkDevice                                    device,
 	const VkDebugUtilsObjectNameInfoEXT* pNameInfo
@@ -35,6 +48,58 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetDebugUtilsObjectTagEXT(
 ) {
 	auto func = (PFN_vkSetDebugUtilsObjectTagEXT)vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectTagEXT");
 	return func(device, pTagInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkQueueBeginDebugUtilsLabelEXT(
+	VkQueue queue, 
+	const VkDebugUtilsLabelEXT* pLabelInfo
+) {
+	VkDevice device = reinterpret_cast<aka::gfx::VulkanGraphicDevice*>(aka::Application::app()->graphic())->getVkDevice();
+	auto func = (PFN_vkQueueBeginDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkQueueBeginDebugUtilsLabelEXT");
+	func(queue, pLabelInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkQueueEndDebugUtilsLabelEXT(
+	VkQueue queue
+) {
+	VkDevice device = reinterpret_cast<aka::gfx::VulkanGraphicDevice*>(aka::Application::app()->graphic())->getVkDevice();
+	auto func = (PFN_vkQueueEndDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkQueueEndDebugUtilsLabelEXT");
+	func(queue);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkQueueInsertDebugUtilsLabelEXT(
+	VkQueue queue,
+	const VkDebugUtilsLabelEXT* pLabelInfo
+) {
+	VkDevice device = reinterpret_cast<aka::gfx::VulkanGraphicDevice*>(aka::Application::app()->graphic())->getVkDevice();
+	auto func = (PFN_vkQueueInsertDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkQueueInsertDebugUtilsLabelEXT");
+	func(queue, pLabelInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdBeginDebugUtilsLabelEXT(
+	VkCommandBuffer commandBuffer, 
+	const VkDebugUtilsLabelEXT* pLabelInfo
+) {
+	VkDevice device = reinterpret_cast<aka::gfx::VulkanGraphicDevice*>(aka::Application::app()->graphic())->getVkDevice();
+	auto func = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkCmdBeginDebugUtilsLabelEXT");
+	func(commandBuffer, pLabelInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdEndDebugUtilsLabelEXT(
+	VkCommandBuffer commandBuffer
+) {
+	VkDevice device = reinterpret_cast<aka::gfx::VulkanGraphicDevice*>(aka::Application::app()->graphic())->getVkDevice();
+	auto func = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkCmdEndDebugUtilsLabelEXT");
+	func(commandBuffer);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdInsertDebugUtilsLabelEXT(
+	VkCommandBuffer commandBuffer,
+	const VkDebugUtilsLabelEXT* pLabelInfo
+) {
+	VkDevice device = reinterpret_cast<aka::gfx::VulkanGraphicDevice*>(aka::Application::app()->graphic())->getVkDevice();
+	auto func = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkCmdInsertDebugUtilsLabelEXT");
+	func(commandBuffer, pLabelInfo);
 }
 
 #endif

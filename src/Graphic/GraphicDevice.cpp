@@ -6,12 +6,14 @@ namespace aka {
 namespace gfx {
 
 
-GraphicDevice* GraphicDevice::create(PlatformDevice* device, const GraphicConfig& cfg)
+GraphicDevice* GraphicDevice::create(GraphicAPI api)
 {
-	switch (cfg.api)
+	switch (api)
 	{
+#if defined(AKA_USE_VULKAN)
 	case GraphicAPI::Vulkan:
-		return new VulkanGraphicDevice(device, cfg);
+		return new VulkanGraphicDevice();
+#endif
 	default:
 		return nullptr;
 	}

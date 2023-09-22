@@ -13,6 +13,9 @@ public:
 	PlatformGLFW3(const PlatformConfig& config);
 	~PlatformGLFW3();
 
+	void initialize(const PlatformConfig& config) override;
+	void shutdown() override;
+
 	void poll() override;
 	void move(int32_t x, int32_t y) override;
 	void resize(uint32_t width, uint32_t height) override;

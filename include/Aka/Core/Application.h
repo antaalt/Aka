@@ -23,7 +23,6 @@ struct Config
 	gfx::GraphicConfig graphic = {};
 	AudioConfig audio = {};
 	PlatformConfig platform = {};
-	Application* app = nullptr;
 	Path directory;
 	int argc = 0;
 	char** argv = nullptr;
@@ -62,7 +61,7 @@ class Application :
 	EventListener<WindowResizeEvent>
 {
 public:
-	Application();
+	Application(const Config& cfg);
 	virtual ~Application();
 private:
 	// Create the application and its resources.
@@ -115,7 +114,7 @@ public:
 	Layer& getRoot();
 public:
 	// Entry point of the application
-	static void run(const Config& config);
+	static void run(Application* app, const Config& config);
 	// Get the application
 	static Application* app();
 	// Get the graphic device

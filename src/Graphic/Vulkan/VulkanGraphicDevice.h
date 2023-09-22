@@ -28,12 +28,13 @@ namespace gfx {
 class VulkanGraphicDevice : public GraphicDevice
 {
 public:
-	VulkanGraphicDevice(PlatformDevice* device, const GraphicConfig& cfg);
+	VulkanGraphicDevice();
 	~VulkanGraphicDevice();
 
-	GraphicAPI api() const override;
+	void initialize(PlatformDevice* platform, const GraphicConfig& cfg) override;
+	void shutdown() override;
 
-	void name(const Resource* resource, const char* name) override;
+	GraphicAPI api() const override;
 
 	// Device
 	uint32_t getPhysicalDeviceCount() override;
@@ -147,6 +148,8 @@ public:
 	void release(CommandList* cmd) override;
 	void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
 	void wait(QueueType queue) override;
+	void beginMarker(QueueType queue, const char* name, const float* color) override;
+	void endMarker(QueueType queue) override;
 
 	// Frame command lists
 	CommandList* getCopyCommandList(Frame* frame) override;

@@ -68,8 +68,18 @@ struct AKA_NO_VTABLE CommandList
 	virtual void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) = 0;
 
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
-
 	virtual void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) = 0;
+
+	virtual void beginMarker(const char* name, const float* color) = 0;
+	virtual void endMarker() = 0;
+};
+
+struct ScopedCmdMarker
+{
+	ScopedCmdMarker(CommandList* cmd, const char* name, const float* colors) : m_command(cmd) { m_command->beginMarker(name, colors); }
+	~ScopedCmdMarker() { m_command->endMarker(); }
+private:
+	CommandList* m_command;
 };
 
 };

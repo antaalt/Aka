@@ -22,6 +22,9 @@ public:
 	static AudioDevice* create(const AudioConfig& config);
 	static void destroy(AudioDevice* device);
 
+	virtual void initialize(const AudioConfig& config) = 0;
+	virtual void shutdown() = 0;
+
 	// Get the frequency of the device
 	uint32_t getFrequency();
 	// Get the channel count of the device

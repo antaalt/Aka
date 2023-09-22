@@ -9,13 +9,22 @@
 namespace aka {
 
 RtAudioDevice::RtAudioDevice(const AudioConfig& config) :
-	AudioDevice(config)
-{
+	AudioDevice(config),
 #if defined(AKA_PLATFORM_WINDOWS)
-	m_audio = new RtAudio(RtAudio::Api::WINDOWS_DS);
+	m_audio(new RtAudio(RtAudio::Api::WINDOWS_DS))
 #else
-	m_audio = new RtAudio(RtAudio::Api::LINUX_PULSE);
+	m_audio(new RtAudio(RtAudio::Api::LINUX_PULSE))
 #endif
+{
+}
+
+RtAudioDevice::~RtAudioDevice()
+{
+	delete m_audio;
+}
+
+void RtAudioDevice::initialize(const AudioConfig& config)
+{
 	// Determine the number of devices available
 	unsigned int devices = m_audio->getDeviceCount();
 	if (devices == 0)
@@ -71,13 +80,12 @@ RtAudioDevice::RtAudioDevice(const AudioConfig& config) :
 	}
 }
 
-RtAudioDevice::~RtAudioDevice()
+void RtAudioDevice::shutdown()
 {
 	if (m_audio->isStreamRunning())
 		m_audio->stopStream();
 	if (m_audio->isStreamOpen())
 		m_audio->closeStream();
-	delete m_audio;
 }
 
 bool RtAudioDevice::play(AudioStream* stream)
