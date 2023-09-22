@@ -34,11 +34,11 @@ void Layer::update(Time deltaTime)
 	for (Layer* children : m_childrens)
 		children->update(deltaTime);
 }
-void Layer::render(gfx::Frame* frame)
+void Layer::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
 {
 	for (Layer* children : m_childrens)
-		children->render(frame);
-	onLayerRender(frame);
+		children->render(_device, frame);
+	onLayerRender(_device, frame);
 }
 void Layer::frame() 
 {

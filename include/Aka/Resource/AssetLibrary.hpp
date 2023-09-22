@@ -96,6 +96,7 @@ struct AssetAddedEvent
 struct ResourceLoadedEvent
 {
 	ResourceID resource;
+	ResourceType type;
 };
 
 class AssetLibrary
@@ -216,8 +217,9 @@ inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typena
 	{
 		AKA_ASSERT(_device != nullptr, "Invalid device");
 		ResourceHandle<T> handle = it.first->second;
-		handle.get().create(this, _device, _archive);
-		EventDispatcher<ResourceLoadedEvent>::emit(ResourceLoadedEvent{ _resourceID });
+		T& res = handle.get();
+		res.create(this, _device, _archive);
+		EventDispatcher<ResourceLoadedEvent>::emit(ResourceLoadedEvent{ _resourceID, res.getType() });
 		return handle;
 	}
 	else

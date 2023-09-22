@@ -83,10 +83,10 @@ void Application::frame()
 	m_root->frame();
 	EventDispatcher<AppFrameEvent>::trigger(AppFrameEvent{});
 }
-void Application::render(gfx::Frame* frame)
+void Application::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
 {
-	onRender(frame);
-	m_root->render(frame);
+	onRender(_device, frame);
+	m_root->render(_device, frame);
 	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{ frame });
 }
 void Application::present()
@@ -199,7 +199,7 @@ void Application::run(const Config& config)
 		if (frame != nullptr)
 		{
 			app->frame();
-			app->render(frame);
+			app->render(graphic, frame);
 			app->present();
 			gfx::SwapchainStatus status = graphic->present(frame);
 			if (status == gfx::SwapchainStatus::Recreated)

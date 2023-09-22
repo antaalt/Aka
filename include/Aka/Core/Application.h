@@ -78,7 +78,7 @@ private:
 	// Called before render for the app.
 	void frame();
 	// Render the app.
-	void render(gfx::Frame* frame);
+	void render(gfx::GraphicDevice* _device, gfx::Frame* frame);
 	// Called before present of the frame
 	void present();
 	// Last function called in a loop
@@ -101,7 +101,7 @@ protected:
 	// Called before app render
 	virtual void onFrame() {}
 	// Called on app render
-	virtual void onRender(gfx::Frame* frame) {}
+	virtual void onRender(gfx::GraphicDevice* _device, gfx::Frame* frame) {}
 	// Called before present of the app
 	virtual void onPresent() {}
 	// Called on app resize

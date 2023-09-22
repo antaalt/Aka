@@ -274,10 +274,9 @@ void ImGuiLayer::onLayerFrame()
 	ImGui::NewFrame();
 }
 
-void ImGuiLayer::onLayerRender(gfx::Frame* frame)
+void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* frame)
 {
-	gfx::GraphicDevice* device = Application::app()->graphic();
-	gfx::CommandList* cmd = device->getGraphicCommandList(frame);
+	gfx::CommandList* cmd = _device->getGraphicCommandList(frame);
 	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
@@ -293,8 +292,8 @@ void ImGuiLayer::onLayerRender(gfx::Frame* frame)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
-	gfx::FramebufferHandle framebuffer = device->get(m_renderData->backbuffer, frame);
-	const gfx::Framebuffer* fb = device->get(framebuffer);
+	gfx::FramebufferHandle framebuffer = _device->get(m_renderData->backbuffer, frame);
+	const gfx::Framebuffer* fb = _device->get(framebuffer);
 	cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
 	cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
 	cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});

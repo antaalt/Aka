@@ -31,7 +31,7 @@ private:
 	void onLayerDestroy(gfx::GraphicDevice* _device) override;
 
 	void onLayerFrame() override;
-	void onLayerRender(gfx::Frame* frame) override;
+	void onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* frame) override;
 	void onLayerPresent() override;
 	void onLayerResize(uint32_t width, uint32_t height) override;
 private:
