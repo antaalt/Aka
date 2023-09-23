@@ -165,10 +165,6 @@ private:
 	PlatformDevice* m_platform;
 
 public:
-	struct VertexInputData {
-		VkVertexInputBindingDescription bindings;
-		VkVertexInputAttributeDescription attributes[VertexMaxAttributeCount];
-	};
 	struct ShaderInputData {
 		VkDescriptorPool pool;
 		VkDescriptorSetLayout layout;
@@ -177,14 +173,11 @@ public:
 	VkRenderPass getRenderPass(const RenderPassState& state);
 	ShaderInputData getDescriptorLayout(const ShaderBindingState& bindingsDesc);
 	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount);
-	VertexInputData getVertexInputData(const VertexAttributeState& verticesDesc);
 
 private:
 	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
 	std::unordered_map<ShaderBindingState, ShaderInputData> m_bindingDesc;
 	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout;
-	std::unordered_map<VertexAttributeState, VertexInputData> m_verticesDesc;
-
 private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);
 	VkSurfaceKHR createSurface(PlatformDevice* platform);

@@ -21,7 +21,7 @@ public:
 	gfx::IndexFormat getIndexFormat() const { return m_indexFormat; }
 	aabbox<> getBounds() const { return m_bounds; }
 public: // Optionnal data for runtime operations
-	gfx::VertexAttributeState attributes;
+	gfx::VertexBufferLayout attributes;
 public: // Mandatory data for rendering & co
 	// Should be mutualized in a big single geometry buffer with pages.
 	gfx::BufferHandle gfxVertexBuffer;

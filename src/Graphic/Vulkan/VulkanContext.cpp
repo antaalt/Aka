@@ -173,19 +173,6 @@ VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* l
 	return pipelineLayout;
 }
 
-VulkanContext::VertexInputData VulkanContext::getVertexInputData(const VertexAttributeState& verticesDesc)
-{
-	auto it = m_verticesDesc.find(verticesDesc);
-	if (it != m_verticesDesc.end())
-		return it->second;
-
-	VertexInputData vertices{};
-	vertices.bindings = VulkanGraphicPipeline::getVertexBindings(verticesDesc, vertices.attributes, VertexMaxAttributeCount);
-
-	m_verticesDesc.insert(std::make_pair(verticesDesc, vertices));
-	return vertices;
-}
-
 VkInstance VulkanContext::createInstance(const char** instanceExtensions, size_t instanceExtensionCount)
 {
 	uint32_t extensionCount = 0;
@@ -535,10 +522,6 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 
 void VulkanContext::shutdown()
 {
-	for (auto& rp : m_verticesDesc)
-	{
-		// nothing to clear.
-	}
 	for (auto& rp : m_bindingDesc)
 	{
 		vkDestroyDescriptorPool(device, rp.second.pool, nullptr);

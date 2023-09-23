@@ -11,7 +11,6 @@ VkCullModeFlags tovk(CullMode mode)
 {
 	switch (mode)
 	{
-	default:
 	case CullMode::None:
 		return VK_CULL_MODE_NONE;
 	case CullMode::FrontFace:
@@ -20,19 +19,24 @@ VkCullModeFlags tovk(CullMode mode)
 		return VK_CULL_MODE_BACK_BIT;
 	case CullMode::AllFace:
 		return VK_CULL_MODE_FRONT_AND_BACK;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_CULL_MODE_FLAG_BITS_MAX_ENUM;
 	}
 }
 VkPolygonMode tovk(FillMode mode)
 {
 	switch (mode)
 	{
-	default:
 	case FillMode::Fill:
 		return VK_POLYGON_MODE_FILL;
 	case FillMode::Line:
 		return VK_POLYGON_MODE_LINE;
 	case FillMode::Point:
 		return VK_POLYGON_MODE_POINT;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_POLYGON_MODE_MAX_ENUM;
 	}
 }
 VkFrontFace tovk(CullOrder order)
@@ -41,9 +45,11 @@ VkFrontFace tovk(CullOrder order)
 	{
 	case CullOrder::ClockWise:
 		return VK_FRONT_FACE_CLOCKWISE;
-	default:
 	case CullOrder::CounterClockWise:
 		return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_FRONT_FACE_MAX_ENUM;
 	}
 }
 VkCompareOp tovk(DepthOp compare)
@@ -54,7 +60,6 @@ VkCompareOp tovk(DepthOp compare)
 		return VK_COMPARE_OP_ALWAYS;
 	case DepthOp::Never:
 		return VK_COMPARE_OP_NEVER;
-	default:
 	case DepthOp::Less:
 		return VK_COMPARE_OP_LESS;
 	case DepthOp::Equal:
@@ -67,13 +72,15 @@ VkCompareOp tovk(DepthOp compare)
 		return VK_COMPARE_OP_NOT_EQUAL;
 	case DepthOp::GreaterOrEqual:
 		return VK_COMPARE_OP_GREATER_OR_EQUAL;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_COMPARE_OP_MAX_ENUM;
 	}
 }
 VkBlendFactor tovk(BlendMode mode)
 {
 	switch (mode)
 	{
-	default:
 	case BlendMode::Zero:
 		return VK_BLEND_FACTOR_ZERO;
 	case BlendMode::One:
@@ -112,6 +119,9 @@ VkBlendFactor tovk(BlendMode mode)
 		return VK_BLEND_FACTOR_SRC1_ALPHA;
 	case BlendMode::OneMinusSrc1Alpha:
 		return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_BLEND_FACTOR_MAX_ENUM;
 	}
 }
 VkColorComponentFlags tovk(ColorMask mask)
@@ -131,7 +141,6 @@ VkBlendOp tovk(BlendOp compare)
 {
 	switch (compare)
 	{
-	default:
 	case BlendOp::Add:
 		return VK_BLEND_OP_ADD;
 	case BlendOp::Subtract:
@@ -142,7 +151,24 @@ VkBlendOp tovk(BlendOp compare)
 		return VK_BLEND_OP_MIN;
 	case BlendOp::Max:
 		return VK_BLEND_OP_MAX;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_BLEND_OP_MAX_ENUM;
 	}
+}
+VkVertexInputRate tovk(VertexStepRate rate)
+{
+	switch (rate)
+	{
+	case VertexStepRate::Vertex:
+		return VK_VERTEX_INPUT_RATE_VERTEX;
+	case VertexStepRate::Instance:
+		return VK_VERTEX_INPUT_RATE_INSTANCE;
+	default:
+		AKA_ASSERT(false, "invalid enum");
+		return VK_VERTEX_INPUT_RATE_MAX_ENUM;
+	}
+	// VK_VERTEX_INPUT_RATE_VERTEX; //VK_VERTEX_INPUT_RATE_INSTANCE if instance
 }
 VkFormat tovk(VertexType type, VertexFormat format)
 {
@@ -246,7 +272,7 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
 	ProgramHandle program,
 	PrimitiveType primitive,
 	const RenderPassState& renderPass,
-	const VertexAttributeState& vertices,
+	const VertexState& vertices,
 	const ViewportState& viewport,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -331,7 +357,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	const VulkanShader** shaders,
 	uint32_t shaderCount,
 	PrimitiveType primitive,
-	const VertexAttributeState& vertices,
+	const VertexState& vertices,
 	const RenderPassState& renderPass,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -393,7 +419,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	//depthStencilInfo.maxDepthBounds = 1.0f;
 	depthStencilInfo.stencilTestEnable = stencil.isEnabled() ? VK_TRUE : VK_FALSE;
 
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPass.count, VkPipelineColorBlendAttachmentState{});
+	Vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(renderPass.count, VkPipelineColorBlendAttachmentState{});
 	for (uint32_t i = 0; i < renderPass.count; i++)
 	{
 		colorBlendAttachments[i].colorWriteMask = tovk(blend.mask);
@@ -411,32 +437,39 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	colorBlendInfo.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
 	colorBlendInfo.pAttachments = colorBlendAttachments.data();
 
-	VkVertexInputBindingDescription vertexInputBinding{};
-	vertexInputBinding.binding = 0;
-	vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // TODO VK_VERTEX_INPUT_RATE_INSTANCE need multiple vertices struct.
-	vertexInputBinding.stride = vertices.stride();
 
-	std::vector<VkVertexInputAttributeDescription> attributeDescription(vertices.count, VkVertexInputAttributeDescription{});
-	for (uint32_t i = 0; i < vertices.count; i++)
+	Vector<VkVertexInputBindingDescription> vertexInputBindings(vertices.count, VkVertexInputBindingDescription{});
+	Vector<VkVertexInputAttributeDescription> attributeDescriptions;
+	uint32_t bindingOffset = 0;
+	for (uint32_t iBuffer = 0; iBuffer < vertices.count; iBuffer++)
 	{
-		const VertexAttribute& attribute = vertices.attributes[i];
-		attributeDescription[i].binding = 0;
-		attributeDescription[i].offset = vertices.offsets[i];
-		attributeDescription[i].format = tovk(attribute.type, attribute.format);
-		AKA_ASSERT(attributeDescription[i].format != VK_FORMAT_UNDEFINED, "Unsupported format");
-		attributeDescription[i].location = i;
+		const VertexBufferLayout& layout = vertices.bufferLayout[iBuffer];
+		vertexInputBindings[iBuffer].binding = iBuffer;
+		vertexInputBindings[iBuffer].inputRate = tovk(layout.stepRate);
+		vertexInputBindings[iBuffer].stride = vertices.bufferLayout[iBuffer].stride();
+		for (uint32_t iBinding = 0; iBinding < layout.count; iBinding++)
+		{
+			VkVertexInputAttributeDescription& attributeDescription = attributeDescriptions.emplace();
+			const VertexAttribute& attribute = layout.attributes[iBinding];
+			attributeDescription.binding = iBuffer;
+			attributeDescription.offset = vertices.bufferLayout[iBuffer].offsets[iBinding]; // Relative to stride.
+			attributeDescription.format = tovk(attribute.type, attribute.format);
+			attributeDescription.location = iBinding + bindingOffset; // Shared between buffers
+			AKA_ASSERT(attributeDescription.format != VK_FORMAT_UNDEFINED, "Unsupported format");
+		}
+		bindingOffset += layout.count;
 	}
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &vertexInputBinding;
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
+	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
+	vertexInputInfo.pVertexBindingDescriptions = vertexInputBindings.data();
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 
 	// Prepare all shader stages
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStages(shaderCount, VkPipelineShaderStageCreateInfo{});
+	Vector<VkPipelineShaderStageCreateInfo> shaderStages(shaderCount, VkPipelineShaderStageCreateInfo{});
 	for (uint32_t i = 0; i < shaderCount; i++)
 	{
 		VkPipelineShaderStageCreateInfo& shaderStage = shaderStages[i];
@@ -467,32 +500,12 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	return pipeline;
 }
 
-VkVertexInputBindingDescription VulkanGraphicPipeline::getVertexBindings(const VertexAttributeState& verticesDesc, VkVertexInputAttributeDescription* attributes, uint32_t count)
-{
-	AKA_ASSERT(count == verticesDesc.count, "");
-	VkVertexInputBindingDescription verticesBindings{};
-	verticesBindings.binding = 0;
-	verticesBindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	verticesBindings.stride = verticesDesc.stride();
-
-	for (uint32_t i = 0; i < verticesDesc.count; i++)
-	{
-		const VertexAttribute& attribute = verticesDesc.attributes[i];
-		attributes[i].binding = 0;
-		attributes[i].offset = verticesDesc.offsets[i];
-		attributes[i].format = tovk(attribute.type, attribute.format);
-		AKA_ASSERT(attributes[i].format != VK_FORMAT_UNDEFINED, "Unsupported format");
-		attributes[i].location = i;
-	}
-	return verticesBindings;
-}
-
 GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	const char* name,
 	ProgramHandle program,
 	PrimitiveType primitive,
 	const RenderPassState& renderPass,
-	const VertexAttributeState& vertices,
+	const VertexState& vertices,
 	const ViewportState& viewport,
 	const DepthState& depth,
 	const StencilState& stencil,

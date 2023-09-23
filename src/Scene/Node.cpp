@@ -2,20 +2,14 @@
 
 namespace aka {
 
-static Pool<StaticMeshComponent> GlobalStaticMeshComponentPool;
-static Pool<CameraComponent> GlobalCameraComponentPool;
-
-template<> Pool<StaticMeshComponent>& GetGlobalComponentPool() { return GlobalStaticMeshComponentPool; }
-template<> Pool<CameraComponent>& GetGlobalComponentPool() { return GlobalCameraComponentPool; }
-
 Node::Node() : 
 	m_name("Unknown"),
-	m_dirtyMask(ComponentTypeMask::None)
+	m_updateFlags(NodeUpdateFlag::None)
 {
 }
 Node::Node(const char* name) : 
 	m_name(name),
-	m_dirtyMask(ComponentTypeMask::None)
+	m_updateFlags(NodeUpdateFlag::None)
 {
 }
 Node::~Node()
@@ -25,21 +19,10 @@ Node::~Node()
 
 void Node::destroyComponents()
 {
-	for (Component* components : m_components)
+	for (Component* component : m_components)
 	{
-		// TODO components data might not have been destroyed here.
-		components->onDetach();
-		switch (components->type())
-		{
-		case ComponentType::StaticMeshComponent:
-			GetGlobalComponentPool<StaticMeshComponent>().release(reinterpret_cast<StaticMeshComponent*>(components));
-			break;
-		case ComponentType::CameraComponent:
-			GetGlobalComponentPool<CameraComponent>().release(reinterpret_cast<CameraComponent*>(components));
-			break;
-		default:
-			AKA_ASSERT(false, "Missing type");
-		}
+		component->onDetach();
+		delete component;
 	}
 	m_components.clear();
 }

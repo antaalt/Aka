@@ -80,6 +80,7 @@ class CameraComponent : public Component
 {
 public:
 	CameraComponent();
+	~CameraComponent();
 
 private:
 	CameraController* m_controller;

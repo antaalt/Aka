@@ -42,7 +42,7 @@ struct Resource
 {
 	Resource(const char* name, ResourceType type);
 
-	char name[256]; // Debug name of the resource.
+	char name[32]; // Debug name of the resource.
 	ResourceNativeHandle native; // Native handle of the resource for external API
 	ResourceType type; // Type of the resource
 };

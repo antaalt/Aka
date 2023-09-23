@@ -7,42 +7,12 @@ namespace aka {
 
 class Renderer;
 
-enum class ComponentType : uint32_t
-{
-	Unknown, 
-
-	StaticMeshComponent,
-	CameraComponent,
-	//RigidBodyComponent,
-	//ColliderComponent,
-	SpriteAnimatorComponent,
-	AudioComponent,
-
-
-	First = StaticMeshComponent,
-	Last = AudioComponent,
-};
-
-enum class ComponentTypeMask
-{
-	None					= 0,
-
-	StaticMeshComponent		= 1 << EnumToIndex(ComponentType::StaticMeshComponent),
-	CameraComponent			= 1 << EnumToIndex(ComponentType::CameraComponent),
-	SpriteAnimatorComponent = 1 << EnumToIndex(ComponentType::SpriteAnimatorComponent),
-	AudioComponent			= 1 << EnumToIndex(ComponentType::AudioComponent),
-
-	Last = AudioComponent,
-};
-AKA_IMPLEMENT_BITMASK_OPERATOR(ComponentTypeMask);
-
-template <typename T>
-struct ComponentTrait { static const ComponentType type = ComponentType::Unknown; };
+enum class ComponentID : uint32_t { Invalid = (uint32_t)-1 };
 
 class Component
 {
 public:
-	Component(ComponentType type);
+	Component(ComponentID id);
 	virtual ~Component() {}
 
 protected:
@@ -54,11 +24,24 @@ protected:
 	virtual void onUpdate(Time deltaTime) {}
 	virtual void onFixedUpdate(Time deltaTime) {}
 	virtual void onRender(Renderer* _device, gfx::Frame* _frame) {}
-
+protected:
+	template <typename T>
+	static ComponentID generateID();
 public:
-	ComponentType type() const { return m_type; }
+	ComponentID id() const { return m_id; }
 private:
-	ComponentType m_type;
+	ComponentID m_id;
+	static uint32_t s_globalComponentID;
 };
+
+template<typename T>
+inline ComponentID Component::generateID()
+{
+	// This need to be called by each components in the same thread to be safe. 
+	// Could add a mutex to be safe ?
+	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
+	static ComponentID s_localComponentID = static_cast<ComponentID>(s_globalComponentID++);
+	return s_localComponentID;
+}
 
 };

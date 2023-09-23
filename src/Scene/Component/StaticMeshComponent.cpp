@@ -3,13 +3,14 @@
 namespace aka {
 
 StaticMeshComponent::StaticMeshComponent(AssetID assetID) :
-	Component(ComponentType::StaticMeshComponent),
+	Component(Component::generateID<StaticMeshComponent>()),
 	m_assetID(assetID)
 {
 }
 StaticMeshComponent::~StaticMeshComponent()
 {
 	// Do not own instance, neither does mesh.
+	// Need to tell the instance to be deleted
 }
 void StaticMeshComponent::setInstance(Instance* instance)
 {

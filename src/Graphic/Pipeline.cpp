@@ -3,17 +3,16 @@
 namespace aka {
 namespace gfx {
 
-uint32_t VertexAttributeState::stride() const
+uint32_t VertexBufferLayout::stride() const
 {
-	if (count > VertexMaxAttributeCount)
-		return 0;
+	AKA_ASSERT(count < VertexMaxAttributeCount, "Too many bindings");
 	uint32_t stride = 0;
 	for (uint32_t i = 0; i < count; i++)
-		stride += VertexAttributeState::size(attributes[i].format) * VertexAttributeState::size(attributes[i].type);
+		stride += VertexBufferLayout::size(attributes[i].format) * VertexBufferLayout::size(attributes[i].type);
 	return stride;
 }
 
-uint32_t VertexAttributeState::size(VertexFormat format)
+uint32_t VertexBufferLayout::size(VertexFormat format)
 {
 	switch (format)
 	{
@@ -38,28 +37,22 @@ uint32_t VertexAttributeState::size(VertexFormat format)
 	}
 	return 0;
 }
-uint32_t VertexAttributeState::size(VertexType type)
+uint32_t VertexBufferLayout::size(VertexType type)
 {
 	switch (type)
 	{
+	case VertexType::Scalar:
+		return 1;
 	case VertexType::Vec2:
 		return 2;
 	case VertexType::Vec3:
 		return 3;
 	case VertexType::Vec4:
 		return 4;
-	case VertexType::Mat2:
-		return 4;
-	case VertexType::Mat3:
-		return 12;
-	case VertexType::Mat4:
-		return 16;
-	case VertexType::Scalar:
-		return 1;
 	}
 	return 0;
 }
-uint32_t VertexAttributeState::size(IndexFormat format)
+uint32_t VertexBufferLayout::size(IndexFormat format)
 {
 	switch (format)
 	{
@@ -97,7 +90,7 @@ GraphicPipeline::GraphicPipeline(
 	ProgramHandle program,
 	PrimitiveType primitive,
 	const RenderPassState& renderPass,
-	const VertexAttributeState& vertices,
+	const VertexState& vertices,
 	const ViewportState& viewport,
 	const DepthState& depth,
 	const StencilState& stencil,
@@ -125,7 +118,7 @@ ComputePipeline::ComputePipeline(const char* name, ProgramHandle program) :
 {
 }
 
-bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
+bool operator<(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs)
 {
 	if (lhs.count < rhs.count) return true;
 	else if (lhs.count > rhs.count) return false;
@@ -143,7 +136,7 @@ bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 	return false; // equal 
 }
 
-bool operator>(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
+bool operator>(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs)
 {
 	if (lhs.count > rhs.count) return true;
 	else if (lhs.count < rhs.count) return false;
@@ -161,7 +154,7 @@ bool operator>(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
 	return false; // equal
 }
 
-bool operator==(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
+bool operator==(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs)
 {
 	if (lhs.count != rhs.count) return false;
 	for (uint32_t i = 0; i < lhs.count; i++)
@@ -174,7 +167,7 @@ bool operator==(const VertexAttributeState& lhs, const VertexAttributeState& rhs
 	return true; // equal
 }
 
-bool operator!=(const VertexAttributeState& lhs, const VertexAttributeState& rhs)
+bool operator!=(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs)
 {
 	if (lhs.count != rhs.count) return true;
 	for (uint32_t i = 0; i < lhs.count; i++)

@@ -42,7 +42,7 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
 		1.0
 	);
-	Vector<Vertex> vertices;
+	Vector<StaticVertex> vertices;
 	Vector<uint32_t> indices;
 	for (const ArchiveBatch& batch : meshArchive.batches)
 	{
@@ -69,7 +69,7 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 		_renderer->getDevice()->update(gfxDescriptorSet, data);
 		
 		this->batches.append(DrawCallIndexed{
-			(uint32_t)(vertices.size() * sizeof(Vertex)),
+			(uint32_t)(vertices.size() * sizeof(StaticVertex)),
 			(uint32_t)(indices.size() * sizeof(uint32_t)),
 			(uint32_t)batch.geometry.indices.size(),
 			albedo,
@@ -83,8 +83,8 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 		this->m_bounds.include(batch.geometry.bounds);
 	}
 	this->m_indexFormat = gfx::IndexFormat::UnsignedInt;
-	this->attributes = Vertex::getState();
-	this->gfxVertexBuffer = _renderer->getDevice()->createBuffer("VertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(Vertex) * vertices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, vertices.data());
+	this->attributes = StaticVertex::getState();
+	this->gfxVertexBuffer = _renderer->getDevice()->createBuffer("VertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(StaticVertex) * vertices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, vertices.data());
 	this->gfxIndexBuffer = _renderer->getDevice()->createBuffer("IndexBuffer", gfx::BufferType::Index, (uint32_t)(sizeof(uint32_t) * indices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, indices.data());;
 }
 
@@ -104,7 +104,7 @@ void StaticMesh::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 		_renderer->getDevice()->destroy(batch.gfxDescriptorSet);
 		_renderer->getDevice()->destroy(batch.gfxUniformBuffer);
 	}
-	this->attributes = gfx::VertexAttributeState{};
+	this->attributes = gfx::VertexBufferLayout{};
 	this->batches.clear();
 }
 

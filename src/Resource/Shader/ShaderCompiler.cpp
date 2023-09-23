@@ -337,27 +337,6 @@ gfx::VertexType getSize(uint32_t rows, uint32_t cols)
 		default: return gfx::VertexType::Unknown;
 		}
 	}
-	case 2: {
-		switch (rows)
-		{
-		case 2: return gfx::VertexType::Mat2;
-		default: return gfx::VertexType::Unknown;
-		}
-	}
-	case 3: {
-		switch (rows)
-		{
-		case 3: return gfx::VertexType::Mat3;
-		default: return gfx::VertexType::Unknown;
-		}
-	}
-	case 4: {
-		switch (rows)
-		{
-		case 4: return gfx::VertexType::Mat4;
-		default: return gfx::VertexType::Unknown;
-		}
-	}
 	default:
 		return gfx::VertexType::Unknown;
 	}
@@ -404,22 +383,29 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 				if (storage != spv::StorageClass::StorageClassInput)
 					continue;
 				uint32_t location = compiler.get_decoration(id, spv::Decoration::DecorationLocation);
+				uint32_t binding = compiler.get_decoration(id, spv::Decoration::DecorationBinding);
 				spirv_cross::SPIRType type = compiler.get_type_from_variable(id);
 
 				AKA_ASSERT(location < gfx::VertexMaxAttributeCount, "");
 
-				data.vertices.attributes[location].format = getType(type.basetype);
-				data.vertices.attributes[location].semantic = gfx::VertexSemantic::Unknown; // store somewhere
-				data.vertices.attributes[location].type = getSize(type.vecsize, type.columns);
-				data.vertices.count = max(data.vertices.count, location + 1);
+				data.vertices.bufferLayout[binding].attributes[location].format = getType(type.basetype);
+				data.vertices.bufferLayout[binding].attributes[location].semantic = gfx::VertexSemantic::Unknown; // store somewhere
+				data.vertices.bufferLayout[binding].attributes[location].type = getSize(type.vecsize, type.columns);
+				data.vertices.bufferLayout[binding].count = max(data.vertices.bufferLayout[binding].count, location + 1);
+				data.vertices.bufferLayout[binding].stepRate = gfx::VertexStepRate::Unknown;
+				data.vertices.count = max(data.vertices.count, binding + 1);
 			}
 			// Compute offsets ? 
 			// TODO move them out of here.
-			uint32_t offset = 0;
-			for (uint32_t i = 0; i < data.vertices.count; i++)
+			for (uint32_t iBuffer = 0; iBuffer < data.vertices.count; iBuffer++)
 			{
-				data.vertices.offsets[i] = offset;
-				offset += gfx::VertexAttributeState::size(data.vertices.attributes[i].format) * gfx::VertexAttributeState::size(data.vertices.attributes[i].type);
+				uint32_t offset = 0; // per buffer
+				gfx::VertexBufferLayout layout = data.vertices.bufferLayout[iBuffer];
+				for (uint32_t iBinding = 0; iBinding < layout.count; iBinding++)
+				{
+					layout.offsets[iBinding] = offset;
+					offset += gfx::VertexBufferLayout::size(layout.attributes[iBinding].format) * gfx::VertexBufferLayout::size(layout.attributes[iBinding].type);
+				}
 			}
 		}
 		else

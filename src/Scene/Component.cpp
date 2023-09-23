@@ -2,9 +2,10 @@
 
 namespace aka {
 
+uint32_t Component::s_globalComponentID = 0;
 
-Component::Component(ComponentType type) :
-	m_type(type)
+Component::Component(ComponentID id) :
+	m_id(id)
 {
 
 }

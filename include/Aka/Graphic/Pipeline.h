@@ -19,6 +19,7 @@ using GraphicPipelineHandle = ResourceHandle<GraphicPipeline>;
 using ComputePipelineHandle = ResourceHandle<ComputePipeline>;
 
 static constexpr uint32_t VertexMaxAttributeCount = 8;
+static constexpr uint32_t VertexMaxBufferCount = 4;
 
 enum class IndexFormat : uint8_t
 {
@@ -54,16 +55,13 @@ enum class VertexType : uint8_t
 {
 	Unknown,
 
+	Scalar,
 	Vec2,
 	Vec3,
 	Vec4,
-	Mat2,
-	Mat3,
-	Mat4,
-	Scalar,
 
-	First = Vec2,
-	Last = Scalar,
+	First = Scalar,
+	Last = Vec4,
 };
 
 enum class VertexSemantic : uint8_t
@@ -102,35 +100,63 @@ enum class PrimitiveType : uint8_t
 	Last = Triangles,
 };
 
-struct VertexAttribute
+enum class VertexStepRate : uint8_t
 {
-	VertexSemantic semantic; // Semantic of the attribute
-	VertexFormat format; // Format of the attribute
-	VertexType type; // Type of the attribute
+	Unknown,
+
+	Vertex,
+	Instance,
+
+	First = Vertex,
+	Last = Instance,
 };
 
-struct VertexAttributeState
+struct VertexAttribute
+{
+	VertexSemantic semantic = VertexSemantic::Unknown; // Semantic of the attribute
+	VertexFormat format = VertexFormat::Unknown; // Format of the attribute
+	VertexType type = VertexType::Unknown; // Type of the attribute
+};
+
+struct VertexBufferLayout
 {
 	VertexAttribute attributes[VertexMaxAttributeCount]; // Attributes
 	uint32_t offsets[VertexMaxAttributeCount]; // Offsets of the attributes in a buffer
-	uint32_t count; // Number of attributes
+	VertexStepRate stepRate = VertexStepRate::Vertex;
+	uint32_t count = 0; // Number of attributes
 
 	uint32_t stride() const;
 
 	static uint32_t size(VertexFormat format);
 	static uint32_t size(VertexType type);
 	static uint32_t size(IndexFormat format);
-	static VertexAttributeState empty() { return VertexAttributeState{}; }
+	static VertexBufferLayout empty() { return VertexBufferLayout{}; }
 
-	VertexAttributeState& add(VertexSemantic semantic, VertexFormat format, VertexType type)
+	VertexBufferLayout& add(VertexSemantic semantic, VertexFormat format, VertexType type)
 	{
 		return add(semantic, format, type, stride());
 	}
-	VertexAttributeState& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset)
+	VertexBufferLayout& add(VertexSemantic semantic, VertexFormat format, VertexType type, uint32_t offset)
 	{
 		AKA_ASSERT(count + 1 < VertexMaxAttributeCount, "Too many vertex attributes");
 		offsets[count] = offset; // TODO compute offset here ?
 		attributes[count++] = VertexAttribute{ semantic, format, type };
+		return *this;
+	}
+};
+
+struct VertexState
+{
+	VertexBufferLayout bufferLayout[VertexMaxBufferCount];
+	uint32_t count = 0; // Number of buffers
+
+	VertexBufferLayout& add(VertexStepRate stepRate)
+	{
+		return bufferLayout[count++];
+	}
+	VertexState& add(const VertexBufferLayout& state)
+	{
+		bufferLayout[count++] = state;
 		return *this;
 	}
 };
@@ -431,7 +457,7 @@ struct GraphicPipeline : Resource
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
-		const VertexAttributeState& vertices,
+		const VertexState& vertices,
 		const ViewportState& viewport,
 		const DepthState& depth,
 		const StencilState& stencil,
@@ -443,7 +469,7 @@ struct GraphicPipeline : Resource
 	ProgramHandle program;
 
 	PrimitiveType primitive;
-	VertexAttributeState vertices;
+	VertexState vertices;
 	RenderPassState renderPass;
 	CullState cull;
 	FillState fill;
@@ -479,7 +505,7 @@ const FillState FillStateFill = FillState{ FillMode::Fill, 1.f };
 const FillState FillStateLine = FillState{ FillMode::Line, 1.f };
 
 // Culling
-const CullState CullStateDisabled = CullState{ CullMode::None, CullOrder::Unknown };
+const CullState CullStateDisabled = CullState{ CullMode::None, CullOrder::CounterClockWise };
 const CullState CullStateCCW = CullState{ CullMode::BackFace, CullOrder::CounterClockWise };
 const CullState CullStateCW = CullState{ CullMode::BackFace, CullOrder::ClockWise };
 const CullState CullStateDefault = CullStateDisabled;
@@ -499,18 +525,18 @@ const ClearState ClearStateAll = ClearState{ ClearMask::All, {0.f, 0.f, 0.f, 1.f
 const ClearState ClearStateNone = ClearState{ ClearMask::None, {0.f, 0.f, 0.f, 1.f}, 1.f, 0 };
 
 
-bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
-bool operator>(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
-bool operator==(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
-bool operator!=(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
+bool operator<(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs);
+bool operator>(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs);
+bool operator==(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs);
+bool operator!=(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs);
 
 };
 };
 
 template <>
-struct std::hash<aka::gfx::VertexAttributeState>
+struct std::hash<aka::gfx::VertexBufferLayout>
 {
-	size_t operator()(const aka::gfx::VertexAttributeState& data) const
+	size_t operator()(const aka::gfx::VertexBufferLayout& data) const
 	{
 		size_t hash = 0;
 		aka::hashCombine(hash, data.count);

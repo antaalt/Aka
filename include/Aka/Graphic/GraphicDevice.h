@@ -176,13 +176,13 @@ public:
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
-		const VertexAttributeState& vertices,
+		const VertexState& vertices,
 		const ViewportState& viewport,
-		const DepthState& depth,
-		const StencilState& stencil,
-		const CullState& culling,
-		const BlendState& blending,
-		const FillState& fill
+		const DepthState& depth = DepthStateDefault,
+		const StencilState& stencil = StencilStateDefault,
+		const CullState& culling = CullStateDefault,
+		const BlendState& blending = BlendStateDefault,
+		const FillState& fill = FillStateFill
 	) = 0;
 	virtual ComputePipelineHandle createComputePipeline(
 		const char* name,

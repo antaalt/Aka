@@ -26,9 +26,6 @@ void Renderer::create()
 	ShaderRegistry* registry = Application::app()->program();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
-		gfx::VertexAttributeState vertex{};
-		//vertex.add(gfx::VertexSemantic::Position);
-
 		// TODO: Should use JSON for this ? JSON that can be generated with a script reading all files in shaders folder (generating DB)
 		const aka::Path ShaderVertexPath = aka::OS::cwd() + "../../../asset/shaders/shader.vert";
 		const aka::Path ShaderFragmentPath = aka::OS::cwd() + "../../../asset/shaders/shader.frag";
@@ -48,7 +45,7 @@ void Renderer::create()
 			program,
 			gfx::PrimitiveType::Triangles,
 			m_device->get(m_backbufferRenderPass)->state,
-			Vertex::getState(),
+			gfx::VertexState{}.add(StaticVertex::getState()),
 			gfx::ViewportState{}.size(1280, 720),
 			gfx::DepthStateLessEqual,
 			gfx::StencilStateDefault,

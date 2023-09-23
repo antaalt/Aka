@@ -5,13 +5,13 @@
 
 namespace aka {
 
-struct Vertex {
+struct StaticVertex {
 	point3f position;
 	norm3f normal;
 	uv2f uv;
 	color4f color;
 
-	static gfx::VertexAttributeState getState();
+	static gfx::VertexBufferLayout getState();
 };
 
 struct ArchiveGeometry : Archive 
@@ -26,7 +26,7 @@ struct ArchiveGeometry : Archive
 	ArchiveGeometry();
 	ArchiveGeometry(AssetID id);
 
-	Vector<Vertex> vertices;
+	Vector<StaticVertex> vertices;
 	Vector<uint32_t> indices;
 	aabbox<> bounds; // local
 

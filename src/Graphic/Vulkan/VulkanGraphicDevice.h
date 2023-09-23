@@ -119,7 +119,7 @@ public:
 		ProgramHandle program,
 		PrimitiveType primitive,
 		const RenderPassState& renderPass,
-		const VertexAttributeState& vertices,
+		const VertexState& vertices,
 		const ViewportState& viewport,
 		const DepthState& depth,
 		const StencilState& stencil,

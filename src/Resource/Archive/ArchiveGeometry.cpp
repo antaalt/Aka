@@ -5,9 +5,9 @@
 
 namespace aka {
 
-gfx::VertexAttributeState Vertex::getState()
+gfx::VertexBufferLayout StaticVertex::getState()
 {
-	gfx::VertexAttributeState attributes{};
+	gfx::VertexBufferLayout attributes{};
 	attributes.add(gfx::VertexSemantic::Position, gfx::VertexFormat::Float, gfx::VertexType::Vec3);
 	attributes.add(gfx::VertexSemantic::Normal, gfx::VertexFormat::Float, gfx::VertexType::Vec3);
 	attributes.add(gfx::VertexSemantic::TexCoord0, gfx::VertexFormat::Float, gfx::VertexType::Vec2);
@@ -40,7 +40,7 @@ ArchiveLoadResult ArchiveGeometry::load_internal(ArchiveLoadContext& _context, B
 	// Vertices
 	uint32_t vertexCount = _archive.read<uint32_t>();
 	this->vertices.resize(vertexCount);
-	_archive.read<Vertex>(this->vertices.data(), vertexCount);
+	_archive.read<StaticVertex>(this->vertices.data(), vertexCount);
 
 	return ArchiveLoadResult::Success;
 }
@@ -55,7 +55,7 @@ ArchiveSaveResult ArchiveGeometry::save_internal(ArchiveSaveContext& _context, B
 	_archive.write<uint32_t>(this->indices.data(), this->indices.size());
 
 	_archive.write<uint32_t>((uint32_t)this->vertices.size());
-	_archive.write<Vertex>(this->vertices.data(), this->vertices.size());
+	_archive.write<StaticVertex>(this->vertices.data(), this->vertices.size());
 
 	return ArchiveSaveResult::Success;
 }

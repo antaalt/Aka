@@ -83,7 +83,7 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 		//}
 		nodes.append(node);
 	}
-#if 1
+#if 0
 	auto recurseDebug = std::function<void(Node3D*, uint32_t)>();
 	recurseDebug = [&recurseDebug](Node3D* parent, uint32_t depth) {
 		String string;

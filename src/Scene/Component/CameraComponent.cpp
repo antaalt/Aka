@@ -98,8 +98,15 @@ CameraControllerType CameraArcball::type() const
 }
 
 CameraComponent::CameraComponent() :
-	Component(ComponentType::CameraComponent)
+	Component(Component::generateID<CameraComponent>()),
+	m_controller(new CameraArcball),
+	m_projection(new CameraPerspective)
 {
+}
+CameraComponent::~CameraComponent()
+{
+	delete m_controller;
+	delete m_projection;
 }
 
 };

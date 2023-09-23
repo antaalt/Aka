@@ -10,20 +10,16 @@
 
 namespace aka {
 
-// You can define your own pool for custom component by overriding this template.
-// --- MyCustomComponent.h ---
-// namespace aka {
-//		template <> Pool<app::MyCustomComponent>& GetGlobalComponentPool();
-// }
-// -- MyCustomComponent.cpp --
-// namespace aka {
-//		static Pool<app::MyCustomComponent> GlobalMyCustomComponentPool;
-//		template<> Pool<app::MyCustomComponent>& GetGlobalComponentPool() { return GlobalMyCustomComponentPool; }
-// }
-// ---------------------------
-template <typename T> Pool<T>& GetGlobalComponentPool();
-template <> Pool<StaticMeshComponent>& GetGlobalComponentPool();
-template <> Pool<CameraComponent>& GetGlobalComponentPool();
+enum class NodeUpdateFlag : uint32_t
+{
+	None				= 0,
+
+	Transform			= 1 << 0,
+	ComponentDirtyBase	= 1 << 1,
+	// Do not add flags after this, leave space for component dirty
+	// Their value is ComponentDirtyBase << Component::generateID<MyComponent>()
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
 class Node
 {
@@ -53,14 +49,15 @@ public:
 	const String& getName() const { return m_name; }
 	bool isOrphan() const { return m_components.size() == 0; }
 	uint32_t getComponentCount() const { return (uint32_t)m_components.size(); }
-	void setDirty(ComponentType type) { m_dirtyMask |= ComponentTypeMask(1U << EnumToIndex(type)); }
+	template<typename T>
+	void setDirty();
 protected:
 	void destroyComponents();
 private: // Data
 	String m_name;
 	Vector<Component*> m_components;
 private:
-	ComponentTypeMask m_dirtyMask;
+	NodeUpdateFlag m_updateFlags;
 };
 
 template<typename T, typename ...Args>
@@ -69,13 +66,13 @@ inline T& Node::attach(Args && ...args)
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
 	for (Component* attachedComponent : m_components)
 	{
-		if (typeid(*attachedComponent) == typeid(T))
+		if (attachedComponent->id() == Component::generateID<T>())
 		{
 			AKA_ASSERT(false, "Trying to attach alredy attached component");
 			AKA_CRASH();
 		}
 	}
-	T* component = GetGlobalComponentPool<T>().acquire(std::forward<Args>(args)...);
+	T* component = new T(std::forward<Args>(args)...);
 	component->onAttach();
 	return reinterpret_cast<T&>(*m_components.append(component));
 }
@@ -86,13 +83,13 @@ inline void Node::detach()
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
 	for (Component*& attachedComponent : m_components)
 	{
-		if (typeid(*attachedComponent) == typeid(T))
+		if (attachedComponent->id() == Component::generateID<T>())
 		{
 			// Detach
 			attachedComponent->onDetach();
 			m_components.remove(&attachedComponent);
 			// Release
-			GetGlobalComponentPool<T>().release(reinterpret_cast<T*>(attachedComponent));
+			delete attachedComponent;
 			return;
 		}
 	}
@@ -105,7 +102,7 @@ inline T& Node::get()
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
 	for (Component* attachedComponent : m_components)
 	{
-		if (typeid(*attachedComponent) == typeid(T))
+		if (attachedComponent->id() == Component::generateID<T>())
 		{
 			return reinterpret_cast<T&>(*attachedComponent);
 		}
@@ -119,13 +116,18 @@ inline bool aka::Node::has()
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
 	for (Component* attachedComponent : m_components)
 	{
-		// TODO should not use RTTI
-		if (typeid(*attachedComponent) == typeid(T))
+		if (attachedComponent->id() == Component::generateID<T>())
 		{
 			return true;
 		}
 	}
 	return false;
+}
+
+template<typename T>
+inline void Node::setDirty()
+{
+	m_updateFlags |= static_cast<NodeUpdateFlag>(static_cast<uint32_t>(NodeUpdateFlag::ComponentDirtyBase) << static_cast<uint32_t>(Component::generateID<T>()));
 }
 
 }
