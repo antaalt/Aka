@@ -3,7 +3,11 @@
 #include <Aka/Resource/Archive/ArchiveImage.hpp>
 #include <Aka/Resource/Resource/Resource.hpp>
 
+#include <Aka/Graphic/GraphicDevice.h>
+
 namespace aka {
+
+class Renderer;
 
 class Texture : public Resource {
 public:
@@ -19,9 +23,9 @@ public:
 	uint32_t getLayerCount() const { return m_layerCount; }
 	uint32_t getMipCount() const { return m_mipCount; }
 private:
-	void create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive) override;
-	void save_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive) override;
-	void destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device) override;
+	void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) override;
+	void save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive) override;
+	void destroy_internal(AssetLibrary* _library, Renderer* _renderer) override;
 private:
 	uint32_t m_width, m_height;
 	gfx::TextureHandle m_textureHandle;

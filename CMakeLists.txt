@@ -32,12 +32,14 @@ add_library (Aka
 
 	"src/Layer/ImGuiLayer.cpp"
 
+	"src/Renderer/Renderer.cpp"
+
 	"src/Scene/Component.cpp"
-	"src/Scene/Entity.cpp"
-	"src/Scene/System.cpp"
-	"src/Scene/World.cpp"
-	"src/Scene/Serializer.cpp"
-	"src/Scene/Camera.cpp"	
+	"src/Scene/Node2D.cpp"
+	"src/Scene/Node3D.cpp"
+	"src/Scene/Component/CameraComponent.cpp"	
+	 
+	"src/Scene/Component/StaticMeshComponent.cpp" 
 
 	"src/Resource/Archive/ArchiveGeometry.cpp" 
 	"src/Resource/Archive/ArchiveMaterial.cpp" 

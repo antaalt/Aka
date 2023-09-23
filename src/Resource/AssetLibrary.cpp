@@ -199,27 +199,27 @@ void AssetLibrary::update()
 	// Each asset has 
 }
 
-void AssetLibrary::destroy(gfx::GraphicDevice* _device)
+void AssetLibrary::destroy(Renderer* _renderer)
 {
 	for (auto it : m_scenes)
 	{
 		if (it.second.isLoaded())
 		{
-			it.second.get().destroy(this, _device);
+			it.second.get().destroy(this, _renderer);
 		}
 	}
 	for (auto it : m_staticMeshes)
 	{
 		if (it.second.isLoaded())
 		{
-			it.second.get().destroy(this, _device);
+			it.second.get().destroy(this, _renderer);
 		}
 	}
 	for (auto it : m_textures)
 	{
 		if (it.second.isLoaded())
 		{
-			it.second.get().destroy(this, _device);
+			it.second.get().destroy(this, _renderer);
 		}
 	}
 }

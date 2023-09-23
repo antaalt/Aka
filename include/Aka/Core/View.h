@@ -8,7 +8,7 @@
 namespace aka {
 
 // A view (aka. a scene) is a part of the game.
-class View
+/*class View
 {
 public:
 	using Ptr = std::shared_ptr<View>;
@@ -40,6 +40,6 @@ template <typename T, typename... Args>
 typename T::Ptr View::create(Args&&... args) {
 	static_assert(std::is_base_of<View, T>::value, "Type is not a view");
 	return std::make_unique<T>(std::forward<Args>(args)...);
-}
+}*/
 
 };

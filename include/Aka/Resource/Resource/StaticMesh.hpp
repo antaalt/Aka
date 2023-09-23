@@ -3,6 +3,8 @@
 #include <Aka/Resource/Archive/ArchiveStaticMesh.hpp>
 #include <Aka/Resource/Resource/Texture.hpp>
 
+#include <Aka/Graphic/GraphicDevice.h>
+
 namespace aka {
 
 class StaticMesh : public Resource {
@@ -11,9 +13,9 @@ public:
 	StaticMesh(ResourceID _id, const String& _name);
 
 private:
-	void create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive) override;
-	void save_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive) override;
-	void destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device) override;
+	void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) override;
+	void save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive) override;
+	void destroy_internal(AssetLibrary* _library, Renderer* _renderer) override;
 
 public:
 	gfx::IndexFormat getIndexFormat() const { return m_indexFormat; }
@@ -40,15 +42,6 @@ public: // Mandatory data for rendering & co
 		gfx::DescriptorSetHandle gfxDescriptorSet;
 	};
 	Vector<DrawCallIndexed> batches; // TODO indirect buffer. Require bindless for material
-};
-
-
-// Component could inherit from StaticMesh directly ?
-struct StaticMeshComponent {
-	ResourceHandle<StaticMesh> mesh;
-	// Instance data.
-	gfx::BufferHandle instanceBuffer;
-	gfx::DescriptorSetHandle descriptorSet;
 };
 
 

@@ -72,6 +72,31 @@ enum class SwapchainStatus
 };
 
 
+struct DispatchIndirectCommand
+{
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+};
+
+struct DrawIndexedIndirectCommand
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t  vertexOffset;
+	uint32_t firstInstance;
+};
+
+struct DrawIndirectCommand
+{
+	uint32_t vertexCount;
+	uint32_t instanceCount;
+	uint32_t firstVertex;
+	uint32_t firstInstance;
+};
+
+
 class AKA_NO_VTABLE GraphicDevice
 {
 public:
@@ -125,6 +150,7 @@ public:
 	virtual BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
 	virtual void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) = 0;
 	virtual void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) = 0;
+	virtual void copy(BufferHandle src, BufferHandle dst) = 0;
 	virtual void* map(BufferHandle buffer, BufferMap map) = 0;
 	virtual void unmap(BufferHandle buffer) = 0;
 	virtual void destroy(BufferHandle buffer) = 0;
@@ -134,7 +160,7 @@ public:
 	virtual TextureHandle createTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags, const void* const* data = nullptr) = 0;
 	virtual void upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
 	virtual void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) = 0;
-	virtual void copy(TextureHandle lhs, TextureHandle rhs) = 0;
+	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 	virtual void destroy(TextureHandle texture) = 0;
 	virtual void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) = 0;
 	virtual const Texture* get(TextureHandle handle) = 0;
@@ -202,6 +228,7 @@ public:
 
 struct ScopedQueueMarker
 {
+	ScopedQueueMarker(GraphicDevice* device, QueueType type, const char* name, float r, float g, float b, float a) : m_device(device), m_queue(type) { color4f c(r, g, b, a); m_device->beginMarker(m_queue, name, c.data); }
 	ScopedQueueMarker(GraphicDevice* device, QueueType type, const char* name, const float* colors) : m_device(device), m_queue(type) { m_device->beginMarker(m_queue, name, colors); }
 	~ScopedQueueMarker() { m_device->endMarker(m_queue); }
 private:

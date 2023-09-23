@@ -1,4 +1,4 @@
-#include <Aka/Scene/Camera.h>
+#include <Aka/Scene/Component/CameraComponent.hpp>
 
 #include <Aka/Platform/Input.h>
 #include <Aka/Platform/PlatformDevice.h>
@@ -95,6 +95,11 @@ mat4f CameraArcball::view() const
 CameraControllerType CameraArcball::type() const
 {
 	return CameraControllerType::Arcball;
+}
+
+CameraComponent::CameraComponent() :
+	Component(ComponentType::CameraComponent)
+{
 }
 
 };

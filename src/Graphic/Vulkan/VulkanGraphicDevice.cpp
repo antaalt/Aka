@@ -41,6 +41,7 @@ void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConf
 			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, true);
 			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, true);
 			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials, true);
+			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Option_DebugOutputMute, false);
 			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 		}
 	}
@@ -190,27 +191,37 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 	if (m_renderDocContext && m_captureState == RenderDocCaptureState::Capturing)
 	{
 		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
-		uint32_t ret = m_renderDocContext->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), m_context.getPlatform()->getNativeHandle());
-		if (ret == 1)
+		bool captureSucceeded = m_renderDocContext->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), m_context.getPlatform()->getNativeHandle());
+		uint32_t captureCount = m_renderDocContext->GetNumCaptures();
+		if (captureSucceeded)
 		{
 			m_captureState = RenderDocCaptureState::Idle;
-			ret = m_renderDocContext->GetCapture(m_renderDocContext->GetNumCaptures() - 1, NULL, NULL, NULL);
-			if (ret == 1) // if capture is valid
+			if (captureCount > 0)
 			{
-				// With 1 as first arg, renderdoc will connect to process immediately, 
-				// so call ShowReplayUI after that.
-				if (m_renderDocContext->IsTargetControlConnected())
+				uint32_t lastCaptureID = captureCount - 1;
+				bool inRange = m_renderDocContext->GetCapture(lastCaptureID, NULL, NULL, NULL);
+				if (inRange) // if capture is valid
 				{
-					m_renderDocContext->ShowReplayUI();
+					// With 1 as first arg, renderdoc will connect to process immediately, 
+					// so call ShowReplayUI after that.
+					if (m_renderDocContext->IsTargetControlConnected())
+					{
+						m_renderDocContext->ShowReplayUI();
+					}
+					else
+					{
+						// Zero if failed.
+						uint32_t processPID = m_renderDocContext->LaunchReplayUI(1, "");
+					}
 				}
 				else
 				{
-					m_renderDocContext->LaunchReplayUI(1, "");
+					Logger::error("Failed to retrieve renderdoc capture.");
 				}
 			}
 			else
 			{
-				Logger::error("Failed to retrieve renderdoc capture.");
+				AlertModal(AlertModalType::Warning, "Failed connection", "The frame capture failed, try closing the app if its open.");
 			}
 		}
 		else

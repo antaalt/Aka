@@ -413,7 +413,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 
 	VkVertexInputBindingDescription vertexInputBinding{};
 	vertexInputBinding.binding = 0;
-	vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // TODO VK_VERTEX_INPUT_RATE_INSTANCE need multiple vertices struct.
 	vertexInputBinding.stride = vertices.stride();
 
 	std::vector<VkVertexInputAttributeDescription> attributeDescription(vertices.count, VkVertexInputAttributeDescription{});

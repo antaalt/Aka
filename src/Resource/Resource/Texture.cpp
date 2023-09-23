@@ -1,5 +1,7 @@
 #include <Aka/Resource/Resource/Texture.hpp>
 
+#include <Aka/Renderer/Renderer.hpp>
+
 namespace aka {
 
 Texture::Texture() : 
@@ -28,7 +30,7 @@ Texture::Texture(ResourceID _id, const String& _name) :
 {
 }
 
-void Texture::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive)
+void Texture::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
 {
 	AKA_ASSERT(_archive.type() == AssetType::Image, "Invalid archive");
 	const ArchiveImage& imageArchive = reinterpret_cast<const ArchiveImage&>(_archive);
@@ -42,7 +44,7 @@ void Texture::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _devic
 	m_textureUsage = gfx::TextureUsage::ShaderResource | gfx::TextureUsage::GenerateMips;
 	m_layerCount = 1; // TODO
 	m_mipCount = gfx::Sampler::mipLevelCount(imageArchive.width, imageArchive.height);
-	m_textureHandle = _device->createTexture(
+	m_textureHandle = _renderer->getDevice()->createTexture(
 		"AlbedoTexture", 
 		imageArchive.width, imageArchive.height, 1, 
 		m_textureType,
@@ -53,14 +55,14 @@ void Texture::create_internal(AssetLibrary* _library, gfx::GraphicDevice* _devic
 	);
 }
 
-void Texture::save_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive)
+void Texture::save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive)
 {
 	AKA_NOT_IMPLEMENTED;
 }
 
-void Texture::destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device)
+void Texture::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	_device->destroy(m_textureHandle);
+	_renderer->getDevice()->destroy(m_textureHandle);
 }
 
 }

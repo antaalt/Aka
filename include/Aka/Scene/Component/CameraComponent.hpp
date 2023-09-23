@@ -3,6 +3,7 @@
 #include <Aka/Core/Geometry.h>
 
 #include <Aka/OS/Time.h>
+#include <Aka/Scene/Component.hpp>
 
 namespace aka {
 
@@ -74,5 +75,16 @@ struct CameraArcball : CameraController
 
 	float speed;
 };
+
+class CameraComponent : public Component
+{
+public:
+	CameraComponent();
+
+private:
+	CameraController* m_controller;
+	CameraProjection* m_projection;
+};
+
 
 };

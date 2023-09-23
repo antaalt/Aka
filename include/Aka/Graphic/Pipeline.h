@@ -494,6 +494,10 @@ const DepthState DepthStateDefault = DepthStateDisabled;
 const StencilState StencilStateDisabled = StencilState{ StencilState::Face{ StencilMode::Keep, StencilMode::Keep, StencilMode::Keep, StencilOp::None}, StencilState::Face{ StencilMode::Keep, StencilMode::Keep, StencilMode::Keep, StencilOp::None}, 0xffffffff, 0xffffffff };
 const StencilState StencilStateDefault = StencilStateDisabled;
 
+// Clear
+const ClearState ClearStateAll = ClearState{ ClearMask::All, {0.f, 0.f, 0.f, 1.f}, 1.f, 0 };
+const ClearState ClearStateNone = ClearState{ ClearMask::None, {0.f, 0.f, 0.f, 1.f}, 1.f, 0 };
+
 
 bool operator<(const VertexAttributeState& lhs, const VertexAttributeState& rhs);
 bool operator>(const VertexAttributeState& lhs, const VertexAttributeState& rhs);

@@ -117,17 +117,17 @@ public:
 
 public:
 	template <typename T> ResourceHandle<T> get(ResourceID _resourceID);
-	template <typename T> ResourceHandle<T> load(ResourceID _resourceID, gfx::GraphicDevice* _device);
-	template <typename T> ResourceHandle<T> load(ResourceID _resourceID, const typename ArchiveTrait<T>::Archive& _archive, gfx::GraphicDevice* _device);
-	template <typename T> ArchiveSaveResult save(ResourceID _resourceID, gfx::GraphicDevice* _device);
-	template <typename T> void unload(ResourceID _resourceID, gfx::GraphicDevice* _device);
+	template <typename T> ResourceHandle<T> load(ResourceID _resourceID, Renderer* _renderer);
+	template <typename T> ResourceHandle<T> load(ResourceID _resourceID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer);
+	template <typename T> ArchiveSaveResult save(ResourceID _resourceID, Renderer* _renderer);
+	template <typename T> void unload(ResourceID _resourceID, Renderer* _renderer);
 	
 protected:
 	friend class Application;
 	// Update the library, handle streaming & unload useless assets
 	void update();
 	// Destroy all assets from library.
-	void destroy(gfx::GraphicDevice* _device);
+	void destroy(Renderer* _renderer);
 public:
 	// Iterate a resource
 	template<typename T> ResourceRange<T> getRange();
@@ -172,7 +172,7 @@ ResourceHandle<T> AssetLibrary::get(ResourceID _resourceID)
 }
 
 template<typename T>
-inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, gfx::GraphicDevice* _device)
+inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, Renderer* _renderer)
 {
 	auto it = m_resources.find(_resourceID);
 	if (it == m_resources.end())
@@ -181,11 +181,11 @@ inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, gfx::Graphic
 	ArchiveLoadResult res = archive.load(ArchiveLoadContext(this));
 	if (res != ArchiveLoadResult::Success)
 		return ResourceHandle<T>::invalid();
-	return load<T>(_resourceID, archive, _device);
+	return load<T>(_resourceID, archive, _renderer);
 }
 
 template<typename T>
-inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typename ArchiveTrait<T>::Archive& _archive, gfx::GraphicDevice* _device)
+inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer)
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Invalid resource type");
 	static_assert(std::is_base_of<Archive, ArchiveTrait<T>::Archive>::value, "Invalid archive type");
@@ -215,10 +215,9 @@ inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typena
 	auto it = map.insert(std::make_pair(_resourceID, ResourceHandle<T>(_resourceID, name)));
 	if (it.second)
 	{
-		AKA_ASSERT(_device != nullptr, "Invalid device");
 		ResourceHandle<T> handle = it.first->second;
 		T& res = handle.get();
-		res.create(this, _device, _archive);
+		res.create(this, _renderer, _archive);
 		EventDispatcher<ResourceLoadedEvent>::emit(ResourceLoadedEvent{ _resourceID, res.getType() });
 		return handle;
 	}
@@ -231,7 +230,7 @@ inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typena
 }
 
 template<typename T>
-inline ArchiveSaveResult AssetLibrary::save(ResourceID _resourceID, gfx::GraphicDevice* _device)
+inline ArchiveSaveResult AssetLibrary::save(ResourceID _resourceID, Renderer* _renderer)
 {
 	auto it = m_resources.find(_resourceID);
 	if (it == m_resources.end())
@@ -243,13 +242,13 @@ inline ArchiveSaveResult AssetLibrary::save(ResourceID _resourceID, gfx::Graphic
 	if (!itResource->second.isLoaded())
 		return ArchiveSaveResult::Failed;
 	ArchiveTrait<T>::Archive archive(it->second);
-	itResource->second.get().save(this, _device, archive);
+	itResource->second.get().save(this, _renderer, archive);
 	ArchiveSaveResult res = archive.save(ArchiveSaveContext(this));
 	return res;
 }
 
 template<typename T>
-inline void AssetLibrary::unload(ResourceID _resourceID, gfx::GraphicDevice* _device)
+inline void AssetLibrary::unload(ResourceID _resourceID, Renderer* _renderer)
 {
 	ResourceMap<T>& map = getResourceMap<T>();
 	auto itResource = map.find(_resourceID);

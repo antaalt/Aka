@@ -61,9 +61,6 @@ VkAccessFlags accessFlagForLayout(ResourceAccessType type, TextureFormat format,
 
 VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, TextureFormat format, bool src)
 {
-	// TODO for buffers also
-	// VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-	// VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
 	bool depth = Texture::hasDepth(format);
 	bool stencil = Texture::hasStencil(format);
 	switch (type)
@@ -344,10 +341,10 @@ void VulkanGraphicDevice::download(TextureHandle texture, void* data, uint32_t x
 	AKA_NOT_IMPLEMENTED;
 }
 
-void VulkanGraphicDevice::copy(TextureHandle lhs, TextureHandle rhs)
+void VulkanGraphicDevice::copy(TextureHandle src, TextureHandle dst)
 {
-	VulkanTexture* vk_src = getVk<VulkanTexture>(lhs);
-	VulkanTexture* vk_dst = getVk<VulkanTexture>(rhs);
+	VulkanTexture* vk_src = getVk<VulkanTexture>(src);
+	VulkanTexture* vk_dst = getVk<VulkanTexture>(dst);
 
 	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Copying textures", getVkDevice(), getVkCommandPool(QueueType::Graphic));
 	vk_dst->copyFrom(cmd, vk_src);

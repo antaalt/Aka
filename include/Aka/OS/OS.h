@@ -105,6 +105,6 @@ enum class AlertModalMessage
 
 // Open a modal with a display message
 // Blocking.
-AlertModalMessage AlertModal(AlertModalType type, const char* title, const char* name);
+AlertModalMessage AlertModal(AlertModalType type, const char* title, const char* message);
 
 }; // namespace aka

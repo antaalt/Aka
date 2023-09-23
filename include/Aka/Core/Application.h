@@ -32,10 +32,10 @@ struct Config
 struct QuitEvent {};
 
 // Event to notify a view change
-struct ViewChangedEvent
+/*struct ViewChangedEvent
 {
 	View::Ptr view;
-};
+};*/
 
 struct AppCreateEvent {
 
@@ -119,6 +119,8 @@ public:
 	static Application* app();
 	// Get the graphic device
 	gfx::GraphicDevice* graphic();
+	// Get the renderer
+	Renderer* renderer();
 	// Get the platform device
 	PlatformDevice* platform();
 	// Get the audio device
@@ -133,7 +135,8 @@ private:
 	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;
 	ShaderRegistry* m_program;
-	AssetLibrary* m_library;
+	AssetLibrary* m_assets;
+	Renderer* m_renderer;
 private:
 	Layer* m_root;
 	uint32_t m_width, m_height;

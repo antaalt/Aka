@@ -54,9 +54,10 @@ struct AKA_NO_VTABLE CommandList
 	virtual void bindDescriptorSets(const DescriptorSetHandle* material, uint32_t count) = 0;
 
 	virtual void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) = 0;
+	virtual void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) = 0;
 
-	virtual void bindVertexBuffer(const BufferHandle handle, uint32_t binding, uint32_t offsets = 0) = 0;
-	virtual void bindVertexBuffers(const BufferHandle* handles, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets = nullptr) = 0;
+	virtual void bindVertexBuffer(uint32_t binding, const BufferHandle handle, uint32_t offsets = 0) = 0;
+	virtual void bindVertexBuffers(uint32_t binding, uint32_t bindingCount, const BufferHandle* handles, const uint32_t* offsets = nullptr) = 0;
 	virtual void bindIndexBuffer(BufferHandle handle, IndexFormat format, uint32_t offset = 0) = 0;
 
 	virtual void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
@@ -67,6 +68,7 @@ struct AKA_NO_VTABLE CommandList
 	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1U) = 0;
 	virtual void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) = 0;
 
+	virtual void copy(BufferHandle src, BufferHandle dst) = 0;
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 	virtual void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) = 0;
 
@@ -76,6 +78,7 @@ struct AKA_NO_VTABLE CommandList
 
 struct ScopedCmdMarker
 {
+	ScopedCmdMarker(CommandList* cmd, const char* name, float r = 0.8f, float g = 0.8f, float b = 0.8f, float a = 1.f) : m_command(cmd) { color4f c(r, g, b, a); m_command->beginMarker(name, c.data); }
 	ScopedCmdMarker(CommandList* cmd, const char* name, const float* colors) : m_command(cmd) { m_command->beginMarker(name, colors); }
 	~ScopedCmdMarker() { m_command->endMarker(); }
 private:

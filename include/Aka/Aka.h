@@ -50,10 +50,8 @@
 #include <Aka/OS/Stream/MemoryStream.h>
 #include <Aka/OS/Stream/FileStream.h>
 
-#include <Aka/Scene/World.h>
-#include <Aka/Scene/Entity.h>
-#include <Aka/Scene/System.h>
-#include <Aka/Scene/Component.h>
+#include <Aka/Scene/Node.hpp>
+#include <Aka/Scene/Component.hpp>
 
 #include <Aka/Resource/Asset.hpp>
 #include <Aka/Resource/AssetLibrary.hpp>

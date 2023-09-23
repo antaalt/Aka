@@ -1,7 +1,12 @@
-#include <Aka/Scene/Component.h>
+#include <Aka/Scene/Component.hpp>
 
 namespace aka {
 
-uint8_t ComponentType::m_typeCounter = 0;
+
+Component::Component(ComponentType type) :
+	m_type(type)
+{
+
+}
 
 };

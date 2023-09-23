@@ -4,10 +4,10 @@
 #include <memory>
 
 #include <Aka/Core/Container/String.h>
-#include <Aka/Graphic/GraphicDevice.h>
 
 namespace aka {
 
+class Renderer;
 class AssetLibrary;
 struct Archive;
 
@@ -51,13 +51,13 @@ public:
 	ResourceType getType() const { return m_type; }
 	ResourceState getState() const { return m_state; }
 
-	void create(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive);
-	void save(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive);
-	void destroy(AssetLibrary* _library, gfx::GraphicDevice* _device);
+	void create(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive);
+	void save(AssetLibrary* _library, Renderer* _renderer, Archive& _archive);
+	void destroy(AssetLibrary* _library, Renderer* _renderer);
 protected:
-	virtual void create_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, const Archive& _archive) = 0;
-	virtual void save_internal(AssetLibrary* _library, gfx::GraphicDevice* _device, Archive& _archive) = 0;
-	virtual void destroy_internal(AssetLibrary* _library, gfx::GraphicDevice* _device) = 0;
+	virtual void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) = 0;
+	virtual void save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive) = 0;
+	virtual void destroy_internal(AssetLibrary* _library, Renderer* _renderer) = 0;
 private:
 	ResourceState m_state;
 	ResourceType m_type;

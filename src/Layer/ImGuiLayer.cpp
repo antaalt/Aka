@@ -292,6 +292,7 @@ void ImGuiLayer::onLayerFrame()
 #endif
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+	ImGuizmo::BeginFrame();
 }
 
 void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* frame)

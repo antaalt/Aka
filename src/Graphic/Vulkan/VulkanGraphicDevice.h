@@ -69,7 +69,7 @@ public:
 	) override;
 	void upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 	void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) override;
-	void copy(TextureHandle lhs, TextureHandle rhs) override;
+	void copy(TextureHandle src, TextureHandle dst) override;
 	void destroy(TextureHandle texture) override;
 	void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) override;
 	const Texture* get(TextureHandle texture) override;
@@ -92,6 +92,7 @@ public:
 	BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
 	void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) override;
 	void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) override;
+	void copy(BufferHandle src, BufferHandle dst) override;
 	void* map(BufferHandle buffer, BufferMap map) override;
 	void unmap(BufferHandle buffer) override;
 	void destroy(BufferHandle buffer) override;

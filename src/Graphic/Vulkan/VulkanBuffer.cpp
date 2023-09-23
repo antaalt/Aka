@@ -34,6 +34,18 @@ void VulkanBuffer::destroy(VulkanGraphicDevice* device)
 	vk_buffer = VK_NULL_HANDLE;
 	vk_memory = VK_NULL_HANDLE;
 }
+
+void VulkanBuffer::copyFrom(VkCommandBuffer cmd, VulkanBuffer* src, uint32_t srcOffset, uint32_t dstOffset, uint32_t range)
+{
+	AKA_ASSERT(size == src->size, "Invalid sizes");
+
+	VkBufferCopy region{};
+	region.srcOffset = srcOffset;
+	region.dstOffset = dstOffset;
+	region.size = (range == ~0U) ? src->size : range;
+	vkCmdCopyBuffer(cmd, src->vk_buffer, vk_buffer, 1, &region);
+}
+
 VkBuffer VulkanBuffer::createVkBuffer(VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage)
 {
 	VkBufferCreateInfo bufferInfo = {};
@@ -64,10 +76,107 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	return vk_memory;
 }
 
+
+VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, bool src)
+{
+	// TODO for buffers also
+	// VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+	// VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+	switch (type)
+	{
+	default:
+		AKA_ASSERT(false, "Invalid access type");
+		[[fallthrough]];
+	case ResourceAccessType::Undefined:
+		return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	case ResourceAccessType::Resource:
+		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+#if 0 // Tesselation support...
+			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+#endif
+			;
+	case ResourceAccessType::Attachment:
+		AKA_ASSERT(false, "Weird");
+		return VK_PIPELINE_STAGE_NONE; // Cant have buffer as attachment
+	case ResourceAccessType::Storage:
+		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+#if 0 // Tesselation support...
+			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+#endif
+			;
+	case ResourceAccessType::CopySRC:
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	case ResourceAccessType::CopyDST:
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	case ResourceAccessType::Present:
+		AKA_ASSERT(false, "Weird");
+		return VK_PIPELINE_STAGE_NONE; // Cant present a buffer
+	}
+}
+
+// Check VulkanTexture::accessFlagForLayout for more info
+VkAccessFlags accessFlagForLayout(ResourceAccessType type, bool src)
+{
+	switch (type)
+	{
+	default:
+		AKA_ASSERT(false, "Invalid access type");
+		[[fallthrough]];
+	case ResourceAccessType::Undefined:
+#if defined(VK_VERSION_1_3)
+		return VK_ACCESS_NONE;
+#else
+		return 0;
+#endif
+	case ResourceAccessType::Resource: // Read only
+		return VK_ACCESS_SHADER_READ_BIT; // Only for shader read
+		//return VK_ACCESS_MEMORY_READ_BIT; // Most general purpose
+		//return VK_ACCESS_HOST_READ_BIT; // access on host (VK_PIPELINE_STAGE_HOST_BIT)
+	case ResourceAccessType::Attachment:
+		AKA_ASSERT(false, "Weird");
+		return VK_ACCESS_NONE;
+	case ResourceAccessType::Storage:
+		return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	case ResourceAccessType::CopySRC:
+		return VK_ACCESS_TRANSFER_READ_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
+	case ResourceAccessType::CopyDST:
+		return VK_ACCESS_TRANSFER_WRITE_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
+	case ResourceAccessType::Present:
+		AKA_ASSERT(false, "Weird");
+		return VK_ACCESS_NONE;
+	}
+}
+
+void VulkanBuffer::transitionBuffer(
+	VkCommandBuffer cmd,
+	VkBuffer buffer,
+	size_t size,
+	size_t offset,
+	ResourceAccessType oldAccess,
+	ResourceAccessType newAccess
+)
+{
+	VulkanBuffer::insertMemoryBarrier(
+		cmd,
+		buffer,
+		size,
+		offset,
+		accessFlagForLayout(oldAccess, true),
+		accessFlagForLayout(newAccess, false),
+		pipelineStageForLayout(oldAccess, true),
+		pipelineStageForLayout(newAccess, true)
+	);
+}
 void VulkanBuffer::insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer, size_t size, size_t offset, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage)
 {
 	VkBufferMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 	barrier.buffer = buffer;
 	barrier.offset = offset;
 	barrier.size = size;
@@ -81,8 +190,8 @@ void VulkanBuffer::insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer,
 		srcStage, dstStage,
 		0,
 		0, nullptr,
-		0, &barrier,
-		1, nullptr
+		1, &barrier,
+		0, nullptr
 	);
 }
 
@@ -198,6 +307,17 @@ void VulkanGraphicDevice::download(BufferHandle buffer, void* data, uint32_t off
 	{
 		throw std::runtime_error("Cannot download from an immutable buffer");
 	}
+}
+
+void gfx::VulkanGraphicDevice::copy(BufferHandle src, BufferHandle dst)
+{
+	VulkanBuffer* vk_srcBuffer = getVk<VulkanBuffer>(src);
+	VulkanBuffer* vk_dstBuffer = getVk<VulkanBuffer>(dst);
+	AKA_ASSERT(vk_srcBuffer->size == vk_dstBuffer->size, "");
+
+	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Copying buffer", getVkDevice(), getVkCommandPool(QueueType::Graphic));
+	vk_dstBuffer->copyFrom(cmd, vk_srcBuffer);
+	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
 }
 
 void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)

@@ -1,5 +1,7 @@
 #include <Aka/Resource/Resource/Resource.hpp>
 
+#include <Aka/Renderer/Renderer.hpp>
+
 namespace aka {
 
 Resource::Resource(ResourceType _type) :
@@ -14,25 +16,25 @@ Resource::Resource(ResourceType _type, ResourceID id, const aka::String& _name) 
 {
 }
 
-void Resource::create(AssetLibrary* _library, aka::gfx::GraphicDevice* _device, const Archive& _archive)
+void Resource::create(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
 {
 	AKA_ASSERT(m_state == ResourceState::Disk, "Trying to load a resource that is not on disk state");
 	m_state = ResourceState::Pending;
-	create_internal(_library, _device, _archive);
+	create_internal(_library, _renderer, _archive);
 	m_state = ResourceState::Loaded;
 }
 
-void Resource::save(AssetLibrary* _library, aka::gfx::GraphicDevice* _device, Archive& _archive)
+void Resource::save(AssetLibrary* _library, Renderer* _renderer, Archive& _archive)
 {
 	AKA_ASSERT(m_state == ResourceState::Loaded, "Trying to save resource that is not loaded");
-	save_internal(_library, _device, _archive);
+	save_internal(_library, _renderer, _archive);
 }
 
-void Resource::destroy(AssetLibrary* _library, aka::gfx::GraphicDevice* _device)
+void Resource::destroy(AssetLibrary* _library, Renderer* _renderer)
 {
 	AKA_ASSERT(m_state == ResourceState::Loaded, "Trying to destroy resource that is not loaded");
 	m_state = ResourceState::Pending;
-	destroy_internal(_library, _device);
+	destroy_internal(_library, _renderer);
 	m_state = ResourceState::Disk;
 }
 

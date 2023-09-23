@@ -30,9 +30,10 @@ struct VulkanCommandList : CommandList
 	void bindDescriptorSets(const DescriptorSetHandle* sets, uint32_t count) override;
 
 	void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) override;
+	void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) override;
 
-	void bindVertexBuffer(const BufferHandle handle, uint32_t binding, uint32_t offsets = 0) override;
-	void bindVertexBuffers(const BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets = nullptr) override;
+	void bindVertexBuffer(uint32_t binding, const BufferHandle handle, uint32_t offsets = 0) override;
+	void bindVertexBuffers(uint32_t binding, uint32_t bindingCount, const BufferHandle* buffers, const uint32_t* offsets = nullptr) override;
 	void bindIndexBuffer(BufferHandle buffer, IndexFormat format, uint32_t offset = 0) override;
 
 	void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) override;
@@ -43,6 +44,7 @@ struct VulkanCommandList : CommandList
 	void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
 	void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) override;
 
+	void copy(BufferHandle src, BufferHandle dst) override;
 	void copy(TextureHandle src, TextureHandle dst) override;
 	void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) override;
 

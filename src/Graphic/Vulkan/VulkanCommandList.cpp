@@ -274,11 +274,23 @@ void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src
 		vk_texture->format
 	);
 }
-void VulkanCommandList::bindVertexBuffer(const BufferHandle buffers, uint32_t binding, uint32_t offset)
+void VulkanCommandList::transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst)
 {
-	bindVertexBuffers(&buffers, binding, 1, &offset);
+	VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffer);
+	VulkanBuffer::transitionBuffer(
+		vk_command,
+		vk_buffer->vk_buffer,
+		vk_buffer->size,
+		0,
+		src,
+		dst
+	);
 }
-void VulkanCommandList::bindVertexBuffers(const BufferHandle* buffers, uint32_t binding, uint32_t bindingCount, const uint32_t* offsets)
+void VulkanCommandList::bindVertexBuffer(uint32_t binding, const BufferHandle buffers, uint32_t offset)
+{
+	bindVertexBuffers(binding, 1, &buffers, &offset);
+}
+void VulkanCommandList::bindVertexBuffers(uint32_t binding, uint32_t bindingCount, const BufferHandle* buffers, const uint32_t* offsets)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	VkBuffer vk_buffers[VertexMaxAttributeCount]{};
@@ -381,6 +393,15 @@ void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t grou
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	vkCmdDispatch(vk_command, groupX, groupY, groupZ);
+}
+
+void VulkanCommandList::copy(BufferHandle src, BufferHandle dst)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	VulkanBuffer* vk_src = device->getVk<VulkanBuffer>(src);
+	VulkanBuffer* vk_dst = device->getVk<VulkanBuffer>(dst);
+
+	vk_dst->copyFrom(vk_command, vk_src);
 }
 
 void VulkanCommandList::copy(TextureHandle src, TextureHandle dst)

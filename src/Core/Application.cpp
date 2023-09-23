@@ -6,6 +6,7 @@
 #include <Aka/Audio/AudioDevice.h>
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
+#include <Aka/Renderer/Renderer.hpp>
 
 namespace aka {
 
@@ -16,12 +17,13 @@ Application::Application(const Config& config) :
 	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
 	m_audio(AudioDevice::create(config.audio)),
 	m_program(new ShaderRegistry),
-	m_library(new AssetLibrary),
+	m_assets(new AssetLibrary),
 	m_root(new Layer),
 	m_needClientResize(false),
 	m_width(0),
 	m_height(0),
-	m_running(true)
+	m_running(true),
+	m_renderer(new Renderer(m_graphic, m_assets))
 {
 }
 Application::~Application()
@@ -30,7 +32,7 @@ Application::~Application()
 	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
 	delete m_root;
-	delete m_library;
+	delete m_assets;
 	delete m_program;
 }
 void Application::create(const Config& config)
@@ -40,12 +42,13 @@ void Application::create(const Config& config)
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
 	AKA_ASSERT(m_audio != nullptr, "No audio");
 	AKA_ASSERT(m_program != nullptr, "No shaders");
-	AKA_ASSERT(m_library != nullptr, "No assets");
+	AKA_ASSERT(m_assets != nullptr, "No assets");
 	AKA_ASSERT(m_root != nullptr, "No layers");
 
 	m_platform->initialize(config.platform);
 	m_graphic->initialize(m_platform, config.graphic);
 	m_audio->initialize(config.audio);
+	m_renderer->create();
 	m_width = config.platform.width;
 	m_height = config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
@@ -58,8 +61,9 @@ void Application::destroy()
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
 	m_root->destroy(graphic());
 	onDestroy();
+	m_assets->destroy(m_renderer);
+	m_renderer->destroy();
 	m_program->destroy(m_graphic);
-	m_library->destroy(m_graphic);
 	m_audio->shutdown();
 	m_graphic->shutdown();
 	m_platform->shutdown();
@@ -72,7 +76,7 @@ void Application::update(Time deltaTime)
 {
 	onUpdate(deltaTime);
 	m_root->update(deltaTime);
-	m_library->update();
+	m_assets->update();
 	EventDispatcher<AppUpdateEvent>::trigger(AppUpdateEvent{ deltaTime });
 }
 void Application::fixedUpdate(Time deltaTime)
@@ -90,6 +94,7 @@ void Application::frame()
 void Application::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
 {
 	onRender(_device, frame);
+	m_renderer->render(frame);
 	m_root->render(_device, frame);
 	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{ frame });
 }
@@ -145,6 +150,11 @@ gfx::GraphicDevice* Application::graphic()
 	return m_graphic;
 }
 
+Renderer* aka::Application::renderer()
+{
+	return m_renderer;
+}
+
 PlatformDevice* Application::platform()
 {
 	return m_platform;
@@ -162,7 +172,7 @@ ShaderRegistry* Application::program()
 
 AssetLibrary* Application::assets()
 {
-	return m_library;
+	return m_assets;
 }
 
 void Application::run(Application* app, const Config& config)
