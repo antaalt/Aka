@@ -10,31 +10,27 @@
 
 namespace aka {
 
-// TODO this class would need to be extendable for each possible custom type we can get create..
-struct ComponentPool
-{
-	template <typename T>
-	Pool<T>& get();
-private:
-	Pool<StaticMeshComponent> m_staticMeshes;
-	Pool<CameraComponent> m_cameras; // Attributed to views ? do we need shadow camera ?
-};
-
-template <>
-inline Pool<StaticMeshComponent>& ComponentPool::get() {
-	return m_staticMeshes;
-}
-template <>
-inline Pool<CameraComponent>& ComponentPool::get() {
-	return m_cameras;
-}
+// You can define your own pool for custom component by overriding this template.
+// --- MyCustomComponent.h ---
+// namespace aka {
+//		template <> Pool<app::MyCustomComponent>& GetGlobalComponentPool();
+// }
+// -- MyCustomComponent.cpp --
+// namespace aka {
+//		static Pool<app::MyCustomComponent> GlobalMyCustomComponentPool;
+//		template<> Pool<app::MyCustomComponent>& GetGlobalComponentPool() { return GlobalMyCustomComponentPool; }
+// }
+// ---------------------------
+template <typename T> Pool<T>& GetGlobalComponentPool();
+template <> Pool<StaticMeshComponent>& GetGlobalComponentPool();
+template <> Pool<CameraComponent>& GetGlobalComponentPool();
 
 class Node
 {
 public:
-	Node() : m_name("Unknown"), m_pools(new ComponentPool) {}
-	Node(const char* name) : m_name(name), m_pools(new ComponentPool) {}
-	virtual ~Node() { delete m_pools; } // TODO release components.
+	Node();
+	Node(const char* name);
+	virtual ~Node();
 
 	// Attach a component to the entity
 	template <typename T, typename... Args> T& attach(Args&&... args);
@@ -58,11 +54,11 @@ public:
 	bool isOrphan() const { return m_components.size() == 0; }
 	uint32_t getComponentCount() const { return (uint32_t)m_components.size(); }
 	void setDirty(ComponentType type) { m_dirtyMask |= ComponentTypeMask(1U << EnumToIndex(type)); }
+protected:
+	void destroyComponents();
 private: // Data
 	String m_name;
 	Vector<Component*> m_components;
-private: // Allocation
-	ComponentPool* m_pools;
 private:
 	ComponentTypeMask m_dirtyMask;
 };
@@ -79,8 +75,7 @@ inline T& Node::attach(Args && ...args)
 			AKA_CRASH();
 		}
 	}
-	Pool<T>& pool = m_pools->get<T>();
-	T* component = pool.acquire(std::forward<Args>(args)...);
+	T* component = GetGlobalComponentPool<T>().acquire(std::forward<Args>(args)...);
 	component->onAttach();
 	return reinterpret_cast<T&>(*m_components.append(component));
 }
@@ -97,8 +92,7 @@ inline void Node::detach()
 			attachedComponent->onDetach();
 			m_components.remove(&attachedComponent);
 			// Release
-			Pool<T>& pool = m_pools->get<T>();
-			pool.release(reinterpret_cast<T*>(attachedComponent));
+			GetGlobalComponentPool<T>().release(reinterpret_cast<T*>(attachedComponent));
 			return;
 		}
 	}

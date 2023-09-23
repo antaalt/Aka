@@ -35,6 +35,7 @@ add_library (Aka
 	"src/Renderer/Renderer.cpp"
 
 	"src/Scene/Component.cpp"
+	"src/Scene/Node.cpp"
 	"src/Scene/Node2D.cpp"
 	"src/Scene/Node3D.cpp"
 	"src/Scene/Component/CameraComponent.cpp"	

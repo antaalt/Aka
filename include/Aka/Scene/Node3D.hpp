@@ -17,9 +17,9 @@ public:
 
 public:
 	// Add a node to this node.
-	Node3D* addChild(const char* name);
+	void addChild(Node3D* node);
 	// Remove a node from this node.
-	void removeChild(Node3D* entity);
+	void removeChild(Node3D* node);
 public:
 	void create(gfx::GraphicDevice* _device) override;
 	void destroy(gfx::GraphicDevice* _device) override;
@@ -28,7 +28,7 @@ public:
 
 	// Dont need this, we dont draw from here, renderer handle this with different rendering subsystem. Only engine logic in node, with move & updates.
 	void prepare(gfx::GraphicDevice* _device) override {}
-	void render(gfx::GraphicDevice* _device, gfx::Frame* _frame) override;
+	void render(gfx::GraphicDevice* _device, gfx::Frame* _frame) {}
 	void finish(gfx::GraphicDevice* _device) override {}
 public:
 	void setLocalTransform(const mat4f& transform);

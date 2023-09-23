@@ -2,10 +2,14 @@
 
 namespace aka {
 
-StaticMeshComponent::StaticMeshComponent() :
-	Component(ComponentType::StaticMeshComponent)
+StaticMeshComponent::StaticMeshComponent(AssetID assetID) :
+	Component(ComponentType::StaticMeshComponent),
+	m_assetID(assetID)
 {
-
+}
+StaticMeshComponent::~StaticMeshComponent()
+{
+	// Do not own instance, neither does mesh.
 }
 void StaticMeshComponent::setInstance(Instance* instance)
 {

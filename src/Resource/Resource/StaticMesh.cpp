@@ -18,6 +18,10 @@ StaticMesh::StaticMesh(ResourceID _id, const String& _name) :
 	Resource(ResourceType::StaticMesh, _id, _name)
 {
 }
+StaticMesh::~StaticMesh()
+{
+	AKA_ASSERT(batches.size() == 0, "Batches should have been cleared.");
+}
 
 void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
 {

@@ -16,18 +16,25 @@ Node3D::~Node3D()
 {
 }
 
-Node3D* Node3D::addChild(const char* name)
+void Node3D::addChild(Node3D* child)
 {
-	return m_childrens.append(new Node3D(name));
+	AKA_ASSERT(child != this, "Trying to add itself as child");
+	AKA_ASSERT(child->m_parent == nullptr, "Child already have a parent");
+	child->m_parent = this;
+	m_childrens.append(child);
 }
-void Node3D::removeChild(Node3D* entity)
+void Node3D::removeChild(Node3D* child)
 {
-	auto it = std::find(m_childrens.begin(), m_childrens.end(), entity);
+	AKA_ASSERT(child != this, "Trying to remove itself as child");
+	auto it = std::find(m_childrens.begin(), m_childrens.end(), child);
 	if (it != m_childrens.end())
 	{
 		m_childrens.remove(it);
-		// TODO delete here or do not new up ?
-		AKA_ASSERT(false, "");
+		child->setParent(nullptr);
+	}
+	else
+	{
+		AKA_ASSERT(false, "Not found.");
 	}
 }
 void Node3D::create(gfx::GraphicDevice* _device)
@@ -46,25 +53,22 @@ void Node3D::create(gfx::GraphicDevice* _device)
 }
 void Node3D::destroy(gfx::GraphicDevice* _device)
 {
-	if (m_parent)
+	/*if (m_parent)
 	{
 		m_parent->removeChild(this);
-	}
+	}*/
 	for (Node3D* childrens : m_childrens)
 	{
 		// This will call remove child on this.
 		childrens->destroy(_device);
 	}
+	destroyComponents();
 }
 void Node3D::update(Time deltaTime)
 {
 
 }
 void Node3D::fixedUpdate(Time deltaTime)
-{
-
-}
-void Node3D::render(gfx::GraphicDevice* _device, gfx::Frame* _frame)
 {
 
 }
@@ -88,7 +92,10 @@ void Node3D::setLocalTransform(const mat4f& transform)
 }
 void Node3D::setParent(Node3D* parent)
 {
+	if (m_parent)
+		m_parent->removeChild(this);
 	m_parent = parent;
+	m_parent->m_childrens.append(this);
 }
 Node3D* Node3D::getParent()
 {

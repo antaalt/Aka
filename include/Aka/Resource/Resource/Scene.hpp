@@ -2,6 +2,8 @@
 
 #include <Aka/Resource/Resource/Resource.hpp>
 #include <Aka/Core/Container/String.h>
+#include <Aka/Memory/Pool.h>
+#include <Aka/Scene/Node3D.hpp> // For Pool<Node3D>, might create cyclic dependencies
 
 namespace aka {
 
@@ -24,8 +26,10 @@ public:
 	aabbox<> getBounds() const { return m_bounds; }
 	Node3D& getRoot() { return *m_root; }
 	const Node3D& getRoot() const { return *m_root; }
+	Node3D* createChild(Node3D* parent, const char* name);
 private:
 	aabbox<> m_bounds;
+	Pool<Node3D> m_nodePool;
 	Node3D* m_root;
 };
 

@@ -201,7 +201,7 @@ void AssetLibrary::update()
 
 void AssetLibrary::destroy(Renderer* _renderer)
 {
-	for (auto it : m_scenes)
+	for (auto it : m_textures)
 	{
 		if (it.second.isLoaded())
 		{
@@ -215,7 +215,7 @@ void AssetLibrary::destroy(Renderer* _renderer)
 			it.second.get().destroy(this, _renderer);
 		}
 	}
-	for (auto it : m_textures)
+	for (auto it : m_scenes)
 	{
 		if (it.second.isLoaded())
 		{
