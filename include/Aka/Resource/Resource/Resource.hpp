@@ -77,6 +77,7 @@ public:
 	bool isLoaded() const;
 	ResourceState getState() const;
 	size_t getCount() const;
+	void reset();
 
 	const T& get() const;
 	T& get();
@@ -123,6 +124,12 @@ template<typename T>
 inline size_t ResourceHandle<T>::getCount() const
 {
 	return m_resource.use_count();
+}
+
+template<typename T>
+inline void ResourceHandle<T>::reset()
+{
+	m_resource.reset();
 }
 
 template<typename T>

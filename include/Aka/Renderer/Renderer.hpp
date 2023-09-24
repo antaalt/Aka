@@ -44,13 +44,13 @@ public: // Allocate
 public: // Instances
 	// Register an instance for a specific asset.
 	Instance* createInstance(AssetID assetID);
-	void destroyInstance(Instance* instance);
+	void destroyInstance(Instance*& instance);
 
 	void render(gfx::Frame* frame);
 
 public:
 	View* createView(ViewType type);
-	void destroyView(View* view);
+	void destroyView(View*& view);
 
 public:
 	AssetLibrary* getLibrary();
@@ -59,7 +59,8 @@ public:
 private:
 	AssetLibrary* m_library;
 	gfx::GraphicDevice* m_device;
-	std::map<AssetID, Vector<Instance*>> m_assetInstances[EnumCount<InstanceType>()];
+	// Use std::vector cuz Vector iterator should be real iterator & not only pointers.
+	std::map<AssetID, std::vector<Instance*>> m_assetInstances[EnumCount<InstanceType>()];
 
 	struct RenderData
 	{

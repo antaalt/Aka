@@ -32,7 +32,6 @@ enum class InstanceType : uint32_t
 struct Instance 
 {
 	AssetID assetID;
-	InstanceData data;
 	ViewTypeMask mask; // An instance is visible in some views only.
 	InstanceType type;
 	// Transform

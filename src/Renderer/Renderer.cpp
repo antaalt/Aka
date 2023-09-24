@@ -109,24 +109,33 @@ Instance* Renderer::createInstance(AssetID assetID)
 	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
 
 	Instance* instance = new Instance;
-	it.append(instance);
+	it.push_back(instance);
+	instance->type = type;
 	instance->assetID = assetID;
 	instance->descriptorSet = m_device->createDescriptorSet("InstanceDescSet", bindings);
 	instance->mask = ViewTypeMask::Color;
-	instance->transform = mat4f::identity();;
+	instance->transform = mat4f::identity();
 	return instance;
 }
 
 
-void Renderer::destroyInstance(Instance* instance)
+void Renderer::destroyInstance(Instance*& instance)
 {
-	auto& it = m_assetInstances[EnumToIndex(instance->type)][instance->assetID];
-	auto itFind = std::find(it.begin(), it.end(), instance);
-	if (itFind != it.end())
+	InstanceType type = getInstanceTypeFromAssetType(m_library->getAssetInfo(instance->assetID).type);
+	AKA_ASSERT(instance->type == type, "");
+	std::vector<Instance*>& data = m_assetInstances[EnumToIndex(type)][instance->assetID];
+	auto itFind = std::find(data.begin(), data.end(), instance);
+	if (itFind != data.end())
 	{
-		it.remove(itFind);
+		data.erase(itFind);
+		m_device->destroy(instance->descriptorSet);
+		delete instance;
+		instance = nullptr;
 	}
-	delete instance;
+	else
+	{
+		AKA_ASSERT(false, "trying to destroy an instance that does not exist");
+	}
 }
 
 
@@ -139,7 +148,7 @@ View* Renderer::createView(ViewType viewType)
 	return view;
 }
 
-void Renderer::destroyView(View* view)
+void Renderer::destroyView(View*& view)
 {
 	auto it = std::find(m_views.begin(), m_views.end(), view);
 	if (it != m_views.end())
@@ -147,6 +156,7 @@ void Renderer::destroyView(View* view)
 		m_views.remove(it);
 	}
 	delete view;
+	view = nullptr;
 }
 
 void Renderer::render(gfx::Frame* frame)
@@ -183,7 +193,7 @@ void Renderer::render(gfx::Frame* frame)
 		{
 			// write offset
 			const AssetID assetID = assetInstances.first;
-			const Vector<Instance*> instances = assetInstances.second;
+			const std::vector<Instance*> instances = assetInstances.second;
 			const ResourceID resourceID = m_library->getResourceID(assetID);
 			ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(resourceID);
 			if (!meshHandle.isLoaded())
@@ -234,7 +244,7 @@ void Renderer::render(gfx::Frame* frame)
 		for (auto& assetInstances : m_assetInstances[EnumToIndex(instanceType)])
 		{
 			const AssetID assetID = assetInstances.first;
-			const Vector<Instance*>& instances = assetInstances.second;
+			const std::vector<Instance*>& instances = assetInstances.second;
 			// TODO should prepare buffers before hand & do indirect.
 			/*for (gfx::DrawIndexedIndirectCommand& batch : batches)
 			{

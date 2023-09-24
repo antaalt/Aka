@@ -7,7 +7,7 @@
 #include <Aka/Scene/Component/StaticMeshComponent.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
-#include <Aka/Scene/Node3D.hpp>
+#include <Aka/Scene/Node.hpp>
 
 namespace aka {
 
@@ -26,7 +26,7 @@ Scene::Scene(ResourceID _id, const String& _name) :
 Scene::~Scene()
 {
 	AKA_ASSERT(m_nodePool.count() == 0, "Node destroy missing");
-	m_nodePool.release([this](Node3D& node) { Logger::warn(node.getName(), " was not destroyed"); });
+	m_nodePool.release([this](Node& node) { Logger::warn(node.getName(), " was not destroyed"); });
 }
 
 void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
@@ -35,10 +35,10 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 	const ArchiveScene& scene = reinterpret_cast<const ArchiveScene&>(_archive);
 
 	m_bounds = scene.bounds;
-	Vector<Node3D*> nodes;
+	Vector<Node*> nodes;
 	for (const ArchiveSceneEntity& entity : scene.entities)
 	{
-		Node3D* node = m_nodePool.acquire(entity.name.cstr());
+		Node* node = m_nodePool.acquire(entity.name.cstr());
 		if (asBool(SceneComponentMask::Transform & entity.components))
 		{
 			ArchiveSceneID id = entity.id[EnumToIndex(SceneComponent::Transform)];
@@ -49,7 +49,7 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 				ArchiveSceneID idParent = entity.id[EnumToIndex(SceneComponent::Hierarchy)];
 				if (idParent != ArchiveSceneID::Invalid)
 				{
-					Node3D* parent = nodes[toIntegral(idParent)];
+					Node* parent = nodes[toIntegral(idParent)];
 					node->setParent(parent);
 				}
 				else
@@ -73,8 +73,8 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 			ArchiveSceneID id = entity.id[EnumToIndex(SceneComponent::StaticMesh)];
 			const ArchiveStaticMesh& mesh = scene.meshes[toIntegral(id)];
 			StaticMeshComponent& s = node->attach<StaticMeshComponent>(mesh.id());
-			s.setMesh(_library->load<StaticMesh>(_library->getResourceID(mesh.id()), mesh, _renderer));
-			s.setInstance(_renderer->createInstance(mesh.id()));
+			// Request the load of the mesh.
+			_library->load<StaticMesh>(_library->getResourceID(mesh.id()), mesh, _renderer);
 		}
 		//if (asBool(SceneComponentMask::PointLight & e.components))
 		//{
@@ -103,10 +103,13 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 
 void Scene::save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _archive)
 {
+	AKA_ASSERT(_archive.type() == AssetType::Scene, "Invalid archive");
+	ArchiveScene& sceneArchive = reinterpret_cast<ArchiveScene&>(_archive);
+	sceneArchive;
 	AKA_NOT_IMPLEMENTED;
 }
 
-void recurseDestroy(Pool<Node3D>& pool, Node3D* root)
+void recurseDestroy(Pool<Node>& pool, Node* root)
 {
 	for (uint32_t i = 0; i < root->getChildCount(); i++)
 	{
@@ -117,14 +120,14 @@ void recurseDestroy(Pool<Node3D>& pool, Node3D* root)
 
 void Scene::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	m_root->destroy(_renderer->getDevice());
+	m_root->destroy(_library, _renderer);
 	recurseDestroy(m_nodePool, m_root);
 }
 
 
-Node3D* Scene::createChild(Node3D* parent, const char* name)
+Node* Scene::createChild(Node* parent, const char* name)
 {
-	Node3D* child = m_nodePool.acquire(name);
+	Node* child = m_nodePool.acquire(name);
 	parent->addChild(child);
 	return child;
 }

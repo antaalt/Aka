@@ -13,13 +13,14 @@ public:
 	StaticMeshComponent(AssetID assetID);
 	~StaticMeshComponent();
 
-	void setInstance(Instance* instance);
-	void setMesh(ResourceHandle<StaticMesh> mesh);
+	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
+	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
 
 	ResourceHandle<StaticMesh> getMesh();
+	void setInstanceTransform(const mat4f& transform) { m_instance->transform = transform; }
 private:
 	AssetID m_assetID;
-	ResourceHandle<StaticMesh> m_mesh;
+	ResourceHandle<StaticMesh> m_meshHandle;
 	Instance* m_instance;
 };
 
