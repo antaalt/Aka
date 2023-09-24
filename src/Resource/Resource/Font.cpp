@@ -3,34 +3,27 @@
 namespace aka {
 
 Font::Font() :
-	Resource(ResourceType::First, ResourceID::Invalid, "") 
+	Resource(ResourceType::Font, ResourceID::Invalid, "")
 {
 }
 Font::Font(ResourceID id, const aka::String& _name) :
-	Resource(ResourceType::First, id, name)
+	Resource(ResourceType::Font, id, _name)
 {
 }
 
-void Font::create(AssetLibrary* _library, aka::gfx::GraphicDevice* _device, const Archive& _archive)
+void Font::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
 {
-	AKA_ASSERT(m_state == ResourceState::Disk, "Trying to load a resource that is not on disk state");
-	m_state = ResourceState::Pending;
-	create_internal(_library, _device, _archive);
-	m_state = ResourceState::Loaded;
+	AKA_NOT_IMPLEMENTED;
 }
 
-void Font::save(AssetLibrary* _library, aka::gfx::GraphicDevice* _device, Archive& _archive)
+void Font::save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive)
 {
-	AKA_ASSERT(m_state == ResourceState::Loaded, "Trying to save resource that is not loaded");
-	save_internal(_library, _device, _archive);
+	AKA_NOT_IMPLEMENTED;
 }
 
-void Font::destroy(AssetLibrary* _library, aka::gfx::GraphicDevice* _device)
+void Font::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	AKA_ASSERT(m_state == ResourceState::Loaded, "Trying to destroy resource that is not loaded");
-	m_state = ResourceState::Pending;
-	destroy_internal(_library, _device);
-	m_state = ResourceState::Disk;
+	AKA_NOT_IMPLEMENTED;
 }
 
 }

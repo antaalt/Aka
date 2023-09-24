@@ -22,6 +22,8 @@ enum class ResourceType : uint32_t
 	StaticMesh,
 	Material,
 	Texture,
+	Sprite,
+	Font,
 	AudioSource,
 
 	First = Scene,

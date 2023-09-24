@@ -37,22 +37,31 @@ add_library (Aka
 	"src/Scene/Component.cpp"
 	"src/Scene/Node.cpp"
 	
-	"src/Scene/Component/CameraComponent.cpp"	
+	"src/Scene/Component/CameraComponent.cpp"
 	 
-	"src/Scene/Component/StaticMeshComponent.cpp" 
+	"src/Scene/Component/StaticMeshComponent.cpp"
 
-	"src/Resource/Archive/ArchiveGeometry.cpp" 
-	"src/Resource/Archive/ArchiveMaterial.cpp" 
-	"src/Resource/Archive/ArchiveBatch.cpp" 
+	"src/Resource/Archive/ArchiveGeometry.cpp"
+	"src/Resource/Archive/ArchiveMaterial.cpp"
+	"src/Resource/Archive/ArchiveBatch.cpp"
 	"src/Resource/Archive/ArchiveStaticMesh.cpp"
 	"src/Resource/Archive/ArchiveImage.cpp"
-	"src/Resource/Archive/ArchiveScene.cpp" 
+	"src/Resource/Archive/ArchiveScene.cpp"
+	"src/Resource/Archive/ArchiveSprite.cpp"
+	"src/Resource/Archive/ArchiveFont.cpp"
 	"src/Resource/Archive/Archive.cpp"
 
 	"src/Resource/Resource/Resource.cpp"
 	"src/Resource/Resource/Scene.cpp"
+	"src/Resource/Resource/Sprite.cpp"
 	"src/Resource/Resource/StaticMesh.cpp"
 	"src/Resource/Resource/Texture.cpp"
+	"src/Resource/Resource/Font.cpp"
+
+	"src/Resource/Importer/Importer.cpp"
+	"src/Resource/Importer/AsepriteImporter.cpp"
+	"src/Resource/Importer/TextureImporter.cpp"
+	"src/Resource/Importer/FontImporter.cpp"
 	
 	"src/Resource/Shader/Shader.cpp"
 	"src/Resource/Shader/ShaderRegistry.cpp" 

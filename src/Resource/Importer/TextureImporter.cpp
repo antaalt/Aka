@@ -1,60 +1,53 @@
-#include <Aka/Resource/Importer/TextureImporter.h>
+#include <Aka/Resource/Importer/TextureImporter.hpp>
 
 #include <Aka/OS/Image.h>
 #include <Aka/Graphic/Texture.h>
 #include <Aka/Core/Container/Vector.h>
-#include <Aka/Resource/Asset.h>
-#include <Aka/Resource/Resource/Texture.h>
-#include <Aka/Resource/Archive/TextureArchive.h>
+#include <Aka/Resource/Asset.hpp>
+#include <Aka/Resource/Resource/Texture.hpp>
+#include <Aka/Resource/Archive/ArchiveImage.hpp>
 #include <Aka/OS/OS.h>
 
 #include <stb_image.h>
 
 namespace aka {
 
-bool TextureImporter::import(const Path& path, std::function<bool(Resource* resource)>&& callback)
+ImportResult TextureImporter::import(AssetLibrary * _library, const Path & path)
 {
-	// Generate build data
-	Texture* texture = new Texture;
-	texture->createBuildData();
-	TextureBuildData* buildData = reinterpret_cast<TextureBuildData*>(texture->getBuildData());
+	// TODO handle HDR / ENVMAP / CUBEMAP / ARRAY
+	Image img = ImageDecoder::fromDisk(path);
+	if (img.size() == 0)
+		return ImportResult::CouldNotReadFile;
+	
+	AssetPath assetPath = getAssetPath((OS::File::basename(path) + ".img").cstr());
 
-	// TODO cubemap
-	// Cubemap : convert from envmap ? Need a flag...
-	int x, y, c;
-	stbi_uc* data = stbi_load(path.cstr(), &x, &y, &c, STBI_default);
-	if (data == nullptr)
-	{
-		float* dataf = stbi_loadf(path.cstr(), &x, &y, &c, STBI_default);
-		if (dataf == nullptr)
-		{
-			delete texture;
-			return false;
-		}
-		buildData->width = x;
-		buildData->height = y;
-		buildData->channels = c;
-		buildData->layers = 1;
-		buildData->flags = TextureBuildFlag::ColorSpaceHDR;
-		buildData->bytes.append(
-			reinterpret_cast<byte_t*>(dataf), 
-			reinterpret_cast<byte_t*>(dataf) + x * y * c * sizeof(float)
-		);
-		stbi_image_free(dataf);
-	}
-	else
-	{
-		buildData->width = x;
-		buildData->height = y;
-		buildData->channels = c;
-		buildData->layers = 1;
-		buildData->flags = TextureBuildFlag::None;
-		buildData->bytes.append(data, data + x * y * c);
-		stbi_image_free(data);
-	}
+	ArchiveImage image(_library->registerAsset(assetPath, AssetType::Image));
+	image.width = img.width;
+	image.height = img.height;
+	image.channels = img.getComponents();
+	image.data = std::move(img.bytes);
+	ArchiveSaveResult res = image.save(ArchiveSaveContext(_library));
 
-	// Callback importer
-	return callback(texture);
+	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
+}
+
+ImportResult TextureImporter::import(AssetLibrary * _library, const Blob & blob)
+{
+	Image img = ImageDecoder::fromMemory(blob);
+	if (img.size() == 0)
+		return ImportResult::CouldNotReadFile;
+
+	// TODO find unused name.
+	AssetPath assetPath = getAssetPath("memory.img");
+	
+	ArchiveImage image(_library->registerAsset(assetPath, AssetType::Image));
+	image.width = img.width;
+	image.height = img.height;
+	image.channels = img.getComponents();
+	image.data = std::move(img.bytes);
+	ArchiveSaveResult res = image.save(ArchiveSaveContext(_library));
+
+	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
 
 };

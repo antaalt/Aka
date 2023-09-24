@@ -1,31 +1,22 @@
-#include <Aka/Resource/Importer/FontImporter.h>
+#include <Aka/Resource/Importer/FontImporter.hpp>
 
 #include <Aka/OS/Image.h>
-#include <Aka/Graphic/Texture.h>
-#include <Aka/Core/Container/Vector.h>
 #include <Aka/OS/Archive.h>
-#include <Aka/Resource/Asset.h>
-#include <Aka/Resource/Resource/Font.h>
-#include <Aka/OS/OS.h>
-
+#include <Aka/Resource/Asset.hpp>
+#include <Aka/Resource/Resource/Font.hpp>
+#include <Aka/Graphic/Texture.h>
 
 namespace aka {
 
-bool FontImporter::import(const Path& path, std::function<bool(Resource* resource)>&& callback)
+ImportResult import(AssetLibrary * _library, const Path & path)
 {
-	Font* font = new Font;
-	font->createBuildData();
-	FontBuildData* buildData = reinterpret_cast<FontBuildData*>(font->getBuildData());
-
-	buildData->height = 48;
-	if (OS::File::read(path, &buildData->ttf))
-	{
-		return callback(font);
-	}
-	else
-	{
-		return false;
-	}
+	AKA_NOT_IMPLEMENTED;
+	return ImportResult::Failed;
+}
+ImportResult import(AssetLibrary * _library, const Blob & blob)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ImportResult::Failed;
 }
 
 };

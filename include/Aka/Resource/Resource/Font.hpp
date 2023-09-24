@@ -1,20 +1,20 @@
 #pragma once
 
 #include <Aka/Resource/Resource/Resource.hpp>
+#include <Aka/Resource/Archive/ArchiveFont.hpp>
 
 namespace aka {
-// .font->hold the ttf to be parsed or other depending on method(check valve paper with sdf).
-//
-struct ArchiveFont : Archive {
-	Blob ttf;
-	void load(const Path& path) override;
-	void save(const Path& path) override;
-};
-struct Font : Resource {
-public:
-	void create_internal(const ArchiveFont& _archive);
-	void destroy_internal(const ArchiveFont& _archive);
 
+class Font : Resource
+{
+public:
+	Font();
+	Font(ResourceID _id, const String& _name);
+	~Font();
+private:
+	void create_internal(AssetLibrary* library, Renderer* _renderer, const Archive& _archive) override;
+	void save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _archive) override;
+	void destroy_internal(AssetLibrary* library, Renderer* _renderer) override;
 };
 
 }

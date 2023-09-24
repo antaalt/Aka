@@ -18,6 +18,7 @@ enum class AssetType : uint32_t
 	Batch,
 	StaticMesh,
 	DynamicMesh,
+	Sprite,
 	Image,
 	Font,
 	Audio,

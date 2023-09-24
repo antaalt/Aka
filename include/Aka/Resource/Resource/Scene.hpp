@@ -27,6 +27,7 @@ public:
 	Node& getRoot() { return *m_root; }
 	const Node& getRoot() const { return *m_root; }
 	Node* createChild(Node* parent, const char* name);
+	void destroyChild(Node* node);
 private:
 	aabbox<> m_bounds;
 	Pool<Node> m_nodePool;

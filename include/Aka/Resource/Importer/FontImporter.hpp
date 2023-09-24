@@ -4,7 +4,7 @@
 
 namespace aka {
 
-class SpriteImporter : public Importer
+class FontImporter : public Importer
 {
 public:
 	ImportResult import(AssetLibrary * _library, const Path & path) override;

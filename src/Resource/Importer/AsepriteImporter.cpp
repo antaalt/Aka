@@ -1,12 +1,12 @@
-#include <Aka/Resource/Importer/SpriteImporter.h>
+#include <Aka/Resource/Importer/AsepriteImporter.hpp>
 
 #include <Aka/OS/Image.h>
 #include <Aka/Graphic/Texture.h>
 #include <Aka/Core/Container/Vector.h>
 #include <Aka/OS/Archive.h>
-#include <Aka/Resource/Asset.h>
-#include <Aka/Resource/Resource/Sprite.h>
-//#include <Aka/Resource/Archive/SpriteArchive.h>
+#include <Aka/Resource/Asset.hpp>
+#include <Aka/Resource/Resource/Sprite.hpp>
+#include <Aka/Resource/Archive/ArchiveSprite.hpp>
 #include <Aka/OS/OS.h>
 
 #include <miniz.h>
@@ -623,62 +623,67 @@ Aseprite::BlendFunc Aseprite::blending(LayerBlendMode blendMode)
 	}
 }
 
-
-
-ImportResult SpriteImporter::import(AssetLibrary * _library, const Path & path) 
+ImportResult AsepriteImporter::import(AssetLibrary * _library, const Path & path)
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
 	Aseprite ase = Aseprite::parse(stream);
 
-	Sprite* sprite = new Sprite;
-	sprite->createBuildData();
-	SpriteBuildData* buildData = reinterpret_cast<SpriteBuildData*>(sprite->getBuildData());
-
-	auto convertFrame = [](const Aseprite& ase, const Aseprite::Frame& aseFrame) -> SpriteBuildData::Frame
+	auto convertFrame = [_library, this](const Aseprite& ase, const Aseprite::Frame& aseFrame, uint32_t index) -> ArchiveSpriteFrame
 	{
-		Vector<Aseprite::Color32> aseImage = aseFrame.image(ase);
-		Image image(ase.width, ase.height, ImageComponent::RGBA);
-		memcpy(image.data(), aseImage[0].data, image.size());
-		// Set frame
-		SpriteBuildData::Frame frame;
+		String frameName = String::format("frame%u.img", index);
+		ArchiveSpriteFrame frame;
 		frame.duration = Time::milliseconds(aseFrame.duration);
-		frame.bytes = Blob(image.data(), image.size());
+		frame.image = ArchiveImage(_library->registerAsset(getAssetPath(frameName.cstr()), AssetType::Image));
+
+		ArchiveImage image;
+		image.width = ase.width;
+		image.height = ase.height;
+		image.channels = 4;
+		image.data.resize(image.width * image.height * 4);
+
+		Vector<Aseprite::Color32> aseImage = aseFrame.image(ase);
+		memcpy(image.data.data(), aseImage[0].data, image.size());
 		return frame;
 	};
 
+	ArchiveSprite sprite(_library->registerAsset(getAssetPath(getName().cstr()), AssetType::Sprite));
+	uint32_t index = 0;
 	if (ase.tags.size() == 0)
 	{
 		// Default animation
-		SpriteBuildData::Animation animation;
+		ArchiveSpriteAnimation animation;
 		animation.name = "Idle";
 		for (Aseprite::Frame& aseFrame : ase.frames)
 		{
-			buildData->width = min<uint32_t>(buildData->width, ase.width);
-			buildData->height = min<uint32_t>(buildData->height, ase.height);
-			animation.frames.append(convertFrame(ase, aseFrame));
+			sprite.width = min<uint32_t>(sprite.width, ase.width);
+			sprite.height = min<uint32_t>(sprite.height, ase.height);
+			animation.frames.append(convertFrame(ase, aseFrame, index++));
 		}
-		buildData->animations.append(animation);
+		sprite.animations.append(animation);
 	}
 	else
 	{
 		for (Aseprite::Tag& aseTag : ase.tags)
 		{
-			SpriteBuildData::Animation animation;
+			ArchiveSpriteAnimation animation;
 			animation.name = aseTag.name;
 			for (Aseprite::Word iFrame = aseTag.from; iFrame <= aseTag.to; iFrame++)
 			{
-				buildData->width = min<uint32_t>(buildData->width, ase.width);
-				buildData->height = min<uint32_t>(buildData->height, ase.height);
-				animation.frames.append(convertFrame(ase, ase.frames[iFrame]));
+				sprite.width = min<uint32_t>(sprite.width, ase.width);
+				sprite.height = min<uint32_t>(sprite.height, ase.height);
+				animation.frames.append(convertFrame(ase, ase.frames[iFrame], index++));
 			}
-			buildData->animations.append(animation);
+			sprite.animations.append(animation);
 		}
 	}
-	return callback(sprite);
+	ArchiveSaveResult res = sprite.save(ArchiveSaveContext(_library));
+	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
-ImportResult SpriteImporter::import(AssetLibrary * _library, const Blob & blob)
+ImportResult AsepriteImporter::import(AssetLibrary * _library, const Blob & blob)
 {
-
+	AKA_NOT_IMPLEMENTED;
+	// TODO write to temp & call other import ?
+	return ImportResult::Failed;
 }
 
 };
