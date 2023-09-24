@@ -49,13 +49,19 @@ public:
 	// Update the component with a fixed timestep.
 	void fixedUpdate(Time deltaTime);
 public:
+	// Get node name
 	const String& getName() const { return m_name; }
+	// Does the node has active components
 	bool isOrphan() const { return m_componentsActive.size() == 0; }
+	// Get the number of active components
 	uint32_t getComponentCount() const { return (uint32_t)m_componentsActive.size(); }
-	template<typename T>
-	void setDirty();
+	// Mark a component as dirty
+	template<typename T> void setDirty();
+	// Set update flag
 	void setFlag(NodeUpdateFlag flag) { m_updateFlags |= flag; }
 public:
+	// Remove the node from the free, set its childs to its parent
+	void unlink();
 	// Add a node to this node.
 	void addChild(Node* node);
 	// Remove a node from this node.
@@ -77,9 +83,13 @@ private: // Hierarchy
 	Vector<Node*> m_childrens;
 
 public: // Transforms
+	// Set local transform
 	void setLocalTransform(const mat4f& transform);
+	// Get the local transform
 	mat4f& getLocalTransform();
+	// Get the local transform
 	const mat4f& getLocalTransform() const;
+	// Get the world transform
 	mat4f getWorldTransform() const;
 private:
 	mat4f m_localTransform;

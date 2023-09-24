@@ -132,4 +132,13 @@ Node* Scene::createChild(Node* parent, const char* name)
 	return child;
 }
 
+void Scene::destroyChild(Node* node)
+{
+	//node->destroy();
+	//AKA_ASSERT(m_nodePool.own(node), "Do not own pool");
+	//AKA_ASSERT(m_root != node, "Cannot unlink root node.");
+	//node->unlink();
+	m_nodePool.release(node);
+}
+
 }

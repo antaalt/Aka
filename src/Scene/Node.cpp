@@ -53,6 +53,10 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 		component->detach();
 		delete component;
 	}
+	m_componentsActiveMask = 0;
+	m_componentsToActivateMask = 0;
+	m_componentsToDeactivateMask = 0;
+	m_componentsActiveMask = 0;
 	m_componentsToActivate.clear();
 	m_componentsActive.clear();
 	m_componentsToDeactivate.clear();
@@ -115,6 +119,18 @@ void Node::fixedUpdate(Time deltaTime)
 {
 }
 
+void Node::unlink()
+{
+	AKA_ASSERT(m_parent, "No parent");
+	Node* parent = m_parent;
+	parent->removeChild(this);
+	for (Node* child : m_childrens)
+	{
+		parent->m_childrens.append(child);
+	}
+	m_childrens.clear();
+}
+
 void Node::addChild(Node* child)
 {
 	AKA_ASSERT(child != this, "Trying to add itself as child");
@@ -129,7 +145,7 @@ void Node::removeChild(Node* child)
 	if (it != m_childrens.end())
 	{
 		m_childrens.remove(it);
-		child->setParent(nullptr);
+		child->m_parent = nullptr;
 	}
 	else
 	{
