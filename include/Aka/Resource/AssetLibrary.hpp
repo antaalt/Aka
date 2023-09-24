@@ -19,7 +19,7 @@ template<> struct ArchiveTrait<Texture> { using Archive = ArchiveImage; };
 template <typename T>
 class ResourceIterator
 {
-	using Iterator = typename std::map<ResourceID, ResourceHandle<T>>::iterator;
+	using Iterator = typename std::map<AssetID, ResourceHandle<T>>::iterator;
 	static_assert(std::is_base_of<Resource, T>::value, "This should inherit Resource");
 public:
 	explicit ResourceIterator(Iterator& value) : m_value(value) {}
@@ -34,7 +34,7 @@ public:
 		++(*this);
 		return old;
 	}
-	std::pair<ResourceID, ResourceHandle<T>> operator*() { return *m_value; }
+	std::pair<AssetID, ResourceHandle<T>> operator*() { return *m_value; }
 	bool operator==(const ResourceIterator<T>& value) { return value.m_value == m_value; }
 	bool operator!=(const ResourceIterator<T>& value) { return value.m_value != m_value; }
 private:
@@ -46,12 +46,12 @@ class ResourceRange
 {
 	static_assert(std::is_base_of<Resource, T>::value, "This should inherit Resource");
 public:
-	ResourceRange(std::map<ResourceID, ResourceHandle<T>>& resources) : m_resources(resources) {}
+	ResourceRange(std::map<AssetID, ResourceHandle<T>>& resources) : m_resources(resources) {}
 
 	ResourceIterator<T> begin() { return ResourceIterator<T>(m_resources.begin()); }
 	ResourceIterator<T> end() { return ResourceIterator<T>(m_resources.end()); }
 private:
-	std::map<ResourceID, ResourceHandle<T>>& m_resources;
+	std::map<AssetID, ResourceHandle<T>>& m_resources;
 };
 
 struct AssetIterator {
@@ -78,12 +78,12 @@ private:
 };
 
 struct AssetRange {
-	AssetRange(std::map<AssetID, AssetInfo>& assets) : m_assets(assets) {}
+	AssetRange(std::map<AssetID, AssetInfo>& assets) : m_assetInfo(assets) {}
 
-	AssetIterator begin() { return AssetIterator(m_assets.begin()); }
-	AssetIterator end() { return AssetIterator(m_assets.end()); }
+	AssetIterator begin() { return AssetIterator(m_assetInfo.begin()); }
+	AssetIterator end() { return AssetIterator(m_assetInfo.end()); }
 private:
-	std::map<AssetID, AssetInfo>& m_assets;
+	std::map<AssetID, AssetInfo>& m_assetInfo;
 };
 
 
@@ -95,7 +95,7 @@ struct AssetAddedEvent
 };
 struct ResourceLoadedEvent
 {
-	ResourceID resource;
+	AssetID resource;
 	ResourceType type;
 };
 
@@ -111,16 +111,14 @@ public:
 	void serialize();
 public:
 	AssetID registerAsset(const AssetPath& _path, AssetType _assetType);
-	ResourceID getResourceID(AssetID _assetID) const;
-	AssetID getAssetID(ResourceID _resourceID) const;
 	AssetInfo getAssetInfo(AssetID _assetID);
 
 public:
-	template <typename T> ResourceHandle<T> get(ResourceID _resourceID);
-	template <typename T> ResourceHandle<T> load(ResourceID _resourceID, Renderer* _renderer);
-	template <typename T> ResourceHandle<T> load(ResourceID _resourceID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer);
-	template <typename T> ArchiveSaveResult save(ResourceID _resourceID, Renderer* _renderer);
-	template <typename T> void unload(ResourceID _resourceID, Renderer* _renderer);
+	template <typename T> ResourceHandle<T> get(AssetID _assetID);
+	template <typename T> ResourceHandle<T> load(AssetID _assetID, Renderer* _renderer);
+	template <typename T> ResourceHandle<T> load(AssetID _assetID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer);
+	template <typename T> ArchiveSaveResult save(AssetID _assetID, Renderer* _renderer);
+	template <typename T> void unload(AssetID _assetID, Renderer* _renderer);
 	
 protected:
 	friend class Application;
@@ -132,16 +130,15 @@ public:
 	// Iterate a resource
 	template<typename T> ResourceRange<T> getRange();
 	// Iterate assets
-	AssetRange getAssetRange() { return AssetRange(m_assets); }
+	AssetRange getAssetRange() { return AssetRange(m_assetInfo); }
 
 private:
 	template <typename T>
-	using ResourceMap = std::map<ResourceID, ResourceHandle<T>>;
+	using ResourceMap = std::map<AssetID, ResourceHandle<T>>;
 	template <typename T>
 	ResourceMap<T>& getResourceMap();
 private:
-	std::map<AssetID, AssetInfo> m_assets;
-	std::map<ResourceID, AssetID> m_resources;
+	std::map<AssetID, AssetInfo> m_assetInfo;
 private:
 	ResourceMap<StaticMesh> m_staticMeshes;
 	ResourceMap<Scene> m_scenes;
@@ -159,11 +156,11 @@ ResourceRange<T> AssetLibrary::getRange()
 }
 
 template<typename T>
-ResourceHandle<T> AssetLibrary::get(ResourceID _resourceID)
+ResourceHandle<T> AssetLibrary::get(AssetID _assetID)
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Invalid resource type");
 	ResourceMap<T>& map = getResourceMap<T>();
-	auto itResource = map.find(_resourceID);
+	auto itResource = map.find(_assetID);
 	if (itResource != map.end())
 	{
 		return itResource->second;
@@ -172,53 +169,43 @@ ResourceHandle<T> AssetLibrary::get(ResourceID _resourceID)
 }
 
 template<typename T>
-inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, Renderer* _renderer)
+inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, Renderer* _renderer)
 {
-	auto it = m_resources.find(_resourceID);
-	if (it == m_resources.end())
-		return ResourceHandle<T>::invalid();
-	ArchiveTrait<T>::Archive archive(it->second);
+	ArchiveTrait<T>::Archive archive(_assetID);
 	ArchiveLoadResult res = archive.load(ArchiveLoadContext(this));
 	if (res != ArchiveLoadResult::Success)
 		return ResourceHandle<T>::invalid();
-	return load<T>(_resourceID, archive, _renderer);
+	return load<T>(_assetID, archive, _renderer);
 }
 
 template<typename T>
-inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer)
+inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer)
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Invalid resource type");
 	static_assert(std::is_base_of<Archive, ArchiveTrait<T>::Archive>::value, "Invalid archive type");
 	ResourceMap<T>& map = getResourceMap<T>();
 	// Check if resource already exist.
-	auto itResource = map.find(_resourceID);
+	auto itResource = map.find(_assetID);
 	if (itResource != map.end())
 	{
 		//Logger::warn("Trying to load a resource that is already loaded.");
 		return itResource->second;
 	}
-	// Get assetID corresponding to resource.
-	auto itAssetID = m_resources.find(_resourceID);
-	if (itAssetID == m_resources.end())
-	{
-		return ResourceHandle<T>::invalid();
-	}
-	AssetID assetID = itAssetID->second;
 	// Get assetInfo
-	auto itAssetInfo = m_assets.find(assetID);
-	if (itAssetInfo == m_assets.end())
+	auto itAssetInfo = m_assetInfo.find(_assetID);
+	if (itAssetInfo == m_assetInfo.end())
 	{
 		return ResourceHandle<T>::invalid();
 	}
 	const AssetInfo& assetInfo = itAssetInfo->second;
 	String name = OS::File::basename(assetInfo.path.getRawPath());
-	auto it = map.insert(std::make_pair(_resourceID, ResourceHandle<T>(_resourceID, name)));
+	auto it = map.insert(std::make_pair(_assetID, ResourceHandle<T>(_assetID, name)));
 	if (it.second)
 	{
 		ResourceHandle<T> handle = it.first->second;
 		T& res = handle.get();
 		res.create(this, _renderer, _archive);
-		EventDispatcher<ResourceLoadedEvent>::emit(ResourceLoadedEvent{ _resourceID, res.getType() });
+		EventDispatcher<ResourceLoadedEvent>::emit(ResourceLoadedEvent{ _assetID, res.getType() });
 		return handle;
 	}
 	else
@@ -230,13 +217,10 @@ inline ResourceHandle<T> AssetLibrary::load(ResourceID _resourceID, const typena
 }
 
 template<typename T>
-inline ArchiveSaveResult AssetLibrary::save(ResourceID _resourceID, Renderer* _renderer)
+inline ArchiveSaveResult AssetLibrary::save(AssetID _assetID, Renderer* _renderer)
 {
-	auto it = m_resources.find(_resourceID);
-	if (it == m_resources.end())
-		return ArchiveSaveResult::Failed;
 	ResourceMap<T>& map = getResourceMap<T>();
-	auto itResource = map.find(_resourceID);
+	auto itResource = map.find(_assetID);
 	if (itResource == map.end())
 		return ArchiveSaveResult::Failed;
 	if (!itResource->second.isLoaded())
@@ -248,10 +232,10 @@ inline ArchiveSaveResult AssetLibrary::save(ResourceID _resourceID, Renderer* _r
 }
 
 template<typename T>
-inline void AssetLibrary::unload(ResourceID _resourceID, Renderer* _renderer)
+inline void AssetLibrary::unload(AssetID _assetID, Renderer* _renderer)
 {
 	ResourceMap<T>& map = getResourceMap<T>();
-	auto itResource = map.find(_resourceID);
+	auto itResource = map.find(_assetID);
 	if (itResource == map.end())
 		return;
 	if (!itResource->second.isLoaded())

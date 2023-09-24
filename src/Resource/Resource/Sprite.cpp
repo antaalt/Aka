@@ -29,7 +29,7 @@ Sprite::Sprite() :
 {
 }
 
-Sprite::Sprite(ResourceID _id, const String& _name) :
+Sprite::Sprite(AssetID _id, const String& _name) :
 	Resource(ResourceType::Sprite, _id, _name)
 {
 }

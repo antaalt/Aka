@@ -5,10 +5,10 @@
 namespace aka {
 
 Resource::Resource(ResourceType _type) :
-	Resource(_type, ResourceID::Invalid, "") 
+	Resource(_type, AssetID::Invalid, "")
 {
 }
-Resource::Resource(ResourceType _type, ResourceID id, const aka::String& _name) :
+Resource::Resource(ResourceType _type, AssetID id, const aka::String& _name) :
 	m_type(_type), 
 	m_id(id), 
 	m_name(_name),

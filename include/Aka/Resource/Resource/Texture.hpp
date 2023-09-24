@@ -12,7 +12,7 @@ class Renderer;
 class Texture : public Resource {
 public:
 	Texture();
-	Texture(ResourceID _id, const String& _name);
+	Texture(AssetID _id, const String& _name);
 
 	uint32_t getWidth() const { return m_width; }
 	uint32_t getHeight() const { return m_height; }

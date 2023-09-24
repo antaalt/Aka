@@ -9,6 +9,7 @@ enum class AssetID : uint64_t
 	Invalid = -1
 };
 
+// Adding element not at the end of this struct might invalidate library.json.
 enum class AssetType : uint32_t
 {
 	Unknown,

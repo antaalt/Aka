@@ -10,7 +10,7 @@ namespace aka {
 class StaticMesh : public Resource {
 public:
 	StaticMesh();
-	StaticMesh(ResourceID _id, const String& _name);
+	StaticMesh(AssetID _id, const String& _name);
 	~StaticMesh();
 private:
 	void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) override;

@@ -15,7 +15,7 @@ class Scene : public Resource
 {
 public:
 	Scene();
-	Scene(ResourceID _id, const String& _name);
+	Scene(AssetID _id, const String& _name);
 	~Scene();
 private:
 	void create_internal(AssetLibrary* library, Renderer* _renderer, const Archive& _archive) override;

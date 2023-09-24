@@ -98,4 +98,10 @@ void hashCombine(std::size_t& s, const T& v)
 	s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
 }
 
+template <typename T, size_t N>
+constexpr size_t countof(T const (&)[N])
+{
+	return N;
+}
+
 };

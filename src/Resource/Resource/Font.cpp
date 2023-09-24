@@ -3,10 +3,10 @@
 namespace aka {
 
 Font::Font() :
-	Resource(ResourceType::Font, ResourceID::Invalid, "")
+	Resource(ResourceType::Font, AssetID::Invalid, "")
 {
 }
-Font::Font(ResourceID id, const aka::String& _name) :
+Font::Font(AssetID id, const aka::String& _name) :
 	Resource(ResourceType::Font, id, _name)
 {
 }

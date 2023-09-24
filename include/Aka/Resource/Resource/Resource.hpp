@@ -4,15 +4,13 @@
 #include <memory>
 
 #include <Aka/Core/Container/String.h>
+#include <Aka/Resource/Asset.hpp>
 
 namespace aka {
 
 class Renderer;
 class AssetLibrary;
 struct Archive;
-
-enum class ResourceID : uint64_t { Invalid = (uint64_t)-1 };
-// TODO define DECL_STRICT_TYPE(ResourceID)
 
 enum class ResourceType : uint32_t
 {
@@ -45,11 +43,11 @@ class Resource
 {
 public:
 	Resource(ResourceType _type);
-	Resource(ResourceType _type, ResourceID id, const String& _name);
+	Resource(ResourceType _type, AssetID id, const String& _name);
 	virtual ~Resource() {}
 
 	const String& getName() const { return m_name; }
-	ResourceID getID() const { return m_id; }
+	AssetID getID() const { return m_id; }
 	ResourceType getType() const { return m_type; }
 	ResourceState getState() const { return m_state; }
 
@@ -63,7 +61,7 @@ protected:
 private:
 	ResourceState m_state;
 	ResourceType m_type;
-	ResourceID m_id;
+	AssetID m_id;
 	String m_name;
 };
 
@@ -73,7 +71,7 @@ struct ResourceHandle {
 	static_assert(std::is_base_of<Resource, T>::value, "Type should inherit Resource");
 public:
 	ResourceHandle();
-	ResourceHandle(ResourceID _id, const String& _name);
+	ResourceHandle(AssetID _id, const String& _name);
 
 	bool isValid() const;
 	bool isLoaded() const;
@@ -97,7 +95,7 @@ inline ResourceHandle<T>::ResourceHandle() :
 }
 
 template<typename T>
-inline ResourceHandle<T>::ResourceHandle(ResourceID _id, const String& _name) :
+inline ResourceHandle<T>::ResourceHandle(AssetID _id, const String& _name) :
 	m_resource(std::make_shared<T>(_id, _name))
 {
 }

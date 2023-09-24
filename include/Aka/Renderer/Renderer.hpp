@@ -6,6 +6,7 @@
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Renderer/Instance.hpp>
 #include <Aka/Renderer/View.hpp>
+#include <Aka/Resource/Shader/ShaderRegistry.h>
 
 namespace aka {
 
@@ -27,7 +28,7 @@ struct BufferOffset
 	uint32_t size;
 };
 
-class Renderer
+class Renderer : EventListener<ShaderReloadedEvent>
 {
 public:
 	Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library);
@@ -35,6 +36,9 @@ public:
 
 	void create();
 	void destroy();
+private:
+	void createRenderPass();
+	void destroyRenderPass();
 
 public: // Allocate 
 	BufferOffset allocate(void* data, size_t size);
@@ -47,8 +51,11 @@ public: // Instances
 	void destroyInstance(Instance*& instance);
 
 	void render(gfx::Frame* frame);
-
 public:
+	void resize(uint32_t width, uint32_t height);
+	void onReceive(const ShaderReloadedEvent& event);
+
+public: // View
 	View* createView(ViewType type);
 	void destroyView(View*& view);
 
@@ -62,14 +69,15 @@ private:
 	// Use std::vector cuz Vector iterator should be real iterator & not only pointers.
 	std::map<AssetID, std::vector<Instance*>> m_assetInstances[EnumCount<InstanceType>()];
 
-	struct RenderData
+	struct InstanceRenderData
 	{
 		gfx::BufferHandle m_instanceBuffer; // one data struct per type
 		gfx::BufferHandle m_instanceBufferStaging;
+		ProgramKey m_programKey;
 		gfx::GraphicPipelineHandle m_pipeline;
-		//gfx::RenderPassHandle m_renderPass;
+		uint32_t m_width, m_height;
 	};
-	RenderData m_renderData[EnumCount<InstanceType>()];
+	InstanceRenderData m_renderData[EnumCount<InstanceType>()];
 	// Backbuffer
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::RenderPassHandle m_backbufferRenderPass;

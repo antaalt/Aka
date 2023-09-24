@@ -20,8 +20,6 @@ static const uint32_t MaxViewCount = 5;
 
 void Renderer::create()
 {
-	m_backbufferRenderPass = m_device->createBackbufferRenderPass();
-	m_backbuffer = m_device->createBackbuffer(m_backbufferRenderPass);
 	// Create instance buffer (need resize depending on count ?)
 	ShaderRegistry* registry = Application::app()->program();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
@@ -33,26 +31,13 @@ void Renderer::create()
 		const aka::ShaderKey ShaderVertex = aka::ShaderKey().setPath(ShaderVertexPath).setType(aka::ShaderType::Vertex);
 		const aka::ShaderKey ShaderFragment = aka::ShaderKey().setPath(ShaderFragmentPath).setType(aka::ShaderType::Fragment);
 
-		aka::ProgramKey programKey = aka::ProgramKey();
-		programKey.add(ShaderVertex).add(ShaderFragment);
+		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
+		data.m_programKey = aka::ProgramKey();
+		data.m_programKey.add(ShaderVertex).add(ShaderFragment);
+		registry->add(data.m_programKey, m_device);
 
-		registry->add(programKey, m_device);
+		getDevice()->getBackbufferSize(data.m_width, data.m_height);
 
-		gfx::ProgramHandle program = registry->get(programKey);
-		RenderData& data = m_renderData[EnumToIndex(instanceType)];
-		data.m_pipeline = m_device->createGraphicPipeline(
-			"Graphic pipeline",
-			program,
-			gfx::PrimitiveType::Triangles,
-			m_device->get(m_backbufferRenderPass)->state,
-			gfx::VertexState{}.add(StaticVertex::getState()),
-			gfx::ViewportState{}.size(1280, 720),
-			gfx::DepthStateLessEqual,
-			gfx::StencilStateDefault,
-			gfx::CullStateDefault,
-			gfx::BlendStateDefault,
-			gfx::FillStateFill
-		);
 		// These buffers are resized dynamically or preallocated ?
 		data.m_instanceBuffer = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Uniform, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 		data.m_instanceBufferStaging = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Uniform, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
@@ -65,16 +50,17 @@ void Renderer::create()
 	gfx::DescriptorSetData data{};
 	data.addUniformBuffer(m_viewBuffers, 0, sizeof(ViewData));
 	m_device->update(m_viewDescriptorSet[0], data);
+
+	createRenderPass();
 }
 
 void Renderer::destroy()
 {
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
-		RenderData& data = m_renderData[EnumToIndex(instanceType)];
+		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		m_device->destroy(data.m_instanceBuffer);
 		m_device->destroy(data.m_instanceBufferStaging);
-		m_device->destroy(data.m_pipeline);
 		for (auto& assetInstances : m_assetInstances[EnumToIndex(instanceType)])
 		{
 			for (auto& instance : assetInstances.second)
@@ -83,10 +69,47 @@ void Renderer::destroy()
 			}
 		}
 	}
-	m_device->destroy(m_backbufferRenderPass);
-	m_device->destroy(m_backbuffer);
+	destroyRenderPass();
 	m_device->destroy(m_viewBuffers);
 	m_device->destroy(m_viewDescriptorSet[0]);
+}
+
+void Renderer::createRenderPass()
+{
+	ShaderRegistry* registry = Application::app()->program();
+
+	m_backbufferRenderPass = m_device->createBackbufferRenderPass();
+	m_backbuffer = m_device->createBackbuffer(m_backbufferRenderPass);
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
+		gfx::ProgramHandle programHandle = registry->get(data.m_programKey);
+		// Create pipeline
+		data.m_pipeline = m_device->createGraphicPipeline(
+			"Graphic pipeline",
+			programHandle,
+			gfx::PrimitiveType::Triangles,
+			m_device->get(m_backbufferRenderPass)->state,
+			gfx::VertexState {}.add(StaticVertex::getState()),
+			gfx::ViewportState{}.size(data.m_width, data.m_height),
+			gfx::DepthStateLessEqual,
+			gfx::StencilStateDefault,
+			gfx::CullStateDefault,
+			gfx::BlendStateDefault,
+			gfx::FillStateFill
+		);
+	}
+
+}
+void Renderer::destroyRenderPass()
+{
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
+		m_device->destroy(data.m_pipeline);
+	}
+	m_device->destroy(m_backbufferRenderPass);
+	m_device->destroy(m_backbuffer);
 }
 
 InstanceType getInstanceTypeFromAssetType(AssetType assetType)
@@ -194,8 +217,7 @@ void Renderer::render(gfx::Frame* frame)
 			// write offset
 			const AssetID assetID = assetInstances.first;
 			const std::vector<Instance*> instances = assetInstances.second;
-			const ResourceID resourceID = m_library->getResourceID(assetID);
-			ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(resourceID);
+			ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(assetID);
 			if (!meshHandle.isLoaded())
 				continue; // Skip it
 			StaticMesh& mesh = meshHandle.get();
@@ -236,7 +258,7 @@ void Renderer::render(gfx::Frame* frame)
 			continue; // Skip other types for now
 		uint32_t instanceID = 0;
 		//const auto& assetDrawCommands = drawIndexedBuffer[EnumToIndex(instanceType)];
-		const RenderData& data = m_renderData[EnumToIndex(instanceType)];
+		const InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		// Cant clear with this pass as it will discard previous instance type
 		gfx::FramebufferHandle fb = m_device->get(m_backbuffer, frame);
 		cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
@@ -254,8 +276,7 @@ void Renderer::render(gfx::Frame* frame)
 			}*/
 
 			// TODO cache this ? templating ?
-			ResourceID resourceID = m_library->getResourceID(assetID);
-			ResourceHandle<StaticMesh> mesh = m_library->get<StaticMesh>(resourceID);
+			ResourceHandle<StaticMesh> mesh = m_library->get<StaticMesh>(assetID);
 			if (mesh.isLoaded())
 			{
 				StaticMesh& m = mesh.get();
@@ -278,6 +299,24 @@ void Renderer::render(gfx::Frame* frame)
 		}
 		cmd->endRenderPass();
 	}
+}
+void Renderer::resize(uint32_t width, uint32_t height)
+{
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
+		data.m_width = width;
+		data.m_height = height;
+	}
+	destroyRenderPass();
+	createRenderPass();
+}
+
+void Renderer::onReceive(const ShaderReloadedEvent& event)
+{
+	getDevice()->wait();
+	destroyRenderPass();
+	createRenderPass();
 }
 
 };

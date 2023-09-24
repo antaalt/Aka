@@ -9,7 +9,7 @@ class Font : Resource
 {
 public:
 	Font();
-	Font(ResourceID _id, const String& _name);
+	Font(AssetID _id, const String& _name);
 	~Font();
 private:
 	void create_internal(AssetLibrary* library, Renderer* _renderer, const Archive& _archive) override;

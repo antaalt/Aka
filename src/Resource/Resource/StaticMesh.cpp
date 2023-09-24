@@ -14,7 +14,7 @@ StaticMesh::StaticMesh() :
 {
 }
 
-StaticMesh::StaticMesh(ResourceID _id, const String& _name) : 
+StaticMesh::StaticMesh(AssetID _id, const String& _name) :
 	Resource(ResourceType::StaticMesh, _id, _name)
 {
 }
@@ -53,8 +53,8 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 		bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
 		// Material
 		// TODO mips
-		ResourceHandle<Texture> albedo = _library->load<Texture>(_library->getResourceID(batch.material.albedo.id()), batch.material.albedo, _renderer);
-		ResourceHandle<Texture> normal = _library->load<Texture>(_library->getResourceID(batch.material.normal.id()), batch.material.normal, _renderer);
+		ResourceHandle<Texture> albedo = _library->load<Texture>(batch.material.albedo.id(), batch.material.albedo, _renderer);
+		ResourceHandle<Texture> normal = _library->load<Texture>(batch.material.normal.id(), batch.material.normal, _renderer);
 		
 		MaterialUniformBuffer ubo{};
 		ubo.color = batch.material.color;

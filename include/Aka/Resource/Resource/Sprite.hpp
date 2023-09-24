@@ -34,7 +34,7 @@ class Sprite : public Resource
 {
 public:
 	Sprite();
-	Sprite(ResourceID _id, const String& _name);
+	Sprite(AssetID _id, const String& _name);
 	~Sprite();
 private:
 	void create_internal(AssetLibrary* library, Renderer* _renderer, const Archive& _archive) override;

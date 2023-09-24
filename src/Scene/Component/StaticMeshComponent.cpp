@@ -16,7 +16,7 @@ StaticMeshComponent::~StaticMeshComponent()
 }
 void StaticMeshComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
 {
-	m_meshHandle = library->get<StaticMesh>(library->getResourceID(m_assetID));
+	m_meshHandle = library->get<StaticMesh>(m_assetID);
 	m_instance = _renderer->createInstance(m_assetID);
 }
 void StaticMeshComponent::onBecomeInactive(AssetLibrary* library, Renderer* _renderer)

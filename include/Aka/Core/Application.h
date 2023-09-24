@@ -16,7 +16,6 @@ namespace aka {
 
 class Application;
 class Layer;
-class ProgramManager;
 
 struct Config
 {

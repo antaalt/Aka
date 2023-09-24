@@ -17,7 +17,7 @@ Texture::Texture() :
 {
 }
 
-Texture::Texture(ResourceID _id, const String& _name) : 
+Texture::Texture(AssetID _id, const String& _name) :
 	Resource(ResourceType::Texture, _id, _name),
 	m_width(0),
 	m_height(0),

@@ -6,17 +6,20 @@
 
 namespace aka {
 
-constexpr const char* s_magicWord[EnumCount<AssetType>()] = {
+constexpr const char* s_magicWord[] = {
 	"akag", // MeshGeometry
 	"akam", // MeshMaterial
 	"akab", // MeshBatch
 	"akas", // StaticMesh
 	"akad", // DynamicMesh
+	"akaa", // Sprite (Animation)
 	"akai", // Image
 	"akaf", // Font
 	"akaa", // Audio
 	"akaw", // Scene (World)
 };
+
+static_assert(countof(s_magicWord) == EnumCount<AssetType>());
 
 ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, const Blob& _blob, bool _loadDependency)
 {

@@ -17,7 +17,7 @@ Scene::Scene() :
 	m_root(m_nodePool.acquire("RootNode"))
 {
 }
-Scene::Scene(ResourceID _id, const String& _name) :
+Scene::Scene(AssetID _id, const String& _name) :
 	Resource(ResourceType::Scene, _id, _name),
 	m_nodePool(),
 	m_root(m_nodePool.acquire("RootNode"))
@@ -74,7 +74,7 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 			const ArchiveStaticMesh& mesh = scene.meshes[toIntegral(id)];
 			StaticMeshComponent& s = node->attach<StaticMeshComponent>(mesh.id());
 			// Request the load of the mesh.
-			_library->load<StaticMesh>(_library->getResourceID(mesh.id()), mesh, _renderer);
+			_library->load<StaticMesh>(mesh.id(), mesh, _renderer);
 		}
 		//if (asBool(SceneComponentMask::PointLight & e.components))
 		//{

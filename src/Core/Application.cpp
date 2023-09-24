@@ -111,6 +111,7 @@ void Application::resize()
 {
 	m_needClientResize = false;
 	EventDispatcher<AppResizeEvent>::trigger(AppResizeEvent{ m_width, m_height });
+	m_renderer->resize(m_width, m_height);
 	m_root->resize(m_width, m_height);
 	onResize(m_width, m_height);
 

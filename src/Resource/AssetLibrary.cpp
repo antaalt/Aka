@@ -7,11 +7,6 @@
 
 namespace aka {
 
-ResourceID generateResourceIDFromAssetID(AssetID id)
-{
-	return ResourceID(id);
-}
-
 AssetID generateAssetIDFromAssetPath(const AssetPath& path)
 {
 	// With an AssetID depending on path, moving this asset will break all references...
@@ -86,7 +81,7 @@ void AssetLibrary::serialize()
 	}
 	{
 		json dataAssets = json::array();
-		for (auto& pair : m_assets)
+		for (auto& pair : m_assetInfo)
 		{
 			json dataAsset = json::object();
 			dataAsset["id"] = (uint64_t)pair.first;
@@ -124,7 +119,7 @@ bool validate(AssetLibrary* _library, AssetID id, AssetType _type)
 AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType)
 {
 	AssetID assetID = generateAssetIDFromAssetPath(_path);
-	auto itAsset = m_assets.insert(std::make_pair(assetID, AssetInfo{ assetID, _path, _assetType }));
+	auto itAsset = m_assetInfo.insert(std::make_pair(assetID, AssetInfo{ assetID, _path, _assetType }));
 	if (!itAsset.second)
 	{
 		// Check if the file already exist & is valid, if so, use it.
@@ -136,39 +131,18 @@ AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType
 			return AssetID::Invalid; // Avoid overwriting an asset. There might be hash conflict.
 	}
 
-	auto itAsset2 = m_assets.insert(std::make_pair(assetID, AssetInfo{ assetID, _path, _assetType }));
-	ResourceID resourceID = generateResourceIDFromAssetID(assetID);
+	auto itAsset2 = m_assetInfo.insert(std::make_pair(assetID, AssetInfo{ assetID, _path, _assetType }));
 
-	ResourceType resourceType = getResourceType(_assetType);
-	if (resourceType != ResourceType::Unknown)
-	{
-		auto itResource = m_resources.insert(std::make_pair(resourceID, assetID));
-		if (!itResource.second)
-			return AssetID::Invalid;
-	}
 	// Could check file if correct type but might not be created yet...
 	EventDispatcher<AssetAddedEvent>::emit(AssetAddedEvent{ assetID });
 
 	return assetID;
 }
 
-ResourceID AssetLibrary::getResourceID(AssetID _assetID) const
-{
-	return generateResourceIDFromAssetID(_assetID);
-}
-
-AssetID AssetLibrary::getAssetID(ResourceID _resourceID) const
-{
-	auto it = m_resources.find(_resourceID);
-	if (it == m_resources.end())
-		return AssetID::Invalid;
-	return it->second;
-}
-
 AssetInfo AssetLibrary::getAssetInfo(AssetID _id)
 {
-	auto it = m_assets.find(_id);
-	if (it == m_assets.end())
+	auto it = m_assetInfo.find(_id);
+	if (it == m_assetInfo.end())
 		return AssetInfo::invalid();
 	return it->second;
 }
