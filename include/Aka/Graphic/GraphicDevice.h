@@ -17,6 +17,7 @@
 #include <Aka/Graphic/Pipeline.h>
 #include <Aka/Graphic/CommandList.h>
 #include <Aka/Graphic/DescriptorSet.h>
+#include <Aka/Graphic/DescriptorPool.h>
 #include <Aka/Graphic/PhysicalDevice.h>
 #include <Aka/Graphic/Fence.h>
 
@@ -122,10 +123,15 @@ public:
 	virtual const Program* get(ProgramHandle program) = 0;
 
 	// Descriptor sets
-	virtual DescriptorSetHandle createDescriptorSet(const char* name, const ShaderBindingState& bindings) = 0;
+	virtual DescriptorSetHandle allocateDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) = 0;
 	virtual void update(DescriptorSetHandle set, const DescriptorSetData& data) = 0;
-	virtual void destroy(DescriptorSetHandle set) = 0;
+	virtual void free(DescriptorSetHandle set) = 0;
 	virtual const DescriptorSet* get(DescriptorSetHandle set) = 0;
+
+	// Descriptor pool
+	virtual DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) = 0;
+	virtual const DescriptorPool* get(DescriptorPoolHandle handle) = 0;
+	virtual void destroy(DescriptorPoolHandle pool) = 0;
 
 	// Device
 	virtual uint32_t getPhysicalDeviceCount() = 0;

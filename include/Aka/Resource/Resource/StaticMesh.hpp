@@ -29,6 +29,7 @@ public: // Mandatory data for rendering & co
 	gfx::SamplerHandle gfxAlbedoSampler;
 	gfx::SamplerHandle gfxNormalSampler;
 	gfx::IndexFormat m_indexFormat;
+	gfx::DescriptorPoolHandle m_pool;
 	aabbox<> m_bounds;
 
 	struct DrawCallIndexed {

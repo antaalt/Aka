@@ -38,6 +38,10 @@ void Renderer::create()
 
 		getDevice()->getBackbufferSize(data.m_width, data.m_height);
 
+		gfx::ShaderBindingState bindings{};
+		bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
+		m_instanceDescriptorPool[EnumToIndex(instanceType)] = getDevice()->createDescriptorPool("InstanceDescriptorPool", bindings, MaxInstanceCount);
+
 		// These buffers are resized dynamically or preallocated ?
 		data.m_instanceBuffer = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Uniform, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 		data.m_instanceBufferStaging = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Uniform, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
@@ -45,7 +49,9 @@ void Renderer::create()
 	gfx::ShaderBindingState bindings{};
 	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
 	m_viewBuffers = m_device->createBuffer("ViewBuffer", gfx::BufferType::Uniform, sizeof(ViewData) * MaxViewCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
-	m_viewDescriptorSet.append(m_device->createDescriptorSet("ViewDescSet", bindings));
+
+	gfx::DescriptorPoolHandle pool = m_viewDescriptorPool.append(getDevice()->createDescriptorPool("InstanceDescriptorPool", bindings, MaxInstanceCount));
+	m_viewDescriptorSet.append(getDevice()->allocateDescriptorSet("ViewDescSet", bindings, pool));
 
 	gfx::DescriptorSetData data{};
 	data.addUniformBuffer(m_viewBuffers, 0, sizeof(ViewData));
@@ -65,13 +71,17 @@ void Renderer::destroy()
 		{
 			for (auto& instance : assetInstances.second)
 			{
-				m_device->destroy(instance->descriptorSet);
+				m_device->free(instance->descriptorSet);
 			}
 		}
+		m_device->destroy(m_instanceDescriptorPool[EnumToIndex(instanceType)]);
 	}
 	destroyRenderPass();
 	m_device->destroy(m_viewBuffers);
-	m_device->destroy(m_viewDescriptorSet[0]);
+	for (gfx::DescriptorSetHandle handle : m_viewDescriptorSet)
+		m_device->free(handle);
+	for (gfx::DescriptorPoolHandle handle : m_viewDescriptorPool)
+		m_device->destroy(handle);
 }
 
 void Renderer::createRenderPass()
@@ -135,7 +145,7 @@ Instance* Renderer::createInstance(AssetID assetID)
 	it.push_back(instance);
 	instance->type = type;
 	instance->assetID = assetID;
-	instance->descriptorSet = m_device->createDescriptorSet("InstanceDescSet", bindings);
+	instance->descriptorSet = m_device->allocateDescriptorSet("InstanceDescSet", bindings, m_instanceDescriptorPool[EnumToIndex(type)]);
 	instance->mask = ViewTypeMask::Color;
 	instance->transform = mat4f::identity();
 	return instance;
@@ -151,7 +161,7 @@ void Renderer::destroyInstance(Instance*& instance)
 	if (itFind != data.end())
 	{
 		data.erase(itFind);
-		m_device->destroy(instance->descriptorSet);
+		m_device->free(instance->descriptorSet);
 		delete instance;
 		instance = nullptr;
 	}

@@ -165,18 +165,13 @@ private:
 	PlatformDevice* m_platform;
 
 public:
-	struct ShaderInputData {
-		VkDescriptorPool pool;
-		VkDescriptorSetLayout layout;
-		//VkPipelineLayout pipelineLayout;
-	};
 	VkRenderPass getRenderPass(const RenderPassState& state);
-	ShaderInputData getDescriptorLayout(const ShaderBindingState& bindingsDesc);
+	VkDescriptorSetLayout getDescriptorSetLayout(const ShaderBindingState& bindingsDesc);
 	VkPipelineLayout getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount);
 
 private:
 	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
-	std::unordered_map<ShaderBindingState, ShaderInputData> m_bindingDesc;
+	std::unordered_map<ShaderBindingState, VkDescriptorSetLayout> m_descriptorSetLayouts;
 	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout;
 private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);

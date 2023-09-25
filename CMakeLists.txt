@@ -117,7 +117,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
-)
+ "include/Aka/Graphic/DescriptorPool.h" "src/Graphic/DescriptorPool.cpp")
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

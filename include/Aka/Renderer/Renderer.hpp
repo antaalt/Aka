@@ -66,6 +66,7 @@ public:
 private:
 	AssetLibrary* m_library;
 	gfx::GraphicDevice* m_device;
+	gfx::DescriptorPoolHandle m_instanceDescriptorPool[EnumCount<InstanceType>()];
 	// Use std::vector cuz Vector iterator should be real iterator & not only pointers.
 	std::map<AssetID, std::vector<Instance*>> m_assetInstances[EnumCount<InstanceType>()];
 
@@ -83,6 +84,7 @@ private:
 	gfx::RenderPassHandle m_backbufferRenderPass;
 private:
 	gfx::BufferHandle m_viewBuffers;
+	Vector<gfx::DescriptorPoolHandle> m_viewDescriptorPool;
 	Vector<gfx::DescriptorSetHandle> m_viewDescriptorSet;
 private:
 	Vector<View*> m_views;

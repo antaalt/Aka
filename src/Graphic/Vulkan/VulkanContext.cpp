@@ -129,23 +129,21 @@ VkRenderPass VulkanContext::getRenderPass(const RenderPassState& state)
 	return vk_renderPass;
 }
 
-VulkanContext::ShaderInputData VulkanContext::getDescriptorLayout(const ShaderBindingState& bindingsDesc)
+VkDescriptorSetLayout VulkanContext::getDescriptorSetLayout(const ShaderBindingState& bindingsDesc)
 {
-	auto it = m_bindingDesc.find(bindingsDesc);
-	if (it != m_bindingDesc.end())
+	if (bindingsDesc.count == 0 || bindingsDesc.count > ShaderMaxBindingCount)
+		return VK_NULL_HANDLE;
+	auto it = m_descriptorSetLayouts.find(bindingsDesc);
+	if (it != m_descriptorSetLayouts.end())
 		return it->second;
-	ShaderInputData s;
-	s.pool = VK_NULL_HANDLE;
-	s.layout = VulkanProgram::createVkDescriptorSetLayout(device, bindingsDesc, &s.pool);
+	VkDescriptorSetLayout layout = VulkanProgram::createVkDescriptorSetLayout(device, bindingsDesc);
 
 	size_t hash = std::hash<ShaderBindingState>()(bindingsDesc);
-	setDebugName(device, s.pool, "VkDescriptorPool_", hash);
-	setDebugName(device, s.layout, "VkDescriptorSetLayout_", hash);
+	setDebugName(device, layout, "VkDescriptorSetLayout_", hash);
 
-	m_bindingDesc.insert(std::make_pair(bindingsDesc, s));
-	return s;
+	m_descriptorSetLayouts.insert(std::make_pair(bindingsDesc, layout));
+	return layout;
 }
-
 
 VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount)
 {
@@ -522,10 +520,9 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 
 void VulkanContext::shutdown()
 {
-	for (auto& rp : m_bindingDesc)
+	for (auto& rp : m_descriptorSetLayouts)
 	{
-		vkDestroyDescriptorPool(device, rp.second.pool, nullptr);
-		vkDestroyDescriptorSetLayout(device, rp.second.layout, nullptr);
+		vkDestroyDescriptorSetLayout(device, rp.second, nullptr);
 		//vkDestroyPipelineLayout(device, rp.second.pipelineLayout, nullptr);
 	}
 	for (auto& rp : m_pipelineLayout)

@@ -5,11 +5,10 @@
 #include <Aka/Graphic/Buffer.h>
 #include <Aka/Graphic/Sampler.h>
 #include <Aka/Graphic/Resource.h>
+#include <Aka/Graphic/DescriptorPool.h>
 
 namespace aka {
 namespace gfx {
-
-
 
 struct DescriptorSlot
 {
@@ -51,14 +50,15 @@ using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
 
 struct DescriptorSet : Resource
 {
-	DescriptorSet(const char* name, const ShaderBindingState& bindings);
+	DescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool);
 
+	DescriptorPoolHandle pool;
 	ShaderBindingState bindings;
 
 	void update(const DescriptorSetData& data);
 
-	static DescriptorSetHandle create(const char* name, const ShaderBindingState& state);
-	static void destroy(DescriptorSetHandle set);
+	static DescriptorSetHandle allocate(const char* name, const ShaderBindingState& state, DescriptorPoolHandle pool);
+	static void free(DescriptorSetHandle set);
 };
 
 };

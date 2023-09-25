@@ -60,22 +60,19 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 
 VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Program(name, vertex, fragment, sets, bindingCounts, constants, constantCount),
-	vk_descriptorSetLayout { VK_NULL_HANDLE},
-	vk_descriptorPool { VK_NULL_HANDLE}
+	vk_descriptorSetLayout { VK_NULL_HANDLE}
 {
 }
 
 VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Program(name, vertex, fragment, geometry, sets, bindingCounts, constants, constantCount),
-	vk_descriptorSetLayout{ VK_NULL_HANDLE },
-	vk_descriptorPool{ VK_NULL_HANDLE }
+	vk_descriptorSetLayout{ VK_NULL_HANDLE }
 {
 }
 
 VulkanProgram::VulkanProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Program(name, compute, sets, bindingCounts, constants, constantCount),
-	vk_descriptorSetLayout{ VK_NULL_HANDLE },
-	vk_descriptorPool{ VK_NULL_HANDLE }
+	vk_descriptorSetLayout{ VK_NULL_HANDLE }
 {
 }
 
@@ -159,12 +156,10 @@ void VulkanProgram::updateDescriptorSet(VulkanGraphicDevice* device, const Descr
 	vkUpdateDescriptorSets(device->getVkDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings, VkDescriptorPool* pool)
+VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings)
 {
-	if (bindings.count == 0)
-		return VK_NULL_HANDLE;
+	AKA_ASSERT(bindings.count > 0, "Invalid inputs");
 	std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.count, VkDescriptorSetLayoutBinding{});
-	std::vector<VkDescriptorPoolSize> vk_poolSizes(bindings.count, VkDescriptorPoolSize{});
 
 	for (uint32_t i = 0; i < bindings.count; i++)
 	{
@@ -174,10 +169,6 @@ VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device
 		vk_bindings[i].descriptorType = VulkanContext::tovk(binding.type);
 		vk_bindings[i].pImmutableSamplers = nullptr;
 		vk_bindings[i].stageFlags = VulkanContext::tovk(binding.stages);
-
-		// Pool
-		vk_poolSizes[i].type = vk_bindings[i].descriptorType;
-		vk_poolSizes[i].descriptorCount = vk_bindings[i].descriptorCount;
 	}
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
@@ -187,17 +178,29 @@ VkDescriptorSetLayout VulkanProgram::createVkDescriptorSetLayout(VkDevice device
 
 	VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout));
+	return descriptorSetLayout;
+}
+VkDescriptorPool VulkanProgram::createVkDescriptorPool(VkDevice device, const ShaderBindingState& bindings, uint32_t size)
+{
+	AKA_ASSERT(bindings.count > 0, "Invalid inputs");
+	std::vector<VkDescriptorPoolSize> vk_poolSizes(bindings.count, VkDescriptorPoolSize{});
 
+	for (uint32_t i = 0; i < bindings.count; i++)
+	{
+		const ShaderBindingLayout& binding = bindings.bindings[i];
+		vk_poolSizes[i].type = VulkanContext::tovk(binding.type);
+		vk_poolSizes[i].descriptorCount = binding.count;
+	}
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(vk_poolSizes.size());
 	poolInfo.pPoolSizes = vk_poolSizes.data();
-	poolInfo.maxSets = 3 * 512; // TODO swapchain image count
-	// TODO max instance count ? non optimal for memory
+	poolInfo.maxSets = size;
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, nullptr, pool));
-
-	return descriptorSetLayout;
+	VkDescriptorPool pool = VK_NULL_HANDLE;
+	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, nullptr, &pool));
+	return pool;
 }
 
 VkDescriptorSet VulkanProgram::createVkDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout* layouts, uint32_t layoutCount)
@@ -245,7 +248,14 @@ const Shader* VulkanGraphicDevice::get(ShaderHandle handle)
 	return static_cast<const Shader*>(handle.__data);
 }
 
-// Programs
+VulkanShader::VulkanShader(const char* name, ShaderType type) :
+	Shader(name, type),
+	vk_module(VK_NULL_HANDLE)
+{
+}
+
+// -----------------------------------------------------------------
+
 ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
 {
 	// TODO check shaders
@@ -258,10 +268,7 @@ ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, Shader
 	// Create vk data
 	for (uint32_t i = 0; i < bindingCounts; i++)
 	{
-		auto data = m_context.getDescriptorLayout(vk_program->sets[i]);
-		vk_program->vk_descriptorPool[i] = data.pool;
-		vk_program->vk_descriptorSetLayout[i] = data.layout;
-		//vk_program->vk_pipelineLayout = m_context.getPipelineLayout(vk_program->vk_descriptorSetLayout);
+		vk_program->vk_descriptorSetLayout[i] = m_context.getDescriptorSetLayout(vk_program->sets[i]);
 	}
 
 	vk_program->native = 0;// reinterpret_cast<std::uintptr_t>(vk_program->vk_descriptorSet);
@@ -280,10 +287,7 @@ ProgramHandle VulkanGraphicDevice::createComputeProgram(const char* name, Shader
 	// Create vk data
 	for (uint32_t i = 0; i < bindingCounts; i++)
 	{
-		auto data = m_context.getDescriptorLayout(vk_program->sets[i]);
-		vk_program->vk_descriptorPool[i] = data.pool;
-		vk_program->vk_descriptorSetLayout[i] = data.layout;
-		//vk_program->vk_pipelineLayout = m_context.getPipelineLayout(vk_program->vk_descriptorSetLayout);
+		vk_program->vk_descriptorSetLayout[i] = m_context.getDescriptorSetLayout(vk_program->sets[i]);
 	}
 
 	vk_program->native = 0;// reinterpret_cast<std::uintptr_t>(vk_program->vk_descriptorSet);
@@ -296,15 +300,9 @@ void VulkanGraphicDevice::destroy(ProgramHandle program)
 	if (get(program) == nullptr) return;
 
 	VulkanProgram* vk_program = getVk<VulkanProgram>(program);
-	// only call free if VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT set
-	//if (vk_program->vk_descriptorSet)
-	//	vkFreeDescriptorSets(m_context.device, vk_program->vk_descriptorPool, 1, &vk_program->vk_descriptorSet);
 	for (uint32_t i = 0; i < vk_program->setCount; i++)
 	{
-		// TODO check this
 		// This is stored in cache so should only unreference it
-		//if (vk_program->vk_descriptorPool[i])
-		//	vkDestroyDescriptorPool(m_context.device, vk_program->vk_descriptorPool[i], nullptr);
 		//if (vk_program->vk_descriptorSetLayout[i])
 		//	vkDestroyDescriptorSetLayout(m_context.device, vk_program->vk_descriptorSetLayout[i], nullptr);
 	}
@@ -316,10 +314,51 @@ const Program* VulkanGraphicDevice::get(ProgramHandle handle)
 	return static_cast<const Program*>(handle.__data);
 }
 
-DescriptorSetHandle VulkanGraphicDevice::createDescriptorSet(const char* name, const ShaderBindingState& bindings)
-{
-	VulkanDescriptorSet* vk_descriptor = m_descriptorPool.acquire(name, bindings);
+// -----------------------------------------------------------------
 
+DescriptorPoolHandle VulkanGraphicDevice::createDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size)
+{
+	VulkanDescriptorPool* vk_pool = m_descriptorPoolPool.acquire(name, bindings, size);
+	vk_pool->create(m_context);
+
+	return DescriptorPoolHandle{ vk_pool };
+}
+
+const DescriptorPool* VulkanGraphicDevice::get(DescriptorPoolHandle handle)
+{
+	return static_cast<const DescriptorPool*>(handle.__data);
+}
+
+void VulkanGraphicDevice::destroy(DescriptorPoolHandle pool)
+{
+	VulkanDescriptorPool* vk_pool = getVk<VulkanDescriptorPool>(pool);
+	vk_pool->destroy(m_context);
+	m_descriptorPoolPool.release(vk_pool);
+}
+
+VulkanDescriptorPool::VulkanDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) :
+	DescriptorPool(name, bindings, size),
+	vk_pool(VK_NULL_HANDLE)
+{
+}
+
+void VulkanDescriptorPool::create(VulkanContext& context)
+{
+	vk_pool = VulkanProgram::createVkDescriptorPool(context.device, bindings, size);
+}
+
+void VulkanDescriptorPool::destroy(VulkanContext& context)
+{
+	vkDestroyDescriptorPool(context.device, vk_pool, nullptr);
+}
+
+// -----------------------------------------------------------------
+
+DescriptorSetHandle VulkanGraphicDevice::allocateDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool)
+{
+	VulkanDescriptorSet* vk_descriptor = m_descriptorSetPool.acquire(name, bindings, pool);
+
+	vk_descriptor->vk_pool = getVk<VulkanDescriptorPool>(pool)->vk_pool;
 	vk_descriptor->create(m_context);
 
 	return DescriptorSetHandle{ vk_descriptor };
@@ -352,11 +391,11 @@ void VulkanGraphicDevice::update(DescriptorSetHandle descriptorSet, const Descri
 	VulkanProgram::updateDescriptorSet(this, get(descriptorSet), data);
 }
 
-void VulkanGraphicDevice::destroy(DescriptorSetHandle descriptorSet)
+void VulkanGraphicDevice::free(DescriptorSetHandle descriptorSet)
 {
 	VulkanDescriptorSet* vk_descriptor = getVk<VulkanDescriptorSet>(descriptorSet);
 	vk_descriptor->destroy(m_context);
-	m_descriptorPool.release(vk_descriptor);
+	m_descriptorSetPool.release(vk_descriptor);
 }
 
 const DescriptorSet* VulkanGraphicDevice::get(DescriptorSetHandle handle)
@@ -364,26 +403,20 @@ const DescriptorSet* VulkanGraphicDevice::get(DescriptorSetHandle handle)
 	return static_cast<const DescriptorSet*>(handle.__data);
 }
 
-VulkanShader::VulkanShader(const char* name, ShaderType type) :
-	Shader(name, type),
-	vk_module(VK_NULL_HANDLE)
-{
-}
-
-VulkanDescriptorSet::VulkanDescriptorSet(const char* name, const ShaderBindingState& bindings) :
-	DescriptorSet(name, bindings),
+VulkanDescriptorSet::VulkanDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) :
+	DescriptorSet(name, bindings, pool),
 	vk_descriptorSet(VK_NULL_HANDLE)
 {
 }
 
 void VulkanDescriptorSet::create(VulkanContext& context)
 {
-	VulkanContext::ShaderInputData data = context.getDescriptorLayout(bindings);
+	VkDescriptorSetLayout layout = context.getDescriptorSetLayout(bindings);
 	vk_descriptorSet = VulkanProgram::createVkDescriptorSet(
 		context.device,
-		data.pool,
-		&data.layout,
-		(data.layout == VK_NULL_HANDLE ? 0 : 1)
+		vk_pool,
+		&layout,
+		(layout == VK_NULL_HANDLE ? 0 : 1)
 	);
 	setDebugName(context.device, vk_descriptorSet, "VkDescriptorSet_", name);
 }
@@ -391,9 +424,9 @@ void VulkanDescriptorSet::create(VulkanContext& context)
 void VulkanDescriptorSet::destroy(VulkanContext& context)
 {
 	// only call free if VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT set
-	//if (vk_material->vk_descriptorSet)
-	//	vkFreeDescriptorSets(m_context.device, vk_material->vk_descriptorPool, 1, &vk_material->vk_descriptorSet);
+	VK_CHECK_RESULT(vkFreeDescriptorSets(context.device, vk_pool, 1, &vk_descriptorSet));
 	vk_descriptorSet = VK_NULL_HANDLE;
+	vk_pool = VK_NULL_HANDLE; // Do not own
 }
 
 };

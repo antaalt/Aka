@@ -16,7 +16,7 @@
 #include <Aka/Memory/Pool.h>
 #include <Aka/Core/Config.h>
 
-#define ENABLE_RENDERDOC_CAPTURE 1
+//#define ENABLE_RENDERDOC_CAPTURE 1
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 struct RENDERDOC_API_1_6_0;
@@ -52,10 +52,14 @@ public:
 	const Program* get(ProgramHandle handle) override;
 
 	// Descriptors
-	DescriptorSetHandle createDescriptorSet(const char* name, const ShaderBindingState& bindings) override;
+	DescriptorSetHandle allocateDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) override;
 	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
-	void destroy(DescriptorSetHandle set) override;
+	void free(DescriptorSetHandle set) override;
 	const DescriptorSet* get(DescriptorSetHandle set) override;
+
+	DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) override;
+	const DescriptorPool* get(DescriptorPoolHandle handle) override;
+	void destroy(DescriptorPoolHandle pool) override;
 
 	// Textures
 	TextureHandle createTexture(
@@ -187,8 +191,7 @@ public:
 	uint32_t getVkPresentQueueIndex();
 	VkSurfaceKHR getVkSurface() { return m_context.surface; }
 	VkRenderPass getVkRenderPass(const RenderPassState& state) { return m_context.getRenderPass(state); }
-	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).layout; }
-	VkDescriptorPool getVkDescriptorPool(const ShaderBindingState& state) { return m_context.getDescriptorLayout(state).pool; }
+	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state) { return m_context.getDescriptorSetLayout(state); }
 	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount) { return m_context.getPipelineLayout(layouts, layoutCount, constants, constantCount); }
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
@@ -215,7 +218,8 @@ private: // Pools
 	Pool<VulkanRenderPass> m_renderPassPool;
 	Pool<VulkanGraphicPipeline> m_graphicPipelinePool;
 	Pool<VulkanComputePipeline> m_computePipelinePool;
-	Pool<VulkanDescriptorSet> m_descriptorPool;
+	Pool<VulkanDescriptorSet> m_descriptorSetPool;
+	Pool<VulkanDescriptorPool> m_descriptorPoolPool;
 	Pool<VulkanFence> m_fencePool;
 	Pool<VulkanCommandList> m_commandListPool;
 };

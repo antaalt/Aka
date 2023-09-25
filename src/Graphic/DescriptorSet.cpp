@@ -56,15 +56,16 @@ DescriptorSetData& DescriptorSetData::addStorageTexture2D(TextureHandle texture,
 	return *this;
 }
 
-DescriptorSet::DescriptorSet(const char* name, const ShaderBindingState& bindings) :
+DescriptorSet::DescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) :
 	Resource(name, ResourceType::DescriptorSet),
+	pool(pool),
 	bindings(bindings)
 {
 }
 
-DescriptorSetHandle DescriptorSet::create(const char* name, const ShaderBindingState& bindings)
+DescriptorSetHandle DescriptorSet::allocate(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool)
 {
-	return Application::app()->graphic()->createDescriptorSet(name, bindings);
+	return Application::app()->graphic()->allocateDescriptorSet(name, bindings, pool);
 }
 
 void DescriptorSet::update(const DescriptorSetData& data)
@@ -72,9 +73,9 @@ void DescriptorSet::update(const DescriptorSetData& data)
 	Application::app()->graphic()->update(DescriptorSetHandle{ this }, data);
 }
 
-void DescriptorSet::destroy(DescriptorSetHandle descriptorSet)
+void DescriptorSet::free(DescriptorSetHandle descriptorSet)
 {
-	Application::app()->graphic()->destroy(descriptorSet);
+	Application::app()->graphic()->free(descriptorSet);
 }
 
 };

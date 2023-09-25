@@ -17,6 +17,7 @@ enum class ResourceType : uint8_t
 	Framebuffer,
 	Pipeline,
 	DescriptorSet,
+	DescriptorPool,
 	Sampler,
 	Program,
 	Shader,

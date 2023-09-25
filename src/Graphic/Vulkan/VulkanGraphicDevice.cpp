@@ -68,7 +68,8 @@ void VulkanGraphicDevice::shutdown()
 	AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_graphicPipelinePool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_descriptorPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_descriptorSetPool.count() == 0, "Resource destroy missing");
+	AKA_ASSERT(m_descriptorPoolPool.count() == 0, "Resource destroy missing");
 	AKA_ASSERT(m_renderPassPool.count() == 0, "Resource destroy missing");
 	// TODO check recursive release issue
 	m_commandListPool.release([this](VulkanCommandList& res) { this->release(&res); });
@@ -80,7 +81,8 @@ void VulkanGraphicDevice::shutdown()
 	m_framebufferPool.release([this](VulkanFramebuffer& res) { this->destroy(FramebufferHandle{ &res }); });
 	m_graphicPipelinePool.release([this](VulkanGraphicPipeline& res) { this->destroy(GraphicPipelineHandle{ &res }); });
 	m_computePipelinePool.release([this](VulkanComputePipeline& res) { this->destroy(ComputePipelineHandle{ &res }); });
-	m_descriptorPool.release([this](const VulkanDescriptorSet& res) { this->destroy(DescriptorSetHandle{ &res }); });
+	//m_descriptorSetPool.release([this](const VulkanDescriptorSet& res) { this->free(DescriptorSetHandle{ &res }); });
+	m_descriptorPoolPool.release([this](const VulkanDescriptorPool& res) { this->destroy(DescriptorPoolHandle{ &res }); });
 	m_renderPassPool.release([this](const VulkanRenderPass& res) { this->destroy(RenderPassHandle{ &res }); });
 	// Destroy context
 	m_context.shutdown();

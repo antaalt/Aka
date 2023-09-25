@@ -42,15 +42,16 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
 		1.0
 	);
+	// TODO should retrieve this from shader somehow...
+	gfx::ShaderBindingState bindings{};
+	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment, 1);
+	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
+	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
+	m_pool = _renderer->getDevice()->createDescriptorPool("MeshDescriptorPool", bindings, meshArchive.batches.size());
 	Vector<StaticVertex> vertices;
 	Vector<uint32_t> indices;
 	for (const ArchiveBatch& batch : meshArchive.batches)
 	{
-		// TODO should retrieve this from shader somehow...
-		gfx::ShaderBindingState bindings{};
-		bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment, 1);
-		bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
-		bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
 		// Material
 		// TODO mips
 		ResourceHandle<Texture> albedo = _library->load<Texture>(batch.material.albedo.id(), batch.material.albedo, _renderer);
@@ -60,7 +61,7 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 		ubo.color = batch.material.color;
 		gfx::BufferHandle gfxUniformBuffer = _renderer->getDevice()->createBuffer("MaterialUniformBuffer", gfx::BufferType::Uniform, sizeof(MaterialUniformBuffer), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, &ubo);
 		
-		gfx::DescriptorSetHandle gfxDescriptorSet = _renderer->getDevice()->createDescriptorSet("DescriptorSetMaterial", bindings);
+		gfx::DescriptorSetHandle gfxDescriptorSet = _renderer->getDevice()->allocateDescriptorSet("DescriptorSetMaterial", bindings, m_pool);
 
 		gfx::DescriptorSetData data;
 		data.addUniformBuffer(gfxUniformBuffer);
@@ -101,9 +102,10 @@ void StaticMesh::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 	_renderer->getDevice()->destroy(this->gfxVertexBuffer);
 	for (const DrawCallIndexed& batch : batches)
 	{
-		_renderer->getDevice()->destroy(batch.gfxDescriptorSet);
+		_renderer->getDevice()->free(batch.gfxDescriptorSet);
 		_renderer->getDevice()->destroy(batch.gfxUniformBuffer);
 	}
+	_renderer->getDevice()->destroy(m_pool);
 	this->attributes = gfx::VertexBufferLayout{};
 	this->batches.clear();
 }
