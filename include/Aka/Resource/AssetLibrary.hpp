@@ -119,7 +119,8 @@ public:
 	template <typename T> ResourceHandle<T> load(AssetID _assetID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer);
 	template <typename T> ArchiveSaveResult save(AssetID _assetID, Renderer* _renderer);
 	template <typename T> void unload(AssetID _assetID, Renderer* _renderer);
-	
+	template <typename T> bool isLoaded(AssetID _assetID);
+	template <typename T> ResourceState getState(AssetID _assetID);
 protected:
 	friend class Application;
 	// Update the library, handle streaming & unload useless assets
@@ -186,9 +187,8 @@ inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, const typename Arc
 	ResourceMap<T>& map = getResourceMap<T>();
 	// Check if resource already exist.
 	auto itResource = map.find(_assetID);
-	if (itResource != map.end())
+	if (itResource != map.end() && itResource->second.isLoaded())
 	{
-		//Logger::warn("Trying to load a resource that is already loaded.");
 		return itResource->second;
 	}
 	// Get assetInfo
@@ -240,7 +240,25 @@ inline void AssetLibrary::unload(AssetID _assetID, Renderer* _renderer)
 		return;
 	if (!itResource->second.isLoaded())
 		return; // resource not loaded
-	itResource->second.destroy(this, _device);
+	itResource->second.get().destroy(this, _renderer);
+	map.erase(itResource);
+}
+
+template<typename T>
+inline bool AssetLibrary::isLoaded(AssetID _assetID)
+{
+	ResourceMap<T>& map = getResourceMap<T>();
+	return 1 == map.count(_assetID);
+}
+
+template<typename T>
+inline ResourceState AssetLibrary::getState(AssetID _assetID)
+{
+	ResourceMap<T>& map = getResourceMap<T>();
+	auto it = map.find(_assetID);
+	if (it == map.end())
+		return ResourceState::Disk;
+	return it->second.getState();
 }
 
 }
