@@ -129,6 +129,7 @@ InstanceType getInstanceTypeFromAssetType(AssetType assetType)
 	case aka::AssetType::StaticMesh:
 		return InstanceType::StaticMesh3D;
 	default:
+		AKA_NOT_IMPLEMENTED;
 		return InstanceType::Unknown;
 	}
 }
@@ -291,16 +292,17 @@ void Renderer::render(gfx::Frame* frame)
 			{
 				StaticMesh& m = mesh.get();
 				gfx::ScopedCmdMarker marker(cmd, m.getName().cstr());
-				cmd->bindVertexBuffer(0, m.gfxVertexBuffer);
+				cmd->bindVertexBuffer(0, m.getVertexBuffer());
 				//cmd->bindVertexBuffer(1, data.m_instanceBuffer);
-				cmd->bindIndexBuffer(m.gfxIndexBuffer, m.getIndexFormat(), 0);
+				cmd->bindIndexBuffer(m.getIndexBuffer(), m.getIndexFormat(), 0);
 				cmd->bindDescriptorSet(0, m_viewDescriptorSet[0]);
 				// For now, do not use indexing as its not ready
 				for (uint32_t iInstance = 0; iInstance < instances.size(); iInstance++)
 				{
 					cmd->bindDescriptorSet(1, instances[iInstance]->descriptorSet);
-					for (const auto& batch : m.batches)
+					for (uint32_t i = 0; i < m.getBatchCount(); i++)
 					{
+						const StaticMeshBatch& batch = m.getBatch(i);
 						cmd->bindDescriptorSet(2, batch.gfxDescriptorSet);
 						cmd->drawIndexed(batch.indexCount, batch.indexOffset, batch.vertexOffset, 1);
 					}

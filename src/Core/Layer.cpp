@@ -40,17 +40,17 @@ void Layer::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
 		children->render(_device, frame);
 	onLayerRender(_device, frame);
 }
-void Layer::frame() 
+void Layer::preRender()
 {
-	onLayerFrame();
+	onLayerPreRender();
 	for (Layer* children : m_childrens)
-		children->frame();
+		children->preRender();
 }
-void Layer::present()
+void Layer::postRender()
 {
 	for (Layer* children : m_childrens)
-		children->present();
-	onLayerPresent();
+		children->postRender();
+	onLayerPostRender();
 }
 void Layer::resize(uint32_t width, uint32_t height)
 {

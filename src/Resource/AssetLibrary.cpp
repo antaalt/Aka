@@ -116,7 +116,7 @@ bool validate(AssetLibrary* _library, AssetID id, AssetType _type)
 	}
 }
 
-AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType)
+AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType, bool _overwrite)
 {
 	AssetID assetID = generateAssetIDFromAssetPath(_path);
 	auto itAsset = m_assetInfo.insert(std::make_pair(assetID, AssetInfo{ assetID, _path, _assetType }));
@@ -124,14 +124,24 @@ AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType
 	{
 		// Check if the file already exist & is valid, if so, use it.
 		bool samePath = itAsset.first->second.path == _path;
+		bool sameType = itAsset.first->second.type == _assetType;
 		bool fileExist = OS::File::exist(_path.getAbsolutePath());
-		if (samePath && (!fileExist || validate(this, assetID, _assetType)))
+		if (samePath && sameType && (!fileExist || validate(this, assetID, _assetType)))
+		{
+			Logger::warn("[register] Asset '", _path.cstr(), "' already exist but is identical. Using it.");
 			return assetID;
+		}
+		else if (_overwrite)
+		{
+			Logger::warn("[register] Asset '", _path.cstr(), "' overwritten.");
+			m_assetInfo[assetID] = AssetInfo{ assetID, _path, _assetType };
+		}
 		else
-			return AssetID::Invalid; // Avoid overwriting an asset. There might be hash conflict.
+		{
+			Logger::error("[register] Asset '", _path.cstr(), "' already exist.");
+			return AssetID::Invalid; // There might be hash conflict, or trying to overwrite old version.
+		}
 	}
-
-	auto itAsset2 = m_assetInfo.insert(std::make_pair(assetID, AssetInfo{ assetID, _path, _assetType }));
 
 	// Could check file if correct type but might not be created yet...
 	EventDispatcher<AssetAddedEvent>::emit(AssetAddedEvent{ assetID });

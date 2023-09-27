@@ -54,12 +54,17 @@ struct ArchiveSaveContext
 
 using ArchiveVersionType = uint32_t;
 
-constexpr ArchiveVersionType InvalidArchiveVersion = -1;
+enum class ArchiveVersion : ArchiveVersionType
+{
+	ArchiveCreation = 0,
+
+	Latest = ArchiveCreation
+};
 
 struct Archive 
 {
-	Archive(AssetType _type) : m_type(_type), m_id(AssetID::Invalid), m_version(InvalidArchiveVersion) {}
-	Archive(AssetType _type, AssetID _id, ArchiveVersionType _version) : m_type(_type), m_id(_id), m_version(_version) {}
+	Archive(AssetType _type) : m_type(_type), m_id(AssetID::Invalid) {}
+	Archive(AssetType _type, AssetID _id) : m_type(_type), m_id(_id) {}
 
 	ArchiveLoadResult load(ArchiveLoadContext& _context, const Blob& _blob, bool _loadDependency = true);
 	ArchiveLoadResult load(ArchiveLoadContext& _context, const AssetPath& _path, bool _loadDependency = true);
@@ -72,7 +77,7 @@ struct Archive
 
 	AssetType type() const { return m_type; }
 	AssetID id() const { return m_id; }
-	ArchiveVersionType version() const { return m_version; }
+	ArchiveVersion version() const { return ArchiveVersion::Latest; }
 
 protected:
 	static const char* getFileMagicWord(AssetType _type);
@@ -87,7 +92,6 @@ protected:
 private:
 	AssetType m_type;
 	AssetID m_id;
-	ArchiveVersionType m_version;
 };
 
 }

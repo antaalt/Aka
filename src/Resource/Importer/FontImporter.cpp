@@ -8,12 +8,17 @@
 
 namespace aka {
 
-ImportResult import(AssetLibrary * _library, const Path & path)
+FontImporter::FontImporter(AssetLibrary* _library) :
+	Importer(_library)
+{
+}
+
+ImportResult FontImporter::import(const Path & path)
 {
 	AKA_NOT_IMPLEMENTED;
 	return ImportResult::Failed;
 }
-ImportResult import(AssetLibrary * _library, const Blob & blob)
+ImportResult FontImporter::import(const Blob & blob)
 {
 	AKA_NOT_IMPLEMENTED;
 	return ImportResult::Failed;

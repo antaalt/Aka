@@ -177,8 +177,11 @@ ArchiveLoadResult Archive::readHeader(BinaryArchive& _archive)
 	for (uint32_t i = 0; i < 4; i++)
 		if (sign[i] != magicWord[i])
 			return ArchiveLoadResult::InvalidMagicWord;
-	ArchiveVersionType archiveVersion = _archive.read<ArchiveVersionType>();
-	if (archiveVersion != version() || archiveVersion == InvalidArchiveVersion)
+	ArchiveVersion archiveVersion = _archive.read<ArchiveVersion>();
+	if (archiveVersion != version())
+		return ArchiveLoadResult::IncompatibleVersion;
+	ArchiveVersionType archiveSubVersion = _archive.read<ArchiveVersionType>();
+	if (archiveSubVersion != getLatestVersion())
 		return ArchiveLoadResult::IncompatibleVersion;
 	AssetID assetID = _archive.read<AssetID>();
 	if (assetID != id() || assetID == AssetID::Invalid)
@@ -190,6 +193,7 @@ ArchiveSaveResult Archive::writeHeader(BinaryArchive& _archive)
 {
 	const char* magicWord = Archive::getFileMagicWord(type());
 	_archive.write<char>(magicWord, 4);
+	_archive.write<ArchiveVersion>(version());
 	_archive.write<ArchiveVersionType>(getLatestVersion());
 	_archive.write<AssetID>(id());
 	return ArchiveSaveResult::Success;

@@ -271,7 +271,7 @@ void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)
 	delete m_renderData;
 }
 
-void ImGuiLayer::onLayerFrame()
+void ImGuiLayer::onLayerPreRender()
 {
 	// Start the Dear ImGui frame
 #if defined(AKA_USE_OPENGL)
@@ -326,7 +326,7 @@ void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* fra
 #endif
 }
 
-void ImGuiLayer::onLayerPresent()
+void ImGuiLayer::onLayerPostRender()
 {
 }
 

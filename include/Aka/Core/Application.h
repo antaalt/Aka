@@ -73,12 +73,12 @@ private:
 	void update(Time deltaTime);
 	// Update the app multiple time per frame at a fixed timestep
 	void fixedUpdate(Time deltaTime);
-	// Called before render for the app.
-	void frame();
+	// Called before render for the app, after frame acquisition
+	void preRender();
 	// Render the app.
 	void render(gfx::GraphicDevice* _device, gfx::Frame* frame);
-	// Called before present of the frame
-	void present();
+	// Called after render, before present of the frame
+	void postRender();
 	// Last function called in a loop
 	void end();
 	// Resize the app
@@ -97,11 +97,11 @@ protected:
 	// Called on app update at a fixed timestep
 	virtual void onFixedUpdate(Time deltaTime) {}
 	// Called before app render
-	virtual void onFrame() {}
+	virtual void onPreRender() {}
 	// Called on app render
 	virtual void onRender(gfx::GraphicDevice* _device, gfx::Frame* frame) {}
 	// Called before present of the app
-	virtual void onPresent() {}
+	virtual void onPostRender() {}
 	// Called on app resize
 	virtual void onResize(uint32_t width, uint32_t height) {}
 public:

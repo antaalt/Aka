@@ -31,9 +31,9 @@ private:
 	void onLayerCreate(gfx::GraphicDevice* _device) override;
 	void onLayerDestroy(gfx::GraphicDevice* _device) override;
 
-	void onLayerFrame() override;
+	void onLayerPreRender() override;
 	void onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* frame) override;
-	void onLayerPresent() override;
+	void onLayerPostRender() override;
 	void onLayerResize(uint32_t width, uint32_t height) override;
 private:
 	ImGuiRenderData* m_renderData;

@@ -14,6 +14,7 @@ inline std::underlying_type<ArchiveSceneID>::type toIntegral(ArchiveSceneID valu
 //ArchiveSceneID operator-(ArchiveSceneID lhs, ArchiveSceneID rhs) { return static_cast<ArchiveSceneID>(toIntegral(lhs) - toIntegral(rhs)); }
 
 // TODO move to scene
+// Should not be component dependent.
 enum class SceneComponent {
 	Unknown,
 

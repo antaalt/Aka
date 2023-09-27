@@ -9,8 +9,8 @@ ArchiveFont::ArchiveFont() :
 	ArchiveFont(AssetID::Invalid)
 {
 }
-ArchiveFont::ArchiveFont(AssetID path) :
-	Archive(AssetType::Font, path, getLatestVersion())
+ArchiveFont::ArchiveFont(AssetID id) :
+	Archive(AssetType::Font, id)
 {
 }
 ArchiveLoadResult ArchiveFont::load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive)

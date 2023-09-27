@@ -110,7 +110,7 @@ public:
 	// serialize library.json 
 	void serialize();
 public:
-	AssetID registerAsset(const AssetPath& _path, AssetType _assetType);
+	AssetID registerAsset(const AssetPath& _path, AssetType _assetType, bool _overwrite = false);
 	AssetInfo getAssetInfo(AssetID _assetID);
 
 public:
@@ -175,7 +175,11 @@ inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, Renderer* _rendere
 	ArchiveTrait<T>::Archive archive(_assetID);
 	ArchiveLoadResult res = archive.load(ArchiveLoadContext(this));
 	if (res != ArchiveLoadResult::Success)
+	{
+		String str = String::format("Failed to load asset because of error %u", (uint32_t)res);
+		AlertModal(AlertModalType::Error, "Failed to load asset", str.cstr());
 		return ResourceHandle<T>::invalid();
+	}
 	return load<T>(_assetID, archive, _renderer);
 }
 
@@ -184,20 +188,18 @@ inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, const typename Arc
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Invalid resource type");
 	static_assert(std::is_base_of<Archive, ArchiveTrait<T>::Archive>::value, "Invalid archive type");
+	// Get assetInfo
+	auto itAssetInfo = m_assetInfo.find(_assetID);
+	AKA_ASSERT(itAssetInfo != m_assetInfo.end(), "Trying to load an asset that does not exist in library.");
+	const AssetInfo& assetInfo = itAssetInfo->second;
 	ResourceMap<T>& map = getResourceMap<T>();
-	// Check if resource already exist.
+	// Check if resource already loaded.
 	auto itResource = map.find(_assetID);
 	if (itResource != map.end() && itResource->second.isLoaded())
 	{
+		Logger::warn("Asset '", assetInfo.path.cstr(), "' already loaded.");
 		return itResource->second;
 	}
-	// Get assetInfo
-	auto itAssetInfo = m_assetInfo.find(_assetID);
-	if (itAssetInfo == m_assetInfo.end())
-	{
-		return ResourceHandle<T>::invalid();
-	}
-	const AssetInfo& assetInfo = itAssetInfo->second;
 	String name = OS::File::basename(assetInfo.path.getRawPath());
 	auto it = map.insert(std::make_pair(_assetID, ResourceHandle<T>(_assetID, name)));
 	if (it.second)

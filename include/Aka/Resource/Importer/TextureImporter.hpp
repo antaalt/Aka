@@ -7,8 +7,10 @@ namespace aka {
 class TextureImporter : public Importer
 {
 public:
-	ImportResult import(AssetLibrary * _library, const Path & path) override;
-	ImportResult import(AssetLibrary * _library, const Blob & blob) override;
+	TextureImporter(AssetLibrary* _library);
+
+	ImportResult import(const Path & path) override;
+	ImportResult import(const Blob & blob) override;
 };
 
 };

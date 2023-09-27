@@ -10,7 +10,7 @@ ArchiveStaticMesh::ArchiveStaticMesh() :
 {
 }
 ArchiveStaticMesh::ArchiveStaticMesh(AssetID id) : 
-	Archive(AssetType::StaticMesh, id, getLatestVersion()),
+	Archive(AssetType::StaticMesh, id),
 	batches{}
 {
 }

@@ -9,8 +9,8 @@ ArchiveImage::ArchiveImage() :
 	ArchiveImage(AssetID::Invalid)
 {
 }
-ArchiveImage::ArchiveImage(const AssetID& id) : 
-	Archive(AssetType::Image, id, getLatestVersion()),
+ArchiveImage::ArchiveImage(AssetID id) : 
+	Archive(AssetType::Image, id),
 	data{},
 	width(0),
 	height(0),

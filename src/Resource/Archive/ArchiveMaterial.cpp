@@ -9,8 +9,8 @@ ArchiveMaterial::ArchiveMaterial() :
 	ArchiveMaterial(AssetID::Invalid)
 {
 }
-ArchiveMaterial::ArchiveMaterial(const AssetID& id) : 
-	Archive(AssetType::Material, id, getLatestVersion()),
+ArchiveMaterial::ArchiveMaterial(AssetID id) : 
+	Archive(AssetType::Material, id),
 	flags(ArchiveMaterialFlag::None),
 	color(0.f, 0.f, 0.f, 1.f),
 	albedo(),

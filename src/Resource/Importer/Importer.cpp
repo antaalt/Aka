@@ -2,7 +2,8 @@
 
 namespace aka {
 
-Importer::Importer() :
+Importer::Importer(AssetLibrary* _library) :
+	m_library(_library),
 	m_path(""),
 	m_name(""),
 	m_flags(ImportFlag::None)
@@ -45,6 +46,67 @@ AssetPath Importer::getAssetPath(const char* subPath) const
 const String& Importer::getName() const
 {
 	return m_name;
+}
+
+AssetLibrary* Importer::getAssetLibrary() const
+{
+	return m_library;
+}
+
+AssetID Importer::registerAsset(AssetType type, const String& name)
+{
+	String finalName = name;
+	AKA_ASSERT(!finalName.empty(), "Missing name");
+	String path;
+	path.append(Importer::getAssetTypeName(type));
+	path.append("/");
+	path.append(name);
+	path.append(".");
+	path.append(Importer::getAssetExtension(type));
+	AssetID id = m_library->registerAsset(getAssetPath(path.cstr()), type);
+	if (id == AssetID::Invalid)
+	{
+		// TODO handle overwrite
+		return AssetID::Invalid;
+	}
+	else
+	{
+		return id;
+	}
+}
+
+const char* Importer::getAssetTypeName(AssetType type)
+{
+	switch (type)
+	{
+	case AssetType::Geometry: return "geometries";
+	case AssetType::Material: return "materials";
+	case AssetType::Batch: return "batches";
+	case AssetType::StaticMesh: return "static-meshes";
+	case AssetType::DynamicMesh: return "dynamic-meshes";
+	case AssetType::Image:return "images";
+	case AssetType::Scene:return "scenes";
+	default:
+		return nullptr;
+	}
+}
+const char* Importer::getAssetExtension(AssetType type)
+{
+	switch (type)
+	{
+	default:
+		AKA_UNREACHABLE;
+		return nullptr;
+	case AssetType::Geometry: return "geo";
+	case AssetType::Material: return "mat";
+	case AssetType::Batch: return "bat";
+	case AssetType::StaticMesh: return "smesh";
+	case AssetType::DynamicMesh: return "dmesh";
+	case AssetType::Image:return "img";
+	case AssetType::Font:return "fnt";
+	case AssetType::Audio:return "odio";
+	case AssetType::Scene:return "sce";
+	}
 }
 
 };

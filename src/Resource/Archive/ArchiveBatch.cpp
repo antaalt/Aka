@@ -9,8 +9,8 @@ ArchiveBatch::ArchiveBatch() :
 	ArchiveBatch(AssetID::Invalid)
 {
 }
-ArchiveBatch::ArchiveBatch(AssetID path) : 
-	Archive(AssetType::Batch, path, getLatestVersion()), 
+ArchiveBatch::ArchiveBatch(AssetID id) : 
+	Archive(AssetType::Batch, id), 
 	material(AssetID::Invalid), 
 	geometry(AssetID::Invalid)
 {

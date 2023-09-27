@@ -7,6 +7,18 @@
 
 namespace aka {
 
+struct StaticMeshBatch
+{
+	uint32_t vertexOffset;
+	uint32_t indexOffset;
+	uint32_t indexCount;
+	// Material
+	ResourceHandle<Texture> m_albedo; // TODO material instead.
+	ResourceHandle<Texture> m_normal;
+	gfx::BufferHandle gfxUniformBuffer;
+	gfx::DescriptorSetHandle gfxDescriptorSet;
+};
+
 class StaticMesh : public Resource {
 public:
 	StaticMesh();
@@ -18,31 +30,24 @@ private:
 	void destroy_internal(AssetLibrary* _library, Renderer* _renderer) override;
 
 public:
+	gfx::BufferHandle getVertexBuffer() const { return m_gfxVertexBuffer; }
+	gfx::BufferHandle getIndexBuffer() const { return m_gfxIndexBuffer; }
+	uint32_t getBatchCount() const { return (uint32_t)m_batches.size(); }
+	const StaticMeshBatch& getBatch(uint32_t index) const { return m_batches[index]; }
 	gfx::IndexFormat getIndexFormat() const { return m_indexFormat; }
 	aabbox<> getBounds() const { return m_bounds; }
-public: // Optionnal data for runtime operations
-	gfx::VertexBufferLayout attributes;
-public: // Mandatory data for rendering & co
-	// Should be mutualized in a big single geometry buffer with pages.
-	gfx::BufferHandle gfxVertexBuffer;
-	gfx::BufferHandle gfxIndexBuffer;
-	gfx::SamplerHandle gfxAlbedoSampler;
-	gfx::SamplerHandle gfxNormalSampler;
-	gfx::IndexFormat m_indexFormat;
-	gfx::DescriptorPoolHandle m_pool;
-	aabbox<> m_bounds;
 
-	struct DrawCallIndexed {
-		uint32_t vertexOffset;
-		uint32_t indexOffset;
-		uint32_t indexCount;
-		// TODO mutualize texture to avoid copies
-		ResourceHandle<Texture> m_albedo;
-		ResourceHandle<Texture> m_normal;
-		gfx::BufferHandle gfxUniformBuffer;
-		gfx::DescriptorSetHandle gfxDescriptorSet;
-	};
-	Vector<DrawCallIndexed> batches; // TODO indirect buffer. Require bindless for material
+private:
+	// Should be mutualized in a big single geometry buffer with pages.
+	gfx::BufferHandle m_gfxVertexBuffer;
+	gfx::BufferHandle m_gfxIndexBuffer;
+	gfx::IndexFormat m_indexFormat;
+	aabbox<> m_bounds;
+	Vector<StaticMeshBatch> m_batches;
+	// Material
+	gfx::SamplerHandle m_gfxAlbedoSampler; // Get from renderer.
+	gfx::SamplerHandle m_gfxNormalSampler;
+	gfx::DescriptorPoolHandle m_pool;
 };
 
 

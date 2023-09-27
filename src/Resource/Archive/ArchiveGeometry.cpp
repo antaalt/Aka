@@ -20,7 +20,7 @@ ArchiveGeometry::ArchiveGeometry() :
 {
 }
 ArchiveGeometry::ArchiveGeometry(AssetID id) :
-	Archive(AssetType::Geometry, id, getLatestVersion()),
+	Archive(AssetType::Geometry, id),
 	vertices{},
 	indices{},
 	bounds()

@@ -10,7 +10,7 @@ ArchiveScene::ArchiveScene() :
 {
 }
 ArchiveScene::ArchiveScene(AssetID id) : 
-	Archive(AssetType::Scene, id, getLatestVersion())
+	Archive(AssetType::Scene, id)
 {
 }
 ArchiveLoadResult ArchiveScene::load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive)

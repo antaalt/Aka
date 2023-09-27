@@ -12,40 +12,39 @@
 
 namespace aka {
 
-ImportResult TextureImporter::import(AssetLibrary * _library, const Path & path)
+TextureImporter::TextureImporter(AssetLibrary* _library) :
+	Importer(_library)
+{
+}
+ImportResult TextureImporter::import(const Path & path)
 {
 	// TODO handle HDR / ENVMAP / CUBEMAP / ARRAY
 	Image img = ImageDecoder::fromDisk(path);
 	if (img.size() == 0)
 		return ImportResult::CouldNotReadFile;
-	
-	AssetPath assetPath = getAssetPath((OS::File::basename(path) + ".img").cstr());
 
-	ArchiveImage image(_library->registerAsset(assetPath, AssetType::Image));
+	ArchiveImage image(registerAsset(AssetType::Image, getName()));
 	image.width = img.width;
 	image.height = img.height;
 	image.channels = img.getComponents();
 	image.data = std::move(img.bytes);
-	ArchiveSaveResult res = image.save(ArchiveSaveContext(_library));
+	ArchiveSaveResult res = image.save(ArchiveSaveContext(getAssetLibrary()));
 
 	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
 
-ImportResult TextureImporter::import(AssetLibrary * _library, const Blob & blob)
+ImportResult TextureImporter::import(const Blob & blob)
 {
 	Image img = ImageDecoder::fromMemory(blob);
 	if (img.size() == 0)
 		return ImportResult::CouldNotReadFile;
-
-	// TODO find unused name.
-	AssetPath assetPath = getAssetPath("memory.img");
-	
-	ArchiveImage image(_library->registerAsset(assetPath, AssetType::Image));
+		
+	ArchiveImage image(registerAsset(AssetType::Image, getName()));
 	image.width = img.width;
 	image.height = img.height;
 	image.channels = img.getComponents();
 	image.data = std::move(img.bytes);
-	ArchiveSaveResult res = image.save(ArchiveSaveContext(_library));
+	ArchiveSaveResult res = image.save(ArchiveSaveContext(getAssetLibrary()));
 
 	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }

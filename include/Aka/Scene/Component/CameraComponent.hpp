@@ -46,9 +46,10 @@ struct CameraPerspective : CameraProjection
 	mat4f projection() const override;
 	CameraProjectionType type() const override;
 	
-	anglef hFov;
-	float ratio;
-	float nearZ, farZ;
+	anglef hFov = anglef::degree(60.f);
+	float ratio = 1.f;
+	float nearZ = 0.1f;
+	float farZ  = 100.f;
 };
 
 struct CameraOrthographic : CameraProjection
@@ -56,8 +57,12 @@ struct CameraOrthographic : CameraProjection
 	mat4f projection() const override;
 	CameraProjectionType type() const override;
 
-	float left, right, bottom, top;
-	float nearZ, farZ;
+	float left   = -1.f;
+	float right  =  1.f;
+	float bottom = -1.f;
+	float top	 =  1.f;
+	float nearZ = 0.1f;
+	float farZ  = 100.f;
 };
 
 
@@ -81,6 +86,11 @@ class CameraComponent : public Component
 public:
 	CameraComponent();
 	~CameraComponent();
+
+	CameraProjection* getProjection() { return m_projection; }
+	const CameraProjection* getProjection() const { return m_projection; }
+	CameraController* getController() { return m_controller; }
+	const CameraController* getController() const { return m_controller; }
 
 private:
 	CameraController* m_controller;

@@ -24,21 +24,27 @@ AKA_IMPLEMENT_BITMASK_OPERATOR(ImportFlag);
 
 class Importer {
 public:
-	Importer();
+	Importer(AssetLibrary* _library);
 	virtual ~Importer();
 
-	virtual ImportResult import(AssetLibrary* _library, const Path & path) = 0;
-	virtual ImportResult import(AssetLibrary* _library, const Blob& blob) = 0;
+	virtual ImportResult import(const Path & path) = 0;
+	virtual ImportResult import(const Blob& blob) = 0;
 
 public:
 	void setFlag(ImportFlag flag);
 	void setAssetPath(const AssetPath& path);
 	void setName(const String& name);
-public:
+protected:
 	bool has(ImportFlag flag) const;
 	AssetPath getAssetPath(const char* subPath = nullptr) const;
 	const String& getName() const;
+	AssetLibrary* getAssetLibrary() const;
+	AssetID registerAsset(AssetType type, const String& name);
+public:
+	static const char* getAssetTypeName(AssetType type);
+	static const char* getAssetExtension(AssetType type);
 private:
+	AssetLibrary* m_library;
 	AssetPath m_path;
 	String m_name;
 	ImportFlag m_flags;

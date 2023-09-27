@@ -85,10 +85,10 @@ void Application::fixedUpdate(Time deltaTime)
 	m_root->fixedUpdate(deltaTime);
 	EventDispatcher<AppFixedUpdateEvent>::trigger(AppFixedUpdateEvent{ deltaTime });
 }
-void Application::frame()
+void Application::preRender()
 {
-	onFrame();
-	m_root->frame();
+	onPreRender();
+	m_root->preRender();
 	EventDispatcher<AppFrameEvent>::trigger(AppFrameEvent{});
 }
 void Application::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
@@ -98,10 +98,10 @@ void Application::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
 	m_root->render(_device, frame);
 	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{ frame });
 }
-void Application::present()
+void Application::postRender()
 {
-	onPresent();
-	m_root->present();
+	onPostRender();
+	m_root->postRender();
 	EventDispatcher<AppPresentEvent>::trigger(AppPresentEvent{});
 }
 void Application::end()
@@ -212,9 +212,9 @@ void Application::run(Application* app, const Config& config)
 		gfx::Frame* frame = graphic->frame();
 		if (frame != nullptr)
 		{
-			app->frame();
+			app->preRender();
 			app->render(graphic, frame);
-			app->present();
+			app->postRender();
 			gfx::SwapchainStatus status = graphic->present(frame);
 			if (status == gfx::SwapchainStatus::Recreated)
 			{

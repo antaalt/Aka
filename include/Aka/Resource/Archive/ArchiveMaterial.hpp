@@ -24,7 +24,7 @@ struct ArchiveMaterial : Archive
 	};
 
 	ArchiveMaterial();
-	ArchiveMaterial(const AssetID& id);
+	ArchiveMaterial(AssetID id);
 
 	ArchiveMaterialFlag flags;
 	color4f color;

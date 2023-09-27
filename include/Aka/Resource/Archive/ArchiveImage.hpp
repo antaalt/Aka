@@ -13,7 +13,7 @@ struct ArchiveImage : Archive
 		Latest = ArchiveCreation
 	};
 	ArchiveImage();
-	ArchiveImage(const AssetID& id);
+	ArchiveImage(AssetID id);
 
 	size_t size() const { return data.size(); }
 

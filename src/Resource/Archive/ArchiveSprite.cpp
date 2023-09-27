@@ -22,7 +22,7 @@ ArchiveSprite::ArchiveSprite() :
 {
 }
 ArchiveSprite::ArchiveSprite(AssetID id) :
-	Archive(AssetType::Sprite, id, getLatestVersion())
+	Archive(AssetType::Sprite, id)
 {
 }
 ArchiveLoadResult ArchiveSprite::load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive)

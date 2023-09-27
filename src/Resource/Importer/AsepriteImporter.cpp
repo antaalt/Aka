@@ -623,17 +623,21 @@ Aseprite::BlendFunc Aseprite::blending(LayerBlendMode blendMode)
 	}
 }
 
-ImportResult AsepriteImporter::import(AssetLibrary * _library, const Path & path)
+AsepriteImporter::AsepriteImporter(AssetLibrary* _library) :
+	Importer(_library)
+{
+}
+ImportResult AsepriteImporter::import(const Path & path)
 {
 	FileStream stream(path, FileMode::Read, FileType::Binary);
 	Aseprite ase = Aseprite::parse(stream);
 
-	auto convertFrame = [_library, this](const Aseprite& ase, const Aseprite::Frame& aseFrame, uint32_t index) -> ArchiveSpriteFrame
+	auto convertFrame = [this](const Aseprite& ase, const Aseprite::Frame& aseFrame, uint32_t index) -> ArchiveSpriteFrame
 	{
 		String frameName = String::format("frame%u.img", index);
 		ArchiveSpriteFrame frame;
 		frame.duration = Time::milliseconds(aseFrame.duration);
-		frame.image = ArchiveImage(_library->registerAsset(getAssetPath(frameName.cstr()), AssetType::Image));
+		frame.image = ArchiveImage(registerAsset(AssetType::Image, frameName));
 
 		ArchiveImage image;
 		image.width = ase.width;
@@ -646,7 +650,7 @@ ImportResult AsepriteImporter::import(AssetLibrary * _library, const Path & path
 		return frame;
 	};
 
-	ArchiveSprite sprite(_library->registerAsset(getAssetPath(getName().cstr()), AssetType::Sprite));
+	ArchiveSprite sprite(registerAsset(AssetType::Sprite, getName()));
 	uint32_t index = 0;
 	if (ase.tags.size() == 0)
 	{
@@ -676,10 +680,10 @@ ImportResult AsepriteImporter::import(AssetLibrary * _library, const Path & path
 			sprite.animations.append(animation);
 		}
 	}
-	ArchiveSaveResult res = sprite.save(ArchiveSaveContext(_library));
+	ArchiveSaveResult res = sprite.save(ArchiveSaveContext(getAssetLibrary()));
 	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
-ImportResult AsepriteImporter::import(AssetLibrary * _library, const Blob & blob)
+ImportResult AsepriteImporter::import(const Blob & blob)
 {
 	AKA_NOT_IMPLEMENTED;
 	// TODO write to temp & call other import ?
