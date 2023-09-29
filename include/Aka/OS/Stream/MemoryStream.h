@@ -2,6 +2,7 @@
 
 #include <Aka/OS/Stream/Stream.h>
 #include <Aka/Core/Container/Blob.h>
+#include <Aka/Core/Container/Vector.h>
 
 namespace aka {
 
@@ -10,11 +11,11 @@ class MemoryStream : public Stream
 public:
 	// Read constructor
 	MemoryStream(const uint8_t* bytes, size_t size);
-	MemoryStream(const std::vector<uint8_t>& bytes);
+	MemoryStream(const Vector<uint8_t>& bytes);
 	MemoryStream(const Blob& blob);
 	// Write constructor
 	MemoryStream(uint8_t* bytes, size_t size);
-	MemoryStream(std::vector<uint8_t>& bytes);
+	MemoryStream(Vector<uint8_t>& bytes);
 	MemoryStream(Blob& blob);
 	~MemoryStream();
 

@@ -63,10 +63,6 @@
 
 namespace aka {
 
-// Hash
-template <typename T> struct Hash;
-template <typename T> void hashCombine(std::size_t& s, const T& v);
-
 // Type traits
 template <typename T> using UnderlyingType = ::std::underlying_type_t<T>;
 
@@ -74,29 +70,6 @@ template <typename T> using UnderlyingType = ::std::underlying_type_t<T>;
 //template <typename T> using Vector = ::std::vector<T>;
 //template <typename T> using TreeMap = ::std::map<T>;
 //template <typename T> using HashMap = ::std::unordered_map<T>;
-
-
-void hash(size_t& hash, const void* data, size_t size);
-size_t hash(const void* data, size_t size);
-
-template <typename T>
-void hash(size_t& s, const T& v)
-{
-	hash(s, &v, sizeof(T));
-}
-
-template <typename T>
-size_t hash(const T& v)
-{
-	return hash(&v, sizeof(T));
-}
-
-template <typename T>
-void hashCombine(std::size_t& s, const T& v)
-{
-	std::hash<T> h;
-	s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
-}
 
 template <typename T, size_t N>
 constexpr size_t countof(T const (&)[N])

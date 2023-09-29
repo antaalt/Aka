@@ -36,52 +36,33 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 
 	m_bounds = scene.bounds;
 	Vector<Node*> nodes;
-	for (const ArchiveSceneEntity& entity : scene.entities)
+	for (const ArchiveSceneNode& node : scene.nodes)
 	{
-		Node* node = m_nodePool.acquire(entity.name.cstr());
-		if (asBool(SceneComponentMask::Transform & entity.components))
+		Node* sceneNode = m_nodePool.acquire(node.name.cstr());
+		sceneNode->setLocalTransform(node.transform);
+		if (node.parentID != ArchiveSceneID::Invalid)
 		{
-			ArchiveSceneID id = entity.id[EnumToIndex(SceneComponent::Transform)];
-			AKA_ASSERT(id != ArchiveSceneID::Invalid, "No transform ID set");
-			node->setLocalTransform(scene.transforms[toIntegral(id)].matrix);
-			if (asBool(SceneComponentMask::Hierarchy & entity.components))
-			{
-				ArchiveSceneID idParent = entity.id[EnumToIndex(SceneComponent::Hierarchy)];
-				if (idParent != ArchiveSceneID::Invalid)
-				{
-					Node* parent = nodes[toIntegral(idParent)];
-					node->setParent(parent);
-				}
-				else
-				{
-					// To keep track of all child, always give them a parent.
-					m_root->addChild(node);
-				}
-			}
-			else
-			{
-				// To keep track of all child, always give them a parent.
-				m_root->addChild(node);
-			}
+			Node* parent = nodes[EnumToValue(node.parentID)];
+			sceneNode->setParent(parent);
 		}
 		else
 		{
-			AKA_ASSERT(false, "NoTransform in node...");
+			// To keep track of all child, always give them a parent.
+			m_root->addChild(sceneNode);
 		}
-		if (asBool(SceneComponentMask::StaticMesh & entity.components))
+		for (const ArchiveSceneComponent& component : node.components)
 		{
-			ArchiveSceneID id = entity.id[EnumToIndex(SceneComponent::StaticMesh)];
-			const ArchiveStaticMesh& mesh = scene.meshes[toIntegral(id)];
-			StaticMeshComponent& s = node->attach<StaticMeshComponent>(mesh.id());
-			// Request the load of the mesh.
-			_library->load<StaticMesh>(mesh.id(), mesh, _renderer);
+			Component* allocatedComponent = ComponentAllocator::allocate(component.id);
+			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component.id);
+			archiveComponent->id = allocatedComponent->getComponentID();
+			archiveComponent->size = 0;
+			archiveComponent->version = 0;
+			archiveComponent->parse(component.archive);
+			allocatedComponent->load(*archiveComponent);
+			ComponentAllocator::freeArchive(archiveComponent);
+			sceneNode->attach(allocatedComponent);
 		}
-		//if (asBool(SceneComponentMask::PointLight & e.components))
-		//{
-		//	const ArchiveStaticMesh& mesh = scene.meshes[uint32_t(e.id)];
-		//	mesh.getPath(); // TODO read cache with this somehow.
-		//}
-		nodes.append(node);
+		nodes.append(sceneNode);
 	}
 #if 0
 	auto recurseDebug = std::function<void(Node3D*, uint32_t)>();

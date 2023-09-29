@@ -16,7 +16,7 @@
 #include <Aka/Memory/Pool.h>
 #include <Aka/Core/Config.h>
 
-//#define ENABLE_RENDERDOC_CAPTURE 1
+#define ENABLE_RENDERDOC_CAPTURE 1
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 struct RENDERDOC_API_1_6_0;
@@ -57,7 +57,7 @@ public:
 	void free(DescriptorSetHandle set) override;
 	const DescriptorSet* get(DescriptorSetHandle set) override;
 
-	DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) override;
+	DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size) override;
 	const DescriptorPool* get(DescriptorPoolHandle handle) override;
 	void destroy(DescriptorPoolHandle pool) override;
 

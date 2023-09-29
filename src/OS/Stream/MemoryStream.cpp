@@ -13,7 +13,7 @@ MemoryStream::MemoryStream(const uint8_t* bytes, size_t size) :
 {
 }
 
-MemoryStream::MemoryStream(const std::vector<uint8_t>& bytes) : 
+MemoryStream::MemoryStream(const Vector<uint8_t>& bytes) : 
 	MemoryStream(bytes.data(), bytes.size()) 
 {
 }
@@ -32,7 +32,7 @@ MemoryStream::MemoryStream(uint8_t* bytes, size_t size) :
 {
 }
 
-MemoryStream::MemoryStream(std::vector<uint8_t>& bytes) : 
+MemoryStream::MemoryStream(Vector<uint8_t>& bytes) : 
 	MemoryStream(bytes.data(), bytes.size()) 
 {
 }

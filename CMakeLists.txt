@@ -23,6 +23,7 @@ add_library (Aka
 	"src/Core/Worker/WorkerPool.cpp" 
 	"src/Core/Worker/Worker.cpp"
 	"src/Core/Worker/Job.cpp"
+	"src/Core/Hash.cpp"
 
 	"src/Memory/Allocator.cpp"
 	"src/Memory/Memory.cpp"
@@ -99,6 +100,7 @@ add_library (Aka
 	"src/Graphic/DescriptorSet.cpp"
 	"src/Graphic/RenderPass.cpp" 
 	"src/Graphic/Fence.cpp"
+	"src/Graphic/DescriptorPool.cpp" 
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"
@@ -117,7 +119,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
- "include/Aka/Graphic/DescriptorPool.h" "src/Graphic/DescriptorPool.cpp")
+)
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

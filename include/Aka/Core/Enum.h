@@ -23,6 +23,12 @@ namespace aka {
 // This way, when zero initialized, the enum is invalid. To cast it as an index, use EnumToIndex
 
 template <typename T>
+inline constexpr UnderlyingType<T> EnumToValue(T value)
+{
+	return static_cast<UnderlyingType<T>>(value);
+}
+
+template <typename T>
 inline constexpr UnderlyingType<T> EnumToIndex(T value)
 {
 	return static_cast<UnderlyingType<T>>(value) - static_cast<UnderlyingType<T>>(T::First);

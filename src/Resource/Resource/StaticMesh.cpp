@@ -47,7 +47,7 @@ void StaticMesh::create_internal(AssetLibrary* _library, Renderer* _renderer, co
 	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment, 1);
 	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
 	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
-	m_pool = _renderer->getDevice()->createDescriptorPool("MeshDescriptorPool", bindings, meshArchive.batches.size());
+	m_pool = _renderer->getDevice()->createDescriptorPool("MeshDescriptorPool", bindings, (uint32_t)meshArchive.batches.size());
 	Vector<StaticVertex> vertices;
 	Vector<uint32_t> indices;
 	for (const ArchiveBatch& batch : meshArchive.batches)

@@ -4,11 +4,37 @@
 
 namespace aka {
 
-uint32_t Component::s_globalComponentID = 0;
+std::map<ComponentID, ComponentAllocator*> ComponentAllocator::m_allocators;
 
-Component::Component(ComponentID id) :
+void ComponentAllocator::unregisterAllocator(ComponentID id)
+{
+	AKA_ASSERT(m_allocators.count(id), "Component type not registered.");
+	delete m_allocators[id];
+	m_allocators.erase(id);
+}
+
+Component* ComponentAllocator::allocate(ComponentID id)
+{
+	AKA_ASSERT(m_allocators.count(id), "Component type not registered.");
+	return m_allocators[id]->allocate_internal();
+}
+void ComponentAllocator::free(Component* component)
+{
+	m_allocators[component->getComponentID()]->free_internal(component);
+}
+ArchiveComponent* ComponentAllocator::allocateArchive(ComponentID id)
+{
+	AKA_ASSERT(m_allocators.count(id), "Component type not registered.");
+	return m_allocators[id]->allocateArchive_internal();
+}
+void ComponentAllocator::freeArchive(ArchiveComponent* component)
+{
+	m_allocators[component->id]->freeArchive_internal(component);
+}
+
+Component::Component(ComponentID componentID) :
 	m_state(ComponentState::PendingActivation),
-	m_id(id)
+	m_componentID(componentID)
 {
 }
 

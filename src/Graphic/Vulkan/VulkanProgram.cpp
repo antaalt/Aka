@@ -316,7 +316,7 @@ const Program* VulkanGraphicDevice::get(ProgramHandle handle)
 
 // -----------------------------------------------------------------
 
-DescriptorPoolHandle VulkanGraphicDevice::createDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size)
+DescriptorPoolHandle VulkanGraphicDevice::createDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size)
 {
 	VulkanDescriptorPool* vk_pool = m_descriptorPoolPool.acquire(name, bindings, size);
 	vk_pool->create(m_context);
@@ -336,7 +336,7 @@ void VulkanGraphicDevice::destroy(DescriptorPoolHandle pool)
 	m_descriptorPoolPool.release(vk_pool);
 }
 
-VulkanDescriptorPool::VulkanDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) :
+VulkanDescriptorPool::VulkanDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size) :
 	DescriptorPool(name, bindings, size),
 	vk_pool(VK_NULL_HANDLE)
 {

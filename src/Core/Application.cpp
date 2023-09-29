@@ -7,6 +7,8 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Renderer/Renderer.hpp>
+#include <Aka/Scene/Component/StaticMeshComponent.hpp>
+#include <Aka/Scene/Component/CameraComponent.hpp>
 
 namespace aka {
 
@@ -25,9 +27,16 @@ Application::Application(const Config& config) :
 	m_running(true),
 	m_renderer(new Renderer(m_graphic, m_assets))
 {
+	// Register all used components
+	AKA_REGISTER_COMPONENT(StaticMeshComponent);
+	AKA_REGISTER_COMPONENT(CameraComponent);
 }
 Application::~Application()
 {
+	// Unregister all used components
+	AKA_UNREGISTER_COMPONENT(StaticMeshComponent);
+	AKA_UNREGISTER_COMPONENT(CameraComponent);
+	// Destroy all pointers
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);

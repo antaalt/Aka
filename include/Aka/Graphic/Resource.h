@@ -78,7 +78,7 @@ struct std::hash<aka::gfx::ResourceHandle<T>>
 	size_t operator()(const aka::gfx::ResourceHandle<T>& data) const
 	{
 		size_t hash = 0;
-		aka::hashCombine(hash, data.__data);
+		aka::hash::combine(hash, data.__data);
 		return hash;
 	}
 };

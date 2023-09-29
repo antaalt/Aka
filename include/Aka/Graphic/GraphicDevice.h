@@ -129,7 +129,7 @@ public:
 	virtual const DescriptorSet* get(DescriptorSetHandle set) = 0;
 
 	// Descriptor pool
-	virtual DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) = 0;
+	virtual DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size) = 0;
 	virtual const DescriptorPool* get(DescriptorPoolHandle handle) = 0;
 	virtual void destroy(DescriptorPoolHandle pool) = 0;
 

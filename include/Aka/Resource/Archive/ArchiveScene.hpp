@@ -1,49 +1,25 @@
 #pragma once 
 	
 #include <Aka/Resource/Archive/ArchiveStaticMesh.hpp>
+#include <Aka/Scene/Component.hpp>
 
 namespace aka {
 
-struct ArchiveSceneTransform {
-	mat4f matrix;
-};
-
 enum class ArchiveSceneID : uint32_t { Invalid = (uint32_t)-1 };
-inline std::underlying_type<ArchiveSceneID>::type toIntegral(ArchiveSceneID value) { return static_cast<std::underlying_type<ArchiveSceneID>::type>(value); }
-//ArchiveSceneID operator+(ArchiveSceneID lhs, ArchiveSceneID rhs) { return static_cast<ArchiveSceneID>(toIntegral(lhs) + toIntegral(rhs)); }
-//ArchiveSceneID operator-(ArchiveSceneID lhs, ArchiveSceneID rhs) { return static_cast<ArchiveSceneID>(toIntegral(lhs) - toIntegral(rhs)); }
 
-// TODO move to scene
-// Should not be component dependent.
-enum class SceneComponent {
-	Unknown,
 
-	Transform,
-	Hierarchy,
-	StaticMesh,
-	PointLight,
-	SunLight,
-
-	First = Transform,
-	Last = SunLight,
+struct ArchiveSceneComponent
+{
+	ComponentID id;
+	Vector<byte_t> archive; // archive data as blob
 };
-enum class SceneComponentMask {
-	None  = 0,
-	Transform  = 1 << EnumToIndex(SceneComponent::Transform),
-	Hierarchy  = 1 << EnumToIndex(SceneComponent::Hierarchy),
-	StaticMesh = 1 << EnumToIndex(SceneComponent::StaticMesh),
 
-	PointLight = 1 << EnumToIndex(SceneComponent::PointLight),
-	SunLight   = 1 << EnumToIndex(SceneComponent::SunLight),
-};
-AKA_IMPLEMENT_BITMASK_OPERATOR(SceneComponentMask)
-
-
-
-struct ArchiveSceneEntity {
+struct ArchiveSceneNode 
+{
 	String name;
-	SceneComponentMask components;
-	ArchiveSceneID id[EnumCount<SceneComponent>()];
+	mat4f transform;
+	ArchiveSceneID parentID;
+	Vector<ArchiveSceneComponent> components;
 };
 
 struct ArchiveScene : Archive 
@@ -58,10 +34,7 @@ struct ArchiveScene : Archive
 	ArchiveScene(AssetID id);
 
 	aabbox<> bounds;
-	Vector<ArchiveStaticMesh> meshes;
-	Vector<ArchiveSceneTransform> transforms;
-	Vector<ArchiveSceneEntity> entities;
-	// TODO: add lights, envmap, cameras, gameplay struct
+	Vector<ArchiveSceneNode> nodes;
 
 protected:
 	ArchiveLoadResult load_internal(ArchiveLoadContext& _context, BinaryArchive& path) override;

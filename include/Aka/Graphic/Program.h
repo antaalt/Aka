@@ -97,12 +97,12 @@ template<> struct std::hash<aka::gfx::ShaderBindingState>
 	size_t operator()(const aka::gfx::ShaderBindingState& data) const
 	{
 		size_t hash = 0;
-		aka::hashCombine(hash, data.count);
+		aka::hash::combine(hash, data.count);
 		for (size_t i = 0; i < data.count; i++)
 		{
-			aka::hashCombine(hash, data.bindings[i].count);
-			aka::hashCombine(hash, static_cast<uint32_t>(data.bindings[i].stages));
-			aka::hashCombine(hash, static_cast<uint32_t>(data.bindings[i].type));
+			aka::hash::combine(hash, data.bindings[i].count);
+			aka::hash::combine(hash, static_cast<uint32_t>(data.bindings[i].stages));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.bindings[i].type));
 		}
 		return hash;
 	}

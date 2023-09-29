@@ -37,8 +37,6 @@ enum class ResourceState {
 	Loaded,
 };
 
-// This could be Component directly for ECS.
-// Might cause issue with component which are not directly droppable -> could have droppable resource to inherit from 
 class Resource
 {
 public:

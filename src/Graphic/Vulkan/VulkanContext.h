@@ -20,9 +20,9 @@ struct std::hash<VkPushConstantRange>
 	size_t operator()(const VkPushConstantRange& data) const
 	{
 		size_t hash = 0;
-		aka::hash(hash, &data.offset, sizeof(uint32_t));
-		aka::hash(hash, &data.size, sizeof(uint32_t));
-		aka::hash(hash, &data.stageFlags, sizeof(VkShaderStageFlags));
+		aka::hash::combine(hash, data.offset);
+		aka::hash::combine(hash, data.size);
+		aka::hash::combine(hash, data.stageFlags);
 		return hash;
 	}
 };
@@ -62,15 +62,15 @@ struct PipelineLayoutKeyFunctor
 	size_t operator()(const PipelineLayoutKey& data) const
 	{
 		size_t hash = 0;
-		for (size_t i = 0; i < data.first.size(); i++)
+		for (VkDescriptorSetLayout layout : data.first)
 		{
-			aka::hash((uintptr_t)data.first[i]);
+			aka::hash::combine(hash, layout);
 		}
-		for (size_t i = 0; i < data.second.size(); i++)
+		for (VkPushConstantRange range : data.second)
 		{
-			aka::hash(hash, &data.second[i].offset, sizeof(uint32_t));
-			aka::hash(hash, &data.second[i].size, sizeof(uint32_t));
-			aka::hash(hash, &data.second[i].stageFlags, sizeof(VkShaderStageFlags));
+			aka::hash::combine(hash, range.offset);
+			aka::hash::combine(hash, range.size);
+			aka::hash::combine(hash, range.stageFlags);
 		}
 		return hash;
 	}

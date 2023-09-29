@@ -10,8 +10,7 @@ namespace aka {
 AssetID generateAssetIDFromAssetPath(const AssetPath& path)
 {
 	// With an AssetID depending on path, moving this asset will break all references...
-	size_t hash = aka::hash(path.cstr(), path.size());
-	return AssetID(hash);
+	return AssetID(aka::hash::fnv(path.cstr(), path.size()));
 }
 
 ResourceType getResourceType(AssetType _type)

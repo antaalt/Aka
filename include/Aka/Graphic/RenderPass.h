@@ -91,20 +91,20 @@ struct std::hash<aka::gfx::RenderPassState>
 	size_t operator()(const aka::gfx::RenderPassState& data) const
 	{
 		size_t hash = 0;
-		aka::hashCombine(hash, data.count);
+		aka::hash::combine(hash, data.count);
 		for (size_t i = 0; i < data.count; i++)
 		{
-			aka::hashCombine(hash, static_cast<uint32_t>(data.colors[i].format));
-			aka::hashCombine(hash, static_cast<uint32_t>(data.colors[i].loadOp));
-			aka::hashCombine(hash, static_cast<uint32_t>(data.colors[i].storeOp));
-			aka::hashCombine(hash, static_cast<uint32_t>(data.colors[i].initialLayout));
-			aka::hashCombine(hash, static_cast<uint32_t>(data.colors[i].finalLayout));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].format));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].loadOp));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].storeOp));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].initialLayout));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].finalLayout));
 		}
-		aka::hashCombine(hash, static_cast<uint32_t>(data.depth.format));
-		aka::hashCombine(hash, static_cast<uint32_t>(data.depth.loadOp));
-		aka::hashCombine(hash, static_cast<uint32_t>(data.depth.storeOp));
-		aka::hashCombine(hash, static_cast<uint32_t>(data.depth.initialLayout));
-		aka::hashCombine(hash, static_cast<uint32_t>(data.depth.finalLayout));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.format));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.loadOp));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.storeOp));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.initialLayout));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.finalLayout));
 		return hash;
 	}
 };

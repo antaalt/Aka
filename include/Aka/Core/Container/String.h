@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include <Aka/Core/Config.h>
+#include <Aka/Core/Hash.hpp>
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Container/Vector.h>
 
@@ -600,6 +601,6 @@ struct std::hash<aka::String>
 {
 	size_t operator()(const aka::String& string) const
 	{
-		return aka::hash(string.cstr(), string.length());
+		return aka::hash::fnv(string.cstr(), string.length());
 	}
 };

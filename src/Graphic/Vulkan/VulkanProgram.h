@@ -39,7 +39,7 @@ struct VulkanProgram : Program
 // also VK_EXT_descriptor_indexing
 struct VulkanDescriptorPool : DescriptorPool
 {
-	VulkanDescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size);
+	VulkanDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size);
 
 	VkDescriptorPool vk_pool;
 

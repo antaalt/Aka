@@ -4,6 +4,7 @@
 
 #include <Aka/OS/Time.h>
 #include <Aka/Scene/Component.hpp>
+#include <Aka/Resource/Archive/ArchiveScene.hpp>
 
 namespace aka {
 
@@ -81,6 +82,16 @@ struct CameraArcball : CameraController
 	float speed;
 };
 
+
+struct ArchiveCameraComponent : ArchiveComponent
+{
+	CameraControllerType controllerType;
+	CameraProjectionType projectionType;
+
+	void parse(const Vector<byte_t>& byte) override;
+	void serialize(Vector<byte_t>& byte) override;
+};
+
 class CameraComponent : public Component
 {
 public:
@@ -92,10 +103,16 @@ public:
 	CameraController* getController() { return m_controller; }
 	const CameraController* getController() const { return m_controller; }
 
+public:
+	void load(const ArchiveComponent& archive) override;
+	void save(ArchiveComponent& archive) override;
+
 private:
 	CameraController* m_controller;
 	CameraProjection* m_projection;
 };
+
+AKA_DECL_COMPONENT(CameraComponent);
 
 
 };

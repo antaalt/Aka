@@ -4,13 +4,22 @@
 #include <Aka/Resource/Resource/Resource.hpp>
 #include <Aka/Resource/Resource/StaticMesh.hpp>
 #include <Aka/Renderer/Instance.hpp>
+#include <Aka/Resource/Archive/ArchiveScene.hpp>
 
 namespace aka {
+
+struct ArchiveStaticMeshComponent : ArchiveComponent
+{
+	AssetID assetID;
+
+	void parse(const Vector<byte_t>& byte) override;
+	void serialize(Vector<byte_t>& byte) override;
+};
 
 class StaticMeshComponent : public Component
 {
 public:
-	StaticMeshComponent(AssetID assetID);
+	StaticMeshComponent();
 	~StaticMeshComponent();
 
 	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
@@ -18,10 +27,15 @@ public:
 
 	ResourceHandle<StaticMesh> getMesh();
 	void setInstanceTransform(const mat4f& transform) { m_instance->transform = transform; }
+public:
+	void load(const ArchiveComponent& archive) override;
+	void save(ArchiveComponent& archive) override;
 private:
 	AssetID m_assetID;
 	ResourceHandle<StaticMesh> m_meshHandle;
 	Instance* m_instance;
 };
+
+AKA_DECL_COMPONENT(StaticMeshComponent);
 
 };

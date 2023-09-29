@@ -5,14 +5,14 @@ namespace aka {
 namespace gfx {
 
 
-DescriptorPool::DescriptorPool(const char* name, const ShaderBindingState& bindings, size_t size) :
+DescriptorPool::DescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size) :
 	Resource(name, ResourceType::DescriptorPool),
 	size(size),
 	bindings(bindings)
 {
 }
 
-DescriptorPoolHandle DescriptorPool::create(const char* name, const ShaderBindingState& bindings, size_t size)
+DescriptorPoolHandle DescriptorPool::create(const char* name, const ShaderBindingState& bindings, uint32_t size)
 {
 	return Application::app()->graphic()->createDescriptorPool(name, bindings, size);
 }

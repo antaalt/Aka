@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Aka/Core/Hash.hpp>
 #include <Aka/Graphic/Program.h>
 #include <Aka/Graphic/Pipeline.h>
 #include <Aka/Core/Container/Array.h>
@@ -56,11 +57,11 @@ struct std::hash<aka::ShaderKey>
 	size_t operator()(const aka::ShaderKey& key) const
 	{
 		size_t hash = 0;
-		aka::hash(hash, key.entryPoint.cstr(), key.entryPoint.length());
+		aka::hash::fnv(hash, key.entryPoint.cstr(), key.entryPoint.length());
 		for (auto& shader : key.macros)
-			aka::hash(hash, shader.cstr(), shader.length());
-		aka::hash(hash, key.path.cstr(), key.path.length());
-		aka::hash(hash, key.type);
+			aka::hash::fnv(hash, shader.cstr(), shader.length());
+		aka::hash::fnv(hash, key.path.cstr(), key.path.length());
+		aka::hash::fnv(hash, &key.type, sizeof(aka::gfx::ShaderType));
 		return hash;
 	}
 };
@@ -71,8 +72,9 @@ struct std::hash<aka::ProgramKey>
 	size_t operator()(const aka::ProgramKey& key) const
 	{
 		size_t hash = 0;
+		std::hash<aka::ShaderKey> hasher;
 		for (auto& shader : key.shaders)
-			aka::hashCombine(hash, shader);
+			aka::hash::combine(hash, hasher(shader));
 		return hash;
 	}
 };

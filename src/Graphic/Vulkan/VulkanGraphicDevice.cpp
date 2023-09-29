@@ -267,6 +267,8 @@ void VulkanGraphicDevice::capture()
 	{
 		m_captureState = RenderDocCaptureState::PendingCapture;
 	}
+#else
+	Logger::warn("Capture disabled");
 #endif
 }
 

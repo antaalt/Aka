@@ -5,8 +5,6 @@
 #include <Aka/Memory/Pool.h>
 
 #include <Aka/Scene/Component.hpp>
-#include <Aka/Scene/Component/CameraComponent.hpp>
-#include <Aka/Scene/Component/StaticMeshComponent.hpp>
 
 namespace aka {
 
@@ -15,9 +13,6 @@ enum class NodeUpdateFlag : uint64_t
 	None				= 0,
 
 	Transform			= 1 << 0,
-	ComponentDirtyBase	= 1 << 1, // Need to be the last component
-	// Do not add flags after this, leave space for component dirty
-	// Their value is ComponentDirtyBase << Component::generateID<MyComponent>()
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
@@ -28,8 +23,9 @@ public:
 	Node(const char* name);
 	virtual ~Node();
 
+	void attach(Component* component);
 	// Attach a component to the entity
-	template <typename T, typename... Args> T& attach(Args&&... args);
+	template <typename T> T& attach();
 	// Detach a component from the entity.
 	template <typename T> void detach();
 	// Get a component from the node
@@ -95,82 +91,52 @@ private:
 	mat4f m_localTransform;
 private: // Data
 	String m_name;
-	// TODO use map, limit of 64 components here :( (check NodeUpdateFlag also)
-	uint64_t m_componentsToActivateMask = 0;	// Mask of all component pending activation.
-	uint64_t m_componentsActiveMask = 0;		// Mask of all active component.
-	uint64_t m_componentsToDeactivateMask = 0; // Mask of all component pending deactivation.
-	uint64_t componentMask() const { return m_componentsToActivateMask | m_componentsActiveMask | m_componentsToDeactivateMask; }
-	Vector<Component*> m_componentsActive;
-	Vector<Component*> m_componentsToActivate;
-	Vector<Component*> m_componentsToDeactivate;
+	ComponentSet m_dirtyComponent;
+	ComponentSet m_componentIDs;
+	ComponentMap m_componentsActive;
+	ComponentMap m_componentsToActivate;
+	ComponentMap m_componentsToDeactivate;
 private:
 	NodeUpdateFlag m_updateFlags;
 };
 
-template<typename T, typename ...Args>
-inline T& Node::attach(Args && ...args)
+template<typename T>
+inline T& Node::attach()
 {
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	ComponentID id = Component::generateID<T>();
-	uint32_t mask = 1U << static_cast<uint32_t>(id);
-	if (componentMask() & mask)
-	{
-		AKA_ASSERT(false, "Trying to attach alredy attached component");
-		AKA_CRASH();
-	}
-	m_componentsToActivateMask |= mask;
-	T* component = new T(std::forward<Args>(args)...);
+	ComponentID id = generateComponentID<T>();
+	AKA_ASSERT(has<T>(), "Trying to attach non attached component");
+	m_componentIDs.insert(id);
+	T* component = reinterpret_cast<T*>(ComponentAllocator::allocate(id));
 	component->onAttach();
-	return reinterpret_cast<T&>(*m_componentsToActivate.append(component));
+	m_componentsToActivate.insert(std::make_pair(id, component));
+	return *component;
 }
 
 template<typename T>
 inline void Node::detach()
 {
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = Component::generateID<T>();
-	const uint64_t mask = 1ULL << static_cast<uint64_t>(componentID);
-	if (!(componentMask() & mask))
+	const ComponentID componentID = generateComponentID<T>();
+	AKA_ASSERT(has<T>(), "Trying to detach non attached component");
+	auto itActive = m_componentsActive.find(componentID);
+	if (itActive != m_componentsActive.end())
 	{
-		AKA_ASSERT(false, "Trying to detach non attached component");
-		AKA_CRASH();
+		// Component still active until deactivate was call on it.
+		m_componentsToDeactivate.insert(std::make_pair(componentID, itActive->second));
+		m_componentsActive.erase(componentID);
+		return;
 	}
-	auto findComponent = [](Vector<Component*>& components, ComponentID id) -> Component*& {
-		for (Component*& component : components)
-		{
-			if (component->id() == id)
-			{
-				return component;
-			}
-		}
-		AKA_UNREACHABLE;
-		return components[0];
-	};
-	if (m_componentsActiveMask & mask)
+	auto itToActivate = m_componentsToActivate.find(componentID);
+	if (itToActivate != m_componentsToActivate.end())
 	{
-		if (Component*& component = findComponent(m_componentsActive, componentID))
-		{
-			m_componentsActiveMask &= ~mask;
-			m_componentsToDeactivateMask |= mask;
-			m_componentsActive.remove(&component);
-			// Component still active until deactivate was call on it.
-			m_componentsToDeactivate.append(component);
-			return;
-		}
+		// Component still active until deactivate was call on it.
+		m_componentsToDeactivate.insert(std::make_pair(componentID, itToActivate->second));
+		m_componentsToActivate.erase(itToActivate);
+		return;
 	}
-	else if (m_componentsToActivateMask & mask)
-	{
-		if (Component*& component = findComponent(m_componentsToActivate, componentID))
-		{
-			m_componentsToActivateMask &= ~mask;
-			m_componentsToDeactivateMask |= mask;
-			m_componentsToActivate.remove(&component);
-			// Component still active until deactivate was call on it.
-			m_componentsToDeactivate.append(component);
-			return;
-		}
-	}
-	else if (m_componentsToDeactivateMask & mask)
+	auto itToDeactivate = m_componentsToDeactivate.find(componentID);
+	if (itToDeactivate != m_componentsToDeactivate.end())
 	{
 		AKA_ASSERT(false, "Trying to detach already detached component");
 	}
@@ -179,36 +145,28 @@ inline void Node::detach()
 		AKA_ASSERT(false, "Trying to detach non attached component");
 		AKA_CRASH();
 	}
-	AKA_UNREACHABLE;
 }
 
 template<typename T>
 inline T& Node::get()
 {
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = Component::generateID<T>();
-	const uint32_t mask = 1U << static_cast<uint32_t>(componentID);
-	auto findComponent = [](Vector<Component*>& components, ComponentID id) -> Component* {
-		for (Component*& component : components)
-		{
-			if (component->id() == id)
-			{
-				return component;
-			}
-		}
-		return nullptr;
-	};
-	if (mask & m_componentsToActivateMask)
+	const ComponentID componentID = generateComponentID<T>();
+	AKA_ASSERT(has<T>(), "Trying to get non attached component");
+	auto itActive = m_componentsActive.find(componentID);
+	if (itActive != m_componentsActive.end())
 	{
-		return *reinterpret_cast<T*>(findComponent(m_componentsToActivate, componentID));
+		return *reinterpret_cast<T*>(itActive->second);
 	}
-	else if (mask & m_componentsActiveMask)
+	auto itToActivate = m_componentsToActivate.find(componentID);
+	if (itToActivate != m_componentsToActivate.end())
 	{
-		return *reinterpret_cast<T*>(findComponent(m_componentsActive, componentID));
+		return *reinterpret_cast<T*>(itToActivate->second);
 	}
-	else if (mask & m_componentsToDeactivateMask)
+	auto itToDeactivate = m_componentsToDeactivate.find(componentID);
+	if (itToDeactivate != m_componentsToDeactivate.end())
 	{
-		return *reinterpret_cast<T*>(findComponent(m_componentsToDeactivate, componentID));
+		return *reinterpret_cast<T*>(itToDeactivate->second);
 	}
 	AKA_ASSERT(false, "Trying to get unattached component");
 	AKA_CRASH();
@@ -217,15 +175,15 @@ template<typename T>
 inline bool aka::Node::has()
 {
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = Component::generateID<T>();
-	const uint32_t mask = 1U << static_cast<uint32_t>(componentID);
-	return (mask & m_componentsActiveMask) || (mask & m_componentsToActivateMask);
+	const ComponentID componentID = generateComponentID<T>();
+	auto it = m_componentIDs.find(componentID);
+	return it != m_componentIDs.end();
 }
 
 template<typename T>
 inline void Node::setDirty()
 {
-	m_updateFlags |= static_cast<NodeUpdateFlag>(static_cast<uint32_t>(NodeUpdateFlag::ComponentDirtyBase) << static_cast<uint32_t>(Component::generateID<T>()));
+	m_dirtyComponent.insert(generateComponentID<T>());
 }
 
 }

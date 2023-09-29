@@ -98,15 +98,64 @@ CameraControllerType CameraArcball::type() const
 }
 
 CameraComponent::CameraComponent() :
-	Component(Component::generateID<CameraComponent>()),
-	m_controller(new CameraArcball),
-	m_projection(new CameraPerspective)
+	Component(generateComponentID<CameraComponent>()),
+	m_controller(nullptr),
+	m_projection(nullptr)
 {
 }
 CameraComponent::~CameraComponent()
 {
 	delete m_controller;
 	delete m_projection;
+}
+
+
+void ArchiveCameraComponent::parse(const Vector<byte_t>& bytes)
+{
+	AKA_ASSERT(bytes.size() == sizeof(CameraControllerType) + sizeof(CameraProjectionType), "Invalid size");
+	Memory::copy(&controllerType, bytes.data(), sizeof(CameraControllerType));
+	Memory::copy(&projectionType, sizeof(CameraControllerType) + bytes.data(), sizeof(CameraProjectionType));
+}
+void ArchiveCameraComponent::serialize(Vector<byte_t>& bytes)
+{
+	bytes.resize(sizeof(AssetID));
+	AKA_NOT_IMPLEMENTED;
+}
+
+void CameraComponent::load(const ArchiveComponent& archive)
+{
+	// Versioning ?
+	AKA_ASSERT(archive.id == getComponentID(), "Invalid ID");
+	const ArchiveCameraComponent& a = reinterpret_cast<const ArchiveCameraComponent&>(archive);
+	switch (a.controllerType)
+	{
+	case CameraControllerType::Arcball:
+		m_controller = new CameraArcball;
+		break;
+	default:
+		AKA_UNREACHABLE;
+		break;
+	}
+	switch (a.projectionType)
+	{
+	case CameraProjectionType::Orthographic:
+		m_projection = new CameraOrthographic;
+		break;
+	case CameraProjectionType::Perpective:
+		m_projection = new CameraPerspective;
+		break;
+	default:
+		AKA_UNREACHABLE;
+		break;
+	}
+}
+
+void CameraComponent::save(ArchiveComponent& archive)
+{
+	AKA_ASSERT(archive.id == getComponentID(), "Invalid ID");
+	ArchiveCameraComponent& a = reinterpret_cast<ArchiveCameraComponent&>(archive);
+	a.controllerType = m_controller->type();
+	a.projectionType = m_projection->type();
 }
 
 };

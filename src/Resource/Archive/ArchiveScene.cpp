@@ -18,51 +18,29 @@ ArchiveLoadResult ArchiveScene::load_internal(ArchiveLoadContext& _context, Bina
 	// Before loading entities, load all components that will be used in the scene.
 	_archive.read<point3f>(bounds.min);
 	_archive.read<point3f>(bounds.max);
-	{
-		uint32_t nbTransform = _archive.read<uint32_t>();
-		for (uint32_t iTransform = 0; iTransform < nbTransform; iTransform++)
-		{
-			ArchiveSceneTransform transform{};
-			_archive.read<mat4f>(transform.matrix);
-			this->transforms.append(transform);
-		}
-	}
-	{
-		// hierarchy only need an ID, do not store it.
-	}
-	{
-		uint32_t nbStaticMesh = _archive.read<uint32_t>();
-		for (uint32_t iMesh = 0; iMesh < nbStaticMesh; iMesh++)
-		{
-			AssetID assetID = _archive.read<AssetID>();
-			this->meshes.append(ArchiveStaticMesh(assetID));
-		}
-	}
 
 	uint32_t nbEntity = _archive.read<uint32_t>();
 	for (uint32_t iEntity = 0; iEntity < nbEntity; iEntity++)
 	{
-		ArchiveSceneEntity entity{};
-		entity.name.resize(_archive.read<uint32_t>());
-		_archive.read<char>(entity.name.cstr(), entity.name.length());
-		entity.name[entity.name.length()] = '\0';
+		ArchiveSceneNode node{};
+		node.name.resize(_archive.read<uint32_t>());
+		_archive.read<char>(node.name.cstr(), node.name.length());
+		node.name[node.name.length()] = '\0';
 
-		entity.components = _archive.read<SceneComponentMask>();
+		_archive.read<mat4f>(node.transform);
+		_archive.read<ArchiveSceneID>(node.parentID);
 
-		for (uint32_t i = 0; i < EnumCount<SceneComponent>(); i++)
+		uint32_t componentCount = _archive.read<uint32_t>();
+		for (uint32_t i = 0; i < componentCount; i++)
 		{
-			if (asBool(static_cast<SceneComponentMask>(1 << i) & entity.components))
-			{
-				entity.id[i] = _archive.read<ArchiveSceneID>();
-			}
-			else
-			{
-				entity.id[i] = ArchiveSceneID::Invalid;
-			}
+			ArchiveSceneComponent component;
+			component.id = _archive.read<ComponentID>();
+			component.archive.resize(_archive.read<uint32_t>());
+			_archive.read<byte_t>(component.archive.data(), component.archive.size());
+			node.components.append(component);
 		}
-		this->entities.append(entity);
+		this->nodes.append(node);
 	}
-
 	return ArchiveLoadResult::Success;
 }
 
@@ -70,41 +48,25 @@ ArchiveSaveResult ArchiveScene::save_internal(ArchiveSaveContext& _context, Bina
 {
 	_archive.write<point3f>(bounds.min);
 	_archive.write<point3f>(bounds.max);
+
+	_archive.write<uint32_t>((uint32_t)this->nodes.size());
+	for (size_t iEntity = 0; iEntity < this->nodes.size(); iEntity++)
 	{
-		_archive.write<uint32_t>((uint32_t)this->transforms.size());
-		for (size_t iTransform = 0; iTransform < this->transforms.size(); iTransform++)
+		ArchiveSceneNode& node = this->nodes[iEntity];
+
+		_archive.write<uint32_t>((uint32_t)node.name.length());
+		_archive.write<char>(node.name.cstr(), node.name.length());
+
+		_archive.write<mat4f>(node.transform);
+		_archive.write<ArchiveSceneID>(node.parentID);
+
+		_archive.write<uint32_t>((uint32_t)node.components.size());
+		for (size_t i = 0; i < node.components.size(); i++)
 		{
-			_archive.write<mat4f>(this->transforms[iTransform].matrix);
-		}
-	}
-	{
-		// hierarchy only need an ID, do not store it.
-	}
-	{
-		_archive.write<uint32_t>((uint32_t)this->meshes.size());
-		for (size_t iMesh = 0; iMesh < this->meshes.size(); iMesh++)
-		{
-			_archive.write<AssetID>(this->meshes[iMesh].id());
-		}
-	}
-
-	_archive.write<uint32_t>((uint32_t)this->entities.size());
-	for (size_t iEntity = 0; iEntity < this->entities.size(); iEntity++)
-	{
-		ArchiveSceneEntity& entity = this->entities[iEntity];
-
-		_archive.write<uint32_t>((uint32_t)entity.name.length());
-		_archive.write<char>(entity.name.cstr(), entity.name.length());
-
-		_archive.write<SceneComponentMask>(entity.components);
-
-		for (uint32_t i = 0; i < EnumCount<SceneComponent>(); i++)
-		{
-			SceneComponentMask mask = static_cast<SceneComponentMask>(1 << i);
-			if (asBool(mask & entity.components))
-			{
-				_archive.write<ArchiveSceneID>(entity.id[i]);
-			}
+			const ArchiveSceneComponent& component = node.components[i];
+			_archive.write<ComponentID>(component.id);
+			_archive.write<uint32_t>((uint32_t)component.archive.size());
+			_archive.write<byte_t>(component.archive.data(), component.archive.size());
 		}
 	}
 
@@ -113,23 +75,11 @@ ArchiveSaveResult ArchiveScene::save_internal(ArchiveSaveContext& _context, Bina
 
 ArchiveLoadResult ArchiveScene::load_dependency(ArchiveLoadContext& _context)
 {
-	for (size_t iMesh = 0; iMesh < this->meshes.size(); iMesh++)
-	{
-		ArchiveLoadResult res = this->meshes[iMesh].load(_context);
-		if (res != ArchiveLoadResult::Success)
-			return res;
-	}
 	return ArchiveLoadResult::Success;
 }
 
 ArchiveSaveResult ArchiveScene::save_dependency(ArchiveSaveContext& _context)
 {
-	for (size_t iMesh = 0; iMesh < this->meshes.size(); iMesh++)
-	{
-		ArchiveSaveResult res = this->meshes[iMesh].save(_context);
-		if (res != ArchiveSaveResult::Success)
-			return res;
-	}
 	return ArchiveSaveResult::Success;
 }
 void ArchiveScene::copyFrom(const Archive* _archive)

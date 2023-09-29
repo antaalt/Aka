@@ -1,5 +1,7 @@
 #include <Aka/Scene/Node.hpp>
 
+#include <Aka/Scene/Component/StaticMeshComponent.hpp>
+
 namespace aka {
 
 Node::Node() : 
@@ -23,6 +25,15 @@ Node::~Node()
 	AKA_ASSERT(m_componentsToDeactivate.size() == 0, "Missing components");
 }
 
+void Node::attach(Component* component)
+{
+	const ComponentID id = component->getComponentID();
+	AKA_ASSERT(m_componentIDs.find(id) == m_componentIDs.end(), "Trying to attach non attached component");
+	m_componentIDs.insert(id);
+	component->onAttach();
+	m_componentsToActivate.insert(std::make_pair(id, component));
+}
+
 void Node::create(AssetLibrary* library, Renderer* renderer)
 {
 }
@@ -36,27 +47,24 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 		childrens->destroy(library, renderer);
 	}
 	// Destroy components
-	for (Component* component : m_componentsToActivate)
+	for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
 	{
-		component->detach();
-		delete component;
+		component.second->detach();
+		ComponentAllocator::free(component.second);
 	}
-	for (Component* component : m_componentsActive)
+	for (std::pair<ComponentID, Component*> component : m_componentsActive)
 	{
-		component->deactivate(library, renderer);
-		component->detach();
-		delete component;
+		component.second->deactivate(library, renderer);
+		component.second->detach();
+		ComponentAllocator::free(component.second);
 	}
-	for (Component* component : m_componentsToDeactivate)
+	for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
 	{
-		component->deactivate(library, renderer);
-		component->detach();
-		delete component;
+		component.second->deactivate(library, renderer);
+		component.second->detach();
+		ComponentAllocator::free(component.second);
 	}
-	m_componentsActiveMask = 0;
-	m_componentsToActivateMask = 0;
-	m_componentsToDeactivateMask = 0;
-	m_componentsActiveMask = 0;
+	m_componentIDs.clear();
 	m_componentsToActivate.clear();
 	m_componentsActive.clear();
 	m_componentsToDeactivate.clear();
@@ -64,25 +72,31 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 
 void Node::update(AssetLibrary* library, Renderer* renderer)
 {
-	/*uint32_t mask = toMask(m_updateFlags);
+#if 0
+	uint32_t mask = toMask(m_updateFlags);
 	uint32_t index = 0;
 	while ((index = firstbitlow(mask)) != 0)
 	{
 		NodeUpdateFlag flag = NodeUpdateFlag(1U << index);
-		index &= ~(1U << index);
+		mask &= ~(1U << index);
 		switch (flag)
 		{
 		case NodeUpdateFlag::Transform:
 			break;
-		case NodeUpdateFlag::ComponentDirtyBase:
-			break;
 		}
-	}*/
-	if (m_componentsActiveMask & (1ULL << (uint64_t)Component::generateID<StaticMeshComponent>()))
+	}
+	for (ComponentID id : m_dirtyComponent)
+	{
+		// TODO some kind of update call where node is accessible from component (to change another comonent, or transform...)
+	}
+	m_dirtyComponent.clear();
+#else
+	if (m_componentsActive.find(generateComponentID<StaticMeshComponent>()) != m_componentsActive.end())
 	{
 		// For now, hard update static mesh component
 		get<StaticMeshComponent>().setInstanceTransform(getWorldTransform());
 	}
+#endif
 
 	// Update children
 	for (Node* childrens : m_childrens)
@@ -90,23 +104,18 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 		childrens->update(library, renderer);
 	}
 	// Activate components
-	for (Component*& component : m_componentsToActivate)
+	for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
 	{
-		const uint64_t mask = 1ULL << static_cast<uint64_t>(component->id());
-		component->activate(library, renderer);
-		m_componentsActive.append(component);
-		m_componentsToActivateMask &= ~mask;
-		m_componentsActiveMask |= mask;
+		component.second->activate(library, renderer);
+		m_componentsActive.insert(component);
 	}
 	m_componentsToActivate.clear();
 	// Deactivate components
-	for (Component*& component : m_componentsToDeactivate)
+	for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
 	{
-		const uint64_t mask = 1ULL << static_cast<uint64_t>(component->id());
-		component->deactivate(library, renderer);
-		component->detach();
-		m_componentsToDeactivateMask &= ~mask;
-		delete component;
+		component.second->deactivate(library, renderer);
+		component.second->detach();
+		ComponentAllocator::free(component.second);
 	}
 	m_componentsToDeactivate.clear();
 }
