@@ -74,7 +74,7 @@ void FileStream::close()
 	m_file = nullptr;
 }
 
-void FileStream::unserialize(void* data, size_t size)
+void FileStream::read(void* data, size_t size)
 {
 	AKA_ASSERT((m_mode & FileMode::Read) == FileMode::Read, "File mode invalid");
 	AKA_ASSERT(m_file != nullptr, "File not opened");
@@ -82,7 +82,7 @@ void FileStream::unserialize(void* data, size_t size)
 	AKA_ASSERT(length == size, "File not read");
 }
 
-void FileStream::serialize(const void* data, size_t size)
+void FileStream::write(const void* data, size_t size)
 {
 	AKA_ASSERT((m_mode & FileMode::Write) == FileMode::Write, "File mode invalid");
 	AKA_ASSERT(m_file != nullptr, "File not opened");

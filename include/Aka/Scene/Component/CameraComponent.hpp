@@ -85,11 +85,13 @@ struct CameraArcball : CameraController
 
 struct ArchiveCameraComponent : ArchiveComponent
 {
+	ArchiveCameraComponent();
+
+	void load_internal(BinaryArchive& archive) override;
+	void save_internal(BinaryArchive& archive) override;
+
 	CameraControllerType controllerType;
 	CameraProjectionType projectionType;
-
-	void parse(const Vector<byte_t>& byte) override;
-	void serialize(Vector<byte_t>& byte) override;
 };
 
 class CameraComponent : public Component

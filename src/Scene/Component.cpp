@@ -1,8 +1,31 @@
 #include <Aka/Scene/Component.hpp>
 
 #include <Aka/Resource/AssetLibrary.hpp>
+#include <Aka/OS/Stream/MemoryStream.h>
 
 namespace aka {
+
+ArchiveComponent::ArchiveComponent(ComponentID id, ArchiveComponentVersionType version) :
+	m_id(id),
+	m_version(version)
+{
+}
+
+void ArchiveComponent::load(const Vector<byte_t>& byte)
+{
+	MemoryReaderStream stream(byte);
+	BinaryArchive archive(stream);
+	load_internal(archive);
+	AKA_ASSERT(archive.offset() == archive.size(), "Failed to read whole data");
+}
+
+void ArchiveComponent::save(Vector<byte_t>& byte)
+{
+	MemoryWriterStream stream(byte);
+	BinaryArchive archive(stream);
+	save_internal(archive);
+}
+
 
 std::map<ComponentID, ComponentAllocator*> ComponentAllocator::m_allocators;
 
@@ -29,7 +52,7 @@ ArchiveComponent* ComponentAllocator::allocateArchive(ComponentID id)
 }
 void ComponentAllocator::freeArchive(ArchiveComponent* component)
 {
-	m_allocators[component->id]->freeArchive_internal(component);
+	m_allocators[component->getComponentID()]->freeArchive_internal(component);
 }
 
 Component::Component(ComponentID componentID) :

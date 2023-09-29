@@ -109,23 +109,25 @@ CameraComponent::~CameraComponent()
 	delete m_projection;
 }
 
-
-void ArchiveCameraComponent::parse(const Vector<byte_t>& bytes)
+ArchiveCameraComponent::ArchiveCameraComponent() :
+	ArchiveComponent(generateComponentID<CameraComponent>(), 0)
 {
-	AKA_ASSERT(bytes.size() == sizeof(CameraControllerType) + sizeof(CameraProjectionType), "Invalid size");
-	Memory::copy(&controllerType, bytes.data(), sizeof(CameraControllerType));
-	Memory::copy(&projectionType, sizeof(CameraControllerType) + bytes.data(), sizeof(CameraProjectionType));
 }
-void ArchiveCameraComponent::serialize(Vector<byte_t>& bytes)
+
+void ArchiveCameraComponent::load_internal(BinaryArchive& archive)
 {
-	bytes.resize(sizeof(AssetID));
-	AKA_NOT_IMPLEMENTED;
+	controllerType = archive.read<CameraControllerType>();
+	projectionType = archive.read<CameraProjectionType>();
+}
+void ArchiveCameraComponent::save_internal(BinaryArchive& archive)
+{
+	archive.write<CameraControllerType>(controllerType);
+	archive.write<CameraProjectionType>(projectionType);
 }
 
 void CameraComponent::load(const ArchiveComponent& archive)
 {
-	// Versioning ?
-	AKA_ASSERT(archive.id == getComponentID(), "Invalid ID");
+	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	const ArchiveCameraComponent& a = reinterpret_cast<const ArchiveCameraComponent&>(archive);
 	switch (a.controllerType)
 	{
@@ -152,7 +154,7 @@ void CameraComponent::load(const ArchiveComponent& archive)
 
 void CameraComponent::save(ArchiveComponent& archive)
 {
-	AKA_ASSERT(archive.id == getComponentID(), "Invalid ID");
+	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	ArchiveCameraComponent& a = reinterpret_cast<ArchiveCameraComponent&>(archive);
 	a.controllerType = m_controller->type();
 	a.projectionType = m_projection->type();

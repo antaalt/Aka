@@ -20,10 +20,10 @@ public:
 	Stream& operator=(Stream&&) = delete;
 	virtual ~Stream();
 
-	// Serialize data and forward the cursor
-	virtual void serialize(const void* data, size_t count) = 0;
-	// Unserialize data and forward the cursor
-	virtual void unserialize(void* data, size_t count) = 0;
+	// Read data and forward the cursor
+	virtual void write(const void* data, size_t count) = 0;
+	// Write data and forward the cursor
+	virtual void read(void* data, size_t count) = 0;
 
 	// Simply forward the cursor.
 	virtual void skim(size_t count) = 0;

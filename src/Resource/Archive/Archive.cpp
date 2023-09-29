@@ -21,7 +21,7 @@ constexpr const char* s_magicWord[] = {
 
 static_assert(countof(s_magicWord) == EnumCount<AssetType>());
 
-ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, const Blob& _blob, bool _loadDependency)
+ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob, bool _loadDependency)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
 	auto it = _context.cache.find(id());
@@ -32,7 +32,7 @@ ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, const Blob& _blob,
 	}
 	else
 	{
-		MemoryStream stream(_blob);
+		MemoryReaderStream stream(_blob);
 		BinaryArchive archive(stream);
 
 		ArchiveLoadResult res = readHeader(archive);
@@ -86,13 +86,13 @@ ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, bool _loadDependen
 	return load(_context, info.path, _loadDependency);
 }
 
-ArchiveSaveResult Archive::save(ArchiveSaveContext& _context, Blob& _blob, bool _saveDependency)
+ArchiveSaveResult Archive::save(ArchiveSaveContext& _context, Vector<byte_t>& _blob, bool _saveDependency)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
 	auto it = _context.cache.find(id());
 	if (it == _context.cache.end())
 	{
-		MemoryStream stream(_blob);
+		MemoryWriterStream stream(_blob);
 		BinaryArchive archive(stream);
 
 		ArchiveSaveResult res = writeHeader(archive);

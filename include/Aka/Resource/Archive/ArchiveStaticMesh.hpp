@@ -20,8 +20,8 @@ struct ArchiveStaticMesh : Archive
 	Vector<ArchiveBatch> batches;
 
 protected:
-	ArchiveLoadResult load_internal(ArchiveLoadContext& _context, BinaryArchive& path) override;
-	ArchiveSaveResult save_internal(ArchiveSaveContext& _context, BinaryArchive& path) override;
+	ArchiveLoadResult load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive) override;
+	ArchiveSaveResult save_internal(ArchiveSaveContext& _context, BinaryArchive& _archive) override;
 	ArchiveLoadResult load_dependency(ArchiveLoadContext& _context) override;
 	ArchiveSaveResult save_dependency(ArchiveSaveContext& _context) override;
 

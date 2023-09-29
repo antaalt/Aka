@@ -37,8 +37,8 @@ public:
 
 	void close();
 protected:
-	void unserialize(void* data, size_t size) override;
-	void serialize(const void* data, size_t size) override;
+	void read(void* data, size_t size) override;
+	void write(const void* data, size_t size) override;
 private:
 	FILE* m_file;
 	FileMode m_mode;

@@ -10,10 +10,12 @@ namespace aka {
 
 struct ArchiveStaticMeshComponent : ArchiveComponent
 {
+	ArchiveStaticMeshComponent();
+
 	AssetID assetID;
 
-	void parse(const Vector<byte_t>& byte) override;
-	void serialize(Vector<byte_t>& byte) override;
+	void load_internal(BinaryArchive& archive) override;
+	void save_internal(BinaryArchive& archive) override;
 };
 
 class StaticMeshComponent : public Component

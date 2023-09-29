@@ -66,10 +66,10 @@ struct Archive
 	Archive(AssetType _type) : m_type(_type), m_id(AssetID::Invalid) {}
 	Archive(AssetType _type, AssetID _id) : m_type(_type), m_id(_id) {}
 
-	ArchiveLoadResult load(ArchiveLoadContext& _context, const Blob& _blob, bool _loadDependency = true);
+	ArchiveLoadResult load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob, bool _loadDependency = true);
 	ArchiveLoadResult load(ArchiveLoadContext& _context, const AssetPath& _path, bool _loadDependency = true);
 	ArchiveLoadResult load(ArchiveLoadContext& _context, bool _loadDependency = true);
-	ArchiveSaveResult save(ArchiveSaveContext& _context, Blob& _blob, bool _saveDependency = true);
+	ArchiveSaveResult save(ArchiveSaveContext& _context, Vector<byte_t>& _blob, bool _saveDependency = true);
 	ArchiveSaveResult save(ArchiveSaveContext& _context, const AssetPath& _path, bool _saveDependency = true);
 	ArchiveSaveResult save(ArchiveSaveContext& _context, bool _saveDependency = true);
 

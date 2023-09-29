@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Aka/OS/Archive.h>
 #include <Aka/Core/Config.h>
 #include <Aka/Core/Container/String.h>
 #include <Aka/Graphic/GraphicDevice.h>
@@ -52,12 +53,19 @@ using ArchiveComponentVersionType = uint32_t;
 
 struct ArchiveComponent
 {
-	ComponentID id;
-	size_t size; // Archive size
-	ArchiveComponentVersionType version;
+	ArchiveComponent(ComponentID componentID, ArchiveComponentVersionType version);
 
-	virtual void parse(const Vector<byte_t>& byte) = 0;
-	virtual void serialize(Vector<byte_t>& byte) = 0;
+	void load(const Vector<byte_t>& byte);
+	void save(Vector<byte_t>& byte);
+protected:
+	virtual void load_internal(BinaryArchive& archive) = 0;
+	virtual void save_internal(BinaryArchive& archive) = 0;
+public:
+	ComponentID getComponentID() const { return m_id; }
+	ArchiveComponentVersionType getVersion() const { return m_version; }
+private:
+	ComponentID m_id;
+	ArchiveComponentVersionType m_version;
 };
 
 

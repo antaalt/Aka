@@ -4,15 +4,19 @@
 
 namespace aka {
 
-void ArchiveStaticMeshComponent::parse(const Vector<byte_t>& bytes)
+ArchiveStaticMeshComponent::ArchiveStaticMeshComponent() :
+	ArchiveComponent(generateComponentID<StaticMeshComponent>(), 0),
+	assetID(AssetID::Invalid)
 {
-	AKA_ASSERT(bytes.size() == sizeof(AssetID), "Invalid size");
-	Memory::copy(&assetID, bytes.data(), bytes.size());
 }
-void ArchiveStaticMeshComponent::serialize(Vector<byte_t>& bytes)
+
+void ArchiveStaticMeshComponent::load_internal(BinaryArchive& archive)
 {
-	bytes.resize(sizeof(AssetID));
-	Memory::copy(bytes.data() , &assetID, bytes.size());
+	archive.read<AssetID>(assetID);
+}
+void ArchiveStaticMeshComponent::save_internal(BinaryArchive& archive)
+{
+	archive.write<AssetID>(assetID);
 }
 
 StaticMeshComponent::StaticMeshComponent() :
@@ -44,15 +48,14 @@ ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
 
 void StaticMeshComponent::load(const ArchiveComponent& archive)
 {
-	// Versioning ?
-	AKA_ASSERT(archive.id == getComponentID(), "Invalid ID");
+	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	const ArchiveStaticMeshComponent& a = reinterpret_cast<const ArchiveStaticMeshComponent&>(archive);
 	m_assetID = a.assetID;
 }
 
 void StaticMeshComponent::save(ArchiveComponent& archive)
 {
-	AKA_ASSERT(archive.id == getComponentID(), "Invalid ID");
+	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	ArchiveStaticMeshComponent& a = reinterpret_cast<ArchiveStaticMeshComponent&>(archive);
 	a.assetID = m_assetID;
 }

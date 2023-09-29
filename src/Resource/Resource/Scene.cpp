@@ -54,10 +54,7 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 		{
 			Component* allocatedComponent = ComponentAllocator::allocate(component.id);
 			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component.id);
-			archiveComponent->id = allocatedComponent->getComponentID();
-			archiveComponent->size = 0;
-			archiveComponent->version = 0;
-			archiveComponent->parse(component.archive);
+			archiveComponent->load(component.archive);
 			allocatedComponent->load(*archiveComponent);
 			ComponentAllocator::freeArchive(archiveComponent);
 			sceneNode->attach(allocatedComponent);
