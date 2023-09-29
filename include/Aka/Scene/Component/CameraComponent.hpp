@@ -97,7 +97,7 @@ struct ArchiveCameraComponent : ArchiveComponent
 class CameraComponent : public Component
 {
 public:
-	CameraComponent();
+	CameraComponent(Node* node);
 	~CameraComponent();
 
 	CameraProjection* getProjection() { return m_projection; }

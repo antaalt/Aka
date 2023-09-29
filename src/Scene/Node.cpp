@@ -72,7 +72,6 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 
 void Node::update(AssetLibrary* library, Renderer* renderer)
 {
-#if 0
 	uint32_t mask = toMask(m_updateFlags);
 	uint32_t index = 0;
 	while ((index = firstbitlow(mask)) != 0)
@@ -85,18 +84,12 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 			break;
 		}
 	}
-	for (ComponentID id : m_dirtyComponent)
+	//for (ComponentID id : m_dirtyComponent)
+	for (auto component : m_componentsActive)
 	{
-		// TODO some kind of update call where node is accessible from component (to change another comonent, or transform...)
+		component.second->onRenderUpdate(library, renderer);
 	}
 	m_dirtyComponent.clear();
-#else
-	if (m_componentsActive.find(generateComponentID<StaticMeshComponent>()) != m_componentsActive.end())
-	{
-		// For now, hard update static mesh component
-		get<StaticMeshComponent>().setInstanceTransform(getWorldTransform());
-	}
-#endif
 
 	// Update children
 	for (Node* childrens : m_childrens)
@@ -122,10 +115,26 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 
 void Node::update(Time deltaTime)
 {
+	for (auto component : m_componentsActive)
+	{
+		component.second->update(deltaTime);
+	}
+	for (Node* children : m_childrens)
+	{
+		children->update(deltaTime);
+	}
 }
 
 void Node::fixedUpdate(Time deltaTime)
 {
+	for (auto component : m_componentsActive)
+	{
+		component.second->fixedUpdate(deltaTime);
+	}
+	for (Node* children : m_childrens)
+	{
+		children->fixedUpdate(deltaTime);
+	}
 }
 
 void Node::unlink()

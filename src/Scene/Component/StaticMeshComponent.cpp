@@ -19,8 +19,8 @@ void ArchiveStaticMeshComponent::save_internal(BinaryArchive& archive)
 	archive.write<AssetID>(assetID);
 }
 
-StaticMeshComponent::StaticMeshComponent() :
-	Component(generateComponentID<StaticMeshComponent>()),
+StaticMeshComponent::StaticMeshComponent(Node* node) :
+	Component(node, generateComponentID<StaticMeshComponent>()),
 	m_assetID(AssetID::Invalid),
 	m_instance(nullptr)
 {
@@ -40,6 +40,10 @@ void StaticMeshComponent::onBecomeInactive(AssetLibrary* library, Renderer* _ren
 {
 	m_meshHandle.reset();
 	_renderer->destroyInstance(m_instance);
+}
+void StaticMeshComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
+{
+	m_instance->transform = getNode()->getWorldTransform();
 }
 ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
 {

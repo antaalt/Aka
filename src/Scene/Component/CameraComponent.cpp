@@ -97,8 +97,8 @@ CameraControllerType CameraArcball::type() const
 	return CameraControllerType::Arcball;
 }
 
-CameraComponent::CameraComponent() :
-	Component(generateComponentID<CameraComponent>()),
+CameraComponent::CameraComponent(Node* node) :
+	Component(node, generateComponentID<CameraComponent>()),
 	m_controller(nullptr),
 	m_projection(nullptr)
 {

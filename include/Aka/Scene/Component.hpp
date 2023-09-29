@@ -12,6 +12,7 @@ namespace aka {
 
 class AssetLibrary;
 class Renderer;
+class Node;
 class Component;
 struct Archive;
 struct ArchiveComponent;
@@ -33,14 +34,14 @@ public:
 	template <typename T>
 	static void registerAllocator(ComponentID id);
 	static void unregisterAllocator(ComponentID id);
-	static Component* allocate(ComponentID id);
+	static Component* allocate(Node* node, ComponentID id);
 	static void free(Component* component);
 	static ArchiveComponent* allocateArchive(ComponentID id);
 	static void freeArchive(ArchiveComponent* id);
 private:
 	static std::map<ComponentID, ComponentAllocator*> m_allocators;
 protected:
-	virtual Component* allocate_internal() = 0;
+	virtual Component* allocate_internal(Node* node) = 0;
 	virtual void free_internal(Component* component) = 0;
 	virtual ArchiveComponent* allocateArchive_internal() = 0;
 	virtual void freeArchive_internal(ArchiveComponent* component) = 0;
@@ -72,7 +73,8 @@ private:
 class Component
 {
 public:
-	Component(ComponentID componentID);
+	Component() = delete;
+	Component(Node* node, ComponentID componentID);
 	virtual ~Component() {}
 
 protected:
@@ -108,13 +110,18 @@ protected:
 	// Should not be called every frame ?
 	virtual void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) {}
 public:
+	// Get the owner node of the component
+	Node* getNode() { return m_node; }
+	// Get the owner node of the component
+	const Node* getNode() const { return m_node; }
 	// Get component ID, using type for now for reliable constant value
 	ComponentID getComponentID() const { return m_componentID; }
 	// Get component state.
 	ComponentState getState() const { return m_state; }
 private:
-	ComponentID m_componentID;
-	ComponentState m_state;
+	Node* m_node;				// Node the component is part of.
+	ComponentID m_componentID;	// ID of the component
+	ComponentState m_state;		// Current state of the component
 };
 
 
@@ -133,7 +140,7 @@ static void ComponentAllocator::registerAllocator(ComponentID id)
 // This should be called within aka namespace. All components need to be in this namespace
 #define AKA_DECL_COMPONENT(ComponentType) 															\
 struct ComponentType ## Allocator : ComponentAllocator {											\
-	Component* allocate_internal() override { return new ComponentType; }							\
+	Component* allocate_internal(Node* node) override { return new ComponentType(node); }			\
 	void free_internal(Component* component) override { delete component; }							\
 	ArchiveComponent* allocateArchive_internal() override { return new Archive ## ComponentType; }	\
 	void freeArchive_internal(ArchiveComponent* component) override { delete component; }			\

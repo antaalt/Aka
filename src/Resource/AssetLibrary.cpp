@@ -152,7 +152,10 @@ AssetInfo AssetLibrary::getAssetInfo(AssetID _id)
 {
 	auto it = m_assetInfo.find(_id);
 	if (it == m_assetInfo.end())
+	{
+		Logger::error("[register] Asset '", (uint64_t)_id, "' could not be found.");
 		return AssetInfo::invalid();
+	}
 	return it->second;
 }
 

@@ -66,7 +66,7 @@ void MemoryStream::rewind()
 
 void MemoryReaderStream::read(void* data, size_t size)
 {
-	AKA_ASSERT(m_offset + size >= m_size, "Reading out of bounds");
+	AKA_ASSERT(m_offset + size <= m_size, "Reading out of bounds");
 	Memory::copy(data, m_bytes + m_offset, size);
 	m_offset += size;
 }

@@ -36,10 +36,10 @@ void ComponentAllocator::unregisterAllocator(ComponentID id)
 	m_allocators.erase(id);
 }
 
-Component* ComponentAllocator::allocate(ComponentID id)
+Component* ComponentAllocator::allocate(Node* node, ComponentID id)
 {
 	AKA_ASSERT(m_allocators.count(id), "Component type not registered.");
-	return m_allocators[id]->allocate_internal();
+	return m_allocators[id]->allocate_internal(node);
 }
 void ComponentAllocator::free(Component* component)
 {
@@ -55,9 +55,10 @@ void ComponentAllocator::freeArchive(ArchiveComponent* component)
 	m_allocators[component->getComponentID()]->freeArchive_internal(component);
 }
 
-Component::Component(ComponentID componentID) :
+Component::Component(Node* node, ComponentID componentID) :
 	m_state(ComponentState::PendingActivation),
-	m_componentID(componentID)
+	m_componentID(componentID),
+	m_node(node)
 {
 }
 

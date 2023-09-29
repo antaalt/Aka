@@ -21,14 +21,14 @@ struct ArchiveStaticMeshComponent : ArchiveComponent
 class StaticMeshComponent : public Component
 {
 public:
-	StaticMeshComponent();
+	StaticMeshComponent(Node* node);
 	~StaticMeshComponent();
 
 	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
 	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
+	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
 
 	ResourceHandle<StaticMesh> getMesh();
-	void setInstanceTransform(const mat4f& transform) { m_instance->transform = transform; }
 public:
 	void load(const ArchiveComponent& archive) override;
 	void save(ArchiveComponent& archive) override;

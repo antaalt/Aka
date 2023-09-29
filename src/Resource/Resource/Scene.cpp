@@ -52,7 +52,7 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 		}
 		for (const ArchiveSceneComponent& component : node.components)
 		{
-			Component* allocatedComponent = ComponentAllocator::allocate(component.id);
+			Component* allocatedComponent = ComponentAllocator::allocate(sceneNode, component.id);
 			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component.id);
 			archiveComponent->load(component.archive);
 			allocatedComponent->load(*archiveComponent);
@@ -62,8 +62,8 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 		nodes.append(sceneNode);
 	}
 #if 0
-	auto recurseDebug = std::function<void(Node3D*, uint32_t)>();
-	recurseDebug = [&recurseDebug](Node3D* parent, uint32_t depth) {
+	auto recurseDebug = std::function<void(Node*, uint32_t)>();
+	recurseDebug = [&recurseDebug](Node* parent, uint32_t depth) {
 		String string;
 		for (uint32_t i = 0; i < depth; i++)
 			string += '\t';
@@ -82,9 +82,49 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 void Scene::save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _archive)
 {
 	AKA_ASSERT(_archive.type() == AssetType::Scene, "Invalid archive");
-	ArchiveScene& sceneArchive = reinterpret_cast<ArchiveScene&>(_archive);
-	sceneArchive;
-	AKA_NOT_IMPLEMENTED;
+	ArchiveScene& scene = reinterpret_cast<ArchiveScene&>(_archive);
+
+	// Place all nodes in an array for serialization
+	std::vector<Node*> nodes;
+	auto recurseDebug = std::function<void(Node*)>();
+	recurseDebug = [&recurseDebug, &nodes](Node* parent) {
+		nodes.push_back(parent);
+		// Serialized child
+		for (uint32_t i = 0; i < parent->getChildCount(); i++)
+		{
+			recurseDebug(parent->getChild(i));
+		}
+	};
+	recurseDebug(m_root);
+
+	auto getParentID = [&nodes](Node* node) -> ArchiveSceneID {
+		auto it = std::find(nodes.begin(), nodes.end(), node->getParent());
+		AKA_ASSERT(it != nodes.end(), "");
+		return ArchiveSceneID(it - nodes.begin());
+	};
+
+	scene.bounds = m_bounds;
+	for (Node* sceneNode : nodes)
+	{
+		// Serialize node
+		ArchiveSceneNode node;
+		node.parentID = sceneNode->getParent() ? getParentID(sceneNode) : ArchiveSceneID::Invalid;
+		node.name = sceneNode->getName();
+		node.transform = sceneNode->getLocalTransform();
+		// Serialize component
+		for (auto pair : sceneNode->getComponentMap())
+		{
+			Component* component = pair.second;
+			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component->getComponentID());
+			component->save(*archiveComponent);
+			ArchiveSceneComponent archive;
+			archive.id = component->getComponentID();
+			archiveComponent->save(archive.archive);
+			ComponentAllocator::freeArchive(archiveComponent);
+			node.components.append(archive);
+		}
+		scene.nodes.append(node);
+	}
 }
 
 void recurseDestroy(Pool<Node>& pool, Node* root)

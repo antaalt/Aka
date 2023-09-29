@@ -74,6 +74,8 @@ VkCompareOp tovk(DepthOp compare)
 		return VK_COMPARE_OP_GREATER_OR_EQUAL;
 	default:
 		AKA_ASSERT(false, "invalid enum");
+		[[fallthrough]]
+	case DepthOp::None: // if disabled
 		return VK_COMPARE_OP_MAX_ENUM;
 	}
 }

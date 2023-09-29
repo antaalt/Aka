@@ -16,6 +16,16 @@ enum class NodeUpdateFlag : uint64_t
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
+struct ComponentRange 
+{
+	ComponentRange(ComponentMap& iterator);
+
+	ComponentMap::iterator begin() { return m_iterator; }
+	ComponentMap::iterator end();
+private:
+	ComponentMap::iterator m_iterator;
+};
+
 class Node
 {
 public:
@@ -49,8 +59,8 @@ public:
 	const String& getName() const { return m_name; }
 	// Does the node has active components
 	bool isOrphan() const { return m_componentsActive.size() == 0; }
-	// Get the number of active components
-	uint32_t getComponentCount() const { return (uint32_t)m_componentsActive.size(); }
+	// Get the active components
+	const ComponentMap& getComponentMap() const { return m_componentsActive; }
 	// Mark a component as dirty
 	template<typename T> void setDirty();
 	// Set update flag
@@ -105,9 +115,9 @@ inline T& Node::attach()
 {
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
 	ComponentID id = generateComponentID<T>();
-	AKA_ASSERT(has<T>(), "Trying to attach non attached component");
+	AKA_ASSERT(!has<T>(), "Trying to attach already attached component");
 	m_componentIDs.insert(id);
-	T* component = reinterpret_cast<T*>(ComponentAllocator::allocate(id));
+	T* component = reinterpret_cast<T*>(ComponentAllocator::allocate(this, id));
 	component->onAttach();
 	m_componentsToActivate.insert(std::make_pair(id, component));
 	return *component;
