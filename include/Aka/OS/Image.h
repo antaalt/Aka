@@ -110,9 +110,9 @@ struct ImageDecoder
 struct ImageEncoder
 {
 	static bool toDisk(const Path& _path, Image& _image, ImageFileFormat _format, ImageQuality _quality);
-	static Blob toMemory(const Path& _path, Image& _image, ImageFileFormat _format, ImageQuality _quality);
+	static Blob toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality);
 	static bool toDisk(const Path& _path, ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality);
-	static Blob toMemory(const Path& _path, ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality);
+	static Blob toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality);
 };
 
 

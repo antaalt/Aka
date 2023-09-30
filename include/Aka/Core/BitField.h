@@ -8,11 +8,17 @@ namespace aka {
 
 // Count bits in bitmask
 uint32_t countbits32(uint32_t x);
+// Count bits in bitmask
+uint32_t countbits64(uint64_t x);
 
 // Find the most significant bit
-uint32_t firstbithigh(uint32_t x);
+uint32_t firstbithigh32(uint32_t x);
 // Find the least significant bit
-uint32_t firstbitlow(uint32_t x);
+uint32_t firstbitlow32(uint32_t x);
+// Find the most significant bit
+uint32_t firstbithigh64(uint64_t x);
+// Find the least significant bit
+uint32_t firstbitlow64(uint64_t x);
 
 // Generate a bitmask from a bit count
 constexpr uint32_t bitmask(uint32_t bitcount);

@@ -7,6 +7,16 @@
 
 namespace aka {
 
+struct StaticVertex
+{
+	point3f position;
+	norm3f normal;
+	uv2f uv;
+	color4f color;
+
+	static gfx::VertexBufferLayout getState();
+};
+
 struct StaticMeshBatch
 {
 	uint32_t vertexOffset;
@@ -25,8 +35,8 @@ public:
 	StaticMesh(AssetID _id, const String& _name);
 	~StaticMesh();
 private:
-	void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) override;
-	void save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive) override;
+	void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) override;
+	void toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer) override;
 	void destroy_internal(AssetLibrary* _library, Renderer* _renderer) override;
 
 public:

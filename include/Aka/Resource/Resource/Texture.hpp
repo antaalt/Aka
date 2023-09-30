@@ -23,8 +23,8 @@ public:
 	uint32_t getLayerCount() const { return m_layerCount; }
 	uint32_t getMipCount() const { return m_mipCount; }
 private:
-	void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) override;
-	void save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive) override;
+	void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) override;
+	void toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer) override;
 	void destroy_internal(AssetLibrary* _library, Renderer* _renderer) override;
 private:
 	uint32_t m_width, m_height;

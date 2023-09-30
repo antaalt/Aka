@@ -87,8 +87,7 @@ struct ArchiveCameraComponent : ArchiveComponent
 {
 	ArchiveCameraComponent();
 
-	void load_internal(BinaryArchive& archive) override;
-	void save_internal(BinaryArchive& archive) override;
+	void parse(BinaryArchive& archive) override;
 
 	CameraControllerType controllerType;
 	CameraProjectionType projectionType;
@@ -106,8 +105,8 @@ public:
 	const CameraController* getController() const { return m_controller; }
 
 public:
-	void load(const ArchiveComponent& archive) override;
-	void save(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveComponent& archive) override;
+	void toArchive(ArchiveComponent& archive) override;
 
 private:
 	CameraController* m_controller;

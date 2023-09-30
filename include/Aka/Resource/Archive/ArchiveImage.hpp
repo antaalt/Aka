@@ -13,7 +13,7 @@ struct ArchiveImage : Archive
 		Latest = ArchiveCreation
 	};
 	ArchiveImage();
-	ArchiveImage(AssetID id);
+	explicit ArchiveImage(AssetID id);
 
 	size_t size() const { return data.size(); }
 
@@ -23,14 +23,10 @@ struct ArchiveImage : Archive
 	uint32_t channels;
 
 protected:
-	ArchiveLoadResult load_internal(ArchiveLoadContext& _context, BinaryArchive& path) override;
-	ArchiveSaveResult save_internal(ArchiveSaveContext& _context, BinaryArchive& path) override;
-	ArchiveLoadResult load_dependency(ArchiveLoadContext& _context) override;
-	ArchiveSaveResult save_dependency(ArchiveSaveContext& _context) override;
+	ArchiveParseResult parse(BinaryArchive& path) override;
+	ArchiveParseResult load_dependency(ArchiveLoadContext& _context) override;
 
 	ArchiveVersionType getLatestVersion() const override { return static_cast<ArchiveVersionType>(Version::Latest); };
-
-	void copyFrom(const Archive* _archive) override;
 };
 
 }

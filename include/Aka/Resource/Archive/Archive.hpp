@@ -11,7 +11,7 @@ namespace aka {
 
 class AssetLibrary;
 
-enum class ArchiveLoadResult {
+enum class ArchiveParseResult {
 	Success,
 
 	InvalidMagicWord,
@@ -22,33 +22,46 @@ enum class ArchiveLoadResult {
 	Failed,
 };
 
-enum class ArchiveSaveResult {
-	Success,
-
-	InvalidDependency,
-
-	Failed,
-};
-
 struct Archive;
 
-using AssetSaveCache = std::set<AssetID>;
 using AssetLoadCache = std::map<AssetID, Archive*>;
 
 struct ArchiveLoadContext
 {
-	ArchiveLoadContext(AssetLibrary* library) : cache{}, library(library) {}
+	ArchiveLoadContext(Archive& _archive, AssetLibrary* library, bool _loadDependency = true);
+	~ArchiveLoadContext();
 
-	AssetLoadCache cache;
-	AssetLibrary* library;
+	template <typename T> T& addArchive(AssetID assetID);
+	template <typename T> T& getArchive(AssetID assetID);
+	bool hasArchive(AssetID assetID);
+	bool isMainArchive(AssetID assetID);
+
+	bool shouldLoadDependency() const { return m_loadDependencies; }
+
+	AssetLibrary* getAssetLibrary() { return m_library; }
+private:
+	Archive& m_archive;
+	bool m_loadDependencies;
+	AssetLoadCache m_dependencies;
+	AssetLibrary* m_library;
 };
 
 struct ArchiveSaveContext
 {
-	ArchiveSaveContext(AssetLibrary* library) : cache{}, library(library) {}
+	ArchiveSaveContext(Archive& _archive, AssetLibrary* library, bool _saveDependency = true);
+	~ArchiveSaveContext();
 
-	AssetSaveCache cache;
-	AssetLibrary* library;
+	template <typename T> T& addArchive(AssetID assetID, T& archive);
+	template <typename T> T& getArchive(AssetID assetID);
+	bool hasArchive(AssetID assetID);
+	bool isMainArchive(AssetID assetID);
+
+	AssetLibrary* getAssetLibrary() { return m_library; }
+private:
+	Archive& m_archive;
+	bool m_saveDependency;
+	AssetLoadCache m_dependencies;
+	AssetLibrary* m_library;
 };
 
 
@@ -66,12 +79,12 @@ struct Archive
 	Archive(AssetType _type) : m_type(_type), m_id(AssetID::Invalid) {}
 	Archive(AssetType _type, AssetID _id) : m_type(_type), m_id(_id) {}
 
-	ArchiveLoadResult load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob, bool _loadDependency = true);
-	ArchiveLoadResult load(ArchiveLoadContext& _context, const AssetPath& _path, bool _loadDependency = true);
-	ArchiveLoadResult load(ArchiveLoadContext& _context, bool _loadDependency = true);
-	ArchiveSaveResult save(ArchiveSaveContext& _context, Vector<byte_t>& _blob, bool _saveDependency = true);
-	ArchiveSaveResult save(ArchiveSaveContext& _context, const AssetPath& _path, bool _saveDependency = true);
-	ArchiveSaveResult save(ArchiveSaveContext& _context, bool _saveDependency = true);
+	ArchiveParseResult load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob);
+	ArchiveParseResult load(ArchiveLoadContext& _context, const AssetPath& _path);
+	ArchiveParseResult load(ArchiveLoadContext& _context);
+	ArchiveParseResult save(ArchiveSaveContext& _context, Vector<byte_t>& _blob);
+	ArchiveParseResult save(ArchiveSaveContext& _context, const AssetPath& _path);
+	ArchiveParseResult save(ArchiveSaveContext& _context);
 
 	bool validate(AssetLibrary* _library);
 
@@ -81,17 +94,104 @@ struct Archive
 
 protected:
 	static const char* getFileMagicWord(AssetType _type);
-	ArchiveLoadResult readHeader(BinaryArchive& _archive);
-	ArchiveSaveResult writeHeader(BinaryArchive& _archive);
-	virtual ArchiveLoadResult load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive) = 0;
-	virtual ArchiveSaveResult save_internal(ArchiveSaveContext& _context, BinaryArchive& _archive) = 0;
-	virtual ArchiveLoadResult load_dependency(ArchiveLoadContext& _context) = 0;
-	virtual ArchiveSaveResult save_dependency(ArchiveSaveContext& _context) = 0;
+	ArchiveParseResult parseHeader(BinaryArchive& _archive);
+	virtual ArchiveParseResult parse(BinaryArchive& _archive) = 0;
+	virtual ArchiveParseResult load_dependency(ArchiveLoadContext& _context) = 0;
 	virtual ArchiveVersionType getLatestVersion() const = 0;
-	virtual void copyFrom(const Archive* _archive) = 0;
 private:
 	AssetType m_type;
 	AssetID m_id;
 };
+
+
+template <typename T> 
+inline T& ArchiveLoadContext::addArchive(AssetID assetID)
+{
+	static_assert(std::is_base_of<Archive, T>::value);
+	auto it = m_dependencies.find(assetID);
+	if (it == m_dependencies.end())
+	{
+		T* archive = new T(assetID);
+		if (m_loadDependencies)
+		{
+			ArchiveParseResult res = archive->load(*this);
+			AKA_ASSERT(res == ArchiveParseResult::Success, "Failed to parse archive");
+		}
+		auto it = m_dependencies.insert(std::make_pair(assetID, archive));
+		AKA_ASSERT(it.second, "Failed to insert");;
+		return *archive;
+	}
+	else
+	{
+		AKA_ASSERT(it->second->type() == T().type(), "Invalid type");
+		return reinterpret_cast<T&>(*it->second);
+	}
+}
+
+inline bool ArchiveLoadContext::hasArchive(AssetID assetID)
+{
+	auto it = m_dependencies.find(assetID);
+	return it != m_dependencies.end();
+}
+
+inline bool ArchiveLoadContext::isMainArchive(AssetID assetID)
+{
+	return assetID == m_archive.id();
+}
+
+template <typename T> 
+inline T& ArchiveLoadContext::getArchive(AssetID assetID)
+{
+	static_assert(std::is_base_of<Archive, T>::value);
+	auto it = m_dependencies.find(assetID);
+	AKA_ASSERT(it != m_dependencies.end(), "Not in cache.");
+	AKA_ASSERT(it->second->type() == T().type(), "Invalid type");
+	return reinterpret_cast<T&>(*it->second);
+}
+
+template <typename T>
+inline T& ArchiveSaveContext::addArchive(AssetID assetID, T& _archive)
+{
+	static_assert(std::is_base_of<Archive, T>::value);
+	auto it = m_dependencies.find(assetID);
+	if (it == m_dependencies.end())
+	{
+		T* archive = new T(_archive);
+		if (m_saveDependency)
+		{
+			ArchiveParseResult res = archive->save(*this);
+			AKA_ASSERT(res == ArchiveParseResult::Success, "Failed to parse archive");
+		}
+		auto it = m_dependencies.insert(std::make_pair(assetID, archive));
+		AKA_ASSERT(it.second, "Failed to insert");;
+		return *archive;
+	}
+	else
+	{
+		AKA_ASSERT(it->second->type() == T().type(), "Invalid type");
+		return reinterpret_cast<T&>(*it->second);
+	}
+}
+
+inline bool ArchiveSaveContext::hasArchive(AssetID assetID)
+{
+	auto it = m_dependencies.find(assetID);
+	return it != m_dependencies.end();
+}
+
+inline bool ArchiveSaveContext::isMainArchive(AssetID assetID)
+{
+	return assetID == m_archive.id();
+}
+
+template <typename T>
+inline T& ArchiveSaveContext::getArchive(AssetID assetID)
+{
+	static_assert(std::is_base_of<Archive, T>::value);
+	auto it = m_dependencies.find(assetID);
+	AKA_ASSERT(it != m_dependencies.end(), "Not in cache.");
+	AKA_ASSERT(it->second->type() == T().type(), "Invalid type");
+	return reinterpret_cast<T&>(*it->second);
+}
 
 }

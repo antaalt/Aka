@@ -199,7 +199,7 @@ Vector<Aseprite::Color32> Aseprite::Frame::image(const Aseprite& ase) const
 
 Aseprite Aseprite::parse(Stream& reader)
 {
-	BinaryArchive archive(reader);
+	BinaryReader archive(reader);
 	Aseprite ase;
 	{
 		// Parse header
@@ -680,8 +680,8 @@ ImportResult AsepriteImporter::import(const Path & path)
 			sprite.animations.append(animation);
 		}
 	}
-	ArchiveSaveResult res = sprite.save(ArchiveSaveContext(getAssetLibrary()));
-	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
+	ArchiveParseResult res = sprite.save(ArchiveSaveContext(sprite, getAssetLibrary()));
+	return (res == ArchiveParseResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
 ImportResult AsepriteImporter::import(const Blob & blob)
 {

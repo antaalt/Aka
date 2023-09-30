@@ -114,18 +114,13 @@ ArchiveCameraComponent::ArchiveCameraComponent() :
 {
 }
 
-void ArchiveCameraComponent::load_internal(BinaryArchive& archive)
+void ArchiveCameraComponent::parse(BinaryArchive& archive)
 {
-	controllerType = archive.read<CameraControllerType>();
-	projectionType = archive.read<CameraProjectionType>();
-}
-void ArchiveCameraComponent::save_internal(BinaryArchive& archive)
-{
-	archive.write<CameraControllerType>(controllerType);
-	archive.write<CameraProjectionType>(projectionType);
+	archive.parse<CameraControllerType>(controllerType);
+	archive.parse<CameraProjectionType>(projectionType);
 }
 
-void CameraComponent::load(const ArchiveComponent& archive)
+void CameraComponent::fromArchive(const ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	const ArchiveCameraComponent& a = reinterpret_cast<const ArchiveCameraComponent&>(archive);
@@ -152,7 +147,7 @@ void CameraComponent::load(const ArchiveComponent& archive)
 	}
 }
 
-void CameraComponent::save(ArchiveComponent& archive)
+void CameraComponent::toArchive(ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	ArchiveCameraComponent& a = reinterpret_cast<ArchiveCameraComponent&>(archive);

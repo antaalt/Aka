@@ -30,11 +30,9 @@ Texture::Texture(AssetID _id, const String& _name) :
 {
 }
 
-void Texture::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
+void Texture::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
-	AKA_ASSERT(_archive.type() == AssetType::Image, "Invalid archive");
-	const ArchiveImage& imageArchive = reinterpret_cast<const ArchiveImage&>(_archive);
-	
+	const ArchiveImage& imageArchive = _context.getArchive<ArchiveImage>(getID());	
 	// TODO custom mips
 	const void* data = imageArchive.data.data();
 	m_width = imageArchive.width;
@@ -55,7 +53,7 @@ void Texture::create_internal(AssetLibrary* _library, Renderer* _renderer, const
 	);
 }
 
-void Texture::save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive)
+void Texture::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
 {
 	AKA_NOT_IMPLEMENTED;
 }

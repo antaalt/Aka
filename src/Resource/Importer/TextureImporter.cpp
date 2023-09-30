@@ -28,9 +28,9 @@ ImportResult TextureImporter::import(const Path & path)
 	image.height = img.height;
 	image.channels = img.getComponents();
 	image.data = std::move(img.bytes);
-	ArchiveSaveResult res = image.save(ArchiveSaveContext(getAssetLibrary()));
+	ArchiveParseResult res = image.save(ArchiveSaveContext(image, getAssetLibrary()));
 
-	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
+	return (res == ArchiveParseResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
 
 ImportResult TextureImporter::import(const Blob & blob)
@@ -44,9 +44,9 @@ ImportResult TextureImporter::import(const Blob & blob)
 	image.height = img.height;
 	image.channels = img.getComponents();
 	image.data = std::move(img.bytes);
-	ArchiveSaveResult res = image.save(ArchiveSaveContext(getAssetLibrary()));
+	ArchiveParseResult res = image.save(ArchiveSaveContext(image, getAssetLibrary()));
 
-	return (res == ArchiveSaveResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
+	return (res == ArchiveParseResult::Success) ? ImportResult::Succeed : ImportResult::Failed;
 }
 
 };

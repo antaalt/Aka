@@ -72,12 +72,12 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 
 void Node::update(AssetLibrary* library, Renderer* renderer)
 {
-	uint32_t mask = toMask(m_updateFlags);
+	uint64_t mask = toMask(m_updateFlags);
 	uint32_t index = 0;
-	while ((index = firstbitlow(mask)) != 0)
+	while ((index = firstbitlow64(mask)) != 0)
 	{
-		NodeUpdateFlag flag = NodeUpdateFlag(1U << index);
-		mask &= ~(1U << index);
+		NodeUpdateFlag flag = NodeUpdateFlag(1ULL << index);
+		mask &= ~(1ULL << index);
 		switch (flag)
 		{
 		case NodeUpdateFlag::Transform:

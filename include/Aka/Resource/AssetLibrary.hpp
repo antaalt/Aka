@@ -116,8 +116,8 @@ public:
 public:
 	template <typename T> ResourceHandle<T> get(AssetID _assetID);
 	template <typename T> ResourceHandle<T> load(AssetID _assetID, Renderer* _renderer);
-	template <typename T> ResourceHandle<T> load(AssetID _assetID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer);
-	template <typename T> ArchiveSaveResult save(AssetID _assetID, Renderer* _renderer);
+	template <typename T> ResourceHandle<T> load(AssetID _assetID, ArchiveLoadContext& _context, Renderer* _renderer);
+	template <typename T> ArchiveParseResult save(AssetID _assetID, ArchiveSaveContext& _context, Renderer* _renderer);
 	template <typename T> void unload(AssetID _assetID, Renderer* _renderer);
 	template <typename T> bool isLoaded(AssetID _assetID);
 	template <typename T> ResourceState getState(AssetID _assetID);
@@ -173,18 +173,19 @@ template<typename T>
 inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, Renderer* _renderer)
 {
 	ArchiveTrait<T>::Archive archive(_assetID);
-	ArchiveLoadResult res = archive.load(ArchiveLoadContext(this));
-	if (res != ArchiveLoadResult::Success)
+	ArchiveLoadContext ctx(archive, this);
+	ArchiveParseResult res = archive.load(ctx);
+	if (res != ArchiveParseResult::Success)
 	{
 		String str = String::format("Failed to load asset because of error %u", (uint32_t)res);
 		AlertModal(AlertModalType::Error, "Failed to load asset", str.cstr());
 		return ResourceHandle<T>::invalid();
 	}
-	return load<T>(_assetID, archive, _renderer);
+	return load<T>(_assetID, ctx, _renderer);
 }
 
 template<typename T>
-inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, const typename ArchiveTrait<T>::Archive& _archive, Renderer* _renderer)
+inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, ArchiveLoadContext& _context, Renderer* _renderer)
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Invalid resource type");
 	static_assert(std::is_base_of<Archive, ArchiveTrait<T>::Archive>::value, "Invalid archive type");
@@ -206,7 +207,7 @@ inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, const typename Arc
 	{
 		ResourceHandle<T> handle = it.first->second;
 		T& res = handle.get();
-		res.create(this, _renderer, _archive);
+		res.fromArchive(_context, _renderer);
 		EventDispatcher<ResourceLoadedEvent>::emit(ResourceLoadedEvent{ _assetID, res.getType() });
 		return handle;
 	}
@@ -219,17 +220,17 @@ inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, const typename Arc
 }
 
 template<typename T>
-inline ArchiveSaveResult AssetLibrary::save(AssetID _assetID, Renderer* _renderer)
+inline ArchiveParseResult AssetLibrary::save(AssetID _assetID, ArchiveSaveContext& _context, Renderer* _renderer)
 {
 	ResourceMap<T>& map = getResourceMap<T>();
 	auto itResource = map.find(_assetID);
 	if (itResource == map.end())
-		return ArchiveSaveResult::Failed;
+		return ArchiveParseResult::Failed;
 	if (!itResource->second.isLoaded())
-		return ArchiveSaveResult::Failed;
-	ArchiveTrait<T>::Archive archive(it->second);
-	itResource->second.get().save(this, _renderer, archive);
-	ArchiveSaveResult res = archive.save(ArchiveSaveContext(this));
+		return ArchiveParseResult::Failed;
+	ArchiveTrait<T>::Archive archive(_assetID);
+	itResource->second.get().toArchive(_context, _renderer);
+	ArchiveParseResult res = archive.save(_context);
 	return res;
 }
 

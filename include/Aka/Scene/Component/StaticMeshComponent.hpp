@@ -14,8 +14,7 @@ struct ArchiveStaticMeshComponent : ArchiveComponent
 
 	AssetID assetID;
 
-	void load_internal(BinaryArchive& archive) override;
-	void save_internal(BinaryArchive& archive) override;
+	void parse(BinaryArchive& archive) override;
 };
 
 class StaticMeshComponent : public Component
@@ -30,8 +29,8 @@ public:
 
 	ResourceHandle<StaticMesh> getMesh();
 public:
-	void load(const ArchiveComponent& archive) override;
-	void save(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveComponent& archive) override;
+	void toArchive(ArchiveComponent& archive) override;
 private:
 	AssetID m_assetID;
 	ResourceHandle<StaticMesh> m_meshHandle;

@@ -5,13 +5,14 @@
 
 namespace aka {
 
-struct StaticVertex {
-	point3f position;
-	norm3f normal;
-	uv2f uv;
-	color4f color;
+struct ArchiveStaticVertex
+{
+	float position[3];
+	float normal[3];
+	float uv[2];
+	float color[4];
 
-	static gfx::VertexBufferLayout getState();
+	//static gfx::VertexBufferLayout getState();
 };
 
 struct ArchiveGeometry : Archive 
@@ -24,21 +25,17 @@ struct ArchiveGeometry : Archive
 		Latest = AddedNormalAndColor
 	};
 	ArchiveGeometry();
-	ArchiveGeometry(AssetID id);
+	explicit ArchiveGeometry(AssetID id);
 
-	Vector<StaticVertex> vertices;
+	Vector<ArchiveStaticVertex> vertices;
 	Vector<uint32_t> indices;
 	aabbox<> bounds; // local
 
 protected:
-	ArchiveLoadResult load_internal(ArchiveLoadContext& _context, BinaryArchive& path) override;
-	ArchiveSaveResult save_internal(ArchiveSaveContext& _context, BinaryArchive& path) override;
-	ArchiveLoadResult load_dependency(ArchiveLoadContext& _context) override;
-	ArchiveSaveResult save_dependency(ArchiveSaveContext& _context) override;
+	ArchiveParseResult parse(BinaryArchive& path) override;
+	ArchiveParseResult load_dependency(ArchiveLoadContext& _context) override;
 
 	ArchiveVersionType getLatestVersion() const override { return static_cast<ArchiveVersionType>(Version::Latest); };
-
-	void copyFrom(const Archive* _archive) override;
 };
 
 }

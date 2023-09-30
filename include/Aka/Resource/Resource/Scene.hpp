@@ -18,8 +18,8 @@ public:
 	Scene(AssetID _id, const String& _name);
 	~Scene();
 private:
-	void create_internal(AssetLibrary* library, Renderer* _renderer, const Archive& _archive) override;
-	void save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _archive) override;
+	void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) override;
+	void toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer) override;
 	void destroy_internal(AssetLibrary* library, Renderer* _renderer) override;
 
 public:

@@ -25,37 +25,16 @@ ArchiveSprite::ArchiveSprite(AssetID id) :
 	Archive(AssetType::Sprite, id)
 {
 }
-ArchiveLoadResult ArchiveSprite::load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive)
+ArchiveParseResult ArchiveSprite::parse(BinaryArchive& _archive)
 {
 	AKA_NOT_IMPLEMENTED;
-	return ArchiveLoadResult::Success;
+	return ArchiveParseResult::Success;
 }
 
-ArchiveSaveResult ArchiveSprite::save_internal(ArchiveSaveContext& _context, BinaryArchive& _archive)
+ArchiveParseResult ArchiveSprite::load_dependency(ArchiveLoadContext& _context)
 {
 	AKA_NOT_IMPLEMENTED;
-	return ArchiveSaveResult::Success;
-}
-
-ArchiveLoadResult ArchiveSprite::load_dependency(ArchiveLoadContext& _context)
-{
-	AKA_NOT_IMPLEMENTED;
-	return ArchiveLoadResult::Success;
-}
-
-ArchiveSaveResult ArchiveSprite::save_dependency(ArchiveSaveContext& _context)
-{
-	AKA_NOT_IMPLEMENTED;
-	return ArchiveSaveResult::Success;
-}
-void ArchiveSprite::copyFrom(const Archive* _archive)
-{
-	AKA_ASSERT(_archive->id() == id(), "Invalid id");
-	AKA_ASSERT(_archive->type() == type(), "Invalid type");
-	AKA_ASSERT(_archive->version() == version(), "Invalid version");
-
-	const ArchiveSprite* archive = reinterpret_cast<const ArchiveSprite*>(_archive);
-	*this = *archive;
+	return ArchiveParseResult::Success;
 }
 
 };

@@ -38,10 +38,9 @@ Sprite::~Sprite()
 {
 }
 
-void Sprite::create_internal(AssetLibrary* library, Renderer* _renderer, const Archive& _archive)
+void Sprite::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
-	AKA_ASSERT(_archive.type() == AssetType::Sprite, "Invalid archive");
-	const ArchiveSprite& archiveSprite = reinterpret_cast<const ArchiveSprite&>(_archive);
+	const ArchiveSprite& archiveSprite = _context.getArchive<ArchiveSprite>(getID());
 	
 	const uint32_t width = archiveSprite.width;
 	const uint32_t height = archiveSprite.height;
@@ -74,7 +73,7 @@ void Sprite::create_internal(AssetLibrary* library, Renderer* _renderer, const A
 		bytes.data()
 	);
 }
-void Sprite::save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _archive)
+void Sprite::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
 {
 	AKA_NOT_IMPLEMENTED;
 }

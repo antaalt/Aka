@@ -21,138 +21,137 @@ constexpr const char* s_magicWord[] = {
 
 static_assert(countof(s_magicWord) == EnumCount<AssetType>());
 
-ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob, bool _loadDependency)
+ArchiveLoadContext::ArchiveLoadContext(Archive& _archive, AssetLibrary * library, bool _loadDependency) :
+	m_dependencies{},
+	m_archive(_archive),
+	m_library(library),
+	m_loadDependencies(_loadDependency)
+{
+	m_dependencies.insert(std::make_pair(_archive.id(), &_archive));
+}
+ArchiveLoadContext::~ArchiveLoadContext() 
+{
+	for (auto it : m_dependencies)
+		if (it.first != m_archive.id())
+			delete it.second;
+}
+
+
+ArchiveSaveContext::ArchiveSaveContext(Archive& _archive, AssetLibrary* library, bool _saveDependency) :
+	m_dependencies{},
+	m_archive(_archive),
+	m_library(library),
+	m_saveDependency(_saveDependency)
+{
+	m_dependencies.insert(std::make_pair(_archive.id(), &_archive));
+}
+ArchiveSaveContext::~ArchiveSaveContext()
+{
+	for (auto it : m_dependencies)
+		if (it.first != m_archive.id())
+			delete it.second;
+}
+
+ArchiveParseResult Archive::load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	auto it = _context.cache.find(id());
-	if (it != _context.cache.end())
+	if (_context.hasArchive(id()) && !_context.isMainArchive(id()))
 	{
-		copyFrom(it->second);
-		return ArchiveLoadResult::Success; // dependency already loaded
+		return ArchiveParseResult::Success; // dependency already loaded
 	}
 	else
 	{
 		MemoryReaderStream stream(_blob);
-		BinaryArchive archive(stream);
+		BinaryArchiveReader archive(stream);
 
-		ArchiveLoadResult res = readHeader(archive);
-		if (res != ArchiveLoadResult::Success)
+		ArchiveParseResult res = parseHeader(archive);
+		if (res != ArchiveParseResult::Success)
 			return res;
-		res = load_internal(_context, archive);
-		_context.cache.insert(std::make_pair(id(), this));
+		res = parse(archive);
 	}
-	if (_loadDependency)
+	if (_context.shouldLoadDependency())
 		return load_dependency(_context);
 	else
-		return ArchiveLoadResult::Success;
+		return ArchiveParseResult::Success;
 }
 
-ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, const AssetPath& _path, bool _loadDependency)
+ArchiveParseResult Archive::load(ArchiveLoadContext& _context, const AssetPath& _path)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	auto it = _context.cache.find(id());
-	if (it != _context.cache.end())
+	if (_context.hasArchive(id()) && !_context.isMainArchive(id()))
 	{
-		copyFrom(it->second);
-		return ArchiveLoadResult::Success; // dependency already loaded
+		return ArchiveParseResult::Success; // dependency already loaded
 	}
 	else
 	{
 		FileStream stream(_path.getAbsolutePath(), FileMode::Read, FileType::Binary);
-		BinaryArchive archive(stream);
+		BinaryArchiveReader archive(stream);
 
-		ArchiveLoadResult res = readHeader(archive);
-		if (res != ArchiveLoadResult::Success)
+		ArchiveParseResult res = parseHeader(archive);
+		if (res != ArchiveParseResult::Success)
 			return res;
-		res = load_internal(_context, archive);
-		_context.cache.insert(std::make_pair(id(), this));
+		res = parse(archive);
 	}
-	if (_loadDependency)
+	if (_context.shouldLoadDependency())
 		return load_dependency(_context);
 	else
-		return ArchiveLoadResult::Success;
+		return ArchiveParseResult::Success;
 }
 
-ArchiveLoadResult Archive::load(ArchiveLoadContext& _context, bool _loadDependency)
+ArchiveParseResult Archive::load(ArchiveLoadContext& _context)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	AssetInfo info = _context.library->getAssetInfo(id());
+	AssetInfo info = _context.getAssetLibrary()->getAssetInfo(id());
 #if 0 // Debug log
 	if (_context.cache.find(id()) == _context.cache.end())
 		Logger::info(info.path.cstr(), " load from cache ", info.readCounter);
 	else
 		Logger::info(info.path.cstr(), " read ", info.readCounter++);
 #endif
-	return load(_context, info.path, _loadDependency);
+	return load(_context, info.path);
 }
 
-ArchiveSaveResult Archive::save(ArchiveSaveContext& _context, Vector<byte_t>& _blob, bool _saveDependency)
+ArchiveParseResult Archive::save(ArchiveSaveContext& _context, Vector<byte_t>& _blob)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	auto it = _context.cache.find(id());
-	if (it == _context.cache.end())
-	{
-		MemoryWriterStream stream(_blob);
-		BinaryArchive archive(stream);
+	MemoryWriterStream stream(_blob);
+	BinaryArchiveWriter archive(stream);
 
-		ArchiveSaveResult res = writeHeader(archive);
-		if (res != ArchiveSaveResult::Success)
-			return res;
-		res = save_internal(_context, archive);
-		if (res != ArchiveSaveResult::Success)
-			return res;
-		_context.cache.insert(id());
-
-		if (_saveDependency)
-			return save_dependency(_context);
-		else
-			return ArchiveSaveResult::Success;
-	}
-	else
-	{
-		return ArchiveSaveResult::Success; // already written
-	}
+	ArchiveParseResult res = parseHeader(archive);
+	if (res != ArchiveParseResult::Success)
+		return res;
+	res = parse(archive);
+	if (res != ArchiveParseResult::Success)
+		return res;
+	return ArchiveParseResult::Success;
 }
 
-ArchiveSaveResult Archive::save(ArchiveSaveContext& _context, const AssetPath& _path, bool _saveDependency)
+ArchiveParseResult Archive::save(ArchiveSaveContext& _context, const AssetPath& _path)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	auto it = _context.cache.find(id());
-	if (it == _context.cache.end())
-	{
-		FileStream stream(_path.getAbsolutePath(), FileMode::Write, FileType::Binary);
-		BinaryArchive archive(stream);
+	FileStream stream(_path.getAbsolutePath(), FileMode::Write, FileType::Binary);
+	BinaryArchiveWriter archive(stream);
 
-		ArchiveSaveResult res = writeHeader(archive);
-		if (res != ArchiveSaveResult::Success)
-			return res;
-		res = save_internal(_context, archive);
-		if (res != ArchiveSaveResult::Success)
-			return res;
-		_context.cache.insert(id());
-	
-		if (_saveDependency)
-			return save_dependency(_context);
-		else
-			return ArchiveSaveResult::Success;
-	}
-	else
-	{
-		return ArchiveSaveResult::Success; // already written
-	}
+	ArchiveParseResult res = parseHeader(archive);
+	if (res != ArchiveParseResult::Success)
+		return res;
+	res = parse(archive);
+	if (res != ArchiveParseResult::Success)
+		return res;
+	return ArchiveParseResult::Success;
 }
 
-ArchiveSaveResult Archive::save(ArchiveSaveContext& _context, bool _saveDependency)
+ArchiveParseResult Archive::save(ArchiveSaveContext& _context)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	AssetInfo& info = _context.library->getAssetInfo(id());
+	AssetInfo& info = _context.getAssetLibrary()->getAssetInfo(id());
 #if 0 // Debug log
 	if (_context.cache.find(id()) == _context.cache.end())
 		Logger::info(info.path.cstr(), " skip bcs of cache ", info.writeCounter);
 	else
 		Logger::info(info.path.cstr(), " written ", info.writeCounter++);
 #endif
-	return save(_context, info.path, _saveDependency);
+	return save(_context, info.path);
 }
 
 bool Archive::validate(AssetLibrary* _library)
@@ -160,8 +159,8 @@ bool Archive::validate(AssetLibrary* _library)
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
 	AssetInfo info = _library->getAssetInfo(id());
 	FileStream stream(info.path.getAbsolutePath(), FileMode::Read, FileType::Binary);
-	BinaryArchive archive(stream);
-	return readHeader(archive) == ArchiveLoadResult::Success;
+	BinaryArchiveReader archive(stream);
+	return parseHeader(archive) == ArchiveParseResult::Success;
 }
 
 const char* Archive::getFileMagicWord(AssetType _type)
@@ -169,34 +168,17 @@ const char* Archive::getFileMagicWord(AssetType _type)
 	return s_magicWord[aka::EnumToIndex(_type)];
 }
 
-ArchiveLoadResult Archive::readHeader(BinaryArchive& _archive)
+ArchiveParseResult Archive::parseHeader(BinaryArchive& _archive)
 {
-	const char* magicWord = Archive::getFileMagicWord(type());
-	char sign[4];
-	_archive.read<char>(sign, 4);
-	for (uint32_t i = 0; i < 4; i++)
-		if (sign[i] != magicWord[i])
-			return ArchiveLoadResult::InvalidMagicWord;
-	ArchiveVersion archiveVersion = _archive.read<ArchiveVersion>();
-	if (archiveVersion != version())
-		return ArchiveLoadResult::IncompatibleVersion;
-	ArchiveVersionType archiveSubVersion = _archive.read<ArchiveVersionType>();
-	if (archiveSubVersion != getLatestVersion())
-		return ArchiveLoadResult::IncompatibleVersion;
-	AssetID assetID = _archive.read<AssetID>();
-	if (assetID != id() || assetID == AssetID::Invalid)
-		return ArchiveLoadResult::InvalidAssetID;
-	return ArchiveLoadResult::Success;
-}
-
-ArchiveSaveResult Archive::writeHeader(BinaryArchive& _archive)
-{
-	const char* magicWord = Archive::getFileMagicWord(type());
-	_archive.write<char>(magicWord, 4);
-	_archive.write<ArchiveVersion>(version());
-	_archive.write<ArchiveVersionType>(getLatestVersion());
-	_archive.write<AssetID>(id());
-	return ArchiveSaveResult::Success;
+	if (!_archive.expectBlob(Archive::getFileMagicWord(type()), 4))
+		return ArchiveParseResult::InvalidMagicWord;
+	if (!_archive.expect<ArchiveVersion>(version()))
+		return ArchiveParseResult::IncompatibleVersion;
+	if (!_archive.expect<ArchiveVersionType>(getLatestVersion()))
+		return ArchiveParseResult::IncompatibleVersion;
+	if (!_archive.expect<AssetID>(id()))
+		return ArchiveParseResult::InvalidAssetID;
+	return ArchiveParseResult::Success;
 }
 
 };

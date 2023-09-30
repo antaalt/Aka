@@ -29,10 +29,9 @@ Scene::~Scene()
 	m_nodePool.release([this](Node& node) { Logger::warn(node.getName(), " was not destroyed"); });
 }
 
-void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
+void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
-	AKA_ASSERT(_archive.type() == AssetType::Scene, "Invalid archive");
-	const ArchiveScene& scene = reinterpret_cast<const ArchiveScene&>(_archive);
+	const ArchiveScene& scene = _context.getArchive<ArchiveScene>(getID());
 
 	m_bounds = scene.bounds;
 	Vector<Node*> nodes;
@@ -55,7 +54,7 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 			Component* allocatedComponent = ComponentAllocator::allocate(sceneNode, component.id);
 			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component.id);
 			archiveComponent->load(component.archive);
-			allocatedComponent->load(*archiveComponent);
+			allocatedComponent->fromArchive(*archiveComponent);
 			ComponentAllocator::freeArchive(archiveComponent);
 			sceneNode->attach(allocatedComponent);
 		}
@@ -79,10 +78,9 @@ void Scene::create_internal(AssetLibrary* _library, Renderer* _renderer, const A
 #endif
 }
 
-void Scene::save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _archive)
+void Scene::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
 {
-	AKA_ASSERT(_archive.type() == AssetType::Scene, "Invalid archive");
-	ArchiveScene& scene = reinterpret_cast<ArchiveScene&>(_archive);
+	ArchiveScene& scene = _context.getArchive<ArchiveScene>(getID());
 
 	// Place all nodes in an array for serialization
 	std::vector<Node*> nodes;
@@ -116,7 +114,7 @@ void Scene::save_internal(AssetLibrary* library, Renderer* _renderer, Archive& _
 		{
 			Component* component = pair.second;
 			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component->getComponentID());
-			component->save(*archiveComponent);
+			component->toArchive(*archiveComponent);
 			ArchiveSceneComponent archive;
 			archive.id = component->getComponentID();
 			archiveComponent->save(archive.archive);

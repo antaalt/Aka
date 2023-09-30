@@ -11,12 +11,12 @@ Font::Font(AssetID id, const aka::String& _name) :
 {
 }
 
-void Font::create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
+void Font::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
 	AKA_NOT_IMPLEMENTED;
 }
 
-void Font::save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive)
+void Font::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
 {
 	AKA_NOT_IMPLEMENTED;
 }

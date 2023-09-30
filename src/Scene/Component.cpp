@@ -14,18 +14,17 @@ ArchiveComponent::ArchiveComponent(ComponentID id, ArchiveComponentVersionType v
 void ArchiveComponent::load(const Vector<byte_t>& byte)
 {
 	MemoryReaderStream stream(byte);
-	BinaryArchive archive(stream);
-	load_internal(archive);
-	AKA_ASSERT(archive.offset() == archive.size(), "Failed to read whole data");
+	BinaryArchiveReader archive(stream);
+	parse(archive);
+	AKA_ASSERT(stream.offset() == stream.size(), "Failed to read whole data");
 }
 
 void ArchiveComponent::save(Vector<byte_t>& byte)
 {
 	MemoryWriterStream stream(byte);
-	BinaryArchive archive(stream);
-	save_internal(archive);
+	BinaryArchiveWriter archive(stream);
+	parse(archive);
 }
-
 
 std::map<ComponentID, ComponentAllocator*> ComponentAllocator::m_allocators;
 

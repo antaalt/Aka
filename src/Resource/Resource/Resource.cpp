@@ -16,18 +16,18 @@ Resource::Resource(ResourceType _type, AssetID id, const aka::String& _name) :
 {
 }
 
-void Resource::create(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive)
+void Resource::fromArchive(ArchiveLoadContext& _context, Renderer* _renderer)
 {
 	AKA_ASSERT(m_state == ResourceState::Disk, "Trying to load a resource that is not on disk state");
 	m_state = ResourceState::Pending;
-	create_internal(_library, _renderer, _archive);
+	fromArchive_internal(_context, _renderer);
 	m_state = ResourceState::Loaded;
 }
 
-void Resource::save(AssetLibrary* _library, Renderer* _renderer, Archive& _archive)
+void Resource::toArchive(ArchiveSaveContext& _context, Renderer* _renderer)
 {
 	AKA_ASSERT(m_state == ResourceState::Loaded, "Trying to save resource that is not loaded");
-	save_internal(_library, _renderer, _archive);
+	toArchive_internal(_context, _renderer);
 }
 
 void Resource::destroy(AssetLibrary* _library, Renderer* _renderer)

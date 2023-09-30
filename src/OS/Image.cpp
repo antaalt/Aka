@@ -178,7 +178,7 @@ bool ImageEncoder::toDisk(const Path& _path, Image& _image, ImageFileFormat _for
 	int error = stbi_write_jpg(_path.cstr(), _image.width, _image.height, c, _image.bytes.data(), (uint32_t)_quality * 50);
 	return error != 0;
 }
-Blob ImageEncoder::toMemory(const Path& _path, Image& _image, ImageFileFormat _format, ImageQuality _quality)
+Blob ImageEncoder::toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality)
 {
 	AKA_NOT_IMPLEMENTED;
 	/*const uint32_t c = getImageComponentCount(_image.components);
@@ -205,7 +205,7 @@ bool ImageEncoder::toDisk(const Path& _path, ImageHdr& _image, ImageFileFormat _
 	AKA_NOT_IMPLEMENTED;
 	return false;
 }
-Blob ImageEncoder::toMemory(const Path& _path, ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
+Blob ImageEncoder::toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
 {
 	/*AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
 	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components * sizeof(float), "Invalid size");

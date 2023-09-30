@@ -15,58 +15,19 @@ ArchiveStaticMesh::ArchiveStaticMesh(AssetID id) :
 {
 }
 
-ArchiveLoadResult ArchiveStaticMesh::load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive)
+ArchiveParseResult ArchiveStaticMesh::parse(BinaryArchive& _archive)
 {
-	uint32_t batchCount = _archive.read<uint32_t>();
-	for (uint32_t i = 0; i < batchCount; i++)
-	{
-		this->batches.append(ArchiveBatch(_archive.read<AssetID>()));
-	}
-
-	return ArchiveLoadResult::Success;
+	_archive.parse<AssetID>(this->batches, [](BinaryArchive& archive, AssetID& assetID) {
+		archive.parse(assetID);
+	});
+	return ArchiveParseResult::Success;
 }
 
-ArchiveSaveResult ArchiveStaticMesh::save_internal(ArchiveSaveContext& _context, BinaryArchive& _archive)
+ArchiveParseResult ArchiveStaticMesh::load_dependency(ArchiveLoadContext& _context)
 {
-	_archive.write<uint32_t>((uint32_t)this->batches.size());
-	for (uint32_t i = 0; i < this->batches.size(); i++)
-	{
-		_archive.write<AssetID>(this->batches[i].id());
-	}
-
-	return ArchiveSaveResult::Success;
-}
-
-ArchiveLoadResult ArchiveStaticMesh::load_dependency(ArchiveLoadContext& _context)
-{
-	for (size_t i = 0; i < this->batches.size(); i++)
-	{
-		ArchiveLoadResult res = this->batches[i].load(_context);
-		if (res != ArchiveLoadResult::Success)
-			return res;
-	}
-	return ArchiveLoadResult::Success;
-}
-
-ArchiveSaveResult ArchiveStaticMesh::save_dependency(ArchiveSaveContext& _context)
-{
-	for (size_t i = 0; i < this->batches.size(); i++)
-	{
-		ArchiveSaveResult res = this->batches[i].save(_context);
-		if (res != ArchiveSaveResult::Success)
-			return res;
-	}
-	return ArchiveSaveResult::Success;
-}
-
-void ArchiveStaticMesh::copyFrom(const Archive* _archive)
-{
-	AKA_ASSERT(_archive->id() == id(), "Invalid id");
-	AKA_ASSERT(_archive->type() == type(), "Invalid type");
-	AKA_ASSERT(_archive->version() == version(), "Invalid version");
-
-	const ArchiveStaticMesh* archive = reinterpret_cast<const ArchiveStaticMesh*>(_archive);
-	*this = *archive;
+	for (AssetID assetID : this->batches)
+		_context.addArchive<ArchiveBatch>(assetID);
+	return ArchiveParseResult::Success;
 }
 
 }

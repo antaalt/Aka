@@ -59,8 +59,7 @@ struct ArchiveComponent
 	void load(const Vector<byte_t>& byte);
 	void save(Vector<byte_t>& byte);
 protected:
-	virtual void load_internal(BinaryArchive& archive) = 0;
-	virtual void save_internal(BinaryArchive& archive) = 0;
+	virtual void parse(BinaryArchive& archive) = 0;
 public:
 	ComponentID getComponentID() const { return m_id; }
 	ArchiveComponentVersionType getVersion() const { return m_version; }
@@ -86,8 +85,8 @@ protected:
 	void deactivate(AssetLibrary* library, Renderer* _renderer);
 
 public:
-	virtual void load(const ArchiveComponent& archive) = 0;
-	virtual void save(ArchiveComponent& archive) = 0;
+	virtual void fromArchive(const ArchiveComponent& archive) = 0;
+	virtual void toArchive(ArchiveComponent& archive) = 0;
 protected:
 	void update(Time deltaTime);
 	void fixedUpdate(Time deltaTime);

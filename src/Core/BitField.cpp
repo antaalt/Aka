@@ -6,7 +6,9 @@ uint32_t countbits32(uint32_t x)
 {
 	// popcount equivalent
 	// http://graphics.stanford.edu/%7Eseander/bithacks.html
-#if defined(AKA_ENVIRONMENT64)
+#if defined(AKA_PLATFORM_WINDOWS)
+	return __popcnt(x);
+#elif defined(AKA_ENVIRONMENT64)
 	// This method require compilation in 64 bit
 	uint32_t	c = ((x & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
 				c += (((x & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
@@ -19,9 +21,21 @@ uint32_t countbits32(uint32_t x)
 	return c;
 #endif
 }
+
+uint32_t countbits64(uint64_t x)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	return (uint32_t)__popcnt64(x);
+#else
+	uint64_t c = 0;
+	for (; x; c++)
+		x &= x - 1; // clear the least significant bit set
+	return c;
+#endif
+}
 // Could check this for cross platform compatibility 
 // https://github.com/mpdn/bitcount
-uint32_t firstbithigh(uint32_t x)
+uint32_t firstbithigh32(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	unsigned long result;
@@ -32,7 +46,7 @@ uint32_t firstbithigh(uint32_t x)
 	return __builtin_clz(x); // GCC
 #endif
 }
-uint32_t firstbitlow(uint32_t x)
+uint32_t firstbitlow32(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	unsigned long result;
@@ -41,6 +55,28 @@ uint32_t firstbitlow(uint32_t x)
 #else
 	// Count trailing zero
 	return __builtin_ctz(x); // GCC
+#endif
+}
+uint32_t firstbithigh64(uint64_t x)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	unsigned long result;
+	_BitScanForward64(&result, x);
+	return result;
+#else
+	// Count leading zero
+	return __builtin_clzll(x); // GCC
+#endif
+}
+uint32_t firstbitlow64(uint64_t x)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	unsigned long result;
+	_BitScanForward64(&result, x);
+	return result;
+#else
+	// Count trailing zero
+	return __builtin_ctzll(x); // GCC
 #endif
 }
 

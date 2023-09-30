@@ -11,6 +11,8 @@ namespace aka {
 class Renderer;
 class AssetLibrary;
 struct Archive;
+struct ArchiveLoadContext;
+struct ArchiveSaveContext;
 
 enum class ResourceType : uint32_t
 {
@@ -49,12 +51,12 @@ public:
 	ResourceType getType() const { return m_type; }
 	ResourceState getState() const { return m_state; }
 
-	void create(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive);
-	void save(AssetLibrary* _library, Renderer* _renderer, Archive& _archive);
+	void fromArchive(ArchiveLoadContext& _context, Renderer* _renderer);
+	void toArchive(ArchiveSaveContext& _context, Renderer* _renderer);
 	void destroy(AssetLibrary* _library, Renderer* _renderer);
 protected:
-	virtual void create_internal(AssetLibrary* _library, Renderer* _renderer, const Archive& _archive) = 0;
-	virtual void save_internal(AssetLibrary* _library, Renderer* _renderer, Archive& _archive) = 0;
+	virtual void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) = 0;
+	virtual void toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer) = 0;
 	virtual void destroy_internal(AssetLibrary* _library, Renderer* _renderer) = 0;
 private:
 	ResourceState m_state;

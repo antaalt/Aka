@@ -10,13 +10,9 @@ ArchiveStaticMeshComponent::ArchiveStaticMeshComponent() :
 {
 }
 
-void ArchiveStaticMeshComponent::load_internal(BinaryArchive& archive)
+void ArchiveStaticMeshComponent::parse(BinaryArchive& archive)
 {
-	archive.read<AssetID>(assetID);
-}
-void ArchiveStaticMeshComponent::save_internal(BinaryArchive& archive)
-{
-	archive.write<AssetID>(assetID);
+	archive.parse<AssetID>(assetID);
 }
 
 StaticMeshComponent::StaticMeshComponent(Node* node) :
@@ -50,14 +46,14 @@ ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
 	return m_meshHandle;
 }
 
-void StaticMeshComponent::load(const ArchiveComponent& archive)
+void StaticMeshComponent::fromArchive(const ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	const ArchiveStaticMeshComponent& a = reinterpret_cast<const ArchiveStaticMeshComponent&>(archive);
 	m_assetID = a.assetID;
 }
 
-void StaticMeshComponent::save(ArchiveComponent& archive)
+void StaticMeshComponent::toArchive(ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	ArchiveStaticMeshComponent& a = reinterpret_cast<ArchiveStaticMeshComponent&>(archive);

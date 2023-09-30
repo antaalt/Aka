@@ -17,57 +17,22 @@ ArchiveMaterial::ArchiveMaterial(AssetID id) :
 	normal()
 {
 }
-ArchiveLoadResult ArchiveMaterial::load_internal(ArchiveLoadContext& _context, BinaryArchive& _archive)
+ArchiveParseResult ArchiveMaterial::parse(BinaryArchive& _archive)
 {
-	_archive.read<ArchiveMaterialFlag>(this->flags);
-	_archive.read<color4f>(this->color);
+	_archive.parse<ArchiveMaterialFlag>(this->flags);
+	_archive.parse(this->color);
 
-	this->albedo = ArchiveImage(_archive.read<AssetID>());
-	this->normal = ArchiveImage(_archive.read<AssetID>());
+	_archive.parse<AssetID>(this->albedo);
+	_archive.parse<AssetID>(this->normal);
 
-	return ArchiveLoadResult::Success;
+	return ArchiveParseResult::Success;
 }
 
-ArchiveSaveResult ArchiveMaterial::save_internal(ArchiveSaveContext& _context, BinaryArchive& _archive)
+ArchiveParseResult ArchiveMaterial::load_dependency(ArchiveLoadContext& _context)
 {
-	_archive.write<ArchiveMaterialFlag>(this->flags);
-	_archive.write<color4f>(this->color);
-
-	_archive.write<AssetID>(this->albedo.id());
-	_archive.write<AssetID>(this->normal.id());
-	
-	return ArchiveSaveResult::Success;
-}
-
-ArchiveLoadResult ArchiveMaterial::load_dependency(ArchiveLoadContext& _context)
-{
-	ArchiveLoadResult res = this->albedo.load(_context);
-	if (res != ArchiveLoadResult::Success)
-		return ArchiveLoadResult::InvalidDependency;
-	res = this->normal.load(_context);
-	if (res != ArchiveLoadResult::Success)
-		return ArchiveLoadResult::InvalidDependency;
-	return ArchiveLoadResult::Success;
-}
-
-ArchiveSaveResult ArchiveMaterial::save_dependency(ArchiveSaveContext& _context)
-{
-	ArchiveSaveResult res = this->albedo.save(_context);
-	if (res != ArchiveSaveResult::Success)
-		return ArchiveSaveResult::InvalidDependency;
-	res = this->normal.save(_context);
-	if (res != ArchiveSaveResult::Success)
-		return ArchiveSaveResult::InvalidDependency;
-	return ArchiveSaveResult::Success;
-}
-void ArchiveMaterial::copyFrom(const Archive* _archive)
-{
-	AKA_ASSERT(_archive->id() == id(), "Invalid id");
-	AKA_ASSERT(_archive->type() == type(), "Invalid type");
-	AKA_ASSERT(_archive->version() == version(), "Invalid version");
-
-	const ArchiveMaterial* archive = reinterpret_cast<const ArchiveMaterial*>(_archive);
-	*this = *archive;
+	_context.addArchive<ArchiveImage>(this->albedo);
+	_context.addArchive<ArchiveImage>(this->normal);
+	return ArchiveParseResult::Success;
 }
 
 }

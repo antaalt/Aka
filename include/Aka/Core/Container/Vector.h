@@ -282,6 +282,10 @@ inline void Vector<T>::resize(size_t size)
 	if (m_size == size)
 		return;
 	reserve(size);
+	if (m_size < size)
+	{
+		std::uninitialized_default_construct(m_data + m_size, m_data + size);
+	}
 	m_size = size;
 }
 template <typename T>
