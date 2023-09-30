@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Aka/Core/Enum.h>
+#include <Aka/Core/Geometry.h>
+
 namespace aka {
 
 enum class ViewType

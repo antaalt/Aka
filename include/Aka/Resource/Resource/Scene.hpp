@@ -23,6 +23,7 @@ private:
 	void destroy_internal(AssetLibrary* library, Renderer* _renderer) override;
 
 public:
+	uint32_t getNodeCount() const { return (uint32_t)m_nodePool.count(); }
 	aabbox<> getBounds() const { return m_bounds; }
 	Node& getRoot() { return *m_root; }
 	const Node& getRoot() const { return *m_root; }

@@ -34,6 +34,7 @@ add_library (Aka
 	"src/Layer/ImGuiLayer.cpp"
 
 	"src/Renderer/Renderer.cpp"
+	"src/Renderer/Instance.cpp"
 
 	"src/Scene/Component.cpp"
 	"src/Scene/Node.cpp"

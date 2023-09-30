@@ -2,6 +2,8 @@
 
 #include <Aka/Renderer/View.hpp>
 #include <Aka/Core/Geometry.h>
+#include <Aka/Resource/Asset.hpp>
+#include <Aka/Graphic/GraphicDevice.h>
 
 namespace aka {
 
@@ -15,6 +17,7 @@ enum class InstanceID : uint32_t {};
 struct InstanceData {
 	mat4f transform;
 	mat4f normal;
+	static gfx::VertexBufferLayout getState();
 };
 enum class InstanceType : uint32_t
 {
@@ -36,8 +39,6 @@ struct Instance
 	InstanceType type;
 	// Transform
 	mat4f transform;
-
-	gfx::DescriptorSetHandle descriptorSet; // Temp for instance data, should be moved to vertex buffer
 };
 
 };

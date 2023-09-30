@@ -323,22 +323,15 @@ gfx::VertexFormat getType(spirv_cross::SPIRType::BaseType type)
 		return gfx::VertexFormat::Unknown;
 	}
 }
-gfx::VertexType getSize(uint32_t rows, uint32_t cols)
+gfx::VertexType getSize(uint32_t rows)
 {
-	switch (cols)
+	switch (rows)
 	{
-	case 1: {
-		switch (rows)
-		{
-		case 1: return gfx::VertexType::Scalar;
-		case 2: return gfx::VertexType::Vec2;
-		case 3: return gfx::VertexType::Vec3;
-		case 4: return gfx::VertexType::Vec4;
-		default: return gfx::VertexType::Unknown;
-		}
-	}
-	default:
-		return gfx::VertexType::Unknown;
+	case 1: return gfx::VertexType::Scalar;
+	case 2: return gfx::VertexType::Vec2;
+	case 3: return gfx::VertexType::Vec3;
+	case 4: return gfx::VertexType::Vec4;
+	default: return gfx::VertexType::Unknown;
 	}
 }
 
@@ -387,11 +380,14 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 				spirv_cross::SPIRType type = compiler.get_type_from_variable(id);
 
 				AKA_ASSERT(location < gfx::VertexMaxAttributeCount, "");
-
-				data.vertices.bufferLayout[binding].attributes[location].format = getType(type.basetype);
-				data.vertices.bufferLayout[binding].attributes[location].semantic = gfx::VertexSemantic::Unknown; // store somewhere
-				data.vertices.bufferLayout[binding].attributes[location].type = getSize(type.vecsize, type.columns);
-				data.vertices.bufferLayout[binding].count = max(data.vertices.bufferLayout[binding].count, location + 1);
+				// Each column uses a single location
+				for (uint32_t iCol = 0; iCol < type.columns; iCol++)
+				{
+					data.vertices.bufferLayout[binding].attributes[location + iCol].format = getType(type.basetype);
+					data.vertices.bufferLayout[binding].attributes[location + iCol].semantic = gfx::VertexSemantic::Unknown; // store somewhere
+					data.vertices.bufferLayout[binding].attributes[location + iCol].type = getSize(type.vecsize);
+				}
+				data.vertices.bufferLayout[binding].count = max(data.vertices.bufferLayout[binding].count, location + type.columns);
 				data.vertices.bufferLayout[binding].stepRate = gfx::VertexStepRate::Unknown;
 				data.vertices.count = max(data.vertices.count, binding + 1);
 			}

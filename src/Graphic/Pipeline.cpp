@@ -34,8 +34,10 @@ uint32_t VertexBufferLayout::size(VertexFormat format)
 		return 4;
 	case VertexFormat::UnsignedInt:
 		return 4;
+	default:
+		AKA_NOT_IMPLEMENTED;
+		return 0;
 	}
-	return 0;
 }
 uint32_t VertexBufferLayout::size(VertexType type)
 {
@@ -49,8 +51,10 @@ uint32_t VertexBufferLayout::size(VertexType type)
 		return 3;
 	case VertexType::Vec4:
 		return 4;
+	default:
+		AKA_NOT_IMPLEMENTED;
+		return 0;
 	}
-	return 0;
 }
 uint32_t VertexBufferLayout::size(IndexFormat format)
 {
@@ -62,8 +66,10 @@ uint32_t VertexBufferLayout::size(IndexFormat format)
 		return 2;
 	case IndexFormat::UnsignedInt:
 		return 4;
+	default:
+		AKA_NOT_IMPLEMENTED;
+		return 0;
 	}
-	return 0;
 }
 
 bool BlendState::isEnabled() const

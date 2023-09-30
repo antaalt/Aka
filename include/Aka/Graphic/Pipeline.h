@@ -18,7 +18,7 @@ struct ComputePipeline;
 using GraphicPipelineHandle = ResourceHandle<GraphicPipeline>;
 using ComputePipelineHandle = ResourceHandle<ComputePipeline>;
 
-static constexpr uint32_t VertexMaxAttributeCount = 8;
+static constexpr uint32_t VertexMaxAttributeCount = 16;
 static constexpr uint32_t VertexMaxBufferCount = 4;
 
 enum class IndexFormat : uint8_t
@@ -79,9 +79,11 @@ enum class VertexSemantic : uint8_t
 	Color1,
 	Color2,
 	Color3,
+	WorldMatrix,
+	NormalMatrix,
 
 	First = Position,
-	Last = Color3,
+	Last = NormalMatrix,
 };
 
 enum class PrimitiveType : uint8_t

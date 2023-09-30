@@ -43,8 +43,8 @@ void Renderer::create()
 		m_instanceDescriptorPool[EnumToIndex(instanceType)] = getDevice()->createDescriptorPool("InstanceDescriptorPool", bindings, MaxInstanceCount);
 
 		// These buffers are resized dynamically or preallocated ?
-		data.m_instanceBuffer = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Uniform, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
-		data.m_instanceBufferStaging = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Uniform, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
+		data.m_instanceBuffer = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Vertex, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		data.m_instanceBufferStaging = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Vertex, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
 	}
 	gfx::ShaderBindingState bindings{};
 	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
@@ -67,13 +67,6 @@ void Renderer::destroy()
 		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		m_device->destroy(data.m_instanceBuffer);
 		m_device->destroy(data.m_instanceBufferStaging);
-		for (auto& assetInstances : m_assetInstances[EnumToIndex(instanceType)])
-		{
-			for (auto& instance : assetInstances.second)
-			{
-				m_device->free(instance->descriptorSet);
-			}
-		}
 		m_device->destroy(m_instanceDescriptorPool[EnumToIndex(instanceType)]);
 	}
 	destroyRenderPass();
@@ -100,7 +93,7 @@ void Renderer::createRenderPass()
 			programHandle,
 			gfx::PrimitiveType::Triangles,
 			m_device->get(m_backbufferRenderPass)->state,
-			gfx::VertexState {}.add(StaticVertex::getState()),
+			gfx::VertexState{}.add(StaticVertex::getState()).add(InstanceData::getState()),
 			gfx::ViewportState{}.size(data.m_width, data.m_height),
 			gfx::DepthStateLessEqual,
 			gfx::StencilStateDefault,
@@ -146,7 +139,6 @@ Instance* Renderer::createInstance(AssetID assetID)
 	it.push_back(instance);
 	instance->type = type;
 	instance->assetID = assetID;
-	instance->descriptorSet = m_device->allocateDescriptorSet("InstanceDescSet", bindings, m_instanceDescriptorPool[EnumToIndex(type)]);
 	instance->mask = ViewTypeMask::Color;
 	instance->transform = mat4f::identity();
 	return instance;
@@ -162,7 +154,6 @@ void Renderer::destroyInstance(Instance*& instance)
 	if (itFind != data.end())
 	{
 		data.erase(itFind);
-		m_device->free(instance->descriptorSet);
 		delete instance;
 		instance = nullptr;
 	}
@@ -211,13 +202,20 @@ void Renderer::render(gfx::Frame* frame)
 	ubo.projection = view->data.projection;
 	m_device->upload(m_viewBuffers, &ubo, 0, sizeof(ViewData));
 
+	static const char* s_instanceTypeName[] = {
+		"StaticMesh3D",
+		"Sprite2D",
+		"Text2D",
+		"Text3D"
+	};
+	static_assert(countof(s_instanceTypeName) == EnumCount<InstanceType>());
 	
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
-		gfx::ScopedCmdMarker marker(cmd, "InstanceTypeSettingBuffer");
-		uint32_t instanceCount = 0;
 		if (instanceType != InstanceType::StaticMesh3D)
 			continue; // Skip other types for now
+		gfx::ScopedCmdMarker marker(cmd, String::format("PrepareBuffers_%s", s_instanceTypeName[EnumToIndex(instanceType)]).cstr());
+		uint32_t instanceCount = 0;
 		gfx::BufferHandle buffer = m_renderData[EnumToIndex(instanceType)].m_instanceBuffer;
 		gfx::BufferHandle bufferStaging = m_renderData[EnumToIndex(instanceType)].m_instanceBufferStaging;
 
@@ -236,10 +234,6 @@ void Renderer::render(gfx::Frame* frame)
 			{
 				data[instanceCount].transform = instance->transform;
 				data[instanceCount].normal = mat4f::transpose(mat4f::inverse(instance->transform));
-
-				gfx::DescriptorSetData data;
-				data.addUniformBuffer(buffer, instanceCount * sizeof(InstanceData), sizeof(InstanceData));
-				getDevice()->update(instance->descriptorSet, data);
 
 				++instanceCount;
 				AKA_ASSERT(MaxInstanceCount >= instanceCount, "Too many instances, need resize buffer");
@@ -261,12 +255,11 @@ void Renderer::render(gfx::Frame* frame)
 		cmd->copy(bufferStaging, buffer);
 		cmd->transition(buffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
 	}
-
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
-		gfx::ScopedCmdMarker marker(cmd, "InstanceTypeRendering");
 		if (instanceType != InstanceType::StaticMesh3D)
 			continue; // Skip other types for now
+		gfx::ScopedCmdMarker marker(cmd, String::format("Render_%s", s_instanceTypeName[EnumToIndex(instanceType)]).cstr());
 		uint32_t instanceID = 0;
 		//const auto& assetDrawCommands = drawIndexedBuffer[EnumToIndex(instanceType)];
 		const InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
@@ -274,6 +267,7 @@ void Renderer::render(gfx::Frame* frame)
 		gfx::FramebufferHandle fb = m_device->get(m_backbuffer, frame);
 		cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
 		cmd->bindPipeline(data.m_pipeline);
+		uint32_t instanceCountOffset = 0;
 		for (auto& assetInstances : m_assetInstances[EnumToIndex(instanceType)])
 		{
 			const AssetID assetID = assetInstances.first;
@@ -293,21 +287,17 @@ void Renderer::render(gfx::Frame* frame)
 				StaticMesh& m = mesh.get();
 				gfx::ScopedCmdMarker marker(cmd, m.getName().cstr());
 				cmd->bindVertexBuffer(0, m.getVertexBuffer());
-				//cmd->bindVertexBuffer(1, data.m_instanceBuffer);
+				cmd->bindVertexBuffer(1, data.m_instanceBuffer, instanceCountOffset * sizeof(InstanceData));
 				cmd->bindIndexBuffer(m.getIndexBuffer(), m.getIndexFormat(), 0);
 				cmd->bindDescriptorSet(0, m_viewDescriptorSet[0]);
-				// For now, do not use indexing as its not ready
-				for (uint32_t iInstance = 0; iInstance < instances.size(); iInstance++)
+				for (uint32_t i = 0; i < m.getBatchCount(); i++)
 				{
-					cmd->bindDescriptorSet(1, instances[iInstance]->descriptorSet);
-					for (uint32_t i = 0; i < m.getBatchCount(); i++)
-					{
-						const StaticMeshBatch& batch = m.getBatch(i);
-						cmd->bindDescriptorSet(2, batch.gfxDescriptorSet);
-						cmd->drawIndexed(batch.indexCount, batch.indexOffset, batch.vertexOffset, 1);
-					}
+					const StaticMeshBatch& batch = m.getBatch(i);
+					cmd->bindDescriptorSet(2, batch.gfxDescriptorSet); // Could skip this with bindless & use indirect everywhere
+					cmd->drawIndexed(batch.indexCount, batch.indexOffset, batch.vertexOffset, instances.size());
 				}
 			}
+			instanceCountOffset += (uint32_t)instances.size();
 		}
 		cmd->endRenderPass();
 	}
