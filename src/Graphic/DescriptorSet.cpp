@@ -4,56 +4,74 @@
 namespace aka {
 namespace gfx {
 
-DescriptorSetData::DescriptorSetData() :
-	count(0),
-	slots{}
+DescriptorUpdate DescriptorUpdate::sampledTexture2D(uint32_t binding, uint32_t index, TextureHandle texture, SamplerHandle sampler, uint32_t layer, uint32_t mipLevel)
 {
+	DescriptorUpdate update{};
+	update.bindingType = ShaderBindingType::SampledImage;
+	update.binding = binding;
+	update.index = index;
+	update.texture.texture = texture;
+	update.texture.sampler = sampler;
+	update.texture.layer = layer;
+	update.texture.mipLevel = mipLevel;
+	return update;
 }
-
-DescriptorSetData& DescriptorSetData::addUniformBuffer(BufferHandle buffer, uint32_t offset, uint32_t range)
+DescriptorUpdate DescriptorUpdate::sampledTextureCube2D(uint32_t binding, uint32_t index, TextureHandle texture, SamplerHandle sampler, uint32_t mipLevel)
 {
-	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	slots[count].bindingType = ShaderBindingType::UniformBuffer;
-	slots[count].buffer.handle = buffer;
-	slots[count].buffer.offset = offset;
-	slots[count].buffer.range = range;
-	count++;
-	return *this;
+	DescriptorUpdate update{};
+	update.bindingType = ShaderBindingType::SampledImage;
+	update.binding = binding;
+	update.index = index;
+	update.texture.texture = texture;
+	update.texture.sampler = sampler;
+	update.texture.layer;
+	update.texture.mipLevel = mipLevel;
+	return update;
 }
-
-DescriptorSetData& DescriptorSetData::addStorageBuffer(BufferHandle buffer, uint32_t offset, uint32_t range)
+DescriptorUpdate DescriptorUpdate::storageTexture2D(uint32_t binding, uint32_t index, TextureHandle texture, uint32_t layer, uint32_t mipLevel)
 {
-	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	slots[count].bindingType = ShaderBindingType::StorageBuffer;
-	slots[count].buffer.handle = buffer;
-	slots[count].buffer.offset = offset;
-	slots[count].buffer.range = range;
-	count++;
-	return *this;
+	DescriptorUpdate update{};
+	update.bindingType = ShaderBindingType::StorageImage;
+	update.binding = binding;
+	update.index = index;
+	update.texture.texture = texture;
+	update.texture.sampler = gfx::SamplerHandle::null;
+	update.texture.layer = layer;
+	update.texture.mipLevel = mipLevel;
+	return update;
 }
-
-DescriptorSetData& DescriptorSetData::addSampledTexture2D(TextureHandle texture, SamplerHandle sampler, uint32_t layer, uint32_t mipLevel)
+DescriptorUpdate DescriptorUpdate::uniformBuffer(uint32_t binding, uint32_t index, BufferHandle buffer, uint32_t offset, uint32_t range)
 {
-	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	slots[count].bindingType = ShaderBindingType::SampledImage;
-	slots[count].texture.texture = texture;
-	slots[count].texture.sampler = sampler;
-	slots[count].texture.layer = layer;
-	slots[count].texture.mipLevel = mipLevel;
-	count++;
-	return *this;
+	DescriptorUpdate update{};
+	update.bindingType = ShaderBindingType::UniformBuffer;
+	update.binding = binding;
+	update.index = index;
+	update.buffer.handle = buffer;
+	update.buffer.offset = offset;
+	update.buffer.range = range;
+	return update;
 }
-
-DescriptorSetData& DescriptorSetData::addStorageTexture2D(TextureHandle texture, uint32_t layer, uint32_t mipLevel)
+DescriptorUpdate DescriptorUpdate::storageBuffer(uint32_t binding, uint32_t index, BufferHandle buffer, uint32_t offset, uint32_t range)
 {
-	AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-	slots[count].bindingType = ShaderBindingType::StorageImage;
-	slots[count].texture.texture = texture;
-	slots[count].texture.sampler = gfx::SamplerHandle::null;
-	slots[count].texture.layer = layer;
-	slots[count].texture.mipLevel = mipLevel;
-	count++;
-	return *this;
+	DescriptorUpdate update{};
+	update.bindingType = ShaderBindingType::StorageBuffer;
+	update.binding = binding;
+	update.index = index;
+	update.buffer.handle = buffer;
+	update.buffer.offset = offset;
+	update.buffer.range = range;
+	return update;
+}
+DescriptorUpdate DescriptorUpdate::structuredBuffer(uint32_t binding, uint32_t index, BufferHandle buffer, uint32_t offset, uint32_t range)
+{
+	DescriptorUpdate update{};
+	update.bindingType = ShaderBindingType::None;
+	update.binding = binding;
+	update.index = index;
+	update.buffer.handle = buffer;
+	update.buffer.offset = offset;
+	update.buffer.range = range;
+	return update;
 }
 
 DescriptorSet::DescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) :
@@ -68,9 +86,9 @@ DescriptorSetHandle DescriptorSet::allocate(const char* name, const ShaderBindin
 	return Application::app()->graphic()->allocateDescriptorSet(name, bindings, pool);
 }
 
-void DescriptorSet::update(const DescriptorSetData& data)
+void DescriptorSet::update(DescriptorSetHandle descriptorSet, const DescriptorUpdate* update, size_t size)
 {
-	Application::app()->graphic()->update(DescriptorSetHandle{ this }, data);
+	Application::app()->graphic()->update(descriptorSet, update, size);
 }
 
 void DescriptorSet::free(DescriptorSetHandle descriptorSet)

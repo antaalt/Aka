@@ -53,9 +53,9 @@ void StaticMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _r
 	);
 	// TODO should retrieve this from shader somehow...
 	gfx::ShaderBindingState bindings{};
-	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment, 1);
-	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
-	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, 1);
+	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment);
+	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment);
+	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment);
 	m_pool = _renderer->getDevice()->createDescriptorPool("MeshDescriptorPool", bindings, (uint32_t)meshArchive.batches.size());
 	Vector<StaticVertex> vertices;
 	Vector<uint32_t> indices;
@@ -75,11 +75,12 @@ void StaticMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _r
 		
 		gfx::DescriptorSetHandle gfxDescriptorSet = _renderer->getDevice()->allocateDescriptorSet("DescriptorSetMaterial", bindings, m_pool);
 
-		gfx::DescriptorSetData data;
-		data.addUniformBuffer(gfxUniformBuffer);
-		data.addSampledTexture2D(albedo.get().getGfxHandle(), m_gfxAlbedoSampler);
-		data.addSampledTexture2D(normal.get().getGfxHandle(), m_gfxNormalSampler);
-		_renderer->getDevice()->update(gfxDescriptorSet, data);
+		// TODO should use global table instead.
+		Vector<gfx::DescriptorUpdate> updates;
+		updates.append(gfx::DescriptorUpdate::uniformBuffer(0, 0, gfxUniformBuffer));
+		updates.append(gfx::DescriptorUpdate::sampledTexture2D(1, 0, albedo.get().getGfxHandle(), m_gfxAlbedoSampler));
+		updates.append(gfx::DescriptorUpdate::sampledTexture2D(2, 0, normal.get().getGfxHandle(), m_gfxNormalSampler));
+		_renderer->getDevice()->update(gfxDescriptorSet, updates.data(), updates.size());
 		
 		m_batches.append(StaticMeshBatch{
 			(uint32_t)(vertices.size() * sizeof(StaticVertex)),

@@ -27,11 +27,20 @@ enum class ShaderBindingType : uint8_t
 	AccelerationStructure,
 };
 
+enum class ShaderBindingFlag
+{
+	None			= 0,
+	Bindless		= 1 << 0,
+	UpdateAfterBind = 1 << 1,
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(ShaderBindingFlag);
+
 struct ShaderBindingLayout
 {
-	ShaderBindingType type; // Type of binding
-	ShaderMask stages; // Shader stages used by this binding
-	uint32_t count; // Number of element for this binding
+	ShaderBindingType type = ShaderBindingType::None; // Type of binding
+	ShaderMask stages = ShaderMask::None; // Shader stages used by this binding
+	ShaderBindingFlag flags = ShaderBindingFlag::None;
+	uint32_t count = 1; // Number of element for this binding
 };
 
 struct ShaderBindingState
@@ -39,10 +48,10 @@ struct ShaderBindingState
 	ShaderBindingLayout bindings[ShaderMaxBindingCount];
 	uint32_t count;
 
-	ShaderBindingState& add(ShaderBindingType type, ShaderMask stages, uint32_t bindingCount = 1)
+	ShaderBindingState& add(ShaderBindingType type, ShaderMask stages, ShaderBindingFlag flags = ShaderBindingFlag::None, uint32_t bindingCount = 1)
 	{
 		AKA_ASSERT(count + 1 < ShaderMaxBindingCount, "Too many shader bindings");
-		bindings[count++] = ShaderBindingLayout{ type, stages, bindingCount };
+		bindings[count++] = ShaderBindingLayout{ type, stages,flags, bindingCount };
 		return *this;
 	}
 };
@@ -101,6 +110,7 @@ template<> struct std::hash<aka::gfx::ShaderBindingState>
 		for (size_t i = 0; i < data.count; i++)
 		{
 			aka::hash::combine(hash, data.bindings[i].count);
+			aka::hash::combine(hash, data.bindings[i].flags);
 			aka::hash::combine(hash, static_cast<uint32_t>(data.bindings[i].stages));
 			aka::hash::combine(hash, static_cast<uint32_t>(data.bindings[i].type));
 		}

@@ -136,7 +136,7 @@ VkDescriptorSetLayout VulkanContext::getDescriptorSetLayout(const ShaderBindingS
 	auto it = m_descriptorSetLayouts.find(bindingsDesc);
 	if (it != m_descriptorSetLayouts.end())
 		return it->second;
-	VkDescriptorSetLayout layout = VulkanProgram::createVkDescriptorSetLayout(device, bindingsDesc);
+	VkDescriptorSetLayout layout = VulkanDescriptorSet::createVkDescriptorSetLayout(device, bindingsDesc);
 
 	size_t hash = std::hash<ShaderBindingState>()(bindingsDesc);
 	setDebugName(device, layout, "VkDescriptorSetLayout_", hash);
@@ -247,25 +247,23 @@ const char** VulkanContext::getPlatformRequiredInstanceExtension(const PlatformD
 	return glfwGetRequiredInstanceExtensions(count);
 }
 
-typedef bool (*PickPhysicalDeviceFunc)(const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&);
-
 VkPhysicalDevice VulkanContext::pickPhysicalDevice(PickPhysicalDeviceFunc isPhysicalDeviceSuitable)
 {
 	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
 	if (deviceCount == 0)
 	{
 		Logger::error("No physical device found.");
 		return VK_NULL_HANDLE;
 	}
 	std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data());
+	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data()));
 	for (const VkPhysicalDevice& physicalDevice : physicalDevices)
 	{
-		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
+		VkPhysicalDeviceProperties deviceProperties{};
+		VkPhysicalDeviceFeatures2 deviceFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
 		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+		vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures);
 		if (isPhysicalDeviceSuitable(deviceProperties, deviceFeatures))
 			return physicalDevice;
 	}
@@ -401,7 +399,7 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 
 	// VK_VERSION_1_1
 	// TODO: Check physical device suitable for these features.
-	VkPhysicalDeviceFeatures2 deviceFeatures = {};
+	VkPhysicalDeviceFeatures2 deviceFeatures {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext = &timelineSemaphoreFeatures;
 	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
@@ -410,7 +408,7 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	deviceFeatures.features.multiDrawIndirect = VK_TRUE;
 	deviceFeatures.features.fillModeNonSolid = VK_TRUE; // VK_POLYGON_MODE_LINE
 
-	VkDeviceCreateInfo createInfo = {};
+	VkDeviceCreateInfo createInfo {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pNext = &deviceFeatures;
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -498,15 +496,15 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	debugMessenger = createDebugMessenger(instance);
 	surface = createSurface(platform);
 
-	physicalDevice = pickPhysicalDevice([](const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures& features) {
-		return 
-			properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-			features.geometryShader && 
-			features.samplerAnisotropy &&
-			features.fragmentStoresAndAtomics &&
-			features.shaderFloat64 &&
-			features.multiDrawIndirect
-			;
+	physicalDevice = pickPhysicalDevice([](const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures2& features) {
+		bool supported = true;
+		supported &= properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+		supported &= features.features.geometryShader == VK_TRUE;
+		supported &= features.features.samplerAnisotropy == VK_TRUE;
+		supported &= features.features.fragmentStoresAndAtomics == VK_TRUE;
+		supported &= features.features.shaderFloat64 == VK_TRUE;
+		supported &= features.features.multiDrawIndirect == VK_TRUE;
+		return supported;
 	});
 	device = createLogicalDevice(deviceExtensions, deviceExtensionCount);
 

@@ -61,6 +61,8 @@ bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	else if (lhs.count > rhs.count) return false;
 	for (uint32_t i = 0; i < lhs.count; i++)
 	{
+		if (lhs.bindings[i].flags < rhs.bindings[i].flags) return true;
+		else if (lhs.bindings[i].flags > rhs.bindings[i].flags) return false;
 		if (lhs.bindings[i].count < rhs.bindings[i].count) return true;
 		else if (lhs.bindings[i].count > rhs.bindings[i].count) return false;
 		if (lhs.bindings[i].stages < rhs.bindings[i].stages) return true;
@@ -76,6 +78,8 @@ bool operator>(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	else if (lhs.count < rhs.count) return false;
 	for (uint32_t i = 0; i < lhs.count; i++)
 	{
+		if (lhs.bindings[i].flags > rhs.bindings[i].flags) return true;
+		else if (lhs.bindings[i].flags < rhs.bindings[i].flags) return false;
 		if (lhs.bindings[i].count > rhs.bindings[i].count) return true;
 		else if (lhs.bindings[i].count < rhs.bindings[i].count) return false;
 		if (lhs.bindings[i].stages > rhs.bindings[i].stages) return true;
@@ -90,6 +94,7 @@ bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 	if (lhs.count != rhs.count) return false;
 	for (uint32_t i = 0; i < lhs.count; i++)
 	{
+		if (lhs.bindings[i].flags != rhs.bindings[i].flags) return false;
 		if (lhs.bindings[i].count != rhs.bindings[i].count) return false;
 		if (lhs.bindings[i].stages != rhs.bindings[i].stages) return false;
 		if (lhs.bindings[i].type != rhs.bindings[i].type) return false;
@@ -98,14 +103,7 @@ bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 }
 bool operator!=(const ShaderBindingState& lhs, const ShaderBindingState& rhs)
 {
-	if (lhs.count != rhs.count) return true;
-	for (uint32_t i = 0; i < lhs.count; i++)
-	{
-		if (lhs.bindings[i].count != rhs.bindings[i].count) return true;
-		if (lhs.bindings[i].stages != rhs.bindings[i].stages) return true;
-		if (lhs.bindings[i].type != rhs.bindings[i].type) return true;
-	}
-	return false; // equal
+	return !operator==(lhs, rhs);
 }
 
 bool Program::hasVertexStage() const

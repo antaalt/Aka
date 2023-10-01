@@ -123,7 +123,7 @@ struct VulkanComputePipeline;
 struct VulkanFramebuffer;
 struct VulkanBuffer;
 
-typedef bool (*PickPhysicalDeviceFunc)(const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&);
+typedef bool (*PickPhysicalDeviceFunc)(const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures2&);
 
 struct VulkanContext
 {
@@ -172,7 +172,7 @@ public:
 private:
 	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
 	std::unordered_map<ShaderBindingState, VkDescriptorSetLayout> m_descriptorSetLayouts;
-	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout;
+	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout; // Should not cache this, heavy to cache, and not that useful...
 private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);
 	VkSurfaceKHR createSurface(PlatformDevice* platform);

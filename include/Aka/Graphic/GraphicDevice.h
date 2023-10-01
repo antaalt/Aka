@@ -124,7 +124,7 @@ public:
 
 	// Descriptor sets
 	virtual DescriptorSetHandle allocateDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) = 0;
-	virtual void update(DescriptorSetHandle set, const DescriptorSetData& data) = 0;
+	virtual void update(DescriptorSetHandle set, const DescriptorUpdate* update, size_t size) = 0;
 	virtual void free(DescriptorSetHandle set) = 0;
 	virtual const DescriptorSet* get(DescriptorSetHandle set) = 0;
 

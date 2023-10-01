@@ -17,6 +17,7 @@ Renderer::~Renderer()
 // TODO dynamic count.
 static const uint32_t MaxInstanceCount = 500;
 static const uint32_t MaxViewCount = 5;
+static const uint32_t MaxBindlessResources = 16536;
 
 void Renderer::create()
 {
@@ -38,24 +39,27 @@ void Renderer::create()
 
 		getDevice()->getBackbufferSize(data.m_width, data.m_height);
 
-		gfx::ShaderBindingState bindings{};
-		bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
-		m_instanceDescriptorPool[EnumToIndex(instanceType)] = getDevice()->createDescriptorPool("InstanceDescriptorPool", bindings, MaxInstanceCount);
-
 		// These buffers are resized dynamically or preallocated ?
 		data.m_instanceBuffer = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Vertex, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 		data.m_instanceBufferStaging = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Vertex, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
 	}
 	gfx::ShaderBindingState bindings{};
-	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
+	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
 	m_viewBuffers = m_device->createBuffer("ViewBuffer", gfx::BufferType::Uniform, sizeof(ViewData) * MaxViewCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 
-	gfx::DescriptorPoolHandle pool = m_viewDescriptorPool.append(getDevice()->createDescriptorPool("InstanceDescriptorPool", bindings, MaxInstanceCount));
+	// Bindless
+	gfx::ShaderBindingState bindlessBindings{};
+	bindlessBindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, gfx::ShaderBindingFlag::Bindless, MaxBindlessResources);
+	m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", bindlessBindings, MaxBindlessResources);
+	m_bindlessDescriptorSet = getDevice()->allocateDescriptorSet("BindlessSet", bindlessBindings, m_bindlessPool);
+
+	// View
+	gfx::DescriptorPoolHandle pool = m_viewDescriptorPool.append(getDevice()->createDescriptorPool("ViewDescriptorPool", bindings, MaxViewCount));
 	m_viewDescriptorSet.append(getDevice()->allocateDescriptorSet("ViewDescSet", bindings, pool));
 
-	gfx::DescriptorSetData data{};
-	data.addUniformBuffer(m_viewBuffers, 0, sizeof(ViewData));
-	m_device->update(m_viewDescriptorSet[0], data);
+	Vector<gfx::DescriptorUpdate> desc;
+	desc.append(gfx::DescriptorUpdate::uniformBuffer(0, 0, m_viewBuffers, 0, sizeof(ViewData)));
+	m_device->update(m_viewDescriptorSet[0], desc.data(), desc.size());
 
 	createRenderPass();
 }
@@ -67,10 +71,11 @@ void Renderer::destroy()
 		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		m_device->destroy(data.m_instanceBuffer);
 		m_device->destroy(data.m_instanceBufferStaging);
-		m_device->destroy(m_instanceDescriptorPool[EnumToIndex(instanceType)]);
 	}
 	destroyRenderPass();
 	m_device->destroy(m_viewBuffers);
+	m_device->free(m_bindlessDescriptorSet);
+	m_device->destroy(m_bindlessPool);
 	for (gfx::DescriptorSetHandle handle : m_viewDescriptorSet)
 		m_device->free(handle);
 	for (gfx::DescriptorPoolHandle handle : m_viewDescriptorPool)
@@ -87,6 +92,13 @@ void Renderer::createRenderPass()
 	{
 		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		gfx::ProgramHandle programHandle = registry->get(data.m_programKey);
+
+		// For now, we hack these as its difficult to generate them from shader reflection.
+		// Should not use shader reflection and maybe have some kind of api 
+		// such as shader->isCompatible(bindings) based on reflection.
+		// This way, we can disable it.
+		const_cast<gfx::Program*>(m_device->get(programHandle))->sets[2].bindings[0].count = MaxBindlessResources;
+		const_cast<gfx::Program*>(m_device->get(programHandle))->sets[2].bindings[0].flags = gfx::ShaderBindingFlag::Bindless;
 		// Create pipeline
 		data.m_pipeline = m_device->createGraphicPipeline(
 			"Graphic pipeline",
@@ -133,7 +145,7 @@ Instance* Renderer::createInstance(AssetID assetID)
 	auto& it = m_assetInstances[EnumToIndex(type)][assetID];
 
 	gfx::ShaderBindingState bindings{};
-	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex, 1);
+	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
 
 	Instance* instance = new Instance;
 	it.push_back(instance);
@@ -221,6 +233,7 @@ void Renderer::render(gfx::Frame* frame)
 
 		InstanceData* data = static_cast<InstanceData*>(m_device->map(bufferStaging, gfx::BufferMap::Write));
 		//uint32_t instanceBufferAssetOffset = 0;
+		Vector<gfx::DescriptorUpdate> desc;
 		for (auto& assetInstances : m_assetInstances[EnumToIndex(instanceType)])
 		{
 			// write offset
@@ -238,7 +251,12 @@ void Renderer::render(gfx::Frame* frame)
 				++instanceCount;
 				AKA_ASSERT(MaxInstanceCount >= instanceCount, "Too many instances, need resize buffer");
 			}
-			/*for (const auto& batch : mesh.batches)
+			for (const StaticMeshBatch& batch : mesh.getBatches())
+			{
+				desc.append(gfx::DescriptorUpdate::sampledTexture2D(0, (uint32_t)desc.size(), batch.m_albedo.get().getGfxHandle(), mesh.getAlbedoSampler()));
+				desc.append(gfx::DescriptorUpdate::sampledTexture2D(0, (uint32_t)desc.size(), batch.m_normal.get().getGfxHandle(), mesh.getNormalSampler()));
+			}
+			/*for (const StaticMeshBatch& batch : mesh.getBatches())
 			{
 				gfx::DrawIndexedIndirectCommand command{};
 				command.indexCount = batch.indexCount;
@@ -247,6 +265,7 @@ void Renderer::render(gfx::Frame* frame)
 				command.vertexOffset = batch.vertexOffset;
 				command.firstInstance = instanceBufferAssetOffset; // offset in instance buffer.
 				drawIndexedBuffer[EnumToIndex(instanceType)][assetID].append(command);
+				// TODO draw on GPU instead of keeping in local.
 			}
 			instanceBufferAssetOffset += instanceCount;*/
 		}
@@ -254,6 +273,18 @@ void Renderer::render(gfx::Frame* frame)
 		cmd->transition(buffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
 		cmd->copy(bufferStaging, buffer);
 		cmd->transition(buffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
+
+		for (auto k : m_library->getRange<Texture>())
+		{
+			ResourceHandle<Texture> texHandle = k.second;
+			if (texHandle.isLoaded())
+			{
+				Texture& texture = texHandle.get();
+				gfx::TextureHandle handle = texture.getGfxHandle();
+			}
+		}
+		// Bindless
+		m_device->update(m_bindlessDescriptorSet, desc.data(), desc.size());
 	}
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
@@ -290,11 +321,12 @@ void Renderer::render(gfx::Frame* frame)
 				cmd->bindVertexBuffer(1, data.m_instanceBuffer, instanceCountOffset * sizeof(InstanceData));
 				cmd->bindIndexBuffer(m.getIndexBuffer(), m.getIndexFormat(), 0);
 				cmd->bindDescriptorSet(0, m_viewDescriptorSet[0]);
+				cmd->bindDescriptorSet(2, m_bindlessDescriptorSet);
 				for (uint32_t i = 0; i < m.getBatchCount(); i++)
 				{
 					const StaticMeshBatch& batch = m.getBatch(i);
-					cmd->bindDescriptorSet(2, batch.gfxDescriptorSet); // Could skip this with bindless & use indirect everywhere
-					cmd->drawIndexed(batch.indexCount, batch.indexOffset, batch.vertexOffset, instances.size());
+					cmd->bindDescriptorSet(1, batch.gfxDescriptorSet); // Could skip this with bindless & use indirect everywhere
+					cmd->drawIndexed(batch.indexCount, batch.indexOffset, batch.vertexOffset, (uint32_t)instances.size());
 				}
 			}
 			instanceCountOffset += (uint32_t)instances.size();

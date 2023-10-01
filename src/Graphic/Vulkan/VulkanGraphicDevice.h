@@ -53,7 +53,7 @@ public:
 
 	// Descriptors
 	DescriptorSetHandle allocateDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) override;
-	void update(DescriptorSetHandle set, const DescriptorSetData& data) override;
+	void update(DescriptorSetHandle set, const DescriptorUpdate* update, size_t size) override;
 	void free(DescriptorSetHandle set) override;
 	const DescriptorSet* get(DescriptorSetHandle set) override;
 

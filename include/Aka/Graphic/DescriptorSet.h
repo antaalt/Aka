@@ -10,39 +10,35 @@
 namespace aka {
 namespace gfx {
 
-struct DescriptorSlot
+struct DescriptorSlotTexture
+{
+	TextureHandle texture;
+	SamplerHandle sampler; // Can be null.
+	uint32_t layer;
+	uint32_t mipLevel;
+};
+struct DescriptorSlotBuffer
+{
+	BufferHandle handle;
+	uint32_t offset;
+	uint32_t range;
+};
+struct DescriptorUpdate
 {
 	ShaderBindingType bindingType;
-	struct Texture {
-		TextureHandle texture;
-		SamplerHandle sampler; // Can be null.
-		uint32_t layer;
-		uint32_t mipLevel;
-	};
-	struct Buffer {
-		BufferHandle handle;
-		uint32_t offset;
-		uint32_t range;
-	};
+	uint32_t binding;
+	uint32_t index;
 	union
 	{
-		Texture texture;
-		Buffer buffer;
+		DescriptorSlotTexture texture;
+		DescriptorSlotBuffer buffer;
 	};
-};
-
-struct DescriptorSetData
-{
-	DescriptorSetData();
-
-	DescriptorSetData& addUniformBuffer(BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0U);
-	DescriptorSetData& addStorageBuffer(BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0U);
-	DescriptorSetData& addSampledTexture2D(TextureHandle texture, SamplerHandle sampler, uint32_t layer = 0, uint32_t mipLevel = 0);
-	//DescriptorSetData& addSampledTextureCube2D(TextureHandle texture, SamplerHandle sampler);
-	DescriptorSetData& addStorageTexture2D(TextureHandle texture, uint32_t layer = 0, uint32_t mipLevel = 0);
-
-	uint32_t count;
-	DescriptorSlot slots[ShaderMaxBindingCount];
+	static DescriptorUpdate sampledTexture2D(uint32_t binding, uint32_t index, TextureHandle texture, SamplerHandle sampler, uint32_t layer = 0, uint32_t mipLevel = 0);
+	static DescriptorUpdate sampledTextureCube2D(uint32_t binding, uint32_t index, TextureHandle texture, SamplerHandle sampler, uint32_t mipLevel = 0);
+	static DescriptorUpdate storageTexture2D(uint32_t binding, uint32_t index, TextureHandle texture, uint32_t layer = 0, uint32_t mipLevel = 0);
+	static DescriptorUpdate uniformBuffer(uint32_t binding, uint32_t index, BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0);
+	static DescriptorUpdate storageBuffer(uint32_t binding, uint32_t index, BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0);
+	static DescriptorUpdate structuredBuffer(uint32_t binding, uint32_t index, BufferHandle buffer, uint32_t offset = 0, uint32_t range = ~0);
 };
 
 struct DescriptorSet;
@@ -55,7 +51,7 @@ struct DescriptorSet : Resource
 	DescriptorPoolHandle pool;
 	ShaderBindingState bindings;
 
-	void update(const DescriptorSetData& data);
+	static void update(DescriptorSetHandle descriptorSet, const DescriptorUpdate* update, size_t size);
 
 	static DescriptorSetHandle allocate(const char* name, const ShaderBindingState& state, DescriptorPoolHandle pool);
 	static void free(DescriptorSetHandle set);

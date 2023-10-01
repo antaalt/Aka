@@ -72,7 +72,7 @@ enum class TextureFormat : uint8_t
 	DepthStencil,
 	Depth0Stencil8,
 	Depth24Stencil8,
-	Depth32FStencil8,
+	Depth32FStencil8, // avoid using it due to performances cost
 
 	First = R8,
 	Last = Depth32FStencil8,

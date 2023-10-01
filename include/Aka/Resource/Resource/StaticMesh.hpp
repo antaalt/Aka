@@ -40,10 +40,13 @@ private:
 	void destroy_internal(AssetLibrary* _library, Renderer* _renderer) override;
 
 public:
+	gfx::SamplerHandle getAlbedoSampler() const { return m_gfxAlbedoSampler; }
+	gfx::SamplerHandle getNormalSampler() const { return m_gfxNormalSampler; }
 	gfx::BufferHandle getVertexBuffer() const { return m_gfxVertexBuffer; }
 	gfx::BufferHandle getIndexBuffer() const { return m_gfxIndexBuffer; }
 	uint32_t getBatchCount() const { return (uint32_t)m_batches.size(); }
 	const StaticMeshBatch& getBatch(uint32_t index) const { return m_batches[index]; }
+	const Vector<StaticMeshBatch>& getBatches() const { return m_batches; }
 	gfx::IndexFormat getIndexFormat() const { return m_indexFormat; }
 	aabbox<> getBounds() const { return m_bounds; }
 
