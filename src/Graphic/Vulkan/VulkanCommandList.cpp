@@ -377,16 +377,14 @@ void VulkanCommandList::push(uint32_t offset, uint32_t range, const void* data, 
 	vkCmdPushConstants(vk_command, layout, VulkanContext::tovk(mask), offset, range, data);
 }
 
-void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount) 
+void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount, uint32_t instanceOffset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	uint32_t instanceOffset = 0;
 	vkCmdDraw(vk_command, vertexCount, instanceCount, vertexOffset, instanceOffset);
 }
-void VulkanCommandList::drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount) 
+void VulkanCommandList::drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount, uint32_t instanceOffset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	uint32_t instanceOffset = 0;
 	vkCmdDrawIndexed(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
 }
 void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) 

@@ -6,6 +6,7 @@ namespace aka {
 
 Texture::Texture() : 
 	Resource(ResourceType::Texture),
+	m_textureID(TextureID::Invalid),
 	m_width(0), 
 	m_height(0),
 	m_textureHandle(gfx::TextureHandle::null),
@@ -19,6 +20,7 @@ Texture::Texture() :
 
 Texture::Texture(AssetID _id, const String& _name) :
 	Resource(ResourceType::Texture, _id, _name),
+	m_textureID(TextureID::Invalid),
 	m_width(0),
 	m_height(0),
 	m_textureHandle(gfx::TextureHandle::null),
@@ -30,9 +32,14 @@ Texture::Texture(AssetID _id, const String& _name) :
 {
 }
 
+Texture::~Texture()
+{
+	// TODO release texture
+}
+
 void Texture::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
-	const ArchiveImage& imageArchive = _context.getArchive<ArchiveImage>(getID());	
+	const ArchiveImage& imageArchive = _context.getArchive<ArchiveImage>(getID());
 	// TODO custom mips
 	const void* data = imageArchive.data.data();
 	m_width = imageArchive.width;
@@ -51,6 +58,7 @@ void Texture::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _rend
 		m_textureUsage,
 		&data
 	);
+	m_textureID = _renderer->allocateTextureID(m_textureHandle);
 }
 
 void Texture::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)

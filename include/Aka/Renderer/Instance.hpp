@@ -17,6 +17,7 @@ enum class InstanceID : uint32_t {};
 struct InstanceData {
 	mat4f transform;
 	mat4f normal;
+	uint32_t batchID;
 	static gfx::VertexBufferLayout getState();
 };
 enum class InstanceType : uint32_t

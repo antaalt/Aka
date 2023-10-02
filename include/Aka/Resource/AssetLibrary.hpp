@@ -5,6 +5,7 @@
 #include <Aka/Resource/Resource/StaticMesh.hpp>
 #include <Aka/Resource/Resource/Texture.hpp>
 #include <Aka/Resource/Resource/Scene.hpp>
+#include <Aka/Resource/Resource/Material.hpp>
 #include <Aka/Resource/Archive/ArchiveScene.hpp>
 
 #include <map>
@@ -15,6 +16,7 @@ template<typename T> struct ArchiveTrait { using Archive = Archive; };
 template<> struct ArchiveTrait<Scene> { using Archive = ArchiveScene; };
 template<> struct ArchiveTrait<StaticMesh> { using Archive = ArchiveStaticMesh; };
 template<> struct ArchiveTrait<Texture> { using Archive = ArchiveImage; };
+template<> struct ArchiveTrait<Material> { using Archive = ArchiveMaterial; };
 
 template <typename T>
 class ResourceIterator
@@ -144,11 +146,13 @@ private:
 	ResourceMap<StaticMesh> m_staticMeshes;
 	ResourceMap<Scene> m_scenes;
 	ResourceMap<Texture> m_textures;
+	ResourceMap<Material> m_materials;
 };
 
 template<> AssetLibrary::ResourceMap<Scene>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<StaticMesh>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<Texture>& AssetLibrary::getResourceMap();
+template<> AssetLibrary::ResourceMap<Material>& AssetLibrary::getResourceMap();
 
 template<typename T>
 ResourceRange<T> AssetLibrary::getRange()

@@ -209,24 +209,46 @@ VkFormat tovk(VertexType type, VertexFormat format)
 	case VertexFormat::Byte:
 		switch (type)
 		{
-		case VertexType::Scalar: return VK_FORMAT_R8_SNORM;
-		case VertexType::Vec2: return VK_FORMAT_R8G8_SNORM;
-		case VertexType::Vec3: return VK_FORMAT_R8G8B8_SNORM;
-		case VertexType::Vec4: return VK_FORMAT_R8G8B8A8_SNORM;
+		case VertexType::Scalar: return VK_FORMAT_R8_SINT;
+		case VertexType::Vec2: return VK_FORMAT_R8G8_SINT;
+		case VertexType::Vec3: return VK_FORMAT_R8G8B8_SINT;
+		case VertexType::Vec4: return VK_FORMAT_R8G8B8A8_SINT;
 		default: return VK_FORMAT_UNDEFINED;
 		}
 		break;
 	case VertexFormat::UnsignedByte:
 		switch (type)
 		{
-		case VertexType::Scalar: return VK_FORMAT_R8_UNORM;
-		case VertexType::Vec2: return VK_FORMAT_R8G8_UNORM;
-		case VertexType::Vec3: return VK_FORMAT_R8G8B8_UNORM;
-		case VertexType::Vec4: return VK_FORMAT_R8G8B8A8_UNORM;
+		case VertexType::Scalar: return VK_FORMAT_R8_UINT;
+		case VertexType::Vec2: return VK_FORMAT_R8G8_UINT;
+		case VertexType::Vec3: return VK_FORMAT_R8G8B8_UINT;
+		case VertexType::Vec4: return VK_FORMAT_R8G8B8A8_UINT;
 		default: return VK_FORMAT_UNDEFINED;
 		}
 		break;
-	default: return VK_FORMAT_UNDEFINED;
+	case VertexFormat::Int:
+		switch (type)
+		{
+		case VertexType::Scalar: return VK_FORMAT_R32_SINT;
+		case VertexType::Vec2: return VK_FORMAT_R32G32_SINT;
+		case VertexType::Vec3: return VK_FORMAT_R32G32B32_SINT;
+		case VertexType::Vec4: return VK_FORMAT_R32G32B32A32_SINT;
+		default: return VK_FORMAT_UNDEFINED;
+		}
+		break;
+	case VertexFormat::UnsignedInt:
+		switch (type)
+		{
+		case VertexType::Scalar: return VK_FORMAT_R32_UINT;
+		case VertexType::Vec2: return VK_FORMAT_R32G32_UINT;
+		case VertexType::Vec3: return VK_FORMAT_R32G32B32_UINT;
+		case VertexType::Vec4: return VK_FORMAT_R32G32B32A32_UINT;
+		default: return VK_FORMAT_UNDEFINED;
+		}
+		break;
+	default: 
+		AKA_NOT_IMPLEMENTED;
+		return VK_FORMAT_UNDEFINED;
 	}
 	return VK_FORMAT_UNDEFINED;
 }

@@ -40,8 +40,8 @@ struct VulkanCommandList : CommandList
 
 	void push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask) override;
 
-	void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
-	void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1) override;
+	void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1, uint32_t instanceOffset = 0) override;
+	void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1, uint32_t instanceOffset = 0) override;
 	void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) override;
 
 	void copy(BufferHandle src, BufferHandle dst) override;

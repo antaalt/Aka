@@ -36,60 +36,21 @@ StaticMesh::~StaticMesh()
 void StaticMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
 	const ArchiveStaticMesh& meshArchive = _context.getArchive<ArchiveStaticMesh>(getID());
-	// TODO mutualize sampler in Renderer class (& pass renderer instead of device as argument, or renderer create class)
-	m_gfxAlbedoSampler = _renderer->getDevice()->createSampler(
-		"Sampler",
-		gfx::Filter::Linear, gfx::Filter::Linear,
-		gfx::SamplerMipMapMode::Linear,
-		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
-		1.0
-	);
-	m_gfxNormalSampler = _renderer->getDevice()->createSampler(
-		"Sampler",
-		gfx::Filter::Linear, gfx::Filter::Linear,
-		gfx::SamplerMipMapMode::Linear,
-		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
-		1.0
-	);
-	// TODO should retrieve this from shader somehow...
-	gfx::ShaderBindingState bindings{};
-	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment);
-	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment);
-	bindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment);
-	m_pool = _renderer->getDevice()->createDescriptorPool("MeshDescriptorPool", bindings, (uint32_t)meshArchive.batches.size());
 	Vector<StaticVertex> vertices;
 	Vector<uint32_t> indices;
 	for (AssetID batchID : meshArchive.batches)
 	{
 		const ArchiveBatch& batch = _context.getArchive<ArchiveBatch>(batchID);
-		const ArchiveMaterial& materialArchive = _context.getArchive<ArchiveMaterial>(batch.material);
 		const ArchiveGeometry& geometryArchive = _context.getArchive<ArchiveGeometry>(batch.geometry);
-		// Material
-		// TODO mips
-		ResourceHandle<Texture> albedo = _context.getAssetLibrary()->load<Texture>(materialArchive.albedo, _context, _renderer);
-		ResourceHandle<Texture> normal = _context.getAssetLibrary()->load<Texture>(materialArchive.normal, _context, _renderer);
-		
-		MaterialUniformBuffer ubo{};
-		ubo.color = materialArchive.color;
-		gfx::BufferHandle gfxUniformBuffer = _renderer->getDevice()->createBuffer("MaterialUniformBuffer", gfx::BufferType::Uniform, sizeof(MaterialUniformBuffer), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, &ubo);
-		
-		gfx::DescriptorSetHandle gfxDescriptorSet = _renderer->getDevice()->allocateDescriptorSet("DescriptorSetMaterial", bindings, m_pool);
 
-		// TODO should use global table instead.
-		Vector<gfx::DescriptorUpdate> updates;
-		updates.append(gfx::DescriptorUpdate::uniformBuffer(0, 0, gfxUniformBuffer));
-		updates.append(gfx::DescriptorUpdate::sampledTexture2D(1, 0, albedo.get().getGfxHandle(), m_gfxAlbedoSampler));
-		updates.append(gfx::DescriptorUpdate::sampledTexture2D(2, 0, normal.get().getGfxHandle(), m_gfxNormalSampler));
-		_renderer->getDevice()->update(gfxDescriptorSet, updates.data(), updates.size());
+		// Material
+		ResourceHandle<Material> material = _context.getAssetLibrary()->load<Material>(batch.material, _context, _renderer);
 		
 		m_batches.append(StaticMeshBatch{
 			(uint32_t)(vertices.size() * sizeof(StaticVertex)),
 			(uint32_t)(indices.size() * sizeof(uint32_t)),
 			(uint32_t)geometryArchive.indices.size(),
-			albedo,
-			normal,
-			gfxUniformBuffer,
-			gfxDescriptorSet,
+			material
 		});
 		vertices.reserve(vertices.size() + geometryArchive.vertices.size());
 		for (const ArchiveStaticVertex& archiveVertex : geometryArchive.vertices)
@@ -105,8 +66,8 @@ void StaticMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _r
 		m_bounds.include(geometryArchive.bounds);
 	}
 	m_indexFormat = gfx::IndexFormat::UnsignedInt;
-	m_gfxVertexBuffer = _renderer->getDevice()->createBuffer("VertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(StaticVertex) * vertices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, vertices.data());
-	m_gfxIndexBuffer = _renderer->getDevice()->createBuffer("IndexBuffer", gfx::BufferType::Index, (uint32_t)(sizeof(uint32_t) * indices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None, indices.data());;
+	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(StaticVertex) * vertices.size());
+	m_gfxIndexBufferHandle = _renderer->allocateGeometryIndex(indices.data(), sizeof(uint32_t) * indices.size());
 }
 
 void StaticMesh::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
@@ -141,16 +102,8 @@ void StaticMesh::toArchive_internal(ArchiveSaveContext& _context, Renderer* _ren
 
 void StaticMesh::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	_renderer->getDevice()->destroy(m_gfxAlbedoSampler);
-	_renderer->getDevice()->destroy(m_gfxNormalSampler);
-	_renderer->getDevice()->destroy(m_gfxIndexBuffer);
-	_renderer->getDevice()->destroy(m_gfxVertexBuffer);
-	for (const StaticMeshBatch& batch : m_batches)
-	{
-		_renderer->getDevice()->free(batch.gfxDescriptorSet);
-		_renderer->getDevice()->destroy(batch.gfxUniformBuffer);
-	}
-	_renderer->getDevice()->destroy(m_pool);
+	_renderer->deallocate(m_gfxVertexBufferHandle);
+	_renderer->deallocate(m_gfxIndexBufferHandle);
 	m_batches.clear();
 }
 

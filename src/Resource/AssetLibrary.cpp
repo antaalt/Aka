@@ -174,6 +174,11 @@ AssetLibrary::ResourceMap<Texture>& AssetLibrary::getResourceMap()
 {
 	return m_textures;
 }
+template<>
+AssetLibrary::ResourceMap<Material>& AssetLibrary::getResourceMap()
+{
+	return m_materials;
+}
 
 void AssetLibrary::update()
 {
@@ -202,6 +207,13 @@ void AssetLibrary::destroy(Renderer* _renderer)
 		}
 	}
 	for (auto it : m_scenes)
+	{
+		if (it.second.isLoaded())
+		{
+			it.second.get().destroy(this, _renderer);
+		}
+	}
+	for (auto it : m_materials)
 	{
 		if (it.second.isLoaded())
 		{

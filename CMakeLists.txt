@@ -59,6 +59,7 @@ add_library (Aka
 	"src/Resource/Resource/StaticMesh.cpp"
 	"src/Resource/Resource/Texture.cpp"
 	"src/Resource/Resource/Font.cpp"
+	"src/Resource/Resource/Material.cpp"
 
 	"src/Resource/Importer/Importer.cpp"
 	"src/Resource/Importer/AsepriteImporter.cpp"

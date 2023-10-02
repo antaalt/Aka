@@ -126,23 +126,28 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 		case ShaderBindingType::StorageBuffer:
 		case ShaderBindingType::UniformBuffer: {
 			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(update.buffer.handle);
+			VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 			if (buffer == nullptr) // No buffer
 			{
-				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = VK_NULL_HANDLE;
 				vk_buffer.offset = 0;
 				vk_buffer.range = 0;
-				descriptorWrites[iUpdate].pBufferInfo = &vk_buffer;
 			}
 			else
 			{
+				VkPhysicalDeviceProperties properties{};
+				vkGetPhysicalDeviceProperties(device->getVkPhysicalDevice(), &properties);
+				AKA_ASSERT(
+					(update.buffer.offset % properties.limits.minStorageBufferOffsetAlignment == 0) && (buffer->type == gfx::BufferType::Storage) ||
+					(update.buffer.offset % properties.limits.minUniformBufferOffsetAlignment == 0) && (buffer->type == gfx::BufferType::Uniform),
+					"Invalid offset"
+				);
 				AKA_ASSERT(valid(binding.type, buffer->type), "Invalid buffer binding, skipping.");
-				VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
 				vk_buffer.buffer = reinterpret_cast<const VulkanBuffer*>(buffer)->vk_buffer;
 				vk_buffer.offset = update.buffer.offset;
 				vk_buffer.range = (update.buffer.range == ~0U) ? VK_WHOLE_SIZE : update.buffer.range;
-				descriptorWrites[iUpdate].pBufferInfo = &vk_buffer;
 			}
+			descriptorWrites[iUpdate].pBufferInfo = &vk_buffer;
 			break;
 		}
 		default:

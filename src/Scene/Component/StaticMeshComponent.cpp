@@ -1,6 +1,7 @@
 #include <Aka/Scene/Component/StaticMeshComponent.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 #include <Aka/OS/Stream/MemoryStream.h>
+#include <Aka/Resource/AssetLibrary.hpp>
 
 namespace aka {
 
