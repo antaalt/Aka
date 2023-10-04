@@ -20,10 +20,9 @@ public:
 	Material(AssetID _id, const String& _name);
 	~Material();
 public:
-	ResourceHandle<Texture> getAlbedoTexture() { return m_albedo; }
-	ResourceHandle<Texture> getNormalTexture() { return m_normal; }
-	RendererMaterial* getMaterial() { return m_material; }
-	const RendererMaterial* getMaterial() const { return m_material; }
+	ResourceHandle<Texture> getAlbedoTexture() const { return m_albedo; }
+	ResourceHandle<Texture> getNormalTexture() const { return m_normal; }
+	MaterialHandle getMaterialHandle() const { return m_materialHandle; }
 private:
 	void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) override;
 	void toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer) override;
@@ -31,7 +30,7 @@ private:
 private:
 	ResourceHandle<Texture> m_albedo;
 	ResourceHandle<Texture> m_normal;
-	RendererMaterial* m_material;
+	MaterialHandle m_materialHandle;
 };
 
 }

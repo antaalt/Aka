@@ -8,12 +8,12 @@ namespace aka {
 
 Material::Material() :
 	Resource(ResourceType::Material, AssetID::Invalid, ""),
-	m_material(nullptr)
+	m_materialHandle(MaterialHandle::Invalid)
 {
 }
 Material::Material(AssetID id, const String& _name) :
 	Resource(ResourceType::Material, id, _name),
-	m_material(nullptr)
+	m_materialHandle(MaterialHandle::Invalid)
 {
 }
 Material::~Material()
@@ -26,10 +26,10 @@ void Material::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _ren
 	m_albedo = _context.getAssetLibrary()->load<Texture>(archive.albedo, _renderer);
 	m_normal = _context.getAssetLibrary()->load<Texture>(archive.normal, _renderer);
 	archive.flags; // TODO
-	m_material = _renderer->createMaterialData();
-	Memory::copy(m_material->data.color, archive.color.data, sizeof(float) * 4);
-	m_material->data.albedoID = EnumToValue(m_albedo.get().getTextureID());
-	m_material->data.normalID = EnumToValue(m_normal.get().getTextureID());
+	m_materialHandle = _renderer->createMaterial();
+	color4f color;
+	Memory::copy(color.data, archive.color.data, sizeof(float) * 4);
+	_renderer->updateMaterial(m_materialHandle, color, m_albedo.get().getTextureID(), m_normal.get().getTextureID());
 }
 
 void Material::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
@@ -40,7 +40,7 @@ void Material::toArchive_internal(ArchiveSaveContext& _context, Renderer* _rende
 
 void Material::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	_renderer->destroyMaterialData(m_material);
+	_renderer->destroyMaterial(m_materialHandle);
 	m_albedo.reset();
 	m_normal.reset();
 }

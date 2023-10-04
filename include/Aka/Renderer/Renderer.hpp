@@ -26,7 +26,8 @@ enum class SamplerType
 };
 
 enum class ViewHandle : uint32_t { Invalid = (uint32_t)-1 };
-enum class InstanceHandle : uint32_t { Invalid = (uint32_t)-1 };
+enum class InstanceHandle : uint64_t { Invalid = (uint64_t)-1 };
+enum class MaterialHandle : uint64_t { Invalid = (uint64_t)-1 };
 enum class TextureID : uint32_t { Invalid = (uint32_t)-1 };
 using TextureHandle = TextureID;
 
@@ -49,7 +50,6 @@ struct alignas(16) MaterialData
 
 struct RendererMaterial
 {
-	uint32_t materialID; // bindless ID
 	MaterialData data;
 };
 
@@ -66,10 +66,9 @@ public:
 	void destroyRenderPass();
 
 	// -- Instances
-	// Register an instance for a specific asset.
-	Instance* createInstance(AssetID assetID);
-	void updateInstanceTransform(Instance* instance, const mat4f& transform);
-	void destroyInstance(Instance*& instance);
+	InstanceHandle createInstance(AssetID assetID);
+	void updateInstanceTransform(InstanceHandle instance, const mat4f& transform);
+	void destroyInstance(InstanceHandle instance);
 
 	// -- View
 	ViewHandle createView(ViewType type);
@@ -84,7 +83,6 @@ public:
 	void deallocate(const GeometryBufferHandle& handle);
 	gfx::BufferHandle getGeometryBuffer(GeometryBufferHandle handle);
 	uint32_t getGeometryBufferOffset(GeometryBufferHandle handle);
-	//size_t getBufferRange(GeometryBufferHandle handle);
 
 	// -- Interactions
 	void render(gfx::Frame* frame);
@@ -92,8 +90,9 @@ public:
 	void onReceive(const ShaderReloadedEvent& event);
 
 	// -- Material
-	RendererMaterial* createMaterialData();
-	void destroyMaterialData(RendererMaterial*& material);
+	MaterialHandle createMaterial();
+	void updateMaterial(MaterialHandle handle, const color4f& color, TextureID albedo, TextureID normal);
+	void destroyMaterial(MaterialHandle handle);
 
 	TextureID allocateTextureID(gfx::TextureHandle texture);
 	gfx::SamplerHandle getSampler(SamplerType type);
@@ -104,10 +103,8 @@ public:
 private:
 	AssetLibrary* m_library;
 	gfx::GraphicDevice* m_device;
-private: // Rendering stuff
-	// Use std::vector cuz Vector iterator should be real iterator & not only pointers.
-	std::map<AssetID, std::vector<Instance*>> m_assetInstances[EnumCount<InstanceType>()]; // Should not store this on CPU.
 
+private: // Rendering stuff
 	struct InstanceRenderData
 	{
 		gfx::BufferHandle m_instanceBuffer; // one data struct per type
@@ -120,17 +117,26 @@ private: // Rendering stuff
 	// Backbuffer
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::RenderPassHandle m_backbufferRenderPass;
+private: // Instances
+	bool m_instancesDirty = false;
+	uint32_t m_instanceSeed;
+	std::map<InstanceHandle, Instance> m_instances;
+	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer[EnumCount<InstanceType>()];
 private: // Views
 	gfx::BufferHandle m_viewBuffers;
 	Vector<gfx::DescriptorPoolHandle> m_viewDescriptorPool;
 	Vector<gfx::DescriptorSetHandle> m_viewDescriptorSet;
 	Vector<View> m_views;
+	uint32_t m_currentView = 0;
+	bool m_viewDirty;
 private: // Material & textures
+	bool m_materialDirty = 0;
 	TextureID m_nextTextureID = (TextureID)0;
+	uint32_t materialSeed;
 	std::set<TextureID> m_availableTexureID;
 	gfx::DescriptorPoolHandle m_bindlessPool;
 	gfx::DescriptorSetHandle m_bindlessDescriptorSet;
-	Vector<RendererMaterial*> m_materials; // Should not store this on CPU.
+	std::map<MaterialHandle, RendererMaterial> m_materials;
 	gfx::BufferHandle m_materialBuffer;
 	gfx::BufferHandle m_materialStagingBuffer;
 	gfx::DescriptorSetHandle m_materialSet;

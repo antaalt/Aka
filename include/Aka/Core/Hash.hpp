@@ -12,7 +12,7 @@ namespace hash {
 void fnv(size_t& hash, const void* data, size_t size);
 size_t fnv(const void* data, size_t size);
 
-// From boost.
+// Combine two hash using Fowler noll vo hash
 template <typename T> void combine(std::size_t& s, const T& v)
 {
 	fnv(s, &v, sizeof(T));

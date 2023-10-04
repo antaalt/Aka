@@ -34,7 +34,7 @@ public:
 private:
 	AssetID m_assetID;
 	ResourceHandle<StaticMesh> m_meshHandle;
-	Instance* m_instance;
+	InstanceHandle m_instance;
 };
 
 AKA_DECL_COMPONENT(StaticMeshComponent);

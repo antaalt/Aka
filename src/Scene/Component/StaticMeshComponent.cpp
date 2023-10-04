@@ -19,14 +19,12 @@ void ArchiveStaticMeshComponent::parse(BinaryArchive& archive)
 StaticMeshComponent::StaticMeshComponent(Node* node) :
 	Component(node, generateComponentID<StaticMeshComponent>()),
 	m_assetID(AssetID::Invalid),
-	m_instance(nullptr)
+	m_instance(InstanceHandle::Invalid)
 {
 }
 StaticMeshComponent::~StaticMeshComponent()
 {
-	// Do not own instance, neither does mesh.
-	// Need to tell the instance to be deleted
-	AKA_ASSERT(m_instance == nullptr, "Instance not deleted");
+	AKA_ASSERT(m_instance == InstanceHandle::Invalid, "Instance not deleted");
 }
 void StaticMeshComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
 {
@@ -37,10 +35,11 @@ void StaticMeshComponent::onBecomeInactive(AssetLibrary* library, Renderer* _ren
 {
 	m_meshHandle.reset();
 	_renderer->destroyInstance(m_instance);
+	m_instance = InstanceHandle::Invalid;
 }
 void StaticMeshComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
-	m_instance->transform = getNode()->getWorldTransform();
+	_renderer->updateInstanceTransform(m_instance, getNode()->getWorldTransform());
 }
 ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
 {

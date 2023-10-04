@@ -37,6 +37,29 @@ static const uint32_t MaxBindlessResources = 16536;
 static const uint32_t MaxMaterialCount = 200;
 static const uint32_t MaxGeometryBufferSize = 1 << 26;
 
+const char* getInstanceTypeName(InstanceType type)
+{
+	static const char* s_instanceTypeName[] = {
+		"StaticMesh3D",
+		"Sprite2D",
+		"Text2D",
+		"Text3D"
+	};
+	static_assert(countof(s_instanceTypeName) == EnumCount<InstanceType>());
+	return s_instanceTypeName[EnumToIndex(type)];
+}
+
+struct InstanceRenderer
+{
+	virtual void prepareRender() = 0;
+	virtual void render() = 0;
+};
+
+struct StaticMeshRenderer : InstanceRenderer
+{
+
+};
+
 Renderer::Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library) :
 	m_device(_device),
 	m_library(_library)
@@ -221,45 +244,55 @@ InstanceType getInstanceTypeFromAssetType(AssetType assetType)
 	}
 }
 
-Instance* Renderer::createInstance(AssetID assetID)
+InstanceHandle Renderer::createInstance(AssetID assetID)
 {
-	InstanceType type = getInstanceTypeFromAssetType(m_library->getAssetInfo(assetID).type);
-	auto& it = m_assetInstances[EnumToIndex(type)][assetID];
+	if (assetID == AssetID::Invalid)
+		return InstanceHandle::Invalid;
+	AssetInfo assetInfo = m_library->getAssetInfo(assetID);
+	InstanceType instanceType = getInstanceTypeFromAssetType(assetInfo.type);
+	// Generate handle
+	size_t hash = hash::fnv(&assetID, sizeof(AssetID));
+	hash::combine(hash, instanceType);
+	hash::combine(hash, m_instanceSeed++);
+	InstanceHandle instanceHandle = static_cast<InstanceHandle>(hash);
 
-	gfx::ShaderBindingState bindings{};
-	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
+	Instance instance{};
+	instance.type = instanceType;
+	instance.assetID = assetID;
+	instance.mask = ViewTypeMask::Color;
+	instance.transform = mat4f::identity();
 
-	Instance* instance = new Instance;
-	it.push_back(instance);
-	instance->type = type;
-	instance->assetID = assetID;
-	instance->mask = ViewTypeMask::Color;
-	instance->transform = mat4f::identity();
-	return instance;
+	AKA_ASSERT(m_instances.find(instanceHandle) == m_instances.end(), "Hash collision");
+
+	// Insert data
+	m_instances.insert(std::make_pair(instanceHandle, instance));
+
+	m_instancesDirty = true;
+
+	return instanceHandle;
+}
+
+void Renderer::updateInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform)
+{
+	if (instanceHandle == InstanceHandle::Invalid)
+		return;
+	auto it = m_instances.find(instanceHandle);
+	AKA_ASSERT(it != m_instances.end(), "");
+
+	it->second.transform = transform;
+
+	m_instancesDirty = true;
 }
 
 
-void Renderer::destroyInstance(Instance*& instance)
+void Renderer::destroyInstance(InstanceHandle instanceHandle)
 {
-	InstanceType type = getInstanceTypeFromAssetType(m_library->getAssetInfo(instance->assetID).type);
-	AKA_ASSERT(instance->type == type, "");
-	std::vector<Instance*>& data = m_assetInstances[EnumToIndex(type)][instance->assetID];
-	auto itFind = std::find(data.begin(), data.end(), instance);
-	if (itFind != data.end())
-	{
-		data.erase(itFind);
-		// Remove asset if no more instances available.
-		if (data.size() == 0)
-		{
-			m_assetInstances[EnumToIndex(type)].erase(instance->assetID);
-		}
-		delete instance;
-		instance = nullptr;
-	}
-	else
-	{
-		AKA_ASSERT(false, "trying to destroy an instance that does not exist");
-	}
+	if (instanceHandle == InstanceHandle::Invalid)
+		return;
+
+	m_instances.erase(instanceHandle);
+
+	m_instancesDirty = true;
 }
 
 
@@ -269,6 +302,9 @@ ViewHandle Renderer::createView(ViewType viewType)
 	View& view = m_views.emplace();
 	view.type = viewType;
 	view.data = ViewData{};
+
+	m_viewDirty = true;
+
 	return handle;
 }
 
@@ -276,12 +312,16 @@ void Renderer::updateView(ViewHandle handle, const mat4f& view, const mat4f& pro
 {
 	m_views[EnumToValue(handle)].data.projection = projection;
 	m_views[EnumToValue(handle)].data.view = view;
+
+	m_viewDirty = true;
 }
 
 void Renderer::destroyView(ViewHandle view)
 {
 	// Cant remove it, might break indexation, use map instead ?
 	m_views[EnumToValue(view)];
+
+	m_viewDirty = true;
 }
 
 GeometryBufferHandle Renderer::allocateGeometryVertex(void* data, size_t size)
@@ -334,29 +374,104 @@ void Renderer::render(gfx::Frame* frame)
 {
 	gfx::CommandList* cmd = m_device->getGraphicCommandList(frame);
 
-	Vector<gfx::DrawIndexedIndirectCommand> drawIndexedBuffer[EnumCount<InstanceType>()];
-	// Update instance buffer (TODO handle gfx::MaxFrameInFlight)
-
+	// TODO should run through all views ?
 	if (m_views.size() == 0)
 		return;
 
-	View& view = m_views[0];
+	View& view = m_views[m_currentView];
 
-	ViewData ubo;
-	ubo.view = view.data.view;
-	ubo.projection = view.data.projection;
-	m_device->upload(m_viewBuffers, &ubo, 0, sizeof(ViewData));
+	if (m_viewDirty)
+	{
+		ViewData ubo;
+		ubo.view = view.data.view;
+		ubo.projection = view.data.projection;
+		m_device->upload(m_viewBuffers, &ubo, 0, sizeof(ViewData));
+		m_viewDirty = false;
+	}
 
-	static const char* s_instanceTypeName[] = {
-		"StaticMesh3D",
-		"Sprite2D",
-		"Text2D",
-		"Text3D"
-	};
-	static_assert(countof(s_instanceTypeName) == EnumCount<InstanceType>());
+	if (m_instancesDirty || m_materialDirty) // TODO enum mask !!
+	{
+		// Group all instances by type & asset for batching draw call.
+		std::map<AssetID, Vector<mat4f>> assetInstances[EnumCount<InstanceType>()];
+		for (const std::pair<InstanceHandle, Instance>& instanceData : m_instances)
+		{
+			const InstanceHandle instanceHandle = instanceData.first;
+			const Instance& instance = instanceData.second;
+			assetInstances[EnumToIndex(instance.type)][instance.assetID].append(instance.transform);
+		}
+
+		// Could have only one type dirty.
+		gfx::BufferHandle buffer[EnumCount<InstanceType>()];
+		gfx::BufferHandle bufferStaging[EnumCount<InstanceType>()];
+		InstanceData* data[EnumCount<InstanceType>()];
+		for (InstanceType instanceType : EnumRange<InstanceType>())
+		{
+			buffer[EnumToIndex(instanceType)] = m_renderData[EnumToIndex(instanceType)].m_instanceBuffer;
+			bufferStaging[EnumToIndex(instanceType)] = m_renderData[EnumToIndex(instanceType)].m_instanceBufferStaging;
+			data[EnumToIndex(instanceType)] = static_cast<InstanceData*>(m_device->map(bufferStaging[EnumToIndex(instanceType)], gfx::BufferMap::Write));
+			m_drawIndexedBuffer[EnumToIndex(instanceType)].clear();
+		}
+
+		// Generate draw command & fill instance buffer.
+		for (InstanceType instanceType : EnumRange<InstanceType>())
+		{
+			if (instanceType != InstanceType::StaticMesh3D)
+				continue; // Skip other types for now
+			uint32_t instanceCount = 0;
+			for (const std::pair<AssetID, Vector<mat4f>>& instancesPair : assetInstances[EnumToIndex(instanceType)])
+			{
+				AssetID assetID = instancesPair.first;
+				const Vector<mat4f>& instances = instancesPair.second;
+				ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(assetID);
+				if (!meshHandle.isLoaded())
+				{
+					// Should not happen as meshes are registered only when set
+					AKA_ASSERT(false, "Should not happen");
+					continue; // Skip it
+				}
+				StaticMesh& mesh = meshHandle.get();
+				AKA_ASSERT(mesh.getIndexFormat() == gfx::IndexFormat::UnsignedInt, "");
+				uint32_t indexOffset = getGeometryBufferOffset(mesh.getIndexBufferHandle());
+				uint32_t vertexOffset = getGeometryBufferOffset(mesh.getVertexBufferHandle());
+				AKA_ASSERT((indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
+				AKA_ASSERT((vertexOffset % sizeof(StaticVertex)) == 0, "Vertices not aligned");
+				for (const StaticMeshBatch& batch : mesh.getBatches())
+				{
+					AKA_ASSERT((batch.indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
+					AKA_ASSERT((batch.vertexOffset % sizeof(StaticVertex)) == 0, "Vertices not aligned");
+					gfx::DrawIndexedIndirectCommand command{};
+					command.indexCount = batch.indexCount;
+					command.instanceCount = (uint32_t)instances.size();
+					command.firstIndex = (batch.indexOffset + indexOffset) / sizeof(uint32_t);
+					command.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(StaticVertex);
+					command.firstInstance = instanceCount; // offset in instance buffer.
+					m_drawIndexedBuffer[EnumToIndex(instanceType)].append(command);
+					for (const mat4f & instanceTransform : instances)
+					{
+						uint32_t batchID = (uint32_t)std::distance(m_materials.begin(), m_materials.find(batch.material.get().getMaterialHandle()));
+						data[EnumToIndex(instanceType)][instanceCount].transform = instanceTransform;
+						data[EnumToIndex(instanceType)][instanceCount].normal = mat4f::transpose(mat4f::inverse(instanceTransform));
+						data[EnumToIndex(instanceType)][instanceCount].batchID = batchID;
+
+						++instanceCount;
+						AKA_ASSERT(MaxInstanceCount >= instanceCount, "Too many instances, need resize buffer");
+					}
+				}
+			}
+		}
+		for (InstanceType instanceType : EnumRange<InstanceType>())
+		{
+			m_device->unmap(bufferStaging[EnumToIndex(instanceType)]);
+			gfx::ScopedCmdMarker marker(cmd, String::format("PrepareBuffers_%s", getInstanceTypeName(instanceType)).cstr());
+			cmd->transition(buffer[EnumToIndex(instanceType)], gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
+			cmd->copy(bufferStaging[EnumToIndex(instanceType)], buffer[EnumToIndex(instanceType)]);
+			cmd->transition(buffer[EnumToIndex(instanceType)], gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
+		}
+		m_instancesDirty = false;
+	}
 	
 	// Prepare indirect buffers
-	for (InstanceType instanceType : EnumRange<InstanceType>())
+	/*for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (instanceType != InstanceType::StaticMesh3D)
 			continue; // Skip other types for now
@@ -369,7 +484,7 @@ void Renderer::render(gfx::Frame* frame)
 		for (auto& assetInstances : m_assetInstances[EnumToIndex(instanceType)])
 		{
 			const AssetID assetID = assetInstances.first;
-			const std::vector<Instance*> instances = assetInstances.second;
+			const std::map<InstanceHandle, Instance> instances = assetInstances.second;
 			ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(assetID);
 			if (!meshHandle.isLoaded())
 				continue; // Skip it
@@ -390,10 +505,10 @@ void Renderer::render(gfx::Frame* frame)
 				command.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(StaticVertex);
 				command.firstInstance = instanceCount; // offset in instance buffer.
 				drawIndexedBuffer[EnumToIndex(instanceType)].append(command);
-				for (Instance* instance : instances)
+				for (const std::pair<InstanceHandle, Instance>& instance : instances)
 				{
-					data[instanceCount].transform = instance->transform;
-					data[instanceCount].normal = mat4f::transpose(mat4f::inverse(instance->transform));
+					data[instanceCount].transform = instance.second.transform;
+					data[instanceCount].normal = mat4f::transpose(mat4f::inverse(instance.second.transform));
 					data[instanceCount].batchID = batch.material.get().getMaterial()->materialID;
 
 					++instanceCount;
@@ -405,16 +520,15 @@ void Renderer::render(gfx::Frame* frame)
 		cmd->transition(buffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
 		cmd->copy(bufferStaging, buffer);
 		cmd->transition(buffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
-	}
-	{ // Prepare materials
+	}*/
+
+	if (m_materialDirty)
+	{
 		MaterialData* data = static_cast<MaterialData*>(m_device->map(m_materialStagingBuffer, gfx::BufferMap::Write));
 		uint32_t materialID = 0;
-		for (RendererMaterial* material : m_materials)
+		for (auto& material : m_materials)
 		{
-			Memory::copy(data[materialID].color, material->data.color, sizeof(float) * 4);
-			data[materialID].albedoID = material->data.albedoID;
-			data[materialID].normalID = material->data.normalID;
-			AKA_ASSERT(material->materialID == materialID, "");
+			data[materialID] = material.second.data;
 			materialID++;
 		}
 
@@ -422,13 +536,15 @@ void Renderer::render(gfx::Frame* frame)
 		cmd->transition(m_materialBuffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
 		cmd->copy(m_materialStagingBuffer, m_materialBuffer);
 		cmd->transition(m_materialBuffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
+		m_materialDirty = false;
 	}
+
 	// Draw !
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (instanceType != InstanceType::StaticMesh3D)
 			continue; // Skip other types for now
-		gfx::ScopedCmdMarker marker(cmd, String::format("Render_%s", s_instanceTypeName[EnumToIndex(instanceType)]).cstr());
+		gfx::ScopedCmdMarker marker(cmd, String::format("Render_%s", getInstanceTypeName(instanceType)).cstr());
 
 		const InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		// TODO Cant clear with this pass as it will discard previous instance type
@@ -442,7 +558,7 @@ void Renderer::render(gfx::Frame* frame)
 		cmd->bindVertexBuffer(1, data.m_instanceBuffer, 0);
 		cmd->bindIndexBuffer(m_geometryIndexBuffer, gfx::IndexFormat::UnsignedInt, 0);
 		// TODO upload command on GPU & use indirect.
-		for (gfx::DrawIndexedIndirectCommand& batch : drawIndexedBuffer[EnumToIndex(instanceType)])
+		for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer[EnumToIndex(instanceType)])
 		{
 			cmd->drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
 		}
@@ -468,24 +584,35 @@ void Renderer::onReceive(const ShaderReloadedEvent& event)
 	createRenderPass();
 }
 
-RendererMaterial* Renderer::createMaterialData()
+MaterialHandle Renderer::createMaterial()
 {
+	m_materialDirty = true;
+
+	size_t hash = hash::fnv(&materialSeed, sizeof(uint32_t));
+	materialSeed++;
+	MaterialHandle materialHandle = static_cast<MaterialHandle>(hash);
+
 	uint32_t materialID = (uint32_t)m_materials.size();
-	RendererMaterial* material = m_materials.append(new RendererMaterial);
-	material->data;
-	material->materialID = materialID;
-	return material;
+	RendererMaterial material;
+	material.data = MaterialData{};
+
+	AKA_ASSERT(m_materials.find(materialHandle) == m_materials.end(), "Hash collision");
+
+	m_materials.insert(std::make_pair(materialHandle, RendererMaterial()));
+	return materialHandle;
 }
 
-void Renderer::destroyMaterialData(RendererMaterial*& material)
+void Renderer::updateMaterial(MaterialHandle handle, const color4f& color, TextureID albedo, TextureID normal)
 {
-	auto it = std::find(m_materials.begin(), m_materials.end(), material);
-	if (it != m_materials.end())
-	{
-		m_materials.remove(it);
-	}
-	delete material;
-	material = nullptr;
+	auto it = m_materials.find(handle);
+	it->second.data.albedoID = EnumToValue(albedo);
+	it->second.data.normalID = EnumToValue(normal);
+	Memory::copy(it->second.data.color, color.data, sizeof(float) * 4);
+}
+
+void Renderer::destroyMaterial(MaterialHandle handle)
+{
+	m_materials.erase(handle);
 }
 
 TextureID Renderer::allocateTextureID(gfx::TextureHandle texture)
