@@ -35,12 +35,15 @@ uint32_t countbits64(uint64_t x)
 }
 // Could check this for cross platform compatibility 
 // https://github.com/mpdn/bitcount
+// Could rename these clz, ctz & pop
 uint32_t firstbithigh32(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	unsigned long result;
-	_BitScanReverse(&result, x);
-	return result;
+	if (_BitScanReverse(&result, x))
+		return 31 - result;
+	else
+		return 32; // Depend on choices
 #else
 	// Count leading zero
 	return __builtin_clz(x); // GCC
@@ -50,8 +53,10 @@ uint32_t firstbitlow32(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	unsigned long result;
-	_BitScanForward(&result, x);
-	return result;
+	if (_BitScanForward(&result, x))
+		return result;
+	else
+		return 32; // Depend on choices
 #else
 	// Count trailing zero
 	return __builtin_ctz(x); // GCC

@@ -118,7 +118,7 @@ private: // Rendering stuff
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::RenderPassHandle m_backbufferRenderPass;
 private: // Instances
-	bool m_instancesDirty = false;
+	EnumMask<InstanceType> m_instancesDirty;
 	uint32_t m_instanceSeed;
 	std::map<InstanceHandle, Instance> m_instances;
 	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer[EnumCount<InstanceType>()];
