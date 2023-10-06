@@ -254,7 +254,6 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 
 void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)
 {
-	_device->wait();
 	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
@@ -295,7 +294,7 @@ void ImGuiLayer::onLayerPreRender()
 	ImGuizmo::BeginFrame();
 }
 
-void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* frame)
+void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::FrameHandle frame)
 {
 	gfx::CommandList* cmd = _device->getGraphicCommandList(frame);
 	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);

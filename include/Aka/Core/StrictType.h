@@ -6,11 +6,13 @@
 
 namespace aka {
 
-template <typename Type, typename Tag>
+template <typename T, typename Tag>
 class StrictType
 {
 private:
-	typedef StrictType<Type, Tag> ST;
+	typedef StrictType<T, Tag> ST;
+public:
+	using Type = T;
 public:
 	constexpr StrictType() : m_value(Type()) {}
 	constexpr explicit StrictType(const Type value) : m_value(value) {}

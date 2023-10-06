@@ -85,7 +85,7 @@ public:
 	uint32_t getGeometryBufferOffset(GeometryBufferHandle handle);
 
 	// -- Interactions
-	void render(gfx::Frame* frame);
+	void render(gfx::FrameHandle frame);
 	void resize(uint32_t width, uint32_t height);
 	void onReceive(const ShaderReloadedEvent& event);
 
@@ -123,12 +123,12 @@ private: // Instances
 	std::map<InstanceHandle, Instance> m_instances;
 	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer[EnumCount<InstanceType>()];
 private: // Views
-	gfx::BufferHandle m_viewBuffers;
-	Vector<gfx::DescriptorPoolHandle> m_viewDescriptorPool;
-	Vector<gfx::DescriptorSetHandle> m_viewDescriptorSet;
-	Vector<View> m_views;
-	uint32_t m_currentView = 0;
-	bool m_viewDirty;
+	gfx::BufferHandle m_viewBuffers[gfx::MaxFrameInFlight];
+	gfx::DescriptorPoolHandle m_viewDescriptorPool;
+	std::map<ViewHandle, gfx::DescriptorSetHandle> m_viewDescriptorSet[gfx::MaxFrameInFlight];
+	std::map<ViewHandle, View> m_views;
+	uint32_t m_viewSeed = 0;
+	bool m_viewDirty[gfx::MaxFrameInFlight];
 private: // Material & textures
 	bool m_materialDirty = 0;
 	TextureID m_nextTextureID = (TextureID)0;

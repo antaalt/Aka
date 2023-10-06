@@ -76,7 +76,7 @@ VkCompareOp tovk(DepthOp compare)
 		AKA_ASSERT(false, "invalid enum");
 		[[fallthrough]];
 	case DepthOp::None: // if disabled
-		return VK_COMPARE_OP_MAX_ENUM;
+		return VK_COMPARE_OP_NEVER;
 	}
 }
 VkBlendFactor tovk(BlendMode mode)
@@ -436,7 +436,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
 	depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencilInfo.depthTestEnable = depth.isEnabled() ? VK_TRUE : VK_FALSE;
-	depthStencilInfo.depthWriteEnable = depth.mask ? VK_TRUE : VK_FALSE;
+	depthStencilInfo.depthWriteEnable = (depth.isEnabled() && depth.mask) ? VK_TRUE : VK_FALSE;
 	depthStencilInfo.depthCompareOp = tovk(depth.compare);
 	//depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
 	//depthStencilInfo.minDepthBounds = 0.0f;

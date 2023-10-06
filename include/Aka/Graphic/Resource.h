@@ -23,6 +23,10 @@ enum class ResourceType : uint8_t
 	Shader,
 	RenderPass,
 	Fence,
+	Frame,
+
+	First = Buffer,
+	Last = Frame,
 };
 
 enum class ResourceAccessType
@@ -34,6 +38,9 @@ enum class ResourceAccessType
 	CopySRC,			// Access as copy
 	CopyDST,			// Access as copy
 	Present,			// Access as swapchain
+
+	First = Undefined,
+	Last = Present,
 };
 
 using ResourceNativeHandle = uint64_t;

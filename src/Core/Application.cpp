@@ -100,7 +100,7 @@ void Application::preRender()
 	m_root->preRender();
 	EventDispatcher<AppFrameEvent>::trigger(AppFrameEvent{});
 }
-void Application::render(gfx::GraphicDevice* _device, gfx::Frame* frame)
+void Application::render(gfx::GraphicDevice* _device, gfx::FrameHandle frame)
 {
 	onRender(_device, frame);
 	m_renderer->render(frame);
@@ -218,8 +218,8 @@ void Application::run(Application* app, const Config& config)
 		platform->poll();
 		app->update(deltaTime);
 		// Rendering
-		gfx::Frame* frame = graphic->frame();
-		if (frame != nullptr)
+		gfx::FrameHandle frame = graphic->frame();
+		if (frame != gfx::FrameHandle::null)
 		{
 			app->preRender();
 			app->render(graphic, frame);

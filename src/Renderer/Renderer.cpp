@@ -35,7 +35,7 @@ static const uint32_t MaxInstanceCount = 500;
 static const uint32_t MaxViewCount = 5;
 static const uint32_t MaxBindlessResources = 16536;
 static const uint32_t MaxMaterialCount = 200;
-static const uint32_t MaxGeometryBufferSize = 1 << 26;
+static const uint32_t MaxGeometryBufferSize = 1 << 28;
 
 const char* getInstanceTypeName(InstanceType type)
 {
@@ -93,98 +93,110 @@ void Renderer::create()
 		data.m_instanceBuffer = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Vertex, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 		data.m_instanceBufferStaging = m_device->createBuffer("InstanceBuffer", gfx::BufferType::Vertex, sizeof(InstanceData) * MaxInstanceCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
 	}
-	gfx::ShaderBindingState bindings{};
-	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
-	m_viewBuffers = m_device->createBuffer("ViewBuffer", gfx::BufferType::Uniform, sizeof(ViewData) * MaxViewCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+	{ // View
+		gfx::ShaderBindingState bindings{};
+		bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
+		m_viewDescriptorPool = getDevice()->createDescriptorPool("ViewDescriptorPool", bindings, MaxViewCount * gfx::MaxFrameInFlight);
+		
+		for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
+		{
+			m_viewBuffers[iFrame] = m_device->createBuffer("ViewBuffer", gfx::BufferType::Uniform, sizeof(ViewData) * MaxViewCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		}
+	}
 
-	// Bindless
-	gfx::ShaderBindingState bindlessBindings{};
-	bindlessBindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, gfx::ShaderBindingFlag::Bindless, MaxBindlessResources);
-	m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", bindlessBindings, MaxBindlessResources);
-	m_bindlessDescriptorSet = getDevice()->allocateDescriptorSet("BindlessSet", bindlessBindings, m_bindlessPool);
+	{ // Textures
+		// Bindless
+		gfx::ShaderBindingState bindlessBindings{};
+		bindlessBindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, gfx::ShaderBindingFlag::Bindless, MaxBindlessResources);
+		m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", bindlessBindings, MaxBindlessResources);
+		m_bindlessDescriptorSet = getDevice()->allocateDescriptorSet("BindlessSet", bindlessBindings, m_bindlessPool);
 
-	// View
-	gfx::DescriptorPoolHandle pool = m_viewDescriptorPool.append(getDevice()->createDescriptorPool("ViewDescriptorPool", bindings, MaxViewCount));
-	m_viewDescriptorSet.append(getDevice()->allocateDescriptorSet("ViewDescSet", bindings, pool));
+		// Samplers
+		m_defaultSamplers[EnumToIndex(SamplerType::Nearest)] = m_device->createSampler(
+			"Sampler",
+			gfx::Filter::Nearest, gfx::Filter::Nearest,
+			gfx::SamplerMipMapMode::None,
+			gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
+			1.0
+		);
+		m_defaultSamplers[EnumToIndex(SamplerType::Bilinear)] = m_device->createSampler(
+			"Sampler",
+			gfx::Filter::Linear, gfx::Filter::Linear,
+			gfx::SamplerMipMapMode::None,
+			gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
+			1.0
+		);
+		m_defaultSamplers[EnumToIndex(SamplerType::Trilinear)] = m_device->createSampler(
+			"Sampler",
+			gfx::Filter::Linear, gfx::Filter::Linear,
+			gfx::SamplerMipMapMode::Linear,
+			gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
+			1.0
+		);
+		m_defaultSamplers[EnumToIndex(SamplerType::Anisotropic)] = m_device->createSampler(
+			"Sampler",
+			gfx::Filter::Linear, gfx::Filter::Linear,
+			gfx::SamplerMipMapMode::Linear,
+			gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
+			1.0
+		);
+	}
+	{ // Material
+		m_materialStagingBuffer = getDevice()->createBuffer("MaterialBuffer", gfx::BufferType::Storage, sizeof(MaterialData) * MaxMaterialCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
+		m_materialBuffer = getDevice()->createBuffer("MaterialBuffer", gfx::BufferType::Storage, sizeof(MaterialData) * MaxMaterialCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 
-	Vector<gfx::DescriptorUpdate> desc;
-	desc.append(gfx::DescriptorUpdate::uniformBuffer(0, 0, m_viewBuffers, 0, sizeof(ViewData)));
-	m_device->update(m_viewDescriptorSet[0], desc.data(), desc.size());
+		gfx::ShaderBindingState materialBindings{};
+		materialBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment);
+		m_materialPool = getDevice()->createDescriptorPool("MaterialDescriptorPool", materialBindings, MaxMaterialCount);
+		m_materialSet = getDevice()->allocateDescriptorSet("MaterialdescriptorSet", materialBindings, m_materialPool);
 
-	m_defaultSamplers[EnumToIndex(SamplerType::Nearest)] = m_device->createSampler(
-		"Sampler",
-		gfx::Filter::Nearest, gfx::Filter::Nearest,
-		gfx::SamplerMipMapMode::None,
-		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
-		1.0
-	);
-	m_defaultSamplers[EnumToIndex(SamplerType::Bilinear)] = m_device->createSampler(
-		"Sampler",
-		gfx::Filter::Linear, gfx::Filter::Linear,
-		gfx::SamplerMipMapMode::None,
-		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
-		1.0
-	);
-	m_defaultSamplers[EnumToIndex(SamplerType::Trilinear)] = m_device->createSampler(
-		"Sampler",
-		gfx::Filter::Linear, gfx::Filter::Linear,
-		gfx::SamplerMipMapMode::Linear,
-		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
-		1.0
-	);
-	m_defaultSamplers[EnumToIndex(SamplerType::Anisotropic)] = m_device->createSampler(
-		"Sampler",
-		gfx::Filter::Linear, gfx::Filter::Linear,
-		gfx::SamplerMipMapMode::Linear,
-		gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat, gfx::SamplerAddressMode::Repeat,
-		1.0
-	);
-	// Material
-	m_materialStagingBuffer = getDevice()->createBuffer("MaterialBuffer", gfx::BufferType::Storage, sizeof(MaterialData) * MaxMaterialCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
-	m_materialBuffer = getDevice()->createBuffer("MaterialBuffer", gfx::BufferType::Storage, sizeof(MaterialData) * MaxMaterialCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
-	
-	gfx::ShaderBindingState materialBindings{};
-	materialBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment);
-	m_materialPool = getDevice()->createDescriptorPool("MaterialDescriptorPool", materialBindings, MaxMaterialCount);
-	m_materialSet = getDevice()->allocateDescriptorSet("MaterialdescriptorSet", materialBindings, m_materialPool);
-
-	Vector<gfx::DescriptorUpdate> updates;
-	updates.append(gfx::DescriptorUpdate::storageBuffer(0, 0, m_materialBuffer, 0, sizeof(MaterialData) * MaxMaterialCount));
-	getDevice()->update(m_materialSet, updates.data(), updates.size());
-
-	// Geometry
-	m_geometryVertexBuffer = getDevice()->createBuffer("GeometryVertexBuffer", gfx::BufferType::Vertex, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
-	m_geometryIndexBuffer = getDevice()->createBuffer("GeometryIndexBuffer", gfx::BufferType::Index, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
-
+		Vector<gfx::DescriptorUpdate> updates;
+		updates.append(gfx::DescriptorUpdate::storageBuffer(0, 0, m_materialBuffer, 0, sizeof(MaterialData) * MaxMaterialCount));
+		getDevice()->update(m_materialSet, updates.data(), updates.size());
+	}
+	{ // Geometry
+		m_geometryVertexBuffer = getDevice()->createBuffer("GeometryVertexBuffer", gfx::BufferType::Vertex, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		m_geometryIndexBuffer = getDevice()->createBuffer("GeometryIndexBuffer", gfx::BufferType::Index, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+	}
 	createRenderPass();
 }
 
 void Renderer::destroy()
 {
+	destroyRenderPass();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
 		m_device->destroy(data.m_instanceBuffer);
 		m_device->destroy(data.m_instanceBufferStaging);
 	}
-	for (SamplerType samplerType : EnumRange<SamplerType>())
-	{
-		m_device->destroy(m_defaultSamplers[EnumToIndex(samplerType)]);
+	{ // Material
+		m_device->destroy(m_materialStagingBuffer);
+		m_device->destroy(m_materialBuffer);
+		m_device->free(m_materialSet);
+		m_device->destroy(m_materialPool);
 	}
-	destroyRenderPass();
-	m_device->destroy(m_materialStagingBuffer);
-	m_device->destroy(m_materialBuffer);
-	m_device->free(m_materialSet);
-	m_device->destroy(m_materialPool);
-	m_device->destroy(m_viewBuffers);
-	m_device->free(m_bindlessDescriptorSet);
-	m_device->destroy(m_bindlessPool);
-	m_device->destroy(m_geometryVertexBuffer);
-	m_device->destroy(m_geometryIndexBuffer);
-	for (gfx::DescriptorSetHandle handle : m_viewDescriptorSet)
-		m_device->free(handle);
-	for (gfx::DescriptorPoolHandle handle : m_viewDescriptorPool)
-		m_device->destroy(handle);
+	{ // Textures
+		for (SamplerType samplerType : EnumRange<SamplerType>())
+		{
+			m_device->destroy(m_defaultSamplers[EnumToIndex(samplerType)]);
+		}
+		m_device->free(m_bindlessDescriptorSet);
+		m_device->destroy(m_bindlessPool);
+	}
+	{ // Geometry
+		m_device->destroy(m_geometryVertexBuffer);
+		m_device->destroy(m_geometryIndexBuffer);
+	}
+	{ // View
+		for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
+		{
+			for (std::pair<ViewHandle, gfx::DescriptorSetHandle> handle : m_viewDescriptorSet[iFrame])
+				m_device->free(handle.second);
+			m_device->destroy(m_viewBuffers[iFrame]);
+		}
+		m_device->destroy(m_viewDescriptorPool);
+	}
 }
 
 void Renderer::createRenderPass()
@@ -298,30 +310,53 @@ void Renderer::destroyInstance(InstanceHandle instanceHandle)
 
 ViewHandle Renderer::createView(ViewType viewType)
 {
-	ViewHandle handle = static_cast<ViewHandle>(m_views.size());
-	View& view = m_views.emplace();
+	size_t hash = hash::fnv(&viewType, sizeof(ViewType));
+	hash::combine(hash, m_viewSeed++);
+	ViewHandle handle = static_cast<ViewHandle>(hash);
+	View view;
 	view.type = viewType;
 	view.data = ViewData{};
 
-	m_viewDirty = true;
+	AKA_ASSERT(m_views.find(handle) == m_views.end(), "Hash collision");
 
+	m_views.insert(std::make_pair(handle, view));
+
+	gfx::ShaderBindingState bindings{};
+	bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
+	for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
+	{
+		gfx::DescriptorSetHandle set = getDevice()->allocateDescriptorSet("ViewDescSet", bindings, m_viewDescriptorPool);
+		m_viewDescriptorSet[iFrame].insert(std::make_pair(handle, set));
+		Vector<gfx::DescriptorUpdate> desc;
+		desc.append(gfx::DescriptorUpdate::uniformBuffer(0, 0, m_viewBuffers[iFrame], 0, sizeof(ViewData)));
+		m_device->update(set, desc.data(), desc.size());
+
+		m_viewDirty[iFrame] = true;
+	}
 	return handle;
 }
 
 void Renderer::updateView(ViewHandle handle, const mat4f& view, const mat4f& projection)
 {
-	m_views[EnumToValue(handle)].data.projection = projection;
-	m_views[EnumToValue(handle)].data.view = view;
+	m_views[handle].data.projection = projection;
+	m_views[handle].data.view = view;
 
-	m_viewDirty = true;
+	for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
+	{
+		m_viewDirty[iFrame] = true;
+	}
 }
 
-void Renderer::destroyView(ViewHandle view)
+void Renderer::destroyView(ViewHandle handle)
 {
-	// Cant remove it, might break indexation, use map instead ?
-	m_views[EnumToValue(view)];
-
-	m_viewDirty = true;
+	View& view = m_views[handle];
+	for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
+	{
+		getDevice()->free(m_viewDescriptorSet[iFrame][handle]);
+		m_viewDescriptorSet[iFrame].erase(handle);
+		m_viewDirty[iFrame] = true;
+	}
+	m_views.erase(handle);
 }
 
 GeometryBufferHandle Renderer::allocateGeometryVertex(void* data, size_t size)
@@ -369,140 +404,141 @@ uint32_t Renderer::getGeometryBufferOffset(GeometryBufferHandle handle)
 	return static_cast<uint32_t>(handle) & bitmask(31); // Remove id bit
 }
 
-
-void Renderer::render(gfx::Frame* frame)
+void Renderer::render(gfx::FrameHandle frame)
 {
 	gfx::CommandList* cmd = m_device->getGraphicCommandList(frame);
+	gfx::FrameIndex frameIndex = m_device->getFrameIndex(frame);
 
-	// TODO should run through all views ?
-	if (m_views.size() == 0)
-		return;
-
-	View& view = m_views[m_currentView];
-
-	if (m_viewDirty)
+	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{
-		ViewData ubo;
-		ubo.view = view.data.view;
-		ubo.projection = view.data.projection;
-		m_device->upload(m_viewBuffers, &ubo, 0, sizeof(ViewData));
-		m_viewDirty = false;
-	}
+		const ViewHandle viewHandle = viewPair.first;
+		const View& view = viewPair.second;
 
-	if (!m_instancesDirty.empty() || m_materialDirty)
-	{
-		// Group all instances by type & asset for batching draw call.
-		std::map<AssetID, Vector<mat4f>> assetInstances[EnumCount<InstanceType>()];
-		for (const std::pair<InstanceHandle, Instance>& instanceData : m_instances)
+		if (m_viewDirty) // TODO one dirty per view.
 		{
-			const InstanceHandle instanceHandle = instanceData.first;
-			const Instance& instance = instanceData.second;
-			// Ignore instance type we dont have to update
-			if (m_instancesDirty.has(instance.type))
-				assetInstances[EnumToIndex(instance.type)][instance.assetID].append(instance.transform);
+			ViewData ubo;
+			ubo.view = view.data.view;
+			ubo.projection = view.data.projection;
+			m_device->upload(m_viewBuffers[frameIndex.value()], &ubo, 0, sizeof(ViewData));
+			m_viewDirty[frameIndex.value()] = false;
 		}
 
-		// Could have only one type dirty.
-		// Generate draw command & fill instance buffer.
-		for (InstanceType instanceType : m_instancesDirty)
+		if (!m_instancesDirty.empty() || m_materialDirty)
 		{
-			if (instanceType != InstanceType::StaticMesh3D)
-				continue; // Skip other types for now
-
-			gfx::BufferHandle buffer = m_renderData[EnumToIndex(instanceType)].m_instanceBuffer;
-			gfx::BufferHandle bufferStaging = m_renderData[EnumToIndex(instanceType)].m_instanceBufferStaging;
-			InstanceData* data = static_cast<InstanceData*>(m_device->map(bufferStaging, gfx::BufferMap::Write));
-			m_drawIndexedBuffer[EnumToIndex(instanceType)].clear();
-
-			uint32_t instanceCount = 0;
-			for (const std::pair<AssetID, Vector<mat4f>>& instancesPair : assetInstances[EnumToIndex(instanceType)])
+			// Group all instances by type & asset for batching draw call.
+			std::map<AssetID, Vector<mat4f>> assetInstances[EnumCount<InstanceType>()];
+			for (const std::pair<InstanceHandle, Instance>& instanceData : m_instances)
 			{
-				AssetID assetID = instancesPair.first;
-				const Vector<mat4f>& instances = instancesPair.second;
-				ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(assetID);
-				if (!meshHandle.isLoaded())
-				{
-					// Should not happen as meshes are registered only when set
-					AKA_ASSERT(false, "Should not happen");
-					continue; // Skip it
-				}
-				StaticMesh& mesh = meshHandle.get();
-				AKA_ASSERT(mesh.getIndexFormat() == gfx::IndexFormat::UnsignedInt, "");
-				uint32_t indexOffset = getGeometryBufferOffset(mesh.getIndexBufferHandle());
-				uint32_t vertexOffset = getGeometryBufferOffset(mesh.getVertexBufferHandle());
-				AKA_ASSERT((indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
-				AKA_ASSERT((vertexOffset % sizeof(StaticVertex)) == 0, "Vertices not aligned");
-				for (const StaticMeshBatch& batch : mesh.getBatches())
-				{
-					AKA_ASSERT((batch.indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
-					AKA_ASSERT((batch.vertexOffset % sizeof(StaticVertex)) == 0, "Vertices not aligned");
-					gfx::DrawIndexedIndirectCommand command{};
-					command.indexCount = batch.indexCount;
-					command.instanceCount = (uint32_t)instances.size();
-					command.firstIndex = (batch.indexOffset + indexOffset) / sizeof(uint32_t);
-					command.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(StaticVertex);
-					command.firstInstance = instanceCount; // offset in instance buffer.
-					m_drawIndexedBuffer[EnumToIndex(instanceType)].append(command);
-					for (const mat4f & instanceTransform : instances)
-					{
-						uint32_t batchID = (uint32_t)std::distance(m_materials.begin(), m_materials.find(batch.material.get().getMaterialHandle()));
-						data[instanceCount].transform = instanceTransform;
-						data[instanceCount].normal = mat4f::transpose(mat4f::inverse(instanceTransform));
-						data[instanceCount].batchID = batchID;
+				const InstanceHandle instanceHandle = instanceData.first;
+				const Instance& instance = instanceData.second;
+				// Ignore instance type we dont have to update
+				if (m_instancesDirty.has(instance.type))
+					assetInstances[EnumToIndex(instance.type)][instance.assetID].append(instance.transform);
+			}
 
-						++instanceCount;
-						AKA_ASSERT(MaxInstanceCount >= instanceCount, "Too many instances, need resize buffer");
+			// Could have only one type dirty.
+			// Generate draw command & fill instance buffer.
+			for (InstanceType instanceType : m_instancesDirty)
+			{
+				if (instanceType != InstanceType::StaticMesh3D)
+					continue; // Skip other types for now
+
+				gfx::BufferHandle buffer = m_renderData[EnumToIndex(instanceType)].m_instanceBuffer;
+				gfx::BufferHandle bufferStaging = m_renderData[EnumToIndex(instanceType)].m_instanceBufferStaging;
+				InstanceData* data = static_cast<InstanceData*>(m_device->map(bufferStaging, gfx::BufferMap::Write));
+				m_drawIndexedBuffer[EnumToIndex(instanceType)].clear();
+
+				uint32_t instanceCount = 0;
+				for (const std::pair<AssetID, Vector<mat4f>>& instancesPair : assetInstances[EnumToIndex(instanceType)])
+				{
+					AssetID assetID = instancesPair.first;
+					const Vector<mat4f>& instances = instancesPair.second;
+					ResourceHandle<StaticMesh> meshHandle = m_library->get<StaticMesh>(assetID);
+					if (!meshHandle.isLoaded())
+					{
+						// Should not happen as meshes are registered only when set
+						AKA_ASSERT(false, "Should not happen");
+						continue; // Skip it
+					}
+					StaticMesh& mesh = meshHandle.get();
+					AKA_ASSERT(mesh.getIndexFormat() == gfx::IndexFormat::UnsignedInt, "");
+					uint32_t indexOffset = getGeometryBufferOffset(mesh.getIndexBufferHandle());
+					uint32_t vertexOffset = getGeometryBufferOffset(mesh.getVertexBufferHandle());
+					AKA_ASSERT((indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
+					AKA_ASSERT((vertexOffset % sizeof(StaticVertex)) == 0, "Vertices not aligned");
+					for (const StaticMeshBatch& batch : mesh.getBatches())
+					{
+						AKA_ASSERT((batch.indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
+						AKA_ASSERT((batch.vertexOffset % sizeof(StaticVertex)) == 0, "Vertices not aligned");
+						gfx::DrawIndexedIndirectCommand command{};
+						command.indexCount = batch.indexCount;
+						command.instanceCount = (uint32_t)instances.size();
+						command.firstIndex = (batch.indexOffset + indexOffset) / sizeof(uint32_t);
+						command.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(StaticVertex);
+						command.firstInstance = instanceCount; // offset in instance buffer.
+						m_drawIndexedBuffer[EnumToIndex(instanceType)].append(command);
+						for (const mat4f& instanceTransform : instances)
+						{
+							uint32_t batchID = (uint32_t)std::distance(m_materials.begin(), m_materials.find(batch.material.get().getMaterialHandle()));
+							data[instanceCount].transform = instanceTransform;
+							data[instanceCount].normal = mat4f::transpose(mat4f::inverse(instanceTransform));
+							data[instanceCount].batchID = batchID;
+
+							++instanceCount;
+							AKA_ASSERT(MaxInstanceCount >= instanceCount, "Too many instances, need resize buffer");
+						}
 					}
 				}
+				m_device->unmap(bufferStaging);
+				gfx::ScopedCmdMarker marker(cmd, String::format("PrepareBuffers_%s", getInstanceTypeName(instanceType)).cstr());
+				cmd->transition(buffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
+				cmd->copy(bufferStaging, buffer);
+				cmd->transition(buffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
 			}
-			m_device->unmap(bufferStaging);
-			gfx::ScopedCmdMarker marker(cmd, String::format("PrepareBuffers_%s", getInstanceTypeName(instanceType)).cstr());
-			cmd->transition(buffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
-			cmd->copy(bufferStaging, buffer);
-			cmd->transition(buffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
+			m_instancesDirty.clear();
 		}
-		m_instancesDirty.clear();
-	}
-	
-	if (m_materialDirty)
-	{
-		MaterialData* data = static_cast<MaterialData*>(m_device->map(m_materialStagingBuffer, gfx::BufferMap::Write));
-		uint32_t materialID = 0;
-		for (auto& material : m_materials)
+
+		if (m_materialDirty)
 		{
-			data[materialID] = material.second.data;
-			materialID++;
+			MaterialData* data = static_cast<MaterialData*>(m_device->map(m_materialStagingBuffer, gfx::BufferMap::Write));
+			uint32_t materialID = 0;
+			for (auto& material : m_materials)
+			{
+				data[materialID] = material.second.data;
+				materialID++;
+			}
+
+			m_device->unmap(m_materialStagingBuffer);
+			cmd->transition(m_materialBuffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
+			cmd->copy(m_materialStagingBuffer, m_materialBuffer);
+			cmd->transition(m_materialBuffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
+			m_materialDirty = false;
 		}
 
-		m_device->unmap(m_materialStagingBuffer);
-		cmd->transition(m_materialBuffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
-		cmd->copy(m_materialStagingBuffer, m_materialBuffer);
-		cmd->transition(m_materialBuffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
-		m_materialDirty = false;
-	}
-
-	// Draw !
-	gfx::FramebufferHandle fb = m_device->get(m_backbuffer, frame);
-	cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
-	for (InstanceType instanceType : EnumRange<InstanceType>())
-	{
-		gfx::ScopedCmdMarker marker(cmd, String::format("Render_%s", getInstanceTypeName(instanceType)).cstr());
-
-		const InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
-		cmd->bindPipeline(data.m_pipeline);
-		cmd->bindDescriptorSet(0, m_viewDescriptorSet[0]);
-		cmd->bindDescriptorSet(1, m_materialSet);
-		cmd->bindDescriptorSet(2, m_bindlessDescriptorSet);
-		cmd->bindVertexBuffer(0, m_geometryVertexBuffer, 0);
-		cmd->bindVertexBuffer(1, data.m_instanceBuffer, 0);
-		cmd->bindIndexBuffer(m_geometryIndexBuffer, gfx::IndexFormat::UnsignedInt, 0);
-		// TODO upload command on GPU & use indirect.
-		for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer[EnumToIndex(instanceType)])
+		// Draw !
+		// TODO each view should have somewhere its target written.
+		gfx::FramebufferHandle fb = m_device->get(m_backbuffer, frame);
+		cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
+		for (InstanceType instanceType : EnumRange<InstanceType>())
 		{
-			cmd->drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
+			gfx::ScopedCmdMarker marker(cmd, String::format("Render_%s", getInstanceTypeName(instanceType)).cstr());
+
+			const InstanceRenderData& data = m_renderData[EnumToIndex(instanceType)];
+			cmd->bindPipeline(data.m_pipeline);
+			cmd->bindDescriptorSet(0, m_viewDescriptorSet[frameIndex.value()][viewHandle]);
+			cmd->bindDescriptorSet(1, m_materialSet);
+			cmd->bindDescriptorSet(2, m_bindlessDescriptorSet);
+			cmd->bindVertexBuffer(0, m_geometryVertexBuffer, 0);
+			cmd->bindVertexBuffer(1, data.m_instanceBuffer, 0);
+			cmd->bindIndexBuffer(m_geometryIndexBuffer, gfx::IndexFormat::UnsignedInt, 0);
+			// TODO upload command on GPU & use indirect.
+			for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer[EnumToIndex(instanceType)])
+			{
+				cmd->drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
+			}
 		}
+		cmd->endRenderPass();
 	}
-	cmd->endRenderPass();
 }
 void Renderer::resize(uint32_t width, uint32_t height)
 {

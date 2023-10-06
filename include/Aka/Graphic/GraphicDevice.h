@@ -43,13 +43,18 @@ struct GraphicConfig
 CREATE_STRICT_TYPE(uint32_t, FrameIndex)
 CREATE_STRICT_TYPE(uint32_t, ImageIndex)
 
-static constexpr uint32_t MaxFrameInFlight = 1; // number of frames to deal with concurrently
+static constexpr uint32_t MaxFrameInFlight = 3; // number of frames to deal with concurrently
 
-struct Frame // TODO FrameHandle instead.
+struct Frame : Resource
 {
+	Frame(const char* name) : Resource(name, ResourceType::Frame){}
+	void setImageIndex(ImageIndex index) { m_image = index; }
+	ImageIndex getImageIndex() const { return m_image; }
 protected:
 	ImageIndex m_image;
 };
+
+using FrameHandle = ResourceHandle<Frame>;
 
 struct Backbuffer : Resource
 { 
@@ -143,7 +148,7 @@ public:
 	virtual void destroy(BackbufferHandle backbuffer) = 0;
 	virtual BackbufferHandle createBackbuffer(RenderPassHandle handle) = 0;
 	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
-	virtual FramebufferHandle get(BackbufferHandle handle, Frame* frame) = 0;
+	virtual FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
 	virtual void getBackbufferSize(uint32_t& width, uint32_t& height) = 0;
 
@@ -207,17 +212,22 @@ public:
 	virtual void signal(FenceHandle handle, FenceValue value) = 0;
 	virtual FenceValue read(FenceHandle handle) = 0;
 
-	// Command
+	// Command lists
 	virtual CommandList* acquireCommandList(QueueType queue) = 0;
 	virtual void release(CommandList* cmd) = 0;
 	// Frame command lists
-	virtual CommandList* getCopyCommandList(Frame* frame) = 0;
-	virtual CommandList* getGraphicCommandList(Frame* frame) = 0;
-	virtual CommandList* getComputeCommandList(Frame* frame) = 0;
+	virtual CommandList* acquireCommandList(FrameHandle frame, QueueType queue) = 0;
+	virtual void release(FrameHandle frame, CommandList* cmd) = 0;
+	// Frame main command lists
+	virtual FrameIndex getFrameIndex(FrameHandle frame) = 0;
+	virtual CommandList* getCopyCommandList(FrameHandle frame) = 0;
+	virtual CommandList* getGraphicCommandList(FrameHandle frame) = 0;
+	virtual CommandList* getComputeCommandList(FrameHandle frame) = 0;
 
 	// Command submit
 	virtual void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
 	virtual void wait(QueueType queue) = 0;
+	// Debug submit markers
 	virtual void beginMarker(QueueType queue, const char* name, const float* color) = 0;
 	virtual void endMarker(QueueType queue) = 0;
 
@@ -227,8 +237,8 @@ public:
 	virtual void capture() = 0;
 
 	// Frame
-	virtual Frame* frame() = 0;
-	virtual SwapchainStatus present(Frame* frame) = 0;
+	virtual FrameHandle frame() = 0;
+	virtual SwapchainStatus present(FrameHandle frame) = 0;
 	virtual void wait() = 0;
 };
 

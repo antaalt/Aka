@@ -57,6 +57,7 @@ struct VulkanCommandList : CommandList
 public:
 	VkCommandBuffer getVkCommandBuffer() { return vk_command; }
 	QueueType getQueueType() { return m_queue; }
+	VulkanGraphicDevice* getDevice() { return m_device; }
 
 private:
 	const VulkanGraphicPipeline* vk_graphicPipeline;
@@ -69,7 +70,7 @@ private:
 private:
 	friend class VulkanGraphicDevice;
 
-	VulkanGraphicDevice* device;
+	VulkanGraphicDevice* m_device;
 	VkCommandBuffer vk_command;
 	QueueType m_queue;
 	bool m_recording;

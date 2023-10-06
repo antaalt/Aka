@@ -231,15 +231,6 @@ VkDescriptorSet VulkanDescriptorSet::createVkDescriptorSet(VkDevice device, VkDe
 	allocInfo.descriptorPool = pool;
 	allocInfo.descriptorSetCount = layoutCount;
 	allocInfo.pSetLayouts = layouts;
-	/*if (bindless)
-	{
-		uint32_t maxBinding = 65535; // How much, not sure this is required.
-		VkDescriptorSetVariableDescriptorCountAllocateInfoEXT countInfo{};
-		countInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
-		countInfo.descriptorSetCount = 1;
-		countInfo.pDescriptorCounts = &maxBinding; // This number is the max allocatable count
-		allocInfo.pNext = &countInfo;
-	}*/
 
 	VkDescriptorSet set;
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &set));

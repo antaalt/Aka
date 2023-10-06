@@ -18,7 +18,7 @@ private:
 	void fixedUpdate(Time delta);
 	void update(Time delta);
 	void preRender();
-	void render(gfx::GraphicDevice* _device, gfx::Frame* frame);
+	void render(gfx::GraphicDevice* _device, gfx::FrameHandle frame);
 	void postRender();
 	void resize(uint32_t width, uint32_t height);
 protected:
@@ -28,7 +28,7 @@ protected:
 	virtual void onLayerUpdate(Time deltaTime) {}
 	virtual void onLayerFixedUpdate(Time deltaTime) {}
 	virtual void onLayerPreRender() {}
-	virtual void onLayerRender(aka::gfx::GraphicDevice* _device, gfx::Frame* frame) {}
+	virtual void onLayerRender(aka::gfx::GraphicDevice* _device, gfx::FrameHandle frame) {}
 	virtual void onLayerPostRender() {}
 
 	virtual void onLayerResize(uint32_t width, uint32_t height) {}

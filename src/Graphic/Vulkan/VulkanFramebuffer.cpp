@@ -118,10 +118,10 @@ RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadO
 	return createRenderPass("RenderPassBackbuffer", state);
 }
 
-FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, Frame* frame)
+FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, FrameHandle frame)
 {
-	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	return m_swapchain.getBackbuffer(this, handle)->handles[vk_frame->m_image.value()];
+	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+	return m_swapchain.getBackbuffer(this, handle)->handles[vk_frame.getImageIndex().value()];
 }
 
 const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)

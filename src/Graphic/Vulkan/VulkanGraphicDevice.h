@@ -16,7 +16,7 @@
 #include <Aka/Memory/Pool.h>
 #include <Aka/Core/Config.h>
 
-#define ENABLE_RENDERDOC_CAPTURE 1
+//#define ENABLE_RENDERDOC_CAPTURE 1
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 struct RENDERDOC_API_1_6_0;
@@ -108,7 +108,7 @@ public:
 	void destroy(BackbufferHandle handle) override;
 	BackbufferHandle createBackbuffer(RenderPassHandle handle) override;
 	RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) override;
-	FramebufferHandle get(BackbufferHandle handle, Frame* frame) override;
+	FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
 	void getBackbufferSize(uint32_t& width, uint32_t& height) override;
 
@@ -157,13 +157,16 @@ public:
 	void endMarker(QueueType queue) override;
 
 	// Frame command lists
-	CommandList* getCopyCommandList(Frame* frame) override;
-	CommandList* getGraphicCommandList(Frame* frame) override;
-	CommandList* getComputeCommandList(Frame* frame) override;
+	FrameIndex getFrameIndex(FrameHandle frame) override;
+	CommandList* getCopyCommandList(FrameHandle frame) override;
+	CommandList* getGraphicCommandList(FrameHandle frame) override;
+	CommandList* getComputeCommandList(FrameHandle frame) override;
+	CommandList* acquireCommandList(FrameHandle frame, QueueType queue) override;
+	void release(FrameHandle frame, CommandList* cmd) override;
 
 	// Frame
-	Frame* frame() override;
-	SwapchainStatus present(Frame* frame) override;
+	FrameHandle frame() override;
+	SwapchainStatus present(FrameHandle frame) override;
 	void wait() override;
 
 	// Tools

@@ -76,22 +76,27 @@ void VulkanGraphicDevice::wait(QueueType queue)
 	VK_CHECK_RESULT(vkQueueWaitIdle(getVkQueue(queue)));
 }
 
-CommandList* VulkanGraphicDevice::getCopyCommandList(Frame* frame)
+FrameIndex VulkanGraphicDevice::getFrameIndex(FrameHandle frame)
 {
-	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	return &vk_frame->commandLists[EnumToIndex(QueueType::Copy)];
+	return m_swapchain.getVkFrameIndex(frame);
 }
 
-CommandList* VulkanGraphicDevice::getGraphicCommandList(Frame* frame)
+CommandList* VulkanGraphicDevice::getCopyCommandList(FrameHandle frame)
 {
-	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	return &vk_frame->commandLists[EnumToIndex(QueueType::Graphic)];
+	VulkanFrame* vk_frame = const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(frame.__typedData));
+	return &vk_frame->mainCommandLists[EnumToIndex(QueueType::Copy)];
 }
 
-CommandList* VulkanGraphicDevice::getComputeCommandList(Frame* frame)
+CommandList* VulkanGraphicDevice::getGraphicCommandList(FrameHandle frame)
 {
-	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
-	return &vk_frame->commandLists[EnumToIndex(QueueType::Compute)];
+	VulkanFrame* vk_frame = const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(frame.__typedData));
+	return &vk_frame->mainCommandLists[EnumToIndex(QueueType::Graphic)];
+}
+
+CommandList* VulkanGraphicDevice::getComputeCommandList(FrameHandle frame)
+{
+	VulkanFrame* vk_frame = const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(frame.__typedData));
+	return &vk_frame->mainCommandLists[EnumToIndex(QueueType::Compute)];
 }
 
 VulkanCommandList::VulkanCommandList() :
@@ -106,7 +111,7 @@ VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffe
 	vk_indices(nullptr),
 	vk_sets{},
 	vk_vertices(nullptr),
-	device(device),
+	m_device(device),
 	vk_command(command),
 	m_recording(false),
 	m_oneTimeSubmit(oneTimeSubmit),
@@ -151,8 +156,8 @@ void VulkanCommandList::reset()
 
 void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear)
 {
-	VulkanFramebuffer* vk_framebuffer = device->getVk<VulkanFramebuffer>(framebuffer);
-	VulkanRenderPass* vk_renderPass = device->getVk<VulkanRenderPass>(renderPass);
+	VulkanFramebuffer* vk_framebuffer = m_device->getVk<VulkanFramebuffer>(framebuffer);
+	VulkanRenderPass* vk_renderPass = m_device->getVk<VulkanRenderPass>(renderPass);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 
 	std::vector<VkClearValue> clearValues(vk_framebuffer->count);
@@ -191,7 +196,7 @@ void VulkanCommandList::endRenderPass()
 void VulkanCommandList::bindPipeline(GraphicPipelineHandle pipeline)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanGraphicPipeline* vk_pipeline = device->getVk<VulkanGraphicPipeline>(pipeline);
+	VulkanGraphicPipeline* vk_pipeline = m_device->getVk<VulkanGraphicPipeline>(pipeline);
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	vkCmdBindPipeline(vk_command, bindPoint, vk_pipeline->vk_pipeline);
 	
@@ -202,7 +207,7 @@ void VulkanCommandList::bindPipeline(GraphicPipelineHandle pipeline)
 void VulkanCommandList::bindPipeline(ComputePipelineHandle pipeline)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanComputePipeline* vk_pipeline = device->getVk<VulkanComputePipeline>(pipeline);
+	VulkanComputePipeline* vk_pipeline = m_device->getVk<VulkanComputePipeline>(pipeline);
 	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 	vkCmdBindPipeline(vk_command, bindPoint, vk_pipeline->vk_pipeline);
 
@@ -218,7 +223,7 @@ void VulkanCommandList::bindDescriptorSet(uint32_t index, DescriptorSetHandle se
 	bool graphicPipeline = this->vk_graphicPipeline != nullptr;
 	bool computePipeline = this->vk_computePipeline != nullptr;
 	VkPipelineBindPoint bindPoint = graphicPipeline ? VK_PIPELINE_BIND_POINT_GRAPHICS : computePipeline ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_MAX_ENUM;
-	const DescriptorSet* descriptorSet = device->get(set);
+	const DescriptorSet* descriptorSet = m_device->get(set);
 	if (descriptorSet->bindings.count > 0)
 	{
 		VkPipelineLayout vk_pipelineLayout = VK_NULL_HANDLE;
@@ -249,7 +254,7 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 		vk_pipelineLayout = vk_computePipeline->vk_pipelineLayout;
 	for (uint32_t i = 0; i < count; i++)
 	{
-		const DescriptorSet* descriptorSet = device->get(sets[i]);
+		const DescriptorSet* descriptorSet = m_device->get(sets[i]);
 		if (descriptorSet->bindings.count > 0)
 		{
 			const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(descriptorSet);
@@ -265,7 +270,7 @@ void VulkanCommandList::bindDescriptorSets(const DescriptorSetHandle* sets, uint
 }
 void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
-	VulkanTexture* vk_texture = device->getVk<VulkanTexture>(texture);
+	VulkanTexture* vk_texture = m_device->getVk<VulkanTexture>(texture);
 	VulkanTexture::transitionImageLayout(
 		vk_command,
 		vk_texture->vk_image,
@@ -276,7 +281,7 @@ void VulkanCommandList::transition(TextureHandle texture, ResourceAccessType src
 }
 void VulkanCommandList::transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst)
 {
-	VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = m_device->getVk<VulkanBuffer>(buffer);
 	VulkanBuffer::transitionBuffer(
 		vk_command,
 		vk_buffer->vk_buffer,
@@ -297,7 +302,7 @@ void VulkanCommandList::bindVertexBuffers(uint32_t binding, uint32_t bindingCoun
 	VkDeviceSize vk_offsets[VertexMaxAttributeCount]{};
 	for (size_t i = 0; i < bindingCount; i++)
 	{
-		VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffers[i]);
+		VulkanBuffer* vk_buffer = m_device->getVk<VulkanBuffer>(buffers[i]);
 		vk_buffers[i] = vk_buffer->vk_buffer;
 		vk_offsets[i] = offsets ? offsets[i] : 0;
 	}
@@ -307,7 +312,7 @@ void VulkanCommandList::bindVertexBuffers(uint32_t binding, uint32_t bindingCoun
 void VulkanCommandList::bindIndexBuffer(BufferHandle buffer, IndexFormat format, uint32_t offset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanBuffer* vk_buffer = device->getVk<VulkanBuffer>(buffer);
+	VulkanBuffer* vk_buffer = m_device->getVk<VulkanBuffer>(buffer);
 	VkBuffer buffers = vk_buffer->vk_buffer;
 	VkIndexType indexType = VulkanContext::tovk(format);
 	vkCmdBindIndexBuffer(vk_command, buffers, offset, indexType);
@@ -324,7 +329,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	{
 		for (uint32_t i = 0; i < this->vk_framebuffer->count; i++)
 		{
-			const Texture* tex = device->get(vk_framebuffer->colors[i].texture);
+			const Texture* tex = m_device->get(vk_framebuffer->colors[i].texture);
 			AKA_ASSERT(Texture::isColor(tex->format), "Texture is not color.");
 			VkClearAttachment att{};
 			att.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -335,7 +340,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	}
 	if (this->vk_framebuffer->depth.texture != gfx::TextureHandle::null)
 	{
-		const Texture* tex = device->get(vk_framebuffer->depth.texture);
+		const Texture* tex = m_device->get(vk_framebuffer->depth.texture);
 		VkImageAspectFlags aspect = 0;
 		if (Texture::hasDepth(tex->format))
 			aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -396,8 +401,8 @@ void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t grou
 void VulkanCommandList::copy(BufferHandle src, BufferHandle dst)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanBuffer* vk_src = device->getVk<VulkanBuffer>(src);
-	VulkanBuffer* vk_dst = device->getVk<VulkanBuffer>(dst);
+	VulkanBuffer* vk_src = m_device->getVk<VulkanBuffer>(src);
+	VulkanBuffer* vk_dst = m_device->getVk<VulkanBuffer>(dst);
 
 	vk_dst->copyFrom(vk_command, vk_src);
 }
@@ -405,8 +410,8 @@ void VulkanCommandList::copy(BufferHandle src, BufferHandle dst)
 void VulkanCommandList::copy(TextureHandle src, TextureHandle dst)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanTexture* vk_src = device->getVk<VulkanTexture>(src);
-	VulkanTexture* vk_dst = device->getVk<VulkanTexture>(dst);
+	VulkanTexture* vk_src = m_device->getVk<VulkanTexture>(src);
+	VulkanTexture* vk_dst = m_device->getVk<VulkanTexture>(dst);
 
 	vk_dst->copyFrom(vk_command, vk_src);
 }
@@ -414,8 +419,8 @@ void VulkanCommandList::copy(TextureHandle src, TextureHandle dst)
 void VulkanCommandList::blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	VulkanTexture* vk_src = device->getVk<VulkanTexture>(src);
-	VulkanTexture* vk_dst = device->getVk<VulkanTexture>(dst);
+	VulkanTexture* vk_src = m_device->getVk<VulkanTexture>(src);
+	VulkanTexture* vk_dst = m_device->getVk<VulkanTexture>(dst);
 
 	vk_dst->blitFrom(vk_command, vk_src, srcRegion, dstRegion, filter);
 }

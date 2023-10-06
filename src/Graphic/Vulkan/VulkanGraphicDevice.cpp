@@ -103,7 +103,19 @@ const PhysicalDevice* VulkanGraphicDevice::getPhysicalDevice(uint32_t index)
 	return m_context.getPhysicalDevice(index);
 }
 
-Frame* VulkanGraphicDevice::frame()
+CommandList* VulkanGraphicDevice::acquireCommandList(FrameHandle frame, QueueType queue)
+{
+	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+	return vk_frame.allocateCommand(this, queue);
+}
+
+void VulkanGraphicDevice::release(FrameHandle frame, CommandList* cmd)
+{
+	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+	return vk_frame.releaseCommand(reinterpret_cast<VulkanCommandList*>(cmd));
+}
+
+FrameHandle VulkanGraphicDevice::frame()
 {
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	if (m_renderDocContext && m_captureState == RenderDocCaptureState::PendingCapture)
@@ -117,7 +129,7 @@ Frame* VulkanGraphicDevice::frame()
 	if (vk_frame == nullptr)
 	{
 		Logger::error("Failed to acquire next swapchain image.");
-		return nullptr;
+		return FrameHandle::null;
 	}
 	static const char* s_commandName[EnumCount<QueueType>()] = {
 		"Graphic main command list",
@@ -127,20 +139,20 @@ Frame* VulkanGraphicDevice::frame()
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
 		color4f markerColor(0.6f, 0.6f, 0.6f, 1.f);
-		vk_frame->commandLists[i].begin();
-		vk_frame->commandLists[i].beginMarker(s_commandName[i], markerColor.data);
+		vk_frame->mainCommandLists[i].begin();
+		vk_frame->mainCommandLists[i].beginMarker(s_commandName[i], markerColor.data);
 	}
-	return vk_frame;
+	return FrameHandle{ vk_frame };
 }
 
-SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
+SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 {
-	VulkanFrame* vk_frame = reinterpret_cast<VulkanFrame*>(frame);
+	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
-		vk_frame->commandLists[i].endMarker();
-		vk_frame->commandLists[i].end();
+		vk_frame.mainCommandLists[i].endMarker();
+		vk_frame.mainCommandLists[i].end();
 	}
 
 	// Submit
@@ -153,9 +165,9 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
 
 	VkCommandBuffer cmds[EnumCount<QueueType>()] = {
-		vk_frame->commandLists[EnumToIndex(QueueType::Graphic)].vk_command,
-		vk_frame->commandLists[EnumToIndex(QueueType::Compute)].vk_command,
-		vk_frame->commandLists[EnumToIndex(QueueType::Copy)].vk_command,
+		vk_frame.mainCommandLists[EnumToIndex(QueueType::Graphic)].vk_command,
+		vk_frame.mainCommandLists[EnumToIndex(QueueType::Compute)].vk_command,
+		vk_frame.mainCommandLists[EnumToIndex(QueueType::Copy)].vk_command,
 	};
 	static const char* s_queueName[EnumCount<QueueType>()] = {
 		"Graphic queue",
@@ -165,9 +177,9 @@ SwapchainStatus VulkanGraphicDevice::present(Frame* frame)
 	for (QueueType queue : EnumRange<QueueType>())
 	{
 		uint32_t i = EnumToIndex(queue);
-		VkSemaphore signalSemaphore = vk_frame->semaphore[i + 1];
-		VkSemaphore waitSemaphore = vk_frame->semaphore[i];
-		VkFence fence = vk_frame->presentFence[i];
+		VkSemaphore signalSemaphore = vk_frame.semaphore[i + 1];
+		VkSemaphore waitSemaphore = vk_frame.semaphore[i];
+		VkFence fence = vk_frame.presentFence[i];
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;

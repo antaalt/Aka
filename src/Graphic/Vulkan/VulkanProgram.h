@@ -46,7 +46,7 @@ struct VulkanDescriptorSet : DescriptorSet
 	VulkanDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool);
 	
 	VkDescriptorPool vk_pool; // Do not own it.
-	VkDescriptorSet vk_descriptorSet; // [MaxFrameInFlight] ? would force to update every frame though... or delay update somehow ?
+	VkDescriptorSet vk_descriptorSet;
 
 	void create(VulkanContext& context);
 	void destroy(VulkanContext& context);

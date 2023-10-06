@@ -12,17 +12,25 @@ namespace gfx {
 
 struct VulkanFrame : Frame
 {
-	friend class VulkanGraphicDevice;
-	friend class VulkanSwapchain;
+	VulkanFrame();
+	VulkanFrame(const char* name);
+
+	void create(VulkanGraphicDevice* device);
+	void destroy(VulkanGraphicDevice* device);
+
+	void wait(VkDevice device);
+	VulkanCommandList* allocateCommand(VulkanGraphicDevice* device, QueueType queue);
+	void releaseCommand(VulkanCommandList* commandList);
 
 	static constexpr uint32_t SemaphoreCount = EnumCount<QueueType>() + 1;
 
 	VkSemaphore semaphore[SemaphoreCount];
 	VkFence presentFence[EnumCount<QueueType>()];
 
-	VulkanCommandList commandLists[EnumCount<QueueType>()];
+	VulkanCommandList mainCommandLists[EnumCount<QueueType>()];
 
-	void wait(VkDevice device);
+	VkCommandPool commandPool[EnumCount<QueueType>()];
+	Vector<VulkanCommandList> commandLists[EnumCount<QueueType>()];
 };
 
 
@@ -48,7 +56,7 @@ public:
 	void recreate(VulkanGraphicDevice* device);
 
 	VulkanFrame* acquireNextImage(VulkanGraphicDevice* context);
-	SwapchainStatus present(VulkanGraphicDevice* device, VulkanFrame* frame);
+	SwapchainStatus present(VulkanGraphicDevice* device, VulkanFrame& frame);
 
 	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle);
 	Backbuffer* getBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
@@ -59,6 +67,9 @@ public:
 	TextureFormat getColorFormat() const { return m_colorFormat; }
 	TextureFormat getDepthFormat() const { return m_depthFormat; }
 
+	VulkanFrame& getVkFrame(FrameHandle handle);
+	FrameIndex getVkFrameIndex(FrameHandle handle);
+	VulkanFrame& getVkFrame(FrameIndex index) { return m_frames[index.value()]; }
 	const VulkanFrame& getVkFrame(FrameIndex index) const { return m_frames[index.value()]; }
 
 	uint32_t width() const { return m_width; }
