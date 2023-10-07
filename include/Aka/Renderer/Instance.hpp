@@ -12,14 +12,8 @@ namespace aka {
 // All this will generate buckets.
 // Which will get in a good place.
 
-enum class InstanceID : uint32_t {};
+enum class InstanceHandle : uint64_t { Invalid = (uint64_t)-1 };
 
-struct InstanceData {
-	mat4f transform;
-	mat4f normal;
-	uint32_t batchID;
-	static gfx::VertexBufferLayout getState();
-};
 enum class InstanceType : uint32_t
 {
 	Unknown,
@@ -35,11 +29,23 @@ enum class InstanceType : uint32_t
 
 struct Instance 
 {
-	AssetID assetID;
-	ViewTypeMask mask; // An instance is visible in some views only.
-	InstanceType type;
-	// Transform
-	mat4f transform;
+	Instance(AssetID assetID, ViewTypeMask mask, InstanceType type) : 
+		m_assetID(assetID),
+		m_mask(mask),
+		m_type(type),
+		m_transform(mat4f::identity())
+	{
+	}
+	AssetID getAssetID() const { return m_assetID; }
+	ViewTypeMask getViewMask() const { return m_mask; }
+	InstanceType getInstanceType() const { return m_type; }
+	mat4f getTransform() const { return m_transform; }
+	void setTransform(const mat4f& transform) { m_transform = transform; }
+private:
+	AssetID m_assetID;
+	ViewTypeMask m_mask; // An instance is visible in some views only.
+	InstanceType m_type;
+	mat4f m_transform;
 };
 
 };

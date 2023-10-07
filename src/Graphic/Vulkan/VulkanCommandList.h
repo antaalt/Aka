@@ -38,6 +38,9 @@ struct VulkanCommandList : CommandList
 
 	void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) override;
 
+	void clearColor(TextureHandle handle, const float* color) override;
+	void clearDepthStencil(TextureHandle handle, float depth, uint32_t stencil) override;
+
 	void push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask) override;
 
 	void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1, uint32_t instanceOffset = 0) override;

@@ -2,6 +2,7 @@
 
 #include <Aka/Core/Enum.h>
 #include <Aka/Core/Geometry.h>
+#include <Aka/Graphic/GraphicDevice.h>
 
 namespace aka {
 
@@ -25,7 +26,7 @@ enum class ViewTypeMask
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(ViewTypeMask);
 
-enum class ViewID : uint32_t {};
+enum class ViewHandle : uint32_t { Invalid = (uint32_t)-1 };
 
 // A view has camera data
 // Color view + shadow view
@@ -38,8 +39,11 @@ struct ViewData
 
 struct View
 {
+	ViewHandle handle;
 	ViewType type;
 	ViewData data;
+	gfx::BufferHandle buffer[gfx::MaxFrameInFlight];
+	gfx::DescriptorSetHandle descriptor[gfx::MaxFrameInFlight];
 };
 
 };

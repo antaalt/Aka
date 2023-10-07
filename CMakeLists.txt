@@ -121,7 +121,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
-)
+ "src/Renderer/InstanceRenderer.cpp" "src/Renderer/InstanceRenderer/StaticMeshInstanceRenderer.cpp" "src/Renderer/Instance/StaticMeshInstance.cpp")
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

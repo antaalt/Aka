@@ -13,6 +13,7 @@ namespace aka {
 // TODO use sub namespace rnd
 
 class AssetLibrary;
+class StaticMeshInstanceRenderer;
 
 enum class SamplerType
 {
@@ -25,8 +26,6 @@ enum class SamplerType
 	Last = Anisotropic,
 };
 
-enum class ViewHandle : uint32_t { Invalid = (uint32_t)-1 };
-enum class InstanceHandle : uint64_t { Invalid = (uint64_t)-1 };
 enum class MaterialHandle : uint64_t { Invalid = (uint64_t)-1 };
 enum class TextureID : uint32_t { Invalid = (uint32_t)-1 };
 using TextureHandle = TextureID;
@@ -52,6 +51,10 @@ struct RendererMaterial
 {
 	MaterialData data;
 };
+static const uint32_t MaxViewCount = 5;
+static const uint32_t MaxBindlessResources = 16536;
+static const uint32_t MaxMaterialCount = 200;
+static const uint32_t MaxGeometryBufferSize = 1 << 28;
 
 class Renderer : EventListener<ShaderReloadedEvent>
 {
@@ -62,13 +65,10 @@ public:
 	void create();
 	void destroy();
 
-	void createRenderPass();
-	void destroyRenderPass();
-
 	// -- Instances
-	InstanceHandle createInstance(AssetID assetID);
-	void updateInstanceTransform(InstanceHandle instance, const mat4f& transform);
-	void destroyInstance(InstanceHandle instance);
+	InstanceHandle createInstance(InstanceType _type, AssetID assetID);
+	void updateInstanceTransform(InstanceType _type, InstanceHandle instance, const mat4f& transform);
+	void destroyInstance(InstanceType _type, InstanceHandle instance);
 
 	// -- View
 	ViewHandle createView(ViewType type);
@@ -97,35 +97,26 @@ public:
 	TextureID allocateTextureID(gfx::TextureHandle texture);
 	gfx::SamplerHandle getSampler(SamplerType type);
 
+private:
+	friend class StaticMeshInstanceRenderer;
+	gfx::BufferHandle getVertexGeometryBuffer() { return m_geometryVertexBuffer; }
+	gfx::BufferHandle getIndexGeometryBuffer() { return m_geometryIndexBuffer; }
+	gfx::DescriptorSetHandle getMaterialDescriptorSet() { return m_materialSet; }
+	gfx::DescriptorSetHandle getBindlessDescriptorSet() { return m_bindlessDescriptorSet; }
+	uint32_t getMaterialIndex(MaterialHandle handle);
+	uint32_t getWidth() const { return m_width;  }
+	uint32_t getHeight() const { return m_height; }
 public:
-	AssetLibrary* getLibrary();
+	AssetLibrary* getLibrary() { return m_library; }
 	gfx::GraphicDevice* getDevice() { return m_device; }
 private:
 	AssetLibrary* m_library;
 	gfx::GraphicDevice* m_device;
-
-private: // Rendering stuff
-	struct InstanceRenderData
-	{
-		gfx::BufferHandle m_instanceBuffer; // one data struct per type
-		gfx::BufferHandle m_instanceBufferStaging;
-		ProgramKey m_programKey;
-		gfx::GraphicPipelineHandle m_pipeline;
-		uint32_t m_width, m_height;
-	};
-	InstanceRenderData m_renderData[EnumCount<InstanceType>()];
-	// Backbuffer
-	gfx::BackbufferHandle m_backbuffer;
-	gfx::RenderPassHandle m_backbufferRenderPass;
-private: // Instances
-	EnumMask<InstanceType> m_instancesDirty;
-	uint32_t m_instanceSeed;
-	std::map<InstanceHandle, Instance> m_instances;
-	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer[EnumCount<InstanceType>()];
+private:
+	uint32_t m_width, m_height;
+	StaticMeshInstanceRenderer* m_staticMeshRenderer;
 private: // Views
-	gfx::BufferHandle m_viewBuffers[gfx::MaxFrameInFlight];
 	gfx::DescriptorPoolHandle m_viewDescriptorPool;
-	std::map<ViewHandle, gfx::DescriptorSetHandle> m_viewDescriptorSet[gfx::MaxFrameInFlight];
 	std::map<ViewHandle, View> m_views;
 	uint32_t m_viewSeed = 0;
 	bool m_viewDirty[gfx::MaxFrameInFlight];
@@ -136,7 +127,8 @@ private: // Material & textures
 	std::set<TextureID> m_availableTexureID;
 	gfx::DescriptorPoolHandle m_bindlessPool;
 	gfx::DescriptorSetHandle m_bindlessDescriptorSet;
-	std::map<MaterialHandle, RendererMaterial> m_materials;
+	std::vector<MaterialData> m_materials;
+	std::map<MaterialHandle, uint32_t> m_materialIndex;
 	gfx::BufferHandle m_materialBuffer;
 	gfx::BufferHandle m_materialStagingBuffer;
 	gfx::DescriptorSetHandle m_materialSet;

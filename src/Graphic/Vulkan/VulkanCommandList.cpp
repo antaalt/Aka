@@ -362,6 +362,37 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	vkCmdClearAttachments(vk_command, (uint32_t)attachments.size(), attachments.data(), 1, &clearRect);
 }
 
+void VulkanCommandList::clearColor(TextureHandle handle, const float* color)
+{
+	VulkanTexture* texture = m_device->getVk<VulkanTexture>(handle);
+
+	VkClearColorValue values{};
+	memcpy(values.float32, color, sizeof(float) * 4);
+	VkImageSubresourceRange range{};
+	range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	range.baseArrayLayer = 0;
+	range.baseMipLevel = 0;
+	range.layerCount = 1;
+	range.levelCount = 1;
+	vkCmdClearColorImage(vk_command, texture->vk_image, VulkanContext::tovk(ResourceAccessType::Resource, texture->format), &values, 1, &range);
+}
+
+void VulkanCommandList::clearDepthStencil(TextureHandle handle, float depth, uint32_t stencil)
+{
+	VulkanTexture* texture = m_device->getVk<VulkanTexture>(handle);
+
+	VkClearDepthStencilValue values{};
+	values.depth = depth;
+	values.stencil = stencil;
+	VkImageSubresourceRange range{};
+	range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	range.baseArrayLayer = 0;
+	range.baseMipLevel = 0;
+	range.layerCount = 1;
+	range.levelCount = 1;
+	vkCmdClearDepthStencilImage(vk_command, texture->vk_image, VulkanContext::tovk(ResourceAccessType::Resource, texture->format), &values, 1, &range);
+}
+
 void VulkanCommandList::push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");

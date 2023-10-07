@@ -29,17 +29,17 @@ StaticMeshComponent::~StaticMeshComponent()
 void StaticMeshComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
 {
 	m_meshHandle = library->load<StaticMesh>(m_assetID, _renderer);
-	m_instance = _renderer->createInstance(m_assetID);
+	m_instance = _renderer->createInstance(InstanceType::StaticMesh3D, m_assetID);
 }
 void StaticMeshComponent::onBecomeInactive(AssetLibrary* library, Renderer* _renderer)
 {
 	m_meshHandle.reset();
-	_renderer->destroyInstance(m_instance);
+	_renderer->destroyInstance(InstanceType::StaticMesh3D, m_instance);
 	m_instance = InstanceHandle::Invalid;
 }
 void StaticMeshComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
-	_renderer->updateInstanceTransform(m_instance, getNode()->getWorldTransform());
+	_renderer->updateInstanceTransform(InstanceType::StaticMesh3D, m_instance, getNode()->getWorldTransform());
 }
 ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
 {

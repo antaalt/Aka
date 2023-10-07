@@ -61,6 +61,8 @@ struct AKA_NO_VTABLE CommandList
 	virtual void bindIndexBuffer(BufferHandle handle, IndexFormat format, uint32_t offset = 0) = 0;
 
 	virtual void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
+	virtual void clearColor(TextureHandle handle, const float* color) = 0;
+	virtual void clearDepthStencil(TextureHandle handle, float depth, uint32_t stencil) = 0;
 
 	virtual void push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask) = 0;
 
