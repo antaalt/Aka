@@ -11,19 +11,31 @@ ArchiveGeometry::ArchiveGeometry() :
 }
 ArchiveGeometry::ArchiveGeometry(AssetID id) :
 	Archive(AssetType::Geometry, id),
-	vertices{},
-	indices{},
-	bounds()
+	flags(ArchiveGeometryFlags::None),
+	bounds(),
+	staticVertices{},
+	skeletalVertices{},
+	indices{}
 {
 }
 ArchiveParseResult ArchiveGeometry::parse(BinaryArchive& _archive)
 {
-	// Bounds
+	_archive.parse(this->flags);
+
+	_archive.parse(this->bounds.min);
 	_archive.parse(this->bounds.min);
 	_archive.parse(this->bounds.max);
 
 	_archive.parse<uint32_t>(this->indices);
-	_archive.parse<ArchiveStaticVertex>(this->vertices);
+	if (asBool(this->flags & ArchiveGeometryFlags::IsSkeletal))
+	{
+		_archive.parse<ArchiveSkeletalVertex>(this->skeletalVertices);
+		_archive.parse<ArchiveSkeletalBone>(this->skeletalBones);
+	}
+	else
+	{
+		_archive.parse<ArchiveStaticVertex>(this->staticVertices);
+	}
 
 	return ArchiveParseResult::Success;
 }

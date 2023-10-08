@@ -2,16 +2,16 @@
 
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Resource/Shader/ShaderRegistry.h>
-#include <Aka/Resource/Resource/StaticMesh.hpp>
+#include <Aka/Resource/Resource/SkeletalMesh.hpp>
 #include <Aka/Renderer/InstanceRenderer.hpp>
-#include <Aka/Renderer/Instance/StaticMeshInstance.hpp>
+#include <Aka/Renderer/Instance/SkeletalMeshInstance.hpp>
 
 namespace aka {
 
-class StaticMeshInstanceRenderer : public InstanceRenderer
+class SkeletalMeshInstanceRenderer : public InstanceRenderer
 {
 public:
-	StaticMeshInstanceRenderer(Renderer& renderer);
+	SkeletalMeshInstanceRenderer(Renderer& renderer);
 
 	void create() override;
 	void destroy() override;
@@ -42,9 +42,9 @@ private:
 	std::map<AssetID, uint32_t> m_assetIndex;
 	std::map<InstanceHandle, uint32_t> m_instanceIndex;
 	// TODO move to gpu with compute.
-	std::vector<StaticMeshInstance> m_instanceDatas; // Updated frequently.
-	std::vector<gpu::StaticMeshAssetData> m_instanceAssetDatas; // Updated rarely
-	std::vector<gpu::StaticMeshBatchData> m_instanceBatchDatas; // Updated rarely
+	std::vector<SkeletalMeshInstance> m_instanceDatas; // Updated frequently.
+	std::vector<gpu::SkeletalMeshAssetData> m_instanceAssetDatas; // Updated rarely
+	std::vector<gpu::SkeletalMeshBatchData> m_instanceBatchDatas; // Updated rarely
 
 	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
 

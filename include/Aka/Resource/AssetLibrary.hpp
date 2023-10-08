@@ -3,6 +3,7 @@
 #include <Aka/OS/OS.h>
 #include <Aka/Core/Event.h>
 #include <Aka/Resource/Resource/StaticMesh.hpp>
+#include <Aka/Resource/Resource/SkeletalMesh.hpp>
 #include <Aka/Resource/Resource/Texture.hpp>
 #include <Aka/Resource/Resource/Scene.hpp>
 #include <Aka/Resource/Resource/Material.hpp>
@@ -15,6 +16,7 @@ namespace aka {
 template<typename T> struct ArchiveTrait { using Archive = Archive; };
 template<> struct ArchiveTrait<Scene> { using Archive = ArchiveScene; };
 template<> struct ArchiveTrait<StaticMesh> { using Archive = ArchiveStaticMesh; };
+template<> struct ArchiveTrait<SkeletalMesh> { using Archive = ArchiveSkeletalMesh; };
 template<> struct ArchiveTrait<Texture> { using Archive = ArchiveImage; };
 template<> struct ArchiveTrait<Material> { using Archive = ArchiveMaterial; };
 
@@ -144,6 +146,7 @@ private:
 	std::map<AssetID, AssetInfo> m_assetInfo;
 private:
 	ResourceMap<StaticMesh> m_staticMeshes;
+	ResourceMap<SkeletalMesh> m_skeletalMeshes;
 	ResourceMap<Scene> m_scenes;
 	ResourceMap<Texture> m_textures;
 	ResourceMap<Material> m_materials;
@@ -151,6 +154,7 @@ private:
 
 template<> AssetLibrary::ResourceMap<Scene>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<StaticMesh>& AssetLibrary::getResourceMap();
+template<> AssetLibrary::ResourceMap<SkeletalMesh>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<Texture>& AssetLibrary::getResourceMap();
 template<> AssetLibrary::ResourceMap<Material>& AssetLibrary::getResourceMap();
 

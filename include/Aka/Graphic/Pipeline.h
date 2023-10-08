@@ -18,7 +18,7 @@ struct ComputePipeline;
 using GraphicPipelineHandle = ResourceHandle<GraphicPipeline>;
 using ComputePipelineHandle = ResourceHandle<ComputePipeline>;
 
-static constexpr uint32_t VertexMaxAttributeCount = 16;
+static constexpr uint32_t VertexMaxAttributeCount = 20;
 static constexpr uint32_t VertexMaxBufferCount = 4;
 
 enum class IndexFormat : uint8_t
@@ -64,6 +64,7 @@ enum class VertexType : uint8_t
 	Last = Vec4,
 };
 
+// https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics
 enum class VertexSemantic : uint8_t
 {
 	Unknown,
@@ -79,6 +80,14 @@ enum class VertexSemantic : uint8_t
 	Color1,
 	Color2,
 	Color3,
+	BlendIndice0,
+	BlendIndice1,
+	BlendIndice2,
+	BlendIndice3,
+	BlendWeight0,
+	BlendWeight1,
+	BlendWeight2,
+	BlendWeight3,
 	WorldMatrix,
 	NormalMatrix,
 

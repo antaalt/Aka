@@ -3,6 +3,7 @@
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Resource/Shader/ShaderRegistry.h>
 #include <Aka/Renderer/View.hpp>
+#include <Aka/Renderer/Instance.hpp>
 
 namespace aka {
 
@@ -20,6 +21,10 @@ public:
 	virtual void render(const View& view, gfx::FrameHandle _frame) = 0;
 	virtual void resize(uint32_t _width, uint32_t _height) = 0;
 	virtual void onReceive(const ShaderReloadedEvent& _event) = 0;
+
+	virtual InstanceHandle createInstance(AssetID assetID) = 0;
+	virtual void updateInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform) = 0;
+	virtual void destroyInstance(InstanceHandle instanceHandle) = 0;
 protected:
 	gfx::GraphicDevice* getDevice();
 	Renderer& getRenderer();

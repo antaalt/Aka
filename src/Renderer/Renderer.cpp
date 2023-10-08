@@ -3,7 +3,7 @@
 #include <Aka/Resource/Shader/ShaderRegistry.h>
 #include <Aka/Core/Application.h>
 
-#include <Aka/Renderer/Instance/StaticMeshInstance.hpp>
+#include <Aka/Renderer/InstanceRenderer/SkeletalMeshInstanceRenderer.hpp>
 #include <Aka/Renderer/InstanceRenderer/StaticMeshInstanceRenderer.hpp>
 
 namespace aka {
@@ -14,6 +14,7 @@ const char* getInstanceTypeName(InstanceType type)
 {
 	static const char* s_instanceTypeName[] = {
 		"StaticMesh3D",
+		"SkeletalMesh3D",
 		"Sprite2D",
 		"Text2D",
 		"Text3D"
@@ -23,14 +24,19 @@ const char* getInstanceTypeName(InstanceType type)
 }
 
 Renderer::Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library) :
-	m_staticMeshRenderer(new StaticMeshInstanceRenderer(*this)),
+	m_instanceRenderer{ nullptr },
 	m_device(_device),
 	m_library(_library)
 {
+	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)] = new StaticMeshInstanceRenderer(*this);
+	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)] = new SkeletalMeshInstanceRenderer(*this);
 }
 Renderer::~Renderer()
 {
-	delete m_staticMeshRenderer;
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		delete m_instanceRenderer[EnumToIndex(instanceType)];
+	}
 }
 
 void Renderer::create()
@@ -39,11 +45,6 @@ void Renderer::create()
 	ShaderRegistry* registry = Application::app()->program();
 
 	getDevice()->getBackbufferSize(m_width, m_height);
-
-	
-	m_staticMeshRenderer->create();
-
-
 
 	{ // View
 		gfx::ShaderBindingState bindings{};
@@ -104,12 +105,25 @@ void Renderer::create()
 	{ // Geometry
 		m_geometryVertexBuffer = getDevice()->createBuffer("GeometryVertexBuffer", gfx::BufferType::Vertex, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 		m_geometryIndexBuffer = getDevice()->createBuffer("GeometryIndexBuffer", gfx::BufferType::Index, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		m_geometryDataBuffer = getDevice()->createBuffer("GeometryDataBuffer", gfx::BufferType::Storage, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+	}
+
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+			continue;
+		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
 }
 
 void Renderer::destroy()
 {
-	m_staticMeshRenderer->destroy();
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+			continue;
+		m_instanceRenderer[EnumToIndex(instanceType)]->destroy();
+	}
 	{ // Material
 		m_device->destroy(m_materialStagingBuffer);
 		m_device->destroy(m_materialBuffer);
@@ -125,6 +139,7 @@ void Renderer::destroy()
 		m_device->destroy(m_bindlessPool);
 	}
 	{ // Geometry
+		m_device->destroy(m_geometryDataBuffer);
 		m_device->destroy(m_geometryVertexBuffer);
 		m_device->destroy(m_geometryIndexBuffer);
 	}
@@ -145,28 +160,45 @@ InstanceType getInstanceTypeFromAssetType(AssetType assetType)
 {
 	switch (assetType)
 	{
-	case aka::AssetType::StaticMesh:
+	case AssetType::StaticMesh:
 		return InstanceType::StaticMesh3D;
+	case AssetType::SkeletalMesh:
+		return InstanceType::SkeletalMesh3D;
 	default:
-		AKA_NOT_IMPLEMENTED;
 		return InstanceType::Unknown;
 	}
 }
 
-InstanceHandle Renderer::createInstance(InstanceType _type, AssetID assetID)
+InstanceHandle Renderer::createStaticMeshInstance(AssetID assetID)
 {
-	// TODO switch
-	return m_staticMeshRenderer->createInstance(assetID);
+	AKA_ASSERT(getInstanceTypeFromAssetType(getLibrary()->getAssetInfo(assetID).type) == InstanceType::StaticMesh3D, "Invalid type");
+	return m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)]->createInstance(assetID);
 }
 
-void Renderer::updateInstanceTransform(InstanceType _type, InstanceHandle instanceHandle, const mat4f& transform)
+void Renderer::updateStaticMeshInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform)
 {
-	m_staticMeshRenderer->updateInstanceTransform(instanceHandle, transform);
+	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)]->updateInstanceTransform(instanceHandle, transform);
 }
 
-void Renderer::destroyInstance(InstanceType _type, InstanceHandle instanceHandle)
+void Renderer::destroyStaticMeshInstance(InstanceHandle instanceHandle)
 {
-	m_staticMeshRenderer->destroyInstance(instanceHandle);
+	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)]->destroyInstance(instanceHandle);
+}
+
+InstanceHandle Renderer::createSkeletalMeshInstance(AssetID assetID)
+{
+	AKA_ASSERT(getInstanceTypeFromAssetType(getLibrary()->getAssetInfo(assetID).type) == InstanceType::SkeletalMesh3D, "Invalid type");
+	return m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)]->createInstance(assetID);
+}
+
+void Renderer::updateSkeletalMeshInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform)
+{
+	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)]->updateInstanceTransform(instanceHandle, transform);
+}
+
+void Renderer::destroySkeletalMeshInstance(InstanceHandle instanceHandle)
+{
+	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)]->destroyInstance(instanceHandle);
 }
 
 
@@ -245,6 +277,17 @@ GeometryBufferHandle Renderer::allocateGeometryIndex(void* data, size_t size)
 	m_geometryIndexBufferAllocOffset += uSize;
 	return handle;
 }
+GeometryBufferHandle Renderer::allocateGeometryData(void* data, size_t size)
+{
+	uint32_t uSize = static_cast<uint32_t>(size);
+	// TODO alignement & better allocator.
+	AKA_ASSERT(uSize + m_geometryDataBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	uint32_t idBitmask = (1U << 30);
+	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryDataBufferAllocOffset | idBitmask);
+	getDevice()->upload(m_geometryDataBuffer, data, m_geometryDataBufferAllocOffset, uSize);
+	m_geometryDataBufferAllocOffset += uSize;
+	return handle;
+}
 
 void Renderer::update(const GeometryBufferHandle& handle, void* data, size_t size, size_t offset)
 {
@@ -260,12 +303,14 @@ gfx::BufferHandle Renderer::getGeometryBuffer(GeometryBufferHandle handle)
 {
 	if ((static_cast<uint32_t>(handle) >> 31) & 0x1)
 		return m_geometryVertexBuffer;
+	if ((static_cast<uint32_t>(handle) >> 30) & 0x1)
+		return m_geometryDataBuffer;
 	return m_geometryIndexBuffer;
 }
 
 uint32_t Renderer::getGeometryBufferOffset(GeometryBufferHandle handle)
 {
-	return static_cast<uint32_t>(handle) & bitmask(31); // Remove id bit
+	return static_cast<uint32_t>(handle) & bitmask(30); // Remove id bit
 }
 
 void Renderer::render(gfx::FrameHandle frame)
@@ -299,18 +344,29 @@ void Renderer::render(gfx::FrameHandle frame)
 			m_viewDirty[frameIndex.value()] = false;
 		}
 
+		// TODO should prepare be per view ?
 		for (InstanceType instanceType : EnumRange<InstanceType>())
 		{
-			// TODO pick valid renderer.
+			if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+				continue;
+			m_instanceRenderer[EnumToIndex(instanceType)]->prepare(frame);
 		}
-		m_staticMeshRenderer->prepare(frame);
-
-		m_staticMeshRenderer->render(view, frame);
+		for (InstanceType instanceType : EnumRange<InstanceType>())
+		{
+			if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+				continue;
+			m_instanceRenderer[EnumToIndex(instanceType)]->render(view, frame);
+		}
 	}
 }
 void Renderer::resize(uint32_t width, uint32_t height)
 {
-	m_staticMeshRenderer->resize(width, height);
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+			continue;
+		m_instanceRenderer[EnumToIndex(instanceType)]->resize(width, height);
+	}
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 	}
@@ -319,7 +375,12 @@ void Renderer::resize(uint32_t width, uint32_t height)
 void Renderer::onReceive(const ShaderReloadedEvent& event)
 {
 	getDevice()->wait();
-	m_staticMeshRenderer->onReceive(event);
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+	{
+		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+			continue;
+		m_instanceRenderer[EnumToIndex(instanceType)]->onReceive(event);
+	}
 }
 
 MaterialHandle Renderer::createMaterial()

@@ -20,6 +20,7 @@ enum class ResourceType : uint32_t
 
 	Scene,
 	StaticMesh,
+	SkeletalMesh,
 	Material,
 	Texture,
 	Sprite,

@@ -19,9 +19,7 @@ ResourceType getResourceType(AssetType _type)
 	{
 	default:
 	case AssetType::Batch:
-	case AssetType::Material:
 	case AssetType::Geometry:
-	case AssetType::DynamicMesh:
 	case AssetType::Font:
 	case AssetType::Audio:
 		return ResourceType::Unknown;
@@ -29,6 +27,10 @@ ResourceType getResourceType(AssetType _type)
 		return ResourceType::Texture;
 	case AssetType::StaticMesh:
 		return ResourceType::StaticMesh;
+	case AssetType::SkeletalMesh:
+		return ResourceType::SkeletalMesh;
+	case AssetType::Material:
+		return ResourceType::Material;
 	case AssetType::Scene:
 		return ResourceType::Scene;
 	}
@@ -47,6 +49,10 @@ void AssetLibrary::parse()
 	using json = nlohmann::json;
 
 	Path path = AssetPath::getAssetPath() + "library.json";
+	if (!OS::File::exist(path))
+	{
+		return;
+	}
 	std::ifstream f(path.cstr());
 
 	json data = json::parse(f);
@@ -104,7 +110,7 @@ bool validate(AssetLibrary* _library, AssetID id, AssetType _type)
 	case AssetType::Material: return ArchiveMaterial(id).validate(_library);
 	case AssetType::Batch: return ArchiveBatch(id).validate(_library);
 	case AssetType::StaticMesh: return ArchiveStaticMesh(id).validate(_library);
-	case AssetType::DynamicMesh: return false;
+	case AssetType::SkeletalMesh: return ArchiveSkeletalMesh(id).validate(_library);
 	case AssetType::Image: return ArchiveImage(id).validate(_library);
 	case AssetType::Font: return false;
 	case AssetType::Audio: return false;
@@ -169,6 +175,11 @@ AssetLibrary::ResourceMap<StaticMesh>& AssetLibrary::getResourceMap()
 {
 	return m_staticMeshes;
 }
+template<>
+AssetLibrary::ResourceMap<SkeletalMesh>& AssetLibrary::getResourceMap()
+{
+	return m_skeletalMeshes;
+}
 template<> 
 AssetLibrary::ResourceMap<Texture>& AssetLibrary::getResourceMap()
 {
@@ -200,6 +211,13 @@ void AssetLibrary::destroy(Renderer* _renderer)
 		}
 	}
 	for (auto it : m_staticMeshes)
+	{
+		if (it.second.isLoaded())
+		{
+			it.second.get().destroy(this, _renderer);
+		}
+	}
+	for (auto it : m_skeletalMeshes)
 	{
 		if (it.second.isLoaded())
 		{

@@ -51,9 +51,9 @@ BinaryArchiveReader::BinaryArchiveReader(Stream& stream, Endianess endianess) :
 }
 bool BinaryArchiveReader::expectBlob(const void* expected, size_t size)
 {
-	Vector<byte_t> value(size);
-	m_stream.read(value.data(), size);
-	return Memory::compare(value.data(), expected, size) == 0;
+	m_cache.resize(size);
+	m_stream.read(m_cache.data(), size);
+	return Memory::compare(m_cache.data(), expected, size) == 0;
 }
 void BinaryArchiveReader::parseBlob(void* value, size_t size)
 {

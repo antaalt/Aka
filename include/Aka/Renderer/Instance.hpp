@@ -19,6 +19,7 @@ enum class InstanceType : uint32_t
 	Unknown,
 
 	StaticMesh3D,
+	SkeletalMesh3D,
 	Sprite2D,
 	Text2D,
 	Text3D,

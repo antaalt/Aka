@@ -35,18 +35,24 @@ add_library (Aka
 
 	"src/Renderer/Renderer.cpp"
 	"src/Renderer/Instance.cpp"
+	"src/Renderer/InstanceRenderer.cpp" 
+	"src/Renderer/InstanceRenderer/StaticMeshInstanceRenderer.cpp" 
+	"src/Renderer/InstanceRenderer/SkeletalMeshInstanceRenderer.cpp" 
+	"src/Renderer/Instance/StaticMeshInstance.cpp" 
+	"src/Renderer/Instance/SkeletalMeshInstance.cpp"
 
 	"src/Scene/Component.cpp"
 	"src/Scene/Node.cpp"
 	
 	"src/Scene/Component/CameraComponent.cpp"
-	 
 	"src/Scene/Component/StaticMeshComponent.cpp"
+	"src/Scene/Component/SkeletalMeshComponent.cpp"
 
 	"src/Resource/Archive/ArchiveGeometry.cpp"
 	"src/Resource/Archive/ArchiveMaterial.cpp"
 	"src/Resource/Archive/ArchiveBatch.cpp"
 	"src/Resource/Archive/ArchiveStaticMesh.cpp"
+	"src/Resource/Archive/ArchiveSkeletalMesh.cpp"
 	"src/Resource/Archive/ArchiveImage.cpp"
 	"src/Resource/Archive/ArchiveScene.cpp"
 	"src/Resource/Archive/ArchiveSprite.cpp"
@@ -57,6 +63,7 @@ add_library (Aka
 	"src/Resource/Resource/Scene.cpp"
 	"src/Resource/Resource/Sprite.cpp"
 	"src/Resource/Resource/StaticMesh.cpp"
+	"src/Resource/Resource/SkeletalMesh.cpp"
 	"src/Resource/Resource/Texture.cpp"
 	"src/Resource/Resource/Font.cpp"
 	"src/Resource/Resource/Material.cpp"
@@ -121,7 +128,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
- "src/Renderer/InstanceRenderer.cpp" "src/Renderer/InstanceRenderer/StaticMeshInstanceRenderer.cpp" "src/Renderer/Instance/StaticMeshInstance.cpp")
+)
 
 target_compile_features(Aka PUBLIC cxx_std_17)
 

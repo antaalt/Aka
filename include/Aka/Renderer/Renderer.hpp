@@ -13,7 +13,7 @@ namespace aka {
 // TODO use sub namespace rnd
 
 class AssetLibrary;
-class StaticMeshInstanceRenderer;
+class InstanceRenderer;
 
 enum class SamplerType
 {
@@ -66,9 +66,12 @@ public:
 	void destroy();
 
 	// -- Instances
-	InstanceHandle createInstance(InstanceType _type, AssetID assetID);
-	void updateInstanceTransform(InstanceType _type, InstanceHandle instance, const mat4f& transform);
-	void destroyInstance(InstanceType _type, InstanceHandle instance);
+	InstanceHandle createStaticMeshInstance(AssetID assetID);
+	void updateStaticMeshInstanceTransform(InstanceHandle instance, const mat4f& transform);
+	void destroyStaticMeshInstance(InstanceHandle instance);
+	InstanceHandle createSkeletalMeshInstance(AssetID assetID);
+	void updateSkeletalMeshInstanceTransform(InstanceHandle instance, const mat4f& transform);
+	void destroySkeletalMeshInstance(InstanceHandle instance);
 
 	// -- View
 	ViewHandle createView(ViewType type);
@@ -79,6 +82,7 @@ public:
 	// TODO move to separated class.
 	GeometryBufferHandle allocateGeometryVertex(void* data, size_t size);
 	GeometryBufferHandle allocateGeometryIndex(void* data, size_t size);
+	GeometryBufferHandle allocateGeometryData(void* data, size_t size);
 	void update(const GeometryBufferHandle& handle, void* data, size_t size, size_t offset = 0);
 	void deallocate(const GeometryBufferHandle& handle);
 	gfx::BufferHandle getGeometryBuffer(GeometryBufferHandle handle);
@@ -99,8 +103,10 @@ public:
 
 private:
 	friend class StaticMeshInstanceRenderer;
+	friend class SkeletalMeshInstanceRenderer;
 	gfx::BufferHandle getVertexGeometryBuffer() { return m_geometryVertexBuffer; }
 	gfx::BufferHandle getIndexGeometryBuffer() { return m_geometryIndexBuffer; }
+	gfx::BufferHandle getDataGeometryBuffer() { return m_geometryDataBuffer; }
 	gfx::DescriptorSetHandle getMaterialDescriptorSet() { return m_materialSet; }
 	gfx::DescriptorSetHandle getBindlessDescriptorSet() { return m_bindlessDescriptorSet; }
 	uint32_t getMaterialIndex(MaterialHandle handle);
@@ -114,7 +120,7 @@ private:
 	gfx::GraphicDevice* m_device;
 private:
 	uint32_t m_width, m_height;
-	StaticMeshInstanceRenderer* m_staticMeshRenderer;
+	InstanceRenderer* m_instanceRenderer[EnumCount<InstanceType>()];
 private: // Views
 	gfx::DescriptorPoolHandle m_viewDescriptorPool;
 	std::map<ViewHandle, View> m_views;
@@ -137,7 +143,9 @@ private: // Material & textures
 private: // Geometry
 	uint32_t m_geometryVertexBufferAllocOffset = 0;
 	uint32_t m_geometryIndexBufferAllocOffset = 0;
+	uint32_t m_geometryDataBufferAllocOffset = 0;
 	// Should use one single buffer as bindless
+	gfx::BufferHandle m_geometryDataBuffer;
 	gfx::BufferHandle m_geometryVertexBuffer;
 	gfx::BufferHandle m_geometryIndexBuffer;
 };
