@@ -106,6 +106,7 @@ public:
 	bool isReading() const { return m_reading; }
 	bool isWriting() const { return !m_reading; }
 protected:
+	Vector<byte_t> m_cache;
 	Endianess m_endianess;
 	bool m_reading; // If not reading, writing
 };
@@ -150,7 +151,7 @@ void BinaryArchive::parse(T& value)
 template <typename T>
 void BinaryArchive::parse(Vector<T>& value)
 {
-	static_assert(std::is_pod<T>::value, "Do not support non pod type");
+	static_assert(std::is_trivially_copyable<T>::value, "Do not support non trivially copyable type. use lambda variant to define how to copy content.");
 	uint32_t size = static_cast<uint32_t>(value.size());
 	parse<uint32_t>(size);
 	if (isReading())

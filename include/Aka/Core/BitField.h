@@ -21,17 +21,23 @@ uint32_t firstbithigh64(uint64_t x);
 uint32_t firstbitlow64(uint64_t x);
 
 // Generate a bitmask from a bit count
-constexpr uint32_t bitmask(uint32_t bitcount);
+constexpr uint32_t bitmask(uint32_t bitCount);
 
 struct BitField
 {
 	BitField();
-	BitField(uint32_t bitcount);
+	BitField(uint32_t bitCount);
 
 	bool operator[](size_t index) const;
 
+	void set(size_t index);
 	void set(size_t index, bool value);
+	void clear(size_t index);
+	void toggle(size_t index);
 	bool check(size_t index) const;
+
+	void resize(size_t bitCount);
+	void reserve(size_t bitCount);
 
 	void clear();
 private:

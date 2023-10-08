@@ -102,12 +102,6 @@ ArchiveParseResult Archive::load(ArchiveLoadContext& _context)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
 	AssetInfo info = _context.getAssetLibrary()->getAssetInfo(id());
-#if 0 // Debug log
-	if (_context.cache.find(id()) == _context.cache.end())
-		Logger::info(info.path.cstr(), " load from cache ", info.readCounter);
-	else
-		Logger::info(info.path.cstr(), " read ", info.readCounter++);
-#endif
 	return load(_context, info.path);
 }
 
@@ -145,12 +139,6 @@ ArchiveParseResult Archive::save(ArchiveSaveContext& _context)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
 	AssetInfo& info = _context.getAssetLibrary()->getAssetInfo(id());
-#if 0 // Debug log
-	if (_context.cache.find(id()) == _context.cache.end())
-		Logger::info(info.path.cstr(), " skip bcs of cache ", info.writeCounter);
-	else
-		Logger::info(info.path.cstr(), " written ", info.writeCounter++);
-#endif
 	return save(_context, info.path);
 }
 

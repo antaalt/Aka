@@ -320,6 +320,7 @@ gfx::VertexFormat getType(spirv_cross::SPIRType::BaseType type)
 	case spirv_cross::SPIRType::BaseType::Int:
 		return gfx::VertexFormat::Int;
 	default:
+		AKA_ASSERT(false, "");
 		return gfx::VertexFormat::Unknown;
 	}
 }
@@ -331,6 +332,7 @@ gfx::VertexType getSize(uint32_t rows)
 	case 2: return gfx::VertexType::Vec2;
 	case 3: return gfx::VertexType::Vec3;
 	case 4: return gfx::VertexType::Vec4;
+		AKA_ASSERT(false, "");
 	default: return gfx::VertexType::Unknown;
 	}
 }

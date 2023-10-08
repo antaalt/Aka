@@ -11,7 +11,7 @@ namespace aka {
 struct StaticVertex
 {
 	point3f position;
-	norm3f normal;
+	norm3f normal; // mikktspace
 	uv2f uv;
 	color4f color;
 
@@ -39,8 +39,6 @@ private:
 public:
 	GeometryBufferHandle getVertexBufferHandle() const { return m_gfxVertexBufferHandle; }
 	GeometryBufferHandle getIndexBufferHandle() const { return m_gfxIndexBufferHandle; }
-	//gfx::BufferHandle getVertexBuffer() const { return m_gfxVertexBuffer; }
-	//gfx::BufferHandle getIndexBuffer() const { return m_gfxIndexBuffer; }
 	uint32_t getBatchCount() const { return (uint32_t)m_batches.size(); }
 	const StaticMeshBatch& getBatch(uint32_t index) const { return m_batches[index]; }
 	const Vector<StaticMeshBatch>& getBatches() const { return m_batches; }
@@ -48,11 +46,8 @@ public:
 	aabbox<> getBounds() const { return m_bounds; }
 
 private:
-	// Should be mutualized in a big single geometry buffer with pages.
 	GeometryBufferHandle m_gfxVertexBufferHandle;
 	GeometryBufferHandle m_gfxIndexBufferHandle;
-	//gfx::BufferHandle m_gfxVertexBuffer;
-	//gfx::BufferHandle m_gfxIndexBuffer;
 	gfx::IndexFormat m_indexFormat;
 	aabbox<> m_bounds;
 	Vector<StaticMeshBatch> m_batches;

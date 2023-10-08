@@ -184,8 +184,8 @@ void StaticMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 		getDevice()->copy(m_instanceBufferStaging, m_instanceBuffer[frameIndex.value()]);
 
 		// TODO should not upload them everytime, frame in flight.
-		getDevice()->upload(m_assetBuffer, m_instanceAssetDatas.data(), 0, m_instanceAssetDatas.size() * sizeof(gpu::StaticMeshAssetData));
-		getDevice()->upload(m_batchBuffer, m_instanceBatchDatas.data(), 0, m_instanceBatchDatas.size() * sizeof(gpu::StaticMeshBatchData));
+		getDevice()->upload(m_assetBuffer, m_instanceAssetDatas.data(), 0, (uint32_t)(m_instanceAssetDatas.size() * sizeof(gpu::StaticMeshAssetData)));
+		getDevice()->upload(m_batchBuffer, m_instanceBatchDatas.data(), 0, (uint32_t)(m_instanceBatchDatas.size() * sizeof(gpu::StaticMeshBatchData)));
 		
 		m_dirty[frameIndex.value()] = false;
 	}

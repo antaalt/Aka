@@ -4,7 +4,6 @@
 #include <Aka/Resource/AssetLibrary.hpp>
 
 #include <Aka/Scene/Component.hpp>
-#include <Aka/Scene/Component/StaticMeshComponent.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
 #include <Aka/Scene/Node.hpp>
