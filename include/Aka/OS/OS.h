@@ -73,16 +73,28 @@ struct OS
 		static bool remove(const Path& path, bool recurse = false);
 	};
 
-	struct Link
+	using ProcessHandle = void*;
+	using LibraryHandle = void*;
+
+	struct Library
 	{
-		// Load a module
-		static void* load(const Path& path);
-		// Open a module that has been loaded
-		static void* open(const Path& path);
-		// Load a proccess
-		static void* getProc(void* dll, const char* proc);
-		// Free a module
-		static void free(void* module);
+		Library() : m_handle(nullptr) {}
+		Library(const Path& path);
+		Library(const Library&) = delete;
+		Library(Library&& e) { std::swap(m_handle, e.m_handle); }
+		Library& operator=(const Library&) = delete;
+		Library& operator=(Library&& e) { std::swap(m_handle, e.m_handle); return *this; }
+		~Library();
+
+		// Look into common places for a given library.
+		static Path getLibraryPath(const char* _name);
+
+		// Get a process from the library
+		ProcessHandle getProcess(const char* _process);
+		// Check if library is loaded
+		bool isLoaded() const { return m_handle != nullptr; }
+	private:
+		LibraryHandle m_handle;
 	};
 };
 

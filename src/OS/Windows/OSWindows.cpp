@@ -421,33 +421,36 @@ AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const 
 	}
 }
 
-void* OS::Link::load(const Path& path)
+OS::Library::Library(const Path& path) :
+	m_handle(nullptr)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	HMODULE mod = LoadLibraryW(wstr.cstr());
 	if (mod == NULL)
-		Logger::warn("Failed to load DLL with error : ", GetLastErrorAsString());
-	return mod;
+	{
+		Logger::warn("Failed to load DLL '", path.cstr(), "' with error : ", GetLastErrorAsString());
+	}
+	m_handle = static_cast<LibraryHandle>(mod);
 }
 
-void* OS::Link::open(const Path& path)
+OS::Library::~Library()
 {
-	StringWide wstr = Utf8ToWchar(path.cstr());
-	HMODULE mod = GetModuleHandleW(wstr.cstr());
-	if (mod == NULL)
-		Logger::warn("Failed to open DLL with error : ", GetLastErrorAsString());
-	return mod;
+	if (m_handle)
+	{
+		BOOL ret = FreeLibrary(static_cast<HMODULE>(m_handle));
+		if (!ret)
+		{
+			Logger::warn("Failed to free DLL with error : ", GetLastErrorAsString());
+		}
+	}
 }
 
-void* OS::Link::getProc(void* dll, const char* proc)
+OS::ProcessHandle OS::Library::getProcess(const char* _process)
 {
-	HMODULE mod = (HMODULE)dll;
-	return GetProcAddress(mod, proc);
-}
+	AKA_ASSERT(m_handle != nullptr, "GetProcess on null pointer");
+	FARPROC proc = GetProcAddress(static_cast<HMODULE>(m_handle), _process);
 
-void OS::Link::free(void* module)
-{
-	BOOL ret = FreeLibrary((HMODULE)module);
+	return static_cast<OS::ProcessHandle>(proc);
 }
 
 };

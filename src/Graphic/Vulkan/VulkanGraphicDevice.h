@@ -15,8 +15,9 @@
 
 #include <Aka/Memory/Pool.h>
 #include <Aka/Core/Config.h>
+#include <Aka/OS/OS.h>
 
-//#define ENABLE_RENDERDOC_CAPTURE 1
+#define ENABLE_RENDERDOC_CAPTURE 1
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 struct RENDERDOC_API_1_6_0;
@@ -199,7 +200,7 @@ public:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
 private:
 #ifdef ENABLE_RENDERDOC_CAPTURE
-	void* m_renderDocDll = nullptr;
+	OS::Library m_renderDocLibrary;
 	RENDERDOC_API_1_6_0* m_renderDocContext = nullptr;
 	enum class RenderDocCaptureState {
 		Idle,

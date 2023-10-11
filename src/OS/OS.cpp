@@ -73,4 +73,10 @@ bool OS::File::write(const Path& path, const Blob& blob)
 	return write(path, blob.data(), blob.size());
 }
 
+Path OS::Library::getLibraryPath(const char* _name)
+{
+	// Where should it look ?
+	return _name;
+}
+
 };

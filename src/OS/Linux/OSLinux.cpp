@@ -238,12 +238,32 @@ AlertModalMessage AlertModal(AlertModalType type, const char* title, const char*
 	return AlertModalMessage::Ok;
 }
 
-void* OS::Link::open(const Path& path)
+
+
+OS::Library::Library(const Path& path) :
+	m_handle(nullptr)
 {
-	return dlopen(path.cstr(), RTLD_NOW | RTLD_NOLOAD);
+	void* library = dlopen(path.cstr(), RTLD_NOW | RTLD_NOLOAD);
+	if (library == NULL)
+	{
+		Logger::warn("Failed to load library '", path.cstr(), "' with error : ", dlerror());
+	}
+	m_handle = library;
 }
 
-void* OS::Link::getProc(void* mod, const char* proc)
+OS::Library::~Library()
+{
+	if (m_handle)
+	{
+		int ret = dlcose(m_handle);
+		if (ret != 0)
+		{
+			Logger::warn("Failed to close library with error : ", dlerror());
+		}
+	}
+}
+
+OS::ProcessHandle OS::Library::getProcess(const char* _process)
 {
 	return dlsym(mod, proc);
 }

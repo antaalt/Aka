@@ -37,7 +37,8 @@ enum class GraphicAPI : uint8_t
 
 struct GraphicConfig
 {
-	GraphicAPI api;
+	GraphicAPI api = GraphicAPI::Vulkan;
+	bool connectRenderDoc = false;
 };
 
 CREATE_STRICT_TYPE(uint32_t, FrameIndex)

@@ -26,23 +26,35 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConfig& cfg)
 {
 #ifdef ENABLE_RENDERDOC_CAPTURE
-	// Load renderdoc before any context creation.
-	m_renderDocDll = OS::Link::load("C:/Program Files/RenderDoc/renderdoc.dll");
-	// Try out some other basic path for renderdoc
-	if (m_renderDocDll)
+	if (cfg.connectRenderDoc)
 	{
-		if (void* mod = OS::Link::open("renderdoc.dll"))
+		// Load renderdoc before any context creation.
+		// TODO should use OS::Library::getLibraryPath();
+		// TODO linux has different path.
+		m_renderDocLibrary = OS::Library("C:/Program Files/RenderDoc/renderdoc.dll");
+		if (m_renderDocLibrary.isLoaded())
 		{
 			// https://renderdoc.org/docs/in_application_api.html
-			pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)OS::Link::getProc(mod, "RENDERDOC_GetAPI");
+			pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)m_renderDocLibrary.getProcess("RENDERDOC_GetAPI");
 			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_renderDocContext);
 			AKA_ASSERT(ret == 1, "Failed to retrieve renderdoc dll");
-			m_renderDocContext->SetCaptureFilePathTemplate("captures/aka");
+			// Generate unique path depending on date to avoid blocking apps.
+			Date date = Date::localtime();
+			const String capturePath = String::format("aka-captures/%4u-%2u-%2u/%2u-%2u-%2u/", date.year, date.month, date.day, date.hour, date.minute, date.second);
+			m_renderDocContext->SetCaptureFilePathTemplate(capturePath.cstr());
+			RENDERDOC_InputButton button = eRENDERDOC_Key_F11;
+			m_renderDocContext->SetCaptureKeys(&button, 1);
 			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, true);
 			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, true);
 			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials, true);
-			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Option_DebugOutputMute, false);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_APIValidation, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, false);
 			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+		}
+		else
+		{
+			Logger::error("Failed to load renderdoc library.");
 		}
 	}
 #endif
@@ -53,9 +65,6 @@ void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConf
 void VulkanGraphicDevice::shutdown()
 {
 	wait();
-#ifdef ENABLE_RENDERDOC_CAPTURE
-	OS::Link::free(m_renderDocDll);
-#endif
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
