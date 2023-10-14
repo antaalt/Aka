@@ -83,9 +83,11 @@ public:
 
 	// -- Allocate 
 	// TODO move to separated class.
-	GeometryBufferHandle allocateGeometryVertex(void* data, size_t size);
-	GeometryBufferHandle allocateGeometryIndex(void* data, size_t size);
-	GeometryBufferHandle allocateGeometryData(void* data, size_t size);
+	static const size_t VertexDefaultAlignement = 16;
+	static const size_t IndexDefaultAlignement = 16;
+	GeometryBufferHandle allocateGeometryVertex(void* data, size_t size, size_t alignement = VertexDefaultAlignement);
+	GeometryBufferHandle allocateGeometryIndex(void* data, size_t size, size_t alignement = IndexDefaultAlignement);
+	GeometryBufferHandle allocateGeometryData(void* data, size_t size, size_t alignement = 0);
 	void update(GeometryBufferHandle handle, const void* data, size_t size, size_t offset = 0);
 	void deallocate(GeometryBufferHandle handle);
 	gfx::BufferHandle getGeometryBuffer(GeometryBufferHandle handle);
@@ -144,9 +146,9 @@ private: // Material & textures
 	gfx::DescriptorPoolHandle m_materialPool;
 	gfx::SamplerHandle m_defaultSamplers[EnumCount<SamplerType>()];
 private: // Geometry
-	uint32_t m_geometryVertexBufferAllocOffset = 0;
-	uint32_t m_geometryIndexBufferAllocOffset = 0;
-	uint32_t m_geometryDataBufferAllocOffset = 0;
+	size_t m_geometryVertexBufferAllocOffset = 0;
+	size_t m_geometryIndexBufferAllocOffset = 0;
+	size_t m_geometryDataBufferAllocOffset = 0;
 	// Should use one single buffer as bindless
 	gfx::BufferHandle m_geometryDataBuffer;
 	gfx::BufferHandle m_geometryVertexBuffer;

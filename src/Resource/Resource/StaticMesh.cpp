@@ -69,8 +69,8 @@ void StaticMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _r
 		m_bounds.include(geometryArchive.bounds);
 	}
 	m_indexFormat = gfx::IndexFormat::UnsignedInt;
-	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(StaticVertex) * vertices.size());
-	m_gfxIndexBufferHandle = _renderer->allocateGeometryIndex(indices.data(), sizeof(uint32_t) * indices.size());
+	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(StaticVertex) * vertices.size(), sizeof(StaticVertex));
+	m_gfxIndexBufferHandle = _renderer->allocateGeometryIndex(indices.data(), sizeof(uint32_t) * indices.size(), sizeof(uint32_t));
 }
 
 void StaticMesh::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)

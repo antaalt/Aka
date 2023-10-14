@@ -68,7 +68,8 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 	m_programKey.add(ShaderVertex).add(ShaderFragment);
 	registry->add(m_programKey, getDevice());
 
-	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass();
+	// TODO should have a single render pass used by all renderer instead.
+	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
 	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
 	gfx::ProgramHandle programHandle = registry->get(m_programKey);
 
@@ -202,7 +203,7 @@ void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle fra
 	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
 	// TODO each view should have somewhere its target written.
 	gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
-	cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
+	cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearStateNone);
 	if (m_drawIndexedBuffer.size() > 0)
 	{
 		gfx::ScopedCmdMarker marker(cmd, "RenderSkeletalMeshInstances");

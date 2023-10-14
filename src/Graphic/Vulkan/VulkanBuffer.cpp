@@ -231,7 +231,7 @@ BufferHandle VulkanGraphicDevice::createBuffer(const char* name, BufferType type
 	return BufferHandle{ buffer };
 }
 
-void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size)
+void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, size_t offset, size_t size)
 {
 	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	if (VulkanBuffer::isMappable(vk_buffer->usage))
@@ -270,7 +270,7 @@ void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, uint32_t
 	}
 }
 
-void VulkanGraphicDevice::download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size)
+void VulkanGraphicDevice::download(BufferHandle buffer, void* data, size_t offset, size_t size)
 {
 	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
 	if (VulkanBuffer::isMappable(vk_buffer->usage))

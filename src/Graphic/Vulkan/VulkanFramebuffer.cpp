@@ -111,7 +111,7 @@ BackbufferHandle VulkanGraphicDevice::createBackbuffer(RenderPassHandle handle)
 
 RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadOp loadOp, AttachmentStoreOp storeOp, ResourceAccessType initialLayout, ResourceAccessType finalLayout)
 {
-	AKA_ASSERT((loadOp == AttachmentLoadOp::Load) != (initialLayout == ResourceAccessType::Undefined), "Cannot load from undefined layout");
+	AKA_ASSERT(!((loadOp == AttachmentLoadOp::Load) && (initialLayout == ResourceAccessType::Undefined)), "Cannot load from undefined layout");
 	RenderPassState state{};
 	state.addColor(m_swapchain.getColorFormat(), loadOp, storeOp, initialLayout, finalLayout);
 	state.setDepth(m_swapchain.getDepthFormat(), loadOp, storeOp, initialLayout, finalLayout);

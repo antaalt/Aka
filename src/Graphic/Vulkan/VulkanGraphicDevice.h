@@ -95,8 +95,8 @@ public:
 
 	// Buffer
 	BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) override;
-	void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) override;
-	void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) override;
+	void upload(BufferHandle buffer, const void* data, size_t offset, size_t size) override;
+	void download(BufferHandle buffer, void* data, size_t offset, size_t size) override;
 	void copy(BufferHandle src, BufferHandle dst) override;
 	void* map(BufferHandle buffer, BufferMap map) override;
 	void unmap(BufferHandle buffer) override;

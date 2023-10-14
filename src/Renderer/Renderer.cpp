@@ -260,37 +260,58 @@ void Renderer::destroyView(ViewHandle handle)
 	m_views.erase(handle);
 }
 
-GeometryBufferHandle Renderer::allocateGeometryVertex(void* data, size_t size)
+
+// TODO better allocator.
+
+// Align to non power of 2
+size_t align(size_t address, size_t alignment)
+{
+	if (alignment == 0)
+		return address; // no alignement required
+	size_t overflow = address % alignment;
+	if (overflow == 0)
+		return address; // already aligned
+
+	return address + alignment - overflow;
+}
+
+GeometryBufferHandle Renderer::allocateGeometryVertex(void* data, size_t size, size_t alignement)
 {
 	uint32_t uSize = static_cast<uint32_t>(size);
-	// TODO alignement & better allocator.
-	AKA_ASSERT(uSize + m_geometryVertexBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	// Align allocation.
+	m_geometryVertexBufferAllocOffset = align(m_geometryVertexBufferAllocOffset, alignement);
+
+	AKA_ASSERT(size + m_geometryVertexBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
 	uint32_t idBitmask = (1U << 31); // Mark it as vertex
 	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryVertexBufferAllocOffset | idBitmask);
 	getDevice()->upload(m_geometryVertexBuffer, data, m_geometryVertexBufferAllocOffset, uSize);
-	m_geometryVertexBufferAllocOffset += uSize;
+	m_geometryVertexBufferAllocOffset += size;
 	return handle;
 }
-GeometryBufferHandle Renderer::allocateGeometryIndex(void* data, size_t size)
+GeometryBufferHandle Renderer::allocateGeometryIndex(void* data, size_t size, size_t alignement)
 {
 	uint32_t uSize = static_cast<uint32_t>(size);
-	// TODO alignement & better allocator.
-	AKA_ASSERT(uSize + m_geometryIndexBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	// Align allocation.
+	m_geometryIndexBufferAllocOffset = align(m_geometryIndexBufferAllocOffset, alignement);
+
+	AKA_ASSERT(size + m_geometryIndexBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
 	uint32_t idBitmask = 0;
 	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryIndexBufferAllocOffset | idBitmask);
 	getDevice()->upload(m_geometryIndexBuffer, data, m_geometryIndexBufferAllocOffset, uSize);
-	m_geometryIndexBufferAllocOffset += uSize;
+	m_geometryIndexBufferAllocOffset += size;
 	return handle;
 }
-GeometryBufferHandle Renderer::allocateGeometryData(void* data, size_t size)
+GeometryBufferHandle Renderer::allocateGeometryData(void* data, size_t size, size_t alignement)
 {
 	uint32_t uSize = static_cast<uint32_t>(size);
-	// TODO alignement & better allocator.
-	AKA_ASSERT(uSize + m_geometryDataBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	// Align allocation.
+	m_geometryDataBufferAllocOffset = align(m_geometryDataBufferAllocOffset, alignement);
+
+	AKA_ASSERT(size + m_geometryDataBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
 	uint32_t idBitmask = (1U << 30);
 	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryDataBufferAllocOffset | idBitmask);
 	getDevice()->upload(m_geometryDataBuffer, data, m_geometryDataBufferAllocOffset, uSize);
-	m_geometryDataBufferAllocOffset += uSize;
+	m_geometryDataBufferAllocOffset += size;
 	return handle;
 }
 

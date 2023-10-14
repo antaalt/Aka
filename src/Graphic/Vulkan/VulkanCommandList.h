@@ -21,7 +21,7 @@ struct VulkanCommandList : CommandList
 
 	void reset() override;
 
-	void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear) override;
+	void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear = ClearStateNone) override;
 	void endRenderPass() override;
 
 	void bindPipeline(GraphicPipelineHandle pipeline) override;

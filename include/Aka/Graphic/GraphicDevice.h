@@ -160,8 +160,8 @@ public:
 
 	// Buffers
 	virtual BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
-	virtual void upload(BufferHandle buffer, const void* data, uint32_t offset, uint32_t size) = 0;
-	virtual void download(BufferHandle buffer, void* data, uint32_t offset, uint32_t size) = 0;
+	virtual void upload(BufferHandle buffer, const void* data, size_t offset, size_t size) = 0;
+	virtual void download(BufferHandle buffer, void* data, size_t offset, size_t size) = 0;
 	virtual void copy(BufferHandle src, BufferHandle dst) = 0;
 	virtual void* map(BufferHandle buffer, BufferMap map) = 0;
 	virtual void unmap(BufferHandle buffer) = 0;

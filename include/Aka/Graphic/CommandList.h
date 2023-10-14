@@ -45,7 +45,7 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void reset() = 0;
 
-	virtual void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear) = 0;
+	virtual void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear = ClearStateNone) = 0;
 	virtual void endRenderPass() = 0;
 
 	virtual void bindPipeline(GraphicPipelineHandle handle) = 0;

@@ -208,8 +208,8 @@ void SkeletalMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* 
 		m_animations.append(animation);
 	}
 	m_indexFormat = gfx::IndexFormat::UnsignedInt;
-	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(SkeletalVertex) * vertices.size());
-	m_gfxIndexBufferHandle = _renderer->allocateGeometryIndex(indices.data(), sizeof(uint32_t) * indices.size());
+	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(SkeletalVertex) * vertices.size(), sizeof(SkeletalVertex));
+	m_gfxIndexBufferHandle = _renderer->allocateGeometryIndex(indices.data(), sizeof(uint32_t) * indices.size(), sizeof(uint32_t));
 }
 
 void SkeletalMesh::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)

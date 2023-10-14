@@ -65,7 +65,8 @@ void StaticMeshInstanceRenderer::createPipeline()
 	m_programKey.add(ShaderVertex).add(ShaderFragment);
 	registry->add(m_programKey, getDevice());
 
-	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass();
+	// We clear as its the first pass. Should be in Renderer.cpp instead
+	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Clear);
 	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
 	gfx::ProgramHandle programHandle = registry->get(m_programKey);
 
