@@ -15,6 +15,7 @@ struct SkeletalMeshInstanceData
 	mat4f transform;
 	mat4f normal;
 	uint32_t batchIndex;
+	uint32_t boneOffset;
 };
 
 struct SkeletalMeshBatchData
@@ -22,10 +23,6 @@ struct SkeletalMeshBatchData
 	uint32_t vertexOffset;
 	uint32_t indexOffset;
 	uint32_t indexCount;
-	uint32_t boneOffset;
-	uint32_t _pad0;
-	uint32_t _pad1;
-	uint32_t _pad2;
 
 	uint32_t materialIndex;
 	// BBOX
@@ -51,6 +48,8 @@ struct SkeletalMeshInstance : Instance
 {
 	SkeletalMeshInstance(AssetID assetID, ViewTypeMask mask = ViewTypeMask::All) : Instance(assetID, mask, InstanceType::SkeletalMesh3D) {}
 
+	uint32_t bonesOffset;
+	// Vector of boneInstanceHandle
 	static gfx::VertexBufferLayout getState();
 };
 

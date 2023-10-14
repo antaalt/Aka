@@ -12,6 +12,8 @@ const char* getAssetTypeString(AssetType type)
 	case AssetType::Batch: return "Batch";
 	case AssetType::StaticMesh: return "StaticMesh";
 	case AssetType::SkeletalMesh: return "SkeletalMesh";
+	case AssetType::Skeleton: return "Skeleton";
+	case AssetType::SkeletonAnimation: return "SkeletonAnimation";
 	case AssetType::Image:return "Image";
 	case AssetType::Font:return "Font";
 	case AssetType::Audio:return "Audio";

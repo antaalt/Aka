@@ -1,11 +1,17 @@
-#pragma once
+#pragma once 
 
 #include <Aka/Resource/Archive/Archive.hpp>
-#include <Aka/Graphic/Pipeline.h>
 
 namespace aka {
 
-struct ArchiveSkeletalMesh : Archive
+struct ArchiveSkeletalBone
+{
+	uint32_t parentIndex;
+	String name;
+	mat4f offset;
+};
+
+struct ArchiveSkeleton : Archive
 {
 	enum class Version : ArchiveVersionType
 	{
@@ -13,17 +19,16 @@ struct ArchiveSkeletalMesh : Archive
 
 		Latest = ArchiveCreation
 	};
-	ArchiveSkeletalMesh();
-	explicit ArchiveSkeletalMesh(AssetID id);
+	ArchiveSkeleton();
+	explicit ArchiveSkeleton(AssetID id);
 
-	Vector<AssetID> animations;
-	Vector<AssetID> batches;
-
+	uint32_t rootBoneIndex;
+	Vector<ArchiveSkeletalBone> bones;
 protected:
-	ArchiveParseResult parse(BinaryArchive& _archive) override;
+	ArchiveParseResult parse(BinaryArchive& path) override;
 	ArchiveParseResult load_dependency(ArchiveLoadContext& _context) override;
 
 	ArchiveVersionType getLatestVersion() const override { return static_cast<ArchiveVersionType>(Version::Latest); };
 };
 
-}
+};

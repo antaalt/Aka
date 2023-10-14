@@ -1,6 +1,6 @@
 #pragma once 
 	
-#include <Aka/Resource/Archive/ArchiveStaticMesh.hpp>
+#include <Aka/Resource/Archive/Archive.hpp>
 #include <Aka/Scene/Component.hpp>
 
 namespace aka {

@@ -4,6 +4,7 @@
 #include <Aka/Resource/Asset.hpp>
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Renderer/Instance.hpp>
+#include <Aka/Renderer/Instance/SkeletalMeshInstance.hpp>
 #include <Aka/Renderer/View.hpp>
 #include <Aka/Core/Event.h>
 #include <Aka/Resource/Shader/ShaderRegistry.h>
@@ -69,8 +70,10 @@ public:
 	InstanceHandle createStaticMeshInstance(AssetID assetID);
 	void updateStaticMeshInstanceTransform(InstanceHandle instance, const mat4f& transform);
 	void destroyStaticMeshInstance(InstanceHandle instance);
+
 	InstanceHandle createSkeletalMeshInstance(AssetID assetID);
 	void updateSkeletalMeshInstanceTransform(InstanceHandle instance, const mat4f& transform);
+	void updateSkeletalMeshBoneInstance(InstanceHandle instance, uint32_t index, const mat4f& transform);
 	void destroySkeletalMeshInstance(InstanceHandle instance);
 
 	// -- View
@@ -83,8 +86,8 @@ public:
 	GeometryBufferHandle allocateGeometryVertex(void* data, size_t size);
 	GeometryBufferHandle allocateGeometryIndex(void* data, size_t size);
 	GeometryBufferHandle allocateGeometryData(void* data, size_t size);
-	void update(const GeometryBufferHandle& handle, void* data, size_t size, size_t offset = 0);
-	void deallocate(const GeometryBufferHandle& handle);
+	void update(GeometryBufferHandle handle, const void* data, size_t size, size_t offset = 0);
+	void deallocate(GeometryBufferHandle handle);
 	gfx::BufferHandle getGeometryBuffer(GeometryBufferHandle handle);
 	uint32_t getGeometryBufferOffset(GeometryBufferHandle handle);
 

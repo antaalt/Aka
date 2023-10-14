@@ -33,7 +33,13 @@ ArchiveParseResult ArchiveSprite::parse(BinaryArchive& _archive)
 
 ArchiveParseResult ArchiveSprite::load_dependency(ArchiveLoadContext& _context)
 {
-	AKA_NOT_IMPLEMENTED;
+	for (auto& animation : animations)
+	{
+		for (auto& frame : animation.frames)
+		{
+			_context.addArchive<ArchiveImage>(frame.image);
+		}
+	}
 	return ArchiveParseResult::Success;
 }
 

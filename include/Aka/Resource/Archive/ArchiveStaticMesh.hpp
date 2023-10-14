@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Resource/Archive/ArchiveBatch.hpp>
+#include <Aka/Resource/Archive/Archive.hpp>
 
 namespace aka {
 

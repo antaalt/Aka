@@ -3,6 +3,7 @@
 #include <Aka/Core/Enum.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/Resource/Archive/ArchiveSprite.hpp>
+#include <Aka/Resource/Archive/ArchiveImage.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
 namespace aka {
@@ -46,6 +47,7 @@ void Sprite::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _rende
 	const uint32_t height = archiveSprite.height;
 	Vector<const void*> bytes;
 	uint32_t layerCount = 0;
+
 	for (const ArchiveSpriteAnimation& archiveAnimation : archiveSprite.animations)
 	{
 		SpriteAnimation animation{};
@@ -56,7 +58,8 @@ void Sprite::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _rende
 			frame.duration = archiveFrame.duration;
 			frame.layer = layerCount++;
 			animation.frames.append(frame);
-			bytes.append(archiveFrame.image.data.data());
+			ArchiveImage& archiveImage = _context.getArchive<ArchiveImage>(archiveFrame.image);
+			bytes.append(archiveImage.data.data());
 		}
 		m_animations.append(animation);
 	}

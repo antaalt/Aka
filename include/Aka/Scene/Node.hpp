@@ -97,6 +97,8 @@ public: // Transforms
 	const mat4f& getLocalTransform() const;
 	// Get the world transform
 	mat4f getWorldTransform() const;
+	// Get the parent transform
+	mat4f getParentTransform() const;
 private:
 	mat4f m_localTransform;
 private: // Data

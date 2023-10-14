@@ -15,6 +15,7 @@ gfx::VertexBufferLayout SkeletalMeshInstance::getState()
 	attributes.add(gfx::VertexSemantic::NormalMatrix, gfx::VertexFormat::Float, gfx::VertexType::Vec4);
 	attributes.add(gfx::VertexSemantic::NormalMatrix, gfx::VertexFormat::Float, gfx::VertexType::Vec4); // Dummy line should have mat3f aligned on 16 bytes instead
 	attributes.add(gfx::VertexSemantic::TexCoord0, gfx::VertexFormat::UnsignedInt, gfx::VertexType::Scalar);
+	attributes.add(gfx::VertexSemantic::TexCoord1, gfx::VertexFormat::UnsignedInt, gfx::VertexType::Scalar);
 	return attributes;
 }
 

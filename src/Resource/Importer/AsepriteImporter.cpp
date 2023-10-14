@@ -637,7 +637,7 @@ ImportResult AsepriteImporter::import(const Path & path)
 		String frameName = String::format("frame%u.img", index);
 		ArchiveSpriteFrame frame;
 		frame.duration = Time::milliseconds(aseFrame.duration);
-		frame.image = ArchiveImage(registerAsset(AssetType::Image, frameName));
+		frame.image = registerAsset(AssetType::Image, frameName);
 
 		ArchiveImage image;
 		image.width = ase.width;

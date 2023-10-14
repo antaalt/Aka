@@ -8,6 +8,10 @@
 #include <Aka/Resource/Resource/Scene.hpp>
 #include <Aka/Resource/Resource/Material.hpp>
 #include <Aka/Resource/Archive/ArchiveScene.hpp>
+#include <Aka/Resource/Archive/ArchiveStaticMesh.hpp>
+#include <Aka/Resource/Archive/ArchiveSkeletalMesh.hpp>
+#include <Aka/Resource/Archive/ArchiveImage.hpp>
+#include <Aka/Resource/Archive/ArchiveMaterial.hpp>
 
 #include <map>
 

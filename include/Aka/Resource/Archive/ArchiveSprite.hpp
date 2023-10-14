@@ -1,12 +1,12 @@
 #pragma once 
 
-#include <Aka/Resource/Archive/ArchiveImage.hpp>
+#include <Aka/Resource/Archive/Archive.hpp>
 
 namespace aka {
 
 struct ArchiveSpriteFrame 
 {
-	ArchiveImage image; // Should use single texture atlas.
+	AssetID image; // Should use single texture atlas.
 	Time duration;
 };
 struct ArchiveSpriteAnimation 

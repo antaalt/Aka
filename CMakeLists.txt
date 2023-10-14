@@ -53,6 +53,8 @@ add_library (Aka
 	"src/Resource/Archive/ArchiveBatch.cpp"
 	"src/Resource/Archive/ArchiveStaticMesh.cpp"
 	"src/Resource/Archive/ArchiveSkeletalMesh.cpp"
+	"src/Resource/Archive/ArchiveSkeletonAnimation.cpp"
+	"src/Resource/Archive/ArchiveSkeleton.cpp"
 	"src/Resource/Archive/ArchiveImage.cpp"
 	"src/Resource/Archive/ArchiveScene.cpp"
 	"src/Resource/Archive/ArchiveSprite.cpp"

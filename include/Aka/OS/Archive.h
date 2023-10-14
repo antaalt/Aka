@@ -95,6 +95,8 @@ public:
 	void parse(Vector<T>& value);
 	void parse(String& value);
 	void parse(point3f& value);
+	void parse(vec3f& value);
+	void parse(quatf& value);
 	void parse(color4f& value);
 	void parse(mat4f& value);
 	template <typename T>

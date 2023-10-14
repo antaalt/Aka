@@ -2,6 +2,7 @@
 
 #include <Aka/OS/Archive.h>
 #include <Aka/Resource/AssetLibrary.hpp>
+#include <Aka/Resource/Archive/ArchiveBatch.hpp>
 
 namespace aka {
 

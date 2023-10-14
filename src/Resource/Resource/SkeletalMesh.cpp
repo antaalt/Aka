@@ -1,5 +1,12 @@
 #include <Aka/Resource/Resource/SkeletalMesh.hpp>
 
+
+#include <Aka/Resource/Archive/ArchiveSkeletalMesh.hpp>
+#include <Aka/Resource/Archive/ArchiveBatch.hpp>
+#include <Aka/Resource/Archive/ArchiveGeometry.hpp>
+#include <Aka/Resource/Archive/ArchiveMaterial.hpp>
+#include <Aka/Resource/Archive/ArchiveSkeleton.hpp>
+#include <Aka/Resource/Archive/ArchiveSkeletonAnimation.hpp>
 #include <Aka/Resource/AssetLibrary.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
@@ -15,6 +22,92 @@ gfx::VertexBufferLayout SkeletalVertex::getState()
 	attributes.add(gfx::VertexSemantic::BlendIndice0, gfx::VertexFormat::UnsignedInt, gfx::VertexType::Vec4);
 	attributes.add(gfx::VertexSemantic::BlendWeight0, gfx::VertexFormat::Float, gfx::VertexType::Vec4);
 	return attributes;
+}
+
+void SkeletalMeshBoneAnimation::update(float animationTime)
+{
+	mat4f translation = interpolatePosition(animationTime);
+	mat4f rotation = interpolateRotation(animationTime);
+	mat4f scale = interpolateScaling(animationTime);
+	localTransform = translation * rotation * scale;
+}
+// Gets normalized value for Lerp & Slerp
+float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)
+{
+	float scaleFactor = 0.0f;
+	float midWayLength = animationTime - lastTimeStamp;
+	float framesDiff = nextTimeStamp - lastTimeStamp;
+	scaleFactor = midWayLength / framesDiff;
+	return scaleFactor;
+}
+mat4f SkeletalMeshBoneAnimation::interpolatePosition(float animationTime)
+{
+	if (positionKeys.size() == 1)
+		return mat4f::translate(positionKeys[0].position);
+	else if (positionKeys.size() == 0)
+		return mat4f::identity();
+
+	size_t p0Index = (size_t)-1;
+	for (size_t index = 0; index < positionKeys.size() - 1; ++index)
+	{
+		if (animationTime < positionKeys[index + 1].timeStamp)
+		{
+			p0Index = index;
+			break;
+		}
+	}
+	AKA_ASSERT(p0Index != (size_t)-1, "");
+	size_t p1Index = p0Index + 1;
+	float scaleFactor = GetScaleFactor(positionKeys[p0Index].timeStamp, positionKeys[p1Index].timeStamp, animationTime);
+	point3f finalPosition = point3f::lerp(positionKeys[p0Index].position, positionKeys[p1Index].position, scaleFactor);
+	return mat4f::translate(finalPosition);
+}
+
+mat4f SkeletalMeshBoneAnimation::interpolateRotation(float animationTime)
+{
+	if (rotationKeys.size() == 1)
+		return mat4f::rotate(quatf::normalize(rotationKeys[0].orientation));
+	else if (rotationKeys.size() == 0)
+		return mat4f::identity();
+
+	size_t p0Index = (size_t)-1;
+	for (size_t index = 0; index < rotationKeys.size() - 1; ++index)
+	{
+		if (animationTime < rotationKeys[index + 1].timeStamp)
+		{
+			p0Index = index;
+			break;
+		}
+	}
+	AKA_ASSERT(p0Index != (size_t)-1, "");
+	size_t p1Index = p0Index + 1;
+	float scaleFactor = GetScaleFactor(rotationKeys[p0Index].timeStamp, rotationKeys[p1Index].timeStamp, animationTime);
+	quatf finalRotation = quatf::slerp(rotationKeys[p0Index].orientation, rotationKeys[p1Index].orientation, scaleFactor);
+	finalRotation = quatf::normalize(finalRotation);
+	return mat4f::rotate(finalRotation);
+}
+
+mat4f SkeletalMeshBoneAnimation::interpolateScaling(float animationTime)
+{
+	if (scaleKeys.size() == 1)
+		return mat4f::scale(scaleKeys[0].scale);
+	else if (scaleKeys.size() == 0)
+		return mat4f::identity();
+
+	size_t p0Index = (size_t)-1;
+	for (size_t index = 0; index < scaleKeys.size() - 1; ++index)
+	{
+		if (animationTime < scaleKeys[index + 1].timeStamp)
+		{
+			p0Index = index;
+			break;
+		}
+	}
+	AKA_ASSERT(p0Index != (size_t)-1, "");
+	size_t p1Index = p0Index + 1;
+	float scaleFactor = GetScaleFactor(scaleKeys[p0Index].timeStamp, scaleKeys[p1Index].timeStamp, animationTime);
+	vec3f finalScale = vec3f::lerp(scaleKeys[p0Index].scale, scaleKeys[p1Index].scale, scaleFactor);
+	return mat4f::scale(finalScale);
 }
 
 SkeletalMesh::SkeletalMesh() :
@@ -36,11 +129,12 @@ void SkeletalMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* 
 	const ArchiveSkeletalMesh& meshArchive = _context.getArchive<ArchiveSkeletalMesh>(getID());
 	Vector<SkeletalVertex> vertices;
 	Vector<uint32_t> indices;
+	AssetID skeletonID = AssetID::Invalid;
 	for (AssetID batchID : meshArchive.batches)
 	{
 		const ArchiveBatch& batch = _context.getArchive<ArchiveBatch>(batchID);
 		const ArchiveGeometry& geometryArchive = _context.getArchive<ArchiveGeometry>(batch.geometry);
-		AKA_ASSERT(asBool(geometryArchive.flags & ArchiveGeometryFlags::IsSkeletal), "");
+		AKA_ASSERT(geometryArchive.skeleton != AssetID::Invalid, "");
 
 		// Material
 		ResourceHandle<Material> material = _context.getAssetLibrary()->load<Material>(batch.material, _context, _renderer);
@@ -67,24 +161,53 @@ void SkeletalMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* 
 			}
 			vertices.append(vertex);
 		}
-		indices.append(geometryArchive.indices);
-		uint32_t boneID = 0;
-		for (const ArchiveSkeletalBone& archiveBone : geometryArchive.skeletalBones)
-		{
-			SkeletalMeshBone bone;
-			for (uint32_t i = 0; i < 4; i++)
-			{
-				for (uint32_t j = 0; j < 4; j++)
-				{
-					bone.offset[i][j] = archiveBone.offset[i][j];
-				}
-			}
-			m_bones.append(bone);
-		}
 		m_bounds.include(geometryArchive.bounds);
+		indices.append(geometryArchive.indices);
+		AKA_ASSERT(skeletonID == AssetID::Invalid || skeletonID == geometryArchive.skeleton, "All batches should share the same skeleton");
+		skeletonID = geometryArchive.skeleton;
+	}
+	const ArchiveSkeleton& skeleton = _context.getArchive<ArchiveSkeleton>(skeletonID);
+	m_rootBoneIndex = skeleton.rootBoneIndex;
+	for (const ArchiveSkeletalBone& archiveBone : skeleton.bones)
+	{
+		SkeletalMeshBone bone;
+		bone.parentIndex = archiveBone.parentIndex;
+		bone.name = archiveBone.name;
+		bone.offset = archiveBone.offset;
+		m_bones.append(bone);
+	}
+	m_animations.reserve(meshArchive.animations.size());
+	for (AssetID animationID : meshArchive.animations)
+	{
+		// TODO this is in mesh component instead.
+		const ArchiveSkeletonAnimation& archiveAnimation = _context.getArchive<ArchiveSkeletonAnimation>(animationID);
+
+		SkeletalMeshAnimation animation;
+		animation.durationInTick = archiveAnimation.durationInTick;
+		animation.tickPerSecond = archiveAnimation.tickPerSeconds;
+		animation.name = archiveAnimation.name;
+		animation.bones.resize(m_bones.size());
+		for (const ArchiveSkeletonBoneAnimation& archiveBone : archiveAnimation.bones)
+		{
+			SkeletalMeshBoneAnimation& bone = animation.bones[archiveBone.boneIndex];
+			bone.localTransform = mat4f::identity();
+			bone.behaviour = static_cast<SkeletalMeshBehaviour>(archiveBone.behaviour);
+			for (size_t i = 0; i < archiveBone.positions.size(); i++)
+			{
+				bone.positionKeys.append(SkeletalMeshKeyPosition{ archiveBone.positions[i].position, archiveBone.positions[i].timestamp });
+			}
+			for (size_t i = 0; i < archiveBone.rotations.size(); i++)
+			{
+				bone.rotationKeys.append(SkeletalMeshKeyRotation{ archiveBone.rotations[i].orientation, archiveBone.rotations[i].timestamp });
+			}
+			for (size_t i = 0; i < archiveBone.scales.size(); i++)
+			{
+				bone.scaleKeys.append(SkeletalMeshKeyScale{ archiveBone.scales[i].scale, archiveBone.scales[i].timestamp });
+			}
+		}
+		m_animations.append(animation);
 	}
 	m_indexFormat = gfx::IndexFormat::UnsignedInt;
-	m_gfxBonesBufferHandle = _renderer->allocateGeometryData(m_bones.data(), sizeof(SkeletalMeshBone) * m_bones.size());
 	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(SkeletalVertex) * vertices.size());
 	m_gfxIndexBufferHandle = _renderer->allocateGeometryIndex(indices.data(), sizeof(uint32_t) * indices.size());
 }
@@ -121,7 +244,6 @@ void SkeletalMesh::toArchive_internal(ArchiveSaveContext& _context, Renderer* _r
 
 void SkeletalMesh::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	_renderer->deallocate(m_gfxBonesBufferHandle);
 	_renderer->deallocate(m_gfxVertexBufferHandle);
 	_renderer->deallocate(m_gfxIndexBufferHandle);
 	m_batches.clear();

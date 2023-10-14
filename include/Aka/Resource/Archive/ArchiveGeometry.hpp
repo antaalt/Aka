@@ -23,21 +23,6 @@ struct ArchiveSkeletalVertex
 	float weights[4];
 };
 
-struct ArchiveSkeletalBone
-{
-	mat4f offset;
-};
-
-enum class ArchiveGeometryFlags
-{
-	None		= 0,
-
-	IsSkeletal	= 1 << 0,
-
-	All			= IsSkeletal,
-};
-AKA_IMPLEMENT_BITMASK_OPERATOR(ArchiveGeometryFlags);
-
 struct ArchiveGeometry : Archive 
 {
 	enum class Version : ArchiveVersionType
@@ -51,12 +36,11 @@ struct ArchiveGeometry : Archive
 	ArchiveGeometry();
 	explicit ArchiveGeometry(AssetID id);
 
-	ArchiveGeometryFlags flags;
+	AssetID skeleton;
 	aabbox<> bounds; // local
 	// TODO should have some stream describing the vertices layout.
 	Vector<ArchiveStaticVertex> staticVertices;
 	Vector<ArchiveSkeletalVertex> skeletalVertices;
-	Vector<ArchiveSkeletalBone> skeletalBones;
 	Vector<uint32_t> indices;
 
 protected:

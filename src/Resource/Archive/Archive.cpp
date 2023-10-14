@@ -7,16 +7,18 @@
 namespace aka {
 
 constexpr const char* s_magicWord[] = {
-	"akag", // MeshGeometry
-	"akam", // MeshMaterial
-	"akab", // MeshBatch
-	"akas", // StaticMesh
-	"akad", // DynamicMesh
-	"akaa", // Sprite (Animation)
-	"akai", // Image
-	"akaf", // Font
-	"akaa", // Audio
-	"akaw", // Scene (World)
+	"akageo", // MeshGeometry
+	"akamat", // MeshMaterial
+	"akabat", // MeshBatch
+	"akastm", // StaticMesh
+	"akadkm", // SkeletalMesh
+	"akaske", // Skeleton
+	"akaska", // SkeletonAnimation
+	"akaspr", // Sprite
+	"akaimg", // Image
+	"akafnt", // Font
+	"akaaud", // Audio
+	"akasce", // Scene
 };
 
 static_assert(countof(s_magicWord) == EnumCount<AssetType>());
@@ -158,7 +160,7 @@ const char* Archive::getFileMagicWord(AssetType _type)
 
 ArchiveParseResult Archive::parseHeader(BinaryArchive& _archive)
 {
-	if (!_archive.expectBlob(Archive::getFileMagicWord(type()), 4))
+	if (!_archive.expectBlob(Archive::getFileMagicWord(type()), 6))
 		return ArchiveParseResult::InvalidMagicWord;
 	if (!_archive.expect<ArchiveVersion>(version()))
 		return ArchiveParseResult::IncompatibleVersion;

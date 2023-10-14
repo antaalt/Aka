@@ -201,6 +201,11 @@ void Renderer::destroySkeletalMeshInstance(InstanceHandle instanceHandle)
 	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)]->destroyInstance(instanceHandle);
 }
 
+void Renderer::updateSkeletalMeshBoneInstance(InstanceHandle instance, uint32_t index, const mat4f& transform)
+{
+	SkeletalMeshInstanceRenderer* renderer = static_cast<SkeletalMeshInstanceRenderer*>(m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)]);
+	renderer->updateBoneInstanceTransform(instance, index, transform);
+}
 
 ViewHandle Renderer::createView(ViewType viewType)
 {
@@ -289,12 +294,14 @@ GeometryBufferHandle Renderer::allocateGeometryData(void* data, size_t size)
 	return handle;
 }
 
-void Renderer::update(const GeometryBufferHandle& handle, void* data, size_t size, size_t offset)
+void Renderer::update(GeometryBufferHandle handle, const void* data, size_t size, size_t offset)
 {
-	AKA_NOT_IMPLEMENTED;
+	gfx::BufferHandle buffer = getGeometryBuffer(handle);
+	uint32_t offsetInBuffer = getGeometryBufferOffset(handle);
+	getDevice()->upload(buffer, data, offsetInBuffer + (uint32_t)offset, (uint32_t)size);
 }
 
-void Renderer::deallocate(const GeometryBufferHandle& handle)
+void Renderer::deallocate(GeometryBufferHandle handle)
 {
 	// Nothing, linear allocator for now
 }

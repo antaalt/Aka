@@ -5,6 +5,11 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
+#include <Aka/Resource/Archive/ArchiveGeometry.hpp>
+#include <Aka/Resource/Archive/ArchiveBatch.hpp>
+#include <Aka/Resource/Archive/ArchiveSkeleton.hpp>
+#include <Aka/Resource/Archive/ArchiveSkeletonAnimation.hpp>
+
 namespace aka {
 
 AssetID generateAssetIDFromAssetPath(const AssetPath& path)
@@ -111,6 +116,8 @@ bool validate(AssetLibrary* _library, AssetID id, AssetType _type)
 	case AssetType::Batch: return ArchiveBatch(id).validate(_library);
 	case AssetType::StaticMesh: return ArchiveStaticMesh(id).validate(_library);
 	case AssetType::SkeletalMesh: return ArchiveSkeletalMesh(id).validate(_library);
+	case AssetType::Skeleton: return ArchiveSkeleton(id).validate(_library);
+	case AssetType::SkeletonAnimation: return ArchiveSkeletonAnimation(id).validate(_library);
 	case AssetType::Image: return ArchiveImage(id).validate(_library);
 	case AssetType::Font: return false;
 	case AssetType::Audio: return false;

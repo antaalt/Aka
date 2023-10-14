@@ -208,10 +208,15 @@ const mat4f& Node::getLocalTransform() const
 }
 mat4f Node::getWorldTransform() const
 {
-	// TODO should check its a node3D, or move all to Node ?
 	if (getParent())
 		return getParent()->getWorldTransform() * m_localTransform;
 	return m_localTransform;
+}
+mat4f Node::getParentTransform() const
+{
+	if (getParent())
+		return getParent()->getWorldTransform();
+	return mat4f::identity();
 }
 void Node::setLocalTransform(const mat4f& transform)
 {

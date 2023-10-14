@@ -1,5 +1,6 @@
 #include <Aka/Resource/Archive/ArchiveGeometry.hpp>
 
+#include <Aka/Resource/Archive/ArchiveSkeleton.hpp>
 #include <Aka/OS/Archive.h>
 #include <Aka/Resource/AssetLibrary.hpp>
 
@@ -11,7 +12,7 @@ ArchiveGeometry::ArchiveGeometry() :
 }
 ArchiveGeometry::ArchiveGeometry(AssetID id) :
 	Archive(AssetType::Geometry, id),
-	flags(ArchiveGeometryFlags::None),
+	skeleton(AssetID::Invalid),
 	bounds(),
 	staticVertices{},
 	skeletalVertices{},
@@ -20,17 +21,16 @@ ArchiveGeometry::ArchiveGeometry(AssetID id) :
 }
 ArchiveParseResult ArchiveGeometry::parse(BinaryArchive& _archive)
 {
-	_archive.parse(this->flags);
+	_archive.parse(this->skeleton);
 
 	_archive.parse(this->bounds.min);
 	_archive.parse(this->bounds.min);
 	_archive.parse(this->bounds.max);
 
 	_archive.parse<uint32_t>(this->indices);
-	if (asBool(this->flags & ArchiveGeometryFlags::IsSkeletal))
+	if (this->skeleton != AssetID::Invalid)
 	{
 		_archive.parse<ArchiveSkeletalVertex>(this->skeletalVertices);
-		_archive.parse<ArchiveSkeletalBone>(this->skeletalBones);
 	}
 	else
 	{
@@ -42,6 +42,8 @@ ArchiveParseResult ArchiveGeometry::parse(BinaryArchive& _archive)
 
 ArchiveParseResult ArchiveGeometry::load_dependency(ArchiveLoadContext& _context)
 {
+	if (skeleton != AssetID::Invalid)
+		_context.addArchive<ArchiveSkeleton>(skeleton);
 	return ArchiveParseResult::Success;
 }
 

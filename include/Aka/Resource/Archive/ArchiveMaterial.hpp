@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Resource/Archive/ArchiveImage.hpp>
+#include <Aka/Resource/Archive/Archive.hpp>
 #include <Aka/Core/Enum.h>
 
 namespace aka {

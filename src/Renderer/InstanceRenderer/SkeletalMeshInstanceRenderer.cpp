@@ -146,6 +146,7 @@ void SkeletalMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 						instanceData.transform = m_instanceDatas[instanceInOffset + iInstance].getTransform();
 						instanceData.normal = mat4f::transpose(mat4f::inverse(instanceData.transform));;
 						instanceData.batchIndex = iBatch + assetData.batchOffset;
+						instanceData.boneOffset = m_instanceDatas[instanceInOffset + iInstance].bonesOffset;
 					}
 				}
 				currentAssetID = instance.getAssetID();
@@ -177,6 +178,7 @@ void SkeletalMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 					instanceData.transform = m_instanceDatas[instanceInOffset + iInstance].getTransform();
 					instanceData.normal = mat4f::transpose(mat4f::inverse(instanceData.transform));;
 					instanceData.batchIndex = iBatch + assetData.batchOffset;
+					instanceData.boneOffset = m_instanceDatas[instanceInOffset + iInstance].bonesOffset;
 				}
 			}
 		}
@@ -246,6 +248,13 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 	ResourceHandle<SkeletalMesh> meshHandle = getRenderer().getLibrary()->get<SkeletalMesh>(assetID);
 	const SkeletalMesh& mesh = meshHandle.get();
 
+	// Bones
+	mat4f default = mat4f::identity();
+	Vector<mat4f> bones(mesh.getBones().size(), mat4f::identity());
+	GeometryBufferHandle bonesHandle = getRenderer().allocateGeometryData(bones.data(), sizeof(mat4f) * bones.size());
+
+	m_boneAllocations.emplace(std::make_pair(instanceHandle, bonesHandle));
+
 	auto itAsset = m_assetIndex.find(assetID);
 	if (itAsset == m_assetIndex.end())
 	{
@@ -261,7 +270,6 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 		AKA_ASSERT(mesh.getIndexFormat() == gfx::IndexFormat::UnsignedInt, "");
 		uint32_t indexOffset = getRenderer().getGeometryBufferOffset(mesh.getIndexBufferHandle());
 		uint32_t vertexOffset = getRenderer().getGeometryBufferOffset(mesh.getVertexBufferHandle());
-		uint32_t boneOffset = getRenderer().getGeometryBufferOffset(mesh.getBoneBufferHandle());
 		AKA_ASSERT((indexOffset % sizeof(uint32_t)) == 0, "Indices not aligned");
 		AKA_ASSERT((vertexOffset % sizeof(SkeletalVertex)) == 0, "Vertices not aligned");
 
@@ -274,7 +282,6 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 			batchData.indexOffset = (batch.indexOffset + indexOffset) / sizeof(uint32_t);
 			batchData.indexCount = batch.indexCount;
 			batchData.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(SkeletalVertex);
-			batchData.boneOffset = boneOffset + batch.boneOffset;
 			batchData.materialIndex = getRenderer().getMaterialIndex(batch.material.get().getMaterialHandle());
 			batchData.min; // TODO
 			batchData.max;
@@ -284,6 +291,8 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 		m_assetIndex.insert(std::make_pair(assetID, assetIndex));
 
 		SkeletalMeshInstance instance(assetID, ViewTypeMask::All);
+		AKA_ASSERT(getRenderer().getGeometryBufferOffset(bonesHandle) % sizeof(mat4f) == 0, "");
+		instance.bonesOffset = getRenderer().getGeometryBufferOffset(bonesHandle);
 
 		uint32_t instanceOffset = (uint32_t)m_instanceDatas.size();
 		m_instanceIndex.insert(std::make_pair(instanceHandle, instanceOffset));
@@ -292,6 +301,8 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 	else
 	{
 		SkeletalMeshInstance instance(assetID, ViewTypeMask::All);
+		AKA_ASSERT(getRenderer().getGeometryBufferOffset(bonesHandle) % sizeof(mat4f) == 0, "");
+		instance.bonesOffset = getRenderer().getGeometryBufferOffset(bonesHandle);
 
 		// Insert the instance near to other instances.
 		// Find other instance using same asset to group them for instanced draw call.
@@ -371,8 +382,18 @@ void SkeletalMeshInstanceRenderer::destroyInstance(InstanceHandle instanceHandle
 	m_instanceAssetDatas.erase(m_instanceAssetDatas.begin() + assetIndex);
 	AKA_NOT_IMPLEMENTED;
 	*/
+
+	m_boneAllocations.erase(instanceHandle);
+
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 		m_dirty[i] = true;
+}
+
+void SkeletalMeshInstanceRenderer::updateBoneInstanceTransform(InstanceHandle instanceHandle, uint32_t boneIndex, const mat4f& transform)
+{
+	// TODO defer update
+	auto it = m_boneAllocations.find(instanceHandle);
+	getRenderer().update(it->second, &transform, sizeof(mat4f), boneIndex * sizeof(mat4f));
 }
 
 }

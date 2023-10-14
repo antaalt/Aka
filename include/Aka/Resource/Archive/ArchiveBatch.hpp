@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Aka/Resource/Archive/ArchiveMaterial.hpp>	
-#include <Aka/Resource/Archive/ArchiveGeometry.hpp>
+#include <Aka/Resource/Archive/Archive.hpp>
+#include <Aka/Graphic/Pipeline.h>
 
 namespace aka {
 

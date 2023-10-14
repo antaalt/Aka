@@ -84,6 +84,8 @@ const char* Importer::getAssetTypeName(AssetType type)
 	case AssetType::Batch: return "batches";
 	case AssetType::StaticMesh: return "static-meshes";
 	case AssetType::SkeletalMesh: return "skeletal-meshes";
+	case AssetType::Skeleton: return "skeleton";
+	case AssetType::SkeletonAnimation: return "skeleton-animation";
 	case AssetType::Image:return "images";
 	case AssetType::Scene:return "scenes";
 	default:
@@ -102,6 +104,8 @@ const char* Importer::getAssetExtension(AssetType type)
 	case AssetType::Batch: return "bat";
 	case AssetType::StaticMesh: return "stm";
 	case AssetType::SkeletalMesh: return "skm";
+	case AssetType::Skeleton: return "ske";
+	case AssetType::SkeletonAnimation: return "ska";
 	case AssetType::Image:return "img";
 	case AssetType::Font:return "fnt";
 	case AssetType::Audio:return "odio";

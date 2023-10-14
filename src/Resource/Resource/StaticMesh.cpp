@@ -1,5 +1,8 @@
 #include <Aka/Resource/Resource/StaticMesh.hpp>
 
+#include <Aka/Resource/Archive/ArchiveStaticMesh.hpp>
+#include <Aka/Resource/Archive/ArchiveBatch.hpp>
+#include <Aka/Resource/Archive/ArchiveGeometry.hpp>
 #include <Aka/Resource/AssetLibrary.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
@@ -42,7 +45,7 @@ void StaticMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _r
 	{
 		const ArchiveBatch& batch = _context.getArchive<ArchiveBatch>(batchID);
 		const ArchiveGeometry& geometryArchive = _context.getArchive<ArchiveGeometry>(batch.geometry);
-		AKA_ASSERT(!asBool(geometryArchive.flags & ArchiveGeometryFlags::IsSkeletal), "");
+		AKA_ASSERT(geometryArchive.skeleton == AssetID::Invalid, "");
 		// Material
 		ResourceHandle<Material> material = _context.getAssetLibrary()->load<Material>(batch.material, _context, _renderer);
 		

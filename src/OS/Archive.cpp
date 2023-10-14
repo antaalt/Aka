@@ -26,6 +26,22 @@ void BinaryArchive::parse(point3f& value)
 	}
 }
 
+void BinaryArchive::parse(vec3f& value)
+{
+	for (uint32_t i = 0; i < 3; ++i)
+	{
+		parse<float>(value.data[i]);
+	}
+}
+
+void BinaryArchive::parse(quatf& value)
+{
+	for (uint32_t i = 0; i < 4; ++i)
+	{
+		parse<float>(value.data[i]);
+	}
+}
+
 void BinaryArchive::parse(color4f& value)
 {
 	for (uint32_t i = 0; i < 4; ++i)

@@ -1,6 +1,5 @@
 #pragma once 
 
-#include <Aka/Resource/Archive/ArchiveStaticMesh.hpp>
 #include <Aka/Resource/Resource/Material.hpp>
 
 #include <Aka/Graphic/GraphicDevice.h>
