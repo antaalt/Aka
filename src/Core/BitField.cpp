@@ -43,7 +43,7 @@ uint32_t countLeadingZero(uint32_t x)
 	if (_BitScanReverse(&result, x))
 		return 31 - result;
 	else
-		return 32; // Depend on choices
+		return BitNotFoundIndex;
 #else
 	// Count leading zero
 	return __builtin_clz(x); // GCC
@@ -56,7 +56,7 @@ uint32_t countTrailingZero(uint32_t x)
 	if (_BitScanForward(&result, x))
 		return result;
 	else
-		return 32; // Depend on choices
+		return BitNotFoundIndex;
 #else
 	// Count trailing zero
 	return __builtin_ctz(x); // GCC
@@ -65,9 +65,11 @@ uint32_t countTrailingZero(uint32_t x)
 uint32_t countLeadingZero(uint64_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
-	unsigned long result;
-	_BitScanForward64(&result, x);
-	return result;
+	unsigned long result = 0;
+	if (_BitScanReverse64(&result, x))
+		return 63 - result;
+	else
+		return BitNotFoundIndex;
 #else
 	// Count leading zero
 	return __builtin_clzll(x); // GCC
@@ -76,11 +78,11 @@ uint32_t countLeadingZero(uint64_t x)
 uint32_t countTrailingZero(uint64_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
-	unsigned long result;
+	unsigned long result = 0;
 	if (_BitScanForward64(&result, x))
 		return result;
 	else
-		return 64;
+		return BitNotFoundIndex;
 #else
 	// Count trailing zero
 	return __builtin_ctzll(x); // GCC

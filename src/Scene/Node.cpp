@@ -74,7 +74,7 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 {
 	uint64_t mask = toMask(m_updateFlags);
 	uint32_t index = 0;
-	while ((index = countTrailingZero(mask)) != 0)
+	while ((index = countTrailingZero(mask)) != BitNotFoundIndex)
 	{
 		NodeUpdateFlag flag = NodeUpdateFlag(1ULL << index);
 		mask &= ~(1ULL << index);
