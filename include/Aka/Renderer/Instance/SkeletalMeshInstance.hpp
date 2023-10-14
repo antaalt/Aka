@@ -3,6 +3,7 @@
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Resource/Shader/ShaderRegistry.h>
 #include <Aka/Renderer/Instance.hpp>
+#include <Aka/Renderer/Geometry.hpp>
 
 namespace aka {
 
@@ -49,7 +50,9 @@ struct SkeletalMeshInstance : Instance
 	SkeletalMeshInstance(AssetID assetID, ViewTypeMask mask = ViewTypeMask::All) : Instance(assetID, mask, InstanceType::SkeletalMesh3D) {}
 
 	uint32_t bonesOffset;
-	// Vector of boneInstanceHandle
+	Vector<mat4f> boneTransforms;
+	GeometryBufferHandle bonesAllocation;
+
 	static gfx::VertexBufferLayout getState();
 };
 

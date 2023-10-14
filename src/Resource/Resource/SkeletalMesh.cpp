@@ -26,6 +26,8 @@ gfx::VertexBufferLayout SkeletalVertex::getState()
 
 void SkeletalMeshBoneAnimation::update(float animationTime)
 {
+	if (positionKeys.size() == 0 && rotationKeys.size() == 0 && scaleKeys.size() == 0)
+		return;
 	mat4f translation = interpolatePosition(animationTime);
 	mat4f rotation = interpolateRotation(animationTime);
 	mat4f scale = interpolateScaling(animationTime);

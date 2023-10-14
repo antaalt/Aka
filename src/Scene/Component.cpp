@@ -57,7 +57,8 @@ void ComponentAllocator::freeArchive(ArchiveComponent* component)
 Component::Component(Node* node, ComponentID componentID) :
 	m_state(ComponentState::PendingActivation),
 	m_componentID(componentID),
-	m_node(node)
+	m_node(node),
+	m_updateFlags(ComponentUpdateFlags::All)
 {
 }
 
@@ -82,21 +83,52 @@ void Component::deactivate(AssetLibrary* library, Renderer* _renderer)
 	onBecomeInactive(library, _renderer);
 	m_state = ComponentState::PendingDestruction;
 }
+void Component::transformUpdate()
+{
+	if (!areRegistered(ComponentUpdateFlags::TransformUpdate))
+		return;
+	AKA_ASSERT(m_state == ComponentState::Active, "Invalid state");
+	onTransformChanged();
+}
+void Component::hierarchyUpdate()
+{
+	if (!areRegistered(ComponentUpdateFlags::HierarchyUpdate))
+		return;
+	AKA_ASSERT(m_state == ComponentState::Active, "Invalid state");
+	onHierarchyChanged();
+}
 void Component::update(Time deltaTime)
 {
+	if (!areRegistered(ComponentUpdateFlags::Update))
+		return;
 	AKA_ASSERT(m_state == ComponentState::Active, "Invalid state");
 	onUpdate(deltaTime);
 }
 void Component::fixedUpdate(Time deltaTime)
 {
+	if (!areRegistered(ComponentUpdateFlags::FixedUpdate))
+		return;
 	AKA_ASSERT(m_state == ComponentState::Active, "Invalid state");
 	onFixedUpdate(deltaTime);
 }
 void Component::renderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
+	if (!areRegistered(ComponentUpdateFlags::RenderUpdate))
+		return;
 	AKA_ASSERT(m_state == ComponentState::Active, "Invalid state");
 	onRenderUpdate(library, _renderer);
 }
-
+void Component::registerUpdates(ComponentUpdateFlags flags)
+{
+	m_updateFlags |= flags;
+}
+void Component::unregisterUpdates(ComponentUpdateFlags flags)
+{
+	m_updateFlags &= ~flags;
+}
+bool Component::areRegistered(ComponentUpdateFlags flags)
+{
+	return asBool(m_updateFlags & flags);
+}
 
 };

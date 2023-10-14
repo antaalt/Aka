@@ -38,38 +38,33 @@ VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKH
 	return formats[0];
 }
 
+bool isPresentModeAvailable(const std::vector<VkPresentModeKHR>& presentModes, VkPresentModeKHR presentMode)
+{
+	return presentModes.end() != std::find(presentModes.begin(), presentModes.end(), presentMode);
+}
+
 VkPresentModeKHR getPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
 	uint32_t presentModeCount;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
-	VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
 	std::vector<VkPresentModeKHR> presentModes;
 	if (presentModeCount == 0)
 	{
 		Logger::error("No valid present mode for surface");
-		return bestMode;
+		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 	presentModes.resize(presentModeCount);
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
-	for (const VkPresentModeKHR& availablePresentMode : presentModes)
-	{
-		if (availablePresentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
-		{
-			bestMode = availablePresentMode;
-			break;
-		}
-		else if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-		{
-			bestMode = availablePresentMode;
-			break;
-		}
-		else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-		{
-			bestMode = availablePresentMode;
-			break;
-		}
-	}
+	// https://www.intel.com/content/www/us/en/developer/articles/training/api-without-secrets-introduction-to-vulkan-part-2.html?language=en#_Toc445674479
+	VkPresentModeKHR bestMode;
+	if (isPresentModeAvailable(presentModes, VK_PRESENT_MODE_MAILBOX_KHR)) // VSync with lowest latency, no tearing.
+		bestMode = VK_PRESENT_MODE_MAILBOX_KHR;
+	else if (isPresentModeAvailable(presentModes, VK_PRESENT_MODE_IMMEDIATE_KHR)) // no vsync. tearing.
+		bestMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+	else
+		bestMode = VK_PRESENT_MODE_FIFO_KHR; // VSync, always available, no tearing.
+
 	return bestMode;
 }
 VkExtent2D getSurfaceExtent(VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window)

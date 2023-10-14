@@ -77,6 +77,8 @@ public:
 	bool isValid() const;
 	bool isLoaded() const;
 	ResourceState getState() const;
+	const String& getName() const;
+	AssetID getAssetID() const;
 	size_t getCount() const;
 	void reset();
 
@@ -120,6 +122,24 @@ inline ResourceState ResourceHandle<T>::getState() const
 		return ResourceState::Unknown;
 	return m_resource->getState();
 }
+
+template<typename T>
+inline const String& ResourceHandle<T>::getName() const
+{
+	static const String s_unvalidName = "UnnamedNotLoaded";
+	if (!isValid())
+		return s_unvalidName;
+	return m_resource->getName();
+}
+
+template<typename T>
+inline AssetID ResourceHandle<T>::getAssetID() const
+{
+	if (!isValid())
+		return AssetID::Invalid;
+	return m_resource->getID();
+}
+
 
 template<typename T>
 inline size_t ResourceHandle<T>::getCount() const

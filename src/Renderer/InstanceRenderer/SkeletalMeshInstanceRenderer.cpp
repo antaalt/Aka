@@ -109,6 +109,14 @@ void SkeletalMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(frame);
 	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
 
+	if (m_dirtyBones[frameIndex.value()])
+	{
+		for (const SkeletalMeshInstance& instance : m_instanceDatas)
+		{
+			getRenderer().update(instance.bonesAllocation, instance.boneTransforms.data(), instance.boneTransforms.size() * sizeof(mat4f));
+		}
+		m_dirtyBones[frameIndex.value()] = false;
+	}
 	// TODO: should run this for each views.
 	// TODO: should use a compute shader for creating indirect buffers
 	if (m_dirty[frameIndex.value()]) // if a transform changed or a material
@@ -254,8 +262,6 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 	Vector<mat4f> bones(mesh.getBones().size(), mat4f::identity());
 	GeometryBufferHandle bonesHandle = getRenderer().allocateGeometryData(bones.data(), sizeof(mat4f) * bones.size());
 
-	m_boneAllocations.emplace(std::make_pair(instanceHandle, bonesHandle));
-
 	auto itAsset = m_assetIndex.find(assetID);
 	if (itAsset == m_assetIndex.end())
 	{
@@ -294,6 +300,8 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 		SkeletalMeshInstance instance(assetID, ViewTypeMask::All);
 		AKA_ASSERT(getRenderer().getGeometryBufferOffset(bonesHandle) % sizeof(mat4f) == 0, "");
 		instance.bonesOffset = getRenderer().getGeometryBufferOffset(bonesHandle);
+		instance.boneTransforms.resize(bones.size());
+		instance.bonesAllocation = bonesHandle;
 
 		uint32_t instanceOffset = (uint32_t)m_instanceDatas.size();
 		m_instanceIndex.insert(std::make_pair(instanceHandle, instanceOffset));
@@ -304,6 +312,8 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 		SkeletalMeshInstance instance(assetID, ViewTypeMask::All);
 		AKA_ASSERT(getRenderer().getGeometryBufferOffset(bonesHandle) % sizeof(mat4f) == 0, "");
 		instance.bonesOffset = getRenderer().getGeometryBufferOffset(bonesHandle);
+		instance.boneTransforms.resize(bones.size());
+		instance.bonesAllocation = bonesHandle;
 
 		// Insert the instance near to other instances.
 		// Find other instance using same asset to group them for instanced draw call.
@@ -359,6 +369,8 @@ void SkeletalMeshInstanceRenderer::destroyInstance(InstanceHandle instanceHandle
 		if (instance.second > instanceIndex)
 			instance.second--;
 	}
+	getRenderer().deallocate(m_instanceDatas[instanceIndex].bonesAllocation);
+	
 	m_instanceDatas.erase(m_instanceDatas.begin() + instanceIndex);
 	//SkeletalMeshInstance& instance = m_instanceDatas[instanceIndex];
 	// TODO remove given instance, offset all instance index in m_instanceIndex.
@@ -384,17 +396,19 @@ void SkeletalMeshInstanceRenderer::destroyInstance(InstanceHandle instanceHandle
 	AKA_NOT_IMPLEMENTED;
 	*/
 
-	m_boneAllocations.erase(instanceHandle);
-
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 		m_dirty[i] = true;
 }
 
 void SkeletalMeshInstanceRenderer::updateBoneInstanceTransform(InstanceHandle instanceHandle, uint32_t boneIndex, const mat4f& transform)
 {
-	// TODO defer update
-	auto it = m_boneAllocations.find(instanceHandle);
-	getRenderer().update(it->second, &transform, sizeof(mat4f), boneIndex * sizeof(mat4f));
+	auto it = m_instanceIndex.find(instanceHandle);
+	AKA_ASSERT(it != m_instanceIndex.end(), "");
+
+	m_instanceDatas[it->second].boneTransforms[boneIndex] = transform;
+
+	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
+		m_dirtyBones[i] = true;
 }
 
 }

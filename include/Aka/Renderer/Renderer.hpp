@@ -4,6 +4,7 @@
 #include <Aka/Resource/Asset.hpp>
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Renderer/Instance.hpp>
+#include <Aka/Renderer/Geometry.hpp>
 #include <Aka/Renderer/Instance/SkeletalMeshInstance.hpp>
 #include <Aka/Renderer/View.hpp>
 #include <Aka/Core/Event.h>
@@ -30,16 +31,6 @@ enum class SamplerType
 enum class MaterialHandle : uint64_t { Invalid = (uint64_t)-1 };
 enum class TextureID : uint32_t { Invalid = (uint32_t)-1 };
 using TextureHandle = TextureID;
-
-enum class GeometryBufferHandle : uint32_t { Invalid = (uint32_t)-1 };
-
-struct GeometryBufferAllocation
-{
-	GeometryBufferHandle handle;
-	//uint32_t bufferIndex; // using paged buffers
-	uint32_t offset;
-	uint32_t size;
-};
 
 struct alignas(16) MaterialData
 {

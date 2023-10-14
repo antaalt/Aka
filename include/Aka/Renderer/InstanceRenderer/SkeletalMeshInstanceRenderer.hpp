@@ -39,13 +39,13 @@ private:
 	gfx::GraphicPipelineHandle m_pipeline;
 	ProgramKey m_programKey;
 	bool m_dirty[gfx::MaxFrameInFlight];
+	bool m_dirtyBones[gfx::MaxFrameInFlight];
 
 private:
 	std::map<AssetID, uint32_t> m_assetIndex;
 	std::map<InstanceHandle, uint32_t> m_instanceIndex;
 	// TODO move to gpu with compute.
-	std::map<InstanceHandle, GeometryBufferHandle> m_boneAllocations;
-	std::vector<SkeletalMeshInstance> m_instanceDatas; // Updated frequently.
+	std::vector<SkeletalMeshInstance> m_instanceDatas; // Updated every frame for bones.
 	std::vector<gpu::SkeletalMeshAssetData> m_instanceAssetDatas; // Updated rarely
 	std::vector<gpu::SkeletalMeshBatchData> m_instanceBatchDatas; // Updated rarely
 

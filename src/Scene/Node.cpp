@@ -36,6 +36,10 @@ void Node::attach(Component* component)
 
 void Node::create(AssetLibrary* library, Renderer* renderer)
 {
+	for (Node* childrens : m_childrens)
+	{
+		childrens->create(library, renderer);
+	}
 }
 
 void Node::destroy(AssetLibrary* library, Renderer* renderer)
@@ -72,50 +76,57 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 
 void Node::update(AssetLibrary* library, Renderer* renderer)
 {
-	uint64_t mask = toMask(m_updateFlags);
-	uint32_t index = 0;
-	while ((index = countTrailingZero(mask)) != BitNotFoundIndex)
+	if (asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
 	{
-		NodeUpdateFlag flag = NodeUpdateFlag(1ULL << index);
-		mask &= ~(1ULL << index);
-		switch (flag)
+		m_cacheWorldTransform = computeWorldTransform();
+		for (ComponentMap::value_type& component : m_componentsActive)
 		{
-		case NodeUpdateFlag::Transform:
-			break;
+			component.second->transformUpdate();
 		}
+		m_updateFlags &= ~NodeUpdateFlag::TransformUpdated;
 	}
-	//for (ComponentID id : m_dirtyComponent)
-	for (auto component : m_componentsActive)
+	else if (asBool(NodeUpdateFlag::HierarchyUpdated & m_updateFlags))
 	{
-		component.second->onRenderUpdate(library, renderer);
+		m_cacheWorldTransform = computeWorldTransform();
+		for (ComponentMap::value_type& component : m_componentsActive)
+		{
+			component.second->hierarchyUpdate();
+		}
+		m_updateFlags &= ~NodeUpdateFlag::HierarchyUpdated;
 	}
-	m_dirtyComponent.clear();
+
+	for (ComponentMap::value_type& component : m_componentsActive)
+	{
+		component.second->renderUpdate(library, renderer);
+	}
 
 	// Update children
 	for (Node* childrens : m_childrens)
 	{
 		childrens->update(library, renderer);
 	}
-	// Activate components
-	for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
-	{
-		component.second->activate(library, renderer);
-		m_componentsActive.insert(component);
+	{ // Components lifecycle.
+		// Activate components
+		for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
+		{
+			component.second->activate(library, renderer);
+			m_componentsActive.insert(component);
+		}
+		m_componentsToActivate.clear();
+		// Deactivate components
+		for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
+		{
+			component.second->deactivate(library, renderer);
+			component.second->detach();
+			ComponentAllocator::free(component.second);
+		}
+		m_componentsToDeactivate.clear();
 	}
-	m_componentsToActivate.clear();
-	// Deactivate components
-	for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
-	{
-		component.second->deactivate(library, renderer);
-		component.second->detach();
-		ComponentAllocator::free(component.second);
-	}
-	m_componentsToDeactivate.clear();
 }
 
 void Node::update(Time deltaTime)
 {
-	for (auto component : m_componentsActive)
+	for (ComponentMap::value_type& component : m_componentsActive)
 	{
 		component.second->update(deltaTime);
 	}
@@ -127,7 +138,7 @@ void Node::update(Time deltaTime)
 
 void Node::fixedUpdate(Time deltaTime)
 {
-	for (auto component : m_componentsActive)
+	for (ComponentMap::value_type& component : m_componentsActive)
 	{
 		component.second->fixedUpdate(deltaTime);
 	}
@@ -151,6 +162,7 @@ void Node::unlink()
 
 void Node::addChild(Node* child)
 {
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated);
 	AKA_ASSERT(child != this, "Trying to add itself as child");
 	AKA_ASSERT(child->m_parent == nullptr, "Child already have a parent");
 	child->m_parent = this;
@@ -158,6 +170,7 @@ void Node::addChild(Node* child)
 }
 void Node::removeChild(Node* child)
 {
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated);
 	AKA_ASSERT(child != this, "Trying to remove itself as child");
 	auto it = std::find(m_childrens.begin(), m_childrens.end(), child);
 	if (it != m_childrens.end())
@@ -172,6 +185,7 @@ void Node::removeChild(Node* child)
 }
 void Node::setParent(Node* parent)
 {
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated);
 	if (m_parent)
 		m_parent->removeChild(this);
 	m_parent = parent;
@@ -198,19 +212,13 @@ const Node* Node::getChild(uint32_t iChild) const
 	return m_childrens[iChild];
 }
 
-mat4f& Node::getLocalTransform()
-{
-	return m_localTransform;
-}
 const mat4f& Node::getLocalTransform() const
 {
 	return m_localTransform;
 }
-mat4f Node::getWorldTransform() const
+const mat4f& Node::getWorldTransform() const
 {
-	if (getParent())
-		return getParent()->getWorldTransform() * m_localTransform;
-	return m_localTransform;
+	return m_cacheWorldTransform;
 }
 mat4f Node::getParentTransform() const
 {
@@ -220,7 +228,14 @@ mat4f Node::getParentTransform() const
 }
 void Node::setLocalTransform(const mat4f& transform)
 {
+	setUpdateFlag(NodeUpdateFlag::TransformUpdated);
 	m_localTransform = transform;
+}
+mat4f Node::computeWorldTransform() const
+{
+	if (getParent())
+		return getParent()->getWorldTransform() * m_localTransform;
+	return m_localTransform;
 }
 
 };

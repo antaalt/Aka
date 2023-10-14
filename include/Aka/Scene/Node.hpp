@@ -8,11 +8,12 @@
 
 namespace aka {
 
-enum class NodeUpdateFlag : uint64_t
+enum class NodeUpdateFlag : uint32_t
 {
 	None				= 0,
 
-	Transform			= 1 << 0,
+	TransformUpdated	= 1 << 0,
+	HierarchyUpdated	= 1 << 1,
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
@@ -64,7 +65,9 @@ public:
 	// Mark a component as dirty
 	template<typename T> void setDirty();
 	// Set update flag
-	void setFlag(NodeUpdateFlag flag) { m_updateFlags |= flag; }
+	void setUpdateFlag(NodeUpdateFlag flag) { m_updateFlags |= flag; }
+	// Get update flag
+	NodeUpdateFlag getUpdateFlag() const { return m_updateFlags; }
 public:
 	// Remove the node from the free, set its childs to its parent
 	void unlink();
@@ -92,18 +95,19 @@ public: // Transforms
 	// Set local transform
 	void setLocalTransform(const mat4f& transform);
 	// Get the local transform
-	mat4f& getLocalTransform();
-	// Get the local transform
 	const mat4f& getLocalTransform() const;
 	// Get the world transform
-	mat4f getWorldTransform() const;
+	const mat4f& getWorldTransform() const;
 	// Get the parent transform
 	mat4f getParentTransform() const;
 private:
+	mat4f computeWorldTransform() const;
+
 	mat4f m_localTransform;
+	mat4f m_cacheWorldTransform;
 private: // Data
 	String m_name;
-	ComponentSet m_dirtyComponent;
+	ComponentSet m_dirtyComponent; // Unused ?
 	ComponentSet m_componentIDs;
 	ComponentMap m_componentsActive;
 	ComponentMap m_componentsToActivate;

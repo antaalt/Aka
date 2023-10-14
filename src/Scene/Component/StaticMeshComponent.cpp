@@ -37,9 +37,21 @@ void StaticMeshComponent::onBecomeInactive(AssetLibrary* library, Renderer* _ren
 	_renderer->destroyStaticMeshInstance(m_instance);
 	m_instance = InstanceHandle::Invalid;
 }
+void StaticMeshComponent::onTransformChanged()
+{
+	m_updateGPU = true;
+}
+void StaticMeshComponent::onHierarchyChanged()
+{
+	m_updateGPU = true;
+}
 void StaticMeshComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
-	_renderer->updateStaticMeshInstanceTransform(m_instance, getNode()->getWorldTransform());
+	if (m_updateGPU)
+	{
+		_renderer->updateStaticMeshInstanceTransform(m_instance, getNode()->getWorldTransform());
+		m_updateGPU = false;
+	}
 }
 ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
 {

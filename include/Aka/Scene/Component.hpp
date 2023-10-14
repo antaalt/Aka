@@ -26,6 +26,20 @@ enum class ComponentState
 	PendingDestruction,
 };
 
+enum class ComponentUpdateFlags : uint32_t
+{
+	None			= 0,
+
+	TransformUpdate	= 1 << 0,
+	HierarchyUpdate	= 1 << 1,
+	Update			= 1 << 2,
+	FixedUpdate		= 1 << 3,
+	RenderUpdate	= 1 << 4,
+
+	All				= TransformUpdate | HierarchyUpdate | Update | FixedUpdate | RenderUpdate,
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(ComponentUpdateFlags);
+
 template <typename T> ComponentID generateComponentID();
 
 struct ComponentAllocator
@@ -88,6 +102,8 @@ public:
 	virtual void fromArchive(const ArchiveComponent& archive) = 0;
 	virtual void toArchive(ArchiveComponent& archive) = 0;
 protected:
+	void transformUpdate();
+	void hierarchyUpdate();
 	void update(Time deltaTime);
 	void fixedUpdate(Time deltaTime);
 	void renderUpdate(AssetLibrary* library, Renderer* _renderer);
@@ -101,13 +117,17 @@ protected:
 	// When a component become inactive.
 	virtual void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) {}
 
+	// When the node transform was updated
+	virtual void onTransformChanged() { unregisterUpdates(ComponentUpdateFlags::TransformUpdate); }
+	// When the node hierarchy (and transform) was updated
+	virtual void onHierarchyChanged() { unregisterUpdates(ComponentUpdateFlags::HierarchyUpdate); }
+
 	// When we update the component
-	virtual void onUpdate(Time deltaTime) {}
+	virtual void onUpdate(Time deltaTime) { unregisterUpdates(ComponentUpdateFlags::Update); }
 	// When we update the component with fixed time step.
-	virtual void onFixedUpdate(Time deltaTime) {}
+	virtual void onFixedUpdate(Time deltaTime) { unregisterUpdates(ComponentUpdateFlags::FixedUpdate); }
 	// When update to renderer are required.
-	// Should not be called every frame ?
-	virtual void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) {}
+	virtual void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) { unregisterUpdates(ComponentUpdateFlags::RenderUpdate); }
 public:
 	// Get the owner node of the component
 	Node* getNode() { return m_node; }
@@ -117,10 +137,20 @@ public:
 	ComponentID getComponentID() const { return m_componentID; }
 	// Get component state.
 	ComponentState getState() const { return m_state; }
+	// Get component state.
+	ComponentUpdateFlags getUpdateFlags() const { return m_updateFlags; }
+private:
+	// Register for internal updates
+	void registerUpdates(ComponentUpdateFlags flags);
+	// Unregister from internal updates
+	void unregisterUpdates(ComponentUpdateFlags flags);
+	// Check if flags are registered
+	bool areRegistered(ComponentUpdateFlags flags);
 private:
 	Node* m_node;				// Node the component is part of.
 	ComponentID m_componentID;	// ID of the component
 	ComponentState m_state;		// Current state of the component
+	ComponentUpdateFlags m_updateFlags; // Update flags of component.
 };
 
 
