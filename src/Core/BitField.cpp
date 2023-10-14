@@ -2,7 +2,7 @@
 
 namespace aka {
 
-uint32_t countbits32(uint32_t x)
+uint32_t countBitSet(uint32_t x)
 {
 	// popcount equivalent
 	// http://graphics.stanford.edu/%7Eseander/bithacks.html
@@ -22,7 +22,7 @@ uint32_t countbits32(uint32_t x)
 #endif
 }
 
-uint32_t countbits64(uint64_t x)
+uint32_t countBitSet(uint64_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	return (uint32_t)__popcnt64(x);
@@ -36,10 +36,10 @@ uint32_t countbits64(uint64_t x)
 // Could check this for cross platform compatibility 
 // https://github.com/mpdn/bitcount
 // Could rename these clz, ctz & pop
-uint32_t firstbithigh32(uint32_t x)
+uint32_t countLeadingZero(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
-	unsigned long result;
+	unsigned long result = 0;
 	if (_BitScanReverse(&result, x))
 		return 31 - result;
 	else
@@ -49,10 +49,10 @@ uint32_t firstbithigh32(uint32_t x)
 	return __builtin_clz(x); // GCC
 #endif
 }
-uint32_t firstbitlow32(uint32_t x)
+uint32_t countTrailingZero(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
-	unsigned long result;
+	unsigned long result = 0;
 	if (_BitScanForward(&result, x))
 		return result;
 	else
@@ -62,7 +62,7 @@ uint32_t firstbitlow32(uint32_t x)
 	return __builtin_ctz(x); // GCC
 #endif
 }
-uint32_t firstbithigh64(uint64_t x)
+uint32_t countLeadingZero(uint64_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	unsigned long result;
@@ -73,12 +73,14 @@ uint32_t firstbithigh64(uint64_t x)
 	return __builtin_clzll(x); // GCC
 #endif
 }
-uint32_t firstbitlow64(uint64_t x)
+uint32_t countTrailingZero(uint64_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
 	unsigned long result;
-	_BitScanForward64(&result, x);
-	return result;
+	if (_BitScanForward64(&result, x))
+		return result;
+	else
+		return 64;
 #else
 	// Count trailing zero
 	return __builtin_ctzll(x); // GCC

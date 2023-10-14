@@ -27,7 +27,7 @@ constexpr const bool defaultFlipImageAtSave = false;
 
 uint32_t getImageComponentCount(ImageComponent _components)
 {
-	return countbits32(toMask(_components));
+	return countBitSet(toMask(_components));
 }
 
 template <>

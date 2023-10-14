@@ -49,7 +49,7 @@ inline constexpr uint32_t EnumCount()
 template <typename T>
 inline constexpr uint32_t EnumBitCount()
 {
-	return 31 - firstbithigh32(static_cast<uint32_t>(T::Last));
+	return 31 - countLeadingZero(static_cast<uint32_t>(T::Last));
 }
 
 template <typename T>
@@ -144,7 +144,7 @@ public:
 		const EnumMask<Type>& m_mask;
 	};
 
-	Iterator begin() { return Iterator(*this, IndexToEnum<Type>(firstbitlow32(m_mask))); }
+	Iterator begin() { return Iterator(*this, IndexToEnum<Type>(countTrailingZero(m_mask))); }
 	Iterator end() { return Iterator(*this, Type::Last); }
 private:
 	Container m_mask = 0;
