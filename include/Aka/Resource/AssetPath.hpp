@@ -2,6 +2,8 @@
 
 #include <Aka/OS/Path.h>
 
+#include <iostream>
+
 namespace aka {
 
 struct AssetPath
@@ -23,6 +25,8 @@ struct AssetPath
 	Path getAbsolutePath() const;
 	// Get the asset path as a raw Path
 	const Path& getRawPath() const;
+	// Generate an assetPath from a raw path.
+	void fromRawPath(const Path& path);
 
 	const char* cstr() const;
 	size_t size() const;
@@ -31,5 +35,11 @@ struct AssetPath
 private:
 	Path m_path;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const AssetPath& path)
+{
+	os << path.getRawPath();
+	return os;
+}
 
 };

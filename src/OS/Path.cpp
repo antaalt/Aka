@@ -41,6 +41,15 @@ size_t Path::length() const
 {
 	return m_string.length();
 }
+void Path::reserve(size_t size)
+{
+	m_string.reserve(size);
+}
+
+void Path::resize(size_t size)
+{
+	m_string.resize(size);
+}
 
 Path Path::operator+(const Path& rhs) const
 {
@@ -92,6 +101,8 @@ Path Path::up() const
 	const size_t separatorCount = std::count(m_string.begin(), m_string.end(), '/');
 	const size_t lastCharacterOffset = m_string.length() - 1;
 	size_t offset = m_string.findLast('/');
+	if (offset == String::invalid)
+		return *this;
 	if (1 == separatorCount)
 	{
 		if (offset != lastCharacterOffset)

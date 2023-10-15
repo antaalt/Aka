@@ -295,6 +295,15 @@ Path OS::normalize(const Path& path)
 	return path;
 }
 
+Path OS::getFullPath(const Path& path)
+{
+	WCHAR fullPath[MAX_PATH];
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	DWORD res = GetFullPathName(wstr.cstr(), (DWORD)wstr.size(), fullPath, NULL);
+	String str = WcharToUtf8(fullPath);
+	return str;
+}
+
 Path OS::executable()
 {
 	WCHAR path[MAX_PATH]{};

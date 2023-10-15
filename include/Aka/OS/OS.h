@@ -12,6 +12,8 @@ struct OS
 {
 	// Normalize a path for aka
 	static Path normalize(const Path& path);
+	// Get a full path from a relative path
+	static Path getFullPath(const Path& path);
 	// Get the path of the executable.
 	static Path executable();
 	// Get the current working directory

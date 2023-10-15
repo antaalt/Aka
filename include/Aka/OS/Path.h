@@ -22,6 +22,8 @@ struct Path
 	const char* cstr() const;
 	size_t size() const;
 	size_t length() const;
+	void reserve(size_t size);
+	void resize(size_t size);
 
 	Path operator+(const Path& rhs) const;
 	Path &operator+=(const Path& rhs);

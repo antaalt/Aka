@@ -32,6 +32,11 @@ const aka::Path& AssetPath::getRawPath() const
 	return m_path;
 }
 
+void AssetPath::fromRawPath(const Path& path)
+{
+	m_path = path; // TODO normalize & check path
+}
+
 const char* AssetPath::cstr() const
 {
 	return m_path.cstr();

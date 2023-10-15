@@ -136,6 +136,7 @@ inline void Node::detach()
 	const ComponentID componentID = generateComponentID<T>();
 	AKA_ASSERT(has<T>(), "Trying to detach non attached component");
 	auto itActive = m_componentsActive.find(componentID);
+	m_componentIDs.erase(componentID);
 	if (itActive != m_componentsActive.end())
 	{
 		// Component still active until deactivate was call on it.

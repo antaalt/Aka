@@ -517,6 +517,8 @@ inline size_t Str<T>::findFirst(T character, size_t offset) const
 template <typename T>
 inline size_t Str<T>::findLast(T character, size_t offset) const
 {
+	if (m_length == 0)
+		return invalid;
 	for (size_t i = m_length - 1; i >= 1; --i)
 		if (character == m_string[i])
 			return i;

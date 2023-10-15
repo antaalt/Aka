@@ -154,6 +154,13 @@ Path OS::normalize(const Path& path)
 	return path;
 }
 
+
+Path OS::getFullPath(const Path& path)
+{
+	char actualpath[PATH_MAX + 1];
+	return realpath(path.cstr(), actualpath);
+}
+
 Path OS::executable()
 {
 	char result[PATH_MAX] = { 0 };
