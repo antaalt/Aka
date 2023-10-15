@@ -76,35 +76,6 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 
 void Node::update(AssetLibrary* library, Renderer* renderer)
 {
-	if (asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
-	{
-		m_cacheWorldTransform = computeWorldTransform();
-		for (ComponentMap::value_type& component : m_componentsActive)
-		{
-			component.second->transformUpdate();
-		}
-		m_updateFlags &= ~NodeUpdateFlag::TransformUpdated;
-	}
-	else if (asBool(NodeUpdateFlag::HierarchyUpdated & m_updateFlags))
-	{
-		m_cacheWorldTransform = computeWorldTransform();
-		for (ComponentMap::value_type& component : m_componentsActive)
-		{
-			component.second->hierarchyUpdate();
-		}
-		m_updateFlags &= ~NodeUpdateFlag::HierarchyUpdated;
-	}
-
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->renderUpdate(library, renderer);
-	}
-
-	// Update children
-	for (Node* childrens : m_childrens)
-	{
-		childrens->update(library, renderer);
-	}
 	{ // Components lifecycle.
 		// Activate components
 		for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
@@ -122,6 +93,35 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 		}
 		m_componentsToDeactivate.clear();
 	}
+	if (asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
+	{
+		m_cacheWorldTransform = computeWorldTransform();
+		for (ComponentMap::value_type& component : m_componentsActive)
+		{
+			component.second->transformUpdate();
+		}
+	}
+	else if (asBool(NodeUpdateFlag::HierarchyUpdated & m_updateFlags))
+	{
+		m_cacheWorldTransform = computeWorldTransform();
+		for (ComponentMap::value_type& component : m_componentsActive)
+		{
+			component.second->hierarchyUpdate();
+		}
+	}
+
+	for (ComponentMap::value_type& component : m_componentsActive)
+	{
+		component.second->renderUpdate(library, renderer);
+	}
+
+	// Update children
+	for (Node* childrens : m_childrens)
+	{
+		childrens->update(library, renderer);
+	}
+	m_updateFlags &= ~NodeUpdateFlag::TransformUpdated;
+	m_updateFlags &= ~NodeUpdateFlag::HierarchyUpdated;
 }
 
 void Node::update(Time deltaTime)
@@ -162,7 +162,7 @@ void Node::unlink()
 
 void Node::addChild(Node* child)
 {
-	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated);
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated);
 	AKA_ASSERT(child != this, "Trying to add itself as child");
 	AKA_ASSERT(child->m_parent == nullptr, "Child already have a parent");
 	child->m_parent = this;
@@ -170,7 +170,7 @@ void Node::addChild(Node* child)
 }
 void Node::removeChild(Node* child)
 {
-	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated);
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated);
 	AKA_ASSERT(child != this, "Trying to remove itself as child");
 	auto it = std::find(m_childrens.begin(), m_childrens.end(), child);
 	if (it != m_childrens.end())
@@ -185,7 +185,7 @@ void Node::removeChild(Node* child)
 }
 void Node::setParent(Node* parent)
 {
-	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated);
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated);
 	if (m_parent)
 		m_parent->removeChild(this);
 	m_parent = parent;

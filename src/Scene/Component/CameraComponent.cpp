@@ -15,6 +15,18 @@ CameraProjectionType CameraPerspective::type() const
 {
 	return CameraProjectionType::Perpective;
 }
+void CameraPerspective::setViewport(uint32_t width, uint32_t height)
+{
+	ratio = width / (float)height;
+}
+void CameraPerspective::setNear(float near)
+{
+	this->nearZ = near;
+}
+void CameraPerspective::setFar(float far)
+{
+	this->farZ = far;
+}
 
 mat4f CameraOrthographic::projection() const
 {
@@ -24,6 +36,18 @@ mat4f CameraOrthographic::projection() const
 CameraProjectionType CameraOrthographic::type() const
 {
 	return CameraProjectionType::Orthographic;
+}
+void CameraOrthographic::setViewport(uint32_t width, uint32_t height)
+{
+	// TODO
+}
+void CameraOrthographic::setNear(float near)
+{
+	this->nearZ = near;
+}
+void CameraOrthographic::setFar(float far)
+{
+	this->farZ = far;
 }
 
 bool CameraArcball::update(Time deltaTime)
@@ -99,6 +123,7 @@ CameraControllerType CameraArcball::type() const
 
 CameraComponent::CameraComponent(Node* node) :
 	Component(node, generateComponentID<CameraComponent>()),
+	m_view(ViewHandle::Invalid),
 	m_controller(nullptr),
 	m_projection(nullptr)
 {
@@ -119,6 +144,56 @@ void ArchiveCameraComponent::parse(BinaryArchive& archive)
 	archive.parse<CameraControllerType>(controllerType);
 	archive.parse<CameraProjectionType>(projectionType);
 }
+mat4f CameraComponent::getViewMatrix() const 
+{
+	// TODO: should cache this heavy compute inverse
+	return mat4f::inverse(getNode()->getWorldTransform()); 
+}
+mat4f CameraComponent::getProjectionMatrix() const 
+{
+	return m_projection->projection();
+}
+void CameraComponent::setUpdateEnabled(bool value)
+{
+	m_updateEnabled = value;
+}
+bool CameraComponent::isUpdateEnabled() const
+{
+	return m_updateEnabled;
+}
+void CameraComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
+{
+	m_view = _renderer->createView(ViewType::Color);
+	getNode()->setLocalTransform(m_controller->transform()); // Mark dirty to send on GPU
+}
+void CameraComponent::onBecomeInactive(AssetLibrary* library, Renderer* _renderer)
+{
+	_renderer->destroyView(m_view);
+}
+void CameraComponent::onUpdate(Time deltaTime)
+{
+	if (m_updateEnabled && m_controller->update(deltaTime))
+	{
+		getNode()->setLocalTransform(m_controller->transform());
+	}
+}
+void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
+{
+	// TODO pass near & far as argument to component instead.
+	m_projection->setNear(0.1f);
+	m_projection->setFar(10000.f);
+	m_projection->setViewport(_renderer->getWidth(), _renderer->getHeight());
+	// TODO should set if is visible (is MainCamera) in order to avoid computing it every frame.
+	if (getNode()->has(NodeUpdateFlag::TransformUpdated))
+	{
+		mat4f view = mat4f::inverse(getNode()->getWorldTransform());
+		_renderer->updateView(
+			m_view,
+			view,
+			getProjection()->projection()
+		);
+	}
+}
 
 void CameraComponent::fromArchive(const ArchiveComponent& archive)
 {
@@ -128,6 +203,7 @@ void CameraComponent::fromArchive(const ArchiveComponent& archive)
 	{
 	case CameraControllerType::Arcball:
 		m_controller = new CameraArcball;
+		m_controller->set(aabbox(point3(-1.f), point3(1.f)));
 		break;
 	default:
 		AKA_UNREACHABLE;

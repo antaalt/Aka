@@ -4,6 +4,7 @@
 #include <Aka/Resource/AssetLibrary.hpp>
 
 #include <Aka/Scene/Component.hpp>
+#include <Aka/Scene/Component/CameraComponent.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
 #include <Aka/Scene/Node.hpp>
@@ -13,13 +14,15 @@ namespace aka {
 Scene::Scene() :
 	Resource(ResourceType::Scene),
 	m_nodePool(),
-	m_root(m_nodePool.acquire("RootNode"))
+	m_root(m_nodePool.acquire("RootNode")),
+	m_mainCamera(nullptr)
 {
 }
 Scene::Scene(AssetID _id, const String& _name) :
 	Resource(ResourceType::Scene, _id, _name),
 	m_nodePool(),
-	m_root(m_nodePool.acquire("RootNode"))
+	m_root(m_nodePool.acquire("RootNode")),
+	m_mainCamera(nullptr)
 {
 }
 Scene::~Scene()
@@ -139,9 +142,17 @@ void Scene::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 	recurseDestroy(m_nodePool, m_root);
 }
 
+void Scene::setMainCameraNode(Node* parent)
+{
+	//AKA_ASSERT(m_nodePool.own(parent), "")
+	AKA_ASSERT(parent->has<CameraComponent>(), "");
+	m_mainCamera = parent;
+}
 
 Node* Scene::createChild(Node* parent, const char* name)
 {
+	if (parent == nullptr)
+		parent = m_root;
 	Node* child = m_nodePool.acquire(name);
 	parent->addChild(child);
 	return child;

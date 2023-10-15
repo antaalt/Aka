@@ -114,10 +114,14 @@ void Renderer::create()
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
+	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Clear);
+	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
 }
 
 void Renderer::destroy()
 {
+	m_device->destroy(m_backbuffer);
+	m_device->destroy(m_backbufferRenderPass);
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
@@ -346,6 +350,12 @@ void Renderer::render(gfx::FrameHandle frame)
 	gfx::CommandList* cmd = m_device->getGraphicCommandList(frame);
 	gfx::FrameIndex frameIndex = m_device->getFrameIndex(frame);
 
+	if (m_bindlessTextureUpdates.size() > 0)
+	{
+		m_device->update(m_bindlessDescriptorSet, m_bindlessTextureUpdates.data(), m_bindlessTextureUpdates.size());
+		m_bindlessTextureUpdates.clear();
+	}
+
 	if (m_materialDirty)
 	{
 		MaterialData* data = static_cast<MaterialData*>(m_device->map(m_materialStagingBuffer, gfx::BufferMap::Write));
@@ -357,6 +367,11 @@ void Renderer::render(gfx::FrameHandle frame)
 		cmd->transition(m_materialBuffer, gfx::ResourceAccessType::CopyDST, gfx::ResourceAccessType::Resource);
 		m_materialDirty = false;
 	}
+
+	// Simple clear + transition render pass.
+	gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
+	cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
+	cmd->endRenderPass();
 
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{
@@ -462,7 +477,7 @@ TextureID Renderer::allocateTextureID(gfx::TextureHandle texture)
 		m_nextTextureID = static_cast<TextureID>(EnumToValue(m_nextTextureID) + 1);
 	}
 	gfx::DescriptorUpdate update = gfx::DescriptorUpdate::sampledTexture2D(0, EnumToValue(textureID), texture, getSampler(SamplerType::Bilinear));
-	m_device->update(m_bindlessDescriptorSet, &update, 1);
+	m_bindlessTextureUpdates.append(update);
 	return textureID;
 }
 

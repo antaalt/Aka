@@ -25,13 +25,16 @@ private:
 public:
 	uint32_t getNodeCount() const { return (uint32_t)m_nodePool.count(); }
 	aabbox<> getBounds() const { return m_bounds; }
-	Node& getRoot() { return *m_root; }
-	const Node& getRoot() const { return *m_root; }
+	Node& getRootNode() { return *m_root; }
+	const Node& getRootNode() const { return *m_root; }
+	const Node* getMainCameraNode() const { return m_mainCamera; }
+	void setMainCameraNode(Node* node);
 	Node* createChild(Node* parent, const char* name);
 	void destroyChild(Node* node);
 private:
 	aabbox<> m_bounds;
 	Pool<Node> m_nodePool;
+	Node* m_mainCamera;
 	Node* m_root;
 };
 

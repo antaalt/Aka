@@ -41,8 +41,10 @@ public:
 	template <typename T> void detach();
 	// Get a component from the node
 	template <typename T> T& get();
+	// Get a component from the node
+	template <typename T> const T& get() const;
 	// Check a component from the node
-	template <typename T> bool has();
+	template <typename T> bool has() const;
 
 public:
 	// Create the node data & all its components.
@@ -68,6 +70,8 @@ public:
 	void setUpdateFlag(NodeUpdateFlag flag) { m_updateFlags |= flag; }
 	// Get update flag
 	NodeUpdateFlag getUpdateFlag() const { return m_updateFlags; }
+	// Check update flags
+	bool has(NodeUpdateFlag flag) const { return asBool(m_updateFlags & flag); }
 public:
 	// Remove the node from the free, set its childs to its parent
 	void unlink();
@@ -188,8 +192,33 @@ inline T& Node::get()
 	AKA_ASSERT(false, "Trying to get unattached component");
 	AKA_CRASH();
 }
+
 template<typename T>
-inline bool aka::Node::has()
+inline const T& Node::get() const
+{
+	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
+	const ComponentID componentID = generateComponentID<T>();
+	AKA_ASSERT(has<T>(), "Trying to get non attached component");
+	auto itActive = m_componentsActive.find(componentID);
+	if (itActive != m_componentsActive.end())
+	{
+		return *reinterpret_cast<T*>(itActive->second);
+	}
+	auto itToActivate = m_componentsToActivate.find(componentID);
+	if (itToActivate != m_componentsToActivate.end())
+	{
+		return *reinterpret_cast<T*>(itToActivate->second);
+	}
+	auto itToDeactivate = m_componentsToDeactivate.find(componentID);
+	if (itToDeactivate != m_componentsToDeactivate.end())
+	{
+		return *reinterpret_cast<T*>(itToDeactivate->second);
+	}
+	AKA_ASSERT(false, "Trying to get unattached component");
+	AKA_CRASH();
+}
+template<typename T>
+inline bool aka::Node::has() const
 {
 	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
 	const ComponentID componentID = generateComponentID<T>();

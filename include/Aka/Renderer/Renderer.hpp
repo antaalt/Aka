@@ -97,6 +97,9 @@ public:
 	TextureID allocateTextureID(gfx::TextureHandle texture);
 	gfx::SamplerHandle getSampler(SamplerType type);
 
+	// -- Viewport
+	uint32_t getWidth() const { return m_width; }
+	uint32_t getHeight() const { return m_height; }
 private:
 	friend class StaticMeshInstanceRenderer;
 	friend class SkeletalMeshInstanceRenderer;
@@ -106,8 +109,6 @@ private:
 	gfx::DescriptorSetHandle getMaterialDescriptorSet() { return m_materialSet; }
 	gfx::DescriptorSetHandle getBindlessDescriptorSet() { return m_bindlessDescriptorSet; }
 	uint32_t getMaterialIndex(MaterialHandle handle);
-	uint32_t getWidth() const { return m_width;  }
-	uint32_t getHeight() const { return m_height; }
 public:
 	AssetLibrary* getLibrary() { return m_library; }
 	gfx::GraphicDevice* getDevice() { return m_device; }
@@ -117,6 +118,9 @@ private:
 private:
 	uint32_t m_width, m_height;
 	InstanceRenderer* m_instanceRenderer[EnumCount<InstanceType>()];
+private: // Backbuffer
+	gfx::BackbufferHandle m_backbuffer;
+	gfx::RenderPassHandle m_backbufferRenderPass;
 private: // Views
 	gfx::DescriptorPoolHandle m_viewDescriptorPool;
 	std::map<ViewHandle, View> m_views;
@@ -136,6 +140,7 @@ private: // Material & textures
 	gfx::DescriptorSetHandle m_materialSet;
 	gfx::DescriptorPoolHandle m_materialPool;
 	gfx::SamplerHandle m_defaultSamplers[EnumCount<SamplerType>()];
+	Vector<gfx::DescriptorUpdate> m_bindlessTextureUpdates;
 private: // Geometry
 	size_t m_geometryVertexBufferAllocOffset = 0;
 	size_t m_geometryIndexBufferAllocOffset = 0;

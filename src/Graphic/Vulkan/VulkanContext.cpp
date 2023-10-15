@@ -389,6 +389,7 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
 	indexingFeatures.runtimeDescriptorArray = VK_TRUE;
 	indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 	indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
 
 	// VK_VERSION_1_2

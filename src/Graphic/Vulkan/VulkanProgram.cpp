@@ -164,7 +164,7 @@ VkDescriptorSetLayout VulkanDescriptorSet::createVkDescriptorSetLayout(VkDevice 
 	AKA_ASSERT(bindings.count > 0, "Invalid inputs");
 	Vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.count, VkDescriptorSetLayoutBinding{});
 	Vector<VkDescriptorBindingFlags> vk_flags(bindings.count, VkDescriptorBindingFlags{});
-
+	bool allowUpdateAfterBind = false;
 	for (uint32_t i = 0; i < bindings.count; i++)
 	{
 		const ShaderBindingLayout& binding = bindings.bindings[i];
@@ -177,6 +177,7 @@ VkDescriptorSetLayout VulkanDescriptorSet::createVkDescriptorSetLayout(VkDevice 
 			vk_flags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT; // Allow null values within array
 		if (asBool(binding.flags & ShaderBindingFlag::UpdateAfterBind))
 			vk_flags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT; // Allow update after the table is bound.
+		allowUpdateAfterBind |= vk_flags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 	}
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
@@ -189,8 +190,8 @@ VkDescriptorSetLayout VulkanDescriptorSet::createVkDescriptorSetLayout(VkDevice 
 	layoutInfo.bindingCount = static_cast<uint32_t>(vk_bindings.size());
 	layoutInfo.pBindings = vk_bindings.data();
 	layoutInfo.pNext = &bindingFlags;
-	//if (asBool(binding.flags & ShaderBindingFlag::UpdateAfterBind))
-	//	layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+	if (allowUpdateAfterBind)
+		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
 	VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout));
