@@ -153,6 +153,18 @@ mat4f CameraComponent::getProjectionMatrix() const
 {
 	return m_projection->projection();
 }
+void CameraComponent::setBounds(const aabbox<>& bounds)
+{
+	m_controller->set(bounds);
+}
+void CameraComponent::setNear(float near)
+{
+	m_projection->setNear(near);
+}
+void CameraComponent::setFar(float far)
+{
+	m_projection->setFar(far);
+}
 void CameraComponent::setUpdateEnabled(bool value)
 {
 	m_updateEnabled = value;
@@ -179,19 +191,20 @@ void CameraComponent::onUpdate(Time deltaTime)
 }
 void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
-	// TODO pass near & far as argument to component instead.
-	m_projection->setNear(0.1f);
-	m_projection->setFar(10000.f);
 	m_projection->setViewport(_renderer->getWidth(), _renderer->getHeight());
 	// TODO should set if is visible (is MainCamera) in order to avoid computing it every frame.
-	if (getNode()->has(NodeUpdateFlag::TransformUpdated))
+	if (getNode()->has(NodeUpdateFlag::TransformUpdated) || isDirty())
 	{
+		if (isDirty())
+			getNode()->setLocalTransform(m_controller->transform());
+
 		mat4f view = mat4f::inverse(getNode()->getWorldTransform());
 		_renderer->updateView(
 			m_view,
 			view,
 			getProjection()->projection()
 		);
+		clearDirty();
 	}
 }
 

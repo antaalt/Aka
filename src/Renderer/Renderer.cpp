@@ -114,14 +114,12 @@ void Renderer::create()
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
-	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Clear);
-	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
+	createBackbuffer();
 }
 
 void Renderer::destroy()
 {
-	m_device->destroy(m_backbuffer);
-	m_device->destroy(m_backbufferRenderPass);
+	destroyBackbuffer();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
@@ -254,9 +252,12 @@ void Renderer::updateView(ViewHandle handle, const mat4f& view, const mat4f& pro
 
 void Renderer::destroyView(ViewHandle handle)
 {
+	getDevice()->wait(); // Wait as buffer might be used by command buffer
+	// Dirty but will be enough for now. View could use push constant instead of dedicated buffer. Data is per frame and stable enough
 	View& view = m_views[handle];
 	for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
 	{
+		// use push constant for views ?
 		getDevice()->destroy(view.buffer[iFrame]);
 		getDevice()->free(view.descriptor[iFrame]);
 		m_viewDirty[iFrame] = true;
@@ -404,14 +405,15 @@ void Renderer::render(gfx::FrameHandle frame)
 }
 void Renderer::resize(uint32_t width, uint32_t height)
 {
+	m_width = width;
+	m_height = height;
+	destroyBackbuffer();
+	createBackbuffer();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->resize(width, height);
-	}
-	for (InstanceType instanceType : EnumRange<InstanceType>())
-	{
 	}
 }
 
@@ -489,6 +491,16 @@ gfx::SamplerHandle Renderer::getSampler(SamplerType type)
 uint32_t Renderer::getMaterialIndex(MaterialHandle handle)
 {
 	return m_materialIndex.find(handle)->second;
+}
+void Renderer::createBackbuffer()
+{
+	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Clear);
+	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
+}
+void Renderer::destroyBackbuffer()
+{
+	m_device->destroy(m_backbuffer);
+	m_device->destroy(m_backbufferRenderPass);
 }
 
 };

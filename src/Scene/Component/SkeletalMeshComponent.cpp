@@ -50,7 +50,10 @@ mat4f getLocalMatrix(const Vector<SkeletalMeshBoneAnimation>& anim, const Vector
 
 void SkeletalMeshComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
-	_renderer->updateSkeletalMeshInstanceTransform(m_instance, getNode()->getWorldTransform());
+	if (getNode()->has(NodeUpdateFlag::TransformUpdated))
+	{
+		_renderer->updateSkeletalMeshInstanceTransform(m_instance, getNode()->getWorldTransform());
+	}
 
 	// Should have a single texture storing all this. but frame dependent.
 	const SkeletalMeshAnimation& animation = m_animations[m_currentAnimation];

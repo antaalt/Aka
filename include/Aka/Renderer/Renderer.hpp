@@ -119,6 +119,8 @@ private:
 	uint32_t m_width, m_height;
 	InstanceRenderer* m_instanceRenderer[EnumCount<InstanceType>()];
 private: // Backbuffer
+	void createBackbuffer();
+	void destroyBackbuffer();
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::RenderPassHandle m_backbufferRenderPass;
 private: // Views

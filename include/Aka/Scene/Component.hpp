@@ -118,16 +118,24 @@ protected:
 	virtual void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) {}
 
 	// When the node transform was updated
-	virtual void onTransformChanged() { unregisterUpdates(ComponentUpdateFlags::TransformUpdate); }
+	virtual void onTransformChanged() { unregisterForUpdates(ComponentUpdateFlags::TransformUpdate); }
 	// When the node hierarchy (and transform) was updated
-	virtual void onHierarchyChanged() { unregisterUpdates(ComponentUpdateFlags::HierarchyUpdate); }
+	virtual void onHierarchyChanged() { unregisterForUpdates(ComponentUpdateFlags::HierarchyUpdate); }
 
 	// When we update the component
-	virtual void onUpdate(Time deltaTime) { unregisterUpdates(ComponentUpdateFlags::Update); }
+	virtual void onUpdate(Time deltaTime) { unregisterForUpdates(ComponentUpdateFlags::Update); }
 	// When we update the component with fixed time step.
-	virtual void onFixedUpdate(Time deltaTime) { unregisterUpdates(ComponentUpdateFlags::FixedUpdate); }
+	virtual void onFixedUpdate(Time deltaTime) { unregisterForUpdates(ComponentUpdateFlags::FixedUpdate); }
 	// When update to renderer are required.
-	virtual void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) { unregisterUpdates(ComponentUpdateFlags::RenderUpdate); }
+	virtual void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) { unregisterForUpdates(ComponentUpdateFlags::RenderUpdate); }
+public:
+	// Mark component as dirty
+	void setDirty() { m_dirty = true; }
+	// Check if component is dirty
+	bool isDirty() const { return m_dirty; }
+protected:
+	// Clear component as dirty
+	void clearDirty() { m_dirty = false; }
 public:
 	// Get the owner node of the component
 	Node* getNode() { return m_node; }
@@ -141,12 +149,13 @@ public:
 	ComponentUpdateFlags getUpdateFlags() const { return m_updateFlags; }
 private:
 	// Register for internal updates
-	void registerUpdates(ComponentUpdateFlags flags);
+	void registerForUpdates(ComponentUpdateFlags flags);
 	// Unregister from internal updates
-	void unregisterUpdates(ComponentUpdateFlags flags);
+	void unregisterForUpdates(ComponentUpdateFlags flags);
 	// Check if flags are registered
 	bool areRegistered(ComponentUpdateFlags flags);
 private:
+	bool m_dirty;				// Has the component been updated somehow
 	Node* m_node;				// Node the component is part of.
 	ComponentID m_componentID;	// ID of the component
 	ComponentState m_state;		// Current state of the component

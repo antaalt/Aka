@@ -124,6 +124,12 @@ public:
 	mat4f getViewMatrix() const;
 	// Get the projection matrix
 	mat4f getProjectionMatrix() const;
+	// Set bounds to focus for camera
+	void setBounds(const aabbox<>& bounds);
+	// Set near plane for camera
+	void setNear(float near);
+	// Set far plane for camera
+	void setFar(float far);
 	// Set if updates are enabled on this camera.
 	void setUpdateEnabled(bool value);
 	// Check if updates are enabled on this camera.

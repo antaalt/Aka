@@ -67,7 +67,7 @@ public:
 	// Mark a component as dirty
 	template<typename T> void setDirty();
 	// Set update flag
-	void setUpdateFlag(NodeUpdateFlag flag) { m_updateFlags |= flag; }
+	void setUpdateFlag(NodeUpdateFlag flag, bool recurse = true);
 	// Get update flag
 	NodeUpdateFlag getUpdateFlag() const { return m_updateFlags; }
 	// Check update flags
@@ -111,7 +111,6 @@ private:
 	mat4f m_cacheWorldTransform;
 private: // Data
 	String m_name;
-	ComponentSet m_dirtyComponent; // Unused ?
 	ComponentSet m_componentIDs;
 	ComponentMap m_componentsActive;
 	ComponentMap m_componentsToActivate;
@@ -229,7 +228,21 @@ inline bool aka::Node::has() const
 template<typename T>
 inline void Node::setDirty()
 {
-	m_dirtyComponent.insert(generateComponentID<T>());
+	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
+	const ComponentID componentID = generateComponentID<T>();
+	AKA_ASSERT(has<T>(), "Trying to mark dirty non attached component");
+	auto itActive = m_componentsActive.find(componentID);
+	if (itActive != m_componentsActive.end())
+	{
+		return itActive->second->setDirty();
+	}
+	auto itToActivate = m_componentsToActivate.find(componentID);
+	if (itToActivate != m_componentsToActivate.end())
+	{
+		return itActive->second->setDirty();
+	}
+	AKA_ASSERT(false, "Trying to get unattached component");
+	AKA_CRASH();
 }
 
 }

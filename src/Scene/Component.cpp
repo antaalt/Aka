@@ -118,11 +118,11 @@ void Component::renderUpdate(AssetLibrary* library, Renderer* _renderer)
 	AKA_ASSERT(m_state == ComponentState::Active, "Invalid state");
 	onRenderUpdate(library, _renderer);
 }
-void Component::registerUpdates(ComponentUpdateFlags flags)
+void Component::registerForUpdates(ComponentUpdateFlags flags)
 {
 	m_updateFlags |= flags;
 }
-void Component::unregisterUpdates(ComponentUpdateFlags flags)
+void Component::unregisterForUpdates(ComponentUpdateFlags flags)
 {
 	m_updateFlags &= ~flags;
 }

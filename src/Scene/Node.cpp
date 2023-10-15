@@ -8,14 +8,16 @@ Node::Node() :
 	m_parent(nullptr),
 	m_name("Unknown"),
 	m_updateFlags(NodeUpdateFlag::None),
-	m_localTransform(mat4f::identity())
+	m_localTransform(mat4f::identity()),
+	m_cacheWorldTransform(mat4f::identity())
 {
 }
 Node::Node(const char* name) : 
 	m_parent(nullptr),
 	m_name(name),
 	m_updateFlags(NodeUpdateFlag::None),
-	m_localTransform(mat4f::identity())
+	m_localTransform(mat4f::identity()),
+	m_cacheWorldTransform(mat4f::identity())
 {
 }
 Node::~Node()
@@ -120,6 +122,7 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 	{
 		childrens->update(library, renderer);
 	}
+	// Remove flag after so that child can check if this flag is set
 	m_updateFlags &= ~NodeUpdateFlag::TransformUpdated;
 	m_updateFlags &= ~NodeUpdateFlag::HierarchyUpdated;
 }
@@ -162,7 +165,7 @@ void Node::unlink()
 
 void Node::addChild(Node* child)
 {
-	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated);
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated, false); // Do not propagate update as adding a child do not affect other childs.
 	AKA_ASSERT(child != this, "Trying to add itself as child");
 	AKA_ASSERT(child->m_parent == nullptr, "Child already have a parent");
 	child->m_parent = this;
@@ -170,7 +173,7 @@ void Node::addChild(Node* child)
 }
 void Node::removeChild(Node* child)
 {
-	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated);
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated, false); // Do not propagate update as removing a child do not affect other childs.
 	AKA_ASSERT(child != this, "Trying to remove itself as child");
 	auto it = std::find(m_childrens.begin(), m_childrens.end(), child);
 	if (it != m_childrens.end())
@@ -236,6 +239,16 @@ mat4f Node::computeWorldTransform() const
 	if (getParent())
 		return getParent()->getWorldTransform() * m_localTransform;
 	return m_localTransform;
+}
+
+void Node::setUpdateFlag(NodeUpdateFlag flag, bool recurse)
+{
+	m_updateFlags |= flag;
+	if (recurse)
+	{
+		for (Node* child : m_childrens)
+			child->setUpdateFlag(flag);
+	}
 }
 
 };

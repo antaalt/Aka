@@ -23,8 +23,6 @@ public:
 	StaticMeshComponent(Node* node);
 	~StaticMeshComponent();
 
-	void onTransformChanged() override;
-	void onHierarchyChanged() override;
 	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
 	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
 	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
@@ -34,7 +32,6 @@ public:
 	void fromArchive(const ArchiveComponent& archive) override;
 	void toArchive(ArchiveComponent& archive) override;
 private:
-	bool m_updateGPU = true;
 	AssetID m_assetID;
 	ResourceHandle<StaticMesh> m_meshHandle;
 	InstanceHandle m_instance;
