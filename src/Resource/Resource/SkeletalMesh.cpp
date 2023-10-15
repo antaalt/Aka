@@ -184,11 +184,13 @@ void SkeletalMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* 
 		// TODO this is in mesh component instead.
 		const ArchiveSkeletonAnimation& archiveAnimation = _context.getArchive<ArchiveSkeletonAnimation>(animationID);
 
-		SkeletalMeshAnimation animation;
+		SkeletalMeshAnimation& animation = m_animations.emplace();
 		animation.durationInTick = archiveAnimation.durationInTick;
 		animation.tickPerSecond = archiveAnimation.tickPerSeconds;
 		animation.name = archiveAnimation.name;
-		animation.bones.resize(m_bones.size());
+		SkeletalMeshBoneAnimation default{};
+		default.localTransform = mat4f::identity();
+		animation.bones.resize(m_bones.size(), default);
 		for (const ArchiveSkeletonBoneAnimation& archiveBone : archiveAnimation.bones)
 		{
 			SkeletalMeshBoneAnimation& bone = animation.bones[archiveBone.boneIndex];
@@ -207,7 +209,6 @@ void SkeletalMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* 
 				bone.scaleKeys.append(SkeletalMeshKeyScale{ archiveBone.scales[i].scale, archiveBone.scales[i].timestamp });
 			}
 		}
-		m_animations.append(animation);
 	}
 	m_indexFormat = gfx::IndexFormat::UnsignedInt;
 	m_gfxVertexBufferHandle = _renderer->allocateGeometryVertex(vertices.data(), sizeof(SkeletalVertex) * vertices.size(), sizeof(SkeletalVertex));

@@ -50,6 +50,8 @@ public:
 	size_t capacity() const;
 	// Resize the vector
 	void resize(size_t size);
+	// Resize the vector with default value
+	void resize(size_t size, const T& defaultValue);
 	// Resize the vector capacity
 	void reserve(size_t size);
 	// Empty the vector
@@ -285,6 +287,26 @@ inline void Vector<T>::resize(size_t size)
 	if (m_size < size)
 	{
 		std::uninitialized_default_construct(m_data + m_size, m_data + size);
+	}
+	else
+	{
+		std::destroy(m_data + size, m_data + m_size);
+	}
+	m_size = size;
+}
+template <typename T>
+inline void Vector<T>::resize(size_t size, const T& defaultValue)
+{
+	if (m_size == size)
+		return;
+	reserve(size);
+	if (m_size < size)
+	{
+		std::uninitialized_fill(m_data + m_size, m_data + size, defaultValue);
+	}
+	else
+	{
+		std::destroy(m_data + size, m_data + m_size);
 	}
 	m_size = size;
 }
