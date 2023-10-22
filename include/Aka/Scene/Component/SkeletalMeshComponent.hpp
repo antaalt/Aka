@@ -34,6 +34,7 @@ public:
 	const SkeletalMeshAnimation& getCurrentAnimation() const;
 	uint32_t getCurrentAnimationIndex() const;
 	void setCurrentAnimation(uint32_t index);
+	aabbox<> getWorldBounds() const;
 public:
 	void fromArchive(const ArchiveComponent& archive) override;
 	void toArchive(ArchiveComponent& archive) override;

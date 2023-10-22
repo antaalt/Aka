@@ -121,6 +121,30 @@ CameraControllerType CameraArcball::type() const
 	return CameraControllerType::Arcball;
 }
 
+bool CameraStatic::update(Time deltaTime)
+{
+	return false;
+}
+
+mat4f CameraStatic::transform() const
+{
+	return mat4f::identity();
+}
+
+void CameraStatic::set(const aabbox<>& bbox)
+{
+}
+
+mat4f CameraStatic::view() const
+{
+	return mat4f::identity();
+}
+
+CameraControllerType CameraStatic::type() const
+{
+	return CameraControllerType::Static;
+}
+
 CameraComponent::CameraComponent(Node* node) :
 	Component(node, generateComponentID<CameraComponent>()),
 	m_view(ViewHandle::Invalid),
@@ -151,6 +175,7 @@ mat4f CameraComponent::getViewMatrix() const
 }
 mat4f CameraComponent::getProjectionMatrix() const 
 {
+	// TODO should cache this aswell
 	return m_projection->projection();
 }
 void CameraComponent::setBounds(const aabbox<>& bounds)
@@ -202,12 +227,11 @@ void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 		_renderer->updateView(
 			m_view,
 			view,
-			getProjection()->projection()
+			getProjectionMatrix()
 		);
 		clearDirty();
 	}
 }
-
 void CameraComponent::fromArchive(const ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
@@ -216,12 +240,15 @@ void CameraComponent::fromArchive(const ArchiveComponent& archive)
 	{
 	case CameraControllerType::Arcball:
 		m_controller = new CameraArcball;
-		m_controller->set(aabbox(point3(-1.f), point3(1.f)));
+		break;
+	case CameraControllerType::Static:
+		m_controller = new CameraStatic;
 		break;
 	default:
 		AKA_UNREACHABLE;
 		break;
 	}
+	m_controller->set(aabbox(point3(-1.f), point3(1.f)));
 	switch (a.projectionType)
 	{
 	case CameraProjectionType::Orthographic:

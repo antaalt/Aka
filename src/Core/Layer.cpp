@@ -10,17 +10,17 @@ Layer::~Layer()
 	for (Layer* layer : m_childrens)
 		delete layer;
 }
-void Layer::create(gfx::GraphicDevice* _device)
+void Layer::create(Renderer* _renderer)
 {
-	onLayerCreate(_device);
+	onLayerCreate(_renderer);
 	for (Layer* children : m_childrens)
-		children->create(_device);
+		children->create(_renderer);
 }
-void Layer::destroy(gfx::GraphicDevice* _device)
+void Layer::destroy(Renderer* _renderer)
 {
 	for (Layer* children : m_childrens)
-		children->destroy(_device);
-	onLayerDestroy(_device);
+		children->destroy(_renderer);
+	onLayerDestroy(_renderer);
 }
 void Layer::fixedUpdate(Time deltaTime)
 {
@@ -34,11 +34,11 @@ void Layer::update(Time deltaTime)
 	for (Layer* children : m_childrens)
 		children->update(deltaTime);
 }
-void Layer::render(gfx::GraphicDevice* _device, gfx::FrameHandle frame)
+void Layer::render(Renderer* _renderer, gfx::FrameHandle frame)
 {
 	for (Layer* children : m_childrens)
-		children->render(_device, frame);
-	onLayerRender(_device, frame);
+		children->render(_renderer, frame);
+	onLayerRender(_renderer, frame);
 }
 void Layer::preRender()
 {

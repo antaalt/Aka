@@ -279,7 +279,7 @@ VulkanShader::VulkanShader(const char* name, ShaderType type) :
 ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
 {
 	// TODO check shaders
-	if (bindingCounts == 0 || bindingCounts > ShaderMaxSetCount)
+	if (bindingCounts > ShaderMaxSetCount)
 		return ProgramHandle::null;
 	if (sets[0].count > ShaderMaxBindingCount)
 		return ProgramHandle::null;
@@ -298,7 +298,7 @@ ProgramHandle VulkanGraphicDevice::createGraphicProgram(const char* name, Shader
 ProgramHandle VulkanGraphicDevice::createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
 {
 	// TODO check shaders
-	if (bindingCounts == 0 || bindingCounts > ShaderMaxSetCount)
+	if (bindingCounts > ShaderMaxSetCount)
 		return ProgramHandle::null;
 	if (sets[0].count > ShaderMaxBindingCount)
 		return ProgramHandle::null;

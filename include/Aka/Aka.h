@@ -11,7 +11,6 @@
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Encoding.h>
 #include <Aka/Core/Application.h>
-#include <Aka/Core/View.h>
 #include <Aka/Core/Config.h>
 #include <Aka/Core/Physic.h>
 #include <Aka/Core/Controller.h>

@@ -64,14 +64,14 @@ void Application::create(const Config& config)
 	m_width = config.platform.width;
 	m_height = config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
-	m_root->create(graphic());
+	m_root->create(renderer());
 	onCreate(config.argc, config.argv);
 }
 void Application::destroy()
 {
 	graphic()->wait();
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
-	m_root->destroy(graphic());
+	m_root->destroy(renderer());
 	onDestroy();
 	m_assets->destroy(m_renderer);
 	m_renderer->destroy();
@@ -103,11 +103,11 @@ void Application::preRender()
 	m_root->preRender();
 	EventDispatcher<AppFrameEvent>::trigger(AppFrameEvent{});
 }
-void Application::render(gfx::GraphicDevice* _device, gfx::FrameHandle frame)
+void Application::render(Renderer* _renderer, gfx::FrameHandle frame)
 {
-	onRender(_device, frame);
+	onRender(_renderer, frame);
 	m_renderer->render(frame);
-	m_root->render(_device, frame);
+	m_root->render(_renderer, frame);
 	EventDispatcher<AppRenderEvent>::trigger(AppRenderEvent{ frame });
 }
 void Application::postRender()
@@ -201,6 +201,7 @@ void Application::run(Application* app, const Config& config)
 	app->create(config);
 
 	gfx::GraphicDevice* graphic = app->m_graphic;
+	Renderer* renderer = app->m_renderer;
 	PlatformDevice* platform = app->m_platform;
 	
 	Time lastTick = Time::now();
@@ -225,7 +226,7 @@ void Application::run(Application* app, const Config& config)
 		if (frame != gfx::FrameHandle::null)
 		{
 			app->preRender();
-			app->render(graphic, frame);
+			app->render(renderer, frame);
 			app->postRender();
 			gfx::SwapchainStatus status = graphic->present(frame);
 			if (status == gfx::SwapchainStatus::Recreated)

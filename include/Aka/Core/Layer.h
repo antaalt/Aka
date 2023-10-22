@@ -13,22 +13,22 @@ public:
 	template <typename T, typename... Args> T* addLayer(Args&&... args);
 private:
 	friend class Application;
-	void create(gfx::GraphicDevice* _device);
-	void destroy(gfx::GraphicDevice* _device);
+	void create(Renderer* _renderer);
+	void destroy(Renderer* _renderer);
 	void fixedUpdate(Time delta);
 	void update(Time delta);
 	void preRender();
-	void render(gfx::GraphicDevice* _device, gfx::FrameHandle frame);
+	void render(Renderer* _renderer, gfx::FrameHandle frame);
 	void postRender();
 	void resize(uint32_t width, uint32_t height);
 protected:
-	virtual void onLayerCreate(gfx::GraphicDevice* _device) {}
-	virtual void onLayerDestroy(gfx::GraphicDevice* _device) {}
+	virtual void onLayerCreate(Renderer* _renderer) {}
+	virtual void onLayerDestroy(Renderer* _renderer) {}
 
 	virtual void onLayerUpdate(Time deltaTime) {}
 	virtual void onLayerFixedUpdate(Time deltaTime) {}
 	virtual void onLayerPreRender() {}
-	virtual void onLayerRender(aka::gfx::GraphicDevice* _device, gfx::FrameHandle frame) {}
+	virtual void onLayerRender(Renderer* _renderer, gfx::FrameHandle frame) {}
 	virtual void onLayerPostRender() {}
 
 	virtual void onLayerResize(uint32_t width, uint32_t height) {}

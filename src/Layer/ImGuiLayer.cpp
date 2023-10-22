@@ -58,7 +58,7 @@ ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::Descripto
 	return ImTextureID{ reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet };
 }
 
-void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
+void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 {
 	m_renderData = new ImGuiRenderData;
 	// Setup Dear ImGui context
@@ -82,7 +82,7 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
 #elif defined(AKA_USE_VULKAN)
-	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
+	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_renderer->getDevice());
 
 	{ // Custom descriptor pool for imgui
 		VkDescriptorPoolSize pool_sizes[] =
@@ -252,9 +252,9 @@ void ImGuiLayer::onLayerCreate(gfx::GraphicDevice* _device)
 
 }
 
-void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)
+void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 {
-	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_device);
+	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_renderer->getDevice());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
 #elif defined(AKA_USE_D3D11)
@@ -265,8 +265,8 @@ void ImGuiLayer::onLayerDestroy(gfx::GraphicDevice* _device)
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 	vkDestroyDescriptorPool(vk_device->getVkDevice(), m_renderData->descriptorPool, nullptr);
-	_device->destroy(m_renderData->renderPass);
-	_device->destroy(m_renderData->backbuffer);
+	vk_device->destroy(m_renderData->renderPass);
+	vk_device->destroy(m_renderData->backbuffer);
 	delete m_renderData;
 }
 
@@ -294,9 +294,9 @@ void ImGuiLayer::onLayerPreRender()
 	ImGuizmo::BeginFrame();
 }
 
-void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::FrameHandle frame)
+void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 {
-	gfx::CommandList* cmd = _device->getGraphicCommandList(frame);
+	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(frame);
 	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
@@ -312,8 +312,8 @@ void ImGuiLayer::onLayerRender(aka::gfx::GraphicDevice* _device, gfx::FrameHandl
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
-	gfx::FramebufferHandle framebuffer = _device->get(m_renderData->backbuffer, frame);
-	const gfx::Framebuffer* fb = _device->get(framebuffer);
+	gfx::FramebufferHandle framebuffer = _renderer->getDevice()->get(m_renderData->backbuffer, frame);
+	const gfx::Framebuffer* fb = _renderer->getDevice()->get(framebuffer);
 	{
 		gfx::ScopedCmdMarker marker(cmd, "ImGui", &Color::red.x);
 		cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);

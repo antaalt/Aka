@@ -44,9 +44,13 @@ void StaticMeshComponent::onRenderUpdate(AssetLibrary* library, Renderer* _rende
 		_renderer->updateStaticMeshInstanceTransform(m_instance, getNode()->getWorldTransform());
 	}
 }
-ResourceHandle<StaticMesh> StaticMeshComponent::getMesh()
+ResourceHandle<StaticMesh> StaticMeshComponent::getMesh() const
 {
 	return m_meshHandle;
+}
+aabbox<> StaticMeshComponent::getWorldBounds() const
+{
+	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
 }
 
 void StaticMeshComponent::fromArchive(const ArchiveComponent& archive)

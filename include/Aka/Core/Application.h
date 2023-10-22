@@ -6,7 +6,6 @@
 #include <Aka/Audio/AudioDevice.h>
 
 #include <Aka/Core/Event.h>
-#include <Aka/Core/View.h>
 
 #include <Aka/Resource/Shader/Shader.h>
 #include <Aka/Resource/Shader/ShaderRegistry.h>
@@ -29,12 +28,6 @@ struct Config
 
 // Event to notify app to exit.
 struct QuitEvent {};
-
-// Event to notify a view change
-/*struct ViewChangedEvent
-{
-	View::Ptr view;
-};*/
 
 struct AppCreateEvent {
 
@@ -76,7 +69,7 @@ private:
 	// Called before render for the app, after frame acquisition
 	void preRender();
 	// Render the app.
-	void render(gfx::GraphicDevice* _device, gfx::FrameHandle frame);
+	void render(Renderer* _renderer, gfx::FrameHandle frame);
 	// Called after render, before present of the frame
 	void postRender();
 	// Last function called in a loop
@@ -99,7 +92,7 @@ protected:
 	// Called before app render
 	virtual void onPreRender() {}
 	// Called on app render
-	virtual void onRender(gfx::GraphicDevice* _device, gfx::FrameHandle frame) {}
+	virtual void onRender(Renderer* _renderer, gfx::FrameHandle frame) {}
 	// Called before present of the app
 	virtual void onPostRender() {}
 	// Called on app resize

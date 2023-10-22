@@ -27,7 +27,8 @@ public:
 	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
 	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
 
-	ResourceHandle<StaticMesh> getMesh();
+	ResourceHandle<StaticMesh> getMesh() const;
+	aabbox<> getWorldBounds() const;
 public:
 	void fromArchive(const ArchiveComponent& archive) override;
 	void toArchive(ArchiveComponent& archive) override;

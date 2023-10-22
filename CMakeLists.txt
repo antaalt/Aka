@@ -12,7 +12,6 @@ add_library (Aka
 	"src/Core/Container/Blob.cpp"
 	"src/Core/Container/String.cpp"
 	"src/Core/Application.cpp"
-	"src/Core/View.cpp"
 	"src/Core/Debug.cpp"
 	"src/Core/Physic.cpp"
 	"src/Core/Encoding.cpp"
@@ -40,10 +39,10 @@ add_library (Aka
 	"src/Renderer/InstanceRenderer/SkeletalMeshInstanceRenderer.cpp" 
 	"src/Renderer/Instance/StaticMeshInstance.cpp" 
 	"src/Renderer/Instance/SkeletalMeshInstance.cpp"
+	"src/Renderer/DebugDraw/DebugDrawList.cpp"
 
 	"src/Scene/Component.cpp"
 	"src/Scene/Node.cpp"
-	
 	"src/Scene/Component/CameraComponent.cpp"
 	"src/Scene/Component/StaticMeshComponent.cpp"
 	"src/Scene/Component/SkeletalMeshComponent.cpp"
@@ -60,7 +59,6 @@ add_library (Aka
 	"src/Resource/Archive/ArchiveSprite.cpp"
 	"src/Resource/Archive/ArchiveFont.cpp"
 	"src/Resource/Archive/Archive.cpp"
-
 	"src/Resource/Resource/Resource.cpp"
 	"src/Resource/Resource/Scene.cpp"
 	"src/Resource/Resource/Sprite.cpp"
@@ -69,16 +67,13 @@ add_library (Aka
 	"src/Resource/Resource/Texture.cpp"
 	"src/Resource/Resource/Font.cpp"
 	"src/Resource/Resource/Material.cpp"
-
 	"src/Resource/Importer/Importer.cpp"
 	"src/Resource/Importer/AsepriteImporter.cpp"
 	"src/Resource/Importer/TextureImporter.cpp"
 	"src/Resource/Importer/FontImporter.cpp"
-	
 	"src/Resource/Shader/Shader.cpp"
 	"src/Resource/Shader/ShaderRegistry.cpp" 
 	"src/Resource/Shader/ShaderCompiler.cpp"
-
  	"src/Resource/Asset.cpp"
 	"src/Resource/AssetLibrary.cpp"
 	"src/Resource/AssetPath.cpp"
@@ -97,9 +92,7 @@ add_library (Aka
 	"src/Graphic/Vulkan/VulkanRenderPass.cpp"
 	"src/Graphic/Vulkan/VulkanFence.cpp"
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
-	 
 	"src/Graphic/Resource.cpp"
-	
 	"src/Graphic/Program.cpp"
 	"src/Graphic/GraphicDevice.cpp"
 	"src/Graphic/Framebuffer.cpp"

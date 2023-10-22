@@ -5,6 +5,7 @@
 #include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Renderer/Instance.hpp>
 #include <Aka/Renderer/Geometry.hpp>
+#include <Aka/Renderer/DebugDraw/DebugDrawList.hpp>
 #include <Aka/Renderer/Instance/SkeletalMeshInstance.hpp>
 #include <Aka/Renderer/View.hpp>
 #include <Aka/Core/Event.h>
@@ -112,6 +113,7 @@ private:
 public:
 	AssetLibrary* getLibrary() { return m_library; }
 	gfx::GraphicDevice* getDevice() { return m_device; }
+	DebugDrawList& getDebugDrawList() { return m_debugDrawList; }
 private:
 	AssetLibrary* m_library;
 	gfx::GraphicDevice* m_device;
@@ -143,6 +145,8 @@ private: // Material & textures
 	gfx::DescriptorPoolHandle m_materialPool;
 	gfx::SamplerHandle m_defaultSamplers[EnumCount<SamplerType>()];
 	Vector<gfx::DescriptorUpdate> m_bindlessTextureUpdates;
+private:
+	DebugDrawList m_debugDrawList;
 private: // Geometry
 	size_t m_geometryVertexBufferAllocOffset = 0;
 	size_t m_geometryIndexBufferAllocOffset = 0;

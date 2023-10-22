@@ -110,6 +110,10 @@ void SkeletalMeshComponent::setCurrentAnimation(uint32_t index)
 {
 	m_currentAnimation = index;
 }
+aabbox<> SkeletalMeshComponent::getWorldBounds() const
+{
+	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
+}
 
 void SkeletalMeshComponent::fromArchive(const ArchiveComponent& archive)
 {

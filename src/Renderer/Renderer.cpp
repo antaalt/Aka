@@ -115,10 +115,13 @@ void Renderer::create()
 		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
 	createBackbuffer();
+
+	m_debugDrawList.create(getDevice(), m_width, m_height);
 }
 
 void Renderer::destroy()
 {
+	m_debugDrawList.destroy(getDevice());
 	destroyBackbuffer();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
@@ -395,19 +398,27 @@ void Renderer::render(gfx::FrameHandle frame)
 				continue;
 			m_instanceRenderer[EnumToIndex(instanceType)]->prepare(frame);
 		}
+		//if (view.main)
+			m_debugDrawList.prepare(frame, getDevice());
 		for (InstanceType instanceType : EnumRange<InstanceType>())
 		{
 			if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
 				continue;
 			m_instanceRenderer[EnumToIndex(instanceType)]->render(view, frame);
 		}
+		//if (view.main)
+			m_debugDrawList.render(getDevice(), frame, view.data.view, view.data.projection);
+
+		break; // Only render 1 view for now
 	}
+	m_debugDrawList.clear();
 }
 void Renderer::resize(uint32_t width, uint32_t height)
 {
 	m_width = width;
 	m_height = height;
 	destroyBackbuffer();
+	m_debugDrawList.resize(getDevice(), m_width, m_height);
 	createBackbuffer();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{

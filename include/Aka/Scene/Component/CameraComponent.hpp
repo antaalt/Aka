@@ -17,7 +17,8 @@ enum class CameraProjectionType
 
 enum class CameraControllerType
 {
-	Arcball
+	Arcball,
+	Static
 };
 
 struct CameraProjection
@@ -91,6 +92,15 @@ struct CameraArcball : CameraController
 	norm3f up;
 
 	float speed;
+};
+
+struct CameraStatic : CameraController
+{
+	bool update(Time deltaTime) override;
+	mat4f transform() const override;
+	mat4f view() const override;
+	CameraControllerType type() const override;
+	void set(const aabbox<>& bbox) override;
 };
 
 
