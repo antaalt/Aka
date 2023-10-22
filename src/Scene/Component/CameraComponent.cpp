@@ -121,40 +121,14 @@ CameraControllerType CameraArcball::type() const
 	return CameraControllerType::Arcball;
 }
 
-bool CameraStatic::update(Time deltaTime)
-{
-	return false;
-}
-
-mat4f CameraStatic::transform() const
-{
-	return mat4f::identity();
-}
-
-void CameraStatic::set(const aabbox<>& bbox)
-{
-}
-
-mat4f CameraStatic::view() const
-{
-	return mat4f::identity();
-}
-
-CameraControllerType CameraStatic::type() const
-{
-	return CameraControllerType::Static;
-}
-
 CameraComponent::CameraComponent(Node* node) :
 	Component(node, generateComponentID<CameraComponent>()),
 	m_view(ViewHandle::Invalid),
-	m_controller(nullptr),
 	m_projection(nullptr)
 {
 }
 CameraComponent::~CameraComponent()
 {
-	delete m_controller;
 	delete m_projection;
 }
 
@@ -165,7 +139,6 @@ ArchiveCameraComponent::ArchiveCameraComponent() :
 
 void ArchiveCameraComponent::parse(BinaryArchive& archive)
 {
-	archive.parse<CameraControllerType>(controllerType);
 	archive.parse<CameraProjectionType>(projectionType);
 }
 mat4f CameraComponent::getViewMatrix() const 
@@ -178,10 +151,6 @@ mat4f CameraComponent::getProjectionMatrix() const
 	// TODO should cache this aswell
 	return m_projection->projection();
 }
-void CameraComponent::setBounds(const aabbox<>& bounds)
-{
-	m_controller->set(bounds);
-}
 void CameraComponent::setNear(float near)
 {
 	m_projection->setNear(near);
@@ -190,18 +159,10 @@ void CameraComponent::setFar(float far)
 {
 	m_projection->setFar(far);
 }
-void CameraComponent::setUpdateEnabled(bool value)
-{
-	m_updateEnabled = value;
-}
-bool CameraComponent::isUpdateEnabled() const
-{
-	return m_updateEnabled;
-}
 void CameraComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
 {
 	m_view = _renderer->createView(ViewType::Color);
-	getNode()->setLocalTransform(m_controller->transform()); // Mark dirty to send on GPU
+	getNode()->setLocalTransform(getNode()->getLocalTransform()); // Mark dirty to send on GPU
 }
 void CameraComponent::onBecomeInactive(AssetLibrary* library, Renderer* _renderer)
 {
@@ -209,10 +170,6 @@ void CameraComponent::onBecomeInactive(AssetLibrary* library, Renderer* _rendere
 }
 void CameraComponent::onUpdate(Time deltaTime)
 {
-	if (m_updateEnabled && m_controller->update(deltaTime))
-	{
-		getNode()->setLocalTransform(m_controller->transform());
-	}
 }
 void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
@@ -220,9 +177,6 @@ void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 	// TODO should set if is visible (is MainCamera) in order to avoid computing it every frame.
 	if (getNode()->has(NodeUpdateFlag::TransformUpdated) || isDirty())
 	{
-		if (isDirty())
-			getNode()->setLocalTransform(m_controller->transform());
-
 		mat4f view = mat4f::inverse(getNode()->getWorldTransform());
 		_renderer->updateView(
 			m_view,
@@ -235,20 +189,8 @@ void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 void CameraComponent::fromArchive(const ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
+	AKA_ASSERT(m_projection == nullptr, "Projection not null");
 	const ArchiveCameraComponent& a = reinterpret_cast<const ArchiveCameraComponent&>(archive);
-	switch (a.controllerType)
-	{
-	case CameraControllerType::Arcball:
-		m_controller = new CameraArcball;
-		break;
-	case CameraControllerType::Static:
-		m_controller = new CameraStatic;
-		break;
-	default:
-		AKA_UNREACHABLE;
-		break;
-	}
-	m_controller->set(aabbox(point3(-1.f), point3(1.f)));
 	switch (a.projectionType)
 	{
 	case CameraProjectionType::Orthographic:
@@ -267,7 +209,6 @@ void CameraComponent::toArchive(ArchiveComponent& archive)
 {
 	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	ArchiveCameraComponent& a = reinterpret_cast<ArchiveCameraComponent&>(archive);
-	a.controllerType = m_controller->type();
 	a.projectionType = m_projection->type();
 }
 

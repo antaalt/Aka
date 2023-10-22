@@ -17,8 +17,7 @@ enum class CameraProjectionType
 
 enum class CameraControllerType
 {
-	Arcball,
-	Static
+	Arcball
 };
 
 struct CameraProjection
@@ -94,15 +93,6 @@ struct CameraArcball : CameraController
 	float speed;
 };
 
-struct CameraStatic : CameraController
-{
-	bool update(Time deltaTime) override;
-	mat4f transform() const override;
-	mat4f view() const override;
-	CameraControllerType type() const override;
-	void set(const aabbox<>& bbox) override;
-};
-
 
 struct ArchiveCameraComponent : ArchiveComponent
 {
@@ -110,7 +100,6 @@ struct ArchiveCameraComponent : ArchiveComponent
 
 	void parse(BinaryArchive& archive) override;
 
-	CameraControllerType controllerType;
 	CameraProjectionType projectionType;
 };
 
@@ -124,26 +113,16 @@ public:
 	CameraProjection* getProjection() { return m_projection; }
 	// Get camera projection data
 	const CameraProjection* getProjection() const { return m_projection; }
-	// Get camera controller data
-	CameraController* getController() { return m_controller; }
-	// Get camera controller data
-	const CameraController* getController() const { return m_controller; }
 
 public:
 	// Get the view matrix 
 	mat4f getViewMatrix() const;
 	// Get the projection matrix
 	mat4f getProjectionMatrix() const;
-	// Set bounds to focus for camera
-	void setBounds(const aabbox<>& bounds);
 	// Set near plane for camera
 	void setNear(float near);
 	// Set far plane for camera
 	void setFar(float far);
-	// Set if updates are enabled on this camera.
-	void setUpdateEnabled(bool value);
-	// Check if updates are enabled on this camera.
-	bool isUpdateEnabled() const;
 public:
 	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
 	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
@@ -154,9 +133,7 @@ public:
 	void toArchive(ArchiveComponent& archive) override;
 
 private:
-	bool m_updateEnabled;
 	ViewHandle m_view;
-	CameraController* m_controller;
 	CameraProjection* m_projection;
 };
 
