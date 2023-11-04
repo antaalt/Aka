@@ -36,7 +36,7 @@ void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConf
 		{
 			// https://renderdoc.org/docs/in_application_api.html
 			pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)m_renderDocLibrary.getProcess("RENDERDOC_GetAPI");
-			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_renderDocContext);
+			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_renderDocContext); // TODO check support for this API and output warning message if not supported.
 			AKA_ASSERT(ret == 1, "Failed to retrieve renderdoc dll");
 			// Generate unique path depending on date to avoid blocking apps.
 			Date date = Date::localtime();

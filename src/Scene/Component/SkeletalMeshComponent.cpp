@@ -84,49 +84,6 @@ void SkeletalMeshComponent::onUpdate(Time deltaTime)
 		float time = fmodf(currentTime * animation.tickPerSecond, animation.durationInTick);
 		bone.update(time);
 	}
-	
-}
-ResourceHandle<SkeletalMesh> SkeletalMeshComponent::getMesh()
-{
-	return m_meshHandle;
-}
-const Vector<SkeletalMeshAnimation>& SkeletalMeshComponent::getAnimations() const
-{
-	return m_animations;
-}
-const Vector<SkeletalMeshBone>& SkeletalMeshComponent::getBones() const
-{
-	return m_bones;
-}
-const SkeletalMeshAnimation& SkeletalMeshComponent::getCurrentAnimation() const
-{
-	return m_animations[m_currentAnimation];
-}
-uint32_t SkeletalMeshComponent::getCurrentAnimationIndex() const
-{
-	return m_currentAnimation;
-}
-void SkeletalMeshComponent::setCurrentAnimation(uint32_t index)
-{
-	m_currentAnimation = index;
-}
-aabbox<> SkeletalMeshComponent::getWorldBounds() const
-{
-	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
-}
-
-void SkeletalMeshComponent::fromArchive(const ArchiveComponent& archive)
-{
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveSkeletalMeshComponent& a = reinterpret_cast<const ArchiveSkeletalMeshComponent&>(archive);
-	m_assetID = a.assetID;
-}
-
-void SkeletalMeshComponent::toArchive(ArchiveComponent& archive)
-{
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveSkeletalMeshComponent& a = reinterpret_cast<ArchiveSkeletalMeshComponent&>(archive);
-	a.assetID = m_assetID;
 }
 
 };

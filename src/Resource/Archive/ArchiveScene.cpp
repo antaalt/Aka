@@ -18,14 +18,11 @@ ArchiveParseResult ArchiveScene::parse(BinaryArchive& _archive)
 	_archive.parse(this->bounds.min);
 	_archive.parse(this->bounds.max);
 
-	_archive.parse<ArchiveSceneNode>(this->nodes, [](BinaryArchive& archive, ArchiveSceneNode& node) {
-		archive.parse(node.name);
-		archive.parse(node.transform);
-		archive.parse(node.parentID);
-		archive.parse<ArchiveSceneComponent>(node.components, [](BinaryArchive& archive, ArchiveSceneComponent& component) {
-			archive.parse<ComponentID>(component.id);
-			archive.parse<byte_t>(component.archive);
-		});
+	_archive.parse(this->entities);
+
+	_archive.parse<ArchiveSceneComponent>(this->components, [](BinaryArchive& archive, ArchiveSceneComponent& component) {
+		archive.parse<ArchiveSceneComponentID>(component.id);
+		archive.parse<byte_t>(component.archive);
 	});
 	return ArchiveParseResult::Success;
 }

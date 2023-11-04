@@ -337,7 +337,7 @@ bool OS::setcwd(const Path& path)
 Path OS::temp()
 {
 	// TODO should cache this path somehow ?
-	StringWide wstr;
+	/*StringWide wstr;
 	DWORD length = GetTempPath2(0, nullptr);
 	AKA_ASSERT(length != 0, "Invalid temporary path");
 	wstr.resize(length);
@@ -350,7 +350,8 @@ Path OS::temp()
 		bool created = OS::Directory::create(path);
 		AKA_ASSERT(created, "Failed to create temporary dir");
 	}
-	return path;
+	return path;*/
+	return "";
 }
 
 const wchar_t* fileMode(FileMode mode, FileType type)

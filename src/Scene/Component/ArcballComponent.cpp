@@ -47,16 +47,4 @@ void ArcballComponent::onUpdate(Time deltaTime)
 		getNode()->setLocalTransform(m_controller.transform());
 	}
 }
-void ArcballComponent::fromArchive(const ArchiveComponent& archive)
-{
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveArcballComponent& a = reinterpret_cast<const ArchiveArcballComponent&>(archive);
-}
-
-void ArcballComponent::toArchive(ArchiveComponent& archive)
-{
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveArcballComponent& a = reinterpret_cast<ArchiveArcballComponent&>(archive);
-}
-
 };

@@ -41,8 +41,8 @@ add_library (Aka
 	"src/Renderer/Instance/SkeletalMeshInstance.cpp"
 	"src/Renderer/DebugDraw/DebugDrawList.cpp"
 
-	"src/Scene/Component.cpp"
-	"src/Scene/Node.cpp"
+	
+	
 	"src/Scene/Component/CameraComponent.cpp"
 	"src/Scene/Component/ArcballComponent.cpp"
 	"src/Scene/Component/StaticMeshComponent.cpp"

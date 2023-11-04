@@ -3,32 +3,28 @@
 #include <Aka/Resource/Archive/ArchiveScene.hpp>
 #include <Aka/Resource/AssetLibrary.hpp>
 
-#include <Aka/Scene/Component.hpp>
-#include <Aka/Scene/Component/CameraComponent.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 
-#include <Aka/Scene/Node.hpp>
+#include <Aka/Scene/ECS/ecs.hpp>
+#include <Aka/Scene/Component/TransformComponent.hpp>
+#include <Aka/Scene/Component/HierarchyComponent.hpp>
+#include <Aka/Scene/Component/CameraComponent.hpp>
 
 namespace aka {
 
 Scene::Scene() :
 	Resource(ResourceType::Scene),
-	m_nodePool(),
-	m_root(m_nodePool.acquire("RootNode")),
-	m_mainCamera(nullptr)
+	m_mainCamera(ecs::EntityID::Invalid)
 {
 }
 Scene::Scene(AssetID _id, const String& _name) :
 	Resource(ResourceType::Scene, _id, _name),
-	m_nodePool(),
-	m_root(m_nodePool.acquire("RootNode")),
-	m_mainCamera(nullptr)
+	m_mainCamera(ecs::EntityID::Invalid)
 {
 }
 Scene::~Scene()
 {
-	AKA_ASSERT(m_nodePool.count() == 0, "Node destroy missing");
-	m_nodePool.release([this](Node& node) { Logger::warn(node.getName(), " was not destroyed"); });
+	AKA_ASSERT(m_world.count() == 0, "Node destroy missing");
 }
 
 void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
@@ -36,6 +32,7 @@ void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _render
 	const ArchiveScene& scene = _context.getArchive<ArchiveScene>(getID());
 
 	m_bounds = scene.bounds;
+#if 0
 	Vector<Node*> nodes;
 	for (const ArchiveSceneNode& node : scene.nodes)
 	{
@@ -75,15 +72,25 @@ void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _render
 		{
 			recurseDebug(parent->getChild(i), depth + 1);
 		}
-	};
+		};
 	recurseDebug(m_root, 0);
+#endif
+#else
+	m_world.fromArchive(scene);
+	m_bounds; // TODO:
+	m_mainCamera;
 #endif
 }
 
 void Scene::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer)
 {
+	AKA_NOT_IMPLEMENTED;
 	ArchiveScene& scene = _context.getArchive<ArchiveScene>(getID());
-
+#if 1
+	m_world.toArchive(scene);
+	m_bounds;
+	m_mainCamera;
+#else
 	// Place all nodes in an array for serialization
 	std::vector<Node*> nodes;
 	auto recurseDebug = std::function<void(Node*)>();
@@ -125,46 +132,35 @@ void Scene::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer
 		}
 		scene.nodes.append(node);
 	}
-}
-
-void recurseDestroy(Pool<Node>& pool, Node* root)
-{
-	for (uint32_t i = 0; i < root->getChildCount(); i++)
-	{
-		recurseDestroy(pool, root->getChild(i));
-	}
-	pool.release(root);
+#endif
 }
 
 void Scene::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
-	m_root->destroy(_library, _renderer);
-	recurseDestroy(m_nodePool, m_root);
+	m_world.destroy();
 }
 
-void Scene::setMainCameraNode(Node* parent)
+void Scene::setMainCameraEntity(ecs::EntityID parent)
 {
-	//AKA_ASSERT(m_nodePool.own(parent), "")
-	AKA_ASSERT(parent->has<CameraComponent>(), "");
+	AKA_ASSERT(m_world.has<CameraComponent>(parent), "");
 	m_mainCamera = parent;
 }
 
-Node* Scene::createChild(Node* parent, const char* name)
+ecs::EntityID Scene::createEntity(ecs::EntityID parent, const char* name)
 {
-	if (parent == nullptr)
-		parent = m_root;
-	Node* child = m_nodePool.acquire(name);
-	parent->addChild(child);
-	return child;
+	ecs::EntityID entity =m_world.create(name);
+	m_world.attach<TransformComponent>(entity);
+	m_world.attach<HierarchyComponent>(entity);
+	m_world.get<HierarchyComponent>(entity).parent = parent;
+	return entity;
 }
 
-void Scene::destroyChild(Node* node)
+void Scene::destroyEntity(ecs::EntityID entity)
 {
 	//node->destroy();
-	//AKA_ASSERT(m_nodePool.own(node), "Do not own pool");
 	//AKA_ASSERT(m_root != node, "Cannot unlink root node.");
 	//node->unlink();
-	m_nodePool.release(node);
+	m_world.destroy(entity);
 }
 
 }

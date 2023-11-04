@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Aka/Scene/Component.hpp>
+#include <Aka/Scene/ECS/World.hpp>
 #include <Aka/Resource/Resource/Resource.hpp>
 #include <Aka/Resource/Resource/SkeletalMesh.hpp>
 #include <Aka/Renderer/Instance.hpp>
@@ -8,46 +8,37 @@
 
 namespace aka {
 
-struct ArchiveSkeletalMeshComponent : ArchiveComponent
+struct SkeletalMeshComponent
 {
-	ArchiveSkeletalMeshComponent();
+	AssetID assetID = AssetID::Invalid;
 
-	AssetID assetID;
-
-	void parse(BinaryArchive& archive) override;
-};
-
-class SkeletalMeshComponent : public Component
-{
-public:
-	SkeletalMeshComponent(Node* node);
-	~SkeletalMeshComponent();
-
-	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
-	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
-	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
-	void onUpdate(Time deltaTime) override;
-
-	ResourceHandle<SkeletalMesh> getMesh();
-	const Vector<SkeletalMeshAnimation>& getAnimations() const;
-	const Vector<SkeletalMeshBone>& getBones() const;
-	const SkeletalMeshAnimation& getCurrentAnimation() const;
-	uint32_t getCurrentAnimationIndex() const;
-	void setCurrentAnimation(uint32_t index);
-	aabbox<> getWorldBounds() const;
-public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
-private:
-	AssetID m_assetID;
 	uint32_t m_currentAnimation;
 	uint32_t m_rootBoneIndex;
-	Vector<SkeletalMeshAnimation> m_animations;
+	Vector<SkeletalMeshAnimation> m_animations; // TODO do we need this ?
 	Vector<SkeletalMeshBone> m_bones; // instantiated bones.
-	ResourceHandle<SkeletalMesh> m_meshHandle;
-	InstanceHandle m_instance;
-};
 
-AKA_DECL_COMPONENT(SkeletalMeshComponent);
+	ResourceHandle<SkeletalMesh> meshHandle;
+	InstanceHandle instance = InstanceHandle::Invalid;
+};
+AKA_DECL_COMPONENT(SkeletalMeshComponent)
+
+template <>
+struct ecs::ArchiveComponent<SkeletalMeshComponent>
+{
+	AssetID assetID;
+
+	void from(const SkeletalMeshComponent& component)
+	{
+		assetID = component.assetID;
+	}
+	void to(SkeletalMeshComponent& component) const
+	{
+		component.assetID = assetID;
+	}
+	void parse(BinaryArchive& archive)
+	{
+		archive.parse(assetID);
+	}
+};
 
 };

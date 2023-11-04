@@ -132,15 +132,6 @@ CameraComponent::~CameraComponent()
 	delete m_projection;
 }
 
-ArchiveCameraComponent::ArchiveCameraComponent() :
-	ArchiveComponent(generateComponentID<CameraComponent>(), 0)
-{
-}
-
-void ArchiveCameraComponent::parse(BinaryArchive& archive)
-{
-	archive.parse<CameraProjectionType>(projectionType);
-}
 mat4f CameraComponent::getViewMatrix() const 
 {
 	// TODO: should cache this heavy compute inverse

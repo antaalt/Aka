@@ -1,43 +1,41 @@
 #pragma once
 
-#include <Aka/Scene/Component.hpp>
+#include <Aka/Scene/ECS/World.hpp>
 #include <Aka/Resource/Resource/Resource.hpp>
 #include <Aka/Resource/Resource/StaticMesh.hpp>
 #include <Aka/Renderer/Instance.hpp>
 #include <Aka/Resource/Archive/ArchiveScene.hpp>
 
+#include <entt.hpp>
+#include <functional>
+
 namespace aka {
 
-struct ArchiveStaticMeshComponent : ArchiveComponent
+struct StaticMeshComponent
 {
-	ArchiveStaticMeshComponent();
+	AssetID assetID = AssetID::Invalid;
+	ResourceHandle<StaticMesh> meshHandle;
+	InstanceHandle instance = InstanceHandle::Invalid;
+};
+AKA_DECL_COMPONENT(StaticMeshComponent)
 
+template <>
+struct ecs::ArchiveComponent<StaticMeshComponent>
+{
 	AssetID assetID;
 
-	void parse(BinaryArchive& archive) override;
+	void from(const StaticMeshComponent& component)
+	{
+		assetID = component.assetID;
+	}
+	void to(StaticMeshComponent& component) const
+	{
+		component.assetID = assetID;
+	}
+	void parse(BinaryArchive& archive)
+	{
+		archive.parse(assetID);
+	}
 };
-
-class StaticMeshComponent : public Component
-{
-public:
-	StaticMeshComponent(Node* node);
-	~StaticMeshComponent();
-
-	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
-	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
-	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
-
-	ResourceHandle<StaticMesh> getMesh() const;
-	aabbox<> getWorldBounds() const;
-public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
-private:
-	AssetID m_assetID;
-	ResourceHandle<StaticMesh> m_meshHandle;
-	InstanceHandle m_instance;
-};
-
-AKA_DECL_COMPONENT(StaticMeshComponent);
 
 };

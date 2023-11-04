@@ -3,9 +3,9 @@
 #include <Aka/Core/Geometry.h>
 
 #include <Aka/OS/Time.h>
-#include <Aka/Scene/Component.hpp>
 #include <Aka/Resource/Archive/ArchiveScene.hpp>
 #include <Aka/Renderer/View.hpp>
+#include <Aka/Scene/ECS/World.hpp>
 
 namespace aka {
 
@@ -93,51 +93,45 @@ struct CameraArcball : CameraController
 	float speed;
 };
 
+// -----------------------------------------
 
-struct ArchiveCameraComponent : ArchiveComponent
+struct CameraComponent
 {
-	ArchiveCameraComponent();
+	CameraProjection* projection;
+	ViewHandle viewHandle;
 
-	void parse(BinaryArchive& archive) override;
-
-	CameraProjectionType projectionType;
+	void setNear(float near) { projection->setNear(near); }
+	void setFar(float far) { projection->setFar(far); }
 };
-
-class CameraComponent : public Component
-{
-public:
-	CameraComponent(Node* node);
-	~CameraComponent();
-
-	// Get camera projection data
-	CameraProjection* getProjection() { return m_projection; }
-	// Get camera projection data
-	const CameraProjection* getProjection() const { return m_projection; }
-
-public:
-	// Get the view matrix 
-	mat4f getViewMatrix() const;
-	// Get the projection matrix
-	mat4f getProjectionMatrix() const;
-	// Set near plane for camera
-	void setNear(float near);
-	// Set far plane for camera
-	void setFar(float far);
-public:
-	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
-	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
-	void onUpdate(Time deltaTime) override;
-	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
-public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
-
-private:
-	ViewHandle m_view;
-	CameraProjection* m_projection;
-};
-
 AKA_DECL_COMPONENT(CameraComponent);
 
+struct ecs::ArchiveComponent<CameraComponent>
+{
+	CameraProjectionType type;
+	void from(const CameraComponent& component)
+	{
+		type = component.projection->type();
+	}
+	void to(CameraComponent& component) const
+	{
+		AKA_ASSERT(component.projection == nullptr, "Projection not null. Leak.");
+		switch (type)
+		{
+		case CameraProjectionType::Orthographic:
+			component.projection = new CameraOrthographic;
+			break;
+		case CameraProjectionType::Perpective:
+			component.projection = new CameraPerspective;
+			break;
+		default:
+			AKA_NOT_IMPLEMENTED;
+			break;
+		}
+	}
+	void parse(BinaryArchive& archive)
+	{
+		archive.parse(type);
+	}
+};
 
 };

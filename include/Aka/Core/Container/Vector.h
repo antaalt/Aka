@@ -13,6 +13,9 @@ class Vector final
 	using AllocatorType = Allocator;
 	static const size_t defaultCapacity = 16;
 public:
+	using Iterator = T*; // TODO use real iterator instead.
+	using ConstIterator = const T*;
+public:
 	Vector();
 	explicit Vector(AllocatorType& allocator);
 	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
@@ -73,13 +76,13 @@ public:
 	const T& last() const;
 
 	// Pointer to beginning of vector
-	T* begin();
+	Iterator begin();
 	// Pointer to ending of vector
-	T* end();
+	Iterator end();
 	// Pointer to beginning of vector
-	const T* begin() const;
+	ConstIterator begin() const;
 	// Pointer to ending of vector
-	const T* end() const;
+	ConstIterator end() const;
 private:
 	AllocatorType& m_allocator;
 	T* m_data;
