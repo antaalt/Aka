@@ -35,7 +35,6 @@ uint32_t countBitSet(uint64_t x)
 }
 // Could check this for cross platform compatibility 
 // https://github.com/mpdn/bitcount
-// Could rename these clz, ctz & pop
 uint32_t countLeadingZero(uint32_t x)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
@@ -43,7 +42,7 @@ uint32_t countLeadingZero(uint32_t x)
 	if (_BitScanReverse(&result, x))
 		return 31 - result;
 	else
-		return BitNotFoundIndex;
+		return BitNotFoundIndex; // Should return 32 instead ?
 #else
 	// Count leading zero
 	return __builtin_clz(x); // GCC
@@ -89,9 +88,79 @@ uint32_t countTrailingZero(uint64_t x)
 #endif
 }
 
-constexpr uint32_t bitmask(uint32_t bitCount)
+uint32_t bitnum(uint32_t value)
 {
-	return (1 << bitCount) - 1;
+	return 31 - countLeadingZero(value);
+}
+bool isPowerOfTwo(uint32_t value)
+{
+	return value && !(value & (value - 1U));
+}
+bool isPowerOfTwo(uint64_t value)
+{
+	return value && !(value & (value - 1ULL));
+}
+uint32_t findNextPowerOfTwo(uint32_t value)
+{
+	// Could simply call 31 - countLeadingZero(value) but watch out for return value with 0
+	// https://graphics.stanford.edu/%7Eseander/bithacks.html#RoundUpPowerOf2
+	value--;
+	value |= value >> 1;
+	value |= value >> 2;
+	value |= value >> 4;
+	value |= value >> 8;
+	value |= value >> 16;
+	value++;
+	return value;
+}
+uint64_t findNextPowerOfTwo(uint64_t value)
+{
+	value--;
+	value |= value >> 1;
+	value |= value >> 2;
+	value |= value >> 4;
+	value |= value >> 8;
+	value |= value >> 16;
+	value |= value >> 32;
+	value++;
+	return value;
+}
+uint32_t findPreviousPowerOfTwo(uint32_t value)
+{
+	value |= (value >> 1);
+	value |= (value >> 2);
+	value |= (value >> 4);
+	value |= (value >> 8);
+	value |= (value >> 16);
+	return value - (value >> 1);
+}
+uint64_t findPreviousPowerOfTwo(uint64_t value)
+{
+	value |= (value >> 1);
+	value |= (value >> 2);
+	value |= (value >> 4);
+	value |= (value >> 8);
+	value |= (value >> 16);
+	value |= (value >> 32);
+	return value - (value >> 1);
+}
+
+std::ostream& operator<<(std::ostream& os, const bitset32& value)
+{
+	for (uint32_t i = 32; i-- > 0;)
+	{
+		// TODO add shiftable operators.
+		os << ((static_cast<uint32_t>(value) >> i) & 0x1) ? "1" : "0";
+	}
+	return os;
+}
+std::ostream& operator<<(std::ostream& os, const bitset64& value)
+{
+	for (uint32_t i = 64; i-- > 0;)
+	{
+		os << ((static_cast<uint64_t>(value) >> i) & 0x1) ? "1" : "0";
+	}
+	return os;
 }
 
 BitField::BitField() :
