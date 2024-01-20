@@ -11,6 +11,7 @@
 #include <Aka/Scene/Component/SkeletalMeshComponent.hpp>
 #include <Aka/Scene/Component/CameraComponent.hpp>
 #include <Aka/Scene/Component/ArcballComponent.hpp>
+#include <Aka/Scene/Component/RigidBodyComponent.hpp>
 
 namespace aka {
 
@@ -34,6 +35,7 @@ Application::Application(const Config& config) :
 	AKA_REGISTER_COMPONENT(SkeletalMeshComponent);
 	AKA_REGISTER_COMPONENT(CameraComponent);
 	AKA_REGISTER_COMPONENT(ArcballComponent);
+	AKA_REGISTER_COMPONENT(RigidBodyComponent);
 }
 Application::~Application()
 {
@@ -42,6 +44,7 @@ Application::~Application()
 	AKA_UNREGISTER_COMPONENT(SkeletalMeshComponent);
 	AKA_UNREGISTER_COMPONENT(CameraComponent);
 	AKA_UNREGISTER_COMPONENT(ArcballComponent);
+	AKA_UNREGISTER_COMPONENT(RigidBodyComponent);
 	// Destroy all pointers
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);
