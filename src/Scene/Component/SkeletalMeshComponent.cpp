@@ -109,18 +109,14 @@ aabbox<> SkeletalMeshComponent::getWorldBounds() const
 	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
 }
 
-void SkeletalMeshComponent::fromArchive(const ArchiveComponent& archive)
+void SkeletalMeshComponent::fromArchive(const ArchiveSkeletalMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveSkeletalMeshComponent& a = reinterpret_cast<const ArchiveSkeletalMeshComponent&>(archive);
-	m_assetID = a.assetID;
+	m_assetID = archive.assetID;
 }
 
-void SkeletalMeshComponent::toArchive(ArchiveComponent& archive)
+void SkeletalMeshComponent::toArchive(ArchiveSkeletalMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveSkeletalMeshComponent& a = reinterpret_cast<ArchiveSkeletalMeshComponent&>(archive);
-	a.assetID = m_assetID;
+	archive.assetID = m_assetID;
 }
 
 };

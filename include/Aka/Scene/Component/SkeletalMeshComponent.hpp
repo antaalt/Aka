@@ -36,8 +36,8 @@ public:
 	void setCurrentAnimation(uint32_t index);
 	aabbox<> getWorldBounds() const;
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveSkeletalMeshComponent& archive) override;
+	void toArchive(ArchiveSkeletalMeshComponent& archive) override;
 private:
 	AssetID m_assetID;
 	uint32_t m_currentAnimation;

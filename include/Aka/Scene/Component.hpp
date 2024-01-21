@@ -84,10 +84,10 @@ protected:
 	void deactivate(AssetLibrary* library, Renderer* _renderer);
 
 public:
-	virtual void fromArchive(const ArchiveComponent& archive) = 0;
-	virtual void toArchive(ArchiveComponent& archive) = 0;
-	virtual ArchiveComponent* createArchive(ArchiveComponentVersionType _version = 0) = 0;
-	virtual void destroyArchive(ArchiveComponent* _archive) = 0;
+	virtual void fromArchiveBase(const ArchiveComponent& archive) = 0;
+	virtual void toArchiveBase(ArchiveComponent& archive) = 0;
+	virtual ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) = 0;
+	virtual void destroyArchiveBase(ArchiveComponent* _archive) = 0;
 protected:
 	void transformUpdate();
 	void hierarchyUpdate();
@@ -170,8 +170,7 @@ private:
 };
 template <typename T>
 struct Factory final : FactoryBase {
-	//static_assert(std::is_base_of<Component<T>, T>::value);
-	//static_assert(std::is_base_of<ArchiveComponent<T>, A>::value);
+	static_assert(std::is_base_of<ComponentBase, T>::value);
 	Factory(ComponentID _componentID) : FactoryBase(_componentID) {}
 	~Factory() {}
 	ComponentBase* allocate(Node* _owner) override { return m_pool.acquire(_owner); }
@@ -183,7 +182,6 @@ private:
 template <typename T>
 static constexpr const char* getComponentName();
 
-// ComponentInstance
 template <typename T, typename A>
 struct Component : ComponentBase
 {
@@ -202,21 +200,29 @@ public:
 	static T* make(Node* _owner) {
 		return reinterpret_cast<T*>(s_factory.allocate(_owner));
 	}
-	// TODO
-	//virtual void fromArchive(const Archive& archive) = 0;
-	//virtual void toArchive(ArchiveComponent& archive) = 0;
-	//Archive* createArchive(ArchiveComponentVersionType _version) = 0;
-	//void destroyArchive(Archive* _archive) = 0;
-//protected:
-	// TODO handle default version
-	ArchiveComponent* createArchive(ArchiveComponentVersionType _version = 0) override {
-		return new Archive(getComponentID(), _version);
+	virtual void fromArchive(const Archive& archive) = 0;
+	virtual void toArchive(Archive& archive) = 0;
+	Archive* createArchive() { return createArchive(0); } // TODO: retrieve default version
+	Archive* createArchive(ArchiveComponentVersionType _version) { return new Archive(getComponentID(), _version); }
+	void destroyArchive(Archive* _archive) { delete _archive; }
+protected:
+	void fromArchiveBase(const ArchiveComponent& _archive) override {
+		AKA_ASSERT(_archive.getComponentID() == getComponentID(), "Invalid component archive");
+		fromArchive(reinterpret_cast<const Archive&>(_archive));
 	}
-	void destroyArchive(ArchiveComponent* _archive) {
-		delete _archive;
+	void toArchiveBase(ArchiveComponent& _archive) {
+		AKA_ASSERT(_archive.getComponentID() == getComponentID(), "Invalid component archive");
+		toArchive(reinterpret_cast<Archive&>(_archive));
+	}
+	ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) override {
+		return createArchive(_version);
+	}
+	void destroyArchiveBase(ArchiveComponent* _archive) {
+		AKA_ASSERT(_archive->getComponentID() == getComponentID(), "Invalid component archive");
+		destroyArchive(reinterpret_cast<Archive*>(_archive));
 	}
 private:
-	static Factory<T> s_factory; // map might not be instantiated at the same time...
+	static Factory<T> s_factory;
 };
 
 template <typename T, typename A>

@@ -37,8 +37,8 @@ public:
 	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
 	void onUpdate(Time deltaTime) override;
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveArcballComponent& archive) override;
+	void toArchive(ArchiveArcballComponent& archive) override;
 
 private:
 	bool m_updateEnabled;

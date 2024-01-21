@@ -44,16 +44,12 @@ void RigidBodyComponent::onUpdate(Time deltaTime)
 	//(geometry::log2(m_velocity.x) + maxVelocity);
 	getNode()->setLocalTransform(mat4f::translate(getNode()->getLocalTransform(), m_velocity * deltaTime.seconds()));
 }
-void RigidBodyComponent::fromArchive(const ArchiveComponent& archive)
+void RigidBodyComponent::fromArchive(const ArchiveRigidBodyComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveRigidBodyComponent& a = reinterpret_cast<const ArchiveRigidBodyComponent&>(archive);
 }
 
-void RigidBodyComponent::toArchive(ArchiveComponent& archive)
+void RigidBodyComponent::toArchive(ArchiveRigidBodyComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveRigidBodyComponent& a = reinterpret_cast<ArchiveRigidBodyComponent&>(archive);
 }
 
 };

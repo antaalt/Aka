@@ -47,18 +47,14 @@ aabbox<> StaticMeshComponent::getWorldBounds() const
 	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
 }
 
-void StaticMeshComponent::fromArchive(const ArchiveComponent& archive)
+void StaticMeshComponent::fromArchive(const ArchiveStaticMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveStaticMeshComponent& a = reinterpret_cast<const ArchiveStaticMeshComponent&>(archive);
-	m_assetID = a.assetID;
+	m_assetID = archive.assetID;
 }
 
-void StaticMeshComponent::toArchive(ArchiveComponent& archive)
+void StaticMeshComponent::toArchive(ArchiveStaticMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveStaticMeshComponent& a = reinterpret_cast<ArchiveStaticMeshComponent&>(archive);
-	a.assetID = m_assetID;
+	archive.assetID = m_assetID;
 }
 
 };

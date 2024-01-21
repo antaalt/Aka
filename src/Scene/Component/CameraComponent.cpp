@@ -181,12 +181,10 @@ void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 		clearDirty();
 	}
 }
-void CameraComponent::fromArchive(const ArchiveComponent& archive)
+void CameraComponent::fromArchive(const ArchiveCameraComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	AKA_ASSERT(m_projection == nullptr, "Projection not null");
-	const ArchiveCameraComponent& a = reinterpret_cast<const ArchiveCameraComponent&>(archive);
-	switch (a.projectionType)
+	switch (archive.projectionType)
 	{
 	case CameraProjectionType::Orthographic:
 		m_projection = new CameraOrthographic;
@@ -200,11 +198,9 @@ void CameraComponent::fromArchive(const ArchiveComponent& archive)
 	}
 }
 
-void CameraComponent::toArchive(ArchiveComponent& archive)
+void CameraComponent::toArchive(ArchiveCameraComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveCameraComponent& a = reinterpret_cast<ArchiveCameraComponent&>(archive);
-	a.projectionType = m_projection->type();
+	archive.projectionType = m_projection->type();
 }
 
 };

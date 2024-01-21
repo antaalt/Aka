@@ -38,8 +38,8 @@ public:
 
 	const vec3f& getVelocity() const { return m_velocity; }
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveRigidBodyComponent& archive) override;
+	void toArchive(ArchiveRigidBodyComponent& archive) override;
 private:
 	vec3f m_velocity;
 };

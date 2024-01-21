@@ -30,8 +30,8 @@ public:
 	ResourceHandle<StaticMesh> getMesh() const;
 	aabbox<> getWorldBounds() const;
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveStaticMeshComponent& archive) override;
+	void toArchive(ArchiveStaticMeshComponent& archive) override;
 private:
 	AssetID m_assetID;
 	ResourceHandle<StaticMesh> m_meshHandle;
