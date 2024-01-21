@@ -122,7 +122,7 @@ CameraControllerType CameraArcball::type() const
 }
 
 CameraComponent::CameraComponent(Node* node) :
-	Component(node, generateComponentID<CameraComponent>()),
+	Component(node),
 	m_view(ViewHandle::Invalid),
 	m_projection(nullptr)
 {
@@ -130,11 +130,6 @@ CameraComponent::CameraComponent(Node* node) :
 CameraComponent::~CameraComponent()
 {
 	delete m_projection;
-}
-
-ArchiveCameraComponent::ArchiveCameraComponent() :
-	ArchiveComponent(generateComponentID<CameraComponent>(), 0)
-{
 }
 
 void ArchiveCameraComponent::parse(BinaryArchive& archive)

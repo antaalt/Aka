@@ -20,7 +20,6 @@ FileStream::FileStream(const Path& path, FileMode mode, FileType type) :
 	m_length(0)
 {
 	m_file = OS::File::open(path, mode, type);
-	AKA_ASSERT(m_file != nullptr, "File not opened");
 	if (m_file == nullptr)
 		return;
 	m_mode = mode;
@@ -72,6 +71,11 @@ void FileStream::close()
 	if (m_file)
 		fclose(m_file);
 	m_file = nullptr;
+}
+
+bool FileStream::isOpen()
+{
+	return m_file != nullptr;
 }
 
 void FileStream::read(void* data, size_t size)

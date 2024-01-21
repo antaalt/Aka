@@ -21,11 +21,11 @@ class ColliderComponent
 // Not a main issue though, firstly need a component update ordering.
 struct ArchiveRigidBodyComponent : ArchiveComponent
 {
-	ArchiveRigidBodyComponent();
+	using ArchiveComponent::ArchiveComponent;
 
 	void parse(BinaryArchive& archive) override;
 };
-class RigidBodyComponent : public Component
+class RigidBodyComponent : public Component<RigidBodyComponent, ArchiveRigidBodyComponent>
 {
 public:
 	RigidBodyComponent(Node* node);

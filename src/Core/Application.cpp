@@ -30,21 +30,9 @@ Application::Application(const Config& config) :
 	m_running(true),
 	m_renderer(new Renderer(m_graphic, m_assets))
 {
-	// Register all used components
-	AKA_REGISTER_COMPONENT(StaticMeshComponent);
-	AKA_REGISTER_COMPONENT(SkeletalMeshComponent);
-	AKA_REGISTER_COMPONENT(CameraComponent);
-	AKA_REGISTER_COMPONENT(ArcballComponent);
-	AKA_REGISTER_COMPONENT(RigidBodyComponent);
 }
 Application::~Application()
 {
-	// Unregister all used components
-	AKA_UNREGISTER_COMPONENT(StaticMeshComponent);
-	AKA_UNREGISTER_COMPONENT(SkeletalMeshComponent);
-	AKA_UNREGISTER_COMPONENT(CameraComponent);
-	AKA_UNREGISTER_COMPONENT(ArcballComponent);
-	AKA_UNREGISTER_COMPONENT(RigidBodyComponent);
 	// Destroy all pointers
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);

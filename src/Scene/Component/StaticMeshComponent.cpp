@@ -5,19 +5,13 @@
 
 namespace aka {
 
-ArchiveStaticMeshComponent::ArchiveStaticMeshComponent() :
-	ArchiveComponent(generateComponentID<StaticMeshComponent>(), 0),
-	assetID(AssetID::Invalid)
-{
-}
-
 void ArchiveStaticMeshComponent::parse(BinaryArchive& archive)
 {
 	archive.parse<AssetID>(assetID);
 }
 
 StaticMeshComponent::StaticMeshComponent(Node* node) :
-	Component(node, generateComponentID<StaticMeshComponent>()),
+	Component(node),
 	m_assetID(AssetID::Invalid),
 	m_instance(InstanceHandle::Invalid)
 {

@@ -34,7 +34,7 @@ public:
 	Node(const char* name);
 	virtual ~Node();
 
-	void attach(Component* component);
+	void attach(ComponentBase* component);
 	// Attach a component to the entity
 	template <typename T> T& attach();
 	// Detach a component from the entity.
@@ -122,11 +122,11 @@ private:
 template<typename T>
 inline T& Node::attach()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	ComponentID id = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	ComponentID id = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(!has<T>(), "Trying to attach already attached component");
 	m_componentIDs.insert(id);
-	T* component = reinterpret_cast<T*>(ComponentAllocator::allocate(this, id));
+	T* component = Component<T, T::Archive>::make(this);
 	component->onAttach();
 	m_componentsToActivate.insert(std::make_pair(id, component));
 	return *component;
@@ -135,8 +135,8 @@ inline T& Node::attach()
 template<typename T>
 inline void Node::detach()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to detach non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	m_componentIDs.erase(componentID);
@@ -170,8 +170,8 @@ inline void Node::detach()
 template<typename T>
 inline T& Node::get()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to get non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())
@@ -195,8 +195,8 @@ inline T& Node::get()
 template<typename T>
 inline const T& Node::get() const
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to get non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())
@@ -219,8 +219,8 @@ inline const T& Node::get() const
 template<typename T>
 inline bool aka::Node::has() const
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	auto it = m_componentIDs.find(componentID);
 	return it != m_componentIDs.end();
 }
@@ -228,8 +228,8 @@ inline bool aka::Node::has() const
 template<typename T>
 inline void Node::setDirty()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to mark dirty non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())

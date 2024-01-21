@@ -2,22 +2,27 @@
 
 #include <Aka/OS/Archive.h>
 #include <Aka/Core/Config.h>
+#include <Aka/Core/Crc.hpp>
+#include <Aka/Memory/Pool.h>
 #include <Aka/Core/Container/String.h>
 #include <Aka/Graphic/GraphicDevice.h>
 
 #include <set>
 #include <map>
+#include <iostream>
 
 namespace aka {
 
 class AssetLibrary;
 class Renderer;
 class Node;
-class Component;
+class ComponentBase;
 struct Archive;
 struct ArchiveComponent;
 
-enum class ComponentID : size_t { Invalid = (size_t)-1 };
+// Unique ComponentID for serialization, based on component class name.
+// Each component need to implement AKA_DECL_COMPONENT(ComponentName) macro to declare it.
+enum class ComponentID : uint32_t { Invalid = (uint32_t)-1 };
 
 enum class ComponentState
 {
@@ -40,29 +45,9 @@ enum class ComponentUpdateFlags : uint32_t
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(ComponentUpdateFlags);
 
-template <typename T> ComponentID generateComponentID();
-
-struct ComponentAllocator
-{
-public:
-	template <typename T>
-	static void registerAllocator(ComponentID id);
-	static void unregisterAllocator(ComponentID id);
-	static Component* allocate(Node* node, ComponentID id);
-	static void free(Component* component);
-	static ArchiveComponent* allocateArchive(ComponentID id);
-	static void freeArchive(ArchiveComponent* id);
-private:
-	static std::map<ComponentID, ComponentAllocator*> m_allocators;
-protected:
-	virtual Component* allocate_internal(Node* node) = 0;
-	virtual void free_internal(Component* component) = 0;
-	virtual ArchiveComponent* allocateArchive_internal() = 0;
-	virtual void freeArchive_internal(ArchiveComponent* component) = 0;
-};
 
 using ComponentSet = std::set<ComponentID>;
-using ComponentMap = std::map<ComponentID, Component*>;
+using ComponentMap = std::map<ComponentID, ComponentBase*>;
 
 using ArchiveComponentVersionType = uint32_t;
 
@@ -83,12 +68,12 @@ private:
 };
 
 
-class Component
+class ComponentBase
 {
 public:
-	Component() = delete;
-	Component(Node* node, ComponentID componentID);
-	virtual ~Component() {}
+	ComponentBase() = delete;
+	ComponentBase(Node* node, ComponentID componentID);
+	virtual ~ComponentBase() {}
 
 protected:
 	friend class Node;
@@ -101,6 +86,8 @@ protected:
 public:
 	virtual void fromArchive(const ArchiveComponent& archive) = 0;
 	virtual void toArchive(ArchiveComponent& archive) = 0;
+	virtual ArchiveComponent* createArchive(ArchiveComponentVersionType _version = 0) = 0;
+	virtual void destroyArchive(ArchiveComponent* _archive) = 0;
 protected:
 	void transformUpdate();
 	void hierarchyUpdate();
@@ -162,36 +149,83 @@ private:
 	ComponentUpdateFlags m_updateFlags; // Update flags of component.
 };
 
+struct FactoryBase {
+	FactoryBase(ComponentID _component) { getFactoryMap().insert(std::make_pair(_component, this)); }
+	virtual ~FactoryBase() {} // Do not release as pointer is not owned.
+protected:
+	virtual ComponentBase* allocate(Node* _owner) = 0;
+	virtual void free(ComponentBase* component) = 0;
+public:
+	static ComponentBase* make(ComponentID _id, Node* _owner) {
+		return getFactoryMap()[_id]->allocate(_owner);
+	}
+	static void unmake(ComponentBase* _component) {
+		getFactoryMap()[_component->getComponentID()]->free(_component);
+	}
+private:
+	static std::map<ComponentID, FactoryBase*>& getFactoryMap() {
+		static std::map<ComponentID, FactoryBase*> s_factories;
+		return s_factories;
+	}
+};
+template <typename T>
+struct Factory final : FactoryBase {
+	//static_assert(std::is_base_of<Component<T>, T>::value);
+	//static_assert(std::is_base_of<ArchiveComponent<T>, A>::value);
+	Factory(ComponentID _componentID) : FactoryBase(_componentID) {}
+	~Factory() {}
+	ComponentBase* allocate(Node* _owner) override { return m_pool.acquire(_owner); }
+	void free(ComponentBase* _component) override { m_pool.release(reinterpret_cast<T*>(_component)); }
+private:
+	Pool<T> m_pool;
+};
 
 template <typename T>
-static void ComponentAllocator::registerAllocator(ComponentID id)
+static constexpr const char* getComponentName();
+
+// ComponentInstance
+template <typename T, typename A>
+struct Component : ComponentBase
 {
-	static_assert(std::is_base_of<ComponentAllocator, T>::value);
-	AKA_ASSERT(m_allocators.find(id) == m_allocators.end(), "Adding an allocator but one already exist");
-	m_allocators.insert(std::make_pair(id, new T)); // Should use pool instead.
-}
+	static_assert(std::is_base_of<ArchiveComponent, A>::value);
+public:
+	using Archive = A;
+	Component(Node* _node) : ComponentBase(_node, getComponentID()) {}
+	virtual ~Component() {};
+	static const char* getName() {
+		return getComponentName<T>();
+	}
+	static ComponentID getComponentID() {
+		static const ComponentID id = static_cast<ComponentID>(WSID(getName()));
+		return id;
+	}
+	static T* make(Node* _owner) {
+		return reinterpret_cast<T*>(s_factory.allocate(_owner));
+	}
+	// TODO
+	//virtual void fromArchive(const Archive& archive) = 0;
+	//virtual void toArchive(ArchiveComponent& archive) = 0;
+	//Archive* createArchive(ArchiveComponentVersionType _version) = 0;
+	//void destroyArchive(Archive* _archive) = 0;
+//protected:
+	// TODO handle default version
+	ArchiveComponent* createArchive(ArchiveComponentVersionType _version = 0) override {
+		return new Archive(getComponentID(), _version);
+	}
+	void destroyArchive(ArchiveComponent* _archive) {
+		delete _archive;
+	}
+private:
+	static Factory<T> s_factory; // map might not be instantiated at the same time...
+};
+
+template <typename T, typename A>
+Factory<T> Component<T, A>::s_factory = Factory<T>(Component<T, A>::getComponentID());
 
 }; // namespace aka
 
-
-// TODO should use compile time hash such as crc instead.
-// This should be called within aka namespace. All components need to be in this namespace
-#define AKA_DECL_COMPONENT(ComponentType) 															\
-struct ComponentType ## Allocator : ComponentAllocator {											\
-	Component* allocate_internal(Node* node) override { return new ComponentType(node); }			\
-	void free_internal(Component* component) override { delete component; }							\
-	ArchiveComponent* allocateArchive_internal() override { return new Archive ## ComponentType; }	\
-	void freeArchive_internal(ArchiveComponent* component) override { delete component; }			\
-};																									\
-template <>																							\
-inline ComponentID generateComponentID<ComponentType>() {											\
-	static_assert(std::is_base_of<Component, ComponentType>::value);								\
-	const char* name = AKA_STRINGIFY(ComponentType);												\
-	std::size_t length = String::length(name);														\
-	ComponentID id = static_cast<ComponentID>(hash::fnv(name, length));								\
-	return id;																						\
-}
-
-#define AKA_REGISTER_COMPONENT(ComponentType) ComponentAllocator::registerAllocator<ComponentType ## Allocator>(generateComponentID<ComponentType>());
-#define AKA_UNREGISTER_COMPONENT(ComponentType) ComponentAllocator::unregisterAllocator(generateComponentID<ComponentType>());
-
+#define AKA_DECL_COMPONENT(ComponentType) \
+template <> \
+inline static constexpr const char* getComponentName<ComponentType>() { \
+	return AKA_STRINGIFY(ComponentType); \
+} \

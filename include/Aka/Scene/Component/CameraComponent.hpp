@@ -96,14 +96,14 @@ struct CameraArcball : CameraController
 
 struct ArchiveCameraComponent : ArchiveComponent
 {
-	ArchiveCameraComponent();
+	using ArchiveComponent::ArchiveComponent;
 
 	void parse(BinaryArchive& archive) override;
 
 	CameraProjectionType projectionType;
 };
 
-class CameraComponent : public Component
+class CameraComponent : public Component<CameraComponent, ArchiveCameraComponent>
 {
 public:
 	CameraComponent(Node* node);

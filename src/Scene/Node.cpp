@@ -27,7 +27,7 @@ Node::~Node()
 	AKA_ASSERT(m_componentsToDeactivate.size() == 0, "Missing components");
 }
 
-void Node::attach(Component* component)
+void Node::attach(ComponentBase* component)
 {
 	const ComponentID id = component->getComponentID();
 	AKA_ASSERT(m_componentIDs.find(id) == m_componentIDs.end(), "Trying to attach non attached component");
@@ -53,22 +53,22 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 		childrens->destroy(library, renderer);
 	}
 	// Destroy components
-	for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
+	for (std::pair<ComponentID, ComponentBase*> component : m_componentsToActivate)
 	{
 		component.second->detach();
-		ComponentAllocator::free(component.second);
+		FactoryBase::unmake(component.second);
 	}
-	for (std::pair<ComponentID, Component*> component : m_componentsActive)
+	for (std::pair<ComponentID, ComponentBase*> component : m_componentsActive)
 	{
 		component.second->deactivate(library, renderer);
 		component.second->detach();
-		ComponentAllocator::free(component.second);
+		FactoryBase::unmake(component.second);
 	}
-	for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
+	for (std::pair<ComponentID, ComponentBase*> component : m_componentsToDeactivate)
 	{
 		component.second->deactivate(library, renderer);
 		component.second->detach();
-		ComponentAllocator::free(component.second);
+		FactoryBase::unmake(component.second);
 	}
 	m_componentIDs.clear();
 	m_componentsToActivate.clear();
@@ -80,18 +80,18 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 {
 	{ // Components lifecycle.
 		// Activate components
-		for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
+		for (std::pair<ComponentID, ComponentBase*> component : m_componentsToActivate)
 		{
 			component.second->activate(library, renderer);
 			m_componentsActive.insert(component);
 		}
 		m_componentsToActivate.clear();
 		// Deactivate components
-		for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
+		for (std::pair<ComponentID, ComponentBase*> component : m_componentsToDeactivate)
 		{
 			component.second->deactivate(library, renderer);
 			component.second->detach();
-			ComponentAllocator::free(component.second);
+			FactoryBase::unmake(component.second);
 		}
 		m_componentsToDeactivate.clear();
 	}

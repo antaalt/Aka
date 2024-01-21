@@ -6,13 +6,8 @@
 
 namespace aka {
 
-ArchiveArcballComponent::ArchiveArcballComponent() :
-	ArchiveComponent(generateComponentID<ArcballComponent>(), 0)
-{
-}
-
 ArcballComponent::ArcballComponent(Node* node) :
-	Component(node, generateComponentID<ArcballComponent>())
+	Component(node)
 {
 }
 

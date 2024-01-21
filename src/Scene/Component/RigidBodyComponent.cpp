@@ -5,19 +5,13 @@
 
 namespace aka {
 
-ArchiveRigidBodyComponent::ArchiveRigidBodyComponent() :
-	ArchiveComponent(generateComponentID<RigidBodyComponent>(), 0)//,
-	//assetID(AssetID::Invalid)
-{
-}
-
 void ArchiveRigidBodyComponent::parse(BinaryArchive& archive)
 {
 	//archive.parse<AssetID>(assetID);
 }
 
 RigidBodyComponent::RigidBodyComponent(Node* node) :
-	Component(node, generateComponentID<RigidBodyComponent>()),
+	Component(node),
 	m_velocity(0.f)
 {
 }

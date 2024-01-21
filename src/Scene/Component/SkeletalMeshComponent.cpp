@@ -5,19 +5,13 @@
 
 namespace aka {
 
-ArchiveSkeletalMeshComponent::ArchiveSkeletalMeshComponent() :
-	ArchiveComponent(generateComponentID<SkeletalMeshComponent>(), 0),
-	assetID(AssetID::Invalid)
-{
-}
-
 void ArchiveSkeletalMeshComponent::parse(BinaryArchive& archive)
 {
 	archive.parse<AssetID>(assetID);
 }
 
 SkeletalMeshComponent::SkeletalMeshComponent(Node* node) :
-	Component(node, generateComponentID<SkeletalMeshComponent>()),
+	Component(node),
 	m_assetID(AssetID::Invalid),
 	m_currentAnimation(0),
 	m_instance(InstanceHandle::Invalid)

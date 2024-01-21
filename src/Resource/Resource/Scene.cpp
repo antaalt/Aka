@@ -53,11 +53,12 @@ void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _render
 		}
 		for (const ArchiveSceneComponent& component : node.components)
 		{
-			Component* allocatedComponent = ComponentAllocator::allocate(sceneNode, component.id);
-			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component.id);
+			ComponentBase* allocatedComponent = FactoryBase::make(component.id, sceneNode);
+			ArchiveComponent* archiveComponent = allocatedComponent->createArchive();
+			AKA_ASSERT(archiveComponent != nullptr && allocatedComponent != nullptr, "Component allocation failed.");
 			archiveComponent->load(component.archive);
 			allocatedComponent->fromArchive(*archiveComponent);
-			ComponentAllocator::freeArchive(archiveComponent);
+			allocatedComponent->destroyArchive(archiveComponent);
 			sceneNode->attach(allocatedComponent);
 		}
 		nodes.append(sceneNode);
@@ -114,13 +115,13 @@ void Scene::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer
 		// Serialize component
 		for (auto pair : sceneNode->getComponentMap())
 		{
-			Component* component = pair.second;
-			ArchiveComponent* archiveComponent = ComponentAllocator::allocateArchive(component->getComponentID());
+			ComponentBase* component = pair.second;
+			ArchiveComponent* archiveComponent = component->createArchive();
 			component->toArchive(*archiveComponent);
 			ArchiveSceneComponent archive;
 			archive.id = component->getComponentID();
 			archiveComponent->save(archive.archive);
-			ComponentAllocator::freeArchive(archiveComponent);
+			component->destroyArchive(archiveComponent);
 			node.components.append(archive);
 		}
 		scene.nodes.append(node);

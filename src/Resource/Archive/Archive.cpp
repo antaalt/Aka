@@ -23,6 +23,20 @@ constexpr const char* s_magicWord[] = {
 
 static_assert(countof(s_magicWord) == EnumCount<AssetType>());
 
+const char* getArchiveParseResultString(ArchiveParseResult _result)
+{
+	switch (_result) {
+	default:
+	case ArchiveParseResult::Failed: return "failed";
+	case ArchiveParseResult::InvalidAssetID: return "invalid asset id";
+	case ArchiveParseResult::InvalidDependency: return "invalid dependency";
+	case ArchiveParseResult::InvalidMagicWord: return "invalid magic word";
+	case ArchiveParseResult::IncompatibleVersion: return "incompatible version";
+	case ArchiveParseResult::FileDoesNotExist: return "file does not exist";
+	case ArchiveParseResult::Success: return "success";
+	}
+}
+
 ArchiveLoadContext::ArchiveLoadContext(Archive& _archive, AssetLibrary * library, bool _loadDependency) :
 	m_dependencies{},
 	m_archive(_archive),
@@ -87,6 +101,8 @@ ArchiveParseResult Archive::load(ArchiveLoadContext& _context, const AssetPath& 
 	else
 	{
 		FileStream stream(_path.getAbsolutePath(), FileMode::Read, FileType::Binary);
+		if (!stream.isOpen())
+			return ArchiveParseResult::FileDoesNotExist;
 		BinaryArchiveReader archive(stream);
 
 		ArchiveParseResult res = parseHeader(archive);

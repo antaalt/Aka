@@ -10,14 +10,14 @@ namespace aka {
 
 struct ArchiveSkeletalMeshComponent : ArchiveComponent
 {
-	ArchiveSkeletalMeshComponent();
+	using ArchiveComponent::ArchiveComponent;
 
-	AssetID assetID;
+	AssetID assetID = AssetID::Invalid;
 
 	void parse(BinaryArchive& archive) override;
 };
 
-class SkeletalMeshComponent : public Component
+class SkeletalMeshComponent : public Component<SkeletalMeshComponent, ArchiveSkeletalMeshComponent>
 {
 public:
 	SkeletalMeshComponent(Node* node);
