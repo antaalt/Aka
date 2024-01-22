@@ -150,23 +150,16 @@ private:
 };
 
 struct FactoryBase {
-	FactoryBase(ComponentID _component) { getFactoryMap().insert(std::make_pair(_component, this)); }
+	FactoryBase(ComponentID _component);
 	virtual ~FactoryBase() {} // Do not release as pointer is not owned.
 protected:
 	virtual ComponentBase* allocate(Node* _owner) = 0;
 	virtual void free(ComponentBase* component) = 0;
 public:
-	static ComponentBase* make(ComponentID _id, Node* _owner) {
-		return getFactoryMap()[_id]->allocate(_owner);
-	}
-	static void unmake(ComponentBase* _component) {
-		getFactoryMap()[_component->getComponentID()]->free(_component);
-	}
+	static ComponentBase* make(ComponentID _id, Node* _owner);
+	static void unmake(ComponentBase* _component);
 private:
-	static std::map<ComponentID, FactoryBase*>& getFactoryMap() {
-		static std::map<ComponentID, FactoryBase*> s_factories;
-		return s_factories;
-	}
+	static std::map<ComponentID, FactoryBase*>& getFactoryMap();
 };
 template <typename T>
 struct Factory final : FactoryBase {
@@ -179,9 +172,6 @@ private:
 	Pool<T> m_pool;
 };
 
-template <typename T>
-static constexpr const char* getComponentName();
-
 template <typename T, typename A>
 struct Component : ComponentBase
 {
@@ -190,40 +180,78 @@ public:
 	using Archive = A;
 	Component(Node* _node) : ComponentBase(_node, getComponentID()) {}
 	virtual ~Component() {};
-	static const char* getName() {
-		return getComponentName<T>();
-	}
-	static ComponentID getComponentID() {
-		static const ComponentID id = static_cast<ComponentID>(WSID(getName()));
-		return id;
-	}
-	static T* make(Node* _owner) {
-		return reinterpret_cast<T*>(s_factory.allocate(_owner));
-	}
+	static const char* getName();
+	static ComponentID getComponentID();
+	static T* make(Node* _owner);
 	virtual void fromArchive(const Archive& archive) = 0;
 	virtual void toArchive(Archive& archive) = 0;
-	Archive* createArchive() { return createArchive(0); } // TODO: retrieve default version
-	Archive* createArchive(ArchiveComponentVersionType _version) { return new Archive(getComponentID(), _version); }
-	void destroyArchive(Archive* _archive) { delete _archive; }
+	Archive* createArchive();
+	Archive* createArchive(ArchiveComponentVersionType _version);
+	void destroyArchive(Archive* _archive);
 protected:
-	void fromArchiveBase(const ArchiveComponent& _archive) override {
-		AKA_ASSERT(_archive.getComponentID() == getComponentID(), "Invalid component archive");
-		fromArchive(reinterpret_cast<const Archive&>(_archive));
-	}
-	void toArchiveBase(ArchiveComponent& _archive) {
-		AKA_ASSERT(_archive.getComponentID() == getComponentID(), "Invalid component archive");
-		toArchive(reinterpret_cast<Archive&>(_archive));
-	}
-	ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) override {
-		return createArchive(_version);
-	}
-	void destroyArchiveBase(ArchiveComponent* _archive) {
-		AKA_ASSERT(_archive->getComponentID() == getComponentID(), "Invalid component archive");
-		destroyArchive(reinterpret_cast<Archive*>(_archive));
-	}
+	void fromArchiveBase(const ArchiveComponent& _archive) override;
+	void toArchiveBase(ArchiveComponent& _archive);
+	ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) override;
+	void destroyArchiveBase(ArchiveComponent* _archive);
 private:
 	static Factory<T> s_factory;
 };
+
+// This is being defined by AKA_DECL_COMPONENT
+template <typename T>
+static constexpr const char* getComponentName();
+
+template <typename T, typename A>
+const char* Component<T, A>::getName() {
+	return getComponentName<T>();
+}
+template <typename T, typename A>
+ComponentID Component<T, A>::getComponentID() {
+	static const ComponentID id = static_cast<ComponentID>(WSID(getName()));
+	return id;
+}
+template <typename T, typename A>
+T* Component<T, A>::make(Node* _owner) {
+	return reinterpret_cast<T*>(s_factory.allocate(_owner));
+}
+template <typename T, typename A>
+Component<T, A>::Archive* Component<T, A>::createArchive()
+{
+	return createArchive(0); // TODO: retrieve default version
+}
+template <typename T, typename A>
+Component<T, A>::Archive* Component<T, A>::createArchive(ArchiveComponentVersionType _version)
+{ 
+	return new Archive(getComponentID(), _version); 
+}
+template <typename T, typename A>
+void Component<T, A>::destroyArchive(Archive* _archive)
+{ 
+	delete _archive; 
+}
+template <typename T, typename A>
+void Component<T, A>::fromArchiveBase(const ArchiveComponent& _archive) 
+{
+	AKA_ASSERT(_archive.getComponentID() == getComponentID(), "Invalid component archive");
+	fromArchive(reinterpret_cast<const Archive&>(_archive));
+}
+template <typename T, typename A>
+void Component<T, A>::toArchiveBase(ArchiveComponent& _archive) 
+{
+	AKA_ASSERT(_archive.getComponentID() == getComponentID(), "Invalid component archive");
+	toArchive(reinterpret_cast<Archive&>(_archive));
+}
+template <typename T, typename A>
+ArchiveComponent* Component<T, A>::createArchiveBase(ArchiveComponentVersionType _version = 0)
+{
+	return createArchive(_version);
+}
+template <typename T, typename A>
+void Component<T, A>::destroyArchiveBase(ArchiveComponent* _archive) 
+{
+	AKA_ASSERT(_archive->getComponentID() == getComponentID(), "Invalid component archive");
+	destroyArchive(reinterpret_cast<Archive*>(_archive));
+}
 
 template <typename T, typename A>
 Factory<T> Component<T, A>::s_factory = Factory<T>(Component<T, A>::getComponentID());
