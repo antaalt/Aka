@@ -135,25 +135,20 @@ bool Memory::operator!=(const Memory& rhs)
 
 namespace mem {
 
-// DArray
-//template <typename T, AllocatorCategory Category = AllocatorCategory::Default>
-//using TempVector = aka::Vector<T, RingAllocator, getAllocator(AllocatorMemoryType::Temporary, Category)
-
-static MemoryAllocator GfxMemoryAllocator;
-static MemoryAllocator AudioMemoryAllocator;
-static MemoryAllocator DefaultMemoryAllocator;
-
-static DefaultAllocatorType GfxPersistentAllocator(&GfxMemoryAllocator, 1 << 16);
-static DefaultAllocatorType DefaultPersistentAllocator(&DefaultMemoryAllocator, 1LL << 31);
-static DefaultAllocatorType StringPersistentAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
-
-static TemporaryAllocatorType GfxTemporaryAllocator(&GfxMemoryAllocator, 1 << 16);
-static TemporaryAllocatorType DefaultTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
-static TemporaryAllocatorType StringTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16);
-
 // There should be some memory manager running everyframe & updating all blocks.
 Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persistent, AllocatorCategory category = AllocatorCategory::Default)
 {
+	static MemoryAllocator GfxMemoryAllocator;
+	static MemoryAllocator AudioMemoryAllocator;
+	static MemoryAllocator DefaultMemoryAllocator;
+
+	static DefaultAllocatorType GfxPersistentAllocator(&GfxMemoryAllocator, 1 << 16);
+	static DefaultAllocatorType DefaultPersistentAllocator(&DefaultMemoryAllocator, 1LL << 31);
+	static DefaultAllocatorType StringPersistentAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
+
+	static TemporaryAllocatorType GfxTemporaryAllocator(&GfxMemoryAllocator, 1 << 16);
+	static TemporaryAllocatorType DefaultTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
+	static TemporaryAllocatorType StringTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16);
 	switch (memory)
 	{
 	case aka::mem::AllocatorMemoryType::Temporary: {

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <functional>
 
+#include <Aka/Memory/Memory.h>
+
 namespace aka {
 
 template <typename T, size_t BlockCount>
@@ -33,8 +35,10 @@ private:
 template <typename T, size_t BlockCount = 512>
 class Pool final
 {
+	using AllocatorType = Allocator;
 public:
 	Pool();
+	Pool(AllocatorType& allocator);
 	Pool(const Pool&) = delete;
 	Pool& operator=(const Pool&) = delete;
 	Pool(Pool&&) = delete;
@@ -71,8 +75,9 @@ private:
 		uint8_t used[(BlockCount + 7) / 8]; // Bitmask for every element to check if it is currently used;
 		Block* next; // Next block if not enough space
 
-		static Block* create();
+		static Block* create(AllocatorType& _allocator);
 	};
+	AllocatorType& m_allocator;
 	size_t m_count; // Number of acquired elements
 	Block* m_block; // Memory block to store objects.
 	Chunk* m_freeList; // Free list for next available item in the pool.
@@ -81,17 +86,26 @@ private:
 
 template <typename T, size_t BlockCount>
 inline Pool<T, BlockCount>::Pool() :
+	Pool(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default))
+{
+}
+
+
+template <typename T, size_t BlockCount>
+inline Pool<T, BlockCount>::Pool(AllocatorType& _allocator) :
+	m_allocator(_allocator),
 	m_count(0),
-	m_block(Block::create()),
+	m_block(Block::create(m_allocator)),
 	m_freeList(nullptr)
 {
 	m_freeList = m_block->chunks;
 }
 
 template <typename T, size_t BlockCount>
-typename Pool<T, BlockCount>::Block* Pool<T, BlockCount>::Block::create()
+typename Pool<T, BlockCount>::Block* Pool<T, BlockCount>::Block::create(AllocatorType& _allocator)
 {
-	Block* block = new Block;
+	
+	Block* block = static_cast<Block*>(_allocator.allocate(sizeof(Block)));
 	memset(block->used, 0, sizeof(block->used));
 	block->next = nullptr;
 	// Init data free list.
@@ -113,7 +127,7 @@ inline Pool<T, BlockCount>::~Pool()
 	{
 		Block* currentBlock = nextBlock;
 		nextBlock = currentBlock->next;
-		delete currentBlock;
+		m_allocator.deallocate(currentBlock, sizeof(Block));
 	} while (nextBlock != nullptr);
 }
 template <typename T, size_t BlockCount>
@@ -127,7 +141,7 @@ inline T* Pool<T, BlockCount>::acquire(Args&&... args)
 		Block* lastBlock = m_block;
 		while (lastBlock->next != nullptr)
 			lastBlock = lastBlock->next;
-		lastBlock->next = Block::create();
+		lastBlock->next = Block::create(m_allocator);
 		m_freeList = lastBlock->next->chunks;
 		block = lastBlock->next;
 	}
