@@ -5,6 +5,11 @@
 
 namespace aka {
 
+ArchiveRigidBodyComponent::ArchiveRigidBodyComponent(ArchiveComponentVersionType _version) :
+	ArchiveComponent(Component<RigidBodyComponent, ArchiveRigidBodyComponent>::getComponentID(), _version)
+{
+}
+
 void ArchiveRigidBodyComponent::parse(BinaryArchive& archive)
 {
 	//archive.parse<AssetID>(assetID);

@@ -5,6 +5,11 @@
 
 namespace aka {
 
+ArchiveStaticMeshComponent::ArchiveStaticMeshComponent(ArchiveComponentVersionType _version) : 
+	ArchiveComponent(Component<StaticMeshComponent, ArchiveStaticMeshComponent>::getComponentID(), _version)
+{
+}
+
 void ArchiveStaticMeshComponent::parse(BinaryArchive& archive)
 {
 	archive.parse<AssetID>(assetID);

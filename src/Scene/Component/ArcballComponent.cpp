@@ -6,6 +6,11 @@
 
 namespace aka {
 
+ArchiveArcballComponent::ArchiveArcballComponent(ArchiveComponentVersionType _version) :
+	ArchiveComponent(Component<ArcballComponent, ArchiveArcballComponent>::getComponentID(), _version)
+{
+}
+
 ArcballComponent::ArcballComponent(Node* node) :
 	Component(node)
 {

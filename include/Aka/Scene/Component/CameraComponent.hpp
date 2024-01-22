@@ -96,7 +96,7 @@ struct CameraArcball : CameraController
 
 struct ArchiveCameraComponent : ArchiveComponent
 {
-	using ArchiveComponent::ArchiveComponent;
+	ArchiveCameraComponent(ArchiveComponentVersionType _version);
 
 	void parse(BinaryArchive& archive) override;
 

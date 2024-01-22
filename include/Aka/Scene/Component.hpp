@@ -3,12 +3,12 @@
 #include <Aka/OS/Archive.h>
 #include <Aka/Core/Config.h>
 #include <Aka/Core/Crc.hpp>
-#include <Aka/Memory/Pool.h>
 #include <Aka/Core/Container/String.h>
+#include <Aka/Core/Container/HashMap.hpp>
+#include <Aka/Scene/ComponentType.hpp>
+#include <Aka/Scene/ComponentAllocator.hpp>
 #include <Aka/Graphic/GraphicDevice.h>
 
-#include <set>
-#include <map>
 #include <iostream>
 
 namespace aka {
@@ -20,36 +20,9 @@ class ComponentBase;
 struct Archive;
 struct ArchiveComponent;
 
-// Unique ComponentID for serialization, based on component class name.
-// Each component need to implement AKA_DECL_COMPONENT(ComponentName) macro to declare it.
-enum class ComponentID : uint32_t { Invalid = (uint32_t)-1 };
 
-enum class ComponentState
-{
-	PendingActivation,
-	Active,
-	PendingDestruction,
-};
-
-enum class ComponentUpdateFlags : uint32_t
-{
-	None			= 0,
-
-	TransformUpdate	= 1 << 0,
-	HierarchyUpdate	= 1 << 1,
-	Update			= 1 << 2,
-	FixedUpdate		= 1 << 3,
-	RenderUpdate	= 1 << 4,
-
-	All				= TransformUpdate | HierarchyUpdate | Update | FixedUpdate | RenderUpdate,
-};
-AKA_IMPLEMENT_BITMASK_OPERATOR(ComponentUpdateFlags);
-
-
-using ComponentSet = std::set<ComponentID>;
-using ComponentMap = std::map<ComponentID, ComponentBase*>;
-
-using ArchiveComponentVersionType = uint32_t;
+using ComponentSet = TreeSet<ComponentID>;
+using ComponentMap = TreeMap<ComponentID, ComponentBase*>;
 
 struct ArchiveComponent
 {
@@ -66,7 +39,6 @@ private:
 	ComponentID m_id;
 	ArchiveComponentVersionType m_version;
 };
-
 
 class ComponentBase
 {
@@ -149,40 +121,16 @@ private:
 	ComponentUpdateFlags m_updateFlags; // Update flags of component.
 };
 
-struct FactoryBase {
-	FactoryBase(ComponentID _component);
-	virtual ~FactoryBase() {} // Do not release as pointer is not owned.
-protected:
-	virtual ComponentBase* allocate(Node* _owner) = 0;
-	virtual void free(ComponentBase* component) = 0;
-public:
-	static ComponentBase* make(ComponentID _id, Node* _owner);
-	static void unmake(ComponentBase* _component);
-private:
-	static std::map<ComponentID, FactoryBase*>& getFactoryMap();
-};
-template <typename T>
-struct Factory final : FactoryBase {
-	static_assert(std::is_base_of<ComponentBase, T>::value);
-	Factory(ComponentID _componentID) : FactoryBase(_componentID) {}
-	~Factory() {}
-	ComponentBase* allocate(Node* _owner) override { return m_pool.acquire(_owner); }
-	void free(ComponentBase* _component) override { m_pool.release(reinterpret_cast<T*>(_component)); }
-private:
-	Pool<T> m_pool;
-};
-
 template <typename T, typename A>
 struct Component : ComponentBase
 {
 	static_assert(std::is_base_of<ArchiveComponent, A>::value);
 public:
 	using Archive = A;
-	Component(Node* _node) : ComponentBase(_node, getComponentID()) {}
+	Component(Node* _node);
 	virtual ~Component() {};
 	static const char* getName();
 	static ComponentID getComponentID();
-	static T* make(Node* _owner);
 	virtual void fromArchive(const Archive& archive) = 0;
 	virtual void toArchive(Archive& archive) = 0;
 	Archive* createArchive();
@@ -194,13 +142,20 @@ protected:
 	ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) override;
 	void destroyArchiveBase(ArchiveComponent* _archive);
 private:
-	static Factory<T> s_factory;
+	// Self registering component allocator
+	static ComponentRegister<T> s_register;
 };
 
 // This is being defined by AKA_DECL_COMPONENT
 template <typename T>
 static constexpr const char* getComponentName();
 
+template <typename T, typename A>
+Component<T, A>::Component(Node* _node) : 
+	ComponentBase(_node, getComponentID()) 
+{ 
+	AKA_UNUSED(s_register); // Required to instantiate data
+}
 template <typename T, typename A>
 const char* Component<T, A>::getName() {
 	return getComponentName<T>();
@@ -211,18 +166,14 @@ ComponentID Component<T, A>::getComponentID() {
 	return id;
 }
 template <typename T, typename A>
-T* Component<T, A>::make(Node* _owner) {
-	return reinterpret_cast<T*>(s_factory.allocate(_owner));
-}
-template <typename T, typename A>
-Component<T, A>::Archive* Component<T, A>::createArchive()
+typename Component<T, A>::Archive* Component<T, A>::createArchive()
 {
 	return createArchive(0); // TODO: retrieve default version
 }
 template <typename T, typename A>
-Component<T, A>::Archive* Component<T, A>::createArchive(ArchiveComponentVersionType _version)
+typename Component<T, A>::Archive* Component<T, A>::createArchive(ArchiveComponentVersionType _version)
 { 
-	return new Archive(getComponentID(), _version); 
+	return new Archive(_version); 
 }
 template <typename T, typename A>
 void Component<T, A>::destroyArchive(Archive* _archive)
@@ -242,7 +193,7 @@ void Component<T, A>::toArchiveBase(ArchiveComponent& _archive)
 	toArchive(reinterpret_cast<Archive&>(_archive));
 }
 template <typename T, typename A>
-ArchiveComponent* Component<T, A>::createArchiveBase(ArchiveComponentVersionType _version = 0)
+ArchiveComponent* Component<T, A>::createArchiveBase(ArchiveComponentVersionType _version)
 {
 	return createArchive(_version);
 }
@@ -254,12 +205,12 @@ void Component<T, A>::destroyArchiveBase(ArchiveComponent* _archive)
 }
 
 template <typename T, typename A>
-Factory<T> Component<T, A>::s_factory = Factory<T>(Component<T, A>::getComponentID());
+ComponentRegister<T> Component<T, A>::s_register = ComponentRegister<T>(Component<T, A>::getComponentID());
 
 }; // namespace aka
 
-#define AKA_DECL_COMPONENT(ComponentType) \
-template <> \
+#define AKA_DECL_COMPONENT(ComponentType)								\
+template <>																\
 inline static constexpr const char* getComponentName<ComponentType>() { \
-	return AKA_STRINGIFY(ComponentType); \
-} \
+	return AKA_STRINGIFY(ComponentType);								\
+}

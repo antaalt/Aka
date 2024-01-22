@@ -1,20 +1,23 @@
 #include <Aka/Scene/Node.hpp>
 
 #include <Aka/Scene/Component/StaticMeshComponent.hpp>
+#include <Aka/Scene/NodeAllocator.hpp>
 
 namespace aka {
 
-Node::Node() : 
+Node::Node(NodeAllocator* _allocator) :
 	m_parent(nullptr),
 	m_name("Unknown"),
+	m_allocator(_allocator),
 	m_updateFlags(NodeUpdateFlag::None),
 	m_localTransform(mat4f::identity()),
 	m_cacheWorldTransform(mat4f::identity())
 {
 }
-Node::Node(const char* name) : 
+Node::Node(const char* name, NodeAllocator* _allocator) :
 	m_parent(nullptr),
 	m_name(name),
+	m_allocator(_allocator),
 	m_updateFlags(NodeUpdateFlag::None),
 	m_localTransform(mat4f::identity()),
 	m_cacheWorldTransform(mat4f::identity())
@@ -56,19 +59,19 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 	for (std::pair<ComponentID, ComponentBase*> component : m_componentsToActivate)
 	{
 		component.second->detach();
-		FactoryBase::unmake(component.second);
+		m_allocator->deallocate(component.second);
 	}
 	for (std::pair<ComponentID, ComponentBase*> component : m_componentsActive)
 	{
 		component.second->deactivate(library, renderer);
 		component.second->detach();
-		FactoryBase::unmake(component.second);
+		m_allocator->deallocate(component.second);
 	}
 	for (std::pair<ComponentID, ComponentBase*> component : m_componentsToDeactivate)
 	{
 		component.second->deactivate(library, renderer);
 		component.second->detach();
-		FactoryBase::unmake(component.second);
+		m_allocator->deallocate(component.second);
 	}
 	m_componentIDs.clear();
 	m_componentsToActivate.clear();
@@ -91,7 +94,7 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 		{
 			component.second->deactivate(library, renderer);
 			component.second->detach();
-			FactoryBase::unmake(component.second);
+			m_allocator->deallocate(component.second);
 		}
 		m_componentsToDeactivate.clear();
 	}

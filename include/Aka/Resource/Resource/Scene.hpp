@@ -3,7 +3,7 @@
 #include <Aka/Resource/Resource/Resource.hpp>
 #include <Aka/Core/Container/String.h>
 #include <Aka/Memory/Pool.h>
-#include <Aka/Scene/Node.hpp> // For Pool<Node>, might create cyclic dependencies
+#include <Aka/Scene/NodeAllocator.hpp>
 
 namespace aka {
 
@@ -23,7 +23,7 @@ private:
 	void destroy_internal(AssetLibrary* library, Renderer* _renderer) override;
 
 public:
-	uint32_t getNodeCount() const { return (uint32_t)m_nodePool.count(); }
+	uint32_t getNodeCount() const { return (uint32_t)m_allocator.getAllocatedNodeCount(); }
 	aabbox<> getBounds() const { return m_bounds; }
 	Node& getRootNode() { return *m_root; }
 	const Node& getRootNode() const { return *m_root; }
@@ -33,7 +33,7 @@ public:
 	void destroyChild(Node* node);
 private:
 	aabbox<> m_bounds;
-	Pool<Node> m_nodePool;
+	NodeAllocator m_allocator;
 	Node* m_mainCamera;
 	Node* m_root;
 };

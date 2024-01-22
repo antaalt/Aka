@@ -13,22 +13,20 @@ namespace aka {
 
 Scene::Scene() :
 	Resource(ResourceType::Scene),
-	m_nodePool(),
-	m_root(m_nodePool.acquire("RootNode")),
+	m_allocator(),
+	m_root(m_allocator.create("RootNode")),
 	m_mainCamera(nullptr)
 {
 }
 Scene::Scene(AssetID _id, const String& _name) :
 	Resource(ResourceType::Scene, _id, _name),
-	m_nodePool(),
-	m_root(m_nodePool.acquire("RootNode")),
+	m_allocator(),
+	m_root(m_allocator.create("RootNode")),
 	m_mainCamera(nullptr)
 {
 }
 Scene::~Scene()
 {
-	AKA_ASSERT(m_nodePool.count() == 0, "Node destroy missing");
-	m_nodePool.release([this](Node& node) { Logger::warn(node.getName(), " was not destroyed"); });
 }
 
 void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
@@ -39,7 +37,7 @@ void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _render
 	Vector<Node*> nodes;
 	for (const ArchiveSceneNode& node : scene.nodes)
 	{
-		Node* sceneNode = m_nodePool.acquire(node.name.cstr());
+		Node* sceneNode = m_allocator.create(node.name.cstr());
 		sceneNode->setLocalTransform(node.transform);
 		if (node.parentID != ArchiveSceneID::Invalid)
 		{
@@ -53,7 +51,7 @@ void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _render
 		}
 		for (const ArchiveSceneComponent& component : node.components)
 		{
-			ComponentBase* allocatedComponent = FactoryBase::make(component.id, sceneNode);
+			ComponentBase* allocatedComponent = m_allocator.allocate(component.id, sceneNode);
 			ArchiveComponent* archiveComponent = allocatedComponent->createArchiveBase();
 			AKA_ASSERT(archiveComponent != nullptr && allocatedComponent != nullptr, "Component allocation failed.");
 			archiveComponent->load(component.archive);
@@ -128,19 +126,19 @@ void Scene::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer
 	}
 }
 
-void recurseDestroy(Pool<Node>& pool, Node* root)
+void recurseDestroy(NodeAllocator& allocator, Node* root)
 {
 	for (uint32_t i = 0; i < root->getChildCount(); i++)
 	{
-		recurseDestroy(pool, root->getChild(i));
+		recurseDestroy(allocator, root->getChild(i));
 	}
-	pool.release(root);
+	allocator.destroy(root);
 }
 
 void Scene::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 {
 	m_root->destroy(_library, _renderer);
-	recurseDestroy(m_nodePool, m_root);
+	recurseDestroy(m_allocator, m_root);
 }
 
 void Scene::setMainCameraNode(Node* parent)
@@ -154,7 +152,7 @@ Node* Scene::createChild(Node* parent, const char* name)
 {
 	if (parent == nullptr)
 		parent = m_root;
-	Node* child = m_nodePool.acquire(name);
+	Node* child = m_allocator.create(name);
 	parent->addChild(child);
 	return child;
 }
@@ -165,7 +163,7 @@ void Scene::destroyChild(Node* node)
 	//AKA_ASSERT(m_nodePool.own(node), "Do not own pool");
 	//AKA_ASSERT(m_root != node, "Cannot unlink root node.");
 	//node->unlink();
-	m_nodePool.release(node);
+	m_allocator.destroy(node);
 }
 
 }

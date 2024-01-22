@@ -43,6 +43,8 @@ add_library (Aka
 
 	"src/Scene/Component.cpp"
 	"src/Scene/Node.cpp"
+	"src/Scene/NodeAllocator.cpp"
+	"src/Scene/ComponentAllocator.cpp"
 	"src/Scene/Component/CameraComponent.cpp"
 	"src/Scene/Component/ArcballComponent.cpp"
 	"src/Scene/Component/StaticMeshComponent.cpp"

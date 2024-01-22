@@ -10,7 +10,7 @@ namespace aka {
 
 struct ArchiveSkeletalMeshComponent : ArchiveComponent
 {
-	using ArchiveComponent::ArchiveComponent;
+	ArchiveSkeletalMeshComponent(ArchiveComponentVersionType _version);
 
 	AssetID assetID = AssetID::Invalid;
 

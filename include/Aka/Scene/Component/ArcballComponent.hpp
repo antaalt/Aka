@@ -12,7 +12,7 @@ namespace aka {
 
 struct ArchiveArcballComponent : ArchiveComponent
 {
-	using ArchiveComponent::ArchiveComponent;
+	ArchiveArcballComponent(ArchiveComponentVersionType _version);
 
 	void parse(BinaryArchive& archive) override;
 };

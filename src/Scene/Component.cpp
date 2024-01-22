@@ -103,20 +103,4 @@ bool ComponentBase::areRegistered(ComponentUpdateFlags flags)
 	return asBool(m_updateFlags & flags);
 }
 
-FactoryBase::FactoryBase(ComponentID _component) 
-{
-	getFactoryMap().insert(std::make_pair(_component, this)); 
-}
-
-ComponentBase* FactoryBase::make(ComponentID _id, Node* _owner) {
-	return getFactoryMap()[_id]->allocate(_owner);
-}
-void FactoryBase::unmake(ComponentBase* _component) {
-	getFactoryMap()[_component->getComponentID()]->free(_component);
-}
-std::map<ComponentID, FactoryBase*>& FactoryBase::getFactoryMap() {
-	static std::map<ComponentID, FactoryBase*> s_factories;
-	return s_factories;
-}
-
 };

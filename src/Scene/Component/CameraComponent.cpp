@@ -6,6 +6,11 @@
 
 namespace aka {
 
+ArchiveCameraComponent::ArchiveCameraComponent(ArchiveComponentVersionType _version) :
+	ArchiveComponent(Component<CameraComponent, ArchiveCameraComponent>::getComponentID(), _version)
+{
+}
+
 mat4f CameraPerspective::projection() const
 {
 	return mat4f::perspective(hFov, ratio, nearZ, farZ);

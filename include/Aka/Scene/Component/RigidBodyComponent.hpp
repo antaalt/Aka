@@ -21,7 +21,7 @@ class ColliderComponent
 // Not a main issue though, firstly need a component update ordering.
 struct ArchiveRigidBodyComponent : ArchiveComponent
 {
-	using ArchiveComponent::ArchiveComponent;
+	ArchiveRigidBodyComponent(ArchiveComponentVersionType _version);
 
 	void parse(BinaryArchive& archive) override;
 };

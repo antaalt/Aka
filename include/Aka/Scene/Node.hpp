@@ -8,6 +8,8 @@
 
 namespace aka {
 
+class NodeAllocator;
+
 enum class NodeUpdateFlag : uint32_t
 {
 	None				= 0,
@@ -17,21 +19,15 @@ enum class NodeUpdateFlag : uint32_t
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
-struct ComponentRange 
-{
-	ComponentRange(ComponentMap& iterator);
-
-	ComponentMap::iterator begin() { return m_iterator; }
-	ComponentMap::iterator end();
-private:
-	ComponentMap::iterator m_iterator;
-};
-
 class Node
 {
 public:
-	Node();
-	Node(const char* name);
+	Node(NodeAllocator* _allocator); // TODO get a global one instead ?
+	Node(const Node&) = delete;
+	Node(Node&&) = delete;
+	Node& operator=(const Node&) = delete;
+	Node& operator=(Node&&) = delete;
+	Node(const char* name, NodeAllocator* _allocator);
 	virtual ~Node();
 
 	void attach(ComponentBase* component);
@@ -116,6 +112,7 @@ private: // Data
 	ComponentMap m_componentsToActivate;
 	ComponentMap m_componentsToDeactivate;
 private:
+	NodeAllocator* m_allocator;
 	NodeUpdateFlag m_updateFlags;
 };
 
@@ -126,7 +123,7 @@ inline T& Node::attach()
 	ComponentID id = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(!has<T>(), "Trying to attach already attached component");
 	m_componentIDs.insert(id);
-	T* component = Component<T, T::Archive>::make(this);
+	T* component = m_allocator->allocate<T>(this);
 	component->onAttach();
 	m_componentsToActivate.insert(std::make_pair(id, component));
 	return *component;
