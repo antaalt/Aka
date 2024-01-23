@@ -141,11 +141,51 @@ void Scene::destroy_internal(AssetLibrary* _library, Renderer* _renderer)
 	recurseDestroy(m_allocator, m_root);
 }
 
+void Scene::update(Time _deltaTime)
+{
+	m_allocator.visitComponentPools([=](ComponentBase& _component) {
+		if (_component.getState() == ComponentState::Active)
+		{
+			_component.update(_deltaTime);
+		}
+	});
+}
+void Scene::fixedUpdate(Time _deltaTime)
+{
+	m_allocator.visitComponentPools([=](ComponentBase& _component) {
+		if (_component.getState() == ComponentState::Active)
+		{
+			_component.fixedUpdate(_deltaTime);
+		}
+	});
+}
+void Scene::update(AssetLibrary* _library, Renderer* _renderer)
+{
+	// Activate & deactive required nodes & prepareUpdate
+	// TODO: node activation & deactivation could be done from pool instead.
+	m_allocator.visitNodes([=](Node& _node) {
+		_node.updateComponentLifecycle(_library, _renderer);
+		_node.prepareUpdate();
+	});
+	m_allocator.visitComponentPools([=](ComponentBase& _component) {
+		if (_component.getState() == ComponentState::Active)
+		{
+			_component.renderUpdate(_library, _renderer);
+		}
+	});
+	m_allocator.visitNodes([](Node& _node) {
+		_node.finishUpdate();
+	});
+}
+
 void Scene::setMainCameraNode(Node* parent)
 {
 	//AKA_ASSERT(m_nodePool.own(parent), "")
 	AKA_ASSERT(parent->has<CameraComponent>(), "");
 	m_mainCamera = parent;
+}
+void Scene::visitChildrens(std::function<void(Node*)> _callback) {
+	m_root->visitChildrens(_callback);
 }
 
 Node* Scene::createChild(Node* parent, const char* name)

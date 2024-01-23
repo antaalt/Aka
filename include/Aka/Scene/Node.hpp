@@ -47,12 +47,12 @@ public:
 	void create(AssetLibrary* library, Renderer* renderer);
 	// Destroy the node data & all its components.
 	void destroy(AssetLibrary* library, Renderer* renderer);
-	// Update the node data, and ensure components are up to date.
-	void update(AssetLibrary* library, Renderer* renderer);
-	// Update the component with delta time.
-	void update(Time deltaTime);
-	// Update the component with a fixed timestep.
-	void fixedUpdate(Time deltaTime);
+	// Update the node components, activating & deactivating them as requested.
+	void updateComponentLifecycle(AssetLibrary* library, Renderer* renderer);
+	// Prepare the update of components.
+	void prepareUpdate();
+	// Finish the update of the node data.
+	void finishUpdate();
 public:
 	// Get node name
 	const String& getName() const { return m_name; }
@@ -87,6 +87,8 @@ public:
 	Node* getChild(uint32_t iChild);
 	// Get child n
 	const Node* getChild(uint32_t iChild) const;
+	// Visit childrens
+	void visitChildrens(std::function<void(Node*)> _callback);
 private: // Hierarchy
 	Node* m_parent;
 	Vector<Node*> m_childrens;

@@ -11,7 +11,7 @@ namespace aka {
 template <typename T, size_t BlockCount>
 class Pool;
 
-template <typename T, size_t BlockCount>
+template <typename T, size_t BlockCount = 512>
 class PoolIterator {
 public:
 	explicit PoolIterator(typename Pool<T, BlockCount>::Block* _block, typename Pool<T, BlockCount>::Chunk* _begin);
@@ -30,6 +30,18 @@ private:
 private:
 	typename Pool<T, BlockCount>::Chunk* m_current;
 	typename Pool<T, BlockCount>::Block* m_block;
+};
+
+
+template <typename T>
+class PoolRange 
+{
+public:
+	PoolRange(PoolIterator<T> _begin, PoolIterator<T> _end) : m_begin(_begin), m_end(_end) {}
+	PoolIterator<T> begin() { m_begin; }
+	PoolIterator<T> end() { m_end; }
+private:
+	PoolIterator<T> m_begin, m_end;
 };
 
 template <typename T, size_t BlockCount = 512>

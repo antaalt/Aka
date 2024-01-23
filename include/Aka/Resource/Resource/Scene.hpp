@@ -21,16 +21,19 @@ private:
 	void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) override;
 	void toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer) override;
 	void destroy_internal(AssetLibrary* library, Renderer* _renderer) override;
-
 public:
-	uint32_t getNodeCount() const { return (uint32_t)m_allocator.getAllocatedNodeCount(); }
+	void update(Time _deltaTime);
+	void fixedUpdate(Time _deltaTime);
+	void update(AssetLibrary* _library, Renderer* _renderer);
+
 	aabbox<> getBounds() const { return m_bounds; }
-	Node& getRootNode() { return *m_root; }
-	const Node& getRootNode() const { return *m_root; }
-	const Node* getMainCameraNode() const { return m_mainCamera; }
-	void setMainCameraNode(Node* node);
+	void visitChildrens(std::function<void(Node*)> _callback);
 	Node* createChild(Node* parent, const char* name);
 	void destroyChild(Node* node);
+
+	// TODO: getmainCameraNode should be determined with cameracomponent :: main
+	const Node* getMainCameraNode() const { return m_mainCamera; }
+	void setMainCameraNode(Node* node);
 private:
 	aabbox<> m_bounds;
 	NodeAllocator m_allocator;

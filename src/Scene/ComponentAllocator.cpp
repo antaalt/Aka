@@ -40,11 +40,19 @@ ComponentAllocatorMap::~ComponentAllocatorMap()
 
 void ComponentAllocatorMap::add(ComponentID _componentID, ComponentAllocatorBase* _componentAllocator)
 {
+	std::cout << "Registering component " << _componentAllocator->getName() << std::endl;
 	m_container.insert(std::make_pair(_componentID, _componentAllocator));
 }
 ComponentAllocatorBase* ComponentAllocatorMap::get(ComponentID _componentID)
 {
 	return m_container[_componentID];
+}
+void ComponentAllocatorMap::visit(std::function<void(ComponentAllocatorBase*)> _callback)
+{
+	for (auto& pair : m_container)
+	{
+		_callback(pair.second);
+	}
 }
 ComponentAllocatorMap& getDefaultComponentAllocators() {
 	// Pass allocator to ComponentAllocator so that it outlives it & avoid a crash because allocator is used in pool destructor but it was already destroyed.

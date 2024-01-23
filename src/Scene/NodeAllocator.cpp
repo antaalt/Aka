@@ -30,5 +30,22 @@ void NodeAllocator::destroy(Node* _node)
 {
 	return m_nodePool.release(_node);
 }
+void NodeAllocator::visitNodes(std::function<void(Node&)> _callback) {
+	for (Node& node : m_nodePool)
+	{
+		_callback(node);
+	}
+}
+void NodeAllocator::visitComponentPools(std::function<void(ComponentBase&)> _callback) {
+	m_componentMap.visit([=](ComponentAllocatorBase* _componentAllocator) {
+		_componentAllocator->visitPool([=](ComponentBase& _component) {
+			_callback(_component);
+			});
+		});
+}
+void NodeAllocator::visitComponentPool(ComponentID _componentID, std::function<void(ComponentBase&)> _callback) {
+	ComponentAllocatorBase* allocator = m_componentMap.get(_componentID);
+	allocator->visitPool(_callback);
+}
 
 }

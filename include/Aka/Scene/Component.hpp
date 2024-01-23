@@ -49,6 +49,7 @@ public:
 
 protected:
 	friend class Node;
+	friend class Scene;
 
 	void attach();
 	void detach();
@@ -146,9 +147,10 @@ private:
 	static ComponentRegister<T> s_register;
 };
 
-// This is being defined by AKA_DECL_COMPONENT
 template <typename T>
-static constexpr const char* getComponentName();
+static constexpr const char* getComponentName() {
+	static_assert(false); // This is being defined by AKA_DECL_COMPONENT
+}
 
 template <typename T, typename A>
 Component<T, A>::Component(Node* _node) : 
@@ -205,7 +207,7 @@ void Component<T, A>::destroyArchiveBase(ArchiveComponent* _archive)
 }
 
 template <typename T, typename A>
-ComponentRegister<T> Component<T, A>::s_register = ComponentRegister<T>(Component<T, A>::getComponentID());
+ComponentRegister<T> Component<T, A>::s_register = ComponentRegister<T>(Component<T, A>::getComponentID(), Component<T, A>::getName());
 
 }; // namespace aka
 

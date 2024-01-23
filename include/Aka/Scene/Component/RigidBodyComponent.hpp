@@ -12,13 +12,7 @@ class ColliderComponent
 	void update(Time deltaTime);
 };
 
-// TODO we have an issue here which is component ordering.
-// If we cant determine an order for components, we lose.
-// Some components need to be updated before others...
-// Should have some global component pool.
-// We do not need to iterate on nodes recursively as well...
-// might be interesting if we want to skip some nodes for examples, but other way its not for perf.
-// Not a main issue though, firstly need a component update ordering.
+
 struct ArchiveRigidBodyComponent : ArchiveComponent
 {
 	ArchiveRigidBodyComponent(ArchiveComponentVersionType _version);

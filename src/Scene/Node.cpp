@@ -79,7 +79,7 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 	m_componentsToDeactivate.clear();
 }
 
-void Node::update(AssetLibrary* library, Renderer* renderer)
+void Node::updateComponentLifecycle(AssetLibrary* library, Renderer* renderer)
 {
 	{ // Components lifecycle.
 		// Activate components
@@ -98,6 +98,10 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 		}
 		m_componentsToDeactivate.clear();
 	}
+}
+
+void Node::prepareUpdate()
+{
 	if (asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
 	{
 		m_cacheWorldTransform = computeWorldTransform();
@@ -114,44 +118,13 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 			component.second->hierarchyUpdate();
 		}
 	}
+}
 
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->renderUpdate(library, renderer);
-	}
-
-	// Update children
-	for (Node* childrens : m_childrens)
-	{
-		childrens->update(library, renderer);
-	}
+void Node::finishUpdate()
+{
 	// Remove flag after so that child can check if this flag is set
 	m_updateFlags &= ~NodeUpdateFlag::TransformUpdated;
 	m_updateFlags &= ~NodeUpdateFlag::HierarchyUpdated;
-}
-
-void Node::update(Time deltaTime)
-{
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->update(deltaTime);
-	}
-	for (Node* children : m_childrens)
-	{
-		children->update(deltaTime);
-	}
-}
-
-void Node::fixedUpdate(Time deltaTime)
-{
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->fixedUpdate(deltaTime);
-	}
-	for (Node* children : m_childrens)
-	{
-		children->fixedUpdate(deltaTime);
-	}
 }
 
 void Node::unlink()
@@ -216,6 +189,14 @@ Node* Node::getChild(uint32_t iChild)
 const Node* Node::getChild(uint32_t iChild) const
 {
 	return m_childrens[iChild];
+}
+
+void Node::visitChildrens(std::function<void(Node*)> _callback)
+{
+	for (Node* child : m_childrens) 
+	{
+		_callback(child);
+	}
 }
 
 const mat4f& Node::getLocalTransform() const
