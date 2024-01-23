@@ -142,8 +142,10 @@ protected:
 	void toArchiveBase(ArchiveComponent& _archive);
 	ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) override;
 	void destroyArchiveBase(ArchiveComponent* _archive);
+public:
+	static ComponentAllocator<T>* create();
+	static void destroy(ComponentAllocator<T>* _allocator);
 private:
-	// Self registering component allocator
 	static ComponentRegister<T> s_register;
 };
 
@@ -204,6 +206,16 @@ void Component<T, A>::destroyArchiveBase(ArchiveComponent* _archive)
 {
 	AKA_ASSERT(_archive->getComponentID() == getComponentID(), "Invalid component archive");
 	destroyArchive(reinterpret_cast<Archive*>(_archive));
+}
+template<typename T, typename A>
+ComponentAllocator<T>* Component<T, A>::create()
+{
+	return s_register.create();
+}
+template<typename T, typename A>
+void Component<T, A>::destroy(ComponentAllocator<T>* _allocator)
+{
+	return s_register.destroy(_allocator);
 }
 
 template <typename T, typename A>

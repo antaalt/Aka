@@ -45,9 +45,7 @@ public:
 	{
 		m_pool.release(_component);
 	}
-	ComponentAllocatorBase* clone() const override {
-		return new ComponentAllocator<T>(getComponentID(), getName());
-	}
+	ComponentAllocatorBase* clone() const override;
 	PoolIterator<T> begin() { return m_pool.begin(); }
 	PoolIterator<T> end() { return m_pool.end(); }
 protected:
@@ -89,13 +87,31 @@ private:
 // Get the prototype of all component allocator map
 ComponentAllocatorMap& getDefaultComponentAllocators();
 
-// Self instancing helper for component allocator
 template <typename T>
 class ComponentRegister {
 public:
-	ComponentRegister(ComponentID _componentID, const char* _name) {
-		getDefaultComponentAllocators().add(_componentID, new ComponentAllocator<T>(_componentID, _name));
+	ComponentRegister(ComponentID _componentID, const char* _name) : 
+		m_componentID(_componentID),
+		m_name(_name)
+	{
+		// Self register here.
+		getDefaultComponentAllocators().add(m_componentID, create());
 	}
+	ComponentAllocator<T>* create() {
+		return new ComponentAllocator<T>(m_componentID, m_name);
+	}
+	void destroy(ComponentAllocator<T>* _allocator) {
+		AKA_ASSERT(_allocator->getComponentID() == m_componentID, "Invalid component ID");
+		delete _allocator;
+	}
+private:
+	ComponentID m_componentID;
+	const char* m_name;
 };
+
+template <typename T>
+ComponentAllocatorBase* ComponentAllocator<T>::clone() const {
+	return Component<T, T::Archive>::create();
+}
 
 };

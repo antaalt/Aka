@@ -45,6 +45,7 @@ void ComponentAllocatorMap::add(ComponentID _componentID, ComponentAllocatorBase
 }
 ComponentAllocatorBase* ComponentAllocatorMap::get(ComponentID _componentID)
 {
+	AKA_ASSERT(m_container.find(_componentID) != m_container.end(), "Component does not exist");
 	return m_container[_componentID];
 }
 void ComponentAllocatorMap::visit(std::function<void(ComponentAllocatorBase*)> _callback)
