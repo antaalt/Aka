@@ -38,8 +38,8 @@ class PoolRange
 {
 public:
 	PoolRange(PoolIterator<T> _begin, PoolIterator<T> _end) : m_begin(_begin), m_end(_end) {}
-	PoolIterator<T> begin() { m_begin; }
-	PoolIterator<T> end() { m_end; }
+	PoolIterator<T> begin() { return m_begin; }
+	PoolIterator<T> end() { return m_end; }
 private:
 	PoolIterator<T> m_begin, m_end;
 };

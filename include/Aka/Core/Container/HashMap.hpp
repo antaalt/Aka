@@ -10,6 +10,9 @@ namespace aka {
 template <typename Key, typename Type>
 using HashMap = std::unordered_map<Key, Type>;
 
+//template <typename Key, typename Type>
+//using LinkedHashMap = std::map<Key, Type>;
+
 template <typename Key, typename Type>
 using TreeMap = std::map<Key, Type>;
 

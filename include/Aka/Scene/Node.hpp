@@ -68,6 +68,8 @@ public:
 	NodeUpdateFlag getUpdateFlag() const { return m_updateFlags; }
 	// Check update flags
 	bool has(NodeUpdateFlag flag) const { return asBool(m_updateFlags & flag); }
+	// Get node allocator
+	NodeAllocator& getAllocator() { return *m_allocator; }
 public:
 	// Remove the node from the free, set its childs to its parent
 	void unlink();

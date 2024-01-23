@@ -1,4 +1,5 @@
 #include <Aka/Scene/Component/RigidBodyComponent.hpp>
+#include <Aka/Scene/Component/ColliderComponent.hpp>
 #include <Aka/Renderer/Renderer.hpp>
 #include <Aka/OS/Stream/MemoryStream.h>
 #include <Aka/Resource/AssetLibrary.hpp>
@@ -32,7 +33,7 @@ void RigidBodyComponent::onBecomeInactive(AssetLibrary* library, Renderer* _rend
 void RigidBodyComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 {
 }
-void RigidBodyComponent::onUpdate(Time deltaTime)
+void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 {
 	// TODO fixed update here ?
 	const float mass = 1.f; // kg (f=ma)
@@ -42,12 +43,25 @@ void RigidBodyComponent::onUpdate(Time deltaTime)
 	forces += gravity;
 	forces += airResistance;
 	vec3f acceleration = forces / mass; // F=ma, acceleration is in m/s^2
-	m_velocity += acceleration * deltaTime.seconds();
+	m_velocity += acceleration * _deltaTime.seconds();
 	// TODO: should use some curve that convert raw velocity to limited value (log is too harsh)
 	//const float maxVelocity = 256.f; // m/s
 	//const float velocityScale = 5.f; // m/s
 	//(geometry::log2(m_velocity.x) + maxVelocity);
-	getNode()->setLocalTransform(mat4f::translate(getNode()->getLocalTransform(), m_velocity * deltaTime.seconds()));
+	getNode()->setLocalTransform(mat4f::translate(getNode()->getLocalTransform(), m_velocity * _deltaTime.seconds()));
+
+	point3f transform = point3f(mat4f::extractTranslation(getNode()->getWorldTransform()));
+	for (ColliderComponent& collider : getNode()->getAllocator().components<ColliderComponent>()) {
+		point3f colliderTransform = point3f(mat4f::extractTranslation(collider.getNode()->getWorldTransform()));
+		if (point3f::distance(transform, colliderTransform) < 1.f)
+		{
+			// Handle collision
+			Logger::info("Collision !");
+		}
+	}
+}
+void RigidBodyComponent::onUpdate(Time _deltaTime)
+{
 }
 void RigidBodyComponent::fromArchive(const ArchiveRigidBodyComponent& archive)
 {
