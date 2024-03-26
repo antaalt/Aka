@@ -57,7 +57,7 @@ public:
 	virtual ~Application();
 private:
 	// Create the application and its resources.
-	void create(const Config& config);
+	void create();
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop
@@ -106,7 +106,7 @@ public:
 	Layer& getRoot();
 public:
 	// Entry point of the application
-	static void run(Application* app, const Config& config);
+	static void run(Application* app);
 	// Get the application
 	static Application* app();
 	// Get the graphic device
@@ -123,6 +123,7 @@ public:
 	AssetLibrary* assets();
 private:
 	static Application* s_app;
+	Config m_config;
 	PlatformDevice* m_platform;
 	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;

@@ -377,6 +377,7 @@ void Renderer::render(gfx::FrameHandle frame)
 	{
 		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
 		cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
+		// Here we could execute custom code...
 		cmd->endRenderPass();
 	}
 

@@ -18,6 +18,7 @@ namespace aka {
 Application* Application::s_app = nullptr;
 
 Application::Application(const Config& config) :
+	m_config(config),
 	m_platform(PlatformDevice::create(config.platform)),
 	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
 	m_audio(AudioDevice::create(config.audio)),
@@ -41,9 +42,9 @@ Application::~Application()
 	delete m_assets;
 	delete m_program;
 }
-void Application::create(const Config& config)
+void Application::create()
 {
-	OS::setcwd(config.directory);
+	OS::setcwd(m_config.directory);
 	AKA_ASSERT(m_platform != nullptr, "No platform");
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
 	AKA_ASSERT(m_audio != nullptr, "No audio");
@@ -51,15 +52,15 @@ void Application::create(const Config& config)
 	AKA_ASSERT(m_assets != nullptr, "No assets");
 	AKA_ASSERT(m_root != nullptr, "No layers");
 
-	m_platform->initialize(config.platform);
-	m_graphic->initialize(m_platform, config.graphic);
-	m_audio->initialize(config.audio);
+	m_platform->initialize(m_config.platform);
+	m_graphic->initialize(m_platform, m_config.graphic);
+	m_audio->initialize(m_config.audio);
 	m_renderer->create();
-	m_width = config.platform.width;
-	m_height = config.platform.height;
+	m_width = m_config.platform.width;
+	m_height = m_config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
 	m_root->create(renderer());
-	onCreate(config.argc, config.argv);
+	onCreate(m_config.argc, m_config.argv);
 }
 void Application::destroy()
 {
@@ -80,6 +81,10 @@ void Application::start()
 }
 void Application::update(Time deltaTime)
 {
+	// Hot reload shaders
+	// TODO: delay update not every frame
+	program()->reloadIfChanged(graphic());
+	// Update app
 	onUpdate(deltaTime);
 	m_root->update(deltaTime);
 	m_assets->update();
@@ -182,7 +187,7 @@ AssetLibrary* Application::assets()
 	return m_assets;
 }
 
-void Application::run(Application* app, const Config& config)
+void Application::run(Application* app)
 {
 	if (app == nullptr)
 		throw std::invalid_argument("No app set.");
@@ -192,7 +197,7 @@ void Application::run(Application* app, const Config& config)
 
 	s_app = app;
 
-	app->create(config);
+	app->create();
 
 	gfx::GraphicDevice* graphic = app->m_graphic;
 	Renderer* renderer = app->m_renderer;

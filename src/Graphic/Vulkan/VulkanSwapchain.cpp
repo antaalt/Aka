@@ -240,6 +240,11 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 		vk_colorTexture->vk_view[0] = view; // Set main image view
 		setDebugName(device->getVkDevice(), vk_images[i], "SwapchainColor", i);
 		setDebugName(device->getVkDevice(), view, "SwapchainColorView", i);
+		{
+			VkCommandBuffer cmd = VulkanCommandList::createSingleTime("TransitionBackbuffer", device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
+			VulkanTexture::transitionImageLayout(cmd, vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
+			VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic), cmd, device->getVkQueue(QueueType::Graphic));
+		}
 		// No memory
 		
 		// Create depth texture
@@ -258,6 +263,13 @@ void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 				TextureUsage::RenderTarget,
 				nullptr
 			);
+			VulkanTexture* vk_depth = device->getVk<VulkanTexture>(depthTexture);
+
+			{
+				VkCommandBuffer cmd = VulkanCommandList::createSingleTime("TransitionBackbuffer", device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
+				VulkanTexture::transitionImageLayout(cmd, vk_depth->vk_image, ResourceAccessType::Undefined, ResourceAccessType::Present, m_depthFormat);
+				VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic), cmd, device->getVkQueue(QueueType::Graphic));
+			}
 		}
 		
 		m_backbufferTextures[i].color = colorTexture;
