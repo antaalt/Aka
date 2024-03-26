@@ -74,13 +74,15 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	gfx::ShaderMask mask = getShaderMask(key);
 	const bool hasVertexStage = has(mask, gfx::ShaderMask::Vertex);
 	const bool hasFragmentStage = has(mask, gfx::ShaderMask::Fragment);
-	const bool hasGeometryStage = has(mask, gfx::ShaderMask::Geometry);
+	const bool hasTaskStage = has(mask, gfx::ShaderMask::Task);
+	const bool hasMeshStage = has(mask, gfx::ShaderMask::Mesh);
 	const bool hasComputeStage = has(mask, gfx::ShaderMask::Compute);
+	// TODO: add tesselation + ray support
 
 	const bool isVertexProgram = hasVertexStage && hasFragmentStage;
-	const bool isVertexGeometryProgram = isVertexProgram && hasGeometryStage;
+	const bool isMeshProgram = hasMeshStage && hasFragmentStage; // task shader optional
 	const bool isComputeProgram = hasComputeStage;
-	AKA_ASSERT(!(isVertexProgram && isComputeProgram) && (isVertexProgram || isComputeProgram), "Unknown stage");
+	AKA_ASSERT(!(isVertexProgram && isComputeProgram) && !(isVertexProgram && isMeshProgram) && (isVertexProgram || isComputeProgram || isMeshProgram), "Unknown stage");
 
 	const size_t ShaderTypeCount = 6;
 	Array<ShaderData, ShaderTypeCount> datas;
@@ -149,25 +151,24 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	if (isVertexProgram)
 	{
 		name = "GraphicProgram" + name;
-		program = device->createGraphicProgram(
+		program = device->createVertexProgram(
 			name.cstr(),
 			shaders[EnumToIndex(gfx::ShaderType::Vertex)],
 			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
-			gfx::ShaderHandle::null,
 			states,
 			static_cast<uint32_t>(setCount),
 			constants,
 			static_cast<uint32_t>(constantCount)
 		);
 	}
-	else if (isVertexGeometryProgram)
+	else if (isMeshProgram)
 	{
 		name = "GraphicProgram" + name;
-		program = device->createGraphicProgram(
+		program = device->createMeshProgram(
 			name.cstr(),
-			shaders[EnumToIndex(gfx::ShaderType::Vertex)],
+			hasTaskStage ? shaders[EnumToIndex(gfx::ShaderType::Task)] : gfx::ShaderHandle::null,
+			shaders[EnumToIndex(gfx::ShaderType::Mesh)],
 			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
-			shaders[EnumToIndex(gfx::ShaderType::Geometry)],
 			states,
 			static_cast<uint32_t>(setCount),
 			constants,
@@ -244,13 +245,29 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 				}
 			}
 		}
-		if (program->geometry != gfx::ShaderHandle::null)
+		if (program->task != gfx::ShaderHandle::null)
 		{
 			for (auto shaderKey : programKey.shaders)
 			{
-				if (shaderKey.type == gfx::ShaderType::Geometry && getRefCount(shaderKey) == 1)
+				if (shaderKey.type == gfx::ShaderType::Task && getRefCount(shaderKey) == 1)
 				{
-					device->destroy(program->geometry);
+					device->destroy(program->task);
+					auto itShader = m_shaders.find(shaderKey);
+					if (itShader != m_shaders.end())
+						m_shaders.erase(itShader);
+					auto itShaderData = m_shadersFileData.find(shaderKey);
+					if (itShaderData != m_shadersFileData.end())
+						m_shadersFileData.erase(itShaderData);
+				}
+			}
+		}
+		if (program->mesh != gfx::ShaderHandle::null)
+		{
+			for (auto shaderKey : programKey.shaders)
+			{
+				if (shaderKey.type == gfx::ShaderType::Mesh && getRefCount(shaderKey) == 1)
+				{
+					device->destroy(program->mesh);
 					auto itShader = m_shaders.find(shaderKey);
 					if (itShader != m_shaders.end())
 						m_shaders.erase(itShader);

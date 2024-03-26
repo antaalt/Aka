@@ -14,9 +14,11 @@ enum class ShaderType : uint8_t
 	Vertex,
 	Fragment,
 	Compute,
-	Geometry,
+	Task,
+	Mesh,
 	TessControl,
 	TessEvaluation,
+	// TODO: add support for RTX
 
 	First = Vertex,
 	Last = TessEvaluation,
@@ -28,7 +30,8 @@ enum class ShaderMask : uint8_t
 	Vertex          = 1 << EnumToIndex(ShaderType::Vertex),
 	Fragment        = 1 << EnumToIndex(ShaderType::Fragment),
 	Compute         = 1 << EnumToIndex(ShaderType::Compute),
-	Geometry        = 1 << EnumToIndex(ShaderType::Geometry),
+	Task			= 1 << EnumToIndex(ShaderType::Task),
+	Mesh			= 1 << EnumToIndex(ShaderType::Mesh),
 	TessControl     = 1 << EnumToIndex(ShaderType::TessControl),
 	TessEvaluation  = 1 << EnumToIndex(ShaderType::TessEvaluation),
 };

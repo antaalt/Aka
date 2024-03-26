@@ -373,9 +373,12 @@ void Renderer::render(gfx::FrameHandle frame)
 	}
 
 	// Simple clear + transition render pass.
-	gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
-	cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
-	cmd->endRenderPass();
+	if (m_views.size() > 0)
+	{
+		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
+		cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState{ gfx::ClearMask::All, {0.f, 1.f, 0.f, 1.f}, 1.f, 0 });
+		cmd->endRenderPass();
+	}
 
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{

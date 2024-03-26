@@ -93,6 +93,7 @@ add_library (Aka
 	"src/Graphic/Vulkan/VulkanRenderPass.cpp"
 	"src/Graphic/Vulkan/VulkanFence.cpp"
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
+	"src/Graphic/Vulkan/Extensions/VkMeshShader.cpp"
 	"src/Graphic/Resource.cpp"
 	"src/Graphic/Program.cpp"
 	"src/Graphic/GraphicDevice.cpp"

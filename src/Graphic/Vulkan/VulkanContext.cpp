@@ -399,15 +399,26 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
 
 	// VK_VERSION_1_1
+	VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};
+	meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+	meshShaderFeatures.pNext = &timelineSemaphoreFeatures;
+	meshShaderFeatures.taskShader = VK_TRUE;
+	meshShaderFeatures.meshShader = VK_TRUE;
+
+	// VK_VERSION_1_1
 	// TODO: Check physical device suitable for these features.
 	VkPhysicalDeviceFeatures2 deviceFeatures {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext = &timelineSemaphoreFeatures;
+	deviceFeatures.pNext = &meshShaderFeatures;
 	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
 	deviceFeatures.features.shaderFloat64 = VK_TRUE;
 	deviceFeatures.features.multiDrawIndirect = VK_TRUE;
 	deviceFeatures.features.fillModeNonSolid = VK_TRUE; // VK_POLYGON_MODE_LINE
+
+	// Renderdoc seems to require these features:
+	deviceFeatures.features.geometryShader = VK_TRUE; // render doc
+	deviceFeatures.features.sampleRateShading = VK_TRUE; // render doc
 
 	VkDeviceCreateInfo createInfo {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -487,6 +498,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
 		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+		VK_EXT_MESH_SHADER_EXTENSION_NAME,
 	};
 	const size_t deviceExtensionCount = sizeof(deviceExtensions) / sizeof(*deviceExtensions);
 	if (!hasValidationLayerSupport(validationLayers, validationLayerCount))

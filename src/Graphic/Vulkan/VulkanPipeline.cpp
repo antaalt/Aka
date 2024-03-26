@@ -286,8 +286,10 @@ VkShaderStageFlagBits tovk(ShaderType type)
 		return VK_SHADER_STAGE_FRAGMENT_BIT;
 	case ShaderType::Compute:
 		return VK_SHADER_STAGE_COMPUTE_BIT;
-	case ShaderType::Geometry:
-		return VK_SHADER_STAGE_GEOMETRY_BIT;
+	case ShaderType::Task:
+		return VK_SHADER_STAGE_TASK_BIT_EXT;
+	case ShaderType::Mesh:
+		return VK_SHADER_STAGE_MESH_BIT_EXT;
 	}
 }
 
@@ -335,15 +337,17 @@ void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 	{
 		vk_shaders.push_back(vertex);
 	}
+	if (VulkanShader* task = device->getVk<VulkanShader>(vk_program->task))
+	{
+		vk_shaders.push_back(task);
+	}
+	if (VulkanShader* mesh = device->getVk<VulkanShader>(vk_program->mesh))
+	{
+		vk_shaders.push_back(mesh);
+	}
 	if (VulkanShader* fragment = device->getVk<VulkanShader>(vk_program->fragment))
 	{
 		vk_shaders.push_back(fragment);
-		AKA_ASSERT(vk_shaders.size() == 2, "Missing vertex shader");
-	}
-	if (VulkanShader* geometry = device->getVk<VulkanShader>(vk_program->geometry))
-	{
-		vk_shaders.push_back(geometry);
-		AKA_ASSERT(vk_shaders.size() == 3, "Missing vertex or fragment shader");
 	}
 	vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
 		device->getVkDevice(),

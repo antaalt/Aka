@@ -416,16 +416,29 @@ void VulkanCommandList::push(uint32_t offset, uint32_t range, const void* data, 
 void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount, uint32_t instanceOffset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->vertex != gfx::ShaderHandle::null, "Trying draw but vertex shader is missing");
 	vkCmdDraw(vk_command, vertexCount, instanceCount, vertexOffset, instanceOffset);
 }
 void VulkanCommandList::drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount, uint32_t instanceOffset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->vertex != gfx::ShaderHandle::null, "Trying draw indexed but vertex shader is missing");
 	vkCmdDrawIndexed(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+	//vkCmdDrawIndirect(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+	//vkCmdDrawIndirectCount(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+}
+void VulkanCommandList::drawMeshTasks(uint32_t groupX, uint32_t groupY, uint32_t groupZ)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->mesh != gfx::ShaderHandle::null, "Trying draw indexed but vertex shader is missing");
+	vkCmdDrawMeshTasksEXT(vk_command, groupX, groupY, groupZ);
+	//vkCmdDrawMeshTasksIndirectCountEXT(vk_command, groupX, groupY, groupZ);
+	//vkCmdDrawMeshTasksIndirectEXT(vk_command, groupX, groupY, groupZ);
 }
 void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) 
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->compute != gfx::ShaderHandle::null, "Trying dispatch but compute shader is missing");
 	vkCmdDispatch(vk_command, groupX, groupY, groupZ);
 }
 

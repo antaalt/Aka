@@ -7,9 +7,10 @@ namespace gfx {
 
 Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Resource(name, ResourceType::Program),
+	task(ShaderHandle::null),
+	mesh(ShaderHandle::null),
 	vertex(vertex),
 	fragment(fragment),
-	geometry(ShaderHandle::null),
 	compute(ShaderHandle::null),
 	sets{},
 	constants{},
@@ -22,11 +23,12 @@ Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, c
 	memcpy(this->constants, constants, constantCount * sizeof(ShaderConstant));
 }
 
-Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
+Program::Program(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Resource(name, ResourceType::Program),
-	vertex(vertex),
+	task(task),
+	mesh(mesh),
+	vertex(ShaderHandle::null),
 	fragment(fragment),
-	geometry(geometry),
 	compute(ShaderHandle::null),
 	sets{},
 	constants{},
@@ -40,9 +42,10 @@ Program::Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, S
 }
 Program::Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
 	Resource(name, ResourceType::Program),
+	task(ShaderHandle::null),
+	mesh(ShaderHandle::null),
 	vertex(ShaderHandle::null),
 	fragment(ShaderHandle::null),
-	geometry(ShaderHandle::null),
 	compute(compute),
 	sets{},
 	constants{},
@@ -114,9 +117,13 @@ bool Program::hasFragmentStage() const
 {
 	return fragment != ShaderHandle::null;
 }
-bool Program::hasGeometryStage() const
+bool Program::hasMeshStage() const
 {
-	return geometry != ShaderHandle::null;
+	return mesh != ShaderHandle::null;
+}
+bool Program::hasTaskStage() const
+{
+	return task != ShaderHandle::null;
 }
 bool Program::hasComputeStage() const
 {
@@ -125,11 +132,11 @@ bool Program::hasComputeStage() const
 
 ProgramHandle Program::createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
 {
-	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, ShaderHandle::null, bindings, count, constants, constantCount);
+	return Application::app()->graphic()->createVertexProgram(name, vertex, fragment, bindings, count, constants, constantCount);
 }
-ProgramHandle Program::createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
+ProgramHandle Program::createMesh(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
 {
-	return Application::app()->graphic()->createGraphicProgram(name, vertex, fragment, geometry, bindings, count, constants, constantCount);
+	return Application::app()->graphic()->createMeshProgram(name, task, mesh, fragment, bindings, count, constants, constantCount);
 }
 ProgramHandle Program::createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount)
 {

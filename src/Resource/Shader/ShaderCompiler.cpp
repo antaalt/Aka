@@ -111,7 +111,16 @@ const TBuiltInResource defaultConf = {
 	1, // .maxTaskWorkGroupSizeY_NV
 	1, // .maxTaskWorkGroupSizeZ_NV
 	4, // .maxMeshViewCountNV
-	1, // maxDualSourceDrawBuffersEXT;
+	256, // .maxMeshOutputVerticesEXT
+	512, // .maxMeshOutputPrimitivesEXT
+	32, // .maxMeshWorkGroupSizeX_EXT
+	1, // .maxMeshWorkGroupSizeY_EXT
+	1, // .maxMeshWorkGroupSizeZ_EXT
+	32, // .maxTaskWorkGroupSizeX_EXT
+	1, // .maxTaskWorkGroupSizeY_EXT
+	1, // .maxTaskWorkGroupSizeZ_EXT
+	4, // .maxMeshViewCountEXT
+	1, // .maxDualSourceDrawBuffersEXT;
 	TLimits{ // limits
 		true, // .nonInductiveForLoops
 		true, // .whileLoops
@@ -209,8 +218,11 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	case ShaderType::Compute:
 		stage = EShLangCompute;
 		break;
-	case ShaderType::Geometry:
-		stage = EShLangGeometry;
+	case ShaderType::Task:
+		stage = EShLangTask;
+		break;
+	case ShaderType::Mesh:
+		stage = EShLangMesh;
 		break;
 	default:
 		return ShaderBlob();
@@ -233,7 +245,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	shader.setInvertY(false);
 	shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, default_version);
 	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
-	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4); // Minimum required for mesh shader EXT
 
 	// Set define values
 	std::vector<std::string> processes;
@@ -343,10 +355,12 @@ gfx::ShaderMask getShaderMask(spv::ExecutionModel executionModel)
 	{
 	case spv::ExecutionModelVertex:
 		return gfx::ShaderMask::Vertex;
-	case spv::ExecutionModelGeometry:
-		return gfx::ShaderMask::Geometry;
 	case spv::ExecutionModelFragment:
 		return gfx::ShaderMask::Fragment;
+	case spv::ExecutionModelTaskEXT:
+		return gfx::ShaderMask::Task;
+	case spv::ExecutionModelMeshEXT:
+		return gfx::ShaderMask::Mesh;
 	case spv::ExecutionModelGLCompute:
 		return gfx::ShaderMask::Compute;
 	default:

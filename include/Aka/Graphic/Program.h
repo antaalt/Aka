@@ -66,13 +66,14 @@ struct ShaderConstant
 struct Program : Resource
 {
 	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
-	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	Program(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
 	Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
 
 	// TODO replace by ShaderType flag as we could delete shader after program creation.
+	ShaderHandle task;
+	ShaderHandle mesh;
 	ShaderHandle vertex;
 	ShaderHandle fragment;
-	ShaderHandle geometry;
 	ShaderHandle compute;
 
 	ShaderBindingState sets[ShaderMaxSetCount];
@@ -82,13 +83,14 @@ struct Program : Resource
 	uint32_t setCount;
 	uint32_t constantCount;
 
+	bool hasMeshStage() const;
+	bool hasTaskStage() const;
 	bool hasVertexStage() const;
 	bool hasFragmentStage() const;
-	bool hasGeometryStage() const;
 	bool hasComputeStage() const;
 
 	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
-	static ProgramHandle createGeometry(const char* name, ShaderHandle vertex, ShaderHandle fragment, ShaderHandle geometry, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	static ProgramHandle createMesh(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
 	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount);
 	static void destroy(ProgramHandle program);
 };
