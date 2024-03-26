@@ -55,8 +55,8 @@ void StaticMeshInstanceRenderer::createPipeline()
 {
 	ShaderRegistry* registry = Application::app()->program();
 	// TODO: Should use JSON for this ? JSON that can be generated with a script reading all files in shaders folder (generating DB)
-	const aka::Path ShaderVertexPath = aka::OS::cwd() + "../../../asset/shaders/shader.vert";
-	const aka::Path ShaderFragmentPath = aka::OS::cwd() + "../../../asset/shaders/shader.frag";
+	const aka::Path ShaderVertexPath = AssetPath("../shaders/renderer/shader.vert").getAbsolutePath();
+	const aka::Path ShaderFragmentPath = AssetPath("../shaders/renderer/shader.frag").getAbsolutePath();
 
 	const aka::ShaderKey ShaderVertex = aka::ShaderKey().setPath(ShaderVertexPath).setType(aka::ShaderType::Vertex);
 	const aka::ShaderKey ShaderFragment = aka::ShaderKey().setPath(ShaderFragmentPath).setType(aka::ShaderType::Fragment);
