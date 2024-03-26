@@ -18,9 +18,12 @@ enum class ArchiveParseResult {
 	IncompatibleVersion,
 	InvalidAssetID,
 	InvalidDependency,
+	FileDoesNotExist,
 
 	Failed,
 };
+
+const char* getArchiveParseResultString(ArchiveParseResult _result);
 
 struct Archive;
 

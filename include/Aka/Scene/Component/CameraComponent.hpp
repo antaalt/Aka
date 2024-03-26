@@ -96,14 +96,14 @@ struct CameraArcball : CameraController
 
 struct ArchiveCameraComponent : ArchiveComponent
 {
-	ArchiveCameraComponent();
+	ArchiveCameraComponent(ArchiveComponentVersionType _version);
 
 	void parse(BinaryArchive& archive) override;
 
 	CameraProjectionType projectionType;
 };
 
-class CameraComponent : public Component
+class CameraComponent : public Component<CameraComponent, ArchiveCameraComponent>
 {
 public:
 	CameraComponent(Node* node);
@@ -129,8 +129,8 @@ public:
 	void onUpdate(Time deltaTime) override;
 	void onRenderUpdate(AssetLibrary* library, Renderer* _renderer) override;
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveCameraComponent& archive) override;
+	void toArchive(ArchiveCameraComponent& archive) override;
 
 private:
 	ViewHandle m_view;

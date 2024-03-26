@@ -10,14 +10,14 @@ namespace aka {
 
 struct ArchiveStaticMeshComponent : ArchiveComponent
 {
-	ArchiveStaticMeshComponent();
+	ArchiveStaticMeshComponent(ArchiveComponentVersionType _version);
 
-	AssetID assetID;
+	AssetID assetID = AssetID::Invalid;
 
 	void parse(BinaryArchive& archive) override;
 };
 
-class StaticMeshComponent : public Component
+class StaticMeshComponent : public Component<StaticMeshComponent, ArchiveStaticMeshComponent>
 {
 public:
 	StaticMeshComponent(Node* node);
@@ -30,8 +30,8 @@ public:
 	ResourceHandle<StaticMesh> getMesh() const;
 	aabbox<> getWorldBounds() const;
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveStaticMeshComponent& archive) override;
+	void toArchive(ArchiveStaticMeshComponent& archive) override;
 private:
 	AssetID m_assetID;
 	ResourceHandle<StaticMesh> m_meshHandle;

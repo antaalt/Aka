@@ -189,7 +189,7 @@ inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, Renderer* _rendere
 	ArchiveParseResult res = archive.load(ctx);
 	if (res != ArchiveParseResult::Success)
 	{
-		String str = String::format("Failed to load asset because of error %u", (uint32_t)res);
+		String str = String::format("Failed to load asset because of following error:  %s", getArchiveParseResultString(res));
 		AlertModal(AlertModalType::Error, "Failed to load asset", str.cstr());
 		return ResourceHandle<T>::invalid();
 	}

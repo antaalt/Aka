@@ -5,9 +5,8 @@
 
 namespace aka {
 
-ArchiveStaticMeshComponent::ArchiveStaticMeshComponent() :
-	ArchiveComponent(generateComponentID<StaticMeshComponent>(), 0),
-	assetID(AssetID::Invalid)
+ArchiveStaticMeshComponent::ArchiveStaticMeshComponent(ArchiveComponentVersionType _version) : 
+	ArchiveComponent(Component<StaticMeshComponent, ArchiveStaticMeshComponent>::getComponentID(), _version)
 {
 }
 
@@ -17,7 +16,7 @@ void ArchiveStaticMeshComponent::parse(BinaryArchive& archive)
 }
 
 StaticMeshComponent::StaticMeshComponent(Node* node) :
-	Component(node, generateComponentID<StaticMeshComponent>()),
+	Component(node),
 	m_assetID(AssetID::Invalid),
 	m_instance(InstanceHandle::Invalid)
 {
@@ -53,18 +52,14 @@ aabbox<> StaticMeshComponent::getWorldBounds() const
 	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
 }
 
-void StaticMeshComponent::fromArchive(const ArchiveComponent& archive)
+void StaticMeshComponent::fromArchive(const ArchiveStaticMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveStaticMeshComponent& a = reinterpret_cast<const ArchiveStaticMeshComponent&>(archive);
-	m_assetID = a.assetID;
+	m_assetID = archive.assetID;
 }
 
-void StaticMeshComponent::toArchive(ArchiveComponent& archive)
+void StaticMeshComponent::toArchive(ArchiveStaticMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveStaticMeshComponent& a = reinterpret_cast<ArchiveStaticMeshComponent&>(archive);
-	a.assetID = m_assetID;
+	archive.assetID = m_assetID;
 }
 
 };

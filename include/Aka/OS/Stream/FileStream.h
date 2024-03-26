@@ -36,6 +36,7 @@ public:
 	void rewind() override;
 
 	void close();
+	bool isOpen();
 protected:
 	void read(void* data, size_t size) override;
 	void write(const void* data, size_t size) override;

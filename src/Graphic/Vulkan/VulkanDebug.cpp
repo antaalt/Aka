@@ -98,20 +98,20 @@ const char* getVkObjectName(VkObjectType objectType)
 #if defined(VK_DEBUG_ALLOCATION)
 void* allocateCallback(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
 {
-	void* ptr = Memory::alignedAlloc(alignment, size);
+	void* ptr = Memory::allocAlligned(alignment, size);
 	memset(ptr, 0, size);
 	Logger::debug("[vulkan] Allocating <", (const char*)pUserData, "> (bytes: ", size, ", alignment:", alignment, ", scope:", allocationScope, ")");
 	return ptr;
 }
 void freeCallback(void* pUserData, void* pMemory)
 {
-	Memory::alignedFree(pMemory);
+	Memory::freeAligned(pMemory);
 	Logger::debug("[vulkan] Freeing <", (const char*)pUserData, ">");
 }
 void* reallocationCallback(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
 {
 	Logger::debug("[vulkan] Reallocating <", (const char*)pUserData, "> (bytes: ", size, ", alignment:", alignment, ", scope:", allocationScope, ")");
-	return Memory::alignedRealloc(pOriginal, alignment, size);
+	return Memory::reallocAligned(pOriginal, alignment, size);
 }
 #endif
 

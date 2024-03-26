@@ -43,10 +43,14 @@ add_library (Aka
 
 	"src/Scene/Component.cpp"
 	"src/Scene/Node.cpp"
+	"src/Scene/NodeAllocator.cpp"
+	"src/Scene/ComponentAllocator.cpp"
 	"src/Scene/Component/CameraComponent.cpp"
 	"src/Scene/Component/ArcballComponent.cpp"
 	"src/Scene/Component/StaticMeshComponent.cpp"
 	"src/Scene/Component/SkeletalMeshComponent.cpp"
+	"src/Scene/Component/RigidBodyComponent.cpp"
+	"src/Scene/Component/ColliderComponent.cpp"
 
 	"src/Resource/Archive/ArchiveGeometry.cpp"
 	"src/Resource/Archive/ArchiveMaterial.cpp"

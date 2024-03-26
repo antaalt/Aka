@@ -5,9 +5,8 @@
 
 namespace aka {
 
-ArchiveSkeletalMeshComponent::ArchiveSkeletalMeshComponent() :
-	ArchiveComponent(generateComponentID<SkeletalMeshComponent>(), 0),
-	assetID(AssetID::Invalid)
+ArchiveSkeletalMeshComponent::ArchiveSkeletalMeshComponent(ArchiveComponentVersionType _version) :
+	ArchiveComponent(Component<SkeletalMeshComponent, ArchiveSkeletalMeshComponent>::getComponentID(), _version)
 {
 }
 
@@ -17,7 +16,7 @@ void ArchiveSkeletalMeshComponent::parse(BinaryArchive& archive)
 }
 
 SkeletalMeshComponent::SkeletalMeshComponent(Node* node) :
-	Component(node, generateComponentID<SkeletalMeshComponent>()),
+	Component(node),
 	m_assetID(AssetID::Invalid),
 	m_currentAnimation(0),
 	m_instance(InstanceHandle::Invalid)
@@ -115,18 +114,14 @@ aabbox<> SkeletalMeshComponent::getWorldBounds() const
 	return getNode()->getWorldTransform() * m_meshHandle.get().getBounds();
 }
 
-void SkeletalMeshComponent::fromArchive(const ArchiveComponent& archive)
+void SkeletalMeshComponent::fromArchive(const ArchiveSkeletalMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveSkeletalMeshComponent& a = reinterpret_cast<const ArchiveSkeletalMeshComponent&>(archive);
-	m_assetID = a.assetID;
+	m_assetID = archive.assetID;
 }
 
-void SkeletalMeshComponent::toArchive(ArchiveComponent& archive)
+void SkeletalMeshComponent::toArchive(ArchiveSkeletalMeshComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveSkeletalMeshComponent& a = reinterpret_cast<ArchiveSkeletalMeshComponent&>(archive);
-	a.assetID = m_assetID;
+	archive.assetID = m_assetID;
 }
 
 };

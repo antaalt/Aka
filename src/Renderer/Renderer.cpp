@@ -411,8 +411,6 @@ void Renderer::render(gfx::FrameHandle frame)
 		}
 		//if (view.main)
 			m_debugDrawList.render(getDevice(), frame, view.data.view, view.data.projection);
-
-		break; // Only render 1 view for now
 	}
 	m_debugDrawList.clear();
 }

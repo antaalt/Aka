@@ -8,6 +8,8 @@
 
 namespace aka {
 
+class NodeAllocator;
+
 enum class NodeUpdateFlag : uint32_t
 {
 	None				= 0,
@@ -17,24 +19,18 @@ enum class NodeUpdateFlag : uint32_t
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
-struct ComponentRange 
-{
-	ComponentRange(ComponentMap& iterator);
-
-	ComponentMap::iterator begin() { return m_iterator; }
-	ComponentMap::iterator end();
-private:
-	ComponentMap::iterator m_iterator;
-};
-
 class Node
 {
 public:
-	Node();
-	Node(const char* name);
+	Node(NodeAllocator* _allocator); // TODO get a global one instead ?
+	Node(const Node&) = delete;
+	Node(Node&&) = delete;
+	Node& operator=(const Node&) = delete;
+	Node& operator=(Node&&) = delete;
+	Node(const char* name, NodeAllocator* _allocator);
 	virtual ~Node();
 
-	void attach(Component* component);
+	void attach(ComponentBase* component);
 	// Attach a component to the entity
 	template <typename T> T& attach();
 	// Detach a component from the entity.
@@ -51,12 +47,12 @@ public:
 	void create(AssetLibrary* library, Renderer* renderer);
 	// Destroy the node data & all its components.
 	void destroy(AssetLibrary* library, Renderer* renderer);
-	// Update the node data, and ensure components are up to date.
-	void update(AssetLibrary* library, Renderer* renderer);
-	// Update the component with delta time.
-	void update(Time deltaTime);
-	// Update the component with a fixed timestep.
-	void fixedUpdate(Time deltaTime);
+	// Update the node components, activating & deactivating them as requested.
+	void updateComponentLifecycle(AssetLibrary* library, Renderer* renderer);
+	// Prepare the update of components.
+	void prepareUpdate();
+	// Finish the update of the node data.
+	void finishUpdate();
 public:
 	// Get node name
 	const String& getName() const { return m_name; }
@@ -72,6 +68,8 @@ public:
 	NodeUpdateFlag getUpdateFlag() const { return m_updateFlags; }
 	// Check update flags
 	bool has(NodeUpdateFlag flag) const { return asBool(m_updateFlags & flag); }
+	// Get node allocator
+	NodeAllocator& getAllocator() { return *m_allocator; }
 public:
 	// Remove the node from the free, set its childs to its parent
 	void unlink();
@@ -91,6 +89,8 @@ public:
 	Node* getChild(uint32_t iChild);
 	// Get child n
 	const Node* getChild(uint32_t iChild) const;
+	// Visit childrens
+	void visitChildrens(std::function<void(Node*)> _callback);
 private: // Hierarchy
 	Node* m_parent;
 	Vector<Node*> m_childrens;
@@ -116,17 +116,18 @@ private: // Data
 	ComponentMap m_componentsToActivate;
 	ComponentMap m_componentsToDeactivate;
 private:
+	NodeAllocator* m_allocator;
 	NodeUpdateFlag m_updateFlags;
 };
 
 template<typename T>
 inline T& Node::attach()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	ComponentID id = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	ComponentID id = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(!has<T>(), "Trying to attach already attached component");
 	m_componentIDs.insert(id);
-	T* component = reinterpret_cast<T*>(ComponentAllocator::allocate(this, id));
+	T* component = m_allocator->allocate<T>(this);
 	component->onAttach();
 	m_componentsToActivate.insert(std::make_pair(id, component));
 	return *component;
@@ -135,8 +136,8 @@ inline T& Node::attach()
 template<typename T>
 inline void Node::detach()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to detach non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	m_componentIDs.erase(componentID);
@@ -170,8 +171,8 @@ inline void Node::detach()
 template<typename T>
 inline T& Node::get()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to get non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())
@@ -195,8 +196,8 @@ inline T& Node::get()
 template<typename T>
 inline const T& Node::get() const
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to get non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())
@@ -219,8 +220,8 @@ inline const T& Node::get() const
 template<typename T>
 inline bool aka::Node::has() const
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	auto it = m_componentIDs.find(componentID);
 	return it != m_componentIDs.end();
 }
@@ -228,8 +229,8 @@ inline bool aka::Node::has() const
 template<typename T>
 inline void Node::setDirty()
 {
-	static_assert(std::is_base_of<Component, T>::value, "Invalid type");
-	const ComponentID componentID = generateComponentID<T>();
+	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to mark dirty non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())

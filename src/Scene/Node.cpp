@@ -1,20 +1,23 @@
 #include <Aka/Scene/Node.hpp>
 
 #include <Aka/Scene/Component/StaticMeshComponent.hpp>
+#include <Aka/Scene/NodeAllocator.hpp>
 
 namespace aka {
 
-Node::Node() : 
+Node::Node(NodeAllocator* _allocator) :
 	m_parent(nullptr),
 	m_name("Unknown"),
+	m_allocator(_allocator),
 	m_updateFlags(NodeUpdateFlag::None),
 	m_localTransform(mat4f::identity()),
 	m_cacheWorldTransform(mat4f::identity())
 {
 }
-Node::Node(const char* name) : 
+Node::Node(const char* name, NodeAllocator* _allocator) :
 	m_parent(nullptr),
 	m_name(name),
+	m_allocator(_allocator),
 	m_updateFlags(NodeUpdateFlag::None),
 	m_localTransform(mat4f::identity()),
 	m_cacheWorldTransform(mat4f::identity())
@@ -27,7 +30,7 @@ Node::~Node()
 	AKA_ASSERT(m_componentsToDeactivate.size() == 0, "Missing components");
 }
 
-void Node::attach(Component* component)
+void Node::attach(ComponentBase* component)
 {
 	const ComponentID id = component->getComponentID();
 	AKA_ASSERT(m_componentIDs.find(id) == m_componentIDs.end(), "Trying to attach non attached component");
@@ -53,22 +56,22 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 		childrens->destroy(library, renderer);
 	}
 	// Destroy components
-	for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
+	for (std::pair<ComponentID, ComponentBase*> component : m_componentsToActivate)
 	{
 		component.second->detach();
-		ComponentAllocator::free(component.second);
+		m_allocator->deallocate(component.second);
 	}
-	for (std::pair<ComponentID, Component*> component : m_componentsActive)
+	for (std::pair<ComponentID, ComponentBase*> component : m_componentsActive)
 	{
 		component.second->deactivate(library, renderer);
 		component.second->detach();
-		ComponentAllocator::free(component.second);
+		m_allocator->deallocate(component.second);
 	}
-	for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
+	for (std::pair<ComponentID, ComponentBase*> component : m_componentsToDeactivate)
 	{
 		component.second->deactivate(library, renderer);
 		component.second->detach();
-		ComponentAllocator::free(component.second);
+		m_allocator->deallocate(component.second);
 	}
 	m_componentIDs.clear();
 	m_componentsToActivate.clear();
@@ -76,25 +79,29 @@ void Node::destroy(AssetLibrary* library, Renderer* renderer)
 	m_componentsToDeactivate.clear();
 }
 
-void Node::update(AssetLibrary* library, Renderer* renderer)
+void Node::updateComponentLifecycle(AssetLibrary* library, Renderer* renderer)
 {
 	{ // Components lifecycle.
 		// Activate components
-		for (std::pair<ComponentID, Component*> component : m_componentsToActivate)
+		for (std::pair<ComponentID, ComponentBase*> component : m_componentsToActivate)
 		{
 			component.second->activate(library, renderer);
 			m_componentsActive.insert(component);
 		}
 		m_componentsToActivate.clear();
 		// Deactivate components
-		for (std::pair<ComponentID, Component*> component : m_componentsToDeactivate)
+		for (std::pair<ComponentID, ComponentBase*> component : m_componentsToDeactivate)
 		{
 			component.second->deactivate(library, renderer);
 			component.second->detach();
-			ComponentAllocator::free(component.second);
+			m_allocator->deallocate(component.second);
 		}
 		m_componentsToDeactivate.clear();
 	}
+}
+
+void Node::prepareUpdate()
+{
 	if (asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
 	{
 		m_cacheWorldTransform = computeWorldTransform();
@@ -111,44 +118,13 @@ void Node::update(AssetLibrary* library, Renderer* renderer)
 			component.second->hierarchyUpdate();
 		}
 	}
+}
 
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->renderUpdate(library, renderer);
-	}
-
-	// Update children
-	for (Node* childrens : m_childrens)
-	{
-		childrens->update(library, renderer);
-	}
+void Node::finishUpdate()
+{
 	// Remove flag after so that child can check if this flag is set
 	m_updateFlags &= ~NodeUpdateFlag::TransformUpdated;
 	m_updateFlags &= ~NodeUpdateFlag::HierarchyUpdated;
-}
-
-void Node::update(Time deltaTime)
-{
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->update(deltaTime);
-	}
-	for (Node* children : m_childrens)
-	{
-		children->update(deltaTime);
-	}
-}
-
-void Node::fixedUpdate(Time deltaTime)
-{
-	for (ComponentMap::value_type& component : m_componentsActive)
-	{
-		component.second->fixedUpdate(deltaTime);
-	}
-	for (Node* children : m_childrens)
-	{
-		children->fixedUpdate(deltaTime);
-	}
 }
 
 void Node::unlink()
@@ -213,6 +189,14 @@ Node* Node::getChild(uint32_t iChild)
 const Node* Node::getChild(uint32_t iChild) const
 {
 	return m_childrens[iChild];
+}
+
+void Node::visitChildrens(std::function<void(Node*)> _callback)
+{
+	for (Node* child : m_childrens) 
+	{
+		_callback(child);
+	}
 }
 
 const mat4f& Node::getLocalTransform() const

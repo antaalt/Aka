@@ -10,14 +10,14 @@ namespace aka {
 
 struct ArchiveSkeletalMeshComponent : ArchiveComponent
 {
-	ArchiveSkeletalMeshComponent();
+	ArchiveSkeletalMeshComponent(ArchiveComponentVersionType _version);
 
-	AssetID assetID;
+	AssetID assetID = AssetID::Invalid;
 
 	void parse(BinaryArchive& archive) override;
 };
 
-class SkeletalMeshComponent : public Component
+class SkeletalMeshComponent : public Component<SkeletalMeshComponent, ArchiveSkeletalMeshComponent>
 {
 public:
 	SkeletalMeshComponent(Node* node);
@@ -36,8 +36,8 @@ public:
 	void setCurrentAnimation(uint32_t index);
 	aabbox<> getWorldBounds() const;
 public:
-	void fromArchive(const ArchiveComponent& archive) override;
-	void toArchive(ArchiveComponent& archive) override;
+	void fromArchive(const ArchiveSkeletalMeshComponent& archive) override;
+	void toArchive(ArchiveSkeletalMeshComponent& archive) override;
 private:
 	AssetID m_assetID;
 	uint32_t m_currentAnimation;

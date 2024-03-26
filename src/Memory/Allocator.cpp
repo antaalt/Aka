@@ -70,7 +70,7 @@ void* MemoryAllocator::allocate(size_t size, AllocatorFlags flags)
 }
 void* MemoryAllocator::alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags)
 {
-	return Memory::alignedAlloc(alignement, size);
+	return Memory::allocAlligned(alignement, size);
 }
 void MemoryAllocator::deallocate(void* elements, size_t size)
 {
@@ -78,7 +78,7 @@ void MemoryAllocator::deallocate(void* elements, size_t size)
 }
 void MemoryAllocator::alignedDeallocate(void* elements, size_t size)
 {
-	Memory::alignedFree(elements);
+	Memory::freeAligned(elements);
 }
 
 };

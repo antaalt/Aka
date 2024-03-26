@@ -4,13 +4,53 @@
 #include <stdint.h>
 #include <functional>
 
+#include <Aka/Memory/Memory.h>
+
 namespace aka {
+
+template <typename T, size_t BlockCount>
+class Pool;
+
+template <typename T, size_t BlockCount = 512>
+class PoolIterator {
+public:
+	explicit PoolIterator(typename Pool<T, BlockCount>::Block* _block, typename Pool<T, BlockCount>::Chunk* _begin);
+	PoolIterator<T, BlockCount>& operator++();
+	PoolIterator<T, BlockCount> operator++(int);
+	T& operator*();
+	const T& operator*() const;
+	bool operator==(const PoolIterator<T, BlockCount>& value) const;
+	bool operator!=(const PoolIterator<T, BlockCount>& value) const;
+
+private:
+	size_t isChunkUsed(typename Pool<T, BlockCount>::Chunk* _chunk) const;
+	size_t getBlockIndex() const;
+	size_t isBlockFinished() const;
+	bool isLastBlock() const;
+private:
+	typename Pool<T, BlockCount>::Chunk* m_current;
+	typename Pool<T, BlockCount>::Block* m_block;
+};
+
+
+template <typename T>
+class PoolRange 
+{
+public:
+	PoolRange(PoolIterator<T> _begin, PoolIterator<T> _end) : m_begin(_begin), m_end(_end) {}
+	PoolIterator<T> begin() { return m_begin; }
+	PoolIterator<T> end() { return m_end; }
+private:
+	PoolIterator<T> m_begin, m_end;
+};
 
 template <typename T, size_t BlockCount = 512>
 class Pool final
 {
+	using AllocatorType = Allocator;
 public:
 	Pool();
+	Pool(AllocatorType& allocator);
 	Pool(const Pool&) = delete;
 	Pool& operator=(const Pool&) = delete;
 	Pool(Pool&&) = delete;
@@ -27,7 +67,13 @@ public:
 	void release(std::function<void(T&)>&& deleter);
 	// Return number of acquired elements
 	size_t count() const;
+public:
+	// Return begin iterator
+	PoolIterator<T, BlockCount> begin();
+	// Return end iterator
+	PoolIterator<T, BlockCount> end();
 private:
+	friend class PoolIterator<T, BlockCount>;
 	union Chunk {
 		Chunk() {}
 		~Chunk() {} 
@@ -41,8 +87,9 @@ private:
 		uint8_t used[(BlockCount + 7) / 8]; // Bitmask for every element to check if it is currently used;
 		Block* next; // Next block if not enough space
 
-		static Block* create();
+		static Block* create(AllocatorType& _allocator);
 	};
+	AllocatorType& m_allocator;
 	size_t m_count; // Number of acquired elements
 	Block* m_block; // Memory block to store objects.
 	Chunk* m_freeList; // Free list for next available item in the pool.
@@ -51,17 +98,26 @@ private:
 
 template <typename T, size_t BlockCount>
 inline Pool<T, BlockCount>::Pool() :
+	Pool(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default))
+{
+}
+
+
+template <typename T, size_t BlockCount>
+inline Pool<T, BlockCount>::Pool(AllocatorType& _allocator) :
+	m_allocator(_allocator),
 	m_count(0),
-	m_block(Block::create()),
+	m_block(Block::create(m_allocator)),
 	m_freeList(nullptr)
 {
 	m_freeList = m_block->chunks;
 }
 
 template <typename T, size_t BlockCount>
-typename Pool<T, BlockCount>::Block* Pool<T, BlockCount>::Block::create()
+typename Pool<T, BlockCount>::Block* Pool<T, BlockCount>::Block::create(AllocatorType& _allocator)
 {
-	Block* block = new Block;
+	
+	Block* block = static_cast<Block*>(_allocator.allocate(sizeof(Block)));
 	memset(block->used, 0, sizeof(block->used));
 	block->next = nullptr;
 	// Init data free list.
@@ -83,7 +139,7 @@ inline Pool<T, BlockCount>::~Pool()
 	{
 		Block* currentBlock = nextBlock;
 		nextBlock = currentBlock->next;
-		delete currentBlock;
+		m_allocator.deallocate(currentBlock, sizeof(Block));
 	} while (nextBlock != nullptr);
 }
 template <typename T, size_t BlockCount>
@@ -97,7 +153,7 @@ inline T* Pool<T, BlockCount>::acquire(Args&&... args)
 		Block* lastBlock = m_block;
 		while (lastBlock->next != nullptr)
 			lastBlock = lastBlock->next;
-		lastBlock->next = Block::create();
+		lastBlock->next = Block::create(m_allocator);
 		m_freeList = lastBlock->next->chunks;
 		block = lastBlock->next;
 	}
@@ -140,6 +196,7 @@ inline void Pool<T, BlockCount>::release(T* element)
 		// Set used bitmask
 		block->used[index / 8] &= ~(0x01 << (index % 8));
 		// Unregister the new element
+		AKA_ASSERT(m_count > 0, "System error");
 		m_count--;
 	}
 }
@@ -222,4 +279,90 @@ inline size_t aka::Pool<T, BlockCount>::count() const
 {
 	return m_count;
 }
+template<typename T, size_t BlockCount>
+PoolIterator<T, BlockCount> Pool<T, BlockCount>::begin() {
+	return PoolIterator<T, BlockCount>(m_block, m_block[0].chunks);
+}
+template<typename T, size_t BlockCount>
+PoolIterator<T, BlockCount> Pool<T, BlockCount>::end() {
+	Block* endBlock = m_block;
+	while (endBlock->next != nullptr)
+		endBlock = endBlock->next;
+	return PoolIterator<T, BlockCount>(endBlock, endBlock->chunks + BlockCount);
+}
+
+template<typename T, size_t BlockCount>
+PoolIterator<T, BlockCount>::PoolIterator(typename Pool<T, BlockCount>::Block* _block, typename Pool<T, BlockCount>::Chunk* _begin) : 
+	m_current(_begin), 
+	m_block(_block) 
+{
+}
+template<typename T, size_t BlockCount>
+PoolIterator<T, BlockCount>& PoolIterator<T, BlockCount>::operator++()
+{
+	do {
+		m_current++;
+		if (isBlockFinished())
+		{
+			if (!isLastBlock())
+			{
+				m_block = m_block->next;
+				m_current = m_block->chunks;
+			}
+			else
+			{
+				return *this;
+			}
+		}
+	} while (!isBlockFinished() && !isChunkUsed(m_current));
+	return *this;
+}
+template<typename T, size_t BlockCount>
+PoolIterator<T, BlockCount> PoolIterator<T, BlockCount>::operator++(int)
+{
+	PoolIterator old = *this;
+	++(*this);
+	return old;
+}
+template<typename T, size_t BlockCount>
+T& PoolIterator<T, BlockCount>::operator*() 
+{
+	return m_current->element; 
+}
+template<typename T, size_t BlockCount>
+const T& PoolIterator<T, BlockCount>::operator*() const 
+{ 
+	return m_current->element; 
+}
+template<typename T, size_t BlockCount>
+bool PoolIterator<T, BlockCount>::operator==(const PoolIterator<T, BlockCount>& value) const 
+{
+	return value.m_current == m_current; 
+}
+template<typename T, size_t BlockCount>
+bool PoolIterator<T, BlockCount>::operator!=(const PoolIterator<T, BlockCount>& value) const
+{ 
+	return value.m_current != m_current;
+}
+template<typename T, size_t BlockCount>
+size_t PoolIterator<T, BlockCount>::isChunkUsed(typename Pool<T, BlockCount>::Chunk* _chunk) const 
+{
+	return ((m_block->used[getBlockIndex() / 8] >> (getBlockIndex() & 7)) & 0x1) == 0x1; 
+}
+template<typename T, size_t BlockCount>
+size_t PoolIterator<T, BlockCount>::getBlockIndex() const 
+{ 
+	return m_current - m_block->chunks; 
+}
+template<typename T, size_t BlockCount>
+size_t PoolIterator<T, BlockCount>::isBlockFinished() const 
+{ 
+	return getBlockIndex() >= BlockCount; 
+}
+template<typename T, size_t BlockCount>
+bool PoolIterator<T, BlockCount>::isLastBlock() const 
+{ 
+	return m_block->next == nullptr; 
+}
+
 };

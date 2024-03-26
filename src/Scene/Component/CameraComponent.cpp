@@ -6,6 +6,11 @@
 
 namespace aka {
 
+ArchiveCameraComponent::ArchiveCameraComponent(ArchiveComponentVersionType _version) :
+	ArchiveComponent(Component<CameraComponent, ArchiveCameraComponent>::getComponentID(), _version)
+{
+}
+
 mat4f CameraPerspective::projection() const
 {
 	return mat4f::perspective(hFov, ratio, nearZ, farZ);
@@ -122,7 +127,7 @@ CameraControllerType CameraArcball::type() const
 }
 
 CameraComponent::CameraComponent(Node* node) :
-	Component(node, generateComponentID<CameraComponent>()),
+	Component(node),
 	m_view(ViewHandle::Invalid),
 	m_projection(nullptr)
 {
@@ -130,11 +135,6 @@ CameraComponent::CameraComponent(Node* node) :
 CameraComponent::~CameraComponent()
 {
 	delete m_projection;
-}
-
-ArchiveCameraComponent::ArchiveCameraComponent() :
-	ArchiveComponent(generateComponentID<CameraComponent>(), 0)
-{
 }
 
 void ArchiveCameraComponent::parse(BinaryArchive& archive)
@@ -186,12 +186,10 @@ void CameraComponent::onRenderUpdate(AssetLibrary* library, Renderer* _renderer)
 		clearDirty();
 	}
 }
-void CameraComponent::fromArchive(const ArchiveComponent& archive)
+void CameraComponent::fromArchive(const ArchiveCameraComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
 	AKA_ASSERT(m_projection == nullptr, "Projection not null");
-	const ArchiveCameraComponent& a = reinterpret_cast<const ArchiveCameraComponent&>(archive);
-	switch (a.projectionType)
+	switch (archive.projectionType)
 	{
 	case CameraProjectionType::Orthographic:
 		m_projection = new CameraOrthographic;
@@ -205,11 +203,9 @@ void CameraComponent::fromArchive(const ArchiveComponent& archive)
 	}
 }
 
-void CameraComponent::toArchive(ArchiveComponent& archive)
+void CameraComponent::toArchive(ArchiveCameraComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveCameraComponent& a = reinterpret_cast<ArchiveCameraComponent&>(archive);
-	a.projectionType = m_projection->type();
+	archive.projectionType = m_projection->type();
 }
 
 };

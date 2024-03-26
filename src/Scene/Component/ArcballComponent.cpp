@@ -6,13 +6,13 @@
 
 namespace aka {
 
-ArchiveArcballComponent::ArchiveArcballComponent() :
-	ArchiveComponent(generateComponentID<ArcballComponent>(), 0)
+ArchiveArcballComponent::ArchiveArcballComponent(ArchiveComponentVersionType _version) :
+	ArchiveComponent(Component<ArcballComponent, ArchiveArcballComponent>::getComponentID(), _version)
 {
 }
 
 ArcballComponent::ArcballComponent(Node* node) :
-	Component(node, generateComponentID<ArcballComponent>())
+	Component(node)
 {
 }
 
@@ -47,16 +47,12 @@ void ArcballComponent::onUpdate(Time deltaTime)
 		getNode()->setLocalTransform(m_controller.transform());
 	}
 }
-void ArcballComponent::fromArchive(const ArchiveComponent& archive)
+void ArcballComponent::fromArchive(const ArchiveArcballComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	const ArchiveArcballComponent& a = reinterpret_cast<const ArchiveArcballComponent&>(archive);
 }
 
-void ArcballComponent::toArchive(ArchiveComponent& archive)
+void ArcballComponent::toArchive(ArchiveArcballComponent& archive)
 {
-	AKA_ASSERT(archive.getComponentID() == getComponentID(), "Invalid ID");
-	ArchiveArcballComponent& a = reinterpret_cast<ArchiveArcballComponent&>(archive);
 }
 
 };
