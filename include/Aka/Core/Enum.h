@@ -81,8 +81,13 @@ template <typename T>
 class EnumRange
 {
 public:
-	EnumIterator<T> begin() const { return EnumIterator<T>(T::First); }
-	EnumIterator<T> end() const { return EnumIterator<T>(static_cast<T>(static_cast<UnderlyingType<T>>(T::Last) + static_cast<UnderlyingType<T>>(1))); }
+	EnumRange() : EnumRange(T::First, static_cast<T>(static_cast<UnderlyingType<T>>(T::Last) + static_cast<UnderlyingType<T>>(1))) {}
+	explicit EnumRange(T _last) : EnumRange(T::First, _last) {}
+	explicit EnumRange(T _first, T _last) : m_begin(_first), m_end(_last) {}
+	EnumIterator<T> begin() const { return EnumIterator<T>(m_begin); }
+	EnumIterator<T> end() const { return EnumIterator<T>(m_end); }
+private:
+	T m_begin, m_end;
 };
 
 template<typename Type, typename Container = uint32_t>
