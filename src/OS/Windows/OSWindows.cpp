@@ -53,6 +53,31 @@ aka::String WcharToUtf8(const wchar_t* wstr)
 	return str;
 }
 
+void BackwardToForwardSlash(String& string)
+{
+	for (char& c : string)
+	{
+		if (c == '\\')
+			c = '/';
+	}
+}
+void RemoveNeighborDuplicateSlash(String& string)
+{
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < string.size() - offset; i++)
+	{
+		string[i] = string[i + offset];
+		uint32_t count = 1;
+		while (string[i + offset] == '/' && string[i + offset + count] == '/')
+		{
+			count++;
+		}
+		offset += count - 1;
+	}
+	string[string.size() - offset] = '\0';
+	string.resize(string.size() - offset);
+}
+
 String GetLastErrorAsString()
 {
 	DWORD errorMessageID = ::GetLastError();
@@ -102,6 +127,13 @@ bool OS::Directory::create(const Path& path)
 {
 	size_t pos = 0;
 	String str = path.cstr();
+	BackwardToForwardSlash(str);
+	RemoveNeighborDuplicateSlash(str);
+	// Windows require last string to own a slash
+	if (str.last() != '/')
+	{
+		str.append('/');
+	}
 	do
 	{
 		pos = str.findFirst('/', pos + 1);
@@ -110,7 +142,7 @@ bool OS::Directory::create(const Path& path)
 		String p = str.substr(0, pos);
 		if (p.length() == 2 && p[1] == ':') // skip C:/ D:/
 			continue;
-		if (p == "." || p == ".." || p == "/" || p == "\\")
+		if (p == "." || p == ".." || p == "/")
 			continue;
 		if (OS::Directory::exist(p))
 			continue;
@@ -338,10 +370,10 @@ Path OS::temp()
 {
 	// TODO should cache this path somehow ?
 	StringWide wstr;
-	DWORD length = GetTempPath2(0, nullptr);
+	DWORD length = GetTempPath(0, nullptr);
 	AKA_ASSERT(length != 0, "Invalid temporary path");
 	wstr.resize(length);
-	DWORD length2 = GetTempPath2(length, wstr.cstr());
+	DWORD length2 = GetTempPath(length, wstr.cstr());
 	AKA_ASSERT(length == length2 + 1, "Invalid temporary path");
 	String str = WcharToUtf8(wstr.cstr()) + "/aka/";
 	Path path = OS::normalize(str);
