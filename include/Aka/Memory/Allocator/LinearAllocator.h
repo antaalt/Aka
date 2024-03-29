@@ -8,7 +8,8 @@ namespace aka {
 class LinearAllocator : public Allocator
 {
 public:
-	LinearAllocator(Allocator* parent, size_t blockSize);
+	LinearAllocator(const char* name, Allocator* parent, size_t blockSize);
+	virtual ~LinearAllocator();
 
 	void* allocate(size_t size, AllocatorFlags flags = AllocatorFlags::None) override;
 	void* alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags = AllocatorFlags::None)  override;

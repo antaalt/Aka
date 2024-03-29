@@ -1,36 +1,43 @@
+
 #include <Aka/Memory/Allocator.h>
 
 #include <Aka/Memory/Memory.h>
+#include <Aka/Core/Container/String.h>
 
 namespace aka {
 
 MemoryBlock::MemoryBlock(void* mem, size_t _size) :
 	mem(mem),
 	size(_size),
-	prev(nullptr),
 	next(nullptr)
 {
 }
 
 MemoryBlock::~MemoryBlock()
 {
-	delete prev;
+	// This does not free allocated memory. allocator need to handle it.
 	delete next;
 }
 
-Allocator::Allocator() :
+Allocator::Allocator(const char* name) :
+	m_name(""),
 	m_parent(nullptr),
 	m_memory(nullptr)
 {
+	String::copy(m_name, 32, name);
+	m_name[31] = 0;
 }
-Allocator::Allocator(Allocator* parent, size_t blockSize) :
+Allocator::Allocator(const char* name, Allocator* parent, size_t blockSize) :
+	m_name(""),
 	m_parent(parent), 
 	m_memory(new MemoryBlock(m_parent->allocate(blockSize), blockSize))
 {
+	String::copy(m_name, 32, name);
+	m_name[31] = 0;
 }
 Allocator::~Allocator()
 {
-	release();
+	releaseAllMemoryBlocks();
 }
 
 uintptr_t Allocator::align(uintptr_t address, size_t alignment)
@@ -49,18 +56,63 @@ size_t Allocator::alignAdjustment(uintptr_t address, size_t alignment)
 	return adjustment;
 }
 
-void Allocator::request()
+MemoryBlock* Allocator::getMemoryBlock()
 {
-	// TODO request parent & store new block.
-	throw std::bad_alloc();
+	MemoryBlock* block = m_memory;
+	while (block->next != nullptr)
+	{
+		block = block->next;
+	}
+	return block;
 }
 
-void Allocator::release()
+Allocator* Allocator::getParentAllocator()
+{
+	return m_parent;
+}
+
+const char* Allocator::getName() const
+{
+	return m_name;
+}
+
+MemoryBlock* Allocator::requestNewMemoryBlock()
+{
+	if (m_parent)
+	{
+		void* mem = m_parent->allocate(m_memory->size, AllocatorFlags::None);
+		MemoryBlock* newBlock = new MemoryBlock(mem, m_memory->size);
+		// Put new block at the end of last block
+		getMemoryBlock()->next = newBlock;
+		return newBlock;
+	}
+	else 
+	{
+		throw std::bad_alloc();
+		return nullptr;
+	}
+}
+
+void Allocator::releaseAllMemoryBlocks()
 {
 	if (m_memory)
 	{
-		m_parent->deallocate(m_memory->mem, m_memory->size);
-		delete m_memory;
+		if (m_parent)
+		{
+			MemoryBlock* block = m_memory;
+			while (block)
+			{
+				m_parent->deallocate(block->mem, block->size);
+				MemoryBlock* nextBlock = block->next;
+				delete block;
+				block = nextBlock;
+			}
+			m_memory = nullptr;
+		}
+		else
+		{
+			throw std::bad_alloc();
+		}
 	}
 }
 

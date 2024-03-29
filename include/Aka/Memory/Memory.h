@@ -2,9 +2,7 @@
 
 #include <Aka/Core/Config.h>
 
-#include <Aka/Memory/Allocator/LinearAllocator.h>
-#include <Aka/Memory/Allocator/RingAllocator.h>
-#include <Aka/Memory/Allocator/DebugAllocator.h>
+#include <Aka/Memory/Allocator.h>
 
 namespace aka {
 
@@ -70,12 +68,7 @@ enum class AllocatorCategory {
 	String,
 };
 
-// Until we create a better allocator, use linear
-using DefaultAllocatorType = DebugAllocator<LinearAllocator>;
-using TemporaryAllocatorType = DebugAllocator<LinearAllocator>;
-
 Allocator& getAllocator(AllocatorMemoryType memory, AllocatorCategory category);
 
-}
-
-};
+}; // namespace mem
+}; // namespace aka

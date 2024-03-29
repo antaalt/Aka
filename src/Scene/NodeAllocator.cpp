@@ -1,5 +1,7 @@
 #include <Aka/Scene/NodeAllocator.hpp>
 
+#include <Aka/OS/Logger.h>
+
 namespace aka {
 
 NodeAllocator::NodeAllocator() :

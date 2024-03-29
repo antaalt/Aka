@@ -17,15 +17,14 @@ struct MemoryBlock
 	void* mem;
 	size_t size;
 
-	MemoryBlock* prev;
 	MemoryBlock* next;
 };
 
 class Allocator
 {
 public:
-	Allocator();
-	Allocator(Allocator* parent, size_t blockSize);
+	Allocator(const char* name);
+	Allocator(const char* name, Allocator* parent, size_t blockSize);
 	virtual ~Allocator();
 
 	// Allocate memory from the allocator
@@ -43,9 +42,18 @@ public:
 	static size_t alignAdjustment(uintptr_t address, size_t alignment);
 
 protected:
-	void request();
-	void release();
-protected:
+
+	const char* getName() const;
+	// Get last memory block allocated
+	MemoryBlock* getMemoryBlock();
+	// Get parent allocator
+	Allocator* getParentAllocator();
+	// Request a new memory block allocation by parent allocator
+	MemoryBlock* requestNewMemoryBlock();
+	// Release all memory block & call parent allocator to free memory.
+	void releaseAllMemoryBlocks();
+private:
+	char m_name[32];
 	Allocator* m_parent; // parent from which memory was acquired.
 	MemoryBlock* m_memory; // allocation for the allocator. if not enough memory, can request more to parent.
 };
@@ -54,7 +62,7 @@ protected:
 class MemoryAllocator : public Allocator
 {
 public:
-	MemoryAllocator() : Allocator() {}
+	MemoryAllocator(const char* name, Allocator* _parent = nullptr, size_t blockSize = 0) : Allocator(name) {}
 	virtual ~MemoryAllocator() {}
 
 	void* allocate(size_t size, AllocatorFlags flags = AllocatorFlags::None) override;

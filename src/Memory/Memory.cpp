@@ -1,5 +1,9 @@
 #include <Aka/Memory/Memory.h>
 
+#include <Aka/Memory/Allocator/LinearAllocator.h>
+#include <Aka/Memory/Allocator/RingAllocator.h>
+#include <Aka/Memory/Allocator/DebugAllocator.h>
+
 namespace aka {
 
 Memory::Memory(size_t size) :
@@ -135,20 +139,31 @@ bool Memory::operator!=(const Memory& rhs)
 
 namespace mem {
 
+#define AKA_TRACK_MEMORY 1
+
+// Until we create a better allocator, use memory
+#if defined(AKA_TRACK_MEMORY)
+using DefaultAllocatorType = DebugAllocator<MemoryAllocator>;
+using TemporaryAllocatorType = DebugAllocator<MemoryAllocator>;
+#else
+using DefaultAllocatorType = MemoryAllocator;
+using TemporaryAllocatorType = MemoryAllocator;
+#endif
+
 // There should be some memory manager running everyframe & updating all blocks.
 Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persistent, AllocatorCategory category = AllocatorCategory::Default)
 {
-	static MemoryAllocator GfxMemoryAllocator;
-	static MemoryAllocator AudioMemoryAllocator;
-	static MemoryAllocator DefaultMemoryAllocator;
+	static MemoryAllocator GfxMemoryAllocator("GfxMemoryAllocator");
+	static MemoryAllocator AudioMemoryAllocator("AudioMemoryAllocator");
+	static MemoryAllocator DefaultMemoryAllocator("DefaultMemoryAllocator");
 
-	static DefaultAllocatorType GfxPersistentAllocator(&GfxMemoryAllocator, 1 << 16);
-	static DefaultAllocatorType DefaultPersistentAllocator(&DefaultMemoryAllocator, 1LL << 31);
-	static DefaultAllocatorType StringPersistentAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
+	static DefaultAllocatorType GfxPersistentAllocator("GfxPersistentAllocator", &GfxMemoryAllocator, 1 << 16);
+	static DefaultAllocatorType DefaultPersistentAllocator("DefaultPersistentAllocator", &DefaultMemoryAllocator, 1LL << 31);
+	static DefaultAllocatorType StringPersistentAllocator("StringPersistentAllocator", &DefaultMemoryAllocator, 1 << 16); // 512 MB
 
-	static TemporaryAllocatorType GfxTemporaryAllocator(&GfxMemoryAllocator, 1 << 16);
-	static TemporaryAllocatorType DefaultTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16); // 512 MB
-	static TemporaryAllocatorType StringTemporaryAllocator(&DefaultMemoryAllocator, 1 << 16);
+	static TemporaryAllocatorType GfxTemporaryAllocator("GfxTemporaryAllocator", &GfxMemoryAllocator, 1 << 16);
+	static TemporaryAllocatorType DefaultTemporaryAllocator("DefaultTemporaryAllocator", &DefaultMemoryAllocator, 1 << 16); // 512 MB
+	static TemporaryAllocatorType StringTemporaryAllocator("StringTemporaryAllocator",  & DefaultMemoryAllocator, 1 << 16);
 	switch (memory)
 	{
 	case aka::mem::AllocatorMemoryType::Temporary: {
@@ -156,11 +171,11 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 		{
 		default:
 		case AllocatorCategory::Default:
-			return DefaultMemoryAllocator;// DefaultTemporaryAllocator;
+			return DefaultTemporaryAllocator;
 		case AllocatorCategory::Graphic:
-			return DefaultMemoryAllocator;//GfxTemporaryAllocator;
+			return GfxTemporaryAllocator;
 		case AllocatorCategory::String:
-			return DefaultMemoryAllocator;//StringTemporaryAllocator;
+			return StringTemporaryAllocator;
 		}
 	}
 	default:
@@ -169,15 +184,38 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 		{
 		default:
 		case AllocatorCategory::Default:
-			return DefaultMemoryAllocator;//DefaultPersistentAllocator;
+			return DefaultPersistentAllocator;
 		case AllocatorCategory::Graphic:
-			return DefaultMemoryAllocator;//GfxPersistentAllocator;
+			return GfxPersistentAllocator;
 		case AllocatorCategory::String:
-			return DefaultMemoryAllocator;//StringPersistentAllocator;
+			return StringPersistentAllocator;
 		}
 	}
 	}
 }
 
-};
-};
+}; // namespace mem
+}; // namespace aka
+
+#if defined(AKA_TRACK_MEMORY)
+void* operator new(std::size_t n) throw(std::bad_alloc)
+{
+	using namespace aka;
+	return mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).allocate(n, AllocatorFlags::None);
+}
+void operator delete(void* p, std::size_t n) throw()
+{
+	using namespace aka;
+	mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).deallocate(p, n);
+}
+void* operator new[](std::size_t n) throw(std::bad_alloc)
+{
+	using namespace aka;
+	return mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).allocate(n, AllocatorFlags::None);
+}
+void operator delete[](void* p, std::size_t n) throw()
+{
+	using namespace aka;
+	mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).deallocate(p, n);
+}
+#endif
