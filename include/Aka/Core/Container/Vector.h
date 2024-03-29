@@ -15,11 +15,11 @@ class Vector final
 public:
 	Vector();
 	explicit Vector(AllocatorType& allocator);
-	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
-	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
-	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
-	Vector(const Vector& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
-	Vector(Vector&& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
+	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
+	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
+	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
+	Vector(const Vector& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
+	Vector(Vector&& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
 	Vector& operator=(const Vector& vector);
 	Vector& operator=(Vector&& vector);
 	~Vector();
@@ -89,12 +89,12 @@ private:
 
 template <typename T>
 inline Vector<T>::Vector() :
-	Vector(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default))
+	Vector(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector))
 {
 }
 template<typename T>
 inline Vector<T>::Vector(AllocatorType& allocator) :
-	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default)),
+	m_allocator(allocator),
 	m_data(static_cast<T*>(m_allocator.allocate(defaultCapacity * sizeof(T)))),
 	m_size(0),
 	m_capacity(defaultCapacity)

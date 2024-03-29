@@ -60,12 +60,22 @@ namespace mem {
 enum class AllocatorMemoryType {
 	Temporary,
 	Persistent,
+
+	First = Temporary,
+	Last = Persistent,
 };
 
 enum class AllocatorCategory {
 	Default,
 	Graphic,
 	String,
+	Vector,
+	Pool,
+	List,
+	Component,
+
+	First = Default,
+	Last = Component,
 };
 
 Allocator& getAllocator(AllocatorMemoryType memory, AllocatorCategory category);

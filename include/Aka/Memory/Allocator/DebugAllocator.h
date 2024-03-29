@@ -26,15 +26,19 @@ private:
 template <typename T>
 DebugAllocator<T>::DebugAllocator(const char* name, Allocator* parent, size_t blockSize) :
 	T(name, parent, blockSize),
-	m_allocated(0),
-	m_freed(0)
+	m_allocated(),
+	m_freed()
 {
 }
 
 template <typename T>
 DebugAllocator<T>::~DebugAllocator()
 {
-	std::cerr << "Allocator " << getName() << " allocated: " << m_allocated << " bytes, freed " << m_freed << " bytes. Leak:" << m_allocated - m_freed << std::endl;
+	std::cout << "---------------------" << std::endl;
+	std::cout << "Allocator " << getName() << std::endl;
+	std::cout << "	Allocated: " << m_allocated << " bytes" << std::endl;
+	std::cout << "	Freed " << m_freed << " bytes. " << std::endl;
+	std::cout << "	Leak:" << (int64_t)m_allocated - (int64_t)m_freed << " bytes. " << std::endl;
 }
 
 template <typename T>

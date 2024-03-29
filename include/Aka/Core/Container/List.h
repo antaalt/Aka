@@ -28,8 +28,8 @@ public:
 public:
 	List();
 	explicit List(AllocatorType& allocator);
-	List(const List& list, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
-	List(List&& list, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
+	List(const List& list, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::List, mem::AllocatorCategory::List));
+	List(List&& list, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::List, mem::AllocatorCategory::List));
 	List& operator=(const List& list);
 	List& operator=(List&& list);
 	~List();
@@ -99,12 +99,12 @@ private:
 
 template <typename T>
 inline List<T>::List() :
-	List(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default))
+	List(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::List))
 {
 }
 template<typename T>
 inline List<T>::List(AllocatorType& allocator) :
-	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default)),
+	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::List)),
 	m_first(nullptr),
 	m_last(nullptr)
 {

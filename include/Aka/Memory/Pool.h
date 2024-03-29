@@ -98,7 +98,7 @@ private:
 
 template <typename T, size_t BlockCount>
 inline Pool<T, BlockCount>::Pool() :
-	Pool(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default))
+	Pool(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Pool))
 {
 }
 

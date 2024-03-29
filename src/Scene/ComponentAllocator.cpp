@@ -57,7 +57,7 @@ void ComponentAllocatorMap::visit(std::function<void(ComponentAllocatorBase*)> _
 }
 ComponentAllocatorMap& getDefaultComponentAllocators() {
 	// Pass allocator to ComponentAllocator so that it outlives it & avoid a crash because allocator is used in pool destructor but it was already destroyed.
-	static ComponentAllocatorMap s_defaultComponentAllocators(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default));
+	static ComponentAllocatorMap s_defaultComponentAllocators(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Component));
 	return s_defaultComponentAllocators;
 }
 
