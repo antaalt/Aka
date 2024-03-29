@@ -95,6 +95,7 @@ GraphicPipeline::GraphicPipeline(
 	const char* name,
 	ProgramHandle program,
 	PrimitiveType primitive,
+	const ShaderPipelineLayout& layout,
 	const RenderPassState& renderPass,
 	const VertexState& vertices,
 	const ViewportState& viewport,
@@ -107,6 +108,7 @@ GraphicPipeline::GraphicPipeline(
 	Resource(name, ResourceType::Pipeline),
 	program(program),
 	primitive(primitive),
+	layout(layout),
 	vertices(vertices),
 	renderPass(renderPass),
 	cull(culling),
@@ -118,9 +120,10 @@ GraphicPipeline::GraphicPipeline(
 {
 }
 
-ComputePipeline::ComputePipeline(const char* name, ProgramHandle program) :
+ComputePipeline::ComputePipeline(const char* name, ProgramHandle program, const ShaderPipelineLayout& layout) :
 	Resource(name, ResourceType::Pipeline),
-	program(program)
+	program(program),
+	layout(layout)
 {
 }
 

@@ -86,12 +86,21 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	program->add(ProgramGraphic, _device);
 	gfx::ProgramHandle m_program = program->get(ProgramGraphic);
 
+
+	gfx::ShaderConstant constant;
+	constant.offset = 0;
+	constant.size = sizeof(mat4f);
+	constant.shader = gfx::ShaderMask::Vertex;
+	gfx::ShaderPipelineLayout layout{};
+	layout.addConstant(constant);
+
 	m_backbufferRenderPass = _device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
 	m_backbuffer = _device->createBackbuffer(m_backbufferRenderPass);
 	m_pipeline = _device->createGraphicPipeline(
 		"DebugDraw",
 		m_program,
 		gfx::PrimitiveType::Lines,
+		layout,
 		_device->get(m_backbufferRenderPass)->state,
 		gfx::VertexState{}.add(DebugVertex::getVertexLayout()),
 		gfx::ViewportState{}.size(width, height),

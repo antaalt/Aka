@@ -9,12 +9,6 @@
 
 namespace aka {
 
-struct ShaderReloadedEvent 
-{
-	ShaderKey shader;
-	ProgramKey program;
-};
-
 struct ShaderFileData
 {
 	Timestamp timestamp;

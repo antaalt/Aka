@@ -123,9 +123,10 @@ public:
 	virtual const Shader* get(ShaderHandle handle) = 0;
 
 	// Programs
-	virtual ProgramHandle createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) = 0;
-	virtual ProgramHandle createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) = 0;
-	virtual ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) = 0;
+	virtual ProgramHandle createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout) = 0;
+	virtual ProgramHandle createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout) = 0;
+	virtual ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout) = 0;
+	virtual void replace(ProgramHandle oldProgram, ProgramHandle newProgram) = 0;
 	virtual void destroy(ProgramHandle program) = 0;
 	virtual const Program* get(ProgramHandle program) = 0;
 
@@ -188,6 +189,7 @@ public:
 		const char* name,
 		ProgramHandle program,
 		PrimitiveType primitive,
+		const ShaderPipelineLayout& layout,
 		const RenderPassState& renderPass,
 		const VertexState& vertices,
 		const ViewportState& viewport,
@@ -199,7 +201,8 @@ public:
 	) = 0;
 	virtual ComputePipelineHandle createComputePipeline(
 		const char* name,
-		ProgramHandle program
+		ProgramHandle program,
+		const ShaderPipelineLayout& layout
 	) = 0;
 	virtual void destroy(GraphicPipelineHandle handle) = 0;
 	virtual void destroy(ComputePipelineHandle handle) = 0;

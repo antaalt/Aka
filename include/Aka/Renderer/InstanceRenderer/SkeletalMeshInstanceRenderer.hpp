@@ -18,7 +18,6 @@ public:
 	void prepare(gfx::FrameHandle frame) override;
 	void render(const View& view, gfx::FrameHandle frame) override;
 	void resize(uint32_t width, uint32_t height) override;
-	void onReceive(const ShaderReloadedEvent& event) override;
 
 	InstanceHandle createInstance(AssetID assetID) override;
 	void updateBoneInstanceTransform(InstanceHandle instanceHandle, uint32_t boneIndex, const mat4f& transform);
@@ -35,6 +34,7 @@ private:
 	gfx::BufferHandle m_instanceBuffer[gfx::MaxFrameInFlight];
 	gfx::DescriptorPoolHandle m_modelDescriptorPool;
 	gfx::DescriptorSetHandle m_modelDescriptorSet;
+	gfx::ShaderPipelineLayout m_layout;
 
 	gfx::GraphicPipelineHandle m_pipeline;
 	ProgramKey m_programKey;

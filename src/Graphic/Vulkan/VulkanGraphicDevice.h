@@ -47,9 +47,10 @@ public:
 	const Shader* get(ShaderHandle handle) override;
 
 	// Programs
-	ProgramHandle createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) override;
-	ProgramHandle createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) override;
-	ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) override;
+	ProgramHandle createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout) override;
+	ProgramHandle createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout) override;
+	ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout) override;
+	void replace(ProgramHandle oldProgram, ProgramHandle newProgram) override;
 	void destroy(ProgramHandle handle) override;
 	const Program* get(ProgramHandle handle) override;
 
@@ -124,6 +125,7 @@ public:
 		const char* name,
 		ProgramHandle program,
 		PrimitiveType primitive,
+		const ShaderPipelineLayout& layout,
 		const RenderPassState& renderPass,
 		const VertexState& vertices,
 		const ViewportState& viewport,
@@ -135,7 +137,8 @@ public:
 	) override;
 	ComputePipelineHandle createComputePipeline(
 		const char* name,
-		ProgramHandle program
+		ProgramHandle program,
+		const ShaderPipelineLayout& layout
 	) override;
 	void destroy(GraphicPipelineHandle handle) override;
 	void destroy(ComputePipelineHandle handle) override;

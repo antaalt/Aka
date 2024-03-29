@@ -47,17 +47,15 @@ void Renderer::create()
 	getDevice()->getBackbufferSize(m_width, m_height);
 
 	{ // View
-		gfx::ShaderBindingState bindings{};
-		bindings.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
-		m_viewDescriptorPool = getDevice()->createDescriptorPool("ViewDescriptorPool", bindings, MaxViewCount * gfx::MaxFrameInFlight);
+		m_viewDescriptorLayout.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
+		m_viewDescriptorPool = getDevice()->createDescriptorPool("ViewDescriptorPool", m_viewDescriptorLayout, MaxViewCount * gfx::MaxFrameInFlight);
 	}
 
 	{ // Textures
 		// Bindless
-		gfx::ShaderBindingState bindlessBindings{};
-		bindlessBindings.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, gfx::ShaderBindingFlag::Bindless, MaxBindlessResources);
-		m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", bindlessBindings, MaxBindlessResources);
-		m_bindlessDescriptorSet = getDevice()->allocateDescriptorSet("BindlessSet", bindlessBindings, m_bindlessPool);
+		m_bindlessDescriptorLayout.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, gfx::ShaderBindingFlag::Bindless, MaxBindlessResources);
+		m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", m_bindlessDescriptorLayout, MaxBindlessResources);
+		m_bindlessDescriptorSet = getDevice()->allocateDescriptorSet("BindlessSet", m_bindlessDescriptorLayout, m_bindlessPool);
 
 		// Samplers
 		m_defaultSamplers[EnumToIndex(SamplerType::Nearest)] = m_device->createSampler(
@@ -93,10 +91,9 @@ void Renderer::create()
 		m_materialStagingBuffer = getDevice()->createBuffer("MaterialBuffer", gfx::BufferType::Storage, sizeof(MaterialData) * MaxMaterialCount, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::ReadWrite);
 		m_materialBuffer = getDevice()->createBuffer("MaterialBuffer", gfx::BufferType::Storage, sizeof(MaterialData) * MaxMaterialCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 
-		gfx::ShaderBindingState materialBindings{};
-		materialBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment);
-		m_materialPool = getDevice()->createDescriptorPool("MaterialDescriptorPool", materialBindings, MaxMaterialCount);
-		m_materialSet = getDevice()->allocateDescriptorSet("MaterialdescriptorSet", materialBindings, m_materialPool);
+		m_materialDescriptorLayout.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex | gfx::ShaderMask::Fragment);
+		m_materialPool = getDevice()->createDescriptorPool("MaterialDescriptorPool", m_materialDescriptorLayout, MaxMaterialCount);
+		m_materialSet = getDevice()->allocateDescriptorSet("MaterialdescriptorSet", m_materialDescriptorLayout, m_materialPool);
 
 		Vector<gfx::DescriptorUpdate> updates;
 		updates.append(gfx::DescriptorUpdate::storageBuffer(0, 0, m_materialBuffer, 0, sizeof(MaterialData) * MaxMaterialCount));
@@ -427,17 +424,6 @@ void Renderer::resize(uint32_t width, uint32_t height)
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->resize(width, height);
-	}
-}
-
-void Renderer::onReceive(const ShaderReloadedEvent& event)
-{
-	getDevice()->wait();
-	for (InstanceType instanceType : EnumRange<InstanceType>())
-	{
-		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
-			continue;
-		m_instanceRenderer[EnumToIndex(instanceType)]->onReceive(event);
 	}
 }
 

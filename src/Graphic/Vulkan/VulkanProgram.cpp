@@ -62,18 +62,18 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 	}
 }
 
-VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
-	Program(name, vertex, fragment, sets, bindingCounts, constants, constantCount)
+VulkanProgram::VulkanProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout) :
+	Program(name, vertex, fragment, layout)
 {
 }
 
-VulkanProgram::VulkanProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
-	Program(name, task, mesh, fragment, sets, bindingCounts, constants, constantCount)
+VulkanProgram::VulkanProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout) :
+	Program(name, task, mesh, fragment, layout)
 {
 }
 
-VulkanProgram::VulkanProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount) :
-	Program(name, compute, sets, bindingCounts, constants, constantCount)
+VulkanProgram::VulkanProgram(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout) :
+	Program(name, compute, layout)
 {
 }
 
@@ -280,62 +280,76 @@ VulkanShader::VulkanShader(const char* name, ShaderType type) :
 
 // -----------------------------------------------------------------
 
-ProgramHandle VulkanGraphicDevice::createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
-{
-	// TODO check shaders
-	if (bindingCounts > ShaderMaxSetCount)
-		return ProgramHandle::null;
-	if (sets[0].count > ShaderMaxBindingCount)
-		return ProgramHandle::null;
-	VulkanProgram* vk_program = m_programPool.acquire(name, vertex, fragment, sets, bindingCounts, constants, constantCount);
 
-	// Create vk data
-	for (uint32_t i = 0; i < bindingCounts; i++)
-	{
-		//vk_program->vk_descriptorSetLayout[i] = m_context.getDescriptorSetLayout(vk_program->sets[i]);
-	}
+ProgramHandle VulkanGraphicDevice::createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout)
+{
+	if (!layout.isValid())
+		return ProgramHandle::null;
+
+	VulkanProgram* vk_program = m_programPool.acquire(name, vertex, fragment, layout);
 
 	vk_program->native = 0;// reinterpret_cast<std::uintptr_t>(vk_program->vk_descriptorSet);
 
 	return ProgramHandle{ vk_program };
 }
-ProgramHandle VulkanGraphicDevice::createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
+ProgramHandle VulkanGraphicDevice::createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout)
 {
-	// TODO check shaders
-	if (bindingCounts > ShaderMaxSetCount)
+	if (!layout.isValid())
 		return ProgramHandle::null;
-	if (sets[0].count > ShaderMaxBindingCount)
-		return ProgramHandle::null;
-	VulkanProgram* vk_program = m_programPool.acquire(name, task, mesh, fragment, sets, bindingCounts, constants, constantCount);
 
-	// Create vk data
-	for (uint32_t i = 0; i < bindingCounts; i++)
-	{
-		//vk_program->vk_descriptorSetLayout[i] = m_context.getDescriptorSetLayout(vk_program->sets[i]);
-	}
+	VulkanProgram* vk_program = m_programPool.acquire(name, task, mesh, fragment, layout);
 
 	vk_program->native = 0;// reinterpret_cast<std::uintptr_t>(vk_program->vk_descriptorSet);
 
 	return ProgramHandle{ vk_program };
 }
-ProgramHandle VulkanGraphicDevice::createComputeProgram(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount)
+ProgramHandle VulkanGraphicDevice::createComputeProgram(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout)
 {
-	// TODO check shaders
-	if (bindingCounts > ShaderMaxSetCount)
+	if (!layout.isValid())
 		return ProgramHandle::null;
-	if (sets[0].count > ShaderMaxBindingCount)
-		return ProgramHandle::null;
-	VulkanProgram* vk_program = m_programPool.acquire(name, compute, sets, bindingCounts, constants, constantCount);
 
-	// Create vk data
-	for (uint32_t i = 0; i < bindingCounts; i++)
-	{
-		//vk_program->vk_descriptorSetLayout[i] = m_context.getDescriptorSetLayout(vk_program->sets[i]);
-	}
+	VulkanProgram* vk_program = m_programPool.acquire(name, compute, layout);
 
 	vk_program->native = 0;// reinterpret_cast<std::uintptr_t>(vk_program->vk_descriptorSet);
 
 	return ProgramHandle{ vk_program };
+}
+
+void VulkanGraphicDevice::replace(ProgramHandle oldProgram, ProgramHandle newProgram)
+{
+	wait();
+	VulkanProgram* oldP = getVk<VulkanProgram>(oldProgram);
+	VulkanProgram* newP = getVk<VulkanProgram>(newProgram);
+	if (oldP->hasFragmentStage())
+	{
+		for (VulkanGraphicPipeline& pipeline : m_graphicPipelinePool)
+		{
+			if (pipeline.program == oldProgram)
+			{
+				pipeline.program = newProgram;
+				pipeline.destroy(this);
+				pipeline.create(this);
+				destroy(oldProgram);
+			}
+		}
+	}
+	else if (oldP->hasComputeStage())
+	{
+		for (VulkanComputePipeline& pipeline : m_computePipelinePool)
+		{
+			if (pipeline.program == oldProgram)
+			{
+				pipeline.program = newProgram;
+				pipeline.destroy(this);
+				pipeline.create(this);
+				destroy(oldProgram);
+			}
+		}
+	}
+	else
+	{
+		AKA_NOT_IMPLEMENTED;
+	}
 }
 
 void VulkanGraphicDevice::destroy(ProgramHandle program)
@@ -343,12 +357,6 @@ void VulkanGraphicDevice::destroy(ProgramHandle program)
 	if (get(program) == nullptr) return;
 
 	VulkanProgram* vk_program = getVk<VulkanProgram>(program);
-	for (uint32_t i = 0; i < vk_program->setCount; i++)
-	{
-		// This is stored in cache so should only unreference it
-		//if (vk_program->vk_descriptorSetLayout[i])
-		//	vkDestroyDescriptorSetLayout(m_context.device, vk_program->vk_descriptorSetLayout[i], nullptr);
-	}
 	m_programPool.release(vk_program);
 }
 

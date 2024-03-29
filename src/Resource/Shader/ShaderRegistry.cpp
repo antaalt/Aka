@@ -84,61 +84,65 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	const bool isComputeProgram = hasComputeStage;
 	AKA_ASSERT(!(isVertexProgram && isComputeProgram) && !(isVertexProgram && isMeshProgram) && (isVertexProgram || isComputeProgram || isMeshProgram), "Unknown stage");
 
-	const size_t ShaderTypeCount = 6;
+	constexpr size_t ShaderTypeCount = EnumCount<ShaderType>();
 	Array<ShaderData, ShaderTypeCount> datas;
 	Array<gfx::ShaderHandle, ShaderTypeCount> shaders;
+	bool shaderReplaced = false;
 	for (auto& shaderKey : key.shaders)
 	{
 		uint32_t index = EnumToIndex(shaderKey.type);
-		auto it = m_shaders.find(shaderKey);
-		if (it != m_shaders.end())
+		
+		// TODO: do not always recompute shader if it already exist. Share it between programs.
+		// TODO: opti if same macro and path, merge compilation for multiple elements
+		// TODO: use multiple entry points
+		// TODO: cache blob for same file.
+		Blob blob = compiler.compile(shaderKey);
+#if defined(AKA_DEBUG)
+		while (blob.size() == 0)
 		{
-			shaders[index] = it->second;
+			String errorMessage = "Failed to compile shader :";
+			errorMessage += shaderKey.path.cstr();
+			AlertModalMessage result = AlertModal(AlertModalType::Warning, "Failed shader compilation", errorMessage.cstr());
+			blob = compiler.compile(shaderKey);
+		} 
+#endif
+		AKA_ASSERT(blob.size() > 0, "Failed to compile shader");
+		datas[index] = compiler.reflect(blob, shaderKey.entryPoint.cstr());
+		shaders[index] = device->createShader(OS::File::basename(shaderKey.path).cstr(), shaderKey.type, blob.data(), blob.size());
+		auto itShader = m_shaders.insert(std::make_pair(shaderKey, shaders[index]));
+		if (!itShader.second)
+		{
+			// Need to update pipelines
+			shaderReplaced = true;
+			// Destroy old one
+			device->destroy(itShader.first->second);
+			// Replace register
+			m_shaders[shaderKey] = shaders[index];
+			m_shadersFileData[shaderKey] = ShaderFileData{ Timestamp::now() };
 		}
 		else
 		{
-			// TODO opti if same macro and path, merge compilation for multiple elements
-			// TOOD use multiple entry points
-			// TODO cache blob for same file.
-			Blob blob = compiler.compile(shaderKey);
-#if defined(AKA_DEBUG)
-			while (blob.size() == 0)
-			{
-				String errorMessage = "Failed to compile shader :";
-				errorMessage += shaderKey.path.cstr();
-				AlertModalMessage result = AlertModal(AlertModalType::Warning, "Failed shader compilation", errorMessage.cstr());
-				blob = compiler.compile(shaderKey);
-			} 
-#endif
-			AKA_ASSERT(blob.size() > 0, "Failed to compile shader");
-			datas[index] = compiler.reflect(blob, shaderKey.entryPoint.cstr());
-			shaders[index] = device->createShader(OS::File::basename(shaderKey.path).cstr(), shaderKey.type, blob.data(), blob.size());
-			auto itShader = m_shaders.insert(std::make_pair(shaderKey, shaders[index]));
-			AKA_ASSERT(itShader.second, "Failed to insert shader");
-			auto itShaderData = m_shadersFileData.insert(std::make_pair(shaderKey, ShaderFileData{Timestamp::now()}));
+			auto itShaderData = m_shadersFileData.insert(std::make_pair(shaderKey, ShaderFileData{ Timestamp::now() }));
 			AKA_ASSERT(itShaderData.second, "Failed to insert shader data");
 		}
 	}
 	// Merge shader bindings
-	size_t setCount = 0;
-	gfx::ShaderBindingState states[gfx::ShaderMaxSetCount]{};
+	gfx::ShaderPipelineLayout layout;
 	for (const ShaderData& data : datas) // for each shader
 	{
-		setCount = max(data.sets.size(), setCount);
+		layout.setCount = max((uint32_t)data.sets.size(), layout.setCount);
 		for (uint32_t iSet = 0; iSet < data.sets.size(); iSet++)
 		{
-			states[iSet] = merge(data.sets[iSet], states[iSet]);
+			layout.sets[iSet] = merge(data.sets[iSet], layout.sets[iSet]);
 		}
 	}
 	// Merge shader constants
-	size_t constantCount = 0;
-	gfx::ShaderConstant constants[gfx::ShaderMaxConstantCount]{};
 	for (const ShaderData& data : datas) // for each shader
 	{
-		constantCount = max(data.constants.size(), constantCount);
+		layout.constantCount = max((uint32_t)data.constants.size(), layout.constantCount);
 		for (uint32_t iCst = 0; iCst < data.constants.size(); iCst++)
 		{
-			constants[iCst] = merge(data.constants[iCst], constants[iCst]);
+			layout.constants[iCst] = merge(data.constants[iCst], layout.constants[iCst]);
 		}
 	}
 	// Create shaders
@@ -155,24 +159,18 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 			name.cstr(),
 			shaders[EnumToIndex(gfx::ShaderType::Vertex)],
 			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
-			states,
-			static_cast<uint32_t>(setCount),
-			constants,
-			static_cast<uint32_t>(constantCount)
+			layout
 		);
 	}
 	else if (isMeshProgram)
 	{
-		name = "GraphicProgram" + name;
+		name = "GraphicMeshProgram" + name;
 		program = device->createMeshProgram(
 			name.cstr(),
 			hasTaskStage ? shaders[EnumToIndex(gfx::ShaderType::Task)] : gfx::ShaderHandle::null,
 			shaders[EnumToIndex(gfx::ShaderType::Mesh)],
 			shaders[EnumToIndex(gfx::ShaderType::Fragment)],
-			states,
-			static_cast<uint32_t>(setCount),
-			constants,
-			static_cast<uint32_t>(constantCount)
+			layout
 		);
 	}
 	else if (isComputeProgram)
@@ -181,14 +179,22 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 		program = device->createComputeProgram(
 			name.cstr(),
 			shaders[EnumToIndex(gfx::ShaderType::Compute)],
-			states,
-			static_cast<uint32_t>(setCount),
-			constants,
-			static_cast<uint32_t>(constantCount)
+			layout
 		);
 	}
 	if (program != gfx::ProgramHandle::null)
-		m_programs.insert(std::make_pair(key, program));
+	{
+		auto it = m_programs.insert(std::make_pair(key, program));
+		if (!it.second || shaderReplaced)
+		{
+			// Already exist, we need to replace it.
+			device->replace(it.first->second, program);
+			// Destroy old one
+			device->destroy(it.first->second);
+			// Replace register
+			m_programs[key] = program;
+		}
+	}
 }
 
 void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
@@ -213,83 +219,24 @@ void ShaderRegistry::remove(const ProgramKey& key, gfx::GraphicDevice* device)
 		ProgramKey programKey = itProgram->first;
 		gfx::ProgramHandle programHandle = itProgram->second;
 		const gfx::Program* program = device->get(programHandle);
-		if (program->vertex != gfx::ShaderHandle::null)
+
+		for (gfx::ShaderType shaderType : EnumRange<gfx::ShaderType>())
 		{
-			for (auto shaderKey : programKey.shaders)
+			if (program->shaders[EnumToIndex(shaderType)] != gfx::ShaderHandle::null)
 			{
-				if (shaderKey.type == gfx::ShaderType::Vertex && getRefCount(shaderKey) == 1)
+				for (auto shaderKey : programKey.shaders)
 				{
-					device->destroy(program->vertex);
-					auto itShader = m_shaders.find(shaderKey);
-					if (itShader != m_shaders.end())
-						m_shaders.erase(itShader);
-					auto itShaderData = m_shadersFileData.find(shaderKey);
-					if (itShaderData != m_shadersFileData.end())
-						m_shadersFileData.erase(itShaderData);
-				}
-			}
-		}
-		if (program->fragment != gfx::ShaderHandle::null)
-		{
-			for (auto shaderKey : programKey.shaders)
-			{
-				if (shaderKey.type == gfx::ShaderType::Fragment && getRefCount(shaderKey) == 1)
-				{
-					device->destroy(program->fragment);
-					auto itShader = m_shaders.find(shaderKey);
-					if (itShader != m_shaders.end())
-						m_shaders.erase(itShader);
-					auto itShaderData = m_shadersFileData.find(shaderKey);
-					if (itShaderData != m_shadersFileData.end())
-						m_shadersFileData.erase(itShaderData);
-				}
-			}
-		}
-		if (program->task != gfx::ShaderHandle::null)
-		{
-			for (auto shaderKey : programKey.shaders)
-			{
-				if (shaderKey.type == gfx::ShaderType::Task && getRefCount(shaderKey) == 1)
-				{
-					device->destroy(program->task);
-					auto itShader = m_shaders.find(shaderKey);
-					if (itShader != m_shaders.end())
-						m_shaders.erase(itShader);
-					auto itShaderData = m_shadersFileData.find(shaderKey);
-					if (itShaderData != m_shadersFileData.end())
-						m_shadersFileData.erase(itShaderData);
-				}
-			}
-		}
-		if (program->mesh != gfx::ShaderHandle::null)
-		{
-			for (auto shaderKey : programKey.shaders)
-			{
-				if (shaderKey.type == gfx::ShaderType::Mesh && getRefCount(shaderKey) == 1)
-				{
-					device->destroy(program->mesh);
-					auto itShader = m_shaders.find(shaderKey);
-					if (itShader != m_shaders.end())
-						m_shaders.erase(itShader);
-					auto itShaderData = m_shadersFileData.find(shaderKey);
-					if (itShaderData != m_shadersFileData.end())
-						m_shadersFileData.erase(itShaderData);
-				}
-			}
-		}
-		if (program->compute != gfx::ShaderHandle::null)
-		{
-			for (auto shaderKey : programKey.shaders)
-			{
-				if (shaderKey.type == gfx::ShaderType::Compute && getRefCount(shaderKey) == 1)
-				{
-					device->destroy(program->compute);
-					auto itShader = m_shaders.find(shaderKey);
-					if (itShader != m_shaders.end())
-						m_shaders.erase(itShader);
-					auto itShaderData = m_shadersFileData.find(shaderKey);
-					if (itShaderData != m_shadersFileData.end())
-						m_shadersFileData.erase(itShaderData);
+					if (shaderKey.type == shaderType)
+					{
+						device->destroy(program->shaders[EnumToIndex(shaderType)]);
+						auto itShader = m_shaders.find(shaderKey);
+						if (itShader != m_shaders.end())
+							m_shaders.erase(itShader);
+						auto itShaderData = m_shadersFileData.find(shaderKey);
+						if (itShaderData != m_shadersFileData.end())
+							m_shadersFileData.erase(itShaderData);
+						break; // key should not be duplicated
+					}
 				}
 			}
 		}
@@ -355,11 +302,16 @@ void ShaderRegistry::reload(const ShaderKey& _shaderKey, gfx::GraphicDevice* dev
 	// Send events.
 	for (auto program : programToReload)
 	{
-		remove(program, device);
-		add(program, device);
-		EventDispatcher<ShaderReloadedEvent>::emit(ShaderReloadedEvent{ shaderKey, program });
+		auto itProgram = m_programs.find(program);
+		if (itProgram != m_programs.end())
+		{
+			gfx::ProgramHandle programHandle = itProgram->second;
+
+			// Compile new program. 
+			// This should take care of updating dependencies aswell
+			add(program, device);
+		}
 	}
-	EventDispatcher<ShaderReloadedEvent>::dispatch();
 }
 
 void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)

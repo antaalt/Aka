@@ -27,12 +27,17 @@ void SkeletalMeshInstanceRenderer::create()
 	m_batchBuffer = getDevice()->createBuffer("BatchBuffer", gfx::BufferType::Storage, sizeof(gpu::SkeletalMeshBatchData) * MaxBatchCount, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 
 
-	gfx::ShaderBindingState materialBindings{};
-	materialBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex); // asset
-	materialBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex); // batch
-	materialBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex); // bones
-	m_modelDescriptorPool = getDevice()->createDescriptorPool("ModelDescriptorPool", materialBindings, MaxMaterialCount);
-	m_modelDescriptorSet = getDevice()->allocateDescriptorSet("ModelDescriptorSet", materialBindings, m_modelDescriptorPool);
+	gfx::ShaderBindingState modelBindings{};
+	modelBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex); // asset
+	modelBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex); // batch
+	modelBindings.add(gfx::ShaderBindingType::StorageBuffer, gfx::ShaderMask::Vertex); // bones
+	m_modelDescriptorPool = getDevice()->createDescriptorPool("ModelDescriptorPool", modelBindings, MaxMaterialCount);
+	m_modelDescriptorSet = getDevice()->allocateDescriptorSet("ModelDescriptorSet", modelBindings, m_modelDescriptorPool);
+
+	m_layout.addSet(getRenderer().getViewDescriptorSetLayout());
+	m_layout.addSet(getRenderer().getMaterialDescriptorSetLayout());
+	m_layout.addSet(getRenderer().getBindlessDescriptorSetLayout());
+	m_layout.addSet(modelBindings);
 
 	Vector<gfx::DescriptorUpdate> updates;
 	updates.append(gfx::DescriptorUpdate::storageBuffer(0, 0, m_assetBuffer, 0, sizeof(gpu::SkeletalMeshAssetData) * MaxAssetCount));
@@ -72,17 +77,12 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
 	gfx::ProgramHandle programHandle = registry->get(m_programKey);
 
-	// For now, we hack these as its difficult to generate them from shader reflection.
-	// Should not use shader reflection and maybe have some kind of api 
-	// such as shader->isCompatible(bindings) based on reflection.
-	// This way, we can disable it.
-	const_cast<gfx::Program*>(getDevice()->get(programHandle))->sets[2].bindings[0].count = MaxBindlessResources;
-	const_cast<gfx::Program*>(getDevice()->get(programHandle))->sets[2].bindings[0].flags = gfx::ShaderBindingFlag::Bindless;
 	// Create pipeline
 	m_pipeline = getDevice()->createGraphicPipeline(
 		"Graphic pipeline",
 		programHandle,
 		gfx::PrimitiveType::Triangles,
+		m_layout,
 		getDevice()->get(m_backbufferRenderPass)->state,
 		gfx::VertexState {}.add(SkeletalVertex::getState()).add(SkeletalMeshInstance::getState()),
 		gfx::ViewportState{}.size(getRenderer().getWidth(), getRenderer().getHeight()),
@@ -234,13 +234,6 @@ void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle fra
 }
 
 void SkeletalMeshInstanceRenderer::resize(uint32_t width, uint32_t height)
-{
-	getDevice()->wait();
-	destroyPipeline();
-	createPipeline();
-}
-
-void SkeletalMeshInstanceRenderer::onReceive(const ShaderReloadedEvent& event)
 {
 	getDevice()->wait();
 	destroyPipeline();

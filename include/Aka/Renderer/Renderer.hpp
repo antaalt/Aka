@@ -49,7 +49,7 @@ static const uint32_t MaxBindlessResources = 16536;
 static const uint32_t MaxMaterialCount = 200;
 static const uint32_t MaxGeometryBufferSize = 1 << 28;
 
-class Renderer : EventListener<ShaderReloadedEvent>
+class Renderer
 {
 public:
 	Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library);
@@ -88,7 +88,6 @@ public:
 	// -- Interactions
 	void render(gfx::FrameHandle frame);
 	void resize(uint32_t width, uint32_t height);
-	void onReceive(const ShaderReloadedEvent& event);
 
 	// -- Material
 	MaterialHandle createMaterial();
@@ -97,6 +96,11 @@ public:
 
 	TextureID allocateTextureID(gfx::TextureHandle texture);
 	gfx::SamplerHandle getSampler(SamplerType type);
+
+	// -- Layout
+	gfx::ShaderBindingState getViewDescriptorSetLayout() { return m_viewDescriptorLayout; }
+	gfx::ShaderBindingState getMaterialDescriptorSetLayout() { return m_materialDescriptorLayout; }
+	gfx::ShaderBindingState getBindlessDescriptorSetLayout() { return m_bindlessDescriptorLayout; }
 
 	// -- Viewport
 	uint32_t getWidth() const { return m_width; }
@@ -145,6 +149,10 @@ private: // Material & textures
 	gfx::DescriptorPoolHandle m_materialPool;
 	gfx::SamplerHandle m_defaultSamplers[EnumCount<SamplerType>()];
 	Vector<gfx::DescriptorUpdate> m_bindlessTextureUpdates;
+private: // Layouts
+	gfx::ShaderBindingState m_viewDescriptorLayout;
+	gfx::ShaderBindingState m_materialDescriptorLayout;
+	gfx::ShaderBindingState m_bindlessDescriptorLayout;
 private:
 	DebugDrawList m_debugDrawList;
 private: // Geometry

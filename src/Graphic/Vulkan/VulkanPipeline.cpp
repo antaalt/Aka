@@ -297,6 +297,7 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
 	const char* name,
 	ProgramHandle program,
 	PrimitiveType primitive,
+	const ShaderPipelineLayout& layout,
 	const RenderPassState& renderPass,
 	const VertexState& vertices,
 	const ViewportState& viewport,
@@ -306,7 +307,7 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
 	const BlendState& blending,
 	const FillState& fill
 ) :
-	GraphicPipeline(name, program, primitive, renderPass, vertices, viewport, depth, stencil, culling, blending, fill),
+	GraphicPipeline(name, program, primitive, layout, renderPass, vertices, viewport, depth, stencil, culling, blending, fill),
 	vk_pipeline(VK_NULL_HANDLE),
 	vk_pipelineLayout(VK_NULL_HANDLE)
 {
@@ -315,39 +316,33 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
 void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 {
 	VulkanProgram* vk_program = device->getVk<VulkanProgram>(program);
+	
+	AKA_ASSERT(vk_program->isCompatible(layout), "Using incompatible binding layout for given shader");
 
 	VkDescriptorSetLayout layouts[ShaderMaxSetCount];
-	for (uint32_t i = 0; i < vk_program->setCount; i++)
+	for (uint32_t i = 0; i < layout.setCount; i++)
 	{
-		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(vk_program->sets[i]);
+		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(layout.sets[i]);
 		layouts[i] = vk_layout;
 	}
 	VkPushConstantRange constants[ShaderMaxConstantCount];
-	for (uint32_t i = 0; i < vk_program->constantCount; i++)
+	for (uint32_t i = 0; i < layout.constantCount; i++)
 	{
-		constants[i].offset = vk_program->constants[i].offset;
-		constants[i].size = vk_program->constants[i].size;
-		constants[i].stageFlags = VulkanContext::tovk(vk_program->constants[i].shader);
+		constants[i].offset = layout.constants[i].offset;
+		constants[i].size = layout.constants[i].size;
+		constants[i].stageFlags = VulkanContext::tovk(layout.constants[i].shader);
 	}
-	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount, constants, vk_program->constantCount);
+	vk_pipelineLayout = device->getVkPipelineLayout(layouts, layout.setCount, constants, layout.constantCount);
 	// Create Pipeline
-	std::vector<const VulkanShader*> vk_shaders;
+	Vector<const VulkanShader*> vk_shaders;
 	uint32_t shaderCount = 0;
-	if (VulkanShader* vertex = device->getVk<VulkanShader>(vk_program->vertex))
+
+	for (ShaderType type : EnumRange<ShaderType>())
 	{
-		vk_shaders.push_back(vertex);
-	}
-	if (VulkanShader* task = device->getVk<VulkanShader>(vk_program->task))
-	{
-		vk_shaders.push_back(task);
-	}
-	if (VulkanShader* mesh = device->getVk<VulkanShader>(vk_program->mesh))
-	{
-		vk_shaders.push_back(mesh);
-	}
-	if (VulkanShader* fragment = device->getVk<VulkanShader>(vk_program->fragment))
-	{
-		vk_shaders.push_back(fragment);
+		if (VulkanShader* shader = device->getVk<VulkanShader>(vk_program->shaders[EnumToIndex(type)]))
+		{
+			vk_shaders.append(shader);
+		}
 	}
 	vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
 		device->getVkDevice(),
@@ -524,6 +519,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 	gfxPipelineInfo.layout = pipelineLayout;
 
 	VkPipeline pipeline = VK_NULL_HANDLE;
+	// TODO: cache
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &gfxPipelineInfo, nullptr, &pipeline));
 	return pipeline;
 }
@@ -532,6 +528,7 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	const char* name,
 	ProgramHandle program,
 	PrimitiveType primitive,
+	const ShaderPipelineLayout& layout,
 	const RenderPassState& renderPass,
 	const VertexState& vertices,
 	const ViewportState& viewport,
@@ -545,18 +542,18 @@ GraphicPipelineHandle VulkanGraphicDevice::createGraphicPipeline(
 	if (get(program) == nullptr)
 		return GraphicPipelineHandle::null;
 
-	VulkanGraphicPipeline* vk_pipeline = m_graphicPipelinePool.acquire(name, program, primitive, renderPass, vertices, viewport, depth, stencil, culling, blending, fill);
+	VulkanGraphicPipeline* vk_pipeline = m_graphicPipelinePool.acquire(name, program, primitive, layout, renderPass, vertices, viewport, depth, stencil, culling, blending, fill);
 	vk_pipeline->create(this);
 
 	return GraphicPipelineHandle{ vk_pipeline };
 }
 
-ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(const char* name, ProgramHandle program)
+ComputePipelineHandle VulkanGraphicDevice::createComputePipeline(const char* name, ProgramHandle program, const ShaderPipelineLayout& layout)
 {
 	if (get(program) == nullptr)
 		return ComputePipelineHandle::null;
 
-	VulkanComputePipeline* vk_pipeline = m_computePipelinePool.acquire(name, program);
+	VulkanComputePipeline* vk_pipeline = m_computePipelinePool.acquire(name, program, layout);
 	vk_pipeline->create(this);
 
 	return ComputePipelineHandle{ vk_pipeline };
@@ -594,8 +591,8 @@ const ComputePipeline* VulkanGraphicDevice::get(ComputePipelineHandle handle)
 	return static_cast<const ComputePipeline*>(handle.__data);
 }
 
-VulkanComputePipeline::VulkanComputePipeline(const char* name, ProgramHandle program) :
-	ComputePipeline(name, program),
+VulkanComputePipeline::VulkanComputePipeline(const char* name, ProgramHandle program, const ShaderPipelineLayout& layout) :
+	ComputePipeline(name, program, layout),
 	vk_pipeline(VK_NULL_HANDLE),
 	vk_pipelineLayout(VK_NULL_HANDLE)
 {
@@ -605,25 +602,27 @@ void VulkanComputePipeline::create(VulkanGraphicDevice* device)
 {
 	VulkanProgram* vk_program = device->getVk<VulkanProgram>(program);
 
+	AKA_ASSERT(vk_program->isCompatible(layout), "Using incompatible binding layout for given shader");
+
 	VkDescriptorSetLayout layouts[ShaderMaxSetCount]{};
-	for (uint32_t i = 0; i < vk_program->setCount; i++)
+	for (uint32_t i = 0; i < layout.setCount; i++)
 	{
-		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(vk_program->sets[i]);
+		VkDescriptorSetLayout vk_layout = device->getVkDescriptorSetLayout(layout.sets[i]);
 		layouts[i] = vk_layout;
 	}
 	VkPushConstantRange constants[ShaderMaxConstantCount];
-	for (uint32_t i = 0; i < vk_program->constantCount; i++)
+	for (uint32_t i = 0; i < layout.constantCount; i++)
 	{
-		constants[i].offset = vk_program->constants[i].offset;
-		constants[i].size = vk_program->constants[i].size;
-		constants[i].stageFlags = VulkanContext::tovk(vk_program->constants[i].shader);
+		constants[i].offset = layout.constants[i].offset;
+		constants[i].size = layout. constants[i].size;
+		constants[i].stageFlags = VulkanContext::tovk(layout.constants[i].shader);
 	}
-	vk_pipelineLayout = device->getVkPipelineLayout(layouts, vk_program->setCount, constants, vk_program->constantCount);
+	vk_pipelineLayout = device->getVkPipelineLayout(layouts, layout.setCount, constants, layout.constantCount);
 	// Create Pipeline
 	vk_pipeline = VulkanComputePipeline::createVkComputePipeline(
 		device->getVkDevice(),
 		vk_pipelineLayout,
-		device->getVk<VulkanShader>(vk_program->compute)
+		device->getVk<VulkanShader>(vk_program->shaders[EnumToIndex(ShaderType::Compute)])
 	);
 }
 

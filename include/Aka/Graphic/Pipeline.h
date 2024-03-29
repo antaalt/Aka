@@ -467,6 +467,7 @@ struct GraphicPipeline : Resource
 		const char* name, 
 		ProgramHandle program,
 		PrimitiveType primitive,
+		const ShaderPipelineLayout& layout,
 		const RenderPassState& renderPass,
 		const VertexState& vertices,
 		const ViewportState& viewport,
@@ -480,6 +481,7 @@ struct GraphicPipeline : Resource
 	ProgramHandle program;
 
 	PrimitiveType primitive;
+	ShaderPipelineLayout layout;
 	VertexState vertices;
 	RenderPassState renderPass;
 	CullState cull;
@@ -492,10 +494,10 @@ struct GraphicPipeline : Resource
 
 struct ComputePipeline : Resource
 {
-	ComputePipeline(const char* name, ProgramHandle program);
+	ComputePipeline(const char* name, ProgramHandle program, const ShaderPipelineLayout& layout);
 
 	ProgramHandle program;
-	//ShaderBindingState sets[ShaderMaxSetCount];
+	ShaderPipelineLayout layout;
 };
 
 struct RaytracingPipeline : Resource

@@ -13,7 +13,7 @@ namespace gfx {
 VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr));
 	std::vector<VkSurfaceFormatKHR> formats;
 	if (formatCount == 0)
 	{
@@ -21,7 +21,7 @@ VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKH
 		return VkSurfaceFormatKHR{ VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 	}
 	formats.resize(formatCount);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data());
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data()));
 	VkSurfaceFormatKHR surfaceFormat;
 	if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
 	{
@@ -46,7 +46,7 @@ bool isPresentModeAvailable(const std::vector<VkPresentModeKHR>& presentModes, V
 VkPresentModeKHR getPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr));
 
 	std::vector<VkPresentModeKHR> presentModes;
 	if (presentModeCount == 0)
@@ -55,7 +55,7 @@ VkPresentModeKHR getPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR su
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 	presentModes.resize(presentModeCount);
-	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data()));
 	// https://www.intel.com/content/www/us/en/developer/articles/training/api-without-secrets-introduction-to-vulkan-part-2.html?language=en#_Toc445674479
 	VkPresentModeKHR bestMode;
 	if (isPresentModeAvailable(presentModes, VK_PRESENT_MODE_MAILBOX_KHR)) // VSync with lowest latency, no tearing.

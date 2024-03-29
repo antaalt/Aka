@@ -34,6 +34,10 @@ enum class ShaderMask : uint8_t
 	Mesh			= 1 << EnumToIndex(ShaderType::Mesh),
 	TessControl     = 1 << EnumToIndex(ShaderType::TessControl),
 	TessEvaluation  = 1 << EnumToIndex(ShaderType::TessEvaluation),
+
+	VertexFragment	= Vertex | Fragment,
+	MeshFragment	= Mesh | Fragment,
+	TaskMeshFragment= Task | Mesh | Fragment,
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(ShaderMask)
 

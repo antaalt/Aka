@@ -16,6 +16,7 @@ struct VulkanGraphicPipeline : GraphicPipeline
 		const char* name,
 		ProgramHandle program,
 		PrimitiveType primitive,
+		const ShaderPipelineLayout& layout,
 		const RenderPassState& renderPass,
 		const VertexState& vertices,
 		const ViewportState& viewport,
@@ -52,7 +53,7 @@ struct VulkanGraphicPipeline : GraphicPipeline
 
 struct VulkanComputePipeline : ComputePipeline
 {
-	VulkanComputePipeline(const char* name, ProgramHandle program);
+	VulkanComputePipeline(const char* name, ProgramHandle program, const ShaderPipelineLayout& layout);
 
 	VkPipeline vk_pipeline;
 	VkPipelineLayout vk_pipelineLayout;

@@ -42,11 +42,11 @@ struct ShaderBindingLayout
 	ShaderBindingFlag flags = ShaderBindingFlag::None;
 	uint32_t count = 1; // Number of element for this binding
 };
-
+// set hold descriptor hold sets.
 struct ShaderBindingState
 {
-	ShaderBindingLayout bindings[ShaderMaxBindingCount];
-	uint32_t count;
+	ShaderBindingLayout bindings[ShaderMaxBindingCount] = {};
+	uint32_t count = 0;
 
 	ShaderBindingState& add(ShaderBindingType type, ShaderMask stages, ShaderBindingFlag flags = ShaderBindingFlag::None, uint32_t bindingCount = 1)
 	{
@@ -58,47 +58,76 @@ struct ShaderBindingState
 
 struct ShaderConstant
 {
-	uint32_t offset;
-	uint32_t size;
-	ShaderMask shader;
+	uint32_t offset = 0;
+	uint32_t size = 0;
+	ShaderMask shader = ShaderMask::None;
+};
+
+struct ShaderPipelineLayout 
+{
+	ShaderBindingState sets[ShaderMaxSetCount] = {};
+	uint32_t setCount = 0;
+	ShaderConstant constants[ShaderMaxConstantCount] = {};
+	uint32_t constantCount = 0;
+
+
+	ShaderPipelineLayout& addSet(const ShaderBindingState& set)
+	{
+		AKA_ASSERT(setCount + 1 < ShaderMaxSetCount, "Too many shader sets");
+		sets[setCount++] = set;
+		return *this;
+	}
+	ShaderPipelineLayout& addConstant(const ShaderConstant& constant)
+	{
+		AKA_ASSERT(constantCount + 1 < ShaderMaxConstantCount, "Too many shader constants");
+		constants[constantCount++] = constant;
+		return *this;
+	}
+
+	bool isValid() const;
 };
 
 struct Program : Resource
 {
-	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
-	Program(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
-	Program(const char* name, ShaderHandle compute, const ShaderBindingState* sets, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
+	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout);
+	Program(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout);
+	Program(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout);
 
-	// TODO replace by ShaderType flag as we could delete shader after program creation.
-	ShaderHandle task;
-	ShaderHandle mesh;
-	ShaderHandle vertex;
-	ShaderHandle fragment;
-	ShaderHandle compute;
+	ShaderHandle shaders[EnumCount<ShaderType>()];
 
-	ShaderBindingState sets[ShaderMaxSetCount];
-
-	ShaderConstant constants[ShaderMaxConstantCount];
-
-	uint32_t setCount;
-	uint32_t constantCount;
-
+	bool hasShaderStage(ShaderType _shaderType) const;
 	bool hasMeshStage() const;
 	bool hasTaskStage() const;
 	bool hasVertexStage() const;
 	bool hasFragmentStage() const;
 	bool hasComputeStage() const;
 
-	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
-	static ProgramHandle createMesh(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderBindingState* bindings, uint32_t bindingCounts, const ShaderConstant* constants, uint32_t constantCount);
-	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderBindingState* bindings, uint32_t count, const ShaderConstant* constants, uint32_t constantCount);
+	bool isCompatible(const ShaderPipelineLayout& _layout) const;
+
+	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout);
+	static ProgramHandle createMesh(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout);
+	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout);
 	static void destroy(ProgramHandle program);
+
+private:
+	// Reflection data. Do not expose.
+	ShaderPipelineLayout layout;
 };
 
 bool operator<(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 bool operator>(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 bool operator==(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
 bool operator!=(const ShaderBindingState& lhs, const ShaderBindingState& rhs);
+
+bool operator<(const ShaderConstant& lhs, const ShaderConstant& rhs);
+bool operator>(const ShaderConstant& lhs, const ShaderConstant& rhs);
+bool operator==(const ShaderConstant& lhs, const ShaderConstant& rhs);
+bool operator!=(const ShaderConstant& lhs, const ShaderConstant& rhs);
+
+bool operator<(const ShaderPipelineLayout& lhs, const ShaderPipelineLayout& rhs);
+bool operator>(const ShaderPipelineLayout& lhs, const ShaderPipelineLayout& rhs);
+bool operator==(const ShaderPipelineLayout& lhs, const ShaderPipelineLayout& rhs);
+bool operator!=(const ShaderPipelineLayout& lhs, const ShaderPipelineLayout& rhs);
 
 };
 };

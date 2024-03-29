@@ -20,7 +20,6 @@ public:
 	virtual void prepare(gfx::FrameHandle _frame) = 0;
 	virtual void render(const View& view, gfx::FrameHandle _frame) = 0;
 	virtual void resize(uint32_t _width, uint32_t _height) = 0;
-	virtual void onReceive(const ShaderReloadedEvent& _event) = 0;
 
 	virtual InstanceHandle createInstance(AssetID assetID) = 0;
 	virtual void updateInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform) = 0;
