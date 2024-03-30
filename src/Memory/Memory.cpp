@@ -175,24 +175,26 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 }; // namespace aka
 
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
-/*void* operator new(std::size_t n) noexcept(false)
+
+using byte_t = uint8_t;
+void* operator new(std::size_t n) noexcept(false)
 {
 	using namespace aka;
-	return mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).allocate(n, AllocatorFlags::None);
+	return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).allocate<byte_t>(n, AllocatorFlags::None);
 }
 void operator delete(void* p, std::size_t n) throw()
 {
 	using namespace aka;
-	mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).deallocate(p, n);
+	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate<byte_t>(static_cast<byte_t*>(p), n);
 }
 void* operator new[](std::size_t n) noexcept(false)
 {
 	using namespace aka;
-	return mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).allocate(n, AllocatorFlags::None);
+	return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).allocate<byte_t>(n, AllocatorFlags::None);
 }
 void operator delete[](void* p, std::size_t n) throw()
 {
 	using namespace aka;
-	mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).deallocate(p, n);
-}*/
+	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate<byte_t>(static_cast<byte_t*>(p), n);
+}
 #endif

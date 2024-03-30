@@ -35,13 +35,76 @@ public:
 	void deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category);
 private:
 	// Override class new & delete to not use global ones.
+	void* operator new(std::size_t n) noexcept(false)
+	{
+		return malloc(sizeof(n));
+	}
+	void operator delete(void* p, std::size_t n) throw()
+	{
+		free(p);
+	}
+	void* operator new[](std::size_t n) noexcept(false)
+	{
+		return malloc(sizeof(n));
+	}
+	void operator delete[](void* p, std::size_t n) throw()
+	{
+		free(p);
+	}
+	// custom allocator based on malloc to store allocations without tracking its own allocations.
+	template <class T>
+	struct malloc_allocator {
+		typedef size_t size_type;
+		typedef ptrdiff_t difference_type;
+		typedef T* pointer;
+		typedef const T* const_pointer;
+		typedef T& reference;
+		typedef const T& const_reference;
+		typedef T value_type;
+
+		template <class U> struct rebind { typedef malloc_allocator<U> other; };
+		malloc_allocator() throw() {}
+		malloc_allocator(const malloc_allocator&) throw() {}
+
+		template <class U> malloc_allocator(const malloc_allocator<U>&) throw() {}
+
+		~malloc_allocator() throw() {}
+
+		pointer address(reference x) const { return &x; }
+		const_pointer address(const_reference x) const { return &x; }
+
+		pointer allocate(size_type s, void const* = 0) {
+			if (0 == s)
+				return NULL;
+			pointer temp = (pointer)malloc(s * sizeof(T));
+			if (temp == NULL)
+				throw std::bad_alloc();
+			return temp;
+		}
+
+		void deallocate(pointer p, size_type) {
+			free(p);
+		}
+
+		size_type max_size() const throw() {
+			return std::numeric_limits<size_t>::max() / sizeof(T);
+		}
+
+		void construct(pointer p, const T& val) {
+			new((void*)p) T(val);
+		}
+
+		void destroy(pointer p) {
+			p->~T();
+		}
+	};
 private:
 	struct AllocatorTrackingData {
 		size_t m_allocation = 0;
 		size_t m_deallocation = 0;
 		size_t m_memoryAllocated = 0;
 		size_t m_memoryDeallocated = 0;
-		std::map<const void*, AllocationTrackingData> m_allocations;
+		std::map<const void*, AllocationTrackingData, std::less<const void*>, malloc_allocator<std::pair<const void* const, AllocationTrackingData>>> m_allocations;
 	};
 	// TODO map with allocator as pointer key
 	AllocatorTrackingData m_data[EnumCount<AllocatorMemoryType>()][EnumCount<AllocatorCategory>()];
