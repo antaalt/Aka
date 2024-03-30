@@ -6,7 +6,7 @@
 
 namespace aka {
 
-class Blob
+class Blob final
 {
 public:
 	Blob();

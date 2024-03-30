@@ -55,27 +55,32 @@ AllocatorTracker::~AllocatorTracker()
 		std::cout << "----- AllocatorMemoryType::" << toString(type) << " ------------" << std::endl;
 		for (AllocatorCategory category : EnumRange<AllocatorCategory>())
 		{
-			std::cout << "--- AllocatorCategory::" << toString(category) << " ------------" << std::endl;
+			size_t totalLeakCategory = 0;
+			std::cout << "	--- AllocatorCategory::" << toString(category) << " ------------" << std::endl;
 			const AllocatorTrackingData& data = m_data[EnumToIndex(type)][EnumToIndex(category)];
-			std::cout << data.m_allocation << " allocations for " << data.m_memoryAllocated << " bytes" << std::endl;
-			std::cout << data.m_deallocation << " deallocations for " << data.m_memoryDeallocated << " bytes" << std::endl;
-			std::cout << data.m_allocation - data.m_deallocation << " allocation leak detected for " << data.m_memoryAllocated - data.m_memoryDeallocated << " bytes" << std::endl;
+			std::cout << "		" << data.m_allocation << " allocations for " << data.m_memoryAllocated << " bytes" << std::endl;
+			std::cout << "		" << data.m_deallocation << " deallocations for " << data.m_memoryDeallocated << " bytes" << std::endl;
+			std::cout << "		" << data.m_allocation - data.m_deallocation << " allocation leak detected for " << data.m_memoryAllocated - data.m_memoryDeallocated << " bytes" << std::endl;
 			if (data.m_allocations.size() > 0)
-				std::cout << "--" << std::endl;
+				std::cout << "		--" << std::endl;
 			for (const auto& alloc : data.m_allocations)
 			{
 				const AllocationTrackingData& data = alloc.second;
-				std::cout << "Leak : " << data.info->name() << " (size(" << data.elementSize << " bytes) count(" << data.count << ")" << std::endl;
-				totalLeak += data.elementSize * data.count;
+				std::cout << "		Leak : " << data.info->name() << " (size(" << data.elementSize << " bytes) count(" << data.count << ")" << std::endl;
+				totalLeakCategory += data.elementSize * data.count;
 			}
-			std::cout << "--" << std::endl;
-			std::cout << "Total leak detected : " << totalLeak << " bytes" << std::endl;
+			std::cout << "		--" << std::endl;
+			std::cout << "		Total leaks category detected : " << totalLeakCategory << " bytes" << std::endl;
+			totalLeak += totalLeakCategory;
 		}
 	}
+	std::cout << "Total leaks detected : " << totalLeak << " bytes" << std::endl;
 }
 
 void AllocatorTracker::allocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data)
 {
+	if (pointer == nullptr)
+		return;
 	//std::cout << "Allocation for " << data.info->name() << " of " << data.count << " elements of size " << data.elementSize << std::endl;
 	AKA_ASSERT(EnumIsInRange(type), "Invalid allocator type");
 	AKA_ASSERT(EnumIsInRange(category), "Invalid allocator category");

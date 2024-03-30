@@ -154,6 +154,7 @@ public:
 				String str;
 				if (OS::File::read(header, &str))
 				{
+					// Destroyed in releaseInclude
 					char* data = new char[str.length() + 1];
 					memcpy(data, str.cstr(), str.length() + 1);
 					return new IncludeResult(header.cstr(), data, str.length(), nullptr);
@@ -171,6 +172,7 @@ public:
 			String str;
 			if (OS::File::read(header, &str))
 			{
+				// Destroyed in releaseInclude
 				char* data = new char[str.length() + 1];
 				memcpy(data, str.cstr(), str.length() + 1);
 				return new IncludeResult(header.cstr(), data, str.length(), nullptr);

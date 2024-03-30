@@ -49,10 +49,14 @@ static const uint32_t MaxBindlessResources = 16536;
 static const uint32_t MaxMaterialCount = 200;
 static const uint32_t MaxGeometryBufferSize = 1 << 28;
 
-class Renderer
+class Renderer final
 {
 public:
 	Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library);
+	Renderer(const Renderer&) = delete;
+	Renderer(Renderer&&) = delete;
+	Renderer& operator=(const Renderer&) = delete;
+	Renderer& operator=(Renderer&&) = delete;
 	~Renderer();
 
 	void create();

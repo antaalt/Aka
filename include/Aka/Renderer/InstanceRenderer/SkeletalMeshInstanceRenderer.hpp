@@ -8,10 +8,11 @@
 
 namespace aka {
 
-class SkeletalMeshInstanceRenderer : public InstanceRenderer
+class SkeletalMeshInstanceRenderer final : public InstanceRenderer
 {
 public:
 	SkeletalMeshInstanceRenderer(Renderer& renderer);
+	~SkeletalMeshInstanceRenderer() {}
 
 	void create() override;
 	void destroy() override;

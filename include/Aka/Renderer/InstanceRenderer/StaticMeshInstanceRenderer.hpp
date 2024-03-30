@@ -8,10 +8,11 @@
 
 namespace aka {
 
-class StaticMeshInstanceRenderer : public InstanceRenderer
+class StaticMeshInstanceRenderer final : public InstanceRenderer
 {
 public:
 	StaticMeshInstanceRenderer(Renderer& renderer);
+	~StaticMeshInstanceRenderer() {}
 
 	void create() override;
 	void destroy() override;

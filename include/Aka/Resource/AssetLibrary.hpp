@@ -111,6 +111,10 @@ class AssetLibrary
 {
 public:
 	AssetLibrary();
+	AssetLibrary(const AssetLibrary&) = delete;
+	AssetLibrary(AssetLibrary&&) = delete;
+	AssetLibrary& operator=(const AssetLibrary&) = delete;
+	AssetLibrary& operator=(AssetLibrary&&) = delete;
 	~AssetLibrary();
 	// parse library.json & store AssetInfo with AssetID
 	// Or parse whole folder looking for asset, with headers, we can id them

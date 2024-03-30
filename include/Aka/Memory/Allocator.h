@@ -24,6 +24,10 @@ class Allocator
 public:
 	Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category);
 	Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category, Allocator* parent, size_t blockSize);
+	Allocator(const Allocator& blob) = delete;
+	Allocator(Allocator&& blob) = delete;
+	Allocator& operator=(const Allocator& blob) = delete;
+	Allocator& operator=(Allocator&& blob) = delete;
 	virtual ~Allocator();
 
 	// Allocate memory from the allocator & track allocations

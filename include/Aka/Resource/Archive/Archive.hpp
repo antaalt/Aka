@@ -29,9 +29,13 @@ struct Archive;
 
 using AssetLoadCache = std::map<AssetID, Archive*>;
 
-struct ArchiveLoadContext
+struct ArchiveLoadContext final
 {
 	ArchiveLoadContext(Archive& _archive, AssetLibrary* library, bool _loadDependency = true);
+	ArchiveLoadContext(const ArchiveLoadContext&) = delete;
+	ArchiveLoadContext(ArchiveLoadContext&&) = delete;
+	ArchiveLoadContext& operator=(const ArchiveLoadContext&) = delete;
+	ArchiveLoadContext& operator=(ArchiveLoadContext&&) = delete;
 	~ArchiveLoadContext();
 
 	template <typename T> T& addArchive(AssetID assetID);
@@ -49,9 +53,13 @@ private:
 	AssetLibrary* m_library;
 };
 
-struct ArchiveSaveContext
+struct ArchiveSaveContext final
 {
 	ArchiveSaveContext(Archive& _archive, AssetLibrary* library, bool _saveDependency = true);
+	ArchiveSaveContext(const ArchiveSaveContext&) = delete;
+	ArchiveSaveContext(ArchiveSaveContext&&) = delete;
+	ArchiveSaveContext& operator=(const ArchiveSaveContext&) = delete;
+	ArchiveSaveContext& operator=(ArchiveSaveContext&&) = delete;
 	~ArchiveSaveContext();
 
 	template <typename T> T& addArchive(AssetID assetID, T& archive);
@@ -81,6 +89,7 @@ struct Archive
 {
 	Archive(AssetType _type) : m_type(_type), m_id(AssetID::Invalid) {}
 	Archive(AssetType _type, AssetID _id) : m_type(_type), m_id(_id) {}
+	virtual ~Archive() {}
 
 	ArchiveParseResult load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob);
 	ArchiveParseResult load(ArchiveLoadContext& _context, const AssetPath& _path);

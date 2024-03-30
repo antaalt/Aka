@@ -18,6 +18,10 @@ class ShaderRegistry
 {
 public:
 	ShaderRegistry();
+	ShaderRegistry(const ShaderRegistry&) = delete;
+	ShaderRegistry(ShaderRegistry&&) = delete;
+	ShaderRegistry& operator=(const ShaderRegistry&) = delete;
+	ShaderRegistry& operator=(ShaderRegistry&&) = delete;
 	~ShaderRegistry();
 
 	// Add a program to the registry

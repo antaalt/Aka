@@ -60,6 +60,7 @@ ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::Descripto
 
 void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 {
+	AKA_ASSERT(m_renderData == nullptr, "");
 	m_renderData = new ImGuiRenderData;
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();

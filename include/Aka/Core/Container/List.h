@@ -202,16 +202,14 @@ template <typename T>
 inline T& List<T>::append(const T& value)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	new (m_data + off) T(value);
+	resize(m_size + 1; value);
 	return last();
 }
 template <typename T>
 inline T& List<T>::append(T&& value)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	new (m_data + off) T(std::move(value));
+	resize(m_size + 1; T(std::move(value));
 	return last();
 }
 template<typename T>
@@ -219,8 +217,7 @@ template<typename ...Args>
 inline T& List<T>::emplace(Args ...args)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	new (m_data + off) T(std::forward<Args>(args)...);
+	resize(m_size + 1; T(std::forward<Args>(args)...));
 	return last();
 }
 template <typename T>

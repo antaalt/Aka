@@ -29,6 +29,8 @@ Renderer::Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library) :
 	m_device(_device),
 	m_library(_library)
 {
+	for (InstanceType instanceType : EnumRange<InstanceType>())
+		m_instanceRenderer[EnumToIndex(instanceType)] = nullptr;
 	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)] = new StaticMeshInstanceRenderer(*this);
 	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)] = new SkeletalMeshInstanceRenderer(*this);
 }

@@ -9,6 +9,10 @@ class Layer
 {
 public:
 	Layer();
+	Layer(const Layer&) = delete;
+	Layer(Layer&&) = delete;
+	Layer& operator=(const Layer&) = delete;
+	Layer& operator=(Layer&&) = delete;
 	virtual ~Layer();
 	template <typename T, typename... Args> T* addLayer(Args&&... args);
 private:

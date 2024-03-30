@@ -157,17 +157,17 @@ inline Str<T>::Str(const T* str, AllocatorType& allocator) :
 template<typename T>
 inline Str<T>::Str(const T* str, size_t length, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_string(static_cast<T*>(m_allocator.allocate<T>(max(length + 1, defaultCapacity)))),
+	m_string(m_allocator.allocate<T>(max(length + 1, defaultCapacity))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
-	Str<T>::copy(m_string, m_capacity, str);
+	Str<T>::copy(m_string, m_length, str);
 	m_string[length] = '\0';
 }
 template<typename T>
 inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_string(static_cast<T*>(m_allocator.allocate<T>(max(length + 1, defaultCapacity)))),
+	m_string(m_allocator.allocate<T>(max(length + 1, defaultCapacity))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -178,7 +178,7 @@ inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
 template<typename T>
 inline Str<T>::Str(size_t length, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_string(static_cast<T*>(m_allocator.allocate<T>(max(length + 1, defaultCapacity)))),
+	m_string(m_allocator.allocate<T>(max(length + 1, defaultCapacity))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -204,7 +204,7 @@ template<typename T>
 inline Str<T>& Str<T>::operator=(const Str<T>& str)
 {
 	resize(str.m_length);
-	Str<T>::copy(m_string, str.m_capacity, str.m_string);
+	Str<T>::copy(m_string, str.m_length, str.m_string);
 	return *this;
 }
 template<typename T>
@@ -221,7 +221,7 @@ inline Str<T>& Str<T>::operator=(const T* str)
 {
 	size_t length = Str<T>::length(str);
 	resize(length);
-	Str<T>::copy(m_string, length + 1, str);
+	Str<T>::copy(m_string, length, str);
 	return *this;
 }
 template<typename T>
@@ -323,7 +323,7 @@ inline Str<T>& Str<T>::append(const Str<T>& str)
 	size_t off = m_length;
 	size_t len = str.length();
 	resize(off + len);
-	Str<T>::copy(m_string + off, len + 1, str.cstr());
+	Str<T>::copy(m_string + off, len, str.cstr());
 	return *this;
 }
 template<typename T>
@@ -384,7 +384,7 @@ inline void Str<T>::reserve(size_t size)
 	if (size <= m_capacity)
 		return;
 	size_t oldCapacity = m_capacity;
-	size_t newCapacity = max(size, defaultCapacity + 1);
+	size_t newCapacity = max(size, defaultCapacity);
 	T* buffer = m_allocator.allocate<T>(newCapacity);
 	Str<T>::copy(buffer, oldCapacity, m_string);
 	m_allocator.deallocate<T>(m_string, oldCapacity);
@@ -394,7 +394,8 @@ inline void Str<T>::reserve(size_t size)
 template<typename T>
 inline void Str<T>::clear()
 {
-	*this = Str<T>(Str<T>::null());
+	m_length = 0;
+	m_string[0] = '\0';
 }
 template<typename T>
 inline bool Str<T>::empty() const
@@ -578,7 +579,7 @@ inline Str<T> Str<T>::substr(size_t start, size_t len) const
 template <typename T>
 inline Str<T> operator+(T c, const Str<T>& str)
 {
-	return Str<T>().append(c) + str;
+	return Str<T>(1, c) + str;
 }
 template <typename T>
 inline Str<T> operator+(const T* s, const Str<T>& str)

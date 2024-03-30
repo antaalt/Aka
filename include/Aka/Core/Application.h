@@ -54,6 +54,10 @@ class Application :
 {
 public:
 	Application(const Config& cfg);
+	Application(const Application&) = delete;
+	Application(Application&&) = delete;
+	Application& operator=(const Application&) = delete;
+	Application& operator=(Application&&) = delete;
 	virtual ~Application();
 private:
 	// Create the application and its resources.

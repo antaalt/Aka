@@ -112,18 +112,18 @@ inline Vector<T>::Vector(const T* data, size_t size, AllocatorType& allocator) :
 template <typename T>
 inline Vector<T>::Vector(size_t size, const T& value, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_data(m_allocator.allocate<T>(size)),
+	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
-	m_capacity(size)
+	m_capacity(max(size, defaultCapacity))
 {
 	std::uninitialized_fill(begin(), end(), value);
 }
 template <typename T>
 inline Vector<T>::Vector(size_t size, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_data(m_allocator.allocate<T>(size)),
+	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
-	m_capacity(size)
+	m_capacity(max(size, defaultCapacity))
 {
 	std::uninitialized_default_construct(begin(), end());
 }
@@ -148,7 +148,7 @@ template <typename T>
 inline Vector<T>& Vector<T>::operator=(const Vector& vector)
 {
 	resize(vector.size());
-	std::copy(vector.data(), vector.data() + vector.size(), begin());
+	std::copy(vector.begin(), vector.end(), begin());
 	return *this;
 }
 template <typename T>
@@ -163,11 +163,8 @@ inline Vector<T>& Vector<T>::operator=(Vector&& vector)
 template <typename T>
 inline Vector<T>::~Vector()
 {
-	if (m_capacity > 0)
-	{
-		std::destroy(begin(), end());
-		m_allocator.deallocate<T>(m_data, m_capacity);
-	}
+	std::destroy(begin(), end());
+	m_allocator.deallocate<T>(m_data, m_capacity);
 }
 template <typename T>
 inline T& Vector<T>::operator[](size_t index)
@@ -225,23 +222,22 @@ inline T& Vector<T>::append(const T* _start, const T* _end)
 	size_t size = m_size;
 	size_t range = (_end - _start);
 	resize(m_size + range);
-	std::uninitialized_copy(_start, _end, m_data + size);
+	// OPTIM: avoid resize default construction
+	std::copy(_start, _end, m_data + size);
 	return last();
 }
 template <typename T>
 inline T& Vector<T>::append(const T& value)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	new (m_data + off) T(value);
+	resize(m_size + 1, value);
 	return last();
 }
 template <typename T>
 inline T& Vector<T>::append(T&& value)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	new (m_data + off) T(std::forward<T>(value));
+	resize(m_size + 1, std::forward<T>(value));
 	return last();
 }
 template<typename T>
@@ -249,8 +245,7 @@ template<typename ...Args>
 inline T& Vector<T>::emplace(Args ...args)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	new (m_data + off) T(std::forward<Args>(args)...);
+	resize(m_size + 1, T(std::forward<Args>(args)...));
 	return last();
 }
 template <typename T>
@@ -284,13 +279,14 @@ inline void Vector<T>::resize(size_t size)
 	if (m_size == size)
 		return;
 	reserve(size);
+	T* newEnd = m_data + size;
 	if (m_size < size)
 	{
-		std::uninitialized_default_construct(m_data + m_size, m_data + size);
+		std::uninitialized_default_construct(end(), newEnd);
 	}
 	else
 	{
-		std::destroy(m_data + size, m_data + m_size);
+		std::destroy(newEnd, end());
 	}
 	m_size = size;
 }
@@ -300,13 +296,14 @@ inline void Vector<T>::resize(size_t size, const T& defaultValue)
 	if (m_size == size)
 		return;
 	reserve(size);
+	T* newEnd = m_data + size;
 	if (m_size < size)
 	{
-		std::uninitialized_fill(m_data + m_size, m_data + size, defaultValue);
+		std::uninitialized_fill(end(), newEnd, defaultValue);
 	}
 	else
 	{
-		std::destroy(m_data + size, m_data + m_size);
+		std::destroy(newEnd, end());
 	}
 	m_size = size;
 }
@@ -318,16 +315,17 @@ inline void Vector<T>::reserve(size_t size)
 	T* b = begin();
 	T* e = end();
 	size_t oldCapacity = m_capacity;
-	m_capacity = size;
-	T* buffer = m_allocator.allocate<T>(m_capacity);
+	T* buffer = m_allocator.allocate<T>(size);
 	std::uninitialized_move(b, e, buffer);
-	std::destroy(b, e); // needed ?
+	std::destroy(b, e);
 	m_allocator.deallocate<T>(m_data, oldCapacity);
+	m_capacity = size;
 	m_data = buffer;
 }
 template <typename T>
 inline void Vector<T>::clear()
 {
+	std::destroy(begin(), end());
 	m_size = 0;
 }
 template <typename T>

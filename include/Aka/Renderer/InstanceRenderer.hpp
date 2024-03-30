@@ -14,6 +14,7 @@ class InstanceRenderer
 {
 public:
 	InstanceRenderer(Renderer& _renderer);
+	virtual ~InstanceRenderer() {}
 
 	virtual void create() = 0;
 	virtual void destroy() = 0;
