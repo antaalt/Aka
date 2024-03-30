@@ -2,6 +2,7 @@
 
 #include <Aka/Resource/Shader/ShaderRegistry.h>
 #include <Aka/Core/Application.h>
+#include <Aka/Core/Bitfield.h>
 
 #include <Aka/Renderer/InstanceRenderer/SkeletalMeshInstanceRenderer.hpp>
 #include <Aka/Renderer/InstanceRenderer/StaticMeshInstanceRenderer.hpp>

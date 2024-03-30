@@ -24,11 +24,11 @@ public:
 	Str(const T* string);
 	explicit Str(AllocatorType& allocator);
 	explicit Str(const T* string, AllocatorType& allocator);
-	explicit Str(const T* string, size_t length, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
-	explicit Str(size_t length, T character, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
-	explicit Str(size_t length, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
-	Str(const Str& string, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
-	Str(Str&& string, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::String));
+	explicit Str(const T* string, size_t length, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
+	explicit Str(size_t length, T character, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
+	explicit Str(size_t length, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
+	Str(const Str& string, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
+	Str(Str&& string, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
 	Str& operator=(const Str& string);
 	Str& operator=(Str&& string);
 	Str& operator=(const T* string);
@@ -157,7 +157,7 @@ inline Str<T>::Str(const T* str, AllocatorType& allocator) :
 template<typename T>
 inline Str<T>::Str(const T* str, size_t length, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_string(static_cast<T*>(m_allocator.allocate(sizeof(T) * max(length + 1, defaultCapacity)))),
+	m_string(static_cast<T*>(m_allocator.allocate<T>(max(length + 1, defaultCapacity)))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -167,7 +167,7 @@ inline Str<T>::Str(const T* str, size_t length, AllocatorType& allocator) :
 template<typename T>
 inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_string(static_cast<T*>(m_allocator.allocate(sizeof(T)* max(length + 1, defaultCapacity)))),
+	m_string(static_cast<T*>(m_allocator.allocate<T>(max(length + 1, defaultCapacity)))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -178,7 +178,7 @@ inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
 template<typename T>
 inline Str<T>::Str(size_t length, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_string(static_cast<T*>(m_allocator.allocate(sizeof(T)* max(length + 1, defaultCapacity)))),
+	m_string(static_cast<T*>(m_allocator.allocate<T>(max(length + 1, defaultCapacity)))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
@@ -227,7 +227,7 @@ inline Str<T>& Str<T>::operator=(const T* str)
 template<typename T>
 inline Str<T>::~Str()
 {
-	m_allocator.deallocate(m_string, sizeof(T) * m_capacity);
+	m_allocator.deallocate<T>(m_string, m_capacity);
 }
 template<typename T>
 inline T& Str<T>::operator[](size_t index)
@@ -384,10 +384,11 @@ inline void Str<T>::reserve(size_t size)
 	if (size <= m_capacity)
 		return;
 	size_t oldCapacity = m_capacity;
-	T* buffer = static_cast<T*>(m_allocator.allocate(sizeof(T) * size));
+	size_t newCapacity = max(size, defaultCapacity + 1);
+	T* buffer = m_allocator.allocate<T>(newCapacity);
 	Str<T>::copy(buffer, oldCapacity, m_string);
-	m_allocator.deallocate(m_string, sizeof(T) * oldCapacity);
-	m_capacity = size;
+	m_allocator.deallocate<T>(m_string, oldCapacity);
+	m_capacity = newCapacity;
 	m_string = buffer;
 }
 template<typename T>

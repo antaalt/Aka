@@ -15,9 +15,9 @@ class Vector final
 public:
 	Vector();
 	explicit Vector(AllocatorType& allocator);
-	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
-	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
-	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
+	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
+	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
+	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
 	Vector(const Vector& vector);
 	Vector(Vector&& vector);
 	Vector& operator=(const Vector& vector);
@@ -89,13 +89,13 @@ private:
 
 template <typename T>
 inline Vector<T>::Vector() :
-	Vector(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector))
+	Vector(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector))
 {
 }
 template<typename T>
 inline Vector<T>::Vector(AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_data(static_cast<T*>(m_allocator.allocate(defaultCapacity * sizeof(T)))),
+	m_data(m_allocator.allocate<T>(defaultCapacity)),
 	m_size(0),
 	m_capacity(defaultCapacity)
 {
@@ -103,16 +103,16 @@ inline Vector<T>::Vector(AllocatorType& allocator) :
 template <typename T>
 inline Vector<T>::Vector(const T* data, size_t size, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_data(static_cast<T*>(m_allocator.allocate(size * sizeof(T)))),
+	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
-	m_capacity(size)
+	m_capacity(max(size, defaultCapacity))
 {
 	std::uninitialized_copy(data, data + size, begin());
 }
 template <typename T>
 inline Vector<T>::Vector(size_t size, const T& value, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_data(static_cast<T*>(m_allocator.allocate(size * sizeof(T)))),
+	m_data(m_allocator.allocate<T>(size)),
 	m_size(size),
 	m_capacity(size)
 {
@@ -121,7 +121,7 @@ inline Vector<T>::Vector(size_t size, const T& value, AllocatorType& allocator) 
 template <typename T>
 inline Vector<T>::Vector(size_t size, AllocatorType& allocator) :
 	m_allocator(allocator),
-	m_data(static_cast<T*>(m_allocator.allocate(size * sizeof(T)))),
+	m_data(m_allocator.allocate<T>(size)),
 	m_size(size),
 	m_capacity(size)
 {
@@ -134,7 +134,7 @@ inline Vector<T>::Vector(const Vector& vector) :
 }
 template <typename T>
 inline Vector<T>::Vector(Vector&& vector) :
-	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector)),
+	m_allocator(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector)),
 	m_data(nullptr),
 	m_size(0),
 	m_capacity(0)
@@ -166,7 +166,7 @@ inline Vector<T>::~Vector()
 	if (m_capacity > 0)
 	{
 		std::destroy(begin(), end());
-		m_allocator.deallocate(m_data, m_capacity * sizeof(T));
+		m_allocator.deallocate<T>(m_data, m_capacity);
 	}
 }
 template <typename T>
@@ -241,7 +241,7 @@ inline T& Vector<T>::append(T&& value)
 {
 	size_t off = m_size;
 	resize(m_size + 1);
-	new (m_data + off) T(std::move(value));
+	new (m_data + off) T(std::forward<T>(value));
 	return last();
 }
 template<typename T>
@@ -319,10 +319,10 @@ inline void Vector<T>::reserve(size_t size)
 	T* e = end();
 	size_t oldCapacity = m_capacity;
 	m_capacity = size;
-	T* buffer = static_cast<T*>(m_allocator.allocate(m_capacity * sizeof(T)));
+	T* buffer = m_allocator.allocate<T>(m_capacity);
 	std::uninitialized_move(b, e, buffer);
 	std::destroy(b, e); // needed ?
-	m_allocator.deallocate(m_data, oldCapacity * sizeof(T));
+	m_allocator.deallocate<T>(m_data, oldCapacity);
 	m_data = buffer;
 }
 template <typename T>

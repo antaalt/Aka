@@ -1,7 +1,8 @@
 #pragma once
 
 #include <Aka/Core/Config.h>
-#include <Aka/Core/BitField.h>
+// Include loop with Bitfield including vector > memory > allocator > enum
+//#include <Aka/Core/BitField.h>
 
 #include <type_traits>
 
@@ -47,10 +48,16 @@ inline constexpr uint32_t EnumCount()
 }
 
 template <typename T>
+inline constexpr bool EnumIsInRange(T _value)
+{
+	return _value <= T::Last && _value >= T::First;
+}
+
+/*template <typename T>
 inline constexpr uint32_t EnumBitCount()
 {
 	return 31 - countLeadingZero(static_cast<uint32_t>(T::Last));
-}
+}*/
 
 template <typename T>
 class EnumIterator

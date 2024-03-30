@@ -98,7 +98,7 @@ private:
 
 template <typename T, size_t BlockCount>
 inline Pool<T, BlockCount>::Pool() :
-	Pool(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Pool))
+	Pool(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Pool))
 {
 }
 
@@ -117,8 +117,8 @@ template <typename T, size_t BlockCount>
 typename Pool<T, BlockCount>::Block* Pool<T, BlockCount>::Block::create(AllocatorType& _allocator)
 {
 	
-	Block* block = static_cast<Block*>(_allocator.allocate(sizeof(Block)));
-	memset(block->used, 0, sizeof(block->used));
+	Block* block = static_cast<Block*>(_allocator.allocate<Block>(1));
+	Memory::set(block->used, 0, sizeof(block->used));
 	block->next = nullptr;
 	// Init data free list.
 	Chunk* start = block->chunks;
@@ -139,7 +139,7 @@ inline Pool<T, BlockCount>::~Pool()
 	{
 		Block* currentBlock = nextBlock;
 		nextBlock = currentBlock->next;
-		m_allocator.deallocate(currentBlock, sizeof(Block));
+		m_allocator.deallocate<Block>(currentBlock, 1);
 	} while (nextBlock != nullptr);
 }
 template <typename T, size_t BlockCount>

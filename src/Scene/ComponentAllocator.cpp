@@ -1,5 +1,6 @@
 #include <Aka/Scene/ComponentAllocator.hpp>
 #include <Aka/Memory/Allocator.h>
+#include <Aka/Memory/AllocatorTracker.hpp>
 
 namespace aka {
 
@@ -40,7 +41,7 @@ ComponentAllocatorMap::~ComponentAllocatorMap()
 
 void ComponentAllocatorMap::add(ComponentID _componentID, ComponentAllocatorBase* _componentAllocator)
 {
-	std::cout << "Registering component " << _componentAllocator->getName() << std::endl;
+	//std::cout << "Registering component " << _componentAllocator->getName() << std::endl;
 	m_container.insert(std::make_pair(_componentID, _componentAllocator));
 }
 ComponentAllocatorBase* ComponentAllocatorMap::get(ComponentID _componentID)
@@ -56,8 +57,13 @@ void ComponentAllocatorMap::visit(std::function<void(ComponentAllocatorBase*)> _
 	}
 }
 ComponentAllocatorMap& getDefaultComponentAllocators() {
+	// This is static initialization order fiasco, look away 
+	// Get allocator tracker to note that it need to outlive the default component allocator...
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	AllocatorTracker& tracker = getAllocatorTracker();
+#endif
 	// Pass allocator to ComponentAllocator so that it outlives it & avoid a crash because allocator is used in pool destructor but it was already destroyed.
-	static ComponentAllocatorMap s_defaultComponentAllocators(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Component));
+	static ComponentAllocatorMap s_defaultComponentAllocators(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Component));
 	return s_defaultComponentAllocators;
 }
 

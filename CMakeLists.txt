@@ -26,9 +26,10 @@ add_library (Aka
 
 	"src/Memory/Allocator.cpp"
 	"src/Memory/Memory.cpp"
-	"src/Memory/Allocator/DebugAllocator.cpp"
+	"src/Memory/Allocator/DefaultAllocator.cpp"
 	"src/Memory/Allocator/PoolAllocator.cpp"
 	"src/Memory/Allocator/LinearAllocator.cpp"
+	"src/Memory/AllocatorTracker.cpp"
 
 	"src/Layer/ImGuiLayer.cpp"
 

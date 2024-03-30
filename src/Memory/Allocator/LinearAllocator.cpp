@@ -2,8 +2,8 @@
 
 namespace aka {
 
-LinearAllocator::LinearAllocator(const char* name, Allocator* parent, size_t blockSize) :
-	Allocator(name, parent, blockSize),
+LinearAllocator::LinearAllocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category, Allocator* parent = nullptr, size_t blockSize = 0) :
+	Allocator(name, memoryType, category),
 	m_offset(0)
 {
 
@@ -14,7 +14,7 @@ LinearAllocator::~LinearAllocator()
 
 }
 
-void* LinearAllocator::allocate(size_t size, AllocatorFlags flags)
+void* LinearAllocator::allocate_internal(size_t size, AllocatorFlags flags)
 {
 	MemoryBlock* block = getMemoryBlock();
 	if (size + m_offset > block->size)
@@ -26,7 +26,7 @@ void* LinearAllocator::allocate(size_t size, AllocatorFlags flags)
 	m_offset += size;
 	return static_cast<uint8_t*>(block->mem) + offset;
 }
-void* LinearAllocator::alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags)
+void* LinearAllocator::alignedAllocate_internal(size_t size, size_t alignement, AllocatorFlags flags)
 {
 	MemoryBlock* block = getMemoryBlock();
 	if (size + m_offset > block->size)
@@ -39,12 +39,12 @@ void* LinearAllocator::alignedAllocate(size_t size, size_t alignement, Allocator
 	return static_cast<uint8_t*>(block->mem) + offset;
 }
 
-void LinearAllocator::deallocate(void* address, size_t size)
+void LinearAllocator::deallocate_internal(void* address, size_t size)
 {
 	// Linear allocator does not need to deallocate.
 }
 
-void LinearAllocator::alignedDeallocate(void* address, size_t size)
+void LinearAllocator::alignedDeallocate_internal(void* address, size_t size)
 {
 	// Linear allocator does not need to deallocate.
 }

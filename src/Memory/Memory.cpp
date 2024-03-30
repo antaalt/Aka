@@ -2,7 +2,7 @@
 
 #include <Aka/Memory/Allocator/LinearAllocator.h>
 #include <Aka/Memory/Allocator/RingAllocator.h>
-#include <Aka/Memory/Allocator/DebugAllocator.h>
+#include <Aka/Memory/Allocator/DefaultAllocator.h>
 #include <Aka/Core/Enum.h>
 
 namespace aka {
@@ -140,38 +140,32 @@ bool Memory::operator!=(const Memory& rhs)
 
 namespace mem {
 
-#define AKA_TRACK_MEMORY
-
-// Until we create a better allocator, use memory
-#if defined(AKA_TRACK_MEMORY)
-using DefaultAllocatorType = DebugAllocator<MemoryAllocator>;
-#else
-using DefaultAllocatorType = MemoryAllocator;
-#endif
+// Until we create a better allocator, use malloc
+using DefaultAllocatorType = DefaultAllocator;
 
 // There should be some memory manager running everyframe & updating all blocks.
 Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persistent, AllocatorCategory category = AllocatorCategory::Default)
 {
-	static MemoryAllocator GlobalMemoryAllocator("GlobalMemoryAllocator");
+	static DefaultAllocator GlobalMemoryAllocator("GlobalMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Default);
 
 	static DefaultAllocatorType AllocatorType[EnumCount<AllocatorMemoryType>()][EnumCount<AllocatorCategory>()] = {
 		{ // AllocatorMemoryType::Temporary
-			DefaultAllocatorType("TemporaryDefaultMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
-			DefaultAllocatorType("TemporaryGfxMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
-			DefaultAllocatorType("TemporaryStringMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
-			DefaultAllocatorType("TemporaryVectorMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
-			DefaultAllocatorType("TemporaryPoolMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
-			DefaultAllocatorType("TemporaryListMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
-			DefaultAllocatorType("TemporaryComponentMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
+			DefaultAllocatorType("TemporaryDefaultMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
+			DefaultAllocatorType("TemporaryGfxMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
+			DefaultAllocatorType("TemporaryStringMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
+			DefaultAllocatorType("TemporaryVectorMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
+			DefaultAllocatorType("TemporaryPoolMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
+			DefaultAllocatorType("TemporaryListMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
+			DefaultAllocatorType("TemporaryComponentMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
 		},
 		{ // AllocatorMemoryType::Persistent
-			DefaultAllocatorType("PersistentDefaultMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
-			DefaultAllocatorType("PersistentGfxMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
-			DefaultAllocatorType("PersistentStringMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
-			DefaultAllocatorType("PersistentVectorMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
-			DefaultAllocatorType("PersistentPoolMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
-			DefaultAllocatorType("PersistentListMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
-			DefaultAllocatorType("PersistentComponentMemoryAllocator", &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
+			DefaultAllocatorType("PersistentDefaultMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
+			DefaultAllocatorType("PersistentGfxMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
+			DefaultAllocatorType("PersistentStringMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
+			DefaultAllocatorType("PersistentVectorMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
+			DefaultAllocatorType("PersistentPoolMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
+			DefaultAllocatorType("PersistentListMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
+			DefaultAllocatorType("PersistentComponentMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
 		},
 	};
 	return AllocatorType[EnumToIndex(memory)][EnumToIndex(category)];
@@ -180,8 +174,8 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 }; // namespace mem
 }; // namespace aka
 
-#if defined(AKA_TRACK_MEMORY)
-void* operator new(std::size_t n) noexcept(false)
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+/*void* operator new(std::size_t n) noexcept(false)
 {
 	using namespace aka;
 	return mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).allocate(n, AllocatorFlags::None);
@@ -200,5 +194,5 @@ void operator delete[](void* p, std::size_t n) throw()
 {
 	using namespace aka;
 	mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).deallocate(p, n);
-}
+}*/
 #endif

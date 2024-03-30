@@ -28,8 +28,8 @@ public:
 public:
 	List();
 	explicit List(AllocatorType& allocator);
-	List(const List& list, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::List, mem::AllocatorCategory::List));
-	List(List&& list, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::List, mem::AllocatorCategory::List));
+	List(const List& list, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::List, AllocatorCategory::List));
+	List(List&& list, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::List, AllocatorCategory::List));
 	List& operator=(const List& list);
 	List& operator=(List&& list);
 	~List();
@@ -99,12 +99,12 @@ private:
 
 template <typename T>
 inline List<T>::List() :
-	List(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::List))
+	List(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::List))
 {
 }
 template<typename T>
 inline List<T>::List(AllocatorType& allocator) :
-	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::List)),
+	m_allocator(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::List)),
 	m_first(nullptr),
 	m_last(nullptr)
 {
@@ -148,7 +148,7 @@ inline List<T>::~List()
 	if (m_capacity > 0)
 	{
 		std::destroy(begin(), end());
-		m_allocator.deallocate(m_data, m_capacity * sizeof(T));
+		m_allocator.deallocate<T>(m_data, m_capacity);
 	}
 }
 template <typename T>
@@ -266,10 +266,10 @@ inline void List<T>::reserve(size_t size)
 	T* e = end();
 	size_t oldCapacity = m_capacity;
 	m_capacity = size;
-	T* buffer = static_cast<T*>(m_allocator.allocate(m_capacity * sizeof(T)));
+	T* buffer = m_allocator.allocate<T>(m_capacity);
 	std::uninitialized_move(b, e, buffer);
 	std::destroy(b, e); // needed ?
-	m_allocator.deallocate(m_data, oldCapacity * sizeof(T));
+	m_allocator.deallocate<T>(m_data, oldCapacity);
 	m_data = buffer;
 }
 template <typename T>

@@ -19,18 +19,22 @@ MemoryBlock::~MemoryBlock()
 	delete next;
 }
 
-Allocator::Allocator(const char* name) :
+Allocator::Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category) :
 	m_name(""),
+	m_type(memoryType),
+	m_category(category),
 	m_parent(nullptr),
 	m_memory(nullptr)
 {
-	String::copy(m_name, 32, name);
+	String::copy(m_name, 31, name);
 	m_name[31] = 0;
 }
-Allocator::Allocator(const char* name, Allocator* parent, size_t blockSize) :
+Allocator::Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category, Allocator* parent, size_t blockSize) :
 	m_name(""),
+	m_type(memoryType),
+	m_category(category),
 	m_parent(parent), 
-	m_memory(new MemoryBlock(m_parent->allocate(blockSize), blockSize))
+	m_memory(new MemoryBlock(m_parent->allocate<uint8_t>(blockSize), blockSize))
 {
 	String::copy(m_name, 32, name);
 	m_name[31] = 0;
@@ -80,7 +84,7 @@ MemoryBlock* Allocator::requestNewMemoryBlock()
 {
 	if (m_parent)
 	{
-		void* mem = m_parent->allocate(m_memory->size, AllocatorFlags::None);
+		void* mem = m_parent->allocate<uint8_t>(m_memory->size, AllocatorFlags::None);
 		MemoryBlock* newBlock = new MemoryBlock(mem, m_memory->size);
 		// Put new block at the end of last block
 		getMemoryBlock()->next = newBlock;
@@ -102,7 +106,7 @@ void Allocator::releaseAllMemoryBlocks()
 			MemoryBlock* block = m_memory;
 			while (block)
 			{
-				m_parent->deallocate(block->mem, block->size);
+				m_parent->deallocate<uint8_t>((uint8_t*)block->mem, block->size);
 				MemoryBlock* nextBlock = block->next;
 				delete block;
 				block = nextBlock;
@@ -114,23 +118,6 @@ void Allocator::releaseAllMemoryBlocks()
 			throw std::bad_alloc();
 		}
 	}
-}
-
-void* MemoryAllocator::allocate(size_t size, AllocatorFlags flags)
-{
-	return Memory::alloc(size);
-}
-void* MemoryAllocator::alignedAllocate(size_t size, size_t alignement, AllocatorFlags flags)
-{
-	return Memory::allocAlligned(alignement, size);
-}
-void MemoryAllocator::deallocate(void* elements, size_t size)
-{
-	Memory::free(elements);
-}
-void MemoryAllocator::alignedDeallocate(void* elements, size_t size)
-{
-	Memory::freeAligned(elements);
 }
 
 };

@@ -35,7 +35,7 @@ class ComponentAllocator : public ComponentAllocatorBase
 public:
 	ComponentAllocator(ComponentID _componentID, const char* _name) :
 		ComponentAllocatorBase(_componentID, _name),
-		m_pool(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Component))
+		m_pool(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Component))
 	{
 	}
 	T* allocate(Node* _node)
