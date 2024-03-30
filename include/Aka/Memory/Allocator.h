@@ -6,8 +6,6 @@
 
 namespace aka {
 
-
-
 struct MemoryBlock
 {
 	MemoryBlock(void* mem, size_t _size);
@@ -17,6 +15,10 @@ struct MemoryBlock
 	size_t size;
 
 	MemoryBlock* next;
+};
+
+struct AllocationHead {
+	// Dummy for non inheritance info
 };
 
 class Allocator
@@ -31,11 +33,11 @@ public:
 	virtual ~Allocator();
 
 	// Allocate memory from the allocator & track allocations
-	template <typename T>
+	template <typename T, typename Metadata = AllocationHead>
 	T* allocate(size_t count, AllocatorFlags flags = AllocatorFlags::None);
 	// Deallocate memory from the allocator & track allocations
-	template <typename T>
-	void deallocate(T* elements, size_t count);
+	template <typename T, typename Metadata = AllocationHead> // TODO: remove T
+	void deallocate(void* elements, size_t count);
 protected:
 	// Allocate memory from the allocator
 	virtual void* allocate_internal(size_t size, AllocatorFlags flags = AllocatorFlags::None) = 0;
@@ -70,28 +72,29 @@ private:
 	MemoryBlock* m_memory; // allocation for the allocator. if not enough memory, can request more to parent.
 };
 
-
-template <typename T>
-T* Allocator::allocate(size_t count, AllocatorFlags flags)
+template <typename Type, typename Metadata>
+Type* Allocator::allocate(size_t count, AllocatorFlags flags)
 {
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	AllocatorTracker& tracker = getAllocatorTracker();
 #endif
-	void* data = allocate_internal(count * sizeof(T), flags);
+	void* data = allocate_internal(count * sizeof(Type) + sizeof(Metadata), flags);
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
-	tracker.allocate<T>(data, count, m_type, m_category);
+	tracker.allocate<Type>(data, count, m_type, m_category);
 #endif
-	return static_cast<T*>(data);
+	return static_cast<Type*>(static_cast<void*>(asByte(data) + sizeof(Metadata)));
 }
 
-template <typename T>
-void Allocator::deallocate(T* elements, size_t count)
+template <typename T, typename Metadata>
+void Allocator::deallocate(void* elements, size_t size)
 {
+	if (elements == nullptr)
+		return;
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	AllocatorTracker& tracker = getAllocatorTracker();
-	tracker.deallocate(elements, m_type, m_category);
+	tracker.deallocate(static_cast<void*>(asByte(elements) - sizeof(Metadata)), m_type, m_category);
 #endif
-	deallocate_internal(static_cast<void*>(elements), count * sizeof(T));
+	deallocate_internal(static_cast<void*>(asByte(elements) - sizeof(Metadata)), size);
 }
 
 };

@@ -66,7 +66,7 @@ AllocatorTracker::~AllocatorTracker()
 			for (const auto& alloc : data.m_allocations)
 			{
 				const AllocationTrackingData& data = alloc.second;
-				std::cout << "		Leak : " << data.info->name() << " (size(" << data.elementSize << " bytes) count(" << data.count << ")" << std::endl;
+				std::cout << "		Leaking " << data.info->name() << " (size(" << data.elementSize << " bytes) count(" << data.count << "))" << std::endl;
 				totalLeakCategory += data.elementSize * data.count;
 			}
 			std::cout << "		--" << std::endl;

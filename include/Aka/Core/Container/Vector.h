@@ -4,6 +4,7 @@
 
 #include <Aka/Core/Config.h>
 #include <Aka/Memory/Memory.h>
+#include <Aka/Core/Geometry.h>
 
 namespace aka {
 

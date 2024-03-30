@@ -45,7 +45,7 @@ template <typename T, typename... Args>
 inline T* Layer::addLayer(Args&&... args)
 {
 	static_assert(std::is_base_of<Layer, T>::value, "Type is not a layer");
-	T* layer = new T(std::forward<Args>(args)...);
+	T* layer = mem::akaNew<T>(AllocatorMemoryType::Persistent, AllocatorCategory::Default, std::forward<Args>(args)...);
 	m_childrens.append(layer);
 	// TODO should be called or prevent to call addLayer after constructor...
 	//layer->onLayerCreate(*this);

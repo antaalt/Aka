@@ -77,4 +77,14 @@ constexpr size_t countof(T const (&)[N])
 	return N;
 }
 
+inline uint8_t* asByte(void* data)
+{
+	return static_cast<uint8_t*>(data);
+}
+
+inline const uint8_t* asByte(const void* data)
+{
+	return static_cast<const uint8_t*>(data);
+}
+
 };

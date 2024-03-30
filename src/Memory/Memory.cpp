@@ -192,6 +192,11 @@ void* operator new[](std::size_t n) noexcept(false)
 	using namespace aka;
 	return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).allocate<byte_t>(n, AllocatorFlags::None);
 }
+void operator delete[](void* p) throw()
+{
+	using namespace aka;
+	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate<byte_t>(static_cast<byte_t*>(p), 1);
+}
 void operator delete[](void* p, std::size_t n) throw()
 {
 	using namespace aka;

@@ -8,7 +8,7 @@ Layer::Layer()
 Layer::~Layer()
 {
 	for (Layer* layer : m_childrens)
-		delete layer;
+		mem::akaDelete(layer);
 }
 void Layer::create(Renderer* _renderer)
 {

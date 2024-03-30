@@ -2,11 +2,11 @@
 
 namespace aka {
 
-enum class AllocatorFlags {
+enum class AllocatorFlags : uint8_t {
 	None,
 };
 
-enum class AllocatorMemoryType {
+enum class AllocatorMemoryType : uint8_t {
 	Temporary,
 	Persistent,
 
@@ -14,7 +14,7 @@ enum class AllocatorMemoryType {
 	Last = Persistent,
 };
 
-enum class AllocatorCategory {
+enum class AllocatorCategory : uint8_t {
 	Default,
 	Graphic,
 	String,
