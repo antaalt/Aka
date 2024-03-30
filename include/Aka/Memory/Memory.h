@@ -65,19 +65,20 @@ template <typename T>					void akaDelete(T*& pointer);
 template <typename T>					T*   akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory category);
 template <typename T>					void akaDeleteArray(T*& pointer);
 
-struct AkaNewHead // uint8_t
+struct AkaNewHead // u8
 {
-	AllocatorMemoryType type : 1;// EnumBitCount<AllocatorMemoryType>();
-	AllocatorCategory category : 3;//EnumBitCount<AllocatorCategory>();
-	uint8_t padding : 8 - 1 - 3;// EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
+	AllocatorMemoryType type : EnumBitCount<AllocatorMemoryType>();
+	AllocatorCategory category : EnumBitCount<AllocatorCategory>();
+	uint8_t padding : 8 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
 };
 
-struct AkaNewArrayHead // uint32_t
+struct AkaNewArrayHead // u32
 {
+	using Type = uint32_t;
 	// TODO magic number
-	AllocatorMemoryType type : 1;// EnumBitCount<AllocatorMemoryType>();
-	AllocatorCategory category : 3;//EnumBitCount<AllocatorCategory>();
-	size_t count : 8 - 1 - 3;// EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
+	AllocatorMemoryType type : EnumBitCount<AllocatorMemoryType>();
+	AllocatorCategory category : EnumBitCount<AllocatorCategory>();
+	size_t count : 32 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
 };
 
 template <typename T, typename ...Args>
@@ -122,7 +123,7 @@ T* akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory categor
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	T* data = aka::mem::getAllocator(type, category).allocate<T, AkaNewArrayHead>(count, aka::AllocatorFlags::None);
 	// Store metadata in a header.
-	AKA_ASSERT(bitnum((uint32_t)count) < 32 - EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>(), "Too many instances");
+	AKA_ASSERT(countBitRange((uint32_t)count) < 32 - EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>(), "Too many instances");
 	AKA_ASSERT(EnumIsInRange(type), "Type invalid");
 	AKA_ASSERT(EnumIsInRange(category), "Category invalid");
 	AkaNewArrayHead* metadata = reinterpret_cast<AkaNewArrayHead*>(data) - 1;

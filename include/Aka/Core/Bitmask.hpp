@@ -27,8 +27,10 @@ uint32_t countTrailingZero(uint64_t x);
 
 // Generate a bitmask from a bit count
 constexpr uint32_t bitmask(uint32_t bitCount);
+// Get number of bits for a given type
+template <typename T> constexpr uint32_t countBitSize();
 // Get the number of bits required to display this value.
-uint32_t bitnum(uint32_t value);
+uint32_t countBitRange(uint32_t value);
 // Check if given number is a power of two
 bool isPowerOfTwo(uint32_t value);
 bool isPowerOfTwo(uint64_t value);
@@ -46,6 +48,11 @@ std::ostream& operator<<(std::ostream&, const bitset64&);
 constexpr uint32_t bitmask(uint32_t bitCount)
 {
 	return (1 << bitCount) - 1;
+}
+
+template <typename T> constexpr uint32_t countBitSize()
+{
+	return sizeof(T) * CHAR_BIT;
 }
 
 };

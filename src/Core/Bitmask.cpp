@@ -88,7 +88,7 @@ uint32_t countTrailingZero(uint64_t x)
 #endif
 }
 
-uint32_t bitnum(uint32_t value)
+uint32_t countBitRange(uint32_t value)
 {
 	return 32 - countLeadingZero(value);
 }

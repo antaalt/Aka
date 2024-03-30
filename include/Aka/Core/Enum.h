@@ -52,10 +52,13 @@ inline constexpr bool EnumIsInRange(T _value)
 	return _value <= T::Last && _value >= T::First;
 }
 
+template <uint32_t Count>	constexpr uint32_t BitCountOf() { return 1U + BitCountOf<(Count >> 1U)>(); }
+template <>					constexpr uint32_t BitCountOf<1>() { return 1U; }
+template <>					constexpr uint32_t BitCountOf<0>() { return 0U; }
 template <typename T>
 inline constexpr uint32_t EnumBitCount()
 {
-	return bitnum(static_cast<uint32_t>(T::Last));
+	return BitCountOf<(static_cast<uint32_t>(T::Last))>();
 }
 
 template <typename T>
@@ -99,8 +102,8 @@ private:
 template<typename Type, typename Container = uint32_t>
 struct EnumMask
 {
-	static_assert(std::is_enum<Type>::value, "This is an enum iterator");
-	static_assert(EnumCount<Type>() <= CHAR_BIT * sizeof(Container));
+	static_assert(std::is_enum<Type>::value, "This is an enum mask");
+	static_assert(EnumCount<Type>() <= sizeof(T) * CHAR_BIT );
 public:
 	EnumMask() = default;
 	explicit EnumMask(Type _type) : m_mask(1U << EnumToIndex(_type)) {}
