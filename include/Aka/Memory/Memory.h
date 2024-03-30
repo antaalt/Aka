@@ -92,7 +92,7 @@ T* akaNew(AllocatorMemoryType type, AllocatorCategory category, Args ...args)
 	AkaNewHead* metadata = reinterpret_cast<AkaNewHead*>(data) - 1;
 	metadata->type = type;
 	metadata->category = category;
-	std::cout << "creating " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
+	//std::cout << "creating " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	return new (data) T(args...);
 #else
 	return new T(args...);
@@ -107,10 +107,10 @@ void akaDelete(T*& pointer)
 	AkaNewHead* metadata = reinterpret_cast<AkaNewHead*>(pointer) - 1;
 	AllocatorMemoryType type   = metadata->type;
 	AllocatorCategory category = metadata->category;
-	std::cout << "deleting " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
+	//std::cout << "deleting " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Destroy data.
 	pointer->~T();
-	aka::mem::getAllocator(type, category).deallocate<T, AkaNewHead>(pointer, 1);
+	aka::mem::getAllocator(type, category).deallocate<AkaNewHead>(pointer, 1);
 	pointer = nullptr;
 #else
 	delete pointer;
@@ -130,7 +130,7 @@ T* akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory categor
 	metadata->type = type;
 	metadata->category = category;
 	metadata->count = count;
-	std::cout << "creating " << count << " " << typeid(T).name() << " bytes of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
+	//std::cout << "creating " << count << " " << typeid(T).name() << " bytes of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Construct data.
 	std::uninitialized_default_construct(data, data + count);
 	return data;
@@ -148,10 +148,10 @@ void akaDeleteArray(T*& pointer)
 	AllocatorMemoryType type = metadata->type;
 	AllocatorCategory category = metadata->category;
 	size_t count = metadata->count;
-	std::cout << "deleting " << count << " " << typeid(T).name() << " bytes of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
+	//std::cout << "deleting " << count << " " << typeid(T).name() << " bytes of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Deallocate data
 	std::destroy(pointer, pointer + count);
-	aka::mem::getAllocator(type, category).deallocate<T, AkaNewArrayHead>(pointer, count);
+	aka::mem::getAllocator(type, category).deallocate<AkaNewArrayHead>(pointer, count);
 	pointer = nullptr;
 #else
 	delete[] pointer;

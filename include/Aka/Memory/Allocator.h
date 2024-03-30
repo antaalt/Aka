@@ -36,7 +36,7 @@ public:
 	template <typename T, typename Metadata = AllocationHead>
 	T* allocate(size_t count, AllocatorFlags flags = AllocatorFlags::None);
 	// Deallocate memory from the allocator & track allocations
-	template <typename T, typename Metadata = AllocationHead> // TODO: remove T
+	template <typename Metadata = AllocationHead>
 	void deallocate(void* elements, size_t count);
 protected:
 	// Allocate memory from the allocator
@@ -85,7 +85,7 @@ Type* Allocator::allocate(size_t count, AllocatorFlags flags)
 	return static_cast<Type*>(static_cast<void*>(asByte(data) + sizeof(Metadata)));
 }
 
-template <typename T, typename Metadata>
+template <typename Metadata>
 void Allocator::deallocate(void* elements, size_t size)
 {
 	if (elements == nullptr)

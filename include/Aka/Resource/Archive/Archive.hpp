@@ -123,7 +123,7 @@ inline T& ArchiveLoadContext::addArchive(AssetID assetID)
 	auto it = m_dependencies.find(assetID);
 	if (it == m_dependencies.end())
 	{
-		T* archive = new T(assetID);
+		T* archive = mem::akaNew<T>(AllocatorMemoryType::Persistent, AllocatorCategory::Archive, assetID);
 		if (m_loadDependencies)
 		{
 			ArchiveParseResult res = archive->load(*this);
@@ -168,7 +168,7 @@ inline T& ArchiveSaveContext::addArchive(AssetID assetID, T& _archive)
 	auto it = m_dependencies.find(assetID);
 	if (it == m_dependencies.end())
 	{
-		T* archive = new T(_archive);
+		T* archive = mem::akaNew<T>(AllocatorMemoryType::Persistent, AllocatorCategory::Archive, _archive);
 		if (m_saveDependency)
 		{
 			ArchiveParseResult res = archive->save(*this);

@@ -227,7 +227,7 @@ inline Str<T>& Str<T>::operator=(const T* str)
 template<typename T>
 inline Str<T>::~Str()
 {
-	m_allocator.deallocate<T>(m_string, m_capacity);
+	m_allocator.deallocate(m_string, m_capacity);
 }
 template<typename T>
 inline T& Str<T>::operator[](size_t index)
@@ -387,7 +387,7 @@ inline void Str<T>::reserve(size_t size)
 	size_t newCapacity = max(size, defaultCapacity);
 	T* buffer = m_allocator.allocate<T>(newCapacity);
 	Str<T>::copy(buffer, oldCapacity, m_string);
-	m_allocator.deallocate<T>(m_string, oldCapacity);
+	m_allocator.deallocate(m_string, oldCapacity);
 	m_capacity = newCapacity;
 	m_string = buffer;
 }

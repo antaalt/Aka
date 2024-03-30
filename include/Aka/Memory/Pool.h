@@ -139,7 +139,7 @@ inline Pool<T, BlockCount>::~Pool()
 	{
 		Block* currentBlock = nextBlock;
 		nextBlock = currentBlock->next;
-		m_allocator.deallocate<Block>(currentBlock, 1);
+		m_allocator.deallocate(currentBlock, 1);
 	} while (nextBlock != nullptr);
 }
 template <typename T, size_t BlockCount>

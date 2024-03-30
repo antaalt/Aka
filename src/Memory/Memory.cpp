@@ -157,6 +157,7 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 			DefaultAllocatorType("TemporaryPoolMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
 			DefaultAllocatorType("TemporaryListMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
 			DefaultAllocatorType("TemporaryComponentMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
+			DefaultAllocatorType("TemporaryArchiveMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Archive, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Archive
 		},
 		{ // AllocatorMemoryType::Persistent
 			DefaultAllocatorType("PersistentDefaultMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
@@ -166,6 +167,7 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 			DefaultAllocatorType("PersistentPoolMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
 			DefaultAllocatorType("PersistentListMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
 			DefaultAllocatorType("PersistentComponentMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
+			DefaultAllocatorType("PersistentArchiveMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Archive, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Archive
 		},
 	};
 	return AllocatorType[EnumToIndex(memory)][EnumToIndex(category)];
@@ -185,7 +187,7 @@ void* operator new(std::size_t n) noexcept(false)
 void operator delete(void* p, std::size_t n) throw()
 {
 	using namespace aka;
-	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate<byte_t>(static_cast<byte_t*>(p), n);
+	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate(static_cast<byte_t*>(p), n);
 }
 void* operator new[](std::size_t n) noexcept(false)
 {
@@ -195,11 +197,11 @@ void* operator new[](std::size_t n) noexcept(false)
 void operator delete[](void* p) throw()
 {
 	using namespace aka;
-	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate<byte_t>(static_cast<byte_t*>(p), 1);
+	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate(static_cast<byte_t*>(p), 1);
 }
 void operator delete[](void* p, std::size_t n) throw()
 {
 	using namespace aka;
-	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate<byte_t>(static_cast<byte_t*>(p), n);
+	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate(static_cast<byte_t*>(p), n);
 }
 #endif

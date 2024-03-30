@@ -9,6 +9,7 @@ enum class AllocatorFlags : uint8_t {
 enum class AllocatorMemoryType : uint8_t {
 	Temporary,
 	Persistent,
+	// Could be Malloc, Pool...
 
 	First = Temporary,
 	Last = Persistent,
@@ -22,9 +23,10 @@ enum class AllocatorCategory : uint8_t {
 	Pool,
 	List,
 	Component,
+	Archive,
 
 	First = Default,
-	Last = Component,
+	Last = Archive,
 };
 
 

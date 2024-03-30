@@ -106,7 +106,7 @@ void Allocator::releaseAllMemoryBlocks()
 			MemoryBlock* block = m_memory;
 			while (block)
 			{
-				m_parent->deallocate<uint8_t>((uint8_t*)block->mem, block->size);
+				m_parent->deallocate((uint8_t*)block->mem, block->size);
 				MemoryBlock* nextBlock = block->next;
 				delete block;
 				block = nextBlock;

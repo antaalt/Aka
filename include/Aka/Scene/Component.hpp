@@ -177,12 +177,12 @@ typename Component<T, A>::Archive* Component<T, A>::createArchive()
 template <typename T, typename A>
 typename Component<T, A>::Archive* Component<T, A>::createArchive(ArchiveComponentVersionType _version)
 { 
-	return new Archive(_version); 
+	return mem::akaNew<Archive>(AllocatorMemoryType::Persistent, AllocatorCategory::Archive, _version);
 }
 template <typename T, typename A>
 void Component<T, A>::destroyArchive(Archive* _archive)
 { 
-	delete _archive; 
+	mem::akaDelete(_archive); 
 }
 template <typename T, typename A>
 void Component<T, A>::fromArchiveBase(const ArchiveComponent& _archive) 

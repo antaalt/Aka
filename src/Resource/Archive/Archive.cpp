@@ -50,7 +50,7 @@ ArchiveLoadContext::~ArchiveLoadContext()
 	// Archive self insert itself into dependencies, so we don't delete it as we don't own it.
 	for (auto it : m_dependencies)
 		if (it.first != m_archive.id())
-			delete it.second;
+			mem::akaDelete(it.second);
 }
 
 
@@ -67,7 +67,7 @@ ArchiveSaveContext::~ArchiveSaveContext()
 	// Archive self insert itself into dependencies, so we don't delete it as we don't own it.
 	for (auto it : m_dependencies)
 		if (it.first != m_archive.id())
-			delete it.second;
+			mem::akaDelete(it.second);
 }
 
 ArchiveParseResult Archive::load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob)

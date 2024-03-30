@@ -148,7 +148,7 @@ inline List<T>::~List()
 	if (m_capacity > 0)
 	{
 		std::destroy(begin(), end());
-		m_allocator.deallocate<T>(m_data, m_capacity);
+		m_allocator.deallocate(m_data, m_capacity);
 	}
 }
 template <typename T>
@@ -266,7 +266,7 @@ inline void List<T>::reserve(size_t size)
 	T* buffer = m_allocator.allocate<T>(m_capacity);
 	std::uninitialized_move(b, e, buffer);
 	std::destroy(b, e); // needed ?
-	m_allocator.deallocate<T>(m_data, oldCapacity);
+	m_allocator.deallocate(m_data, oldCapacity);
 	m_data = buffer;
 }
 template <typename T>
