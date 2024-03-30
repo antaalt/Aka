@@ -41,6 +41,7 @@ Application::~Application()
 	delete m_root;
 	delete m_assets;
 	delete m_program;
+	delete m_renderer;
 }
 void Application::create()
 {

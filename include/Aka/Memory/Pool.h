@@ -11,7 +11,7 @@ namespace aka {
 template <typename T, size_t BlockCount>
 class Pool;
 
-template <typename T, size_t BlockCount = 512>
+template <typename T, size_t BlockCount = 256>
 class PoolIterator {
 public:
 	explicit PoolIterator(typename Pool<T, BlockCount>::Block* _block, typename Pool<T, BlockCount>::Chunk* _begin);
@@ -44,7 +44,7 @@ private:
 	PoolIterator<T> m_begin, m_end;
 };
 
-template <typename T, size_t BlockCount = 512>
+template <typename T, size_t BlockCount = 256>
 class Pool final
 {
 	using AllocatorType = Allocator;

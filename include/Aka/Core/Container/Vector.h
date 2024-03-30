@@ -18,8 +18,8 @@ public:
 	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
 	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
 	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
-	Vector(const Vector& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
-	Vector(Vector&& vector, AllocatorType& allocator = mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector));
+	Vector(const Vector& vector);
+	Vector(Vector&& vector);
 	Vector& operator=(const Vector& vector);
 	Vector& operator=(Vector&& vector);
 	~Vector();
@@ -128,13 +128,13 @@ inline Vector<T>::Vector(size_t size, AllocatorType& allocator) :
 	std::uninitialized_default_construct(begin(), end());
 }
 template <typename T>
-inline Vector<T>::Vector(const Vector& vector, AllocatorType& allocator) :
-	Vector(vector.data(), vector.size(), allocator)
+inline Vector<T>::Vector(const Vector& vector) :
+	Vector(vector.data(), vector.size()) // No allocator
 {
 }
 template <typename T>
-inline Vector<T>::Vector(Vector&& vector, AllocatorType& allocator) :
-	m_allocator(allocator),
+inline Vector<T>::Vector(Vector&& vector) :
+	m_allocator(mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Vector)),
 	m_data(nullptr),
 	m_size(0),
 	m_capacity(0)
@@ -214,7 +214,7 @@ inline bool Vector<T>::operator>=(const Vector<T>& value) const
 template <typename T>
 inline T& Vector<T>::append(const Vector<T>& vector)
 {
-	return append(vector.data(), vector.data() + vector.size());
+	return append(vector.begin(), vector.end());
 }
 template <typename T>
 inline T& Vector<T>::append(const T* _start, const T* _end)
@@ -256,11 +256,11 @@ inline T& Vector<T>::emplace(Args ...args)
 template <typename T>
 inline void Vector<T>::remove(T* _start, T* _end)
 {
-	AKA_ASSERT(_start >= m_data || _start < m_data + m_size, "Start not in range");
-	AKA_ASSERT(_end > m_data || _end <= m_data + m_size, "End not in range");
+	AKA_ASSERT(_start >= begin() || _start < end(), "Start not in range");
+	AKA_ASSERT(_end > begin() || _end <= end(), "End not in range");
 	AKA_ASSERT(_end >= _start, "Invalid range");
-	std::copy(_end, end(), _start);
-	std::destroy(_end, end());
+	std::move(_end, end(), _start);
+	std::destroy(_start + (end() - _end), end());
 	m_size -= (_end - _start);
 }
 template <typename T>

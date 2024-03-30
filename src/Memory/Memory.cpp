@@ -181,7 +181,7 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 }; // namespace aka
 
 #if defined(AKA_TRACK_MEMORY)
-/*void* operator new(std::size_t n) noexcept(false)
+void* operator new(std::size_t n) noexcept(false)
 {
 	using namespace aka;
 	return mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).allocate(n, AllocatorFlags::None);
@@ -200,5 +200,5 @@ void operator delete[](void* p, std::size_t n) throw()
 {
 	using namespace aka;
 	mem::getAllocator(mem::AllocatorMemoryType::Persistent, mem::AllocatorCategory::Default).deallocate(p, n);
-}*/
+}
 #endif

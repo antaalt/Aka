@@ -36,9 +36,9 @@ DebugAllocator<T>::~DebugAllocator()
 {
 	std::cout << "---------------------" << std::endl;
 	std::cout << "Allocator " << getName() << std::endl;
-	std::cout << "	Allocated: " << m_allocated << " bytes" << std::endl;
-	std::cout << "	Freed " << m_freed << " bytes. " << std::endl;
-	std::cout << "	Leak:" << (int64_t)m_allocated - (int64_t)m_freed << " bytes. " << std::endl;
+	std::cout << "	Allocated : " << m_allocated << " bytes" << std::endl;
+	std::cout << "	Freed     : " << m_freed << " bytes. " << std::endl;
+	std::cout << "	Leak      : " << (int64_t)m_allocated - (int64_t)m_freed << " bytes. " << std::endl;
 }
 
 template <typename T>
