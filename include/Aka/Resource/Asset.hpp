@@ -50,7 +50,7 @@ struct AssetInfo
 	static AssetInfo invalid() {
 		return AssetInfo{
 			AssetID::Invalid,
-			"",
+			AssetPath(),
 			AssetType::Unknown
 		};
 	}

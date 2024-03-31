@@ -53,7 +53,7 @@ void AssetLibrary::parse()
 {
 	using json = nlohmann::json;
 
-	Path path = AssetPath::getAssetPath() + "library.json";
+	Path path = AssetPath("library.json", AssetPathType::Custom).getAbsolutePath();
 	if (!OS::File::exist(path))
 	{
 		return;
@@ -73,7 +73,7 @@ void AssetLibrary::parse()
 			uint64_t assetID = dataAsset["id"].get<uint64_t>();
 			std::string path = dataAsset["path"].get<std::string>();
 			AssetType type = dataAsset["type"].get<AssetType>();
-			AssetID id = registerAsset(AssetPath(path.c_str()), type);
+			AssetID id = registerAsset(AssetPath(path.c_str(), AssetPathType::Custom), type);
 			AKA_ASSERT(id == AssetID(assetID), "Invalid assetID");
 		}
 	}
@@ -102,7 +102,7 @@ void AssetLibrary::serialize()
 		data["assets"] = dataAssets;
 	}
 
-	Path path = AssetPath::getAssetPath() + "library.json";
+	Path path = AssetPath("library.json", AssetPathType::Custom).getAbsolutePath();
 	std::ofstream f(path.cstr());
 	f << data.dump(4);
 }

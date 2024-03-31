@@ -204,8 +204,8 @@ ShaderCompiler::~ShaderCompiler()
 ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 {
 	String file;
-	String name = OS::File::basename(key.path);
-	if (!OS::File::read(key.path, &file))
+	String name = OS::File::basename(key.path.getAbsolutePath());
+	if (!OS::File::read(key.path.getAbsolutePath(), &file))
 		return ShaderBlob();
 
 	EShLanguage stage = EShLanguage::EShLangVertex;
@@ -271,7 +271,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 
 	// Set include directories
 	std::vector<Path> paths;
-	paths.push_back(key.path.up());
+	paths.push_back(key.path.getAbsolutePath().up());
 	Includer includer(paths.data(), paths.size());
 
 	if (!shader.parse(&defaultConf, default_version, false, messages, includer))

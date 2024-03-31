@@ -3,28 +3,10 @@
 
 namespace aka {
 
-ShaderKey ShaderKey::generate(const Path& path, ShaderType type)
+ShaderKey ShaderKey::generate(const AssetPath& path, ShaderType type)
 {
 	return ShaderKey{
 		path,
-		Vector<String>(),
-		type,
-		"main"
-	};
-}
-ShaderKey ShaderKey::fromString(const String& shader, ShaderType type)
-{
-	// Save shader in temp folder to load it.
-	Path temporaryFile = OS::temp();
-	temporaryFile = temporaryFile / "tmp-shaders";
-	bool written = OS::Directory::create(temporaryFile);
-	AKA_ASSERT(written, "Failed to write folder");
-	std::string fileName = std::to_string(std::hash<String>()(shader)) + ".shader";
-	temporaryFile = temporaryFile / fileName.c_str();
-	written = OS::File::write(temporaryFile, shader);
-	AKA_ASSERT(written, "Failed to write shader");
-	return ShaderKey{
-		temporaryFile,
 		Vector<String>(),
 		type,
 		"main"

@@ -108,7 +108,7 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 #endif
 		AKA_ASSERT(blob.size() > 0, "Failed to compile shader");
 		datas[index] = compiler.reflect(blob, shaderKey.entryPoint.cstr());
-		shaders[index] = device->createShader(OS::File::basename(shaderKey.path).cstr(), shaderKey.type, blob.data(), blob.size());
+		shaders[index] = device->createShader(OS::File::basename(shaderKey.path.getAbsolutePath()).cstr(), shaderKey.type, blob.data(), blob.size());
 		auto itShader = m_shaders.insert(std::make_pair(shaderKey, shaders[index]));
 		if (!itShader.second)
 		{
@@ -149,7 +149,7 @@ void ShaderRegistry::add(const ProgramKey& key, gfx::GraphicDevice* device)
 	String name;
 	for (auto shaders : key.shaders)
 	{
-		name += OS::File::name(shaders.path);
+		name += OS::File::name(shaders.path.getAbsolutePath());
 	}
 	gfx::ProgramHandle program;
 	if (isVertexProgram)
@@ -320,7 +320,7 @@ void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 	{
 		auto it = m_shadersFileData.find(shader.first);
 		AKA_ASSERT(it != m_shadersFileData.end(), "");
-		bool updated = OS::File::lastWrite(shader.first.path) > it->second.timestamp;
+		bool updated = OS::File::lastWrite(shader.first.path.getAbsolutePath()) > it->second.timestamp;
 		if (updated)
 		{
 			ShaderKey key = shader.first;

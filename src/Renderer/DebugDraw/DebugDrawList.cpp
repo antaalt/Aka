@@ -50,36 +50,10 @@ void DebugDrawList::draw3DLine(const point3f* positions, size_t count, const col
 	}
 }
 
-static const char* s_debugVertexShader = R"(
-	#version 450
-	layout(location = 0) in vec3 a_position;
-	layout(location = 1) in vec4 a_color;
-	layout(location = 0) out vec3 v_position;
-	layout(location = 1) out vec4 v_color;
-	layout(push_constant) uniform constants {
-		mat4 mvp;
-	} u_push;
-	void main(void) {
-		v_position = a_position;
-		gl_Position = u_push.mvp * vec4(v_position, 1.0);
-		v_color = a_color;
-	}
-)";
-
-static const char* s_debugFragmentShader = R"(
-	#version 450
-	layout (location = 0) in vec3 v_position;
-	layout (location = 1) in vec4 v_color;
-	layout (location = 0) out vec4 o_color;
-	void main(void) {
-		o_color = v_color;
-	}
-)";
-
 void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t height)
 {
-	const ShaderKey ShaderVertex = ShaderKey::fromString(s_debugVertexShader, ShaderType::Vertex);
-	const ShaderKey ShaderFragment = ShaderKey::fromString(s_debugFragmentShader, ShaderType::Fragment);
+	const ShaderKey ShaderVertex = ShaderKey::generate(AssetPath("../shaders/debugdraw/debug.vert", AssetPathType::Common), ShaderType::Vertex);
+	const ShaderKey ShaderFragment = ShaderKey::generate(AssetPath("../shaders/debugdraw/debug.frag", AssetPathType::Common), ShaderType::Fragment);
 
 	const ProgramKey ProgramGraphic = ProgramKey().add(ShaderVertex).add(ShaderFragment);
 	ShaderRegistry* program = Application::app()->program();

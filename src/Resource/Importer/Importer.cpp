@@ -4,7 +4,7 @@ namespace aka {
 
 Importer::Importer(AssetLibrary* _library) :
 	m_library(_library),
-	m_path(""),
+	m_path(AssetPath()),
 	m_name(""),
 	m_flags(ImportFlag::None)
 {
@@ -40,7 +40,7 @@ AssetPath Importer::getAssetPath(const char* subPath) const
 		String str = m_path.cstr();
 		str.append("/");
 		str.append(subPath);
-		return AssetPath(str);
+		return AssetPath(str, AssetPathType::Custom);
 	}
 }
 const String& Importer::getName() const
