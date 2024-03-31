@@ -37,6 +37,7 @@ struct Instance
 		m_transform(mat4f::identity())
 	{
 	}
+	virtual ~Instance() {}
 	AssetID getAssetID() const { return m_assetID; }
 	ViewTypeMask getViewMask() const { return m_mask; }
 	InstanceType getInstanceType() const { return m_type; }

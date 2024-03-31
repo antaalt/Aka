@@ -62,6 +62,7 @@ using BufferHandle = ResourceHandle<Buffer>;
 struct Buffer : Resource
 {
 	Buffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access);
+	virtual ~Buffer() {}
 
 	uint32_t size;
 

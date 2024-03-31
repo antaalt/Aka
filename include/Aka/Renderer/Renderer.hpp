@@ -145,7 +145,7 @@ private: // Material & textures
 	std::set<TextureID> m_availableTexureID;
 	gfx::DescriptorPoolHandle m_bindlessPool;
 	gfx::DescriptorSetHandle m_bindlessDescriptorSet;
-	std::vector<MaterialData> m_materials;
+	Vector<MaterialData> m_materials;
 	std::map<MaterialHandle, uint32_t> m_materialIndex;
 	gfx::BufferHandle m_materialBuffer;
 	gfx::BufferHandle m_materialStagingBuffer;

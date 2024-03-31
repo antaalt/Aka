@@ -12,6 +12,7 @@ using DescriptorPoolHandle = ResourceHandle<DescriptorPool>;
 struct DescriptorPool : Resource
 {
 	DescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size);
+	virtual ~DescriptorPool() {}
 
 	uint32_t size;
 	ShaderBindingState bindings;

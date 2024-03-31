@@ -13,6 +13,7 @@ using FenceHandle = ResourceHandle<Fence>;
 struct Fence : Resource
 {
 	Fence(const char* name);
+	virtual ~Fence() {}
 };
 
 };

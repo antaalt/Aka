@@ -485,6 +485,7 @@ struct GraphicPipeline : Resource
 		const BlendState& blending,
 		const FillState& fill
 	);
+	virtual ~GraphicPipeline() {}
 
 	ProgramHandle program;
 
@@ -503,6 +504,7 @@ struct GraphicPipeline : Resource
 struct ComputePipeline : Resource
 {
 	ComputePipeline(const char* name, ProgramHandle program, const ShaderPipelineLayout& layout);
+	virtual ~ComputePipeline() {}
 
 	ProgramHandle program;
 	ShaderPipelineLayout layout;
@@ -511,6 +513,7 @@ struct ComputePipeline : Resource
 struct RaytracingPipeline : Resource
 {
 	RaytracingPipeline() : Resource("", ResourceType::Pipeline) {}
+	virtual ~RaytracingPipeline() {}
 	// ...
 };
 

@@ -49,6 +49,7 @@ using ShaderHandle = ResourceHandle<Shader>;
 struct Shader : Resource
 {
 	Shader(const char* name, ShaderType type);
+	virtual ~Shader() {}
 
 	ShaderType type;
 

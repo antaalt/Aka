@@ -31,14 +31,14 @@ Renderer::Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library) :
 {
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 		m_instanceRenderer[EnumToIndex(instanceType)] = nullptr;
-	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)] = new StaticMeshInstanceRenderer(*this);
-	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)] = new SkeletalMeshInstanceRenderer(*this);
+	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)] = mem::akaNew<StaticMeshInstanceRenderer>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, std::ref(*this));
+	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)] = mem::akaNew<SkeletalMeshInstanceRenderer>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, std::ref(*this));
 }
 Renderer::~Renderer()
 {
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
-		delete m_instanceRenderer[EnumToIndex(instanceType)];
+		mem::akaDelete(m_instanceRenderer[EnumToIndex(instanceType)]);
 	}
 }
 
@@ -114,6 +114,7 @@ void Renderer::create()
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
+	return;
 	createBackbuffer();
 
 	m_debugDrawList.create(getDevice(), m_width, m_height);
@@ -121,8 +122,8 @@ void Renderer::create()
 
 void Renderer::destroy()
 {
-	m_debugDrawList.destroy(getDevice());
-	destroyBackbuffer();
+	/*m_debugDrawList.destroy(getDevice());
+	destroyBackbuffer();*/
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
@@ -439,7 +440,7 @@ MaterialHandle Renderer::createMaterial()
 	AKA_ASSERT(m_materialIndex.find(materialHandle) == m_materialIndex.end(), "Hash collision");
 
 	const uint32_t materialIndex = (uint32_t)m_materials.size();
-	m_materials.push_back(MaterialData{});
+	m_materials.append(MaterialData{});
 	m_materialIndex.insert(std::make_pair(materialHandle, materialIndex));
 	return materialHandle;
 }

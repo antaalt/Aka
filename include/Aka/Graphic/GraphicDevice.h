@@ -49,6 +49,8 @@ static constexpr uint32_t MaxFrameInFlight = 3; // number of frames to deal with
 struct Frame : Resource
 {
 	Frame(const char* name) : Resource(name, ResourceType::Frame){}
+	virtual ~Frame() {}
+
 	void setImageIndex(ImageIndex index) { m_image = index; }
 	ImageIndex getImageIndex() const { return m_image; }
 protected:
@@ -60,8 +62,10 @@ using FrameHandle = ResourceHandle<Frame>;
 struct Backbuffer : Resource
 { 
 	Backbuffer(const char* name) : Resource(name, ResourceType::Framebuffer) {}
-	RenderPassHandle renderPass;
-	std::vector<FramebufferHandle> handles;
+	virtual ~Backbuffer() {}
+
+	RenderPassHandle renderPass = RenderPassHandle::null;
+	Vector<FramebufferHandle> handles;
 };
 
 using BackbufferHandle = ResourceHandle<Backbuffer>;
@@ -108,6 +112,7 @@ struct DrawIndirectCommand
 class AKA_NO_VTABLE GraphicDevice
 {
 public:
+	GraphicDevice() {}
 	virtual ~GraphicDevice() {}
 
 	static GraphicDevice* create(GraphicAPI api);

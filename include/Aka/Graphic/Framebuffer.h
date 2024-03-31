@@ -33,6 +33,7 @@ using FramebufferHandle = ResourceHandle<Framebuffer>;
 struct Framebuffer : Resource
 {
 	Framebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, uint32_t count, const Attachment* depth);
+	virtual ~Framebuffer() {}
 
 	uint32_t width, height; // TODO: Should move this out.
 

@@ -47,6 +47,7 @@ using DescriptorSetHandle = ResourceHandle<DescriptorSet>;
 struct DescriptorSet : Resource
 {
 	DescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool);
+	virtual ~DescriptorSet() {}
 
 	DescriptorPoolHandle pool;
 	ShaderBindingState bindings;

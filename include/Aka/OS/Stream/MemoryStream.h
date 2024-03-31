@@ -10,6 +10,7 @@ class MemoryStream : public Stream
 {
 public:
 	MemoryStream(size_t size);
+	virtual ~MemoryStream() {}
 
 	void skim(size_t count) override;
 	void seek(size_t position) override;
@@ -21,7 +22,7 @@ protected:
 	size_t m_offset;	// Current offset position.
 };
 
-class MemoryReaderStream : public MemoryStream
+class MemoryReaderStream final : public MemoryStream
 {
 public:
 	MemoryReaderStream(const uint8_t* bytes, size_t size);
@@ -35,7 +36,7 @@ private:
 	const uint8_t* m_bytes;
 };
 
-class MemoryWriterStream : public MemoryStream
+class MemoryWriterStream final : public MemoryStream
 {
 public:
 	MemoryWriterStream(Vector<uint8_t>& bytes);

@@ -102,6 +102,7 @@ using TextureHandle = ResourceHandle<Texture>;
 struct Texture : Resource
 {
 	Texture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags);
+	virtual ~Texture() {}
 
 	uint32_t width; // Width of the texture
 	uint32_t height; // Height of the texture

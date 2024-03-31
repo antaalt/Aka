@@ -103,6 +103,8 @@ template <typename T>
 void akaDelete(T*& pointer)
 {
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	if (pointer == nullptr)
+		return;
 	// Retrieve metadata from header.
 	AkaNewHead* metadata = reinterpret_cast<AkaNewHead*>(pointer) - 1;
 	AllocatorMemoryType type   = metadata->type;

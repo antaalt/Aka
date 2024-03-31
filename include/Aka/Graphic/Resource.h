@@ -49,6 +49,7 @@ constexpr ResourceNativeHandle ResourceNativeHandleInvalid = ~0ULL;
 struct Resource
 {
 	Resource(const char* name, ResourceType type);
+	virtual ~Resource() {}
 
 	char name[32]; // Debug name of the resource.
 	ResourceNativeHandle native; // Native handle of the resource for external API
@@ -56,7 +57,7 @@ struct Resource
 };
 
 template <typename T>
-struct ResourceHandle
+struct ResourceHandle final
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Not a resource");
 	union {
@@ -76,8 +77,6 @@ const ResourceHandle<T> ResourceHandle<T>::null = { nullptr };
 
 };
 };
-
-
 
 template <typename T>
 struct std::hash<aka::gfx::ResourceHandle<T>>

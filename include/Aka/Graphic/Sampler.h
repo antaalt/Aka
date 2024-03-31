@@ -34,6 +34,7 @@ using SamplerHandle = ResourceHandle<Sampler>;
 struct Sampler : Resource
 {
 	Sampler(const char* name, Filter min, Filter mag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy);
+	virtual ~Sampler() {}
 
 	Filter filterMin;
 	Filter filterMag;

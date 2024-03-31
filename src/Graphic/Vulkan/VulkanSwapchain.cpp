@@ -283,9 +283,9 @@ BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, 
 		Attachment color = Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
 		Attachment depth = Attachment{ m_backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
 		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, &color, 1, &depth);
-		backbuffer.handles.push_back(fb);
+		backbuffer.handles.append(fb);
 	}
-	auto itInsert = m_backbuffers.insert(std::make_pair(bbhandle, backbuffer));
+	auto itInsert = m_backbuffers.insert(std::make_pair(bbhandle, std::move(backbuffer)));
 	AKA_ASSERT(itInsert.second, "Failed to create backbuffer");
 	return bbhandle;
 }
@@ -490,7 +490,7 @@ void VulkanSwapchain::destroyFrames(VulkanGraphicDevice* _device)
 
 void VulkanSwapchain::destroyFramebuffers(VulkanGraphicDevice* _device)
 {
-	for (auto backbuffer : m_backbuffers)
+	for (auto& backbuffer : m_backbuffers)
 	{
 		backbuffer.first; // TODO: Clear renderpass ref count
 		for (FramebufferHandle fb : backbuffer.second.handles)
@@ -503,7 +503,7 @@ void VulkanSwapchain::destroyFramebuffers(VulkanGraphicDevice* _device)
 
 void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 {
-	for (auto backbufferPair : m_backbuffers)
+	for (auto& backbufferPair : m_backbuffers)
 	{
 		const BackbufferHandle& bbhandle = backbufferPair.first;
 		Backbuffer& backbuffer = backbufferPair.second;
@@ -521,7 +521,7 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 			Attachment color = Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
 			Attachment depth = Attachment{ m_backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
 			FramebufferHandle fb = _device->createFramebuffer("Backbuffer", backbuffer.renderPass, &color, 1, &depth);
-			backbuffer.handles.push_back(fb);
+			backbuffer.handles.append(fb);
 		}
 	}
 }

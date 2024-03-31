@@ -73,6 +73,7 @@ using RenderPassHandle = ResourceHandle<RenderPass>;
 struct RenderPass : Resource
 {
 	RenderPass(const char* name, const RenderPassState& state);
+	virtual ~RenderPass() {}
 
 	RenderPassState state;
 };

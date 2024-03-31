@@ -310,6 +310,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 		glslang::FinalizeProcess();
 		return ShaderBlob();
 	}
+	glslang::FinalizeProcess();
 	return ShaderBlob(spirv.data(), spirv.size() * sizeof(uint32_t));
 }
 

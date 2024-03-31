@@ -92,6 +92,7 @@ struct Program : Resource
 	Program(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout);
 	Program(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout);
 	Program(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout);
+	virtual ~Program() {}
 
 	ShaderHandle shaders[EnumCount<ShaderType>()];
 
