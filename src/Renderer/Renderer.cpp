@@ -114,7 +114,6 @@ void Renderer::create()
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
-	return;
 	createBackbuffer();
 
 	m_debugDrawList.create(getDevice(), m_width, m_height);
@@ -122,8 +121,8 @@ void Renderer::create()
 
 void Renderer::destroy()
 {
-	/*m_debugDrawList.destroy(getDevice());
-	destroyBackbuffer();*/
+	m_debugDrawList.destroy(getDevice());
+	destroyBackbuffer();
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
