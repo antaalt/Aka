@@ -56,6 +56,8 @@ AssetLibrary* Importer::getAssetLibrary() const
 AssetID Importer::registerAsset(AssetType type, const String& name)
 {
 	String finalName = name;
+	if (finalName.empty())
+		finalName = String::format("Material %s %p", getAssetTypeString(type), &name);
 	AKA_ASSERT(!finalName.empty(), "Missing name");
 	String path;
 	path.append(Importer::getAssetTypeName(type));
