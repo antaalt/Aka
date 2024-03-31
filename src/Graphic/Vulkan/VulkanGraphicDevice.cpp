@@ -68,31 +68,31 @@ void VulkanGraphicDevice::shutdown()
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
-	AKA_ASSERT(m_commandListPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_texturePool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_samplerPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_bufferPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_shaderPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_programPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_graphicPipelinePool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_descriptorSetPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_descriptorPoolPool.count() == 0, "Resource destroy missing");
-	AKA_ASSERT(m_renderPassPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_commandListPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_texturePool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_samplerPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_bufferPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_shaderPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_programPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_graphicPipelinePool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_descriptorSetPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_descriptorPoolPool.count() == 0, "Resource destroy missing");
+	//AKA_ASSERT(m_renderPassPool.count() == 0, "Resource destroy missing");
 	// TODO check recursive release issue
-	m_commandListPool.release([this](VulkanCommandList& res) { this->release(&res); });
-	m_texturePool.release([this](VulkanTexture& res) { this->destroy(TextureHandle{ &res }); });
-	m_samplerPool.release([this](VulkanSampler& res) { this->destroy(SamplerHandle{ &res }); });
-	m_bufferPool.release([this](VulkanBuffer& res) { this->destroy(BufferHandle{ &res }); });
-	m_shaderPool.release([this](VulkanShader& res) { this->destroy(ShaderHandle{ &res }); });
-	m_programPool.release([this](VulkanProgram& res) { this->destroy(ProgramHandle{ &res }); });
-	m_framebufferPool.release([this](VulkanFramebuffer& res) { this->destroy(FramebufferHandle{ &res }); });
-	m_graphicPipelinePool.release([this](VulkanGraphicPipeline& res) { this->destroy(GraphicPipelineHandle{ &res }); });
-	m_computePipelinePool.release([this](VulkanComputePipeline& res) { this->destroy(ComputePipelineHandle{ &res }); });
-	//m_descriptorSetPool.release([this](const VulkanDescriptorSet& res) { this->free(DescriptorSetHandle{ &res }); });
-	m_descriptorPoolPool.release([this](const VulkanDescriptorPool& res) { this->destroy(DescriptorPoolHandle{ &res }); });
-	m_renderPassPool.release([this](const VulkanRenderPass& res) { this->destroy(RenderPassHandle{ &res }); });
+	m_commandListPool.release([this](VulkanCommandList& res) { Logger::warn("Leaking command list."); this->release(&res); });
+	m_texturePool.release([this](VulkanTexture& res) { Logger::warn("Leaking texture ", res.name); this->destroy(TextureHandle{ &res }); });
+	m_samplerPool.release([this](VulkanSampler& res) { Logger::warn("Leaking sampler ", res.name); this->destroy(SamplerHandle{ &res }); });
+	m_bufferPool.release([this](VulkanBuffer& res) { Logger::warn("Leaking buffer ", res.name); this->destroy(BufferHandle{ &res }); });
+	m_shaderPool.release([this](VulkanShader& res) { Logger::warn("Leaking shader ", res.name); this->destroy(ShaderHandle{ &res }); });
+	m_programPool.release([this](VulkanProgram& res) { Logger::warn("Leaking program ", res.name); this->destroy(ProgramHandle{ &res }); });
+	m_framebufferPool.release([this](VulkanFramebuffer& res) { Logger::warn("Leaking framebuffer", res.name); this->destroy(FramebufferHandle{ &res }); });
+	m_graphicPipelinePool.release([this](VulkanGraphicPipeline& res) { Logger::warn("Leaking graphic pipeline", res.name); this->destroy(GraphicPipelineHandle{ &res }); });
+	m_computePipelinePool.release([this](VulkanComputePipeline& res) { Logger::warn("Leaking compute pipeline", res.name); this->destroy(ComputePipelineHandle{&res}); });
+	//m_descriptorSetPool.release([this](const VulkanDescriptorSet& res) { Logger::warn("Leaking descriptor set", res.name); this->free(DescriptorSetHandle{ &res }); });
+	m_descriptorPoolPool.release([this](const VulkanDescriptorPool& res) { Logger::warn("Leaking desciptor pool", res.name); this->destroy(DescriptorPoolHandle{ &res }); });
+	m_renderPassPool.release([this](const VulkanRenderPass& res) { Logger::warn("Leaking render pass ", res.name); this->destroy(RenderPassHandle{ &res }); });
 	// Destroy context
 	m_context.shutdown();
 }

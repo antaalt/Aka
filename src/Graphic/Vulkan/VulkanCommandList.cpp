@@ -438,7 +438,7 @@ void VulkanCommandList::drawMeshTasks(uint32_t groupX, uint32_t groupY, uint32_t
 void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) 
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Compute), "Trying dispatch but compute shader is missing");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_computePipeline->program)->hasShaderStage(ShaderType::Compute), "Trying dispatch but compute shader is missing");
 	vkCmdDispatch(vk_command, groupX, groupY, groupZ);
 }
 

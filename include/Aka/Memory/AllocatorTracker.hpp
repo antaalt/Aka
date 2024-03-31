@@ -9,7 +9,7 @@
 
 namespace aka {
 
-#define AKA_TRACK_MEMORY_ALLOCATIONS
+//#define AKA_TRACK_MEMORY_ALLOCATIONS
 
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 
