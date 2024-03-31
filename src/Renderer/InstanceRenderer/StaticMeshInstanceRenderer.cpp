@@ -80,8 +80,8 @@ void StaticMeshInstanceRenderer::createPipeline()
 		gfx::PrimitiveType::Triangles,
 		m_layout,
 		getDevice()->get(m_backbufferRenderPass)->state,
-		gfx::VertexState {}.add(StaticVertex::getState()).add(StaticMeshInstance::getState()),
-		gfx::ViewportState{}.size(getRenderer().getWidth(), getRenderer().getHeight()),
+		gfx::VertexState{}.add(StaticVertex::getState()).add(StaticMeshInstance::getState()),
+		gfx::ViewportStateBackbuffer,
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDefault,
 		gfx::CullStateDefault,
@@ -217,13 +217,6 @@ void StaticMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame
 		}
 	}
 	cmd->endRenderPass();
-}
-
-void StaticMeshInstanceRenderer::resize(uint32_t width, uint32_t height)
-{
-	getDevice()->wait();
-	destroyPipeline();
-	createPipeline();
 }
 
 InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)

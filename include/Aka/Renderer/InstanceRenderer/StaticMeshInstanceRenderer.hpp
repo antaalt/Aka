@@ -18,7 +18,6 @@ public:
 	void destroy() override;
 	void prepare(gfx::FrameHandle frame) override;
 	void render(const View& view, gfx::FrameHandle frame) override;
-	void resize(uint32_t width, uint32_t height) override;
 
 	InstanceHandle createInstance(AssetID assetID) override;
 	void updateInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform) override;

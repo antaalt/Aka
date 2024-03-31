@@ -438,10 +438,18 @@ struct StencilState
 	}
 };
 
+enum class ViewportFlags
+{
+	None = 0,
+	BackbufferAutoResize = 1 << 0,
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(ViewportFlags);
+
 struct ViewportState
 {
 	Rect viewport;
 	Rect scissor;
+	ViewportFlags flags = ViewportFlags::None;
 
 	ViewportState& offset(int32_t x, int32_t y) 
 	{
@@ -505,6 +513,12 @@ struct RaytracingPipeline : Resource
 	RaytracingPipeline() : Resource("", ResourceType::Pipeline) {}
 	// ...
 };
+
+// Vertex
+const VertexState VertexStateEmpty = VertexState{};
+
+// Viewport
+const ViewportState ViewportStateBackbuffer = ViewportState{ Rect{}, Rect{}, ViewportFlags::BackbufferAutoResize };
 
 // Blending
 const BlendState BlendStateNormal = BlendState{ BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMode::One, BlendMode::Zero, BlendOp::Add, ColorMask::Rgba, 0xffffffff };

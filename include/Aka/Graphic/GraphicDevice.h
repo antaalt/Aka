@@ -60,6 +60,7 @@ using FrameHandle = ResourceHandle<Frame>;
 struct Backbuffer : Resource
 { 
 	Backbuffer(const char* name) : Resource(name, ResourceType::Framebuffer) {}
+	RenderPassHandle renderPass;
 	std::vector<FramebufferHandle> handles;
 };
 

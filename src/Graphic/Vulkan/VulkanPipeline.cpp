@@ -344,6 +344,17 @@ void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 			vk_shaders.append(shader);
 		}
 	}
+	if (asBool(viewport.flags & ViewportFlags::BackbufferAutoResize))
+	{
+		viewport.viewport.x = 0;
+		viewport.viewport.y = 0;
+		viewport.scissor.x = 0;
+		viewport.scissor.y = 0;
+		device->getBackbufferSize(viewport.viewport.w, viewport.viewport.h);
+		viewport.scissor.w = viewport.viewport.w;
+		viewport.scissor.h = viewport.viewport.h;
+	}
+	// Here read flag & setup 
 	vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(
 		device->getVkDevice(),
 		device->getVkRenderPass(renderPass),

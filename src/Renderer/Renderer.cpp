@@ -153,8 +153,8 @@ void Renderer::destroy()
 		{
 			for (uint32_t iFrame = 0; iFrame < gfx::MaxFrameInFlight; iFrame++)
 			{
-			m_device->free(view.second.descriptor[iFrame]);
-			m_device->destroy(view.second.buffer[iFrame]);
+				m_device->free(view.second.descriptor[iFrame]);
+				m_device->destroy(view.second.buffer[iFrame]);
 			}
 		}
 		m_device->destroy(m_viewDescriptorPool);
@@ -380,11 +380,14 @@ void Renderer::render(gfx::FrameHandle frame)
 		// Here we could execute custom code...
 		cmd->endRenderPass();
 	}
-
+	// Color views.
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{
 		const ViewHandle viewHandle = viewPair.first;
 		const View& view = viewPair.second;
+
+		if (view.type != ViewType::Color)
+			continue;
 
 		if (m_viewDirty) // TODO one dirty per view.
 		{
@@ -419,15 +422,6 @@ void Renderer::resize(uint32_t width, uint32_t height)
 {
 	m_width = width;
 	m_height = height;
-	destroyBackbuffer();
-	m_debugDrawList.resize(getDevice(), m_width, m_height);
-	createBackbuffer();
-	for (InstanceType instanceType : EnumRange<InstanceType>())
-	{
-		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
-			continue;
-		m_instanceRenderer[EnumToIndex(instanceType)]->resize(width, height);
-	}
 }
 
 MaterialHandle Renderer::createMaterial()

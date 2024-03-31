@@ -85,7 +85,7 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 		m_layout,
 		getDevice()->get(m_backbufferRenderPass)->state,
 		gfx::VertexState {}.add(SkeletalVertex::getState()).add(SkeletalMeshInstance::getState()),
-		gfx::ViewportState{}.size(getRenderer().getWidth(), getRenderer().getHeight()),
+		gfx::ViewportStateBackbuffer,
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDefault,
 		gfx::CullStateDefault,
@@ -231,13 +231,6 @@ void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle fra
 		}
 	}
 	cmd->endRenderPass();
-}
-
-void SkeletalMeshInstanceRenderer::resize(uint32_t width, uint32_t height)
-{
-	getDevice()->wait();
-	destroyPipeline();
-	createPipeline();
 }
 
 InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)

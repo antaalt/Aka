@@ -75,8 +75,20 @@ public:
 	uint32_t width() const { return m_width; }
 	uint32_t height() const { return m_height; }
 private:
+	void createSwapchain(VulkanGraphicDevice* _device, PlatformDevice* _platform, VkSwapchainKHR _oldSwapchain);
+	void createImageViews(VulkanGraphicDevice* _device);
+	void createFrames(VulkanGraphicDevice* _device);
+
+	void destroySwapchain(VulkanGraphicDevice* _device);
+	void destroyImageViews(VulkanGraphicDevice* _device);
+	void destroyFrames(VulkanGraphicDevice* _device);
+	void destroyFramebuffers(VulkanGraphicDevice* _device);
+
+	void recreateFramebuffers(VulkanGraphicDevice* _device);
+private:
 	bool m_needRecreation;
 	uint32_t m_width, m_height;
+	VkFormat m_surfaceFormat;
 	PlatformDevice* m_platform;
 	VkSwapchainKHR m_swapchain;
 	//VkSurfaceKHR m_surface;
