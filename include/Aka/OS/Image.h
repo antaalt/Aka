@@ -85,8 +85,9 @@ struct Img
 	size_t size() const;
 	uint32_t getComponents() const;
 
-	uint32_t width, height;
-	ImageComponent components;
+	uint32_t width = 0;
+	uint32_t height = 0;
+	ImageComponent components = ImageComponent::RGBA;
 	Vector<T> bytes;
 };
 

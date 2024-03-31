@@ -31,6 +31,7 @@ Application::Application(const Config& config) :
 	m_running(true),
 	m_renderer(new Renderer(m_graphic, m_assets))
 {
+	OS::setcwd(m_config.directory);
 }
 Application::~Application()
 {
@@ -45,7 +46,6 @@ Application::~Application()
 }
 void Application::create()
 {
-	OS::setcwd(m_config.directory);
 	AKA_ASSERT(m_platform != nullptr, "No platform");
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
 	AKA_ASSERT(m_audio != nullptr, "No audio");
