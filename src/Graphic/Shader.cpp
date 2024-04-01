@@ -1,22 +1,34 @@
 #include <Aka/Graphic/Shader.h>
 
-#include <Aka/Graphic/GraphicDevice.h>
 #include <Aka/Core/Application.h>
-#include <Aka/OS/Logger.h>
+
+#include <type_traits>
 
 namespace aka {
+namespace gfx {
 
-Shader::Shader()
+Shader::Shader(const char* name, ShaderType type) : 
+	Resource(name, ResourceType::Shader),
+	type(type)
 {
 }
 
-Shader::~Shader()
+ShaderMask getShaderMask(ShaderType type)
 {
+	if (static_cast<uint8_t>(type) > EnumCount<ShaderType>())
+		return ShaderMask::None;
+	return static_cast<ShaderMask>(1 << EnumToIndex(type));
 }
 
-Shader::Ptr Shader::compile(const char* content, ShaderType type)
+ShaderHandle Shader::create(const char* name, ShaderType type, const void* content, size_t size)
 {
-	return Application::graphic()->compile(content, type);
+	return Application::app()->graphic()->createShader(name, type, content, size);
 }
 
+void Shader::destroy(ShaderHandle shader)
+{
+	Application::app()->graphic()->destroy(shader);
+}
+
+};
 };

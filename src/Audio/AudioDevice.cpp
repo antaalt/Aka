@@ -1,8 +1,24 @@
 #include <Aka/Audio/AudioDevice.h>
 
-#include "RtAudio/AudioRtAudio.h"
+#include "RtAudio/RtAudioDevice.h"
 
 namespace aka {
+
+
+AudioDevice* AudioDevice::create(const AudioConfig& config)
+{
+#if defined(AKA_USE_RTAUDIO)
+	return new RtAudioDevice(config);
+#else
+	return new DummyAudioDevice(config);
+#endif
+}
+
+void AudioDevice::destroy(AudioDevice* device)
+{
+	delete device;
+}
+
 
 AudioDevice::AudioDevice(const AudioConfig& config) :
 	m_frequency(config.frequency),

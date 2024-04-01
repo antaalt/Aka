@@ -1,7 +1,7 @@
 #include <Aka/Audio/AudioStreamMp3.h>
 
 #include <Aka/OS/Logger.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 
 //#define MINIMP3_ONLY_MP3
 //#define MINIMP3_ONLY_SIMD

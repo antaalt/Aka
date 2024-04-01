@@ -1,4 +1,6 @@
 #include <Aka/OS/OS.h>
+#include <Aka/Platform/PlatformDevice.h>
+#include <Aka/Core/Application.h>
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #define NOMINMAX
@@ -15,7 +17,7 @@
 namespace aka {
 
 const WORD terminalColors[20] = {
-	0, // ForgeroundBlack
+	0, // ForegroundBlack
 	FOREGROUND_RED, // ForegroundRed
 	FOREGROUND_GREEN, // ForegroundGreen
 	FOREGROUND_RED | FOREGROUND_GREEN, // ForegroundYellow
@@ -23,7 +25,7 @@ const WORD terminalColors[20] = {
 	FOREGROUND_RED | FOREGROUND_BLUE, // ForegroundMagenta
 	FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundCyan
 	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // ForegroundWhite
-	FOREGROUND_INTENSITY, // ForgeroundBrightBlack
+	FOREGROUND_INTENSITY, // ForegroundBrightBlack
 	FOREGROUND_RED | FOREGROUND_INTENSITY, // ForegroundBrightRed
 	FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightGreen
 	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, // ForegroundBrightYellow
@@ -37,7 +39,8 @@ aka::StringWide Utf8ToWchar(const char* str)
 {
 	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str, -1, nullptr, 0);
 	aka::StringWide wstr(wstr_size - 1);
-	MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr.cstr(), (int)wstr.length());
+	int ret = MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr.cstr(), wstr_size);
+	AKA_ASSERT(ret != 0, "Failed to convert string"); // GetLastError()
 	return wstr;
 }
 
@@ -45,8 +48,58 @@ aka::String WcharToUtf8(const wchar_t* wstr)
 {
 	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, NULL, NULL);
 	aka::String str(str_size - 1);
-	WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str.cstr(), (int)str.length(), NULL, NULL);
+	int ret = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str.cstr(), str_size, NULL, NULL);
+	AKA_ASSERT(ret != 0, "Failed to convert string"); // GetLastError()
 	return str;
+}
+
+void BackwardToForwardSlash(String& string)
+{
+	for (char& c : string)
+	{
+		if (c == '\\')
+			c = '/';
+	}
+}
+void RemoveNeighborDuplicateSlash(String& string)
+{
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < string.size() - offset; i++)
+	{
+		string[i] = string[i + offset];
+		uint32_t count = 1;
+		while (string[i + offset] == '/' && string[i + offset + count] == '/')
+		{
+			count++;
+		}
+		offset += count - 1;
+	}
+	string[string.size() - offset] = '\0';
+	string.resize(string.size() - offset);
+}
+
+String GetLastErrorAsString()
+{
+	DWORD errorMessageID = ::GetLastError();
+	if (errorMessageID == 0) 
+	{
+		return String("No errors.");
+	}
+
+	LPWSTR messageBuffer = nullptr;
+
+	//Ask Win32 to give us the string version of that message ID.
+	//The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
+	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
+
+	//Copy the error message into a std::string.
+	StringWide message(messageBuffer, size);
+
+	//Free the Win32's string's buffer.
+	LocalFree(messageBuffer);
+
+	return WcharToUtf8(message.cstr());
 }
 
 std::ostream& operator<<(std::ostream& os, Logger::Color color)
@@ -74,13 +127,24 @@ bool OS::Directory::create(const Path& path)
 {
 	size_t pos = 0;
 	String str = path.cstr();
+	BackwardToForwardSlash(str);
+	RemoveNeighborDuplicateSlash(str);
+	// Windows require last string to own a slash
+	if (str.last() != '/')
+	{
+		str.append('/');
+	}
 	do
 	{
 		pos = str.findFirst('/', pos + 1);
 		if (pos == str.length() || pos == String::invalid)
 			return true;
 		String p = str.substr(0, pos);
-		if (p == "." || p == ".." || p == "/" || p == "\\")
+		if (p.length() == 2 && p[1] == ':') // skip C:/ D:/
+			continue;
+		if (p == "." || p == ".." || p == "/")
+			continue;
+		if (OS::Directory::exist(p))
 			continue;
 		StringWide wstr = Utf8ToWchar(p.cstr());
 		if (!CreateDirectory(wstr.cstr(), NULL))
@@ -170,7 +234,8 @@ String OS::File::basename(const Path& path)
 {
 	namespace fs = std::filesystem;
 	fs::path stem = fs::path(path.cstr()).stem();
-	return stem.string();
+	std::string str = stem.string();
+	return String(str.c_str(), str.size());
 }
 
 size_t OS::File::size(const Path& path)
@@ -262,6 +327,15 @@ Path OS::normalize(const Path& path)
 	return path;
 }
 
+Path OS::getFullPath(const Path& path)
+{
+	WCHAR fullPath[MAX_PATH];
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	DWORD res = GetFullPathName(wstr.cstr(), (DWORD)wstr.size(), fullPath, NULL);
+	String str = WcharToUtf8(fullPath);
+	return str;
+}
+
 Path OS::executable()
 {
 	WCHAR path[MAX_PATH]{};
@@ -290,6 +364,25 @@ bool OS::setcwd(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	return _wchdir(wstr.cstr()) == 0;
+}
+
+Path OS::temp()
+{
+	// TODO should cache this path somehow ?
+	StringWide wstr;
+	DWORD length = GetTempPath(0, nullptr);
+	AKA_ASSERT(length != 0, "Invalid temporary path");
+	wstr.resize(length);
+	DWORD length2 = GetTempPath(length, wstr.cstr());
+	AKA_ASSERT(length == length2 + 1, "Invalid temporary path");
+	String str = WcharToUtf8(wstr.cstr()) + "/aka/";
+	Path path = OS::normalize(str);
+	if (!OS::Directory::exist(path))
+	{
+		bool created = OS::Directory::create(path);
+		AKA_ASSERT(created, "Failed to create temporary dir");
+	}
+	return path;
 }
 
 const wchar_t* fileMode(FileMode mode, FileType type)
@@ -323,9 +416,82 @@ FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 	StringWide wstr = Utf8ToWchar(path.cstr());
 	FILE* file = nullptr;
 	errno_t err = _wfopen_s(&file, wstr.cstr(), fileMode(mode, type));
-	if (err == 0)
-		return file;
-	return nullptr;
+	if (err != 0)
+	{
+		char error[256];
+		err = strerror_s(error, 256, err);
+		Logger::error("Failed to open file ", path, " with error : ", error);
+		return nullptr;
+	}
+	return file;
+}
+
+AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const char* message)
+{
+	UINT type = 0;
+	switch (modalType)
+	{
+	case AlertModalType::Information:
+		type = MB_ICONINFORMATION | MB_OK;
+		break;
+	case AlertModalType::Question:
+		type = MB_ICONQUESTION | MB_YESNO;
+		break;
+	case AlertModalType::Warning:
+		type = MB_ICONWARNING | MB_OK;
+		break;
+	case AlertModalType::Error:
+		type = MB_ICONERROR | MB_OK;
+		break;
+	}
+	PlatformDevice* platform = Application::app()->platform();
+	HWND handle = (HWND)platform->getNativeHandle();
+
+	StringWide wstr = Utf8ToWchar(message);
+	StringWide wstrTitle = Utf8ToWchar(title);
+	int value = MessageBoxW(handle, wstr.cstr(), wstrTitle.cstr(), type);
+	switch (value)
+	{
+	case IDYES:
+		return AlertModalMessage::Yes;
+	case IDNO:
+		return AlertModalMessage::No;
+	default:
+	case IDOK:
+		return AlertModalMessage::Ok;
+	}
+}
+
+OS::Library::Library(const Path& path) :
+	m_handle(nullptr)
+{
+	StringWide wstr = Utf8ToWchar(path.cstr());
+	HMODULE mod = LoadLibraryW(wstr.cstr());
+	if (mod == NULL)
+	{
+		Logger::warn("Failed to load DLL '", path.cstr(), "' with error : ", GetLastErrorAsString());
+	}
+	m_handle = static_cast<LibraryHandle>(mod);
+}
+
+OS::Library::~Library()
+{
+	if (m_handle)
+	{
+		BOOL ret = FreeLibrary(static_cast<HMODULE>(m_handle));
+		if (!ret)
+		{
+			Logger::warn("Failed to free DLL with error : ", GetLastErrorAsString());
+		}
+	}
+}
+
+OS::ProcessHandle OS::Library::getProcess(const char* _process)
+{
+	AKA_ASSERT(m_handle != nullptr, "GetProcess on null pointer");
+	FARPROC proc = GetProcAddress(static_cast<HMODULE>(m_handle), _process);
+
+	return static_cast<OS::ProcessHandle>(proc);
 }
 
 };

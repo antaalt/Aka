@@ -11,9 +11,10 @@
 // This affect the perspective matrix for clip space transformation.
 #if defined(AKA_USE_OPENGL)
 #define GEOMETRY_CLIP_SPACE_NEGATIVE // [-1, 1]
-#elif defined(AKA_USE_D3D11)
+#elif defined(AKA_USE_D3D11) || defined(AKA_USE_VULKAN)
 #define GEOMETRY_CLIP_SPACE_POSITIVE // [0, 1]
 #else
+#error "Undetected API"
 #endif
 
 #include <geo/geometry.h>

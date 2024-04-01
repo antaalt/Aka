@@ -154,6 +154,13 @@ Path OS::normalize(const Path& path)
 	return path;
 }
 
+
+Path OS::getFullPath(const Path& path)
+{
+	char actualpath[PATH_MAX + 1];
+	return realpath(path.cstr(), actualpath);
+}
+
 Path OS::executable()
 {
 	char result[PATH_MAX] = { 0 };
@@ -174,6 +181,30 @@ Path OS::cwd()
 bool OS::setcwd(const Path& path)
 {
 	return chdir(path.cstr()) == 0;
+}
+
+Path OS::temp()
+{
+	static const uin32_t envNum = 4;
+	static const char* envVar[envNum] = {
+		"TMPDIR",
+		"TMP",
+		"TEMP",
+		"TEMPDIR",
+	}
+	String folder;
+	for (uin32_t i = 0; i < envNum; i++)
+	{
+		char* f = getenv(envVar[i]);
+		if (f != nullptr)
+		{
+			folder = f;
+			break;
+		}
+	}
+	if (folder.empty())
+		folder = "/tmp";
+	return Path(folder + "/aka/");
 }
 
 const char* fileMode(FileMode mode, FileType type)
@@ -205,6 +236,43 @@ const char* fileMode(FileMode mode, FileType type)
 FILE* OS::File::open(const Path& path, FileMode mode, FileType type)
 {
 	return ::fopen(path.cstr(), fileMode(mode, type));
+}
+
+AlertModalMessage AlertModal(AlertModalType type, const char* title, const char* message)
+{
+	Logger::error("[", title,"] ", message);
+	getchar();
+	return AlertModalMessage::Ok;
+}
+
+
+
+OS::Library::Library(const Path& path) :
+	m_handle(nullptr)
+{
+	void* library = dlopen(path.cstr(), RTLD_NOW | RTLD_NOLOAD);
+	if (library == NULL)
+	{
+		Logger::warn("Failed to load library '", path.cstr(), "' with error : ", dlerror());
+	}
+	m_handle = library;
+}
+
+OS::Library::~Library()
+{
+	if (m_handle)
+	{
+		int ret = dlcose(m_handle);
+		if (ret != 0)
+		{
+			Logger::warn("Failed to close library with error : ", dlerror());
+		}
+	}
+}
+
+OS::ProcessHandle OS::Library::getProcess(const char* _process)
+{
+	return dlsym(mod, proc);
 }
 
 };

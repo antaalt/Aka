@@ -5,33 +5,84 @@
 
 namespace aka {
 
-struct Endianess {
-	enum class Order {
-		Little,
-		Big
-	};
-	// Swap the endianess of the value passed.
-	template<typename T>
-	static T &swap(T& value);
-	// Check if system is big endian
-	static bool isBigEndian();
-	// Check if system is little endian
-	static bool isLittleEndian();
-	// Check if given endian byte order is the same as system
-	static bool same(Order order);
+enum class Endianess : uint8_t
+{
+	Unknown,
+
+	Little,
+	Big,
+	Middle,
+
+	Default = Little,
 };
 
-template<typename T> 
-T &Endianess::swap(T& value)
+struct Endian 
 {
-	uint8_t* d = reinterpret_cast<uint8_t*>(&value);
-	for (size_t i = 0; i < sizeof(T) / 2; i++)
-	{
-		uint8_t tmp = d[i];
-		d[i] = d[sizeof(T) - i - 1];
-		d[sizeof(T) - i - 1] = tmp;
-	}
-	return value;
+	// Swap the endianess of the value passed.
+	template<typename T> static void swap(T& value);
+	// Swap 16 bits elements
+	static void swap16(uint16_t& value);
+	// Swap 32 bits elements
+	static void swap32(uint32_t& value);
+	// Swap 64 bits elements
+	static void swap64(uint64_t& value);
+
+	// Check if system is big endian
+	static constexpr bool isBigEndian();
+	// Check if system is middle endian
+	static constexpr bool isMiddleEndian();
+	// Check if system is little endian
+	static constexpr bool isLittleEndian();
+
+	// Check if given endian byte order is the same as system
+	static bool same(Endianess order);
+	// Get the native endianess
+	static constexpr Endianess native();
+};
+
+
+constexpr bool Endian::isBigEndian()
+{
+	constexpr uint32_t ui = 0x01020304;
+	constexpr uint8_t ub = (const uint8_t&)ui;
+	return ub == 0x01;
 }
+
+constexpr bool Endian::isMiddleEndian()
+{
+	constexpr uint32_t ui = 0x01020304;
+	constexpr uint8_t ub = (const uint8_t&)ui;
+	return ub == 0x02;
+}
+
+constexpr bool Endian::isLittleEndian()
+{
+	constexpr uint32_t ui = 0x01020304;
+	constexpr uint8_t ub = (const uint8_t&)ui;
+	return ub == 0x04;
+}
+
+constexpr Endianess Endian::native()
+{
+	if constexpr (Endian::isBigEndian())
+		return Endianess::Big;
+	else if constexpr (Endian::isLittleEndian())
+		return Endianess::Little;
+	else if constexpr (Endian::isMiddleEndian())
+		return Endianess::Middle;
+	else
+		return Endianess::Unknown;
+}
+
+template <typename T> inline void Endian::swap(T& value) {} // Do not swap if not needed.
+template <> inline void Endian::swap(int16_t& value) { Endian::swap16(reinterpret_cast<uint16_t&>(value)); }
+template <> inline void Endian::swap(int32_t& value) { Endian::swap32(reinterpret_cast<uint32_t&>(value)); }
+template <> inline void Endian::swap(int64_t& value) { Endian::swap64(reinterpret_cast<uint64_t&>(value)); }
+template <> inline void Endian::swap(uint16_t& value) { Endian::swap16(value); }
+template <> inline void Endian::swap(uint32_t& value) { Endian::swap32(value); }
+template <> inline void Endian::swap(uint64_t& value) { Endian::swap64(value); }
+template <> inline void Endian::swap(float& value) { Endian::swap32(reinterpret_cast<uint32_t&>(value)); }
+template <> inline void Endian::swap(double& value) { Endian::swap64(reinterpret_cast<uint64_t&>(value)); }
+template <> inline void Endian::swap(char16_t& value) { Endian::swap16(reinterpret_cast<uint16_t&>(value)); }
 
 };

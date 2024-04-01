@@ -6,34 +6,28 @@
 #include <Aka/Audio/AudioDevice.h>
 
 #include <Aka/Core/Event.h>
-#include <Aka/Core/View.h>
+
+#include <Aka/Resource/Shader/Shader.h>
+#include <Aka/Resource/Shader/ShaderRegistry.h>
+#include <Aka/Resource/AssetLibrary.hpp>
 
 namespace aka {
 
 class Application;
 class Layer;
-class ProgramManager;
-class ResourceManager;
 
 struct Config
 {
-	GraphicConfig graphic = {};
+	gfx::GraphicConfig graphic = {};
 	AudioConfig audio = {};
 	PlatformConfig platform = {};
-	Application* app = nullptr;
-	Path directory;
+	Path directory = "../../../"; // Default build path for CMake relative to project
 	int argc = 0;
 	char** argv = nullptr;
 };
 
 // Event to notify app to exit.
 struct QuitEvent {};
-
-// Event to notify a view change
-struct ViewChangedEvent
-{
-	View::Ptr view;
-};
 
 struct AppCreateEvent {
 
@@ -49,7 +43,7 @@ struct AppUpdateEvent
 {
 	Time deltaTime;
 };
-struct AppRenderEvent {};
+struct AppRenderEvent { gfx::FrameHandle frame; };
 struct AppFrameEvent {};
 struct AppPresentEvent {};
 struct AppResizeEvent { uint32_t width; uint32_t height; };
@@ -59,12 +53,15 @@ class Application :
 	EventListener<WindowResizeEvent>
 {
 public:
-	Application();
-	Application(const std::vector<Layer*> layers);
+	Application(const Config& cfg);
+	Application(const Application&) = delete;
+	Application(Application&&) = delete;
+	Application& operator=(const Application&) = delete;
+	Application& operator=(Application&&) = delete;
 	virtual ~Application();
 private:
 	// Create the application and its resources.
-	void create(const Config& config);
+	void create();
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop
@@ -73,14 +70,16 @@ private:
 	void update(Time deltaTime);
 	// Update the app multiple time per frame at a fixed timestep
 	void fixedUpdate(Time deltaTime);
-	// Called before render for the app.
-	void frame();
+	// Called before render for the app, after frame acquisition
+	void preRender();
 	// Render the app.
-	void render();
-	// Called before present of the frame
-	void present();
+	void render(Renderer* _renderer, gfx::FrameHandle frame);
+	// Called after render, before present of the frame
+	void postRender();
 	// Last function called in a loop
 	void end();
+	// Resize the app
+	void resize();
 	// Called on app resize
 	void onReceive(const WindowResizeEvent& event) override;
 	// Called on app quit request
@@ -95,39 +94,50 @@ protected:
 	// Called on app update at a fixed timestep
 	virtual void onFixedUpdate(Time deltaTime) {}
 	// Called before app render
-	virtual void onFrame() {}
+	virtual void onPreRender() {}
 	// Called on app render
-	virtual void onRender() {}
+	virtual void onRender(Renderer* _renderer, gfx::FrameHandle frame) {}
 	// Called before present of the app
-	virtual void onPresent() {}
+	virtual void onPostRender() {}
 	// Called on app resize
 	virtual void onResize(uint32_t width, uint32_t height) {}
+public:
 	// Get the current app width
 	uint32_t width() const;
 	// Get the current app height
 	uint32_t height() const;
+	// Get the root layer
+	Layer& getRoot();
 public:
 	// Entry point of the application
-	static void run(const Config& config);
+	static void run(Application* app);
+	// Get the application
+	static Application* app();
 	// Get the graphic device
-	static GraphicDevice* graphic();
+	gfx::GraphicDevice* graphic();
+	// Get the renderer
+	Renderer* renderer();
 	// Get the platform device
-	static PlatformDevice* platform();
+	PlatformDevice* platform();
 	// Get the audio device
-	static AudioDevice* audio();
+	AudioDevice* audio();
 	// Get the program manager
-	static ProgramManager* program();
-	// Get the resource manager
-	static ResourceManager* resource();
+	ShaderRegistry* program();
+	// Get the asset manager
+	AssetLibrary* assets();
 private:
-	static PlatformDevice* s_platform;
-	static GraphicDevice* s_graphic;
-	static AudioDevice* s_audio;
-	static ProgramManager* s_program;
-	static ResourceManager* s_resource;
+	static Application* s_app;
+	Config m_config;
+	PlatformDevice* m_platform;
+	gfx::GraphicDevice* m_graphic;
+	AudioDevice* m_audio;
+	ShaderRegistry* m_program;
+	AssetLibrary* m_assets;
+	Renderer* m_renderer;
 private:
-	std::vector<Layer*> m_layers;
+	Layer* m_root;
 	uint32_t m_width, m_height;
+	bool m_needClientResize;
 	bool m_running;
 };
 

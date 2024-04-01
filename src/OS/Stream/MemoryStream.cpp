@@ -4,33 +4,37 @@
 
 namespace aka {
 
-MemoryStream::MemoryStream(const uint8_t* bytes, size_t size) : 
-	m_bytes(bytes), 
-	m_bytesWrite(nullptr), 
-	m_size(size), 
-	m_offset(0)
+MemoryStream::MemoryStream(size_t size) :
+	m_offset(0),
+	m_size(size)
 {
 }
 
-MemoryStream::MemoryStream(const std::vector<uint8_t>& bytes) : 
-	MemoryStream(bytes.data(), bytes.size()) 
+MemoryReaderStream::MemoryReaderStream(const uint8_t* bytes, size_t size) :
+	MemoryStream(size),
+	m_bytes(bytes)
 {
 }
 
-MemoryStream::MemoryStream(uint8_t* bytes, size_t size) : 
-	m_bytes(bytes), 
-	m_bytesWrite(bytes),
-	m_size(size), 
-	m_offset(0) 
+MemoryReaderStream::MemoryReaderStream(const Vector<uint8_t>& bytes) :
+	MemoryReaderStream(bytes.data(), bytes.size())
 {
 }
 
-MemoryStream::MemoryStream(std::vector<uint8_t>& bytes) : 
-	MemoryStream(bytes.data(), bytes.size()) 
+MemoryReaderStream::MemoryReaderStream(const Blob& blob) :
+	MemoryReaderStream(reinterpret_cast<const uint8_t*>(blob.data()), blob.size())
+{
+}
+MemoryReaderStream::~MemoryReaderStream()
 {
 }
 
-MemoryStream::~MemoryStream() 
+MemoryWriterStream::MemoryWriterStream(Vector<uint8_t>& bytes) :
+	MemoryStream(bytes.size()),
+	m_bytes(bytes)
+{
+}
+MemoryWriterStream::~MemoryWriterStream()
 {
 }
 
@@ -59,25 +63,30 @@ void MemoryStream::rewind()
 	m_offset = 0;
 }
 
-const uint8_t* MemoryStream::data(size_t len) const
-{ 
-	return m_bytes + m_offset; 
-}
 
-void MemoryStream::readData(void* data, size_t size)
+void MemoryReaderStream::read(void* data, size_t size)
 {
-	if (m_offset + size > m_size)
-		throw std::runtime_error("Reading out of bounds");
-	memcpy(data, m_bytes + m_offset, size);
+	AKA_ASSERT(m_offset + size <= m_size, "Reading out of bounds");
+	Memory::copy(data, m_bytes + m_offset, size);
 	m_offset += size;
 }
 
-void MemoryStream::writeData(const void* data, size_t size)
+void MemoryReaderStream::write(const void* data, size_t size)
 {
-	if (m_offset + size > m_size)
-		throw std::runtime_error("Writing out of bounds");
-	memcpy(m_bytesWrite + m_offset, data, size);
-	m_offset += size;
+	AKA_ASSERT(false, "Cannot write with a reader stream.");
 }
+
+void MemoryWriterStream::read(void* data, size_t size)
+{
+	AKA_ASSERT(false, "Cannot write with a reader stream.");
+}
+
+void MemoryWriterStream::write(const void* data, size_t size)
+{
+	const uint8_t* datau = static_cast<const uint8_t*>(data);
+	m_bytes.append(datau, datau + size);
+	m_size = m_bytes.size();
+}
+
 
 };

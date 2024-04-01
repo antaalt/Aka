@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Memory/Allocator.h>
 
 namespace aka {
 
-class PoolAllocator final : public Allocator
+/*class PoolAllocator final : public Allocator
 {
 public:
 	PoolAllocator(void* mem, size_t size, size_t objectSize, size_t objectAlignment);
@@ -20,6 +20,6 @@ private:
 	size_t m_objectCount;
 	size_t m_objectSize;
 	void** m_freeList;
-};
+};*/
 
 };

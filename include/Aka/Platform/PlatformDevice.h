@@ -89,6 +89,12 @@ public:
 	PlatformDevice(const PlatformConfig& config);
 	virtual ~PlatformDevice();
 
+	static PlatformDevice* create(const PlatformConfig& config);
+	static void destroy(PlatformDevice* device);
+
+	virtual void initialize(const PlatformConfig& config) = 0;
+	virtual void shutdown() = 0;
+
 	// Get the width of the window
 	uint32_t width() const;
 	// Get the height of the window
@@ -119,6 +125,8 @@ public:
 	virtual void setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight) = 0;
 	// Set fullscreen mode of the window
 	virtual void fullscreen(bool enabled) = 0;
+	// Get native handle to the window
+	virtual void* getNativeHandle() = 0;
 protected: // Inputs
 	void onInputsUpdate();
 	void onKeyboardKeyDown(KeyboardKey key);

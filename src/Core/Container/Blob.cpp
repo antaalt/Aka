@@ -17,7 +17,7 @@ Blob::Blob(size_t size) :
 {
 }
 
-Blob::Blob(const byte_t* bytes, size_t size) :
+Blob::Blob(const void* bytes, size_t size) :
 	m_bytes(new byte_t[size]),
 	m_size(size)
 {
@@ -63,12 +63,12 @@ Blob::~Blob()
 	delete[] m_bytes;
 }
 
-byte_t* Blob::data()
+void* Blob::data()
 {
 	return m_bytes;
 }
 
-const byte_t* Blob::data() const
+const void* Blob::data() const
 {
 	return m_bytes;
 }

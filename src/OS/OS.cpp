@@ -54,7 +54,7 @@ bool OS::File::write(const Path& path, const String& str)
 	return write(path, str.cstr());
 }
 
-bool OS::File::write(const Path& path, const uint8_t* bytes, size_t size)
+bool OS::File::write(const Path& path, const void* bytes, size_t size)
 {
 	FILE* file = open(path, FileMode::Write, FileType::Binary);
 	if (file == nullptr)
@@ -71,6 +71,12 @@ bool OS::File::write(const Path& path, const uint8_t* bytes, size_t size)
 bool OS::File::write(const Path& path, const Blob& blob)
 {
 	return write(path, blob.data(), blob.size());
+}
+
+Path OS::Library::getLibraryPath(const char* _name)
+{
+	// Where should it look ?
+	return _name;
 }
 
 };

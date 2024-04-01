@@ -2,11 +2,17 @@
 
 #include <Aka/Platform/Platform.h>
 #include <Aka/OS/Time.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 
 
 #include <iostream>
 #include <mutex>
+
+
+#if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+#include <sstream>
+void OutputDebugConsole(const char* string);
+#endif
 
 namespace aka {
 
@@ -91,6 +97,13 @@ inline void Logger::Channel::print(Args ...args)
 	AKA_ASSERT(result != 0, "Failed formatting of string.");
 	std::lock_guard<std::mutex> m(this->writeLock);
 	doPrint(this->ostream, this->color, buffer, args...);
+#if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+	std::stringstream sstr;
+	doPrint(sstr, this->color, buffer, args...);
+	sstr << Logger::Color::ForegroundWhite << std::endl;
+	std::string str = sstr.str();
+	OutputDebugConsole(str.c_str());
+#endif
 	ostream << Logger::Color::ForegroundWhite << std::endl; // Default color
 }
 

@@ -1,27 +1,29 @@
 #pragma once
 
-#include <vector>
+#include <memory>
 
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
+#include <Aka/Memory/Memory.h>
+#include <Aka/Core/Geometry.h>
 
 namespace aka {
 
 template <typename T>
 class Vector final
 {
+	using AllocatorType = Allocator;
+	static const size_t defaultCapacity = 16;
 public:
 	Vector();
-	Vector(const std::vector<T>& vector);
-	Vector(const T* data, size_t size);
-	Vector(size_t size, const T& value);
-	explicit Vector(size_t size);
+	explicit Vector(AllocatorType& allocator);
+	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
+	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
+	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
 	Vector(const Vector& vector);
 	Vector(Vector&& vector);
 	Vector& operator=(const Vector& vector);
 	Vector& operator=(Vector&& vector);
 	~Vector();
-
-	operator std::vector<T>() const;
 
 	T& operator[](size_t index);
 	const T& operator[](size_t index) const;
@@ -29,11 +31,16 @@ public:
 	bool operator==(const Vector<T>& vector) const;
 	bool operator!=(const Vector<T>& vector) const;
 	bool operator<(const Vector<T>& vector) const;
+	bool operator>(const Vector<T>& vector) const;
+	bool operator<=(const Vector<T>& vector) const;
+	bool operator>=(const Vector<T>& vector) const;
 
-	Vector<T>& append(const Vector<T>& vector);
-	Vector<T>& append(const T* start, const T* end);
-	Vector<T>& append(const T& value);
-	Vector<T>& append(T&& value);
+	T& append(const Vector<T>& vector);
+	T& append(const T* start, const T* end);
+	T& append(const T& value);
+	T& append(T&& value);
+	template <typename ...Args>
+	T& emplace(Args ...args);
 
 	void remove(T* start, T* end);
 	void remove(T* value);
@@ -44,6 +51,8 @@ public:
 	size_t capacity() const;
 	// Resize the vector
 	void resize(size_t size);
+	// Resize the vector with default value
+	void resize(size_t size, const T& defaultValue);
 	// Resize the vector capacity
 	void reserve(size_t size);
 	// Empty the vector
@@ -73,62 +82,65 @@ public:
 	// Pointer to ending of vector
 	const T* end() const;
 private:
+	AllocatorType& m_allocator;
 	T* m_data;
 	size_t m_size;
 	size_t m_capacity;
 };
 
-
 template <typename T>
 inline Vector<T>::Vector() :
-	m_data(new T[16]),
+	Vector(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector))
+{
+}
+template<typename T>
+inline Vector<T>::Vector(AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(m_allocator.allocate<T>(defaultCapacity)),
 	m_size(0),
-	m_capacity(16)
+	m_capacity(defaultCapacity)
 {
 }
 template <typename T>
-inline Vector<T>::Vector(const std::vector<T>& vector) :
-	Vector(vector.data(), vector.size())
-{
-}
-template <typename T>
-inline Vector<T>::Vector(const T* data, size_t size) :
-	m_data(new T[size]),
+inline Vector<T>::Vector(const T* data, size_t size, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
-	m_capacity(size)
+	m_capacity(max(size, defaultCapacity))
 {
-	memcpy(m_data, data, sizeof(T) * size);
+	std::uninitialized_copy(data, data + size, begin());
 }
 template <typename T>
-inline Vector<T>::Vector(size_t size, const T& value) :
-	m_data(new T[size]),
+inline Vector<T>::Vector(size_t size, const T& value, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
-	m_capacity(size)
+	m_capacity(max(size, defaultCapacity))
 {
-	for (T& data : m_data)
-		data = value;
+	std::uninitialized_fill(begin(), end(), value);
 }
 template <typename T>
-inline Vector<T>::Vector(size_t size) :
-	Vector(size, T())
+inline Vector<T>::Vector(size_t size, AllocatorType& allocator) :
+	m_allocator(allocator),
+	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
+	m_size(size),
+	m_capacity(max(size, defaultCapacity))
 {
+	std::uninitialized_default_construct(begin(), end());
 }
 template <typename T>
 inline Vector<T>::Vector(const Vector& vector) :
-	m_data(new T[vector.m_capacity]),
-	m_size(vector.m_size),
-	m_capacity(vector.m_capacity)
+	Vector(vector.data(), vector.size()) // No allocator
 {
-	// Can't memcpy for type that need a constructor.
-	for (size_t i = 0; i < m_size; i++)
-		m_data[i] = vector[i];
 }
 template <typename T>
 inline Vector<T>::Vector(Vector&& vector) :
+	m_allocator(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector)),
 	m_data(nullptr),
 	m_size(0),
 	m_capacity(0)
 {
+	//std::swap(m_allocator, vector.m_allocator);
 	std::swap(m_data, vector.m_data);
 	std::swap(m_size, vector.m_size);
 	std::swap(m_capacity, vector.m_capacity);
@@ -137,26 +149,23 @@ template <typename T>
 inline Vector<T>& Vector<T>::operator=(const Vector& vector)
 {
 	resize(vector.size());
-	// Can't memcpy for type that need a constructor.
-	for (size_t i = 0; i < m_size; i++)
-		m_data[i] = vector[i];
+	std::copy(vector.begin(), vector.end(), begin());
+	return *this;
 }
 template <typename T>
 inline Vector<T>& Vector<T>::operator=(Vector&& vector)
 {
+	//std::swap(m_allocator, vector.m_allocator);
 	std::swap(m_data, vector.m_data);
 	std::swap(m_size, vector.m_size);
 	std::swap(m_capacity, vector.m_capacity);
+	return *this;
 }
 template <typename T>
 inline Vector<T>::~Vector()
 {
-	delete[] m_data;
-}
-template <typename T>
-inline Vector<T>::operator std::vector<T>() const
-{
-	return std::vector<T>(m_data, m_data + m_size);
+	std::destroy(begin(), end());
+	m_allocator.deallocate(m_data, m_capacity);
 }
 template <typename T>
 inline T& Vector<T>::operator[](size_t index)
@@ -173,60 +182,82 @@ inline const T& Vector<T>::operator[](size_t index) const
 template <typename T>
 inline bool Vector<T>::operator==(const Vector<T>& value) const
 {
+	return (size() == value.size()) && std::equal(begin(), end(), value.begin());
 }
 template <typename T>
 inline bool Vector<T>::operator!=(const Vector<T>& value) const
 {
+	return (size() != value.size()) || !std::equal(begin(), end(), value.begin());
 }
 template <typename T>
 inline bool Vector<T>::operator<(const Vector<T>& value) const
 {
+	return std::lexicographical_compare(begin(), end(), value.begin(), value.end());
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const Vector<T>& vector)
+inline bool Vector<T>::operator>(const Vector<T>& value) const
 {
-	return append(vector.data(), vector.data() + vector.size());
+	return value < *this;
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const T* start, const T*end)
+inline bool Vector<T>::operator<=(const Vector<T>& value) const
 {
-	AKA_ASSERT(end >= start, "Invalid range");
+	return !(value < *this);
+}
+template <typename T>
+inline bool Vector<T>::operator>=(const Vector<T>& value) const
+{
+	return !(*this < value);
+}
+template <typename T>
+inline T& Vector<T>::append(const Vector<T>& vector)
+{
+	return append(vector.begin(), vector.end());
+}
+template <typename T>
+inline T& Vector<T>::append(const T* _start, const T* _end)
+{
+	AKA_ASSERT(_end >= _start, "Invalid range");
+	T* b = begin();
+	T* e = end();
 	size_t size = m_size;
-	size_t range = (end - start);
+	size_t range = (_end - _start);
 	resize(m_size + range);
-	// Can't memcpy for type that need a constructor.
-	for (size_t i = size; i < range; i++)
-		m_data[i] = start[i];
-	return *this;
+	// OPTIM: avoid resize default construction
+	std::copy(_start, _end, m_data + size);
+	return last();
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(const T& value)
+inline T& Vector<T>::append(const T& value)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	m_data[off] = value;
-	return *this;
+	resize(m_size + 1, value);
+	return last();
 }
 template <typename T>
-inline Vector<T>& Vector<T>::append(T&& value)
+inline T& Vector<T>::append(T&& value)
 {
 	size_t off = m_size;
-	resize(m_size + 1);
-	m_data[off] = std::move(value);
-	return *this;
+	resize(m_size + 1, std::forward<T>(value));
+	return last();
+}
+template<typename T>
+template<typename ...Args>
+inline T& Vector<T>::emplace(Args ...args)
+{
+	size_t off = m_size;
+	resize(m_size + 1, T(std::forward<Args>(args)...));
+	return last();
 }
 template <typename T>
-inline void Vector<T>::remove(T* start, T* end)
+inline void Vector<T>::remove(T* _start, T* _end)
 {
-	if (start < m_data && start >= m_data + m_size)
-		throw std::invalid_argument("Start not in range");
-	if (end <= m_data || end > m_data + m_size)
-		throw std::invalid_argument("End not in range");
-	if (end < start)
-		throw std::invalid_argument("Invalid range");
-	size_t range = m_data + m_size - end;
-	memcpy(start, end, range * sizeof(T));
-	m_size -= (end - start);
+	AKA_ASSERT(_start >= begin() || _start < end(), "Start not in range");
+	AKA_ASSERT(_end > begin() || _end <= end(), "End not in range");
+	AKA_ASSERT(_end >= _start, "Invalid range");
+	std::move(_end, end(), _start);
+	std::destroy(_start + (end() - _end), end());
+	m_size -= (_end - _start);
 }
 template <typename T>
 inline void Vector<T>::remove(T* value)
@@ -249,6 +280,32 @@ inline void Vector<T>::resize(size_t size)
 	if (m_size == size)
 		return;
 	reserve(size);
+	T* newEnd = m_data + size;
+	if (m_size < size)
+	{
+		std::uninitialized_default_construct(end(), newEnd);
+	}
+	else
+	{
+		std::destroy(newEnd, end());
+	}
+	m_size = size;
+}
+template <typename T>
+inline void Vector<T>::resize(size_t size, const T& defaultValue)
+{
+	if (m_size == size)
+		return;
+	reserve(size);
+	T* newEnd = m_data + size;
+	if (m_size < size)
+	{
+		std::uninitialized_fill(end(), newEnd, defaultValue);
+	}
+	else
+	{
+		std::destroy(newEnd, end());
+	}
 	m_size = size;
 }
 template <typename T>
@@ -256,17 +313,20 @@ inline void Vector<T>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
+	T* b = begin();
+	T* e = end();
 	size_t oldCapacity = m_capacity;
-	while (m_capacity < size)
-		m_capacity *= 2;
-	T* buffer = new T[m_capacity]();
-	memcpy(buffer, m_data, oldCapacity * sizeof(T));
-	delete[] m_data;
+	T* buffer = m_allocator.allocate<T>(size);
+	std::uninitialized_move(b, e, buffer);
+	std::destroy(b, e);
+	m_allocator.deallocate(m_data, oldCapacity);
+	m_capacity = size;
 	m_data = buffer;
 }
 template <typename T>
 inline void Vector<T>::clear()
 {
+	std::destroy(begin(), end());
 	m_size = 0;
 }
 template <typename T>

@@ -1,7 +1,8 @@
 #include <Aka/OS/Image.h>
 
 #include <Aka/OS/Logger.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
+#include <Aka/Core/BitField.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -13,6 +14,9 @@
 
 namespace aka {
 
+template struct Img<byte_t>;
+template struct Img<float>;
+
 #if defined(AKA_ORIGIN_BOTTOM_LEFT)
 constexpr const bool defaultFlipImageAtLoad = true;
 constexpr const bool defaultFlipImageAtSave = true;
@@ -21,240 +25,189 @@ constexpr const bool defaultFlipImageAtLoad = false;
 constexpr const bool defaultFlipImageAtSave = false;
 #endif
 
-size_t size(ImageFormat format)
+uint32_t getImageComponentCount(ImageComponent _components)
 {
-	switch (format)
-	{
-	default:
-	case aka::ImageFormat::None:
-		return 0;
-	case aka::ImageFormat::UnsignedByte:
-		return 1;
-	case aka::ImageFormat::Float:
-		return 4;
-	}
+	return countBitSet(toMask(_components));
 }
 
-Image::Image() :
-	Image(0, 0, 0, ImageFormat::None)
+template <>
+void Img<byte_t>::set(uint32_t x, uint32_t y, const Pixel& pixel)
 {
+	const uint32_t c = getImageComponentCount(components);
+	size_t stride = c * width;
+	memcpy(bytes.data() + x * c + stride * y, pixel.data, c);
 }
 
-Image::Image(uint32_t width, uint32_t height, uint32_t components, ImageFormat format) :
-	m_width(width),
-	m_height(height),
-	m_components(components),
-	m_format(format),
-	m_bytes(width * height * components * aka::size(format))
+template <>
+void Img<float>::set(uint32_t x, uint32_t y, const Pixel& pixel)
 {
+	const uint32_t c = getImageComponentCount(components);
+	size_t stride = sizeof(float) * c * width;
+	memcpy(bytes.data() + x * c + stride * y, pixel.data, c * sizeof(float));
+}
+template <>
+Img<byte_t>::Pixel Img<byte_t>::get(uint32_t x, uint32_t y) const
+{
+	Pixel out;
+	const uint32_t c = getImageComponentCount(components);
+	size_t stride = c * width;
+	memcpy(out.data, bytes.data() + x * c + stride * y, c);
+	return out;
 }
 
-Image::Image(uint32_t width, uint32_t height, uint32_t components, const float* data) :
-	m_width(width),
-	m_height(height),
-	m_components(components),
-	m_format(ImageFormat::Float),
-	m_bytes((uint8_t*)data, (uint8_t*)data + width * height * components * sizeof(float))
+template <>
+Img<float>::Pixel Img<float>::get(uint32_t x, uint32_t y) const
 {
+	Pixel out;
+	const uint32_t c = getImageComponentCount(components);
+	size_t stride = sizeof(float) * c * width;
+	memcpy(out.data, bytes.data() + x * c + stride * y, c * sizeof(float));
+	return out;
 }
 
-Image::Image(uint32_t width, uint32_t height, uint32_t components, const uint8_t* data) :
-	m_width(width),
-	m_height(height),
-	m_components(components),
-	m_format(ImageFormat::UnsignedByte),
-	m_bytes(data, data + width * height * components)
+ImageFileFormat ImageDecoder::getFileFormat(const Path& _path)
 {
+	return ImageFileFormat::Unknown;
 }
-
-Image Image::load(const Path& path)
+ImageFileFormat ImageDecoder::getFileFormat(const Blob& _blob)
 {
-	Image image;
-	image.decode(path);
-	return image;
+	return ImageFileFormat::Unknown;
 }
-
-Image Image::load(const uint8_t* binaries, size_t size)
+Image ImageDecoder::fromDisk(const Path& _path)
 {
-	Image image;
-	image.decode(binaries, size);
-	return image;
-}
-
-Image Image::loadHDR(const Path& path)
-{
-	Image image;
-	image.decodeHDR(path);
-	return image;
-}
-
-Image Image::loadHDR(const uint8_t* binaries, size_t size)
-{
-	Image image;
-	image.decodeHDR(binaries, size);
-	return image;
-}
-
-bool Image::decode(const Path& path)
-{
-	Image image{};
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
-	stbi_uc* data = stbi_load(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
+	stbi_uc* data = stbi_load(_path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load image from path ", path.cstr());
-		return false;
+		return Image{};
 	}
 	else
 	{
+		Image img{};
 		size_t size = x * y * 4;
-		m_bytes.resize(size);
-		memcpy(m_bytes.data(), data, size);
-		m_width = static_cast<uint32_t>(x);
-		m_height = static_cast<uint32_t>(y);
-		m_components = 4;
-		m_format = ImageFormat::UnsignedByte;
+		img.bytes.resize(size);
+		memcpy(img.bytes.data(), data, size);
+		img.width = static_cast<uint32_t>(x);
+		img.height = static_cast<uint32_t>(y);
+		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return true;
+		return img;
 	}
 }
-
-bool Image::decode(const uint8_t* binaries, size_t size)
+Image ImageDecoder::fromMemory(const Blob& _blob)
 {
-	Image image{};
+	return fromMemory((const byte_t*)_blob.data(), _blob.size());
+}
+Image ImageDecoder::fromMemory(const byte_t* _data, size_t _size)
+{
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
-	stbi_uc* data = stbi_load_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
+	stbi_uc* data = stbi_load_from_memory(_data, (int)_size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load image from binaries");
-		return false;
+		return Image{};
 	}
 	else
 	{
+		Image img{};
 		size_t size = x * y * 4;
-		m_bytes.resize(size);
-		memcpy(m_bytes.data(), data, size);
-		m_width = static_cast<uint32_t>(x);
-		m_height = static_cast<uint32_t>(y);
-		m_components = 4;
-		m_format = ImageFormat::UnsignedByte;
+		img.bytes.resize(size);
+		memcpy(img.bytes.data(), data, size);
+		img.width = static_cast<uint32_t>(x);
+		img.height = static_cast<uint32_t>(y);
+		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return true;
+		return img;
 	}
 }
-
-bool Image::decodeHDR(const Path& path)
+ImageHdr ImageDecoder::fromDiskHdr(const Path& _path)
 {
-	Image image{};
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
-	float* data = stbi_loadf(path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
+	float* data = stbi_loadf(_path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load hdr image from path ", path.cstr());
-		return false;
+		return ImageHdr{};
 	}
 	else
 	{
-		size_t size = x * y * 4 * sizeof(float);
-		m_bytes.resize(size);
-		memcpy(m_bytes.data(), data, size);
-		m_width = static_cast<uint32_t>(x);
-		m_height = static_cast<uint32_t>(y);
-		m_components = 4;
-		m_format = ImageFormat::Float;
+		ImageHdr img{};
+		size_t size = x * y * 4;
+		img.bytes.resize(size);
+		memcpy(img.bytes.data(), data, size * sizeof(float));
+		img.width = static_cast<uint32_t>(x);
+		img.height = static_cast<uint32_t>(y);
+		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return true;
+		return img;
 	}
 }
-
-bool Image::decodeHDR(const uint8_t* binaries, size_t size)
+ImageHdr ImageDecoder::fromMemoryHdr(const Blob& _blob)
 {
-	Image image{};
+	return fromMemoryHdr((const byte_t*)_blob.data(), _blob.size());
+}
+ImageHdr ImageDecoder::fromMemoryHdr(const byte_t* _data, size_t _size)
+{
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
-	float* data = stbi_loadf_from_memory(binaries, (int)size, &x, &y, &channel, STBI_rgb_alpha);
+	float* data = stbi_loadf_from_memory(_data, (int)_size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Could not load hdr image from binaries");
-		return false;
+		return ImageHdr{};
 	}
 	else
 	{
-		size_t size = x * y * 4 * sizeof(float);
-		m_bytes.resize(size);
-		memcpy(m_bytes.data(), data, size);
-		m_width = static_cast<uint32_t>(x);
-		m_height = static_cast<uint32_t>(y);
-		m_components = 4;
-		m_format = ImageFormat::Float;
+		ImageHdr img{};
+		size_t size = x * y * 4;
+		img.bytes.resize(size);
+		memcpy(img.bytes.data(), data, size * sizeof(float));
+		img.width = static_cast<uint32_t>(x);
+		img.height = static_cast<uint32_t>(y);
+		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return true;
+		return img;
 	}
 }
 
-bool Image::encodeJPG(const Path& path, uint32_t quality) const
+bool ImageEncoder::toDisk(const Path& _path, Image& _image, ImageFileFormat _format, ImageQuality _quality)
 {
-	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
-	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
+	const uint32_t c = getImageComponentCount(_image.components);
+	AKA_ASSERT(_image.bytes.size() == _image.width * _image.height * c, "Invalid size");
 	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
-	int error = stbi_write_jpg(path.cstr(), m_width, m_height, m_components, m_bytes.data(), quality);
+	int error = stbi_write_jpg(_path.cstr(), _image.width, _image.height, c, _image.bytes.data(), (uint32_t)_quality * 50);
 	return error != 0;
 }
-
-std::vector<uint8_t> Image::encodeJPG(uint32_t quality) const
+Blob ImageEncoder::toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality)
 {
-	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
-	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
+	AKA_NOT_IMPLEMENTED;
+	/*const uint32_t c = getImageComponentCount(_image.components);
+	AKA_ASSERT(_image.bytes.size() == _image.width * _image.height * c, "Invalid size");
 	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
-	std::vector<uint8_t> data;
+	Blob data;
 	int outLength = stbi_write_jpg_to_func([](void* context, void* data, int size) {
-		std::vector<uint8_t>* bytes = reinterpret_cast<std::vector<uint8_t>*>(context);
+		Blob* bytes = reinterpret_cast<Blob*>(context);
 		uint8_t* binaryData = static_cast<uint8_t*>(data);
 		bytes->insert(bytes->end(), binaryData, binaryData + size);
-	}, &data, m_width, m_height, m_components, m_bytes.data(), quality);
+		}, &data, _image.width, _image.height, c, _image.bytes.data(), (uint32_t)_quality * 50);
 	if (data.size() == 0 || outLength == 0)
-		return std::vector<uint8_t>();
-	return data;
+		return Blob();
+	return data;*/
+	return Blob();
 }
-
-bool Image::encodePNG(const Path& path) const
+bool ImageEncoder::toDisk(const Path& _path, ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
 {
-	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
-	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
-	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
-	int error = stbi_write_png(path.cstr(), m_width, m_height, m_components, m_bytes.data(), m_width * m_components);
-	return error != 0;
-}
-
-std::vector<uint8_t> Image::encodePNG() const
-{
-	AKA_ASSERT(m_format == ImageFormat::UnsignedByte, "Invalid format");
-	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components, "Invalid size");
-	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
-	int outLength = 0;
-	unsigned char* data = stbi_write_png_to_mem(m_bytes.data(), m_width * m_components, m_width, m_height, m_components, &outLength);
-	if (data == nullptr || outLength == 0)
-		return std::vector<uint8_t>();
-	std::vector<uint8_t> bytes(data, data + outLength);
-	free(data);
-	return bytes;
-}
-
-bool Image::encodeHDR(const Path& path) const
-{
-	AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
+	/*AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
 	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components * sizeof(float), "Invalid size");
 	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
 	int error = stbi_write_hdr(path.cstr(), m_width, m_height, m_components, reinterpret_cast<const float*>(m_bytes.data()));
-	return (error != 0);
+	return (error != 0);*/
+	AKA_NOT_IMPLEMENTED;
+	return false;
 }
-
-std::vector<uint8_t> Image::encodeHDR() const
+Blob ImageEncoder::toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
 {
-	AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
+	/*AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
 	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components * sizeof(float), "Invalid size");
 	stbi_flip_vertically_on_write(defaultFlipImageAtSave);
 	std::vector<uint8_t> data;
@@ -262,64 +215,11 @@ std::vector<uint8_t> Image::encodeHDR() const
 		std::vector<uint8_t>* bytes = reinterpret_cast<std::vector<uint8_t>*>(context);
 		uint8_t* binaryData = static_cast<uint8_t*>(data);
 		bytes->insert(bytes->end(), binaryData, binaryData + size);
-	}, &data, m_width, m_height, m_components, reinterpret_cast<const float*>(m_bytes.data()));
+		}, &data, m_width, m_height, m_components, reinterpret_cast<const float*>(m_bytes.data()));
 	if (data.size() == 0 || outLength == 0)
-		return std::vector<uint8_t>();
-	return data;
-}
-
-void Image::clear()
-{
-	m_width = 0;
-	m_height = 0;
-	m_components = 0;
-	m_format = ImageFormat::None;
-	m_bytes.clear();
-}
-
-void Image::flip()
-{
-	std::vector<uint8_t> tmp(m_bytes.size());
-	size_t componentSize = aka::size(m_format);
-	size_t stride = componentSize * m_width * m_components;
-	for (uint32_t i = 0; i < m_height; i++)
-		memcpy(tmp.data() + (m_height - 1 - i) * stride, m_bytes.data() + i * stride, stride);
-	m_bytes = tmp;
-}
-
-uint32_t Image::width() const
-{
-	return m_width;
-}
-
-uint32_t Image::height() const
-{
-	return m_height;
-}
-
-uint32_t Image::components() const
-{
-	return m_components;
-}
-
-ImageFormat Image::format() const
-{
-	return m_format;
-}
-
-void* Image::data()
-{
-	return m_bytes.data();
-}
-
-const void* Image::data() const
-{
-	return m_bytes.data();
-}
-
-size_t Image::size() const
-{
-	return m_bytes.size();
+		return std::vector<uint8_t>();*/
+	AKA_NOT_IMPLEMENTED;
+	return Blob();
 }
 
 };

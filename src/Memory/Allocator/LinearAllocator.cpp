@@ -2,39 +2,51 @@
 
 namespace aka {
 
-LinearAllocator::LinearAllocator(void* chunk, size_t size) :
-	Allocator(chunk, size)
+LinearAllocator::LinearAllocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category, Allocator* parent = nullptr, size_t blockSize = 0) :
+	Allocator(name, memoryType, category),
+	m_offset(0)
 {
+
 }
 
 LinearAllocator::~LinearAllocator()
 {
+
 }
 
-void* LinearAllocator::allocate(size_t size, size_t alignement)
+void* LinearAllocator::allocate_internal(size_t size, AllocatorFlags flags)
 {
-	uintptr_t current = (uintptr_t)m_mem + m_used;
-	size_t adjustment = Allocator::alignAdjustment(current, alignement);
-	if (m_used + adjustment + size > m_size)
-		return nullptr; // Not enough space in allocator
-	uintptr_t aligned = current + adjustment;
-	m_used += size + adjustment;
-	return (void*)aligned;
+	MemoryBlock* block = getMemoryBlock();
+	if (size + m_offset > block->size)
+	{
+		block = requestNewMemoryBlock(); // Out of memory
+		m_offset = 0; // Reset offset
+	}
+	size_t offset = m_offset;
+	m_offset += size;
+	return static_cast<uint8_t*>(block->mem) + offset;
+}
+void* LinearAllocator::alignedAllocate_internal(size_t size, size_t alignement, AllocatorFlags flags)
+{
+	MemoryBlock* block = getMemoryBlock();
+	if (size + m_offset > block->size)
+	{
+		block = requestNewMemoryBlock(); // Out of memory
+		m_offset = 0; // Reset offset
+	}
+	size_t offset = m_offset + alignAdjustment((uintptr_t)block->mem + m_offset, alignement);
+	m_offset = offset + size;
+	return static_cast<uint8_t*>(block->mem) + offset;
 }
 
-void LinearAllocator::deallocate(void* address, size_t size)
+void LinearAllocator::deallocate_internal(void* address, size_t size)
 {
 	// Linear allocator does not need to deallocate.
 }
 
-void LinearAllocator::reset()
+void LinearAllocator::alignedDeallocate_internal(void* address, size_t size)
 {
-	m_used = 0;
-}
-
-bool LinearAllocator::contiguous() const
-{
-	return true;
+	// Linear allocator does not need to deallocate.
 }
 
 };

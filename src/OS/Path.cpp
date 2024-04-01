@@ -3,7 +3,7 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 #include <Aka/OS/Stream/FileStream.h>
-#include <Aka/Core/Debug.h>
+#include <Aka/Core/Config.h>
 #include <Aka/Platform/PlatformDevice.h>
 
 #include <algorithm>
@@ -23,6 +23,11 @@ Path::Path(const String& path) : m_string(path)
 {
 }
 
+char* Path::cstr()
+{
+	return m_string.cstr();
+}
+
 const char* Path::cstr() const
 {
 	return m_string.cstr();
@@ -35,6 +40,15 @@ size_t Path::size() const
 size_t Path::length() const
 {
 	return m_string.length();
+}
+void Path::reserve(size_t size)
+{
+	m_string.reserve(size);
+}
+
+void Path::resize(size_t size)
+{
+	m_string.resize(size);
 }
 
 Path Path::operator+(const Path& rhs) const
@@ -71,11 +85,24 @@ bool Path::operator!=(const Path& rhs) const
 	return OS::normalize(*this).m_string != OS::normalize(rhs).m_string;
 }
 
+Path Path::operator/(const Path& rhs)
+{
+	return Path(m_string + '/' + rhs.m_string);
+}
+
+Path& Path::append(const Path& string)
+{
+	m_string.append(string.cstr());
+	return *this;
+}
+
 Path Path::up() const
 {
 	const size_t separatorCount = std::count(m_string.begin(), m_string.end(), '/');
 	const size_t lastCharacterOffset = m_string.length() - 1;
 	size_t offset = m_string.findLast('/');
+	if (offset == String::invalid)
+		return *this;
 	if (1 == separatorCount)
 	{
 		if (offset != lastCharacterOffset)

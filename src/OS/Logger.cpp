@@ -28,4 +28,18 @@ void Logger::Channel::unmute()
 	muted = false;
 }
 
+};
+
+#if defined(AKA_PLATFORM_WINDOWS) && defined(AKA_DEBUG)
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <Aka/Core/Container/String.h>
+void OutputDebugConsole(const char* string)
+{
+	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, string, -1, nullptr, 0);
+	aka::StringWide wstr(wstr_size - 1);
+	MultiByteToWideChar(CP_UTF8, 0, string, -1, wstr.cstr(), wstr_size);
+	OutputDebugStringW(wstr.cstr());
 }
+#endif

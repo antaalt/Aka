@@ -1,169 +1,267 @@
 #pragma once
 
+#include <type_traits>
+
+#include <Aka/Core/Geometry.h>
+#include <Aka/Core/Config.h>
+#include <Aka/Core/StrictType.h>
+#include <Aka/Platform/PlatformDevice.h>
+
+#include <Aka/Graphic/Resource.h>
 #include <Aka/Graphic/Texture.h>
-#include <Aka/Graphic/Texture2D.h>
-#include <Aka/Graphic/Texture2DMultisample.h>
-#include <Aka/Graphic/TextureCubeMap.h>
-#include <Aka/Graphic/Framebuffer.h>
-#include <Aka/Graphic/Backbuffer.h>
 #include <Aka/Graphic/Buffer.h>
-#include <Aka/Graphic/RenderPass.h>
-#include <Aka/Graphic/Device.h>
+#include <Aka/Graphic/Sampler.h>
 #include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/Program.h>
+#include <Aka/Graphic/Framebuffer.h>
+#include <Aka/Graphic/Pipeline.h>
+#include <Aka/Graphic/CommandList.h>
+#include <Aka/Graphic/DescriptorSet.h>
+#include <Aka/Graphic/DescriptorPool.h>
+#include <Aka/Graphic/PhysicalDevice.h>
+#include <Aka/Graphic/Fence.h>
 
 namespace aka {
+namespace gfx {
 
-enum class GraphicAPI
+enum class GraphicAPI : uint8_t
 {
-	None,
-	OpenGL3,
-	DirectX11,
+	Unknown,
+
+	Vulkan,
+	DirectX12,
+
+	First = Vulkan,
+	Last = DirectX12,
 };
-
-struct GraphicCoordinates
-{
-	// Is origin of texture bottom left or top left.
-	// Textures data must be flipped at loading if originTextureBottomLeft is true.
-	// This need to be respected to be render target compatible.
-	// D3D / Metal / Consoles origin is top left
-	// OpenGL / OpenGL ES origin is bottom left
-	bool originTextureBottomLeft;
-
-	// Is UV (0, 0) bottom left or top left (pixel space coordinate).
-	// UV of models must be flipped if originUVBottomLeft is false.
-	// This need to be respected to be render target compatible.
-	bool originUVBottomLeft;
-
-	// Is clip space between [0, 1] or [-1, 1]
-	// This affect mostly projection matrix which are responsible of changing view space to clip space.
-	bool clipSpacePositive;
-
-	// Is render Y Axis up
-	// This affect mostly projection matrix which are responsible of changing view space to clip space
-	// Vulkan is false, others are true
-	bool renderAxisYUp;
-
-	// Graphics math conventions is up to the dev (left-handed vs right-handed, column-major vs row-major...)
-};
-
-struct GraphicDeviceFeatures
-{
-	uint32_t maxColorAttachments; // Max number of color attachments for framebuffer
-	uint32_t maxElementIndices; // Max number of indices for index buffer
-	uint32_t maxElementVertices; // Max number of vertices for vertex buffer
-	uint32_t maxTextureUnits; // Max number of textures bound at same time
-	uint32_t maxTextureSize; // Maximum size of a single texture
-};
-
-struct GraphicDeviceSettings
-{
-	GraphicAPI api; // Current API
-	struct {
-		uint32_t major; // Major version of the API
-		uint32_t minor; // Minor version of the API
-	} version;
-	uint32_t profile; // Profile version of API shader
-	GraphicCoordinates coordinates; // Specific api coordinates that might affect external code.
-};
-
-enum class GraphicFlag
-{
-	None,
-	VerticalSynchronisation,
-	HDRBackbuffer,
-};
-
-GraphicFlag operator|(const GraphicFlag& lhs, const GraphicFlag& rhs);
-GraphicFlag operator&(const GraphicFlag& lhs, const GraphicFlag& rhs);
-GraphicFlag operator~(const GraphicFlag& flag);
 
 struct GraphicConfig
 {
-	GraphicFlag flags;
+	GraphicAPI api = GraphicAPI::Vulkan;
+	bool connectRenderDoc = false;
 };
 
-class GraphicDevice
+CREATE_STRICT_TYPE(uint32_t, FrameIndex)
+CREATE_STRICT_TYPE(uint32_t, ImageIndex)
+
+static constexpr uint32_t MaxFrameInFlight = 3; // number of frames to deal with concurrently
+
+struct Frame : Resource
+{
+	Frame(const char* name) : Resource(name, ResourceType::Frame){}
+	virtual ~Frame() {}
+
+	void setImageIndex(ImageIndex index) { m_image = index; }
+	ImageIndex getImageIndex() const { return m_image; }
+protected:
+	ImageIndex m_image;
+};
+
+using FrameHandle = ResourceHandle<Frame>;
+
+struct Backbuffer : Resource
+{ 
+	Backbuffer(const char* name) : Resource(name, ResourceType::Framebuffer) {}
+	virtual ~Backbuffer() {}
+
+	RenderPassHandle renderPass = RenderPassHandle::null;
+	Vector<FramebufferHandle> handles;
+};
+
+using BackbufferHandle = ResourceHandle<Backbuffer>;
+
+
+enum class SwapchainStatus
+{
+	Unknown,
+
+	Ok,
+	Recreated,
+	Error,
+
+	First = Ok,
+	Last = Error,
+};
+
+
+struct DispatchIndirectCommand
+{
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+};
+
+struct DrawIndexedIndirectCommand
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t  vertexOffset;
+	uint32_t firstInstance;
+};
+
+struct DrawIndirectCommand
+{
+	uint32_t vertexCount;
+	uint32_t instanceCount;
+	uint32_t firstVertex;
+	uint32_t firstInstance;
+};
+
+
+class AKA_NO_VTABLE GraphicDevice
 {
 public:
-	GraphicDevice(const GraphicConfig& config);
-	GraphicDevice(const GraphicDevice&) = delete;
-	GraphicDevice& operator=(const GraphicDevice&) = delete;
-	virtual ~GraphicDevice();
-public:
-	// Get the underlying api.
-	const GraphicAPI& api() const;
-	// Get device features
-	const GraphicDeviceFeatures& features() const;
-	// Get device flags
-	GraphicFlag flags() const;
-	// Get device settings
-	const GraphicDeviceSettings& settings() const;
-	// Get current api coordinates
-	const GraphicCoordinates& coordinates() const;
-	// Start a new frame
-	void frame();
-	// Present the frame
-	void present();
-	// Get the backbuffer
-	Backbuffer::Ptr backbuffer();
-public:
-	// Render a render pass
-	virtual void render(RenderPass& renderPass) = 0;
-	// Dispatch a compute pass
-	virtual void dispatch(ComputePass& computePass) = 0;
-	// Copy the whole texture to destination texture
-	virtual void copy(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST) = 0;
-	// Copy a texture
-	virtual void blit(const Texture::Ptr& src, const Texture::Ptr& dst, const TextureRegion& regionSRC, const TextureRegion& regionDST, TextureFilter filter) = 0;
+	GraphicDevice() {}
+	virtual ~GraphicDevice() {}
 
-public:
-	// Get the physical device info
-	virtual Device getDevice(uint32_t id) = 0;
-	// Get the physical device count
-	virtual uint32_t getDeviceCount() = 0;
-	// Create a 2D texture
-	virtual Texture2D::Ptr createTexture2D(
-		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags,
-		const void* data
+	static GraphicDevice* create(GraphicAPI api);
+	static void destroy(GraphicDevice* device);
+
+	virtual void initialize(PlatformDevice* platform, const GraphicConfig& cfg) = 0;
+	virtual void shutdown() = 0;
+
+	virtual GraphicAPI api() const = 0;
+
+	// Shaders
+	virtual ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) = 0;
+	virtual void destroy(ShaderHandle handle) = 0;
+	virtual const Shader* get(ShaderHandle handle) = 0;
+
+	// Programs
+	virtual ProgramHandle createVertexProgram(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout) = 0;
+	virtual ProgramHandle createMeshProgram(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout) = 0;
+	virtual ProgramHandle createComputeProgram(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout) = 0;
+	virtual void replace(ProgramHandle oldProgram, ProgramHandle newProgram) = 0;
+	virtual void destroy(ProgramHandle program) = 0;
+	virtual const Program* get(ProgramHandle program) = 0;
+
+	// Descriptor sets
+	virtual DescriptorSetHandle allocateDescriptorSet(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool) = 0;
+	virtual void update(DescriptorSetHandle set, const DescriptorUpdate* update, size_t size) = 0;
+	virtual void free(DescriptorSetHandle set) = 0;
+	virtual const DescriptorSet* get(DescriptorSetHandle set) = 0;
+
+	// Descriptor pool
+	virtual DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size) = 0;
+	virtual const DescriptorPool* get(DescriptorPoolHandle handle) = 0;
+	virtual void destroy(DescriptorPoolHandle pool) = 0;
+
+	// Device
+	virtual uint32_t getPhysicalDeviceCount() = 0;
+	virtual const PhysicalDevice* getPhysicalDevice(uint32_t index) = 0;
+
+	// Framebuffer
+	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
+	virtual void destroy(FramebufferHandle framebuffer) = 0;
+	virtual void destroy(BackbufferHandle backbuffer) = 0;
+	virtual BackbufferHandle createBackbuffer(RenderPassHandle handle) = 0;
+	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
+	virtual FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) = 0;
+	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
+	virtual void getBackbufferSize(uint32_t& width, uint32_t& height) = 0;
+
+	// RenderPass
+	virtual RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) = 0;
+	virtual void destroy(RenderPassHandle framebuffer) = 0;
+	virtual const RenderPass* get(RenderPassHandle handle) = 0;
+
+	// Buffers
+	virtual BufferHandle createBuffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr) = 0;
+	virtual void upload(BufferHandle buffer, const void* data, size_t offset, size_t size) = 0;
+	virtual void download(BufferHandle buffer, void* data, size_t offset, size_t size) = 0;
+	virtual void copy(BufferHandle src, BufferHandle dst) = 0;
+	virtual void* map(BufferHandle buffer, BufferMap map) = 0;
+	virtual void unmap(BufferHandle buffer) = 0;
+	virtual void destroy(BufferHandle buffer) = 0;
+	virtual const Buffer* get(BufferHandle handle) = 0;
+
+	// Textures
+	virtual TextureHandle createTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags, const void* const* data = nullptr) = 0;
+	virtual void upload(TextureHandle texture, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
+	virtual void download(TextureHandle texture, void* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t mipLevel = 0, uint32_t layer = 0) = 0;
+	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
+	virtual void destroy(TextureHandle texture) = 0;
+	virtual void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) = 0;
+	virtual const Texture* get(TextureHandle handle) = 0;
+
+	// Samplers
+	virtual SamplerHandle createSampler(const char* name, Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy) = 0;
+	virtual void destroy(SamplerHandle sampler) = 0;
+	virtual const Sampler* get(SamplerHandle handle) = 0;
+
+	// Pipelines
+	virtual GraphicPipelineHandle createGraphicPipeline(
+		const char* name,
+		ProgramHandle program,
+		PrimitiveType primitive,
+		const ShaderPipelineLayout& layout,
+		const RenderPassState& renderPass,
+		const VertexState& vertices = VertexStateEmpty,
+		const ViewportState& viewport = ViewportStateBackbuffer,
+		const DepthState& depth = DepthStateDefault,
+		const StencilState& stencil = StencilStateDefault,
+		const CullState& culling = CullStateDefault,
+		const BlendState& blending = BlendStateDefault,
+		const FillState& fill = FillStateFill
 	) = 0;
-	// Create a 2D multisampled texture
-	virtual Texture2DMultisample::Ptr createTexture2DMultisampled(
-		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags,
-		uint8_t samples,
-		const void* data
+	virtual ComputePipelineHandle createComputePipeline(
+		const char* name,
+		ProgramHandle program,
+		const ShaderPipelineLayout& layout
 	) = 0;
-	// Create a cubemap texture
-	virtual TextureCubeMap::Ptr createTextureCubeMap(
-		uint32_t width, uint32_t height,
-		TextureFormat format, TextureFlag flags,
-		const void* px, const void* nx,
-		const void* py, const void* ny,
-		const void* pz, const void* nz
-	) = 0;
-	// Create a framebuffer
-	virtual Framebuffer::Ptr createFramebuffer(Attachment* attachments, size_t count) = 0;
-	// Create a buffer
-	virtual Buffer::Ptr createBuffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data) = 0;
-	// Create a mesh
-	virtual Mesh::Ptr createMesh() = 0;
-	// Compile a shader from content
-	virtual Shader::Ptr compile(const char* content, ShaderType type) = 0;
-	// Create a vertex program
-	virtual Program::Ptr createVertexProgram(Shader::Ptr vert, Shader::Ptr frag, const VertexAttribute* attributes, size_t count) = 0;
-	// Create a vertex program with geometry stage
-	virtual Program::Ptr createGeometryProgram(Shader::Ptr vert, Shader::Ptr frag, Shader::Ptr geometry, const VertexAttribute* attributes, size_t count) = 0;
-	// Create a compute program
-	virtual Program::Ptr createComputeProgram(Shader::Ptr compute) = 0;
-	// Create a material using given program.
-	virtual Material::Ptr createMaterial(Program::Ptr shader) = 0;
-protected:
-	GraphicFlag m_flags;
-	GraphicDeviceSettings m_settings;
-	GraphicDeviceFeatures m_features; // Features of the device
-	Backbuffer::Ptr m_backbuffer; // Backbuffer of the device
+	virtual void destroy(GraphicPipelineHandle handle) = 0;
+	virtual void destroy(ComputePipelineHandle handle) = 0;
+	virtual const GraphicPipeline* get(GraphicPipelineHandle handle) = 0;
+	virtual const ComputePipeline* get(ComputePipelineHandle handle) = 0;
+
+	// Fence
+	virtual FenceHandle createFence(const char* name) = 0;
+	virtual void destroy(FenceHandle handle) = 0;
+	virtual const Fence* get(FenceHandle handle) = 0;
+	virtual void wait(FenceHandle handle, FenceValue waitValue) = 0;
+	virtual void signal(FenceHandle handle, FenceValue value) = 0;
+	virtual FenceValue read(FenceHandle handle) = 0;
+
+	// Command lists
+	virtual CommandList* acquireCommandList(QueueType queue) = 0;
+	virtual void release(CommandList* cmd) = 0;
+	// Frame command lists
+	virtual CommandList* acquireCommandList(FrameHandle frame, QueueType queue) = 0;
+	virtual void release(FrameHandle frame, CommandList* cmd) = 0;
+	// Frame main command lists
+	virtual FrameIndex getFrameIndex(FrameHandle frame) = 0;
+	virtual CommandList* getCopyCommandList(FrameHandle frame) = 0;
+	virtual CommandList* getGraphicCommandList(FrameHandle frame) = 0;
+	virtual CommandList* getComputeCommandList(FrameHandle frame) = 0;
+
+	// Command submit
+	virtual void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
+	virtual void wait(QueueType queue) = 0;
+	// Debug submit markers
+	virtual void beginMarker(QueueType queue, const char* name, const float* color) = 0;
+	virtual void endMarker(QueueType queue) = 0;
+
+	// Screenshot of the backbuffer
+	virtual void screenshot(void* data) = 0;
+	// Capture the frame with render doc.
+	virtual void capture() = 0;
+
+	// Frame
+	virtual FrameHandle frame() = 0;
+	virtual SwapchainStatus present(FrameHandle frame) = 0;
+	virtual void wait() = 0;
 };
 
+struct ScopedQueueMarker
+{
+	ScopedQueueMarker(GraphicDevice* device, QueueType type, const char* name, float r, float g, float b, float a) : m_device(device), m_queue(type) { color4f c(r, g, b, a); m_device->beginMarker(m_queue, name, c.data); }
+	ScopedQueueMarker(GraphicDevice* device, QueueType type, const char* name, const float* colors) : m_device(device), m_queue(type) { m_device->beginMarker(m_queue, name, colors); }
+	~ScopedQueueMarker() { m_device->endMarker(m_queue); }
+private:
+	GraphicDevice* m_device;
+	QueueType m_queue;
+};
+
+};
 };

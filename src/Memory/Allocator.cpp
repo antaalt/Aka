@@ -1,31 +1,47 @@
+
 #include <Aka/Memory/Allocator.h>
+
+#include <Aka/Memory/Memory.h>
+#include <Aka/Core/Container/String.h>
 
 namespace aka {
 
-Allocator::Allocator(void* mem, size_t size) :
-	m_mem(mem),
-	m_size(size),
-	m_used(0)
+MemoryBlock::MemoryBlock(void* mem, size_t _size) :
+	mem(mem),
+	size(_size),
+	next(nullptr)
 {
 }
 
+MemoryBlock::~MemoryBlock()
+{
+	// This does not free allocated memory. allocator need to handle it.
+	delete next;
+}
+
+Allocator::Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category) :
+	m_name(""),
+	m_type(memoryType),
+	m_category(category),
+	m_parent(nullptr),
+	m_memory(nullptr)
+{
+	String::copy(m_name, 31, name);
+	m_name[31] = 0;
+}
+Allocator::Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category, Allocator* parent, size_t blockSize) :
+	m_name(""),
+	m_type(memoryType),
+	m_category(category),
+	m_parent(parent), 
+	m_memory(new MemoryBlock(m_parent->allocate<uint8_t>(blockSize), blockSize))
+{
+	String::copy(m_name, 32, name);
+	m_name[31] = 0;
+}
 Allocator::~Allocator()
 {
-}
-
-const void* Allocator::mem() const
-{
-	return m_mem;
-}
-
-size_t Allocator::size() const
-{
-	return m_size;
-}
-
-size_t Allocator::used() const
-{
-	return m_used;
+	releaseAllMemoryBlocks();
 }
 
 uintptr_t Allocator::align(uintptr_t address, size_t alignment)
@@ -42,6 +58,66 @@ size_t Allocator::alignAdjustment(uintptr_t address, size_t alignment)
 	size_t adjustment = alignment - (address & mask);
 	if (adjustment == alignment) return 0; // Already aligned 
 	return adjustment;
+}
+
+MemoryBlock* Allocator::getMemoryBlock()
+{
+	MemoryBlock* block = m_memory;
+	while (block->next != nullptr)
+	{
+		block = block->next;
+	}
+	return block;
+}
+
+Allocator* Allocator::getParentAllocator()
+{
+	return m_parent;
+}
+
+const char* Allocator::getName() const
+{
+	return m_name;
+}
+
+MemoryBlock* Allocator::requestNewMemoryBlock()
+{
+	if (m_parent)
+	{
+		void* mem = m_parent->allocate<uint8_t>(m_memory->size, AllocatorFlags::None);
+		MemoryBlock* newBlock = new MemoryBlock(mem, m_memory->size);
+		// Put new block at the end of last block
+		getMemoryBlock()->next = newBlock;
+		return newBlock;
+	}
+	else 
+	{
+		throw std::bad_alloc();
+		return nullptr;
+	}
+}
+
+void Allocator::releaseAllMemoryBlocks()
+{
+	if (m_memory)
+	{
+		if (m_parent)
+		{
+			MemoryBlock* block = m_memory;
+			while (block)
+			{
+				m_parent->deallocate((uint8_t*)block->mem, block->size);
+				MemoryBlock* nextBlock = block->next;
+				delete block;
+				block = nextBlock;
+			}
+			m_memory = nullptr;
+		}
+		else
+		{
+			throw std::bad_alloc();
+		}
+	}
 }
 
 };

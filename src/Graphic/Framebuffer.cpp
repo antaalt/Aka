@@ -1,104 +1,69 @@
 #include <Aka/Graphic/Framebuffer.h>
-#include <Aka/Graphic/GraphicDevice.h>
+
 #include <Aka/Core/Application.h>
-#include <Aka/OS/Logger.h>
+
+#include <type_traits>
 
 namespace aka {
+namespace gfx {
 
-Framebuffer::Framebuffer(uint32_t width, uint32_t height) :
-	m_width(width),
-	m_height(height),
-	m_attachments()
+uint32_t getWidth(GraphicDevice* device, const Attachment* colors, uint32_t count, const Attachment* depth)
 {
-}
-
-Framebuffer::Framebuffer(Attachment* attachment, size_t count) :
-	m_width(attachment[0].texture->width()),
-	m_height(attachment[0].texture->height()),
-	m_attachments(attachment, attachment + count)
-{
-	for (size_t i = 1; i < count; ++i)
+	uint32_t width = ~0U;
+	for (uint32_t i = 0; i < count; i++)
 	{
-		if (m_width > attachment[i].texture->width())
-			m_width = attachment[i].texture->width();
-		if (m_height > attachment[i].texture->height())
-			m_height = attachment[i].texture->height();
-	}
-}
-
-Framebuffer::~Framebuffer()
-{
-}
-
-Framebuffer::Ptr Framebuffer::create(Attachment* attachment, size_t count)
-{
-	// Validate attachment
-	for (size_t i = 0; i < count; ++i)
-	{
-		if (!valid(attachment[i]))
+		if (colors[i].texture != TextureHandle::null)
 		{
-			Logger::error("Attachment not valid : ", i);
-			return nullptr;
+			const Texture* texture = device->get(colors[i].texture);
+			width = min(texture->width, width);
 		}
 	}
-	return Application::graphic()->createFramebuffer(attachment, count);
-}
-
-bool Framebuffer::valid(Attachment attachment)
-{
-	if (attachment.texture == nullptr)
-		return false;
-	if ((attachment.texture->flags() & TextureFlag::RenderTarget) != TextureFlag::RenderTarget)
-		return false;
-	return true;
-}
-
-uint32_t Framebuffer::width() const
-{
-	return m_width;
-}
-
-uint32_t Framebuffer::height() const
-{
-	return m_height;
-}
-
-Attachment* Framebuffer::getAttachment(AttachmentType type)
-{
-	for (Attachment& attachment : m_attachments)
-		if (attachment.type == type)
-			return &attachment;
-	return nullptr;
-}
-
-Texture::Ptr Framebuffer::get(AttachmentType type)
-{
-	for (Attachment& attachment : m_attachments)
+	if (depth != nullptr)
 	{
-		if (attachment.type == type)
-			return attachment.texture;
+		const Texture* texture = device->get(depth->texture);
+		width = min(texture->width, width);
 	}
-	return nullptr;
+	return width;
 }
-
-AttachmentFlag operator&(const AttachmentFlag& lhs, const AttachmentFlag& rhs)
+uint32_t getHeight(GraphicDevice* device, const Attachment* colors, uint32_t count, const Attachment* depth)
 {
-	return static_cast<AttachmentFlag>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	uint32_t height = ~0U;
+	for (uint32_t i = 0; i < count; i++)
+	{
+		if (colors[i].texture != TextureHandle::null)
+		{
+			const Texture* texture = device->get(colors[i].texture);
+			height = min(texture->height, height);
+		}
+	}
+	if (depth != nullptr)
+	{
+		const Texture* texture = device->get(depth->texture);
+		height = min(texture->height, height);
+	}
+	return height;
 }
 
-AttachmentFlag operator|(const AttachmentFlag& lhs, const AttachmentFlag& rhs)
+Framebuffer::Framebuffer(const char* name, uint32_t width, uint32_t height, RenderPassHandle handle, const Attachment* colors, uint32_t count, const Attachment* depth) :
+	Resource(name, ResourceType::Framebuffer),
+	renderPass(handle),
+	width(width),
+	height(height),
+	count(count)
 {
-	return static_cast<AttachmentFlag>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	memcpy(this->colors, colors, sizeof(Attachment) * count);
+	if (depth)
+		this->depth = *depth;
 }
 
-ClearMask operator&(const ClearMask& lhs, const ClearMask& rhs)
+FramebufferHandle Framebuffer::create(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth)
 {
-	return static_cast<ClearMask>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	return Application::app()->graphic()->createFramebuffer(name, handle, attachments, count, depth);
 }
-
-ClearMask operator|(const ClearMask& lhs, const ClearMask& rhs)
+void Framebuffer::destroy(FramebufferHandle framebuffer)
 {
-	return static_cast<ClearMask>(static_cast<int>(lhs) | static_cast<int>(rhs));
+	return Application::app()->graphic()->destroy(framebuffer);
 }
 
+};
 };

@@ -12,12 +12,16 @@ struct OS
 {
 	// Normalize a path for aka
 	static Path normalize(const Path& path);
+	// Get a full path from a relative path
+	static Path getFullPath(const Path& path);
 	// Get the path of the executable.
 	static Path executable();
 	// Get the current working directory
 	static Path cwd();
 	// Set the current working directory
 	static bool setcwd(const Path& path);
+	// Get the temporary folder directory
+	static Path temp();
 	// Enumerate all path in a directory.
 	static std::vector<Path> enumerate(const Path& path);
 
@@ -53,7 +57,7 @@ struct OS
 		// Write a string to a file
 		static bool write(const Path& path, const String& str);
 		// Write binary data to a file
-		static bool write(const Path& path, const uint8_t* bytes, size_t size);
+		static bool write(const Path& path, const void* bytes, size_t size);
 		// Write a blob to a file
 		static bool write(const Path& path, const Blob& blob);
 
@@ -70,8 +74,51 @@ struct OS
 		// Remove a directory.
 		static bool remove(const Path& path, bool recurse = false);
 	};
+
+	using ProcessHandle = void*;
+	using LibraryHandle = void*;
+
+	struct Library
+	{
+		Library() : m_handle(nullptr) {}
+		Library(const Path& path);
+		Library(const Library&) = delete;
+		Library(Library&& e) { std::swap(m_handle, e.m_handle); }
+		Library& operator=(const Library&) = delete;
+		Library& operator=(Library&& e) { std::swap(m_handle, e.m_handle); return *this; }
+		~Library();
+
+		// Look into common places for a given library.
+		static Path getLibraryPath(const char* _name);
+
+		// Get a process from the library
+		ProcessHandle getProcess(const char* _process);
+		// Check if library is loaded
+		bool isLoaded() const { return m_handle != nullptr; }
+	private:
+		LibraryHandle m_handle;
+	};
 };
 
 std::ostream& operator<<(std::ostream& os, Logger::Color color);
+
+enum class AlertModalType
+{
+	Information,
+	Question,
+	Warning,
+	Error,
+};
+
+enum class AlertModalMessage
+{
+	Yes,
+	No,
+	Ok,
+};
+
+// Open a modal with a display message
+// Blocking.
+AlertModalMessage AlertModal(AlertModalType type, const char* title, const char* message);
 
 }; // namespace aka

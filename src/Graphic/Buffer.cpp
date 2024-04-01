@@ -1,49 +1,43 @@
 #include <Aka/Graphic/Buffer.h>
+
 #include <Aka/Core/Application.h>
 
 namespace aka {
+namespace gfx {
 
-Buffer::Buffer(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access) :
-	m_size(size),
-	m_type(type),
-	m_usage(usage),
-	m_access(access)
+Buffer::Buffer(const char* name, BufferType type, uint32_t size, BufferUsage usage, BufferCPUAccess access) :
+	Resource(name, ResourceType::Buffer),
+	type(type),
+	size(size),
+	usage(usage),
+	access(access)
 {
 }
 
-Buffer::~Buffer()
+BufferHandle Buffer::createIndexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
+	return Application::app()->graphic()->createBuffer(name, BufferType::Index, size, usage, access, data);
 }
 
-Buffer::Ptr Buffer::create(BufferType type, size_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
+BufferHandle Buffer::createVertexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
-	return Application::graphic()->createBuffer(type, size, usage, access, data);
+	return Application::app()->graphic()->createBuffer(name, BufferType::Vertex, size, usage, access, data);
 }
 
-size_t Buffer::size() const
+BufferHandle Buffer::createUniformBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data)
 {
-	return m_size;
+	return Application::app()->graphic()->createBuffer(name, BufferType::Uniform, size, usage, access, data);
 }
 
-BufferType Buffer::type() const
+BufferHandle Buffer::createStagingBuffer(const char* name, uint32_t size, const void* data)
 {
-	return m_type;
+	return BufferHandle::null;
 }
 
-BufferUsage Buffer::usage() const
+void Buffer::destroy(BufferHandle buffer)
 {
-	return m_usage;
+	return Application::app()->graphic()->destroy(buffer);
 }
 
-BufferCPUAccess Buffer::access() const
-{
-	return m_access;
-}
-
-
-void Buffer::copy(const Buffer::Ptr& dst)
-{
-	copy(dst, 0, 0, min(m_size, dst->m_size));
-}
-
-}
+};
+};

@@ -1,87 +1,100 @@
 #pragma once
 
-#include <Aka/Core/Debug.h>
-#include <Aka/Memory/Memory.h>
+#include <Aka/Core/Config.h>
+#include <Aka/Memory/AllocatorTracker.hpp>
+#include <Aka/Memory/AllocatorTypes.hpp>
 
 namespace aka {
+
+struct MemoryBlock
+{
+	MemoryBlock(void* mem, size_t _size);
+	~MemoryBlock();
+
+	void* mem;
+	size_t size;
+
+	MemoryBlock* next;
+};
+
+struct AllocationHead {
+	// Dummy for non inheritance info
+};
 
 class Allocator
 {
 public:
-	Allocator(void* mem, size_t size);
+	Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category);
+	Allocator(const char* name, AllocatorMemoryType memoryType, AllocatorCategory category, Allocator* parent, size_t blockSize);
+	Allocator(const Allocator& blob) = delete;
+	Allocator(Allocator&& blob) = delete;
+	Allocator& operator=(const Allocator& blob) = delete;
+	Allocator& operator=(Allocator&& blob) = delete;
 	virtual ~Allocator();
 
-	// Invalidate every pointer created with this allocator and make the whole pool available.
-	virtual void reset() = 0;
+	// Allocate memory from the allocator & track allocations
+	template <typename T, typename Metadata = AllocationHead>
+	T* allocate(size_t count, AllocatorFlags flags = AllocatorFlags::None);
+	// Deallocate memory from the allocator & track allocations
+	template <typename Metadata = AllocationHead>
+	void deallocate(void* elements, size_t count);
+protected:
 	// Allocate memory from the allocator
-	virtual void* allocate(size_t size, size_t alignement = 0) = 0;
+	virtual void* allocate_internal(size_t size, AllocatorFlags flags = AllocatorFlags::None) = 0;
+	// Allocate aligned memory from the allocator
+	virtual void* alignedAllocate_internal(size_t size, size_t alignement, AllocatorFlags flags = AllocatorFlags::None) = 0;
 	// Deallocate memory from the allocator
-	virtual void deallocate(void* address, size_t size) = 0;
-	// Is allocator memory contiguous
-	virtual bool contiguous() const = 0;
-
-	// Memory used by this allocator
-	const void* mem() const;
-	// Size of the memory used
-	size_t size() const;
-	// Used memory in the allocator
-	size_t used() const;
-
-	// Acquire an object from the allocator
-	template <typename T, typename ...Args> T* acquire(Args&&... args);
-	// Acquire an object array from the allocator
-	template <typename T> T* acquires(size_t length);
-	// Release an object from the allocator
-	template <typename T> void release(T& element);
-	// Release an object array from the allocator
-	template <typename T> void releases(T* elements);
+	virtual void deallocate_internal(void* elements, size_t size) = 0;
+	// Deallocate aligned memory from the allocator
+	virtual void alignedDeallocate_internal(void* elements, size_t size) = 0;
 
 	// Find next aligned address for given one.
 	static uintptr_t align(uintptr_t address, size_t alignment);
 	// Find next aligned address adjustment for given one.
 	static size_t alignAdjustment(uintptr_t address, size_t alignment);
+
 protected:
-	void* m_mem;
-	size_t m_size;
-	size_t m_used;
+
+	const char* getName() const;
+	// Get last memory block allocated
+	MemoryBlock* getMemoryBlock();
+	// Get parent allocator
+	Allocator* getParentAllocator();
+	// Request a new memory block allocation by parent allocator
+	MemoryBlock* requestNewMemoryBlock();
+	// Release all memory block & call parent allocator to free memory.
+	void releaseAllMemoryBlocks();
+private:
+	char m_name[32];
+	AllocatorMemoryType m_type;
+	AllocatorCategory m_category;
+	Allocator* m_parent; // parent from which memory was acquired.
+	MemoryBlock* m_memory; // allocation for the allocator. if not enough memory, can request more to parent.
 };
 
-
-
-template <typename T, typename ...Args> T* Allocator::acquire(Args&&... args)
+template <typename Type, typename Metadata>
+Type* Allocator::allocate(size_t count, AllocatorFlags flags)
 {
-	return new (allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
-};
-template <typename T> T* Allocator::acquires(size_t length)
-{
-	AKA_ASSERT(length > 0 && contiguous(), "Trying to allocate empty array");
-	size_t headerSize = sizeof(size_t) / sizeof(T);// Ensure data is aligned.
-	if (sizeof(size_t) % sizeof(T) > 0) headerSize += 1;
-	// Allocate with header
-	T* allocated = ((T*)allocate(sizeof(T) * (length + headerSize), alignof(T))) + headerSize;
-	*(((size_t*)allocated) - 1) = length; // Store length at beginning of array
-	// Construct object if needed
-	if constexpr (std::is_constructible<T>::value)
-		for (size_t i = 0; i < length; i++)
-			new (&allocated[i]) T;
-	return allocated;
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	AllocatorTracker& tracker = getAllocatorTracker();
+#endif
+	void* data = allocate_internal(count * sizeof(Type) + sizeof(Metadata), flags);
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	tracker.allocate<Type>(data, count, m_type, m_category);
+#endif
+	return static_cast<Type*>(static_cast<void*>(asByte(data) + sizeof(Metadata)));
 }
-template <typename T> void Allocator::release(T& element)
+
+template <typename Metadata>
+void Allocator::deallocate(void* elements, size_t size)
 {
-	if constexpr (std::is_destructible<T>::value)
-		element.~T();
-	deallocate(&element, sizeof(T));
-}
-template <typename T> void Allocator::releases(T* elements)
-{
-	size_t length = *(((size_t*)elements) - 1);
-	if constexpr (std::is_destructible<T>::value)
-		for (size_t i = 0; i < length; i++)
-			elements[i].~T();
-	size_t headerSize = sizeof(size_t) / sizeof(T);
-	if (sizeof(size_t) % sizeof(T) > 0)
-		headerSize += 1;
-	deallocate(elements - headerSize, sizeof(T) * (length + headerSize));
+	if (elements == nullptr)
+		return;
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	AllocatorTracker& tracker = getAllocatorTracker();
+	tracker.deallocate(static_cast<void*>(asByte(elements) - sizeof(Metadata)), m_type, m_category);
+#endif
+	deallocate_internal(static_cast<void*>(asByte(elements) - sizeof(Metadata)), size);
 }
 
 };

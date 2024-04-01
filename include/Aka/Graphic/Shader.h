@@ -1,31 +1,61 @@
 #pragma once
 
-#include <vector>
-#include <memory>
+#include <stdint.h>
+
+#include <Aka/Graphic/Resource.h>
 
 namespace aka {
+namespace gfx {
 
-enum class ShaderType
+enum class ShaderType : uint8_t
 {
-	Vertex = (1 << 0),
-	Fragment = (1 << 1),
-	Compute = (1 << 2),
-	Geometry = (1 << 3),
-	//TessControl     = (1 << 4),
-	//TessEvaluation  = (1 << 5),
+	Unknown,
+
+	Vertex,
+	Fragment,
+	Compute,
+	Task,
+	Mesh,
+	TessControl,
+	TessEvaluation,
+	// TODO: add support for RTX
+
+	First = Vertex,
+	Last = TessEvaluation,
 };
 
-class Shader
+enum class ShaderMask : uint8_t
 {
-public:
-	using Ptr = std::shared_ptr<Shader>;
-protected:
-	Shader();
-	Shader(const Shader&) = delete;
-	const Shader& operator=(const Shader&) = delete;
-	virtual ~Shader();
-public:
-	static Shader::Ptr compile(const char* content, ShaderType type);
+	None            = 0,
+	Vertex          = 1 << EnumToIndex(ShaderType::Vertex),
+	Fragment        = 1 << EnumToIndex(ShaderType::Fragment),
+	Compute         = 1 << EnumToIndex(ShaderType::Compute),
+	Task			= 1 << EnumToIndex(ShaderType::Task),
+	Mesh			= 1 << EnumToIndex(ShaderType::Mesh),
+	TessControl     = 1 << EnumToIndex(ShaderType::TessControl),
+	TessEvaluation  = 1 << EnumToIndex(ShaderType::TessEvaluation),
+
+	VertexFragment	= Vertex | Fragment,
+	MeshFragment	= Mesh | Fragment,
+	TaskMeshFragment= Task | Mesh | Fragment,
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(ShaderMask)
+
+ShaderMask getShaderMask(ShaderType type);
+
+struct Shader;
+using ShaderHandle = ResourceHandle<Shader>;
+
+struct Shader : Resource
+{
+	Shader(const char* name, ShaderType type);
+	virtual ~Shader() {}
+
+	ShaderType type;
+
+	static ShaderHandle create(const char* name, ShaderType type, const void* content, size_t size);
+	static void destroy(ShaderHandle shader);
 };
 
+};
 };

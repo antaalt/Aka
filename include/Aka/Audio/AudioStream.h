@@ -10,12 +10,12 @@ namespace aka {
 class AudioStream
 {
 public:
-    using Ptr = std::shared_ptr<AudioStream>;
-public:
     // Open an audio stream from file and return it.
-    static AudioStream::Ptr openStream(const Path& path);
+    static AudioStream* openStream(const Path& path);
     // Open an audio from file and return it. Load the whole audio in memory.
-    static AudioStream::Ptr loadMemory(const Path& path);
+    static AudioStream* loadMemory(const Path& path);
+	// Destroy an audio stream
+	static void destroy(AudioStream* stream);
 
 public:
     AudioStream() : m_volume(1.f) {}

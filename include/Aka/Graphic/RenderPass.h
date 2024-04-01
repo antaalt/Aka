@@ -1,226 +1,111 @@
 #pragma once
 
-#include <Aka/Graphic/Framebuffer.h>
-#include <Aka/Graphic/Mesh.h>
-#include <Aka/Graphic/Shader.h>
-#include <Aka/Graphic/Material.h>
+#include <stdint.h>
+
+#include <Aka/Graphic/Texture.h>
+#include <Aka/Graphic/Resource.h>
 
 namespace aka {
+namespace gfx {
 
-enum class BlendMode 
+static constexpr uint32_t FramebufferMaxColorAttachmentCount = 8;
+
+enum class ClearMask : uint8_t
 {
-	Zero,
-	One,
-	SrcColor,
-	OneMinusSrcColor,
-	DstColor,
-	OneMinusDstColor,
-	SrcAlpha,
-	OneMinusSrcAlpha,
-	DstAlpha,
-	OneMinusDstAlpha,
-	ConstantColor,
-	OneMinusConstantColor,
-	ConstantAlpha,
-	OneMinusConstantAlpha,
-	SrcAlphaSaturate,
-	Src1Color,
-	OneMinusSrc1Color,
-	Src1Alpha,
-	OneMinusSrc1Alpha
+	None		= 0,
+
+	Color		= 1 << 0,
+	Depth		= 1 << 1,
+	Stencil		= 1 << 2,
+
+	All = Color | Depth | Stencil
+};
+AKA_IMPLEMENT_BITMASK_OPERATOR(ClearMask)
+
+enum class AttachmentLoadOp : uint8_t
+{
+	Clear,
+	Load,
+	DontCare,
+};
+enum class AttachmentStoreOp : uint8_t
+{
+	Store,
+	DontCare,
 };
 
-enum class BlendOp
+// TODO should be just RenderPass.
+struct RenderPassState
 {
-	Add,
-	Substract,
-	ReverseSubstract,
-	Min,
-	Max
-};
-
-enum class BlendMask
-{
-	None  = 0,
-	Red   = 1,
-	Green = 2,
-	Blue  = 4,
-	Alpha = 8,
-	Rgb   = Red | Green | Blue,
-	Rgba  = Red | Green | Blue | Alpha 
-};
-
-struct Blending
-{
-	BlendMode colorModeSrc;
-	BlendMode colorModeDst;
-	BlendOp colorOp;
-
-	BlendMode alphaModeSrc;
-	BlendMode alphaModeDst;
-	BlendOp alphaOp;
-
-	BlendMask mask;
-
-	color32 blendColor;
-
-	static const Blending none;
-	static const Blending premultiplied;
-
-	bool operator==(const Blending& rhs) const;
-	bool operator!=(const Blending& rhs) const;
-
-	bool enabled() const;
-};
-
-enum class CullMode
-{
-	None,
-	FrontFace,
-	BackFace,
-	AllFace
-};
-
-enum class CullOrder 
-{
-	ClockWise,
-	CounterClockWise,
-};
-
-struct Culling 
-{
-	CullMode mode;
-	CullOrder order;
-
-	static const Culling none;
-
-	bool operator==(const Culling& rhs) const;
-	bool operator!=(const Culling& rhs) const;
-};
-
-enum class DepthCompare 
-{
-	None,
-	Always,
-	Never,
-	Less,
-	Equal,
-	LessOrEqual,
-	Greater,
-	NotEqual,
-	GreaterOrEqual
-};
-
-struct Depth 
-{
-	DepthCompare compare;
-	bool mask;
-
-	static const Depth none;
-
-	bool operator==(const Depth& rhs) const;
-	bool operator!=(const Depth& rhs) const;
-};
-
-enum class StencilCompare 
-{
-	None,
-	Never,
-	Less,
-	LessOrEqual,
-	Greater,
-	GreaterOrEqual,
-	Equal,
-	NotEqual,
-	Always,
-};
-
-enum class StencilMode 
-{
-	Keep,
-	Zero,
-	Replace,
-	Increment,
-	IncrementWrap,
-	Decrement,
-	DecrementWrap,
-	Invert,
-};
-
-struct Stencil
-{
-	struct Face
+	struct Attachment
 	{
-		StencilMode stencilFailed;
-		StencilMode stencilDepthFailed;
-		StencilMode stencilPassed;
-
-		StencilCompare mode;
+		TextureFormat format;
+		AttachmentLoadOp loadOp;
+		AttachmentStoreOp storeOp;
+		ResourceAccessType initialLayout; // Needed if loadOp = load
+		ResourceAccessType finalLayout;
 	};
-	Face front;
-	Face back;
 
-	uint32_t readMask;
-	uint32_t writeMask;
+	uint32_t count; // color attachment count
+	Attachment colors[FramebufferMaxColorAttachmentCount];
+	Attachment depth;
 
-	static const Stencil none;
-	static const Stencil always;
-	static const Stencil equal;
+	bool hasDepthStencil() const { return depth.format != TextureFormat::Unknown; }
 
-	bool operator==(const Stencil& rhs) const;
-	bool operator!=(const Stencil& rhs) const;
-
-	bool enabled() const;
+	RenderPassState& addColor(TextureFormat format, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Attachment)
+	{
+		AKA_ASSERT(count + 1 < FramebufferMaxColorAttachmentCount, "Too many attachments");
+		colors[count++] = Attachment{ format, loadOp, storeOp, initialLayout, finalLayout };
+		return *this;
+	}
+	RenderPassState& setDepth(TextureFormat format, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Attachment, ResourceAccessType finalLayout = ResourceAccessType::Attachment)
+	{
+		depth = Attachment{ format, loadOp, storeOp, initialLayout, finalLayout };
+		return *this;
+	}
 };
 
-struct Clear
+class GraphicDevice;
+
+struct RenderPass;
+using RenderPassHandle = ResourceHandle<RenderPass>;
+
+struct RenderPass : Resource
 {
-	ClearMask mask;
-	color4f color;
-	float depth;
-	int stencil;
+	RenderPass(const char* name, const RenderPassState& state);
+	virtual ~RenderPass() {}
 
-	static const Clear none;
+	RenderPassState state;
 };
 
-struct RenderPass
+bool operator<(const RenderPassState& lhs, const RenderPassState& rhs);
+bool operator>(const RenderPassState& lhs, const RenderPassState& rhs);
+bool operator==(const RenderPassState& lhs, const RenderPassState& rhs);
+bool operator!=(const RenderPassState& lhs, const RenderPassState& rhs);
+
+};
+};
+
+template <>
+struct std::hash<aka::gfx::RenderPassState>
 {
-	// Framebuffer to render to
-	Framebuffer::Ptr framebuffer = nullptr;
-	// Mesh to render
-	SubMesh submesh = { nullptr, PrimitiveType::Unknown, 0, 0 };
-	// Material for mesh
-	Material::Ptr material = nullptr;
-	// Clear values for framebuffer
-	Clear clear = Clear::none;
-	// Blending for alpha operation
-	Blending blend = Blending::none;
-	// Culling for triangle face
-	Culling cull = Culling::none;
-	// Depth test
-	Depth depth = Depth::none;
-	// Stencil test
-	Stencil stencil = Stencil::none;
-	// Viewport for rendering
-	Rect viewport = Rect{};
-	// Scissor for rendering
-	Rect scissor = Rect{};
-
-	// Execute the render pass
-	void execute();
+	size_t operator()(const aka::gfx::RenderPassState& data) const
+	{
+		size_t hash = 0;
+		aka::hash::combine(hash, data.count);
+		for (size_t i = 0; i < data.count; i++)
+		{
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].format));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].loadOp));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].storeOp));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].initialLayout));
+			aka::hash::combine(hash, static_cast<uint32_t>(data.colors[i].finalLayout));
+		}
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.format));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.loadOp));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.storeOp));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.initialLayout));
+		aka::hash::combine(hash, static_cast<uint32_t>(data.depth.finalLayout));
+		return hash;
+	}
 };
-
-struct ComputePass
-{
-	// Material for mesh
-	Material::Ptr material;
-	// Number of group for dispatch
-	vec3u groupCount;
-	// Group size in shader
-	vec3u groupSize;
-
-	// Execute the compute pass
-	void execute();
-};
-
-}

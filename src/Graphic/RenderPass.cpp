@@ -1,214 +1,113 @@
 #include <Aka/Graphic/RenderPass.h>
-#include <Aka/Graphic/GraphicDevice.h>
+
 #include <Aka/Core/Application.h>
-#include <Aka/OS/Logger.h>
+
+#include <type_traits>
 
 namespace aka {
+namespace gfx {
 
-const Blending Blending::none = {
-	BlendMode::One,
-	BlendMode::Zero,
-	BlendOp::Add,
-	BlendMode::One,
-	BlendMode::Zero,
-	BlendOp::Add,
-	BlendMask::Rgba,
-	color32(255)
-};
 
-const Blending Blending::premultiplied = {
-	BlendMode::One,
-	BlendMode::OneMinusSrcAlpha,
-	BlendOp::Add,
-	BlendMode::One,
-	BlendMode::OneMinusSrcAlpha,
-	BlendOp::Add,
-	BlendMask::Rgba,
-	color32(255)
-};
-
-bool Blending::operator==(const Blending& rhs) const
+RenderPass::RenderPass(const char* name, const RenderPassState& state) :
+	Resource(name, ResourceType::RenderPass),
+	state(state)
 {
-	return colorModeSrc == rhs.colorModeSrc && colorModeDst == rhs.colorModeDst && colorOp == rhs.colorOp && 
-		alphaModeSrc == rhs.alphaModeSrc && alphaModeDst == rhs.alphaModeDst && alphaOp == rhs.alphaOp &&
-		mask == rhs.mask && blendColor == rhs.blendColor;
 }
 
-bool Blending::operator!=(const Blending& rhs) const
+bool operator<(const RenderPassState& lhs, const RenderPassState& rhs)
 {
-	return colorModeSrc != rhs.colorModeSrc || colorModeDst != rhs.colorModeDst || colorOp != rhs.colorOp ||
-		alphaModeSrc != rhs.alphaModeSrc || alphaModeDst != rhs.alphaModeDst || alphaOp != rhs.alphaOp ||
-		mask != rhs.mask || blendColor != rhs.blendColor;
-}
-
-bool Blending::enabled() const
-{
-	return !(colorModeSrc == BlendMode::One && colorModeDst == BlendMode::Zero && alphaModeSrc == BlendMode::One && alphaModeDst == BlendMode::Zero);
-}
-
-const Culling Culling::none = {
-	CullMode::None,
-	CullOrder::CounterClockWise
-};
-
-bool Culling::operator==(const Culling& rhs) const
-{
-	return mode == rhs.mode && order == rhs.order;
-}
-
-bool Culling::operator!=(const Culling& rhs) const
-{
-	return mode != rhs.mode || order != rhs.order;
-}
-
-const Depth Depth::none = {
-	DepthCompare::None,
-	true
-};
-
-bool Depth::operator==(const Depth& rhs) const
-{
-	return compare == rhs.compare && mask == rhs.mask;
-}
-
-bool Depth::operator!=(const Depth& rhs) const
-{
-	return compare != rhs.compare || mask != rhs.mask;
-}
-
-const Stencil Stencil::none = {
-	Face {
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilCompare::None
-	},
-	Face {
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilCompare::None
-	},
-	0xff,
-	0xff
-};
-
-const Stencil Stencil::always = {
-	Face {
-		StencilMode::Replace,
-		StencilMode::Replace,
-		StencilMode::Replace,
-		StencilCompare::Always
-	},
-	Face {
-		StencilMode::Replace,
-		StencilMode::Replace,
-		StencilMode::Replace,
-		StencilCompare::Always
-	},
-	0xff,
-	0xff
-};
-
-const Stencil Stencil::equal = {
-	Face {
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilCompare::Equal
-	},
-	Face {
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilMode::Keep,
-		StencilCompare::Equal
-	},
-	0xff,
-	0xff
-};
-
-bool Stencil::operator==(const Stencil& rhs) const
-{
-	return front.stencilFailed == rhs.front.stencilFailed &&
-		front.stencilDepthFailed == rhs.front.stencilDepthFailed &&
-		front.stencilPassed == rhs.front.stencilPassed &&
-		front.mode == rhs.front.mode &&
-		back.stencilFailed == rhs.back.stencilFailed &&
-		back.stencilDepthFailed == rhs.back.stencilDepthFailed &&
-		back.stencilPassed == rhs.back.stencilPassed &&
-		back.mode == rhs.back.mode &&
-		readMask == rhs.readMask &&
-		writeMask == rhs.writeMask;
-}
-
-bool Stencil::operator!=(const Stencil& rhs) const
-{
-	return front.stencilFailed != rhs.front.stencilFailed ||
-		front.stencilDepthFailed != rhs.front.stencilDepthFailed ||
-		front.stencilPassed != rhs.front.stencilPassed ||
-		front.mode != rhs.front.mode ||
-		back.stencilFailed != rhs.back.stencilFailed ||
-		back.stencilDepthFailed != rhs.back.stencilDepthFailed ||
-		back.stencilPassed != rhs.back.stencilPassed ||
-		back.mode != rhs.back.mode ||
-		readMask != rhs.readMask ||
-		writeMask != rhs.writeMask;
-}
-
-bool Stencil::enabled() const
-{
-	return front.mode != StencilCompare::None && back.mode != StencilCompare::None;
-}
-
-
-const Clear Clear::none = {
-	ClearMask::None,
-	color4f(1.f),
-	1.f,
-	1
-};
-
-void RenderPass::execute()
-{
-	if (this->material == nullptr)
+	if (lhs.count < rhs.count) return true;
+	else if (lhs.count > rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
 	{
-		Logger::error("No Material set for render pass.");
-		return;
+		if (lhs.colors[i].format < rhs.colors[i].format) return true;
+		else if (lhs.colors[i].format > rhs.colors[i].format) return false;
+		if (lhs.colors[i].loadOp < rhs.colors[i].loadOp) return true;
+		else if (lhs.colors[i].loadOp > rhs.colors[i].loadOp) return false;
+		if (lhs.colors[i].storeOp < rhs.colors[i].storeOp) return true;
+		else if (lhs.colors[i].storeOp > rhs.colors[i].storeOp) return false;
+		if (lhs.colors[i].initialLayout < rhs.colors[i].initialLayout) return true;
+		else if (lhs.colors[i].initialLayout > rhs.colors[i].initialLayout) return false;
+		if (lhs.colors[i].finalLayout < rhs.colors[i].finalLayout) return true;
+		else if (lhs.colors[i].finalLayout > rhs.colors[i].finalLayout) return false;
 	}
-	if (this->submesh.mesh == nullptr)
-	{
-		Logger::error("No mesh set for render pass.");
-		return;
-	}
-	if (this->submesh.mesh->getVertexAttributeCount() >= this->material->program()->getAttributeCount())
-	{
-		for (uint32_t i = 0; i < this->material->program()->getAttributeCount(); i++)
-		{
-			const VertexAttribute& mesh = this->submesh.mesh->getVertexAttribute(i);
-			const VertexAttribute& shader = this->material->program()->getAttribute(i);
-			if (mesh.semantic != shader.semantic || mesh.format != shader.format || mesh.type != shader.type)
-			{
-				Logger::error("Shader and mesh non compatible");
-				return;
-			}
-		}
-	}
-	else
-	{
-		Logger::error("Shader and mesh non compatible");
-		return;
-	}
-	Application::graphic()->render(*this);
+	if (lhs.depth.format < rhs.depth.format) return true;
+	else if (lhs.depth.format > rhs.depth.format) return false;
+	if (lhs.depth.loadOp < rhs.depth.loadOp) return true;
+	else if (lhs.depth.loadOp > rhs.depth.loadOp) return false;
+	if (lhs.depth.storeOp < rhs.depth.storeOp) return true;
+	else if (lhs.depth.storeOp > rhs.depth.storeOp) return false;
+	if (lhs.depth.initialLayout < rhs.depth.initialLayout) return true;
+	else if (lhs.depth.initialLayout > rhs.depth.initialLayout) return false;
+	if (lhs.depth.finalLayout < rhs.depth.finalLayout) return true;
+	else if (lhs.depth.finalLayout > rhs.depth.finalLayout) return false;
+	return false; // equal
 }
 
-void ComputePass::execute()
+bool operator>(const RenderPassState& lhs, const RenderPassState& rhs)
 {
-	if (this->material == nullptr)
+	if (lhs.count > rhs.count) return true;
+	else if (lhs.count < rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
 	{
-		Logger::error("No Material set for render pass.");
-		return;
+		if (lhs.colors[i].format > rhs.colors[i].format) return true;
+		else if (lhs.colors[i].format < rhs.colors[i].format) return false;
+		if (lhs.colors[i].loadOp > rhs.colors[i].loadOp) return true;
+		else if (lhs.colors[i].loadOp < rhs.colors[i].loadOp) return false;
+		if (lhs.colors[i].storeOp > rhs.colors[i].storeOp) return true;
+		else if (lhs.colors[i].storeOp < rhs.colors[i].storeOp) return false;
+		if (lhs.colors[i].initialLayout > rhs.colors[i].initialLayout) return true;
+		else if (lhs.colors[i].initialLayout < rhs.colors[i].initialLayout) return false;
+		if (lhs.colors[i].finalLayout > rhs.colors[i].finalLayout) return true;
+		else if (lhs.colors[i].finalLayout < rhs.colors[i].finalLayout) return false;
 	}
-	Application::graphic()->dispatch(*this);
+	if (lhs.depth.format > rhs.depth.format) return true;
+	else if (lhs.depth.format < rhs.depth.format) return false;
+	if (lhs.depth.loadOp > rhs.depth.loadOp) return true;
+	else if (lhs.depth.loadOp < rhs.depth.loadOp) return false;
+	if (lhs.depth.storeOp > rhs.depth.storeOp) return true;
+	else if (lhs.depth.storeOp < rhs.depth.storeOp) return false;
+	if (lhs.depth.initialLayout > rhs.depth.initialLayout) return true;
+	else if (lhs.depth.initialLayout < rhs.depth.initialLayout) return false;
+	if (lhs.depth.finalLayout > rhs.depth.finalLayout) return true;
+	else if (lhs.depth.finalLayout < rhs.depth.finalLayout) return false;
+	return false; // equal
 }
 
+bool operator==(const RenderPassState& lhs, const RenderPassState& rhs)
+{
+	if (lhs.count != rhs.count) return false;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.colors[i].format != rhs.colors[i].format) return false;
+		if (lhs.colors[i].loadOp != rhs.colors[i].loadOp) return false;
+		if (lhs.colors[i].storeOp != rhs.colors[i].storeOp) return false;
+		if (lhs.colors[i].initialLayout != rhs.colors[i].initialLayout) return false;
+		if (lhs.colors[i].finalLayout != rhs.colors[i].finalLayout) return false;
+	}
+	if (lhs.depth.format != rhs.depth.format) return false;
+	if (lhs.depth.loadOp != rhs.depth.loadOp) return false;
+	if (lhs.depth.storeOp != rhs.depth.storeOp) return false;
+	if (lhs.depth.initialLayout != rhs.depth.initialLayout) return false;
+	if (lhs.depth.finalLayout != rhs.depth.finalLayout) return false;
+	return true; // equal
+}
+
+bool operator!=(const RenderPassState& lhs, const RenderPassState& rhs)
+{
+	if (lhs.count != rhs.count) return true;
+	for (uint32_t i = 0; i < lhs.count; i++)
+	{
+		if (lhs.colors[i].format != rhs.colors[i].format) return true;
+		if (lhs.colors[i].loadOp != rhs.colors[i].loadOp) return true;
+	}
+	if (lhs.depth.format != rhs.depth.format) return true;
+	if (lhs.depth.loadOp != rhs.depth.loadOp) return true;
+	if (lhs.depth.storeOp != rhs.depth.storeOp) return true;
+	if (lhs.depth.initialLayout != rhs.depth.initialLayout) return true;
+	if (lhs.depth.finalLayout != rhs.depth.finalLayout) return true;
+	return false; // equal
+}
+
+};
 };

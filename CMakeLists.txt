@@ -7,85 +7,112 @@ add_library (Aka
 	"src/Audio/AudioStream.cpp"
 	"src/Audio/AudioStreamMp3.cpp"
 	"src/Audio/AudioStreamMemory.cpp"
-	"src/Audio/RtAudio/AudioRtAudio.cpp"
+	"src/Audio/RtAudio/RtAudioDevice.cpp"
 
 	"src/Core/Container/Blob.cpp"
 	"src/Core/Container/String.cpp"
 	"src/Core/Application.cpp"
-	"src/Core/View.cpp"
 	"src/Core/Debug.cpp"
-	"src/Core/Font.cpp"
 	"src/Core/Physic.cpp"
-	"src/Core/Aseprite.cpp"
-	"src/Core/Sprite.cpp"
 	"src/Core/Encoding.cpp"
 	"src/Core/Controller.cpp"
+	"src/Core/Config.cpp" 
+	"src/Core/BitField.cpp"
+	"src/Core/Bitmask.cpp"
+	"src/Core/Layer.cpp"
+	"src/Core/Worker/WorkerPool.cpp" 
+	"src/Core/Worker/Worker.cpp"
+	"src/Core/Worker/Job.cpp"
+	"src/Core/Hash.cpp"
 
 	"src/Memory/Allocator.cpp"
 	"src/Memory/Memory.cpp"
-	"src/Memory/Allocator/PoolAllocator.cpp" 
+	"src/Memory/Allocator/DefaultAllocator.cpp"
+	"src/Memory/Allocator/PoolAllocator.cpp"
 	"src/Memory/Allocator/LinearAllocator.cpp"
+	"src/Memory/AllocatorTracker.cpp"
 
 	"src/Layer/ImGuiLayer.cpp"
 
+	"src/Renderer/Renderer.cpp"
+	"src/Renderer/Instance.cpp"
+	"src/Renderer/InstanceRenderer.cpp" 
+	"src/Renderer/InstanceRenderer/StaticMeshInstanceRenderer.cpp" 
+	"src/Renderer/InstanceRenderer/SkeletalMeshInstanceRenderer.cpp" 
+	"src/Renderer/Instance/StaticMeshInstance.cpp" 
+	"src/Renderer/Instance/SkeletalMeshInstance.cpp"
+	"src/Renderer/DebugDraw/DebugDrawList.cpp"
+
 	"src/Scene/Component.cpp"
-	"src/Scene/Entity.cpp"
-	"src/Scene/System.cpp"
-	"src/Scene/World.cpp"
-	"src/Scene/Serializer.cpp"
-	"src/Scene/Camera.cpp"
+	"src/Scene/Node.cpp"
+	"src/Scene/NodeAllocator.cpp"
+	"src/Scene/ComponentAllocator.cpp"
+	"src/Scene/Component/CameraComponent.cpp"
+	"src/Scene/Component/ArcballComponent.cpp"
+	"src/Scene/Component/StaticMeshComponent.cpp"
+	"src/Scene/Component/SkeletalMeshComponent.cpp"
+	"src/Scene/Component/RigidBodyComponent.cpp"
+	"src/Scene/Component/ColliderComponent.cpp"
 
-	"src/Resource/ProgramManager.cpp"
-	"src/Resource/ResourceManager.cpp"
-	"src/Resource/MeshStorage.cpp"
-	"src/Resource/FontStorage.cpp"
-	"src/Resource/AudioStorage.cpp"
-	"src/Resource/TextureStorage.cpp"
-	"src/Resource/BufferStorage.cpp"
+	"src/Resource/Archive/ArchiveGeometry.cpp"
+	"src/Resource/Archive/ArchiveMaterial.cpp"
+	"src/Resource/Archive/ArchiveBatch.cpp"
+	"src/Resource/Archive/ArchiveStaticMesh.cpp"
+	"src/Resource/Archive/ArchiveSkeletalMesh.cpp"
+	"src/Resource/Archive/ArchiveSkeletonAnimation.cpp"
+	"src/Resource/Archive/ArchiveSkeleton.cpp"
+	"src/Resource/Archive/ArchiveImage.cpp"
+	"src/Resource/Archive/ArchiveScene.cpp"
+	"src/Resource/Archive/ArchiveSprite.cpp"
+	"src/Resource/Archive/ArchiveFont.cpp"
+	"src/Resource/Archive/Archive.cpp"
+	"src/Resource/Resource/Resource.cpp"
+	"src/Resource/Resource/Scene.cpp"
+	"src/Resource/Resource/Sprite.cpp"
+	"src/Resource/Resource/StaticMesh.cpp"
+	"src/Resource/Resource/SkeletalMesh.cpp"
+	"src/Resource/Resource/Texture.cpp"
+	"src/Resource/Resource/Font.cpp"
+	"src/Resource/Resource/Material.cpp"
+	"src/Resource/Importer/Importer.cpp"
+	"src/Resource/Importer/AsepriteImporter.cpp"
+	"src/Resource/Importer/TextureImporter.cpp"
+	"src/Resource/Importer/FontImporter.cpp"
+	"src/Resource/Shader/Shader.cpp"
+	"src/Resource/Shader/ShaderRegistry.cpp" 
+	"src/Resource/Shader/ShaderCompiler.cpp"
+ 	"src/Resource/Asset.cpp"
+	"src/Resource/AssetLibrary.cpp"
+	"src/Resource/AssetPath.cpp"
 
-	"src/Drawing/Renderer2D.cpp"
-	"src/Drawing/Renderer3D.cpp"
-	"src/Drawing/Batch2D.cpp"
-	"src/Drawing/Batch3D.cpp"
-
-	"src/Graphic/D3D11/D3D11Context.cpp"
-	"src/Graphic/D3D11/D3D11Device.cpp"
-	"src/Graphic/D3D11/D3D11Backbuffer.cpp"
-	"src/Graphic/D3D11/D3D11Buffer.cpp"
-	"src/Graphic/D3D11/D3D11Texture.cpp"
-	"src/Graphic/D3D11/D3D11Mesh.cpp"
-	"src/Graphic/D3D11/D3D11Material.cpp"
-	"src/Graphic/D3D11/D3D11Framebuffer.cpp"
-	"src/Graphic/D3D11/D3D11Program.cpp"
-	"src/Graphic/D3D11/Internal/D3D11Blit.cpp"
-
-	"src/Graphic/GL/GLContext.cpp"
-	"src/Graphic/GL/GLDevice.cpp"
-	"src/Graphic/GL/GLBackbuffer.cpp"
-	"src/Graphic/GL/GLBuffer.cpp"
-	"src/Graphic/GL/GLTexture.cpp"
-	"src/Graphic/GL/GLMesh.cpp"
-	"src/Graphic/GL/GLMaterial.cpp"
-	"src/Graphic/GL/GLFramebuffer.cpp"
-	"src/Graphic/GL/GLProgram.cpp"
-
-	"src/Graphic/GraphicDevice.cpp"
-	"src/Graphic/Device.cpp"
-	"src/Graphic/Framebuffer.cpp"
-	"src/Graphic/Backbuffer.cpp"
-	"src/Graphic/Mesh.cpp"
-	"src/Graphic/RenderPass.cpp"
-	"src/Graphic/Compiler.cpp"
-	"src/Graphic/Shader.cpp"
+	"src/Graphic/Vulkan/VulkanContext.cpp"
+	"src/Graphic/Vulkan/VulkanGraphicDevice.cpp"
+	"src/Graphic/Vulkan/VulkanSwapchain.cpp"
+	"src/Graphic/Vulkan/VulkanBuffer.cpp"
+	"src/Graphic/Vulkan/VulkanCommandList.cpp"
+	"src/Graphic/Vulkan/VulkanTexture.cpp"
+	"src/Graphic/Vulkan/VulkanFramebuffer.cpp"
+	"src/Graphic/Vulkan/VulkanProgram.cpp"
+	"src/Graphic/Vulkan/VulkanPipeline.cpp"
+	"src/Graphic/Vulkan/VulkanSampler.cpp"
+	"src/Graphic/Vulkan/VulkanDebug.cpp"
+	"src/Graphic/Vulkan/VulkanRenderPass.cpp"
+	"src/Graphic/Vulkan/VulkanFence.cpp"
+	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
+	"src/Graphic/Vulkan/Extensions/VkMeshShader.cpp"
+	"src/Graphic/Resource.cpp"
 	"src/Graphic/Program.cpp"
-	"src/Graphic/Material.cpp"
+	"src/Graphic/GraphicDevice.cpp"
+	"src/Graphic/Framebuffer.cpp"
+	"src/Graphic/Shader.cpp"
 	"src/Graphic/Texture.cpp"
-	"src/Graphic/Texture2D.cpp"
-	"src/Graphic/Texture2DMultisample.cpp"
-	"src/Graphic/TextureCubeMap.cpp"
-	"src/Graphic/Texture2DArray.cpp"
+	"src/Graphic/Pipeline.cpp"
 	"src/Graphic/Sampler.cpp"
 	"src/Graphic/Buffer.cpp"
+	"src/Graphic/DescriptorSet.cpp"
+	"src/Graphic/RenderPass.cpp" 
+	"src/Graphic/Fence.cpp"
+	"src/Graphic/DescriptorPool.cpp" 
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"
@@ -93,17 +120,17 @@ add_library (Aka
 	"src/OS/Logger.cpp"
 	"src/OS/Time.cpp"
 	"src/OS/Endian.cpp"
+	"src/OS/Stream/Stream.cpp"
 	"src/OS/Stream/MemoryStream.cpp"
 	"src/OS/Stream/FileStream.cpp"
+	"src/OS/Archive.cpp"
 	"src/OS/OS.cpp"
-
 	"src/OS/Windows/OSWindows.cpp"
-
-	"src/OS/Linux/OSLinux.cpp" 
+	"src/OS/Linux/OSLinux.cpp"
 
 	"src/Platform/Input.cpp"
-	"src/Platform/GLFW3/PlatformGLFW3.cpp" 
-	"src/Platform/PlatformDevice.cpp" 
+	"src/Platform/GLFW3/PlatformGLFW3.cpp"
+	"src/Platform/PlatformDevice.cpp"
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)
@@ -118,8 +145,9 @@ target_include_directories(Aka
 # Platform Backend
 set(PLATFORM_GLFW3 true CACHE BOOL "Set GLFW3 as platform backend")
 # Graphic Backend
-set(GRAPHIC_OPENGL true CACHE BOOL "Set OpenGL as graphic backend")
+set(GRAPHIC_OPENGL false CACHE BOOL "Set OpenGL as graphic backend")
 set(GRAPHIC_D3D11 false CACHE BOOL "Set DirectX11 as graphic backend")
+set(GRAPHIC_VULKAN true CACHE BOOL "Set Vulkan as graphic backend")
 # Audio Backend
 set(AUDIO_RTAUDIO true CACHE BOOL "Set RtAudio as audio backend")
 
@@ -144,6 +172,12 @@ elseif (GRAPHIC_D3D11)
 	# Setup D3D11
 	target_compile_definitions(Aka PUBLIC AKA_USE_D3D11)
 	# D3D11 libs are loaded with #pragma within the code
+elseif (GRAPHIC_VULKAN)
+	# Setup Vulkan
+	target_compile_definitions(Aka PUBLIC AKA_USE_VULKAN)
+	find_package(Vulkan REQUIRED) # Use VULKAN_SDK env to find Vulkan
+	target_include_directories(Aka PRIVATE ${Vulkan_INCLUDE_DIRS})
+	target_link_libraries(Aka PRIVATE Vulkan::Vulkan)
 endif()
 
 # Link RtAudio
@@ -163,6 +197,9 @@ if (PLATFORM_GLFW3)
 	target_link_libraries(Aka PRIVATE glfw)
 endif()
 
+# Disable SPIRV opt
+set(ENABLE_OPT OFF CACHE BOOL "" FORCE)
+
 # Third party libs
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
@@ -176,6 +213,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/lua)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/renderdoc)
 
 target_link_libraries(Aka PUBLIC
 	Geometry
@@ -186,6 +224,7 @@ target_link_libraries(Aka PUBLIC
 target_link_libraries(Aka PRIVATE
 	AkaMiniz
 	AkaUtfCpp
+	AkaRenderdoc
 	AkaMiniMp3
 	AkaStb
 	AkaJson

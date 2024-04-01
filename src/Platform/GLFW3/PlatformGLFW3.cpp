@@ -6,6 +6,13 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+//#define GLFW_NATIVE_INCLUDE_NONE
+#include <GLFW/glfw3native.h>
+
 namespace aka {
 
 const KeyboardKey glfwKeyboardKeyMap[512] = {
@@ -392,17 +399,26 @@ const GamepadButton glfwGamepadButtonMap[512] = {
 
 
 PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
-	PlatformDevice(config)
+	PlatformDevice(config),
+	m_window(nullptr)
+{
+}
+
+PlatformGLFW3::~PlatformGLFW3()
+{
+}
+
+void PlatformGLFW3::initialize(const PlatformConfig& config)
 {
 	glfwSetErrorCallback([](int error, const char* description) {
 		Logger::error("[GLFW][", error, "] ", description);
-	});
+		});
 	// TODO glfw context static to handle multiple window creation
 	if (glfwInit() != GLFW_TRUE)
 		throw std::runtime_error("Could not init GLFW");
 	auto has = [](PlatformFlag flags, PlatformFlag flag) -> int {
 		return (flags & flag) == flag ? GLFW_TRUE : GLFW_FALSE;
-	};
+		};
 	// Backend API
 	glfwWindowHint(GLFW_RESIZABLE, has(config.flags, PlatformFlag::Resizable));
 	glfwWindowHint(GLFW_DECORATED, has(config.flags, PlatformFlag::Decorated));
@@ -421,7 +437,7 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 #if defined(AKA_DEBUG)
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 #endif
-#elif defined(AKA_USE_D3D11)
+#elif defined(AKA_USE_D3D11) || defined(AKA_USE_VULKAN)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
 	GLFWmonitor* monitor = nullptr;
@@ -432,13 +448,11 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 	glfwGetWindowPos(m_window, reinterpret_cast<int*>(&m_x), reinterpret_cast<int*>(&m_y));
 	glfwSetWindowUserPointer(m_window, this);
 	//glfwSetMonitorUserPointer(monitor, this);
-	for (int jid = GLFW_JOYSTICK_1; jid < GLFW_JOYSTICK_LAST; ++jid)
-		glfwSetJoystickUserPointer(jid, this);
 	if (config.icon.size > 0)
 	{
 		GLFWimage img{ (int)config.icon.size, (int)config.icon.size, config.icon.bytes };
 		glfwSetWindowIcon(m_window, 1, &img);
-	}
+}
 	if (m_window == nullptr) {
 		glfwTerminate();
 		throw std::runtime_error("Could not init window");
@@ -455,40 +469,40 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 		p->m_width = width;
 		p->m_height = height;
 		EventDispatcher<WindowResizeEvent>::emit(WindowResizeEvent{ (uint32_t)width, (uint32_t)height });
-	});
+		});
 	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
 		EventDispatcher<BackbufferResizeEvent>::emit(BackbufferResizeEvent{ (uint32_t)width, (uint32_t)height });
-	});
+		});
 	glfwSetWindowContentScaleCallback(m_window, [](GLFWwindow* window, float x, float y) {
 		EventDispatcher<WindowContentScaledEvent>::emit(WindowContentScaledEvent{ x, y });
-	});
+		});
 	glfwSetWindowMaximizeCallback(m_window, [](GLFWwindow* window, int maximized) {
 		EventDispatcher<WindowMaximizedEvent>::emit(WindowMaximizedEvent{ (maximized == GLFW_TRUE) });
-	});
+		});
 	// --- Window
 	glfwSetWindowFocusCallback(m_window, [](GLFWwindow* window, int focused) {
 		EventDispatcher<WindowFocusedEvent>::emit(WindowFocusedEvent{ (focused == GLFW_TRUE) });
-	});
+		});
 	glfwSetWindowRefreshCallback(m_window, [](GLFWwindow* window) {
 		EventDispatcher<WindowRefreshedEvent>::emit(WindowRefreshedEvent{});
-	});
+		});
 	glfwSetWindowIconifyCallback(m_window, [](GLFWwindow* window, int iconified) {
 		EventDispatcher<WindowIconifiedEvent>::emit(WindowIconifiedEvent{ (iconified == GLFW_TRUE) });
-	});
+		});
 	glfwSetWindowPosCallback(m_window, [](GLFWwindow* window, int x, int y) {
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		EventDispatcher<WindowMovedEvent>::emit(WindowMovedEvent{ x, y });
 		p->m_x = x;
 		p->m_y = y;
-	});
+		});
 	// --- Monitor
 	glfwSetMonitorCallback([](GLFWmonitor* monitor, int event) {
 		// TODO get monitor informations
 		if (event == GLFW_CONNECTED)
-			EventDispatcher<MonitorConnectedEvent>::emit(MonitorConnectedEvent{});
+			EventDispatcher<MonitorConnectedEvent>::emit(MonitorConnectedEvent {});
 		else if (event == GLFW_DISCONNECTED)
 			EventDispatcher<MonitorDisconnectedEvent>::emit(MonitorDisconnectedEvent {});
-	});
+		});
 	// --- Inputs
 	glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mode) {
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
@@ -505,7 +519,7 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 		}
 		else if (action == GLFW_REPEAT)
 			EventDispatcher<KeyboardKeyRepeatEvent>::emit(KeyboardKeyRepeatEvent{ k });
-	});
+		});
 	glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mode) {
 		MouseButton b = glfwMouseButtonMap[button];
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
@@ -521,17 +535,17 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 		}
 		else if (action == GLFW_REPEAT)
 			EventDispatcher<MouseButtonRepeatEvent>::emit(MouseButtonRepeatEvent{ b });
-	});
+		});
 	glfwSetCharCallback(m_window, [](GLFWwindow* window, unsigned int character) {
 		EventDispatcher<WindowUnicodeCharEvent>::emit(WindowUnicodeCharEvent{ character });
-	});
+		});
 	glfwSetDropCallback(m_window, [](GLFWwindow* window, int count, const char** paths) {
 		// TODO get mouse position and pass it along the event.
 		WindowDropEvent e;
 		for (int i = 0; i < count; i++)
 			e.paths.append(OS::normalize(paths[i]));
 		EventDispatcher<WindowDropEvent>::emit(std::move(e));
-	});
+		});
 	glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
 		// position, in screen coordinates, relative to the upper-left corner of the client area of the window
 		// Aka coordinates system origin is bottom left, so we convert.
@@ -540,14 +554,14 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 		float y = static_cast<float>(p->height()) - static_cast<float>(ypos);
 		p->onMouseMotion(x, y);
 		EventDispatcher<MouseMotionEvent>::emit(MouseMotionEvent{ x, y });
-	});
+		});
 	glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		float x = static_cast<float>(xoffset);
 		float y = static_cast<float>(yoffset);
 		p->onMouseScroll(x, y);
 		EventDispatcher<MouseScrollEvent>::emit(MouseScrollEvent{ x, y });
-	});
+		});
 	glfwSetCursorEnterCallback(m_window, [](GLFWwindow* window, int entered) {
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetWindowUserPointer(window));
 		if (entered == GLFW_TRUE)
@@ -560,7 +574,7 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 			p->onMouseLeave();
 			EventDispatcher<MouseLeaveEvent>::emit();
 		}
-	});
+		});
 	glfwSetJoystickCallback([](int jid, int event) {
 		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetJoystickUserPointer(jid));
 		if (glfwJoystickIsGamepad(jid) == GLFW_FALSE)
@@ -577,7 +591,7 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 			p->onGamepadDisconnected(gid);
 			EventDispatcher<GamepadDisconnectedEvent>::emit(GamepadDisconnectedEvent{ gid });
 		}
-	});
+		});
 	// Register all connected joystick by emitting a connected event
 	for (int jid = GLFW_JOYSTICK_1; jid <= GLFW_JOYSTICK_LAST; jid++)
 	{
@@ -588,10 +602,11 @@ PlatformGLFW3::PlatformGLFW3(const PlatformConfig& config) :
 			onGamepadConnected(gid, name);
 			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ gid, name });
 		}
+		glfwSetJoystickUserPointer(jid, this);
 	}
 }
 
-PlatformGLFW3::~PlatformGLFW3()
+void PlatformGLFW3::shutdown()
 {
 	glfwTerminate();
 }
@@ -743,6 +758,11 @@ void PlatformGLFW3::fullscreen(bool enable)
 GLFWwindow* PlatformGLFW3::getGLFW3Handle()
 {
 	return m_window;
+}
+
+void* PlatformGLFW3::getNativeHandle()
+{
+	return glfwGetWin32Window(m_window);
 }
 
 };
