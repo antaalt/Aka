@@ -63,7 +63,7 @@ aka::Path AssetPath::getAssetPathFromCwd(AssetPathType type)
 		return "./asset/library/";
 	default:
 		AKA_UNREACHABLE;
-		break;
+		return "./error/";
 	}
 }
 

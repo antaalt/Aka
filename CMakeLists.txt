@@ -197,6 +197,9 @@ if (PLATFORM_GLFW3)
 	target_link_libraries(Aka PRIVATE glfw)
 endif()
 
+# Disable SPIRV opt
+set(ENABLE_OPT OFF CACHE BOOL "" FORCE)
+
 # Third party libs
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)

@@ -26,8 +26,8 @@ enum class AssetPathType {
 struct AssetPath
 {
 	AssetPath();
-	explicit AssetPath(const char* _path, AssetPathType type);
-	explicit AssetPath(const String& _path, AssetPathType type);
+	explicit AssetPath(const char* _path, AssetPathType type = AssetPathType::Custom);
+	explicit AssetPath(const String& _path, AssetPathType type = AssetPathType::Custom);
 	AssetPath(const AssetPath&) = default;
 	AssetPath(AssetPath&&) = default;
 	AssetPath& operator=(const AssetPath&) = default;
