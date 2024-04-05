@@ -278,52 +278,61 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	Vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-	std::vector<uint32_t> queueFamilySlotCount(queueFamilyCount, 0);
-	bool isQueuePicked[EnumCount<QueueType>()] = {false};
-	bool isPresentPicked = false;
+	// Select graphic & present queue.
+	// With exclusive swapchain, we need to use same queue to avoid transferring ownership.
+	// https://stackoverflow.com/questions/55272626/what-is-actually-a-queue-family-in-vulkan/55273688#55273688
+	Vector<uint32_t> queueFamilySlotCount(queueFamilyCount, 0);
 	for (uint32_t iQueue = 0; iQueue < queueFamilyCount; ++iQueue)
 	{
+		// Should always have at least 1 queue
 		const VkQueueFamilyProperties& queueFamily = queueFamilies[iQueue];
-		if (queueFamily.queueCount > 0)
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-			if (!isQueuePicked[EnumToIndex(QueueType::Graphic)] && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
-			{
-				isQueuePicked[EnumToIndex(QueueType::Graphic)] = true;
-				queues[EnumToIndex(QueueType::Graphic)].familyIndex = iQueue;
-				queues[EnumToIndex(QueueType::Graphic)].index = queueFamilySlotCount[iQueue]++;
-				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
-			}
-			if (!isQueuePicked[EnumToIndex(QueueType::Compute)] && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
-			{
-				isQueuePicked[EnumToIndex(QueueType::Compute)] = true;
-				queues[EnumToIndex(QueueType::Compute)].familyIndex = iQueue;
-				queues[EnumToIndex(QueueType::Compute)].index = queueFamilySlotCount[iQueue]++;
-				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
-			}
-			if (!isQueuePicked[EnumToIndex(QueueType::Copy)] && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
-			{
-				isQueuePicked[EnumToIndex(QueueType::Copy)] = true;
-				queues[EnumToIndex(QueueType::Copy)].familyIndex = iQueue;
-				queues[EnumToIndex(QueueType::Copy)].index = queueFamilySlotCount[iQueue]++;
-				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
-			}
-			if (!isPresentPicked && hasSurface)
+			if (hasSurface)
 			{
 				VkBool32 presentSupport = false;
 				VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, iQueue, surface, &presentSupport));
-				if (presentSupport && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+				if (presentSupport)
 				{
-					isPresentPicked = true;
 					presentQueue.familyIndex = iQueue;
 					presentQueue.index = queueFamilySlotCount[iQueue]++;
-					AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues for present slot");
+					queues[EnumToIndex(QueueType::Graphic)].familyIndex = presentQueue.familyIndex;
+					queues[EnumToIndex(QueueType::Graphic)].index = presentQueue.index;
+					break;
 				}
+			}
+			else
+			{
+				queues[EnumToIndex(QueueType::Graphic)].familyIndex = iQueue;
+				queues[EnumToIndex(QueueType::Graphic)].index = queueFamilySlotCount[iQueue]++;
+				break;
 			}
 		}
 	}
+	// Now we can select a queue for asyncCopy & asyncCompute
+	bool isQueuePicked[EnumCount<QueueType>()] = { false };
+	for (uint32_t iQueue = 0; iQueue < queueFamilyCount; ++iQueue)
+	{
+		const VkQueueFamilyProperties& queueFamily = queueFamilies[iQueue];
+		if (!isQueuePicked[EnumToIndex(QueueType::Compute)] && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+		{
+			isQueuePicked[EnumToIndex(QueueType::Compute)] = true;
+			queues[EnumToIndex(QueueType::Compute)].familyIndex = iQueue;
+			queues[EnumToIndex(QueueType::Compute)].index = queueFamilySlotCount[iQueue]++;
+			AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
+		}
+		if (!isQueuePicked[EnumToIndex(QueueType::Copy)] && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+		{
+			isQueuePicked[EnumToIndex(QueueType::Copy)] = true;
+			queues[EnumToIndex(QueueType::Copy)].familyIndex = iQueue;
+			queues[EnumToIndex(QueueType::Copy)].index = queueFamilySlotCount[iQueue]++;
+			AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
+		}
+	}
+	
 	// Check standard queues
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{

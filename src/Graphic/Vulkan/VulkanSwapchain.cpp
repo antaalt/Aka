@@ -354,17 +354,18 @@ void VulkanSwapchain::createSwapchain(VulkanGraphicDevice* _device, PlatformDevi
 	for (uint32_t f : singleImageFamilies)
 		singleImageFamiliesData.push_back(f);
 
-	if (singleImageFamilies.size() > 1)
+	// We need concurrent mode only if graphic queue & present queue different.
+	// We suppose async compute & async transfer dont deal with swapchain.
+	if (_device->getVkPresentQueueIndex() != _device->getVkQueueIndex(QueueType::Graphic))
 	{
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		createInfo.queueFamilyIndexCount = (uint32_t)singleImageFamilies.size();
 		createInfo.pQueueFamilyIndices = singleImageFamiliesData.data();
+		AKA_ASSERT(false, "Ownership transfer not implemented for swapchain.");
 	}
 	else
 	{
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		createInfo.queueFamilyIndexCount = 0; // Optional
-		createInfo.pQueueFamilyIndices = nullptr; // Optional
 	}
 	createInfo.preTransform = capabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
