@@ -57,7 +57,9 @@ void Renderer::create()
 	{ // Textures
 		// Bindless
 		m_bindlessDescriptorLayout.add(gfx::ShaderBindingType::SampledImage, gfx::ShaderMask::Fragment, gfx::ShaderBindingFlag::Bindless, MaxBindlessResources);
-		m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", m_bindlessDescriptorLayout, MaxBindlessResources);
+		// Should have max frame in flight set instead of pools.
+		// Need to sync n buffers though...
+		m_bindlessPool = getDevice()->createDescriptorPool("BindlessPool", m_bindlessDescriptorLayout, 1);
 		m_bindlessDescriptorSet = getDevice()->allocateDescriptorSet("BindlessSet", m_bindlessDescriptorLayout, m_bindlessPool);
 
 		// Samplers

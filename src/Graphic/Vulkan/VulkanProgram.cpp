@@ -212,7 +212,7 @@ VkDescriptorPool VulkanDescriptorPool::createVkDescriptorPool(VkDevice device, c
 	{
 		const ShaderBindingLayout& binding = bindings.bindings[i];
 		vk_poolSizes[i].type = VulkanContext::tovk(binding.type);
-		vk_poolSizes[i].descriptorCount = 1;// binding.count;
+		vk_poolSizes[i].descriptorCount = binding.count;
 		if (asBool(binding.flags & ShaderBindingFlag::UpdateAfterBind))
 			poolInfo.flags |= VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 	}
