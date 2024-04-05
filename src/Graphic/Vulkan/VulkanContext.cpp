@@ -360,11 +360,10 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	std::map<uint32_t, std::vector<float>> priorities;
 	for (uint32_t queueFamily : uniqueQueueFamilies) {
+		// Only handle separated queue here, ignore present shared with graphics.
 		for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 			if (queues[i].familyIndex == queueFamily)
 				priorities[queueFamily].push_back(1.f); // TODO More prio for graphic ?
-		if (presentQueue.familyIndex == queueFamily)
-			priorities[queueFamily].push_back(1.f);
 		VkDeviceQueueCreateInfo queueCreateInfo = {};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex = queueFamily;
