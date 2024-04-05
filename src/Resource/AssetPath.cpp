@@ -58,12 +58,14 @@ aka::Path AssetPath::getAssetPathFromCwd(AssetPathType type)
 	switch (type)
 	{
 	case aka::AssetPathType::Common:
-		return "./lib/Aka/asset/library/";
+		return "./lib/Aka/asset/";
 	case aka::AssetPathType::Custom:
-		return "./asset/library/";
+		return "./asset/";
+	case aka::AssetPathType::Cooked:
+		return "./asset/.cooked/";
 	default:
-		AKA_UNREACHABLE;
-		return "./error/";
+		AKA_ASSERT(false, "Invalid asset path type");
+		return OS::temp();
 	}
 }
 

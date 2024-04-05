@@ -58,8 +58,8 @@ void StaticMeshInstanceRenderer::destroy()
 void StaticMeshInstanceRenderer::createPipeline()
 {
 	ShaderRegistry* registry = Application::app()->program();
-	const aka::AssetPath ShaderVertexPath = AssetPath("../shaders/renderer/shader.vert", AssetPathType::Common);
-	const aka::AssetPath ShaderFragmentPath = AssetPath("../shaders/renderer/shader.frag", AssetPathType::Common);
+	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
+	const aka::AssetPath ShaderFragmentPath = AssetPath("shaders/renderer/shader.frag", AssetPathType::Common);
 
 	const aka::ShaderKey ShaderVertex = aka::ShaderKey().setPath(ShaderVertexPath).setType(aka::ShaderType::Vertex);
 	const aka::ShaderKey ShaderFragment = aka::ShaderKey().setPath(ShaderFragmentPath).setType(aka::ShaderType::Fragment);

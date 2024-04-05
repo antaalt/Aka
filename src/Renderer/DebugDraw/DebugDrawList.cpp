@@ -52,8 +52,8 @@ void DebugDrawList::draw3DLine(const point3f* positions, size_t count, const col
 
 void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t height)
 {
-	const ShaderKey ShaderVertex = ShaderKey::generate(AssetPath("../shaders/debugdraw/debug.vert", AssetPathType::Common), ShaderType::Vertex);
-	const ShaderKey ShaderFragment = ShaderKey::generate(AssetPath("../shaders/debugdraw/debug.frag", AssetPathType::Common), ShaderType::Fragment);
+	const ShaderKey ShaderVertex = ShaderKey::generate(AssetPath("shaders/debugdraw/debug.vert", AssetPathType::Common), ShaderType::Vertex);
+	const ShaderKey ShaderFragment = ShaderKey::generate(AssetPath("shaders/debugdraw/debug.frag", AssetPathType::Common), ShaderType::Fragment);
 
 	const ProgramKey ProgramGraphic = ProgramKey().add(ShaderVertex).add(ShaderFragment);
 	ShaderRegistry* program = Application::app()->program();

@@ -40,7 +40,7 @@ AssetPath Importer::getAssetPath(const char* subPath) const
 		String str = m_path.cstr();
 		str.append("/");
 		str.append(subPath);
-		return AssetPath(str, AssetPathType::Custom);
+		return AssetPath(str, AssetPathType::Cooked);
 	}
 }
 const String& Importer::getName() const

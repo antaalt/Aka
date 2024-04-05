@@ -18,6 +18,7 @@ enum class AssetPathType {
 
 	Common, // Common assets used by aka framework
 	Custom, // Custom assets used by application
+	Cooked, // Cooked assets that are usable by framework
 
 	First = Common,
 	Last = Custom

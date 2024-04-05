@@ -63,8 +63,8 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 {
 	ShaderRegistry* registry = Application::app()->program();
 	// TODO: Should use JSON for this ? JSON that can be generated with a script reading all files in shaders folder (generating DB)
-	const aka::AssetPath ShaderVertexPath = AssetPath("../shaders/renderer/shader.vert", AssetPathType::Common);
-	const aka::AssetPath ShaderFragmentPath = AssetPath("../shaders/renderer/shader.frag", AssetPathType::Common);
+	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
+	const aka::AssetPath ShaderFragmentPath = AssetPath("shaders/renderer/shader.frag", AssetPathType::Common);
 
 	const aka::ShaderKey ShaderVertex = aka::ShaderKey().setPath(ShaderVertexPath).setType(aka::ShaderType::Vertex).addMacro("SKELETAL");
 	const aka::ShaderKey ShaderFragment = aka::ShaderKey().setPath(ShaderFragmentPath).setType(aka::ShaderType::Fragment).addMacro("SKELETAL");
