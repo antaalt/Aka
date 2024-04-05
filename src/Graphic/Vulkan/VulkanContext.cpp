@@ -282,39 +282,44 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
 	std::vector<uint32_t> queueFamilySlotCount(queueFamilyCount, 0);
+	bool isQueuePicked[EnumCount<QueueType>()] = {false};
+	bool isPresentPicked = false;
 	for (uint32_t iQueue = 0; iQueue < queueFamilyCount; ++iQueue)
 	{
 		const VkQueueFamilyProperties& queueFamily = queueFamilies[iQueue];
 		if (queueFamily.queueCount > 0)
 		{
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			if (!isQueuePicked[EnumToIndex(QueueType::Graphic)] && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 			{
+				isQueuePicked[EnumToIndex(QueueType::Graphic)] = true;
 				queues[EnumToIndex(QueueType::Graphic)].familyIndex = iQueue;
 				queues[EnumToIndex(QueueType::Graphic)].index = queueFamilySlotCount[iQueue]++;
 				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
 			}
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			if (!isQueuePicked[EnumToIndex(QueueType::Compute)] && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 			{
+				isQueuePicked[EnumToIndex(QueueType::Compute)] = true;
 				queues[EnumToIndex(QueueType::Compute)].familyIndex = iQueue;
 				queues[EnumToIndex(QueueType::Compute)].index = queueFamilySlotCount[iQueue]++;
 				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
 			}
-			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+			if (!isQueuePicked[EnumToIndex(QueueType::Copy)] && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 			{
+				isQueuePicked[EnumToIndex(QueueType::Copy)] = true;
 				queues[EnumToIndex(QueueType::Copy)].familyIndex = iQueue;
 				queues[EnumToIndex(QueueType::Copy)].index = queueFamilySlotCount[iQueue]++;
 				AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
 			}
-			if (hasSurface)
+			if (!isPresentPicked && hasSurface)
 			{
 				VkBool32 presentSupport = false;
 				VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, iQueue, surface, &presentSupport));
-				if (presentSupport)
+				if (presentSupport && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 				{
+					isPresentPicked = true;
 					presentQueue.familyIndex = iQueue;
 					presentQueue.index = queueFamilySlotCount[iQueue]++;
 					AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues for present slot");
-					break;
 				}
 			}
 		}
@@ -511,8 +516,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 
 	physicalDevice = pickPhysicalDevice([](const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures2& features) {
 		bool supported = true;
-		supported &= properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-		supported &= features.features.geometryShader == VK_TRUE;
+		supported &= properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 		supported &= features.features.samplerAnisotropy == VK_TRUE;
 		supported &= features.features.fragmentStoresAndAtomics == VK_TRUE;
 		supported &= features.features.shaderFloat64 == VK_TRUE;
