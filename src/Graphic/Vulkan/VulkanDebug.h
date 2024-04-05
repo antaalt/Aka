@@ -41,6 +41,9 @@ template <> struct VulkanTypeTrait<VkShaderModule> { static const VkObjectType d
 template <> struct VulkanTypeTrait<VkDescriptorSet> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_SET; };
 template <> struct VulkanTypeTrait<VkDescriptorSetLayout> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT; };
 template <> struct VulkanTypeTrait<VkDescriptorPool> { static const VkObjectType debugType = VK_OBJECT_TYPE_DESCRIPTOR_POOL; };
+template <> struct VulkanTypeTrait<VkFence> { static const VkObjectType debugType = VK_OBJECT_TYPE_FENCE; };
+template <> struct VulkanTypeTrait<VkSemaphore> { static const VkObjectType debugType = VK_OBJECT_TYPE_SEMAPHORE; };
+template <> struct VulkanTypeTrait<VkQueue> { static const VkObjectType debugType = VK_OBJECT_TYPE_QUEUE; };
 
 // Get a vulkan error string
 const char* getVkErrorString(VkResult result);

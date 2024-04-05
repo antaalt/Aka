@@ -22,9 +22,8 @@ struct VulkanFrame : Frame
 	VulkanCommandList* allocateCommand(VulkanGraphicDevice* device, QueueType queue);
 	void releaseCommand(VulkanCommandList* commandList);
 
-	static constexpr uint32_t SemaphoreCount = EnumCount<QueueType>() + 1;
-
-	VkSemaphore semaphore[SemaphoreCount];
+	VkSemaphore presentSemaphore[EnumCount<QueueType>()];
+	VkSemaphore acquireSemaphore;
 	VkFence presentFence[EnumCount<QueueType>()];
 
 	VulkanCommandList mainCommandLists[EnumCount<QueueType>()];

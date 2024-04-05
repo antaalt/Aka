@@ -455,10 +455,21 @@ VkDevice VulkanContext::createLogicalDevice(const char** deviceExtensions, size_
 	VK_CHECK_RESULT(vkCreateDevice(physicalDevice, &createInfo, NULL, &device));
 
 	// Retrieve queues from device
+	static const char* s_queueName[EnumCount<QueueType>()] = {
+		"Graphic queue",
+		"Compute queue",
+		"Copy queue",
+	};
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
 		vkGetDeviceQueue(device, queues[i].familyIndex, queues[i].index, &queues[i].queue);
+		setDebugName(device, queues[i].queue, "%s", s_queueName[i]);
+	}
 	if (hasSurface)
+	{
 		vkGetDeviceQueue(device, presentQueue.familyIndex, presentQueue.index, &presentQueue.queue);
+		setDebugName(device, presentQueue.queue, "Present queue");
+	}
 	return device;
 }
 

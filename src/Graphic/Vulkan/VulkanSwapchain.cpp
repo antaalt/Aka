@@ -203,8 +203,8 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	VkResult result = vkAcquireNextImageKHR(
 		device->getVkDevice(),
 		m_swapchain,
-		(std::numeric_limits<uint64_t>::max)(),
-		vk_frame.semaphore[0],
+		5 * geometry::pow(10, 9), // 1s timeout
+		vk_frame.acquireSemaphore,
 		VK_NULL_HANDLE,
 		&imageIndex
 	);
@@ -244,8 +244,8 @@ SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFram
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &vk_frame.semaphore[VulkanFrame::SemaphoreCount - 1];
+	presentInfo.waitSemaphoreCount = EnumCount<QueueType>();
+	presentInfo.pWaitSemaphores = vk_frame.presentSemaphore;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = indices;
@@ -559,15 +559,15 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 	fenceSignaledInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceSignaledInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	// Semaphores
-	for (uint32_t i = 0; i < VulkanFrame::SemaphoreCount; i++)
-	{
-		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &semaphore[i]));
-	}
-	// Fences
+	// Semaphores & Fences
+	VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &acquireSemaphore));
+	setDebugName(device->getVkDevice(), acquireSemaphore, "AcquireSemaphore");
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
 		VK_CHECK_RESULT(vkCreateFence(device->getVkDevice(), &fenceSignaledInfo, nullptr, &presentFence[i]));
+		setDebugName(device->getVkDevice(), presentFence[i], "presentFence");
+		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &presentSemaphore[i]));
+		setDebugName(device->getVkDevice(), presentSemaphore[i], "PresentSemaphore%u", i);
 	}
 	// Command buffers
 	for (QueueType queue : EnumRange<QueueType>())
@@ -595,17 +595,16 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 
 void VulkanFrame::destroy(VulkanGraphicDevice* device)
 {
-	for (uint32_t i = 0; i < VulkanFrame::SemaphoreCount; i++)
-	{
-		vkDestroySemaphore(device->getVkDevice(), semaphore[i], nullptr);
-		semaphore[i] = VK_NULL_HANDLE;
-	}
+	vkDestroySemaphore(device->getVkDevice(), acquireSemaphore, nullptr);
+	acquireSemaphore = VK_NULL_HANDLE;
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
 		vkDestroyCommandPool(device->getVkDevice(), commandPool[i], nullptr);
 		commandPool[i] = VK_NULL_HANDLE;
 		vkDestroyFence(device->getVkDevice(), presentFence[i], nullptr);
 		presentFence[i] = VK_NULL_HANDLE;
+		vkDestroySemaphore(device->getVkDevice(), presentSemaphore[i], nullptr);
+		presentSemaphore[i] = VK_NULL_HANDLE;
 	}
 }
 

@@ -186,8 +186,11 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 	for (QueueType queue : EnumRange<QueueType>())
 	{
 		uint32_t i = EnumToIndex(queue);
-		VkSemaphore signalSemaphore = vk_frame.semaphore[i + 1];
-		VkSemaphore waitSemaphore = vk_frame.semaphore[i];
+		VkSemaphore signalSemaphore = vk_frame.presentSemaphore[i];
+		// Async compute & transfer do not need to wait for swapchain
+		Vector<VkSemaphore> waitSemaphores;
+		if (queue == QueueType::Graphic)
+			waitSemaphores.append(vk_frame.acquireSemaphore);
 		VkFence fence = vk_frame.presentFence[i];
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -196,8 +199,8 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &signalSemaphore;
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &waitSemaphore;
+		submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
+		submitInfo.pWaitSemaphores = waitSemaphores.data();
 
 		color4f markerColor(0.8f, 0.8f, 0.8f, 1.f);
 		beginMarker(queue, s_queueName[i], markerColor.data);
