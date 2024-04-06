@@ -123,8 +123,6 @@ struct VulkanComputePipeline;
 struct VulkanFramebuffer;
 struct VulkanBuffer;
 
-typedef bool (*PickPhysicalDeviceFunc)(const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures2&);
-
 struct VulkanContext
 {
 	void initialize(PlatformDevice* platform, const GraphicConfig& config);
@@ -151,7 +149,7 @@ struct VulkanContext
 	VkInstance instance;
 	VkDevice device;
 	VkPhysicalDevice physicalDevice;
-	VkSurfaceKHR surface;
+	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	// swapchain
 	VulkanQueue queues[EnumCount<QueueType>()];
 	VulkanQueue presentQueue;
@@ -177,8 +175,8 @@ private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);
 	VkSurfaceKHR createSurface(PlatformDevice* platform);
 	const char** getPlatformRequiredInstanceExtension(const PlatformDevice* platform, uint32_t* count);
-	VkPhysicalDevice pickPhysicalDevice(PickPhysicalDeviceFunc isPhysicalDeviceSuitable);
-	VkDevice createLogicalDevice(const char** deviceExtensions, size_t deviceExtensionCount);
+	VkPhysicalDevice pickPhysicalDevice();
+	VkDevice createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount);
 };
 
 };
