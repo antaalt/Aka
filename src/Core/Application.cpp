@@ -63,6 +63,7 @@ bool Application::create()
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
 	m_root->create(renderer());
 	onCreate(m_config.argc, m_config.argv);
+	return true;
 }
 void Application::destroy()
 {
