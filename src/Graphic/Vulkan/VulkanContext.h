@@ -125,11 +125,10 @@ struct VulkanBuffer;
 
 struct VulkanContext
 {
-	void initialize(PlatformDevice* platform, const GraphicConfig& config);
+	bool initialize(PlatformDevice* platform, const GraphicConfig& config);
 	void shutdown();
 
 	uint32_t getPhysicalDeviceCount() const;
-	PhysicalDevice* getPhysicalDevice(uint32_t index);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	static uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -149,6 +148,8 @@ struct VulkanContext
 	VkInstance instance;
 	VkDevice device;
 	VkPhysicalDevice physicalDevice;
+	PhysicalDeviceFeatures physicalDeviceFeatures;
+	PhysicalDeviceLimits physicalDeviceLimits;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	// swapchain
 	VulkanQueue queues[EnumCount<QueueType>()];
@@ -175,7 +176,7 @@ private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);
 	VkSurfaceKHR createSurface(PlatformDevice* platform);
 	const char** getPlatformRequiredInstanceExtension(const PlatformDevice* platform, uint32_t* count);
-	VkPhysicalDevice pickPhysicalDevice();
+	std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> pickPhysicalDevice(PhysicalDeviceFeatures _requestedFeatures);
 	VkDevice createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount);
 };
 

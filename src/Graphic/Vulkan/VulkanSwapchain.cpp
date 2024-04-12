@@ -132,12 +132,13 @@ VulkanSwapchain::VulkanSwapchain() :
 {
 }
 
-void VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* platform)
+bool VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* platform)
 {
 	AKA_ASSERT(m_swapchain == VK_NULL_HANDLE, "Cannot call initialize with already initialized swapchain.");
 	createSwapchain(device, platform, VK_NULL_HANDLE);
 	createImageViews(device);
 	createFrames(device);
+	return true;
 }
 
 void VulkanSwapchain::shutdown(VulkanGraphicDevice* _device)

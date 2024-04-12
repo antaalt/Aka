@@ -44,7 +44,7 @@ Application::~Application()
 	delete m_program;
 	delete m_renderer;
 }
-void Application::create()
+bool Application::create()
 {
 	AKA_ASSERT(m_platform != nullptr, "No platform");
 	AKA_ASSERT(m_graphic != nullptr, "No graphics");
@@ -54,7 +54,8 @@ void Application::create()
 	AKA_ASSERT(m_root != nullptr, "No layers");
 
 	m_platform->initialize(m_config.platform);
-	m_graphic->initialize(m_platform, m_config.graphic);
+	if (!m_graphic->initialize(m_platform, m_config.graphic))
+		return false;
 	m_audio->initialize(m_config.audio);
 	m_renderer->create();
 	m_width = m_config.platform.width;
@@ -198,7 +199,9 @@ void Application::run(Application* app)
 
 	s_app = app;
 
-	app->create();
+	// Early exit on failure.
+	if (!app->create())
+		return;
 
 	gfx::GraphicDevice* graphic = app->m_graphic;
 	Renderer* renderer = app->m_renderer;

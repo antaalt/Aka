@@ -48,7 +48,7 @@ class VulkanSwapchain :
 public:
 	VulkanSwapchain();
 
-	void initialize(VulkanGraphicDevice* device, PlatformDevice* platform);
+	bool initialize(VulkanGraphicDevice* device, PlatformDevice* platform);
 	void shutdown(VulkanGraphicDevice* device);
 
 	void onReceive(const BackbufferResizeEvent& e) override;

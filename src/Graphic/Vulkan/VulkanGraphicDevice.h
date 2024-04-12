@@ -32,14 +32,13 @@ public:
 	VulkanGraphicDevice();
 	~VulkanGraphicDevice();
 
-	void initialize(PlatformDevice* platform, const GraphicConfig& cfg) override;
+	bool initialize(PlatformDevice* platform, const GraphicConfig& cfg) override;
 	void shutdown() override;
 
-	GraphicAPI api() const override;
-
-	// Device
-	uint32_t getPhysicalDeviceCount() override;
-	const PhysicalDevice* getPhysicalDevice(uint32_t index) override;
+	GraphicAPI getApi() const override;
+	PhysicalDeviceFeatures getFeatures() const override;
+	bool hasFeatures(PhysicalDeviceFeatures _features) const override;
+	PhysicalDeviceLimits getLimits() const override;
 
 	// Shaders
 	ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) override;

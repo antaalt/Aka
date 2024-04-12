@@ -84,9 +84,7 @@ static constexpr const char* s_requiredInstanceExtensions[] = {
 static constexpr const size_t s_requiredInstanceExtensionCount = countof(s_requiredInstanceExtensions);
 static constexpr const char* s_requiredDeviceExtensions[] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
 	VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-	VK_EXT_MESH_SHADER_EXTENSION_NAME,
 };
 static constexpr const size_t s_requiredDeviceExtensionCount = countof(s_requiredDeviceExtensions);
 
@@ -146,7 +144,7 @@ void populateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo)
 	debugCreateInfo = {};
 	debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+	debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 	debugCreateInfo.pfnUserCallback = debugCallback;
 	debugCreateInfo.pUserData = nullptr; // Optional
 }
@@ -383,9 +381,18 @@ bool areQueuesAdequate(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 	}
 	return hasGraphicsAndPresent && hasAsyncCompute && hasAsyncCopy;
 }
-
-uint32_t getPhysicalDeviceScore(const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures2& features)
+// Should have generic limits + features data that are computed from vk & D3D with common selection process based on generic data.
+std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDeviceScore(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceProperties& properties)
 {
+	VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
+	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+	VkPhysicalDeviceFeatures2 features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+	timelineSemaphoreFeatures.pNext = &meshShaderFeatures;
+	indexingFeatures.pNext = &timelineSemaphoreFeatures;
+	features.pNext = &indexingFeatures;
+	vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
+	PhysicalDeviceFeatures supportedFeatureMask = PhysicalDeviceFeatures::All;
 	uint32_t score = 0;
 	switch (properties.deviceType)
 	{
@@ -398,9 +405,9 @@ uint32_t getPhysicalDeviceScore(const VkPhysicalDeviceProperties& properties, co
 		break;
 	default:
 		Logger::error("No suitable device type found.");
-		return 0;
+		return std::make_tuple(0, PhysicalDeviceFeatures::None, PhysicalDeviceLimits{});
 	};
-	score += properties.limits.maxImageDimension2D;
+	//score += properties.limits.maxImageDimension2D;
 
 	bool requiredFeatures = true;
 	requiredFeatures &= features.features.samplerAnisotropy == VK_TRUE;
@@ -410,8 +417,14 @@ uint32_t getPhysicalDeviceScore(const VkPhysicalDeviceProperties& properties, co
 	requiredFeatures &= features.features.multiDrawIndirect == VK_TRUE;
 
 	// Renderdoc seems to require these features:
-	requiredFeatures &= features.features.geometryShader == VK_TRUE; // render doc
-	requiredFeatures &= features.features.sampleRateShading == VK_TRUE; // render doc
+	bool renderDocRequiredFeatures = true;
+	renderDocRequiredFeatures &= features.features.geometryShader == VK_TRUE; // render doc
+	renderDocRequiredFeatures &= features.features.sampleRateShading == VK_TRUE; // render doc
+	if (!renderDocRequiredFeatures)
+	{
+		Logger::warn("Does not support required extension for renderdoc.");
+		supportedFeatureMask = ~PhysicalDeviceFeatures::RenderDocAttachment;
+	}
 
 	VkBaseOutStructure* base = reinterpret_cast<VkBaseOutStructure*>(features.pNext);
 	while (base != nullptr)
@@ -419,23 +432,36 @@ uint32_t getPhysicalDeviceScore(const VkPhysicalDeviceProperties& properties, co
 		switch (base->sType)
 		{
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT: {
+			bool meshShaderSupport = true;
 			VkPhysicalDeviceMeshShaderFeaturesEXT* meshShaderFeatures = reinterpret_cast<VkPhysicalDeviceMeshShaderFeaturesEXT*>(base);
-			requiredFeatures &= meshShaderFeatures->taskShader == VK_TRUE;
-			requiredFeatures &= meshShaderFeatures->meshShader == VK_TRUE;
+			meshShaderSupport &= meshShaderFeatures->taskShader == VK_TRUE;
+			meshShaderSupport &= meshShaderFeatures->meshShader == VK_TRUE;
+			if (!meshShaderSupport)
+			{
+				Logger::warn("Mesh shader not supported.");
+				supportedFeatureMask &= ~PhysicalDeviceFeatures::MeshShader;
+			}
 			break;
 		}
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: {
+			// This is here to emulate DX12 semaphore, so use it as required extension.
 			VkPhysicalDeviceTimelineSemaphoreFeatures* timelineSemaphoreFeatures = reinterpret_cast<VkPhysicalDeviceTimelineSemaphoreFeatures*>(base);
 			requiredFeatures &= timelineSemaphoreFeatures->timelineSemaphore == VK_TRUE;
 			break;
 		}
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES: {
+			bool bindlessSupport = true;
 			VkPhysicalDeviceDescriptorIndexingFeatures* indexingFeatures = reinterpret_cast<VkPhysicalDeviceDescriptorIndexingFeatures*>(base);
-			requiredFeatures &= indexingFeatures->descriptorBindingPartiallyBound == VK_TRUE;
-			requiredFeatures &= indexingFeatures->runtimeDescriptorArray == VK_TRUE;
-			requiredFeatures &= indexingFeatures->shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
-			requiredFeatures &= indexingFeatures->descriptorBindingSampledImageUpdateAfterBind == VK_TRUE;
-			requiredFeatures &= indexingFeatures->descriptorBindingVariableDescriptorCount == VK_TRUE;
+			bindlessSupport &= indexingFeatures->descriptorBindingPartiallyBound == VK_TRUE;
+			bindlessSupport &= indexingFeatures->runtimeDescriptorArray == VK_TRUE;
+			bindlessSupport &= indexingFeatures->shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
+			bindlessSupport &= indexingFeatures->descriptorBindingSampledImageUpdateAfterBind == VK_TRUE;
+			bindlessSupport &= indexingFeatures->descriptorBindingVariableDescriptorCount == VK_TRUE;
+			if (!bindlessSupport)
+			{
+				Logger::warn("Bindless resources not supported.");
+				supportedFeatureMask &= ~PhysicalDeviceFeatures::BindlessResources;
+			}
 			break;
 		}
 		default:
@@ -443,57 +469,85 @@ uint32_t getPhysicalDeviceScore(const VkPhysicalDeviceProperties& properties, co
 		}
 		base = base->pNext;
 	}
+	PhysicalDeviceLimits limits{};
+	limits.maxTexture1DSize = properties.limits.maxImageDimension1D;
+	limits.maxTexture2DSize = properties.limits.maxImageDimension2D;
+	limits.maxTexture3DSize = properties.limits.maxImageDimension3D;
+	limits.maxTextureCubeSize = properties.limits.maxImageDimensionCube;
+	limits.maxTextureLayers = properties.limits.maxImageArrayLayers;
+	limits.maxPushConstantSize = properties.limits.maxPushConstantsSize;
+	for (uint32_t i = 0; i < 3; i++)
+		limits.maxComputeWorkgroupCount[i] = properties.limits.maxComputeWorkGroupCount[i];
+	limits.maxComputeWorkGroupInvocations = properties.limits.maxComputeWorkGroupInvocations;
+	for (uint32_t i = 0; i < 3; i++)
+		limits.maxComputeWorkgroupSize[i] = properties.limits.maxComputeWorkGroupSize[i];
+	
 	if (!requiredFeatures)
 	{
 		Logger::error("Some required features are not supported.");
-		return 0;
+		return std::make_tuple(0, supportedFeatureMask, limits);
 	}
-	return score;
+	return std::make_tuple(score, supportedFeatureMask, limits);
 }
 
-VkPhysicalDevice VulkanContext::pickPhysicalDevice()
+std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> VulkanContext::pickPhysicalDevice(PhysicalDeviceFeatures _requestedFeatures)
 {
 	uint32_t deviceCount = 0;
 	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
 	if (deviceCount == 0)
 	{
 		Logger::error("No physical device found.");
-		return VK_NULL_HANDLE;
+		return std::make_tuple(VK_NULL_HANDLE, PhysicalDeviceFeatures::None, PhysicalDeviceLimits{});
 	}
 	Vector<VkPhysicalDevice> physicalDevices(deviceCount);
 	uint32_t maxScore = 0;
 	VkPhysicalDevice physicalDevicePicked = VK_NULL_HANDLE;
+	PhysicalDeviceFeatures physicalDeviceFeatures = PhysicalDeviceFeatures::None;
+	PhysicalDeviceLimits physicalDeviceLimits = {};
 	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data()));
 	for (const VkPhysicalDevice& physicalDevice : physicalDevices)
 	{
 		VkPhysicalDeviceProperties deviceProperties{};
-		VkPhysicalDeviceFeatures2 deviceFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
 		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-		vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures);
 		// A score of zero means invalid device (unsupported mandatory feature).
-		const uint32_t score = getPhysicalDeviceScore(deviceProperties, deviceFeatures);
-		if (score > 0 && isSwapchainAdequate(physicalDevice, surface) && areQueuesAdequate(physicalDevice, surface) && isDeviceSupportingRequiredExtensions(physicalDevice))
+		uint32_t score = 0;
+		PhysicalDeviceFeatures supportedFeatureMask = PhysicalDeviceFeatures::None;
+		PhysicalDeviceLimits supportedDeviceLimits = PhysicalDeviceLimits{};
+		std::tie(score, supportedFeatureMask, supportedDeviceLimits) = getPhysicalDeviceScore(physicalDevice, deviceProperties);
+		bool hasValidScore = score > 0;
+		bool hasRequestedFeatures = (_requestedFeatures & supportedFeatureMask) == _requestedFeatures;
+		bool hasValidSwapchain = isSwapchainAdequate(physicalDevice, surface);
+		bool hasValidQueues = areQueuesAdequate(physicalDevice, surface);
+		bool hasValidExtensions = isDeviceSupportingRequiredExtensions(physicalDevice);
+		if (hasValidScore && hasRequestedFeatures && hasValidSwapchain && hasValidQueues && hasValidExtensions)
 		{
 			Logger::info("Candidate physical device detected: ", deviceProperties.deviceName, " (Score: ", score, ")");
 			if (score > maxScore)
 			{
 				maxScore = score;
 				physicalDevicePicked = physicalDevice;
+				physicalDeviceFeatures = supportedFeatureMask;
+				physicalDeviceLimits = supportedDeviceLimits;
 			}
 		}
 		else
 		{
-			Logger::info("Candidate physical device rejected: ", deviceProperties.deviceName);
+			String reason;
+			if (!hasValidScore) reason += "invalid gpu, ";
+			if (!hasRequestedFeatures) reason += "unsupported features, ";
+			if (!hasValidSwapchain) reason += "unvalid swapchain, ";
+			if (!hasValidQueues) reason += "unvalid queues, ";
+			if (!hasValidExtensions) reason += "unvalid extensions, ";
+			Logger::warn("Candidate physical device ", deviceProperties.deviceName, " rejected for following resons: ", reason);
 		}
 	}
 	if (physicalDevicePicked == VK_NULL_HANDLE)
 	{
-		Logger::error("No suitable physical device found.");
-		return VK_NULL_HANDLE;
+		return std::make_tuple(VK_NULL_HANDLE, PhysicalDeviceFeatures::None, PhysicalDeviceLimits{});
 	}
 	else
 	{
-		return physicalDevicePicked;
+		return std::make_tuple(physicalDevicePicked, physicalDeviceFeatures, physicalDeviceLimits);
 	}
 }
 
@@ -598,34 +652,43 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 	}
 
 	// --- Create device
+	void* next = nullptr;
 	// VK_VERSION_1_2
 	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
-	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-	indexingFeatures.pNext = nullptr;
-	indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-	indexingFeatures.runtimeDescriptorArray = VK_TRUE;
-	indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-	indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-	indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::BindlessResources))
+	{
+		indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+		indexingFeatures.pNext = nullptr;
+		indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+		indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+		indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+		indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+		next = &indexingFeatures;
+	}
 
 	// VK_VERSION_1_2
 	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
 	timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-	timelineSemaphoreFeatures.pNext = &indexingFeatures;
+	timelineSemaphoreFeatures.pNext = next;
 	timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
+	next = &timelineSemaphoreFeatures;
 
 	// VK_VERSION_1_1
 	VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{};
-	meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-	meshShaderFeatures.pNext = &timelineSemaphoreFeatures;
-	meshShaderFeatures.taskShader = VK_TRUE;
-	meshShaderFeatures.meshShader = VK_TRUE;
+	if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::MeshShader))
+	{
+		meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+		meshShaderFeatures.pNext = &timelineSemaphoreFeatures;
+		meshShaderFeatures.taskShader = VK_TRUE;
+		meshShaderFeatures.meshShader = VK_TRUE;
+		next = &meshShaderFeatures;
+	}
 
 	// VK_VERSION_1_1
-	// TODO: Check physical device suitable for these features.
 	VkPhysicalDeviceFeatures2 deviceFeatures {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext = &meshShaderFeatures;
+	deviceFeatures.pNext = next;
 	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
 	deviceFeatures.features.shaderFloat64 = VK_TRUE;
@@ -689,7 +752,7 @@ VkCommandPool createCommandPool(VkDevice device, uint32_t queueIndex)
 }
 
 
-void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& config)
+bool VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& config)
 {
 	// We are using Vulkan 1.2 in this backend.
 	//clipSpacePositive = true; // VK clip space is [0, 1]
@@ -715,7 +778,7 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	// Check platform & required instance extensions
 	uint32_t extensionCount = 0;
 	VK_CHECK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
-	std::vector<VkExtensionProperties> availableInstanceExtensions(extensionCount);
+	Vector<VkExtensionProperties> availableInstanceExtensions(extensionCount);
 	VK_CHECK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableInstanceExtensions.data()));
 	for (size_t i = 0; i < instanceExtensionCount; i++)
 	{
@@ -742,15 +805,37 @@ void VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	debugMessenger = createDebugMessenger(instance);
 	surface = createSurface(platform);
 
-	physicalDevice = pickPhysicalDevice();
-	device = createLogicalDevice(s_requiredDeviceExtensions, s_requiredDeviceExtensionCount);
+	std::tie(physicalDevice, physicalDeviceFeatures, physicalDeviceLimits) = pickPhysicalDevice(config.features);
 
-	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	if (physicalDevice != VK_NULL_HANDLE)
 	{
-		commandPool[i] = createCommandPool(device, queues[i].familyIndex);
-		setDebugName(device, commandPool[i], "MainCommandPool", i);
-	}
+		// List all used extensions & device features extension that are requested.
+		Vector<const char*> usedDeviceExtensions;
+		for (uint32_t i = 0; i < s_requiredDeviceExtensionCount; i++)
+		{
+			usedDeviceExtensions.append(s_requiredDeviceExtensions[i]);
+		}
+		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::MeshShader))
+		{
+			usedDeviceExtensions.append(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+		}
+		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::BindlessResources))
+		{
+			usedDeviceExtensions.append(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+		}
+		device = createLogicalDevice(usedDeviceExtensions.data(), (uint32_t)usedDeviceExtensions.size());
 
+		for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+		{
+			commandPool[i] = createCommandPool(device, queues[i].familyIndex);
+			setDebugName(device, commandPool[i], "MainCommandPool", i);
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void VulkanContext::shutdown()
@@ -782,18 +867,6 @@ uint32_t VulkanContext::getPhysicalDeviceCount() const
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 	return deviceCount;
-}
-
-PhysicalDevice* VulkanContext::getPhysicalDevice(uint32_t index)
-{
-	VkPhysicalDeviceProperties deviceProperties;
-	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-	//m_features.maxTextureUnits = deviceProperties.limits.maxDescriptorSetSampledImages;
-	//m_features.maxTextureSize = deviceProperties.limits.maxImageDimension2D;
-	//m_features.maxColorAttachments = deviceProperties.limits.maxColorAttachments;
-	//m_features.maxElementIndices = deviceProperties.limits.maxDrawIndexedIndexValue;
-	//m_features.maxElementVertices = deviceProperties.limits.maxVertexInputBindings;
-	return nullptr; // pool
 }
 
 uint32_t VulkanContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)

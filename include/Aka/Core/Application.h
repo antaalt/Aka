@@ -61,7 +61,7 @@ public:
 	virtual ~Application();
 private:
 	// Create the application and its resources.
-	void create();
+	bool create();
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop

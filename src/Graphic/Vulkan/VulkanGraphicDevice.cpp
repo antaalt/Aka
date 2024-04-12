@@ -23,10 +23,10 @@ VulkanGraphicDevice::~VulkanGraphicDevice()
 {
 }
 
-void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConfig& cfg)
+bool VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConfig& cfg)
 {
 #ifdef ENABLE_RENDERDOC_CAPTURE
-	if (cfg.connectRenderDoc)
+	if (asBool(cfg.features & PhysicalDeviceFeatures::RenderDocAttachment))
 	{
 		// Load renderdoc before any context creation.
 		// TODO should use OS::Library::getLibraryPath();
@@ -58,8 +58,9 @@ void VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConf
 		}
 	}
 #endif
-	m_context.initialize(platform, cfg);
-	m_swapchain.initialize(this, platform);
+	if (!m_context.initialize(platform, cfg))
+		return false;
+	return m_swapchain.initialize(this, platform);
 }
 
 void VulkanGraphicDevice::shutdown()
@@ -97,19 +98,21 @@ void VulkanGraphicDevice::shutdown()
 	m_context.shutdown();
 }
 
-GraphicAPI VulkanGraphicDevice::api() const
+GraphicAPI VulkanGraphicDevice::getApi() const
 {
 	return GraphicAPI::Vulkan;
 }
-
-uint32_t VulkanGraphicDevice::getPhysicalDeviceCount()
+PhysicalDeviceFeatures VulkanGraphicDevice::getFeatures() const
 {
-	return m_context.getPhysicalDeviceCount();
+	return m_context.physicalDeviceFeatures;
 }
-
-const PhysicalDevice* VulkanGraphicDevice::getPhysicalDevice(uint32_t index)
+bool VulkanGraphicDevice::hasFeatures(PhysicalDeviceFeatures _features) const
 {
-	return m_context.getPhysicalDevice(index);
+	return asBool(m_context.physicalDeviceFeatures & _features);
+}
+PhysicalDeviceLimits VulkanGraphicDevice::getLimits() const
+{
+	return m_context.physicalDeviceLimits;
 }
 
 CommandList* VulkanGraphicDevice::acquireCommandList(FrameHandle frame, QueueType queue)

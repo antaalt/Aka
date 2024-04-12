@@ -54,8 +54,15 @@ const ImVec4 ImGuiLayer::Color::light = ImVec4(0.9f, 0.9f, 0.9f, 1.f);
 
 ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::DescriptorSetHandle _texture)
 {
-	AKA_ASSERT(_device->api() == gfx::GraphicAPI::Vulkan, "Invalid API");
-	return ImTextureID{ reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet };
+	switch (_device->getApi())
+	{
+	case gfx::GraphicAPI::Vulkan:
+		return ImTextureID{ reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet };
+	default:
+	case gfx::GraphicAPI::DirectX12:
+		AKA_NOT_IMPLEMENTED;
+		return ImTextureID{};
+	}
 }
 
 void ImGuiLayer::onLayerCreate(Renderer* _renderer)

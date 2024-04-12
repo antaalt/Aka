@@ -37,8 +37,8 @@ enum class GraphicAPI : uint8_t
 
 struct GraphicConfig
 {
+	PhysicalDeviceFeatures features = PhysicalDeviceFeatures::Default;
 	GraphicAPI api = GraphicAPI::Vulkan;
-	bool connectRenderDoc = false;
 };
 
 CREATE_STRICT_TYPE(uint32_t, FrameIndex)
@@ -118,10 +118,14 @@ public:
 	static GraphicDevice* create(GraphicAPI api);
 	static void destroy(GraphicDevice* device);
 
-	virtual void initialize(PlatformDevice* platform, const GraphicConfig& cfg) = 0;
+	virtual bool initialize(PlatformDevice* platform, const GraphicConfig& cfg) = 0;
 	virtual void shutdown() = 0;
 
-	virtual GraphicAPI api() const = 0;
+	// Device
+	virtual GraphicAPI getApi() const = 0;
+	virtual PhysicalDeviceFeatures getFeatures() const  = 0;
+	virtual bool hasFeatures(PhysicalDeviceFeatures _feature) const = 0;
+	virtual PhysicalDeviceLimits getLimits() const  = 0;
 
 	// Shaders
 	virtual ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) = 0;
@@ -146,10 +150,6 @@ public:
 	virtual DescriptorPoolHandle createDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size) = 0;
 	virtual const DescriptorPool* get(DescriptorPoolHandle handle) = 0;
 	virtual void destroy(DescriptorPoolHandle pool) = 0;
-
-	// Device
-	virtual uint32_t getPhysicalDeviceCount() = 0;
-	virtual const PhysicalDevice* getPhysicalDevice(uint32_t index) = 0;
 
 	// Framebuffer
 	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
