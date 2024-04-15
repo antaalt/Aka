@@ -43,6 +43,7 @@ protected:
 	void clear();
 public:
 	void draw3DFrustum(const mat4f& projection, const color4f& color);
+	void draw3DSphere(const mat4f& transform, const color4f& color);
 	void draw3DCube(const mat4f& transform, const color4f& color);
 	void draw3DLine(const point3f* positions, size_t count, const color4f& color);
 private:

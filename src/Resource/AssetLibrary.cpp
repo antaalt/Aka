@@ -138,7 +138,8 @@ AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType
 		bool samePath = itAsset.first->second.path == _path;
 		bool sameType = itAsset.first->second.type == _assetType;
 		bool fileExist = OS::File::exist(_path.getAbsolutePath());
-		if (samePath && sameType && (!fileExist || validate(this, assetID, _assetType)))
+		// Should check hash aswell to validate content.
+		if (samePath && sameType && (!fileExist || validate(this, assetID, _assetType)) && !_overwrite)
 		{
 			Logger::warn("[register] Asset '", _path.cstr(), "' already exist but is identical. Using it.");
 			return assetID;

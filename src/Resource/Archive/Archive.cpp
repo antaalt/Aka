@@ -143,6 +143,8 @@ ArchiveParseResult Archive::save(ArchiveSaveContext& _context, Vector<byte_t>& _
 ArchiveParseResult Archive::save(ArchiveSaveContext& _context, const AssetPath& _path)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
+	if (!OS::Directory::exist(_path.getAbsolutePath().up()))
+		OS::Directory::create(_path.getAbsolutePath().up());
 	FileStream stream(_path.getAbsolutePath(), FileMode::Write, FileType::Binary);
 	BinaryArchiveWriter archive(stream);
 
