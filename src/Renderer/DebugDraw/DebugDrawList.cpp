@@ -133,7 +133,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 		layout,
 		_device->get(m_backbufferRenderPass)->state,
 		gfx::VertexState{}.add(DebugVertex::getVertexLayout()),
-		gfx::ViewportState{}.size(width, height),
+		gfx::ViewportStateBackbuffer,
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDisabled,
 		gfx::CullStateDefault,

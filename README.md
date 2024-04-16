@@ -124,7 +124,7 @@ struct Game :
 			layout,
 			graphic()->get(renderPass)->state,
 			gfx::VertexState{}.add(vertexLayout),
-			gfx::ViewportState().size(width(), height()),
+			gfx::ViewportStateBackbuffer,
 			gfx::DepthStateLessEqual,
 			gfx::StencilStateDefault,
 			gfx::CullStateCCW,
