@@ -576,7 +576,8 @@ void PlatformGLFW3::initialize(const PlatformConfig& config)
 		}
 		});
 	glfwSetJoystickCallback([](int jid, int event) {
-		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(glfwGetJoystickUserPointer(jid));
+		PlatformGLFW3* p = static_cast<PlatformGLFW3*>(Application::app()->platform());
+		AKA_ASSERT(p != nullptr, "Invalid platform retrieved");
 		if (glfwJoystickIsGamepad(jid) == GLFW_FALSE)
 			return;
 		GamepadID gid = (GamepadID)jid;
@@ -602,7 +603,6 @@ void PlatformGLFW3::initialize(const PlatformConfig& config)
 			onGamepadConnected(gid, name);
 			EventDispatcher<GamepadConnectedEvent>::emit(GamepadConnectedEvent{ gid, name });
 		}
-		glfwSetJoystickUserPointer(jid, this);
 	}
 }
 
