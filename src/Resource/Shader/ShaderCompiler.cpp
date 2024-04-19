@@ -17,7 +17,10 @@
 #include <spirv_msl.hpp>
 
 namespace aka {
-
+// Should be read from device capabilities...
+// But would require runtime compilation...
+// from https://github.com/KhronosGroup/glslang/blob/main/glslang/ResourceLimits/ResourceLimits.cpp
+// Should adapt this list to our need.
 const TBuiltInResource defaultConf = {
 	32, // .MaxLights
 	6, // .MaxClipPlanes
@@ -112,13 +115,13 @@ const TBuiltInResource defaultConf = {
 	1, // .maxTaskWorkGroupSizeZ_NV
 	4, // .maxMeshViewCountNV
 	256, // .maxMeshOutputVerticesEXT
-	512, // .maxMeshOutputPrimitivesEXT
-	32, // .maxMeshWorkGroupSizeX_EXT
-	1, // .maxMeshWorkGroupSizeY_EXT
-	1, // .maxMeshWorkGroupSizeZ_EXT
-	32, // .maxTaskWorkGroupSizeX_EXT
-	1, // .maxTaskWorkGroupSizeY_EXT
-	1, // .maxTaskWorkGroupSizeZ_EXT
+	256, // .maxMeshOutputPrimitivesEXT
+	128, // .maxMeshWorkGroupSizeX_EXT
+	128, // .maxMeshWorkGroupSizeY_EXT
+	128, // .maxMeshWorkGroupSizeZ_EXT
+	128, // .maxTaskWorkGroupSizeX_EXT
+	128, // .maxTaskWorkGroupSizeY_EXT
+	128, // .maxTaskWorkGroupSizeZ_EXT
 	4, // .maxMeshViewCountEXT
 	1, // .maxDualSourceDrawBuffersEXT;
 	TLimits{ // limits
@@ -251,8 +254,9 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 
 	// Set define values
 	std::vector<std::string> processes;
+	// TODO: check if define does not already exist.
 	String defs = "#extension GL_GOOGLE_include_directive : require\n";
-	// TODO move these defines in key.macro ? as mandatory macros
+	// TODO: move these defines in key.macro ? as mandatory macros
 #if defined(AKA_ORIGIN_TOP_LEFT)
 	defs += "#define AKA_FLIP_UV\n";
 #endif

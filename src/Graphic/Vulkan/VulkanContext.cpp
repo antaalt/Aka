@@ -382,7 +382,7 @@ bool areQueuesAdequate(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 	return hasGraphicsAndPresent && hasAsyncCompute && hasAsyncCopy;
 }
 // Should have generic limits + features data that are computed from vk & D3D with common selection process based on generic data.
-std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDeviceScore(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceProperties& properties)
+std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDeviceScore(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceProperties2& properties)
 {
 	VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
 	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
@@ -394,7 +394,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 	vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 	PhysicalDeviceFeatures supportedFeatureMask = PhysicalDeviceFeatures::All;
 	uint32_t score = 0;
-	switch (properties.deviceType)
+	switch (properties.properties.deviceType)
 	{
 	case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
 		score += 100;
@@ -470,17 +470,38 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 		base = base->pNext;
 	}
 	PhysicalDeviceLimits limits{};
-	limits.maxTexture1DSize = properties.limits.maxImageDimension1D;
-	limits.maxTexture2DSize = properties.limits.maxImageDimension2D;
-	limits.maxTexture3DSize = properties.limits.maxImageDimension3D;
-	limits.maxTextureCubeSize = properties.limits.maxImageDimensionCube;
-	limits.maxTextureLayers = properties.limits.maxImageArrayLayers;
-	limits.maxPushConstantSize = properties.limits.maxPushConstantsSize;
+	limits.maxTexture1DSize = properties.properties.limits.maxImageDimension1D;
+	limits.maxTexture2DSize = properties.properties.limits.maxImageDimension2D;
+	limits.maxTexture3DSize = properties.properties.limits.maxImageDimension3D;
+	limits.maxTextureCubeSize = properties.properties.limits.maxImageDimensionCube;
+	limits.maxTextureLayers = properties.properties.limits.maxImageArrayLayers;
+	limits.maxPushConstantSize = properties.properties.limits.maxPushConstantsSize;
 	for (uint32_t i = 0; i < 3; i++)
-		limits.maxComputeWorkgroupCount[i] = properties.limits.maxComputeWorkGroupCount[i];
-	limits.maxComputeWorkGroupInvocations = properties.limits.maxComputeWorkGroupInvocations;
+		limits.maxComputeWorkgroupCount[i] = properties.properties.limits.maxComputeWorkGroupCount[i];
+	limits.maxComputeWorkGroupInvocations = properties.properties.limits.maxComputeWorkGroupInvocations;
 	for (uint32_t i = 0; i < 3; i++)
-		limits.maxComputeWorkgroupSize[i] = properties.limits.maxComputeWorkGroupSize[i];
+		limits.maxComputeWorkgroupSize[i] = properties.properties.limits.maxComputeWorkGroupSize[i];
+
+	VkBaseOutStructure* baseProp = reinterpret_cast<VkBaseOutStructure*>(properties.pNext);
+	while (baseProp != nullptr)
+	{
+		switch (baseProp->sType)
+		{
+		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT: {
+			VkPhysicalDeviceMeshShaderPropertiesEXT* meshShaderProperties = reinterpret_cast<VkPhysicalDeviceMeshShaderPropertiesEXT*>(baseProp);
+
+			for (uint32_t i = 0; i < 3; i++)
+				limits.maxMeshShaderWorkgroupCount[i] = meshShaderProperties->maxMeshWorkGroupCount[i];
+			limits.maxMeshShaderWorkGroupInvocations = meshShaderProperties->maxMeshWorkGroupInvocations;
+			for (uint32_t i = 0; i < 3; i++)
+				limits.maxMeshShaderWorkgroupSize[i] = meshShaderProperties->maxMeshWorkGroupSize[i];
+			break;
+		}
+		default: 
+			break;
+		}
+		baseProp = baseProp->pNext;
+	}
 	
 	if (!requiredFeatures)
 	{
@@ -507,8 +528,10 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data()));
 	for (const VkPhysicalDevice& physicalDevice : physicalDevices)
 	{
-		VkPhysicalDeviceProperties deviceProperties{};
-		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+		VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT };
+		VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+		deviceProperties.pNext = &meshShaderProperties;
+		vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 		// A score of zero means invalid device (unsupported mandatory feature).
 		uint32_t score = 0;
 		PhysicalDeviceFeatures supportedFeatureMask = PhysicalDeviceFeatures::None;
@@ -521,7 +544,7 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 		bool hasValidExtensions = isDeviceSupportingRequiredExtensions(physicalDevice);
 		if (hasValidScore && hasRequestedFeatures && hasValidSwapchain && hasValidQueues && hasValidExtensions)
 		{
-			Logger::info("Candidate physical device detected: ", deviceProperties.deviceName, " (Score: ", score, ")");
+			Logger::info("Candidate physical device detected: ", deviceProperties.properties.deviceName, " (Score: ", score, ")");
 			if (score > maxScore)
 			{
 				maxScore = score;
@@ -538,7 +561,7 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 			if (!hasValidSwapchain) reason += "unvalid swapchain, ";
 			if (!hasValidQueues) reason += "unvalid queues, ";
 			if (!hasValidExtensions) reason += "unvalid extensions, ";
-			Logger::warn("Candidate physical device ", deviceProperties.deviceName, " rejected for following resons: ", reason);
+			Logger::warn("Candidate physical device ", deviceProperties.properties.deviceName, " rejected for following resons: ", reason);
 		}
 	}
 	if (physicalDevicePicked == VK_NULL_HANDLE)

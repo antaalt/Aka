@@ -25,15 +25,22 @@ static_assert((PhysicalDeviceFeatures::Optional & PhysicalDeviceFeatures::Requir
 
 struct PhysicalDeviceLimits
 {
+	// Textures
 	uint32_t maxTexture1DSize;
 	uint32_t maxTexture2DSize;
 	uint32_t maxTexture3DSize;
 	uint32_t maxTextureCubeSize;
 	uint32_t maxTextureLayers;
+	// Push constants
 	uint32_t maxPushConstantSize;
+	// Compute
 	uint32_t maxComputeWorkgroupSize[3];
 	uint32_t maxComputeWorkgroupCount[3];
 	uint32_t maxComputeWorkGroupInvocations;
+	// Mesh shader
+	uint32_t maxMeshShaderWorkgroupSize[3];
+	uint32_t maxMeshShaderWorkgroupCount[3];
+	uint32_t maxMeshShaderWorkGroupInvocations;
 };
 
 };
