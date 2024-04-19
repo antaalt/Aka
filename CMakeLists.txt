@@ -145,39 +145,19 @@ target_include_directories(Aka
 # Platform Backend
 set(PLATFORM_GLFW3 true CACHE BOOL "Set GLFW3 as platform backend")
 # Graphic Backend
-set(GRAPHIC_OPENGL false CACHE BOOL "Set OpenGL as graphic backend")
-set(GRAPHIC_D3D11 false CACHE BOOL "Set DirectX11 as graphic backend")
 set(GRAPHIC_VULKAN true CACHE BOOL "Set Vulkan as graphic backend")
+set(GRAPHIC_D3D12 false CACHE BOOL "Set DirectX12 as graphic backend")
 # Audio Backend
 set(AUDIO_RTAUDIO true CACHE BOOL "Set RtAudio as audio backend")
 
-if (GRAPHIC_OPENGL)
-	# Setup OpenGL and glew
-	target_compile_definitions(Aka PUBLIC AKA_USE_OPENGL)
-	# GL
-	if(UNIX)
-		set(OpenGL_GL_PREFERENCE "GLVND")
-	endif(UNIX)
-	find_package(OpenGL REQUIRED)
-	# Glew
-	if(MSVC)
-		set(GLEW_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/glew")
-		set(CMAKE_PREFIX_PATH "${GLEW_DIR}")
-		set(CMAKE_LIBRARY_PATH "${GLEW_DIR}/lib/")
-	endif()
-	find_package(GLEW 2.1 REQUIRED)
-	target_include_directories(Aka PRIVATE ${GLEW_INCLUDE_DIRS})
-	target_link_libraries(Aka PRIVATE OpenGL::GL GLEW::GLEW)
-elseif (GRAPHIC_D3D11)
-	# Setup D3D11
-	target_compile_definitions(Aka PUBLIC AKA_USE_D3D11)
-	# D3D11 libs are loaded with #pragma within the code
-elseif (GRAPHIC_VULKAN)
+if (GRAPHIC_VULKAN)
 	# Setup Vulkan
 	target_compile_definitions(Aka PUBLIC AKA_USE_VULKAN)
 	find_package(Vulkan REQUIRED) # Use VULKAN_SDK env to find Vulkan
 	target_include_directories(Aka PRIVATE ${Vulkan_INCLUDE_DIRS})
 	target_link_libraries(Aka PRIVATE Vulkan::Vulkan)
+elseif (GRAPHIC_D3D12)
+	# Setup D3D12
 endif()
 
 # Link RtAudio
@@ -209,7 +189,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/entt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/lua)
@@ -217,7 +196,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/renderdoc)
 
 target_link_libraries(Aka PUBLIC
 	Geometry
-	AkaEntt
 	AkaImGui
 	AkaLua
 )
