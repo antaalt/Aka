@@ -50,7 +50,7 @@
 		__LINE__);										\
 		AKA_DEBUG_BREAK;								\
 	} while(0)
-	#define AKA_CRASH(...) AKA_ASSERT(false, __VA_ARGS__)
+	#define AKA_CRASH(...) do { AKA_ASSERT(false, __VA_ARGS__); throw std::runtime_error(__VA_ARGS__); } while(0)
 #else
 	#define AKA_ASSERT(condition, message) AKA_UNUSED(0)
 	#define AKA_DEBUG_BREAK AKA_UNUSED(0)
