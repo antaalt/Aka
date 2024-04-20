@@ -50,12 +50,12 @@
 		__LINE__);										\
 		AKA_DEBUG_BREAK;								\
 	} while(0)
-	#define AKA_CRASH(...) throw std::runtime_error("Failed");
+	#define AKA_CRASH(...) AKA_ASSERT(false, __VA_ARGS__)
 #else
 	#define AKA_ASSERT(condition, message) AKA_UNUSED(0)
 	#define AKA_DEBUG_BREAK AKA_UNUSED(0)
 	#define AKA_PRINT(...) AKA_UNUSED(0)
-	#define AKA_CRASH(...) AKA_UNUSED(0)
+#define AKA_CRASH(...) throw std::runtime_error(__VA_ARGS__);
 #endif
 
 #define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented")

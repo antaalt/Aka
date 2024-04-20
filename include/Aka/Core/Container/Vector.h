@@ -222,23 +222,27 @@ inline T& Vector<T>::append(const T* _start, const T* _end)
 	T* e = end();
 	size_t size = m_size;
 	size_t range = (_end - _start);
-	resize(m_size + range);
-	// OPTIM: avoid resize default construction
-	std::copy(_start, _end, m_data + size);
+	reserve(m_size + range);
+	std::uninitialized_copy(_start, _end, m_data + size);
+	m_size = m_size + range;
 	return last();
 }
 template <typename T>
 inline T& Vector<T>::append(const T& value)
 {
-	size_t off = m_size;
-	resize(m_size + 1, value);
+	size_t newSize = m_size + 1;
+	reserve(newSize);
+	std::uninitialized_fill(end(), end() + 1, value);
+	m_size = newSize;
 	return last();
 }
 template <typename T>
 inline T& Vector<T>::append(T&& value)
 {
-	size_t off = m_size;
-	resize(m_size + 1, std::forward<T>(value));
+	size_t newSize = m_size + 1;
+	reserve(newSize);
+	std::uninitialized_move(&value, &value + 1, end());
+	m_size = newSize;
 	return last();
 }
 template<typename T>

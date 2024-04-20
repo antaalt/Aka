@@ -163,8 +163,7 @@ inline void Node::detach()
 	}
 	else
 	{
-		AKA_ASSERT(false, "Trying to detach non attached component");
-		AKA_CRASH();
+		AKA_CRASH("Trying to detach non attached component");
 	}
 }
 
@@ -189,8 +188,7 @@ inline T& Node::get()
 	{
 		return *reinterpret_cast<T*>(itToDeactivate->second);
 	}
-	AKA_ASSERT(false, "Trying to get unattached component");
-	AKA_CRASH();
+	AKA_CRASH("Trying to get unattached component");
 }
 
 template<typename T>
@@ -214,8 +212,7 @@ inline const T& Node::get() const
 	{
 		return *reinterpret_cast<T*>(itToDeactivate->second);
 	}
-	AKA_ASSERT(false, "Trying to get unattached component");
-	AKA_CRASH();
+	AKA_CRASH("Trying to get unattached component");
 }
 template<typename T>
 inline bool aka::Node::has() const
@@ -242,8 +239,7 @@ inline void Node::setDirty()
 	{
 		return itActive->second->setDirty();
 	}
-	AKA_ASSERT(false, "Trying to get unattached component");
-	AKA_CRASH();
+	AKA_CRASH("Trying to get unattached component");
 }
 
 }
