@@ -22,11 +22,11 @@ AssetPath::AssetPath(const aka::String& _path, AssetPathType type) :
 }
 bool AssetPath::operator==(const AssetPath& _path) const
 {
-	return m_path == _path.m_path;
+	return m_path == _path.m_path && m_type == _path.m_type;
 }
 bool AssetPath::operator!=(const AssetPath& _path) const
 {
-	return m_path != _path.m_path;
+	return m_path != _path.m_path || m_type != _path.m_type;
 }
 AssetPathType AssetPath::getType() const
 {
