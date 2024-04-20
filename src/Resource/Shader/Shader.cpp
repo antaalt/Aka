@@ -46,4 +46,34 @@ bool operator==(const ProgramKey& lhs, const ProgramKey& rhs)
 	return true;
 }
 
+const char* toString(gfx::ShaderType type)
+{
+	switch (type)
+	{
+	case ShaderType::Vertex: return "Vertex";
+	case ShaderType::Fragment: return "Fragment";
+	case ShaderType::Compute: return "Compute";
+	case ShaderType::Task: return "Task";
+	case ShaderType::Mesh: return "Mesh";
+	case ShaderType::TessControl: return "TessControl";
+	case ShaderType::TessEvaluation: return "TessEvaluation";
+	default:
+	case ShaderType::Unknown: return "Unknown";
+	}
+}
+
+std::ostream& operator<<(std::ostream& os, const ShaderKey& key)
+{
+	aka::String macros;
+	for (aka::String macro : key.macros)
+	{
+		macros.append(macro);
+		if (macro != key.macros.last())
+			macros.append(",");
+	}
+	if (key.macros.size() == 0)
+		macros.append("ø");
+	return os << "ShaderKey(" << key.path << "," << key.entryPoint << "," << macros << "," << toString(key.type) << ")";
+}
+
 };

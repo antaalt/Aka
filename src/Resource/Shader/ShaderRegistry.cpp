@@ -77,7 +77,7 @@ std::tuple<gfx::ShaderHandle, ShaderReflectionData> CompileShader(const ShaderKe
 {
 	StopWatch stopWatch;
 	ShaderBlob shaderBlob = _compiler.compile(_shaderKey);
-	Logger::info("Shader ", _shaderKey.path, " compiled in ", stopWatch.elapsed(), "ms");
+	Logger::debug(_shaderKey, " compiled in ", stopWatch.elapsed(), "ms");
 #if defined(AKA_SHADER_HOT_RELOAD)
 	while (shaderBlob.size() == 0)
 	{
@@ -90,7 +90,7 @@ std::tuple<gfx::ShaderHandle, ShaderReflectionData> CompileShader(const ShaderKe
 		}
 		stopWatch.start();
 		shaderBlob = _compiler.compile(_shaderKey);
-		Logger::info("Shader ", _shaderKey.path, " compiled in ", stopWatch.elapsed(), "ms");
+		Logger::debug(_shaderKey, " compiled in ", stopWatch.elapsed(), "ms");
 	}
 #else
 	if (shaderBlob.size() == 0)
@@ -387,20 +387,26 @@ bool ShaderRegistry::reload(const ShaderKey& _shaderKey, gfx::GraphicDevice* dev
 
 void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 {
-	// TODO: use a file watcher instead.
-	// Here shaders might be recompiled to many time...
+	// TODO: use a file watcher instead for improved perfs.
 	for (auto& shader : m_shaders)
 	{
 		auto it = m_shadersFileData.find(shader.first);
 		AKA_ASSERT(it != m_shadersFileData.end(), "");
-		Timestamp updateDelay = Timestamp::seconds(1);
 		bool updated = OS::File::lastWrite(shader.first.path.getAbsolutePath()) > it->second.timestamp;
 		if (updated)
 		{
+			// Sometime, the file is marked as updated but the system is not finished writing the file, we will get contention error.
+			// So wait for the write to finish.
+			std::this_thread::sleep_for(std::chrono::milliseconds{ 50 });
 			StopWatch stopWatch;
-			Logger::info("Shader ", shader.first.path, " reloading...");
-			reload(shader.first, device);
-			Logger::info("Shader ", shader.first.path, " reloaded in : ", stopWatch.elapsed(), "ms");
+			if (reload(shader.first, device))
+			{
+				Logger::debug(shader.first, " reloaded in : ", stopWatch.elapsed(), "ms");
+			}
+			else
+			{
+				Logger::warn("Failed to reload ", shader.first);
+			}
 			break; // m_shaders is invalidated
 		}
 	}
