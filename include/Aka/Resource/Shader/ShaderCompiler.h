@@ -14,7 +14,7 @@ public:
 	// Generate blob from a variant
 	ShaderBlob compile(const ShaderKey& key);
 	// Get shader data for a specific entry point
-	ShaderData reflect(const ShaderBlob& blob, const char* entryPoint);
+	ShaderReflectionData reflect(const ShaderBlob& blob, const char* entryPoint);
 private:
 
 };

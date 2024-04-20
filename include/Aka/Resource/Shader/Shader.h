@@ -12,7 +12,7 @@ using ShaderType = gfx::ShaderType;
 
 using ShaderBlob = Blob;
 
-struct ShaderData
+struct ShaderReflectionData
 {
 	String entryPoint;
 	Vector<gfx::ShaderBindingState> sets;

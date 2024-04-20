@@ -198,10 +198,12 @@ private:
 
 ShaderCompiler::ShaderCompiler()
 {
+	glslang::InitializeProcess();
 }
 
 ShaderCompiler::~ShaderCompiler()
 {
+	glslang::FinalizeProcess();
 }
 
 ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
@@ -232,9 +234,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	default:
 		return ShaderBlob();
 	}
-
-	glslang::InitializeProcess();
-
+	
 	EShMessages messages = EShMsgDefault;
 	int default_version = 110; // 110 for desktop
 	glslang::TProgram program;
@@ -249,7 +249,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	shader.setEntryPoint(key.entryPoint.cstr());
 	shader.setInvertY(false);
 	shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, default_version);
-	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
+	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3); // Minimum required VK version
 	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4); // Minimum required for mesh shader EXT
 
 	// Set define values
@@ -288,15 +288,12 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 			sstream << macro + ",";
 		sstream << ")";
 		Logger::error("Failed to parse shader ", sstream.str(), " : ", shader.getInfoLog());
-		glslang::FinalizeProcess();
 		return ShaderBlob();
 	}
 	program.addShader(&shader);
 	if (!program.link(messages))
 	{
 		Logger::error("Failed to link shader : ", program.getInfoLog());
-		program.~TProgram();
-		glslang::FinalizeProcess();
 		return ShaderBlob();
 	}
 
@@ -307,14 +304,12 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 
 	std::vector<uint32_t> spirv;
 	glslang::GlslangToSpv(*program.getIntermediate(stage), spirv, &logger, &spv_opts);
+
 	if (!logger.getAllMessages().empty())
 	{
 		Logger::error(logger.getAllMessages().c_str());
-		program.~TProgram();
-		glslang::FinalizeProcess();
 		return ShaderBlob();
 	}
-	glslang::FinalizeProcess();
 	return ShaderBlob(spirv.data(), spirv.size() * sizeof(uint32_t));
 }
 
@@ -375,9 +370,9 @@ gfx::ShaderMask getShaderMask(spv::ExecutionModel executionModel)
 	}
 }
 
-ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoint)
+ShaderReflectionData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoint)
 {
-	ShaderData data{};
+	ShaderReflectionData data{};
 	data.entryPoint = entryPoint;
 
 	// TODO what if blob is HLSL or such
@@ -511,7 +506,7 @@ ShaderData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoin
 	catch (const spirv_cross::CompilerError& e)
 	{
 		Logger::error("Failed to compile shader : ", e.what());
-		return ShaderData{};
+		return ShaderReflectionData{};
 	}
 }
 

@@ -86,7 +86,9 @@ void Application::update(Time deltaTime)
 {
 	// Hot reload shaders
 	// TODO: delay update not every frame
+#if defined(AKA_SHADER_HOT_RELOAD)
 	program()->reloadIfChanged(graphic());
+#endif
 	// Update app
 	onUpdate(deltaTime);
 	m_root->update(deltaTime);
