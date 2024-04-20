@@ -61,15 +61,16 @@ Allocator& getAllocator(AllocatorMemoryType memory, AllocatorCategory category);
 
 // Override default new for memory tracking.
 template <typename T, typename ...Args> T*   akaNew(AllocatorMemoryType type, AllocatorCategory category, Args ...args);
-template <typename T>					void akaDelete(T*& pointer);
+template <typename T>					void akaDelete(const T* const & pointer);
 template <typename T>					T*   akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory category);
-template <typename T>					void akaDeleteArray(T*& pointer);
+template <typename T>					void akaDeleteArray(const T* const & pointer);
 
 struct AkaNewHead // u8
 {
 	AllocatorMemoryType type : EnumBitCount<AllocatorMemoryType>();
 	AllocatorCategory category : EnumBitCount<AllocatorCategory>();
 	uint8_t padding : 8 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
+	static_assert(EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>() < 8);
 };
 
 struct AkaNewArrayHead // u32
@@ -79,6 +80,7 @@ struct AkaNewArrayHead // u32
 	AllocatorMemoryType type : EnumBitCount<AllocatorMemoryType>();
 	AllocatorCategory category : EnumBitCount<AllocatorCategory>();
 	size_t count : 32 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
+	static_assert(EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>() < 32);
 };
 
 template <typename T, typename ...Args>
@@ -100,20 +102,20 @@ T* akaNew(AllocatorMemoryType type, AllocatorCategory category, Args ...args)
 }
 
 template <typename T>
-void akaDelete(T*& pointer)
+void akaDelete(const T* const & pointer)
 {
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	if (pointer == nullptr)
 		return;
 	// Retrieve metadata from header.
-	AkaNewHead* metadata = reinterpret_cast<AkaNewHead*>(pointer) - 1;
+	const AkaNewHead* metadata = reinterpret_cast<const AkaNewHead*>(pointer) - 1;
 	AllocatorMemoryType type   = metadata->type;
 	AllocatorCategory category = metadata->category;
 	//std::cout << "deleting " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Destroy data.
 	pointer->~T();
-	aka::mem::getAllocator(type, category).deallocate<AkaNewHead>(pointer, 1);
-	pointer = nullptr;
+	aka::mem::getAllocator(type, category).deallocate<AkaNewHead>(const_cast<T*>(pointer), 1);
+	const_cast<T*&>(pointer) = nullptr; // Safe pointer invalidation
 #else
 	delete pointer;
 #endif
@@ -142,19 +144,20 @@ T* akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory categor
 }
 
 template <typename T>
-void akaDeleteArray(T*& pointer)
+void akaDeleteArray(const T*const & pointer)
 {
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	// Retrieve metadata
-	AkaNewArrayHead* metadata = reinterpret_cast<AkaNewArrayHead*>(pointer) - 1;
+	const AkaNewArrayHead* metadata = reinterpret_cast<const AkaNewArrayHead*>(pointer) - 1;
 	AllocatorMemoryType type = metadata->type;
 	AllocatorCategory category = metadata->category;
 	size_t count = metadata->count;
 	//std::cout << "deleting " << count << " " << typeid(T).name() << " bytes of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Deallocate data
 	std::destroy(pointer, pointer + count);
-	aka::mem::getAllocator(type, category).deallocate<AkaNewArrayHead>(pointer, count);
-	pointer = nullptr;
+	// const_cast here is OK cuz we are here to destroy it forever, bye !
+	aka::mem::getAllocator(type, category).deallocate<AkaNewArrayHead>(const_cast<T*>(pointer), count);
+	const_cast<T*&>(pointer) = nullptr; // Safe pointer invalidation
 #else
 	delete[] pointer;
 #endif

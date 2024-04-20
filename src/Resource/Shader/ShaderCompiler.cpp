@@ -158,9 +158,9 @@ public:
 				if (OS::File::read(header, &str))
 				{
 					// Destroyed in releaseInclude
-					char* data = new char[str.length() + 1];
-					memcpy(data, str.cstr(), str.length() + 1);
-					return new IncludeResult(header.cstr(), data, str.length(), nullptr);
+					char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
+					Memory::copy(data, str.cstr(), str.length() + 1);
+					return mem::akaNew<IncludeResult>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
 				}
 			}
 		}
@@ -176,9 +176,9 @@ public:
 			if (OS::File::read(header, &str))
 			{
 				// Destroyed in releaseInclude
-				char* data = new char[str.length() + 1];
-				memcpy(data, str.cstr(), str.length() + 1);
-				return new IncludeResult(header.cstr(), data, str.length(), nullptr);
+				char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
+				Memory::copy(data, str.cstr(), str.length() + 1);
+				return mem::akaNew<IncludeResult>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
 			}
 		}
 		return nullptr;
@@ -188,8 +188,8 @@ public:
 		if (result)
 		{
 			if (result->headerData)
-				delete[] result->headerData;
-			delete result;
+				mem::akaDeleteArray<char>(result->headerData);
+			mem::akaDeleteArray<IncludeResult>(result);
 		}
 	}
 private:
