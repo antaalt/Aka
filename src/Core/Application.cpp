@@ -18,7 +18,7 @@ namespace aka {
 Application* Application::s_app = nullptr;
 
 Application::Application(const Config& config) :
-	m_config(config),
+	m_config((OS::setcwd(config.directory), config)), // Some comma operator magic !
 	m_platform(PlatformDevice::create(config.platform)),
 	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
 	m_audio(AudioDevice::create(config.audio)),
@@ -31,7 +31,6 @@ Application::Application(const Config& config) :
 	m_running(true),
 	m_renderer(new Renderer(m_graphic, m_assets))
 {
-	OS::setcwd(m_config.directory);
 }
 Application::~Application()
 {
