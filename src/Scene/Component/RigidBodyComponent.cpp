@@ -25,6 +25,32 @@ RigidBodyComponent::~RigidBodyComponent()
 {
 }
 
+enum class Shape
+{
+	Sphere,
+	Plane,
+	Cube,
+};
+
+struct RigidBody;
+
+struct ContactData {
+	// Rigid body 1 impacted in collision
+	RigidBody* rb1;
+	// Rigid body 2 impacted in collision
+	RigidBody* rb2;
+	// Contact point of the entity 1 in local space.
+	vec3f surfaceHit1;
+	// Contact point of the entity 2 in local space.
+	vec3f surfaceHit2;
+	// Contact normal of the entity 1 in local space
+	vec3f normal1;
+	// Contact normal of the entity 2 in local space
+	vec3f normal2;
+	// Penetration depth, aka magnitude of the collision.
+	float penetration;
+};
+
 // XPBD
 struct Particle
 {
@@ -49,17 +75,32 @@ struct RigidBody
 	static mat3f computeSphereInertiaMatrix(float radius, float mass) {
 		return mat3f::identity() * (2.f / 5.f * mass * radius);
 	}
-	RigidBody(const vec3f& position, const quatf& orientation, float mass) :
-		position(position),
-		orientation(orientation),
-		velocity(vec3f(0.f, 0.f, 1.f)),
-		angularVelocity(vec3f(0.f)),
-		inertiaInverse(mat3f::inverse(computeSphereInertiaMatrix(sphereRadius, mass))),
-		massInverse(1.f / mass),
-		previousPosition(0.f),
-		previousOrientation(quatf::identity())
-	{}
-
+	static RigidBody dynamic(const vec3f & position, const quatf & orientation, float mass)
+	{
+		RigidBody rb;
+		rb.position = position;
+		rb.orientation = orientation;
+		rb.velocity = vec3f(0.f, 0.f, 1.f);
+		rb.angularVelocity = vec3f(0.f);
+		rb.inertiaInverse = computeSphereInertiaMatrix(sphereRadius, mass);
+		rb.massInverse = 1.f / mass;
+		rb.previousPosition = vec3f(0.f);
+		rb.previousOrientation = quatf::identity();
+		return rb;
+	}
+	static RigidBody fixed(const vec3f& position, const quatf& orientation)
+	{
+		RigidBody rb;
+		rb.position = position;
+		rb.orientation = orientation;
+		rb.velocity = vec3f(0.f, 0.f, 1.f);
+		rb.angularVelocity = vec3f(0.f);
+		rb.inertiaInverse = mat3f::identity();
+		rb.massInverse = 0.f;
+		rb.previousPosition = vec3f(0.f);
+		rb.previousOrientation = quatf::identity();
+		return rb;
+	}
 	vec3f position; // m
 	quatf orientation; // rad
 	vec3f velocity; // m/s
@@ -69,17 +110,102 @@ struct RigidBody
 
 	vec3f previousPosition;
 	quatf previousOrientation;
+
+	// Cache
+	float lagrange = 0.f;
+
+	bool isDynamic() const { return massInverse > 0.f; }
+
+	float generalizedInverseMass(const vec3f& hitPoint, const vec3f& correction)
+	{
+		if (isDynamic())
+		{
+			vec3f axis = vec3f::cross(hitPoint, correction);
+			return massInverse + vec3f::dot(axis, inertiaInverse * axis);
+		}
+		else
+		{
+			// Static can be seen as having infinite mass.
+			return 0.f;
+		}
+	}
+
+	float getMagnitude()
+	{
+		// Depends on shape
+		Shape shape;
+		switch (shape)
+		{
+		case Shape::Sphere:
+			// Distance between two body (with)
+			break;
+		case Shape::Plane:
+			break;
+		case Shape::Cube:
+			break;
+		default:
+			break;
+		}
+	}
+
+	static void solvePositionConstraint(ContactData& contact, float dt)
+	{
+		// Should not use body.position here as we need relative positions. compute everything related to body 1 ? Or 
+		RigidBody& rb1 = *contact.rb1;
+		RigidBody& rb2 = *contact.rb2;
+
+		// Positions of bodies in relative space.
+		vec3f r1 = vec3f::zero();
+		vec3f r2 = vec3f::zero();
+		// Compute correction vector for r1 (r2 = -correction)
+		// TODO: vector should be the other way around, something fishy...
+		vec3f correction = vec3f::normalize(contact.surfaceHit1 - contact.surfaceHit2);
+		// Cannot be negative cuz of dot
+		float w1 = rb1.generalizedInverseMass(r1, correction);
+		float w2 = rb2.generalizedInverseMass(r2, correction);
+
+		// TODO: add support for compliance.
+		// List of compliance here http://blog.mmacklin.com/2016/10/12/xpbd-slides-and-stiffness/
+		float compliance = 0.f; // compliance of the constraint
+
+		// For a plane, should take normal into account for sign.
+		float magnitude = contact.penetration; // amplitude of the constraint
+		float tildeCompliance = compliance / (dt * dt);
+		// Computing Lagrange multiplier updates & accumulate it for same item.
+		// TODO: store value in rigid r1. Or cache it.
+		// Do we need to store it in r2 aswell ?
+		float deltaLagrange = (-magnitude - tildeCompliance * rb1.lagrange) / (w1 + w2 + tildeCompliance);
+		rb1.lagrange += deltaLagrange;
+
+		vec3f impulse = correction * deltaLagrange;
+		if (rb1.isDynamic())
+		{
+			vec3f rb1AngularImpulse = rb1.inertiaInverse * vec3f::cross(r1, impulse);
+			rb1.position += impulse * rb1.massInverse;
+			rb1.orientation += quatf(0.5f * rb1AngularImpulse.x, 0.5f * rb1AngularImpulse.y, 0.5f * rb1AngularImpulse.z, 0.f) * rb1.orientation;
+			rb1.orientation = quatf::normalize(rb1.orientation);
+		}
+		if (rb2.isDynamic())
+		{
+			vec3f rb2AngularImpulse = rb2.inertiaInverse * vec3f::cross(r2, impulse);
+			rb2.position -= impulse * rb2.massInverse;
+			rb2.orientation -= quatf(0.5f * rb2AngularImpulse.x, 0.5f * rb2AngularImpulse.y, 0.5f * rb2AngularImpulse.z, 0.f) * rb2.orientation;
+			rb2.orientation = quatf::normalize(rb2.orientation);
+		}
+
+		vec3f forces = rb1.lagrange * correction / (dt * dt);
+	}
 };
 static Vector<Particle> particles;
 static Vector<RigidBody> bodies;
 void RigidBodyComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
 {
 	particles.append(Particle(vec3f(0.f, 10.f, 1.f), 5.f));
-	bodies.append(RigidBody(vec3f(0.f, 3.f, 2.2f), quatf::identity(), 5.f));
-	bodies.append(RigidBody(vec3f(0.f, 2.f, 2.f), quatf::identity(), 5.f));
-	bodies.append(RigidBody(vec3f(0.f, 4.f, 1.3f), quatf::identity(), 5.f));
-	bodies.append(RigidBody(vec3f(1.f, 4.f, 1.3f), quatf::identity(), 5.f));
-	bodies.append(RigidBody(vec3f(1.5f, 5.f, 1.3f), quatf::identity(), 5.f));
+	bodies.append(RigidBody::dynamic(vec3f(0.f, 3.f, 2.2f), quatf::identity(), 5.f));
+	bodies.append(RigidBody::dynamic(vec3f(0.f, 2.f, 2.f), quatf::identity(), 5.f));
+	bodies.append(RigidBody::dynamic(vec3f(0.f, 4.f, 1.3f), quatf::identity(), 5.f));
+	bodies.append(RigidBody::dynamic(vec3f(1.f, 4.f, 1.3f), quatf::identity(), 5.f));
+	bodies.append(RigidBody::dynamic(vec3f(1.5f, 5.f, 1.3f), quatf::identity(), 5.f));
 }
 void RigidBodyComponent::onBecomeInactive(AssetLibrary* library, Renderer* _renderer)
 {
@@ -146,13 +272,15 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 				// TODO: SolvePositions & resolve collisions
 				// dont collide particles
 			}
+			// Reset lagrange before computations.
 			for (RigidBody& body : bodies)
 			{
-				// TODO: should handle collisions between instances here.
-				// TODO: what about multi collisions ? How to handle them ?
+				body.lagrange = 0.f;
+			}
+			for (RigidBody& body : bodies)
+			{
 				// https://gamedev.stackexchange.com/questions/176790/add-impulse-and-torque-to-a-cube
 				// https://github.com/Jondolf/bevy_xpbd/blob/main/src/constraints/position_constraint.rs
-
 				// Lagrange is shared between constraint for same object.
 				float lagrange = 0.f;
 				for (RigidBody& otherBody : bodies)
@@ -161,39 +289,22 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 					if (&otherBody == &body)
 						continue;
 					const float distance = vec3f::distance(body.position, otherBody.position);
-					if (distance <= sphereRadius * 2.f)
+					if (distance < sphereRadius * 2.f)
 					{
-						// Collisions need to give to system: r1, r2 (hit points) and thats all ?
 						vec3f normal = vec3f::normalize(otherBody.position - body.position);
-						vec3f bodyHitPoint = body.position + normal * sphereRadius;
-						vec3f otherBodyHitPoint = otherBody.position - normal * sphereRadius;
-						vec3f bodyAxis = vec3f::cross(bodyHitPoint, normal);
-						vec3f otherBodyAxis = vec3f::cross(otherBodyHitPoint, -normal);
-						float w1 = body.massInverse + vec3f::dot(bodyAxis, body.inertiaInverse * bodyAxis);
-						float w2 = otherBody.massInverse + vec3f::dot(otherBodyAxis, otherBody.inertiaInverse * otherBodyAxis);
+						// this works if sphere radius is enough
+						float magnitude = -(vec3f::distance(body.position, otherBody.position) - sphereRadius * 2.f);
+						ContactData coll{
+							&body,
+							& otherBody,
+							body.position + normal * sphereRadius,
+							otherBody.position - normal * sphereRadius,
+							normal,
+							-normal,
+							magnitude,
+						};
 
-						// List of compliance here http://blog.mmacklin.com/2016/10/12/xpbd-slides-and-stiffness/
-						float compliance = 0.f; // compliance of the constraint
-						float magnitude = distance; // amplitude of the constraint
-						float tildeCompliance = compliance / dt2;
-						// Computing Lagrange multiplier updates & accumulate it for same item.
-						// TODO: store value in rigid body. Or cache it.
-						float deltaLagrange = (-magnitude - tildeCompliance * lagrange) / (w1 + w2 + tildeCompliance);
-						lagrange += deltaLagrange;
-
-						vec3f impulse = normal * deltaLagrange;
-						vec3f bodyAngularImpulse = body.inertiaInverse * vec3f::cross(bodyHitPoint, impulse);
-						vec3f otherBodyAngularImpulse = otherBody.inertiaInverse * vec3f::cross(otherBodyHitPoint, impulse);
-						// Current
-						body.position += impulse * body.massInverse;
-						body.orientation += quatf(0.5f * bodyAngularImpulse.x, 0.5f * bodyAngularImpulse.y, 0.5f * bodyAngularImpulse.z, 0.f) * body.orientation;
-						body.orientation = quatf::normalize(body.orientation);
-						// Other
-						otherBody.position -= impulse * otherBody.massInverse;
-						otherBody.orientation -= quatf(0.5f * otherBodyAngularImpulse.x, 0.5f * otherBodyAngularImpulse.y, 0.5f * otherBodyAngularImpulse.z, 0.f) * otherBody.orientation;
-						otherBody.orientation = quatf::normalize(otherBody.orientation);
-
-						vec3f forces = lagrange * normal / dt2;
+						RigidBody::solvePositionConstraint(coll, dt);
 					}
 				}
 				// Floor detection (Should be simply a plane collider)
@@ -201,25 +312,20 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 				//const float distFromFloor = vec3f::distance(body.position, vec3f(body.position.x, 0.f, body.position.z));
 				if (distFromFloor < 0.f)
 				{
-					// Apply impulse + rotation 
-					vec3f hitPoint = vec3f(0.f, - sphereRadius, 0.f);
-					vec3f correction = vec3f(0.f, 1.f, 0.f);
-					vec3f axis = vec3f::cross(hitPoint, correction);
-					// OPTIM: This w is zero for static & kinematic element (infinite mass)
-					float w = body.massInverse + vec3f::dot(axis, body.inertiaInverse * axis);
-					// No compliance as its 0
-					float compliance = 0.f; // compliance of the constraint
-					// Somehow setting magnitude negative fix a bit
-					float magnitude = distFromFloor; // distance
-					float tildeCompliance = compliance / dt2;
-					float deltaLagrange = (-magnitude - tildeCompliance * lagrange) / (w + tildeCompliance);
-					lagrange += deltaLagrange;
+					static RigidBody floor = RigidBody::fixed(vec3f::zero(), quatf::identity());
+					vec3f hitPoint = vec3f::down() * sphereRadius;
+					// Position of floor is below...
+					ContactData coll{
+						&body,
+						&floor,
+						body.position + hitPoint,
+						vec3f(body.position.x, 0.f, body.position.z),
+						vec3f::down(),
+						vec3f(0.f, 1.f, 0.f),
+						-distFromFloor
+					};
 
-					vec3f impulse = correction * deltaLagrange;
-					vec3f angularImpulse = body.inertiaInverse * vec3f::cross(hitPoint, impulse);
-					body.position += impulse * body.massInverse;
-					body.orientation += quatf(0.5f * angularImpulse.x, 0.5f * angularImpulse.y, 0.5f * angularImpulse.z, 0.0f) * body.orientation;
-					body.orientation = quatf::normalize(body.orientation);
+					RigidBody::solvePositionConstraint(coll, dt);
 				}
 			}
 		}
