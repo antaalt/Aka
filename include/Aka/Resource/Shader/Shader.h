@@ -12,12 +12,19 @@ using ShaderType = gfx::ShaderType;
 
 using ShaderBlob = Blob;
 
+struct ShaderCompilationResult
+{
+	ShaderBlob blob;
+	Vector<AssetPath> dependencies;
+};
+
 struct ShaderReflectionData
 {
 	String entryPoint;
 	Vector<gfx::ShaderBindingState> sets;
 	gfx::VertexState vertices;
 	Vector<gfx::ShaderConstant> constants;
+	Vector<AssetPath> dependencies;
 };
 
 struct ShaderKey

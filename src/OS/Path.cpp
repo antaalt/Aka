@@ -33,6 +33,14 @@ const char* Path::cstr() const
 	return m_string.cstr();
 }
 
+String& Path::string()
+{
+	return m_string;
+}
+const String& Path::string() const
+{
+	return m_string;
+}
 size_t Path::size() const
 {
 	return m_string.length();
@@ -50,7 +58,14 @@ void Path::resize(size_t size)
 {
 	m_string.resize(size);
 }
-
+String::Char& Path::operator[](size_t index)
+{
+	return m_string[index];
+}
+const String::Char& Path::operator[](size_t index) const
+{
+	return m_string[index];
+}
 Path Path::operator+(const Path& rhs) const
 {
 	Path path(*this);

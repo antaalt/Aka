@@ -161,6 +161,12 @@ Path OS::getFullPath(const Path& path)
 	return realpath(path.cstr(), actualpath);
 }
 
+Path OS::relative(const Path& path, const Path& from)
+{
+	AKA_NOT_IMPLEMENTED;
+	return path;
+}
+
 Path OS::executable()
 {
 	char result[PATH_MAX] = { 0 };

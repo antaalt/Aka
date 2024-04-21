@@ -12,9 +12,9 @@ public:
 	~ShaderCompiler();
 
 	// Generate blob from a variant
-	ShaderBlob compile(const ShaderKey& key);
+	ShaderCompilationResult compile(const ShaderKey& key);
 	// Get shader data for a specific entry point
-	ShaderReflectionData reflect(const ShaderBlob& blob, const char* entryPoint);
+	ShaderReflectionData reflect(const ShaderCompilationResult& blob, const char* entryPoint);
 private:
 
 };

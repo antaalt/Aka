@@ -141,9 +141,10 @@ const TBuiltInResource defaultConf = {
 class Includer : public glslang::TShader::Includer
 {
 public:
-	Includer(const Path* systemDirectories, size_t count) :
+	Includer(const Path* systemDirectories, size_t count, AssetPathType assetPathType) :
 		glslang::TShader::Includer(),
-		m_systemDirectories(systemDirectories, systemDirectories + count)
+		m_assetPathType(assetPathType),
+		m_systemDirectories(systemDirectories, count)
 	{
 	}
 	IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override
@@ -154,6 +155,16 @@ public:
 			Path header = systemDirectory + headerName;
 			if (OS::File::exist(header))
 			{
+				// Compute relative path & register the dependency.
+				Path relativePath = OS::relative(header, AssetPath("", m_assetPathType).getAbsolutePath());
+				// Remove ./ at beginning of path.
+				if (relativePath.size() > 2 && relativePath[0] == '.' && relativePath[1] == '/')
+				{
+					relativePath = Path(relativePath.string().substr(2, relativePath.size() - 2));
+				}
+				AssetPath assetPath = AssetPath(relativePath.cstr(), m_assetPathType);
+				m_dependencies.append(assetPath);
+				// Read file
 				String str;
 				if (OS::File::read(header, &str))
 				{
@@ -168,10 +179,19 @@ public:
 	}
 	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
 	{
-		// TODO pass correct path
 		Path header = OS::cwd() + headerName;
 		if (OS::File::exist(header))
 		{
+			// Compute relative path & register the dependency.
+			Path relativePath = OS::relative(header, AssetPath("", m_assetPathType).getAbsolutePath());
+			// Remove ./ at beginning of path.
+			if (relativePath.size() > 2 && relativePath[0] == '.' && relativePath[1] == '/')
+			{
+				relativePath = Path(relativePath.string().substr(2, relativePath.size() - 2));
+			}
+			AssetPath assetPath = AssetPath(relativePath.cstr(), m_assetPathType);
+			m_dependencies.append(assetPath);
+			// Read file
 			String str;
 			if (OS::File::read(header, &str))
 			{
@@ -192,8 +212,13 @@ public:
 			mem::akaDelete<IncludeResult>(result);
 		}
 	}
+	const Vector<AssetPath>& getDependencies() const {
+		return m_dependencies;
+	}
 private:
-	std::vector<Path> m_systemDirectories;
+	AssetPathType m_assetPathType;
+	Vector<Path> m_systemDirectories;
+	Vector<AssetPath> m_dependencies;
 };
 
 ShaderCompiler::ShaderCompiler()
@@ -206,13 +231,13 @@ ShaderCompiler::~ShaderCompiler()
 	glslang::FinalizeProcess();
 }
 
-ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
+ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 {
 	// OPTIM: compile multiple shader of same stage at the same time for improved perfs.
 	String file;
 	String name = OS::File::basename(key.path.getAbsolutePath());
 	if (!OS::File::read(key.path.getAbsolutePath(), &file))
-		return ShaderBlob();
+		return ShaderCompilationResult();
 
 	EShLanguage stage = EShLanguage::EShLangVertex;
 	switch (key.type)
@@ -233,7 +258,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 		stage = EShLangMesh;
 		break;
 	default:
-		return ShaderBlob();
+		return ShaderCompilationResult();
 	}
 	
 	EShMessages messages = EShMsgDefault;
@@ -277,7 +302,7 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	// Set include directories
 	std::vector<Path> paths;
 	paths.push_back(key.path.getAbsolutePath().up());
-	Includer includer(paths.data(), paths.size());
+	Includer includer(paths.data(), paths.size(), key.path.getType());
 
 	if (!shader.parse(&defaultConf, default_version, false, messages, includer))
 	{
@@ -289,13 +314,13 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 			sstream << macro + ",";
 		sstream << ")";
 		Logger::error("Failed to parse shader ", sstream.str(), " : ", shader.getInfoLog());
-		return ShaderBlob();
+		return ShaderCompilationResult();
 	}
 	program.addShader(&shader);
 	if (!program.link(messages))
 	{
 		Logger::error("Failed to link shader : ", program.getInfoLog());
-		return ShaderBlob();
+		return ShaderCompilationResult();
 	}
 
 	glslang::SpvOptions spv_opts;
@@ -309,9 +334,9 @@ ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 	if (!logger.getAllMessages().empty())
 	{
 		Logger::error(logger.getAllMessages().c_str());
-		return ShaderBlob();
+		return ShaderCompilationResult();
 	}
-	return ShaderBlob(spirv.data(), spirv.size() * sizeof(uint32_t));
+	return ShaderCompilationResult { ShaderBlob(spirv.data(), spirv.size() * sizeof(uint32_t)), includer.getDependencies() };
 }
 
 gfx::VertexFormat getType(spirv_cross::SPIRType::BaseType type)
@@ -371,10 +396,12 @@ gfx::ShaderMask getShaderMask(spv::ExecutionModel executionModel)
 	}
 }
 
-ShaderReflectionData ShaderCompiler::reflect(const ShaderBlob& blob, const char* entryPoint)
+ShaderReflectionData ShaderCompiler::reflect(const ShaderCompilationResult& compilationResult, const char* entryPoint)
 {
+	const ShaderBlob& blob = compilationResult.blob;
 	ShaderReflectionData data{};
 	data.entryPoint = entryPoint;
+	data.dependencies = compilationResult.dependencies;
 
 	// TODO what if blob is HLSL or such
 	AKA_ASSERT(blob.size() % 4 == 0, "Invalid size");

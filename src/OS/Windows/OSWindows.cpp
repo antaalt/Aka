@@ -238,16 +238,47 @@ Path OS::normalize(const Path& path)
 		BackwardToForwardSlash(str);
 		return str;
 	}
-	return path;
+	else
+	{
+		Logger::error("OS::normalize failed: ", GetLastErrorAsString());
+		return path;
+	}
 }
 
 Path OS::getFullPath(const Path& path)
 {
 	WCHAR fullPath[MAX_PATH];
 	StringWide wstr = Utf8ToWchar(path.cstr());
-	DWORD res = GetFullPathName(wstr.cstr(), (DWORD)wstr.size(), fullPath, NULL);
+	DWORD res = GetFullPathName(wstr.cstr(), MAX_PATH, fullPath, NULL);
+	if (res == 0)
+	{
+		Logger::error("OS::getFullPath failed: ", GetLastErrorAsString());
+		return Path();
+	}
 	String str = WcharToUtf8(fullPath);
 	return str;
+}
+
+Path OS::relative(const Path& path, const Path& from)
+{
+	WCHAR relativePath[MAX_PATH] = L"";
+	StringWide towstr = Utf8ToWchar(OS::getFullPath(path).cstr()); // MAX_PATH
+	StringWide fromwstr = Utf8ToWchar(OS::getFullPath(from).cstr()); // MAX_PATH
+	BOOL res = PathRelativePathTo(
+		relativePath,
+		fromwstr.cstr(), 
+		FILE_ATTRIBUTE_DIRECTORY,
+		towstr.cstr(),
+		FILE_ATTRIBUTE_NORMAL
+	);
+	if (res != TRUE)
+	{
+		Logger::error("OS::relative failed: ", GetLastErrorAsString());
+		return Path();
+	}
+	String finalPath = WcharToUtf8(relativePath);
+	BackwardToForwardSlash(finalPath);
+	return Path(finalPath);
 }
 
 Path OS::executable()
@@ -256,9 +287,7 @@ Path OS::executable()
 	if (GetModuleFileName(NULL, path, MAX_PATH) == 0)
 		return Path();
 	String str = WcharToUtf8(path);
-	for (char& c : str)
-		if (c == '\\')
-			c = '/';
+	BackwardToForwardSlash(str);
 	return Path(str);
 }
 
@@ -268,9 +297,7 @@ Path OS::cwd()
 	if (GetCurrentDirectory(MAX_PATH, path) == 0)
 		return Path();
 	String str = WcharToUtf8(path);
-	for (char& c : str)
-		if (c == '\\')
-			c = '/';
+	BackwardToForwardSlash(str);
 	return Path(str + '/');
 }
 

@@ -1,5 +1,8 @@
 #version 450
-#extension GL_KHR_vulkan_glsl : enable
+
+#extension GL_GOOGLE_include_directive : require
+
+#include "asset.glsl"
 
 layout (location = 0) in vec3 a_position;
 layout (location = 1) in vec3 a_normal;
@@ -36,36 +39,9 @@ layout(set = 0, binding = 0) uniform CameraUniformBuffer {
 	mat4 projection;
 } u_camera;
 
-struct MaterialData
-{
-	vec4 color;
-	uint albedoID;
-	uint normalID;
-};
-
 layout(std140, set = 1, binding = 0) readonly buffer MaterialDataBuffer {
 	MaterialData data[];
 } u_material;
-
-// TODO share these struct between C++ & glsl
-struct AssetData
-{
-	uint batchOffset;
-	uint batchCount; // valid batches
-};
-
-struct BatchData
-{
-	uint vertexOffset;
-	uint indexOffset;
-	uint indexCount;
-
-	uint materialIndex;
-	// BBOX
-	vec4 min;
-	vec4 max;
-};
-
 
 layout(std140, set = 3, binding = 0) readonly buffer AssetDataBuffer {
 	AssetData data[];

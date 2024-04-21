@@ -86,6 +86,26 @@ ShaderRegistry::ShaderRegistry()
 					break;
 				}
 			}
+			// Check dependencies if recompile is required.
+			for (AssetPath& dependency : m_shadersFileData[key.first].data.dependencies)
+			{
+				if (dependency == assetCommon || dependency == assetCustom)
+				{
+					switch (action)
+					{
+					case FileWatchAction::Updated: {
+						std::lock_guard guard(m_fileWatcherMutex);
+						m_shaderToReload.append(key.first);
+						break;
+					}
+					default:
+					case FileWatchAction::Added:
+					case FileWatchAction::Removed:
+						// TODO: update DB ?
+						break;
+					}
+				}
+			}
 		}
 	};
 	m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Custom).getAbsolutePath(), true, shaderEvent);
@@ -105,10 +125,10 @@ using ShaderHandleArray = Array<gfx::ShaderHandle, EnumCount<ShaderType>()>;
 std::tuple<gfx::ShaderHandle, ShaderReflectionData> CompileShader(const ShaderKey& _shaderKey, gfx::GraphicDevice* _device, ShaderCompiler& _compiler)
 {
 	StopWatch stopWatch;
-	ShaderBlob shaderBlob = _compiler.compile(_shaderKey);
+	ShaderCompilationResult shaderCompilationResult = _compiler.compile(_shaderKey);
 	Logger::debug(_shaderKey, " compiled in ", stopWatch.elapsed(), "ms");
 #if defined(AKA_SHADER_HOT_RELOAD)
-	while (shaderBlob.size() == 0)
+	while (shaderCompilationResult.blob.size() == 0)
 	{
 		// TODO retrieve errors here & handle them here instead ?
 		String errorMessage = String::format("Failed to compile shader %s\n Retry ?", _shaderKey.path.cstr());
@@ -118,7 +138,7 @@ std::tuple<gfx::ShaderHandle, ShaderReflectionData> CompileShader(const ShaderKe
 			return std::make_tuple(gfx::ShaderHandle::null, ShaderReflectionData{});
 		}
 		stopWatch.start();
-		shaderBlob = _compiler.compile(_shaderKey);
+		shaderCompilationResult = _compiler.compile(_shaderKey);
 		Logger::debug(_shaderKey, " compiled in ", stopWatch.elapsed(), "ms");
 	}
 #else
@@ -128,8 +148,8 @@ std::tuple<gfx::ShaderHandle, ShaderReflectionData> CompileShader(const ShaderKe
 	}
 #endif
 	String shaderDebugName = OS::File::name(_shaderKey.path.getAbsolutePath());
-	ShaderReflectionData data = _compiler.reflect(shaderBlob, _shaderKey.entryPoint.cstr());
-	gfx::ShaderHandle handle = _device->createShader(shaderDebugName.cstr(), _shaderKey.type, shaderBlob.data(), shaderBlob.size());
+	ShaderReflectionData data = _compiler.reflect(shaderCompilationResult, _shaderKey.entryPoint.cstr());
+	gfx::ShaderHandle handle = _device->createShader(shaderDebugName.cstr(), _shaderKey.type, shaderCompilationResult.blob.data(), shaderCompilationResult.blob.size());
 	return std::make_tuple(handle, data);
 }
 

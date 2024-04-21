@@ -20,10 +20,15 @@ struct Path
 
 	char* cstr();
 	const char* cstr() const;
+	String& string();
+	const String& string() const;
 	size_t size() const;
 	size_t length() const;
 	void reserve(size_t size);
 	void resize(size_t size);
+
+	String::Char& operator[](size_t index);
+	const String::Char& operator[](size_t index) const;
 
 	Path operator+(const Path& rhs) const;
 	Path &operator+=(const Path& rhs);
