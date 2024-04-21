@@ -126,7 +126,9 @@ add_library (Aka
 	"src/OS/Archive.cpp"
 	"src/OS/OS.cpp"
 	"src/OS/Windows/OSWindows.cpp"
+	"src/OS/Windows/FileWatcherWindows.cpp"
 	"src/OS/Linux/OSLinux.cpp"
+	"src/OS/Linux/FileWatcherINotify.cpp"
 
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"

@@ -59,7 +59,7 @@ private:
 
 inline std::ostream& operator<<(std::ostream& os, const AssetPath& path)
 {
-	os << path.getRawPath();
+	os << path.getAbsolutePath();
 	return os;
 }
 

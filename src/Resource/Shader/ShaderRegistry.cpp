@@ -62,6 +62,35 @@ gfx::ShaderConstant merge(const gfx::ShaderConstant& lhs, const gfx::ShaderConst
 
 ShaderRegistry::ShaderRegistry()
 {
+#if defined(AKA_SHADER_HOT_RELOAD)
+	FileWatchEvent shaderEvent = [&](const Path& directory, const Path& file, FileWatchAction action) {
+		// Using OS::getFullPath should help find relative path
+		AssetPath assetCommon = AssetPath(String::format("shaders/%s", file.cstr()), AssetPathType::Common);
+		AssetPath assetCustom = AssetPath(String::format("shaders/%s", file.cstr()), AssetPathType::Custom);
+		for (const auto& key : m_shaders)
+		{
+			AssetPath assetPath = key.first.path;
+			if (assetPath == assetCommon || assetPath == assetCustom)
+			{
+				switch (action)
+				{
+				case FileWatchAction::Updated: {
+					std::lock_guard guard(m_fileWatcherMutex);
+					m_shaderToReload.append(key.first);
+					break;
+				}
+				default:
+				case FileWatchAction::Added:
+				case FileWatchAction::Removed:
+					// TODO: update DB ?
+					break;
+				}
+			}
+		}
+	};
+	m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Custom).getAbsolutePath(), true, shaderEvent);
+	m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Common).getAbsolutePath(), true, shaderEvent);
+#endif
 }
 
 ShaderRegistry::~ShaderRegistry()
@@ -340,7 +369,7 @@ bool ShaderRegistry::reload(const ShaderKey& _shaderKey, gfx::GraphicDevice* dev
 	{
 		for (const ShaderKey& programShader : program.first.shaders)
 		{
-			if (programShader.path == _shaderKey.path)
+			if (programShader == _shaderKey)
 			{
 				programToReload.push_back(program.first);
 			}
@@ -387,27 +416,22 @@ bool ShaderRegistry::reload(const ShaderKey& _shaderKey, gfx::GraphicDevice* dev
 
 void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 {
-	// TODO: use a file watcher instead for improved perfs.
-	for (auto& shader : m_shaders)
+	// Copy list in a lock.
+	Vector<ShaderKey> shadersToReload;
 	{
-		auto it = m_shadersFileData.find(shader.first);
-		AKA_ASSERT(it != m_shadersFileData.end(), "");
-		bool updated = OS::File::lastWrite(shader.first.path.getAbsolutePath()) > it->second.timestamp;
-		if (updated)
+		std::lock_guard guard(m_fileWatcherMutex);
+		shadersToReload = m_shaderToReload;
+		m_shaderToReload.clear();
+	}
+	for (const ShaderKey& shader : shadersToReload)
+	{
+		// Sometime, the file is marked as updated but the system is not finished writing the file, we will get contention error.
+		// So wait for the write to finish.
+		std::this_thread::sleep_for(std::chrono::milliseconds{ 50 });
+		StopWatch stopWatch;
+		if (!reload(shader, device))
 		{
-			// Sometime, the file is marked as updated but the system is not finished writing the file, we will get contention error.
-			// So wait for the write to finish.
-			std::this_thread::sleep_for(std::chrono::milliseconds{ 50 });
-			StopWatch stopWatch;
-			if (reload(shader.first, device))
-			{
-				Logger::debug(shader.first, " reloaded in : ", stopWatch.elapsed(), "ms");
-			}
-			else
-			{
-				Logger::warn("Failed to reload ", shader.first);
-			}
-			break; // m_shaders is invalidated
+			Logger::warn("Failed to reload ", shader);
 		}
 	}
 }

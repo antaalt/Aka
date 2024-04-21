@@ -2,15 +2,9 @@
 #include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Core/Application.h>
 
-#if defined(AKA_PLATFORM_WINDOWS)
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#include <string>
-#include <shlwapi.h>
+#include "WindowsCommon.hpp"
 
-#include <filesystem>
-#include <iostream>
+#if defined(AKA_PLATFORM_WINDOWS)
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -34,73 +28,6 @@ const WORD terminalColors[20] = {
 	FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightCyan
 	FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // ForegroundBrightWhite
 };
-
-aka::StringWide Utf8ToWchar(const char* str)
-{
-	int wstr_size = MultiByteToWideChar(CP_UTF8, 0, str, -1, nullptr, 0);
-	aka::StringWide wstr(wstr_size - 1);
-	int ret = MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr.cstr(), wstr_size);
-	AKA_ASSERT(ret != 0, "Failed to convert string"); // GetLastError()
-	return wstr;
-}
-
-aka::String WcharToUtf8(const wchar_t* wstr)
-{
-	int str_size = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, NULL, NULL);
-	aka::String str(str_size - 1);
-	int ret = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str.cstr(), str_size, NULL, NULL);
-	AKA_ASSERT(ret != 0, "Failed to convert string"); // GetLastError()
-	return str;
-}
-
-void BackwardToForwardSlash(String& string)
-{
-	for (char& c : string)
-	{
-		if (c == '\\')
-			c = '/';
-	}
-}
-void RemoveNeighborDuplicateSlash(String& string)
-{
-	uint32_t offset = 0;
-	for (uint32_t i = 0; i < string.size() - offset; i++)
-	{
-		string[i] = string[i + offset];
-		uint32_t count = 1;
-		while (string[i + offset] == '/' && string[i + offset + count] == '/')
-		{
-			count++;
-		}
-		offset += count - 1;
-	}
-	string[string.size() - offset] = '\0';
-	string.resize(string.size() - offset);
-}
-
-String GetLastErrorAsString()
-{
-	DWORD errorMessageID = ::GetLastError();
-	if (errorMessageID == 0) 
-	{
-		return String("No errors.");
-	}
-
-	LPWSTR messageBuffer = nullptr;
-
-	//Ask Win32 to give us the string version of that message ID.
-	//The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
-	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
-
-	//Copy the error message into a std::string.
-	StringWide message(messageBuffer, size);
-
-	//Free the Win32's string's buffer.
-	LocalFree(messageBuffer);
-
-	return WcharToUtf8(message.cstr());
-}
 
 std::ostream& operator<<(std::ostream& os, Logger::Color color)
 {
@@ -241,28 +168,17 @@ String OS::File::basename(const Path& path)
 size_t OS::File::size(const Path& path)
 {
 	StringWide wstr = Utf8ToWchar(path.cstr());
-	HANDLE h = CreateFile(wstr.cstr(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if (h)
-	{
-		LARGE_INTEGER size;
-		if (!GetFileSizeEx(h, &size))
-		{
-			CloseHandle(h);
-			return 0;
-		}
-		CloseHandle(h);
-		return size.QuadPart;
-	}
-	else
-	{
-		return 0; // GetLastError()
-	}
+	struct _stat result;
+	if (::_wstat(wstr.cstr(), &result) != 0)
+		return 0;
+	return result.st_size;
 }
 
 Timestamp OS::File::lastWrite(const Path& path)
 {
+	StringWide wstr = Utf8ToWchar(path.cstr());
 	struct _stat result;
-	if (::_stat(path.cstr(), &result) != 0)
+	if (::_wstat(wstr.cstr(), &result) != 0)
 		return Timestamp::seconds(0);
 	return Timestamp::seconds(result.st_mtime);
 }
@@ -319,9 +235,7 @@ Path OS::normalize(const Path& path)
 	if (PathCanonicalize(canonicalizedPath, wstr.cstr()) == TRUE)
 	{
 		String str = WcharToUtf8(canonicalizedPath);
-		for (char& c : str)
-			if (c == '\\')
-				c = '/';
+		BackwardToForwardSlash(str);
 		return str;
 	}
 	return path;

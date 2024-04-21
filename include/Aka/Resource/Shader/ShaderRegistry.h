@@ -4,8 +4,10 @@
 #include <Aka/Resource/Shader/Shader.h>
 #include <Aka/Graphic/Program.h>
 #include <Aka/Resource/Shader/ShaderCompiler.h>
+#include <Aka/OS/FileWatcher.hpp>
 
 #include <unordered_map>
+#include <mutex>
 
 #define AKA_SHADER_HOT_RELOAD 1
 
@@ -59,6 +61,11 @@ private:
 	std::unordered_map<ShaderKey, ShaderFileData> m_shadersFileData;
 	std::unordered_map<ShaderKey, gfx::ShaderHandle> m_shaders;
 	std::unordered_map<ProgramKey, gfx::ProgramHandle> m_programs;
+#if defined(AKA_SHADER_HOT_RELOAD)
+	FileWatcher m_fileWatcher;
+	std::mutex m_fileWatcherMutex;
+	Vector<ShaderKey> m_shaderToReload;
+#endif
 };
 
 };
