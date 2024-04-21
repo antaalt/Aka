@@ -17,6 +17,10 @@
 #error "Undetected API"
 #endif
 
+// No need even though we are using vulkan as we work it around with viewport flip. 
+// Check VulkanGraphicPipeline::createVkGraphicPipeline
+//#define GEOMETRY_REVERSED_Y
+
 #include <geo/geometry.h>
 
 namespace aka {
