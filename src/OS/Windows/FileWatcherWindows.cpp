@@ -214,12 +214,12 @@ struct FileWatcher::OSData
 	{
 		// Stop the thread when we finish
 		m_initOK = false;
-		if (m_thread.joinable())
-			m_thread.join();
 		if (m_iocp && m_iocp != INVALID_HANDLE_VALUE)
 		{
 			PostQueuedCompletionStatus(m_iocp, 0, reinterpret_cast<ULONG_PTR>(this), NULL);
 		}
+		if (m_thread.joinable())
+			m_thread.join();
 		for (WatchStruct* watch : m_watches)
 		{
 			DestroyWatch(watch);
