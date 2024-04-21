@@ -189,7 +189,7 @@ public:
 		{
 			if (result->headerData)
 				mem::akaDeleteArray<char>(result->headerData);
-			mem::akaDeleteArray<IncludeResult>(result);
+			mem::akaDelete<IncludeResult>(result);
 		}
 	}
 private:
@@ -208,6 +208,7 @@ ShaderCompiler::~ShaderCompiler()
 
 ShaderBlob ShaderCompiler::compile(const ShaderKey& key)
 {
+	// OPTIM: compile multiple shader of same stage at the same time for improved perfs.
 	String file;
 	String name = OS::File::basename(key.path.getAbsolutePath());
 	if (!OS::File::read(key.path.getAbsolutePath(), &file))

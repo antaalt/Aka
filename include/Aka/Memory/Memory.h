@@ -65,22 +65,23 @@ template <typename T>					void akaDelete(const T* const & pointer);
 template <typename T>					T*   akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory category);
 template <typename T>					void akaDeleteArray(const T* const & pointer);
 
-struct AkaNewHead // u8
+struct AkaNewHead // u16
 {
+	uint8_t magicNumber : 8;
 	AllocatorMemoryType type : EnumBitCount<AllocatorMemoryType>();
 	AllocatorCategory category : EnumBitCount<AllocatorCategory>();
-	uint8_t padding : 8 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
-	static_assert(EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>() < 8);
+	uint8_t padding : 16 - 8 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
+	static_assert(EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>() + 8 < 16);
 };
 
 struct AkaNewArrayHead // u32
 {
 	using Type = uint32_t;
-	// TODO magic number
+	uint8_t magicNumber : 8;
 	AllocatorMemoryType type : EnumBitCount<AllocatorMemoryType>();
 	AllocatorCategory category : EnumBitCount<AllocatorCategory>();
-	size_t count : 32 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
-	static_assert(EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>() < 32);
+	size_t count : 32 - 8 - EnumBitCount<AllocatorMemoryType>() - EnumBitCount<AllocatorCategory>();
+	static_assert(EnumBitCount<AllocatorMemoryType>() + EnumBitCount<AllocatorCategory>() + 8 < 32);
 };
 
 template <typename T, typename ...Args>
@@ -92,6 +93,7 @@ T* akaNew(AllocatorMemoryType type, AllocatorCategory category, Args ...args)
 	AKA_ASSERT(EnumIsInRange(type), "Type invalid");
 	AKA_ASSERT(EnumIsInRange(category), "Category invalid");
 	AkaNewHead* metadata = reinterpret_cast<AkaNewHead*>(data) - 1;
+	metadata->magicNumber = 0b10101010;
 	metadata->type = type;
 	metadata->category = category;
 	//std::cout << "creating " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
@@ -111,6 +113,7 @@ void akaDelete(const T* const & pointer)
 	const AkaNewHead* metadata = reinterpret_cast<const AkaNewHead*>(pointer) - 1;
 	AllocatorMemoryType type   = metadata->type;
 	AllocatorCategory category = metadata->category;
+	AKA_ASSERT(metadata->magicNumber == 0b10101010, "Invalid allocation passed to delete");
 	//std::cout << "deleting " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Destroy data.
 	pointer->~T();
@@ -131,6 +134,7 @@ T* akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory categor
 	AKA_ASSERT(EnumIsInRange(type), "Type invalid");
 	AKA_ASSERT(EnumIsInRange(category), "Category invalid");
 	AkaNewArrayHead* metadata = reinterpret_cast<AkaNewArrayHead*>(data) - 1;
+	metadata->magicNumber = 0b10101010;
 	metadata->type = type;
 	metadata->category = category;
 	metadata->count = count;
@@ -152,6 +156,7 @@ void akaDeleteArray(const T*const & pointer)
 	AllocatorMemoryType type = metadata->type;
 	AllocatorCategory category = metadata->category;
 	size_t count = metadata->count;
+	AKA_ASSERT(metadata->magicNumber == 0b10101010, "Invalid allocation passed to delete");
 	//std::cout << "deleting " << count << " " << typeid(T).name() << " bytes of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Deallocate data
 	std::destroy(pointer, pointer + count);
