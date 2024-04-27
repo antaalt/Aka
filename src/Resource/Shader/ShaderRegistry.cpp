@@ -108,8 +108,11 @@ ShaderRegistry::ShaderRegistry()
 			}
 		}
 	};
-	m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Custom).getAbsolutePath(), true, shaderEvent);
-	m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Common).getAbsolutePath(), true, shaderEvent);
+	// TODO: should watch upper folder and register them if its created
+	if (OS::Directory::exist(AssetPath("shaders/", AssetPathType::Custom).getAbsolutePath()))
+		m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Custom).getAbsolutePath(), true, shaderEvent);
+	if (OS::Directory::exist(AssetPath("shaders/", AssetPathType::Common).getAbsolutePath()))
+		m_fileWatcher.addWatch(AssetPath("shaders/", AssetPathType::Common).getAbsolutePath(), true, shaderEvent);
 #endif
 }
 
