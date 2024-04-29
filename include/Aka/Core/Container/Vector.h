@@ -171,7 +171,7 @@ template <typename T>
 inline Vector<T>::~Vector()
 {
 	std::destroy(begin(), end());
-	m_allocator.deallocate(m_data, m_capacity);
+	m_allocator.deallocate(m_data);
 }
 template <typename T>
 inline T& Vector<T>::operator[](size_t index)
@@ -338,7 +338,7 @@ inline void Vector<T>::reserve(size_t size)
 	T* buffer = m_allocator.allocate<T>(size);
 	std::uninitialized_move(b, e, buffer);
 	std::destroy(b, e);
-	m_allocator.deallocate(m_data, oldCapacity);
+	m_allocator.deallocate(m_data);
 	m_capacity = size;
 	m_data = buffer;
 }

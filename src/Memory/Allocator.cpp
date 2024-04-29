@@ -7,7 +7,7 @@
 namespace aka {
 
 
-constexpr const char* toString(AllocatorMemoryType _type)
+const char* toString(AllocatorMemoryType _type)
 {
 	switch (_type)
 	{
@@ -16,7 +16,7 @@ constexpr const char* toString(AllocatorMemoryType _type)
 	default: return "Unknown";
 	}
 }
-constexpr const char* toString(AllocatorCategory _category)
+const char* toString(AllocatorCategory _category)
 {
 	switch (_category)
 	{
@@ -25,6 +25,7 @@ constexpr const char* toString(AllocatorCategory _category)
 	case aka::AllocatorCategory::Audio: return "Audio";
 	case aka::AllocatorCategory::String: return "String";
 	case aka::AllocatorCategory::Vector: return "Vector";
+	case aka::AllocatorCategory::Map: return "Map";
 	case aka::AllocatorCategory::Pool: return "Pool";
 	case aka::AllocatorCategory::List: return "List";
 	case aka::AllocatorCategory::Component: return "Component";
@@ -134,7 +135,7 @@ void Allocator::releaseAllMemoryBlocks()
 			MemoryBlock* block = m_memory;
 			while (block)
 			{
-				m_parent->deallocate((uint8_t*)block->mem, block->size);
+				m_parent->deallocate((uint8_t*)block->mem);
 				MemoryBlock* nextBlock = block->next;
 				delete block;
 				block = nextBlock;

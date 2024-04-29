@@ -133,7 +133,7 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 	renderPassInfo.pDependencies = dependencies.data();
 
 	VkRenderPass renderPass = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, getVkAllocator(), &renderPass));
 	return renderPass;
 }
 

@@ -117,7 +117,7 @@ void akaDelete(const T* const & pointer)
 	//std::cout << "deleting " << typeid(T).name() << " of type " << (int)EnumToValue(type) << " & " << (int)EnumToValue(category) << std::endl;
 	// Destroy data.
 	pointer->~T();
-	aka::mem::getAllocator(type, category).deallocate<AkaNewHead>(const_cast<T*>(pointer), 1);
+	aka::mem::getAllocator(type, category).deallocate<AkaNewHead>(const_cast<T*>(pointer));
 	const_cast<T*&>(pointer) = nullptr; // Safe pointer invalidation
 #else
 	delete pointer;
@@ -161,7 +161,7 @@ void akaDeleteArray(const T*const & pointer)
 	// Deallocate data
 	std::destroy(pointer, pointer + count);
 	// const_cast here is OK cuz we are here to destroy it forever, bye !
-	aka::mem::getAllocator(type, category).deallocate<AkaNewArrayHead>(const_cast<T*>(pointer), count);
+	aka::mem::getAllocator(type, category).deallocate<AkaNewArrayHead>(const_cast<T*>(pointer));
 	const_cast<T*&>(pointer) = nullptr; // Safe pointer invalidation
 #else
 	delete[] pointer;

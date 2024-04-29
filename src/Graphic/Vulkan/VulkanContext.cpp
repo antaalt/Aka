@@ -154,7 +154,7 @@ VkDebugUtilsMessengerEXT createDebugMessenger(VkInstance instance)
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
 	populateCreateInfo(createInfo);
 	VkDebugUtilsMessengerEXT messenger;
-	VK_CHECK_RESULT(vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &messenger));
+	VK_CHECK_RESULT(vkCreateDebugUtilsMessengerEXT(instance, &createInfo, getVkAllocator(), &messenger));
 	return messenger;
 }
 
@@ -266,7 +266,7 @@ VkInstance VulkanContext::createInstance(const char** instanceExtensions, size_t
 		createInfo.pNext = nullptr;
 	}
 	VkInstance instance;
-	VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &instance));
+	VK_CHECK_RESULT(vkCreateInstance(&createInfo, getVkAllocator(), &instance));
 	return instance;
 }
 
@@ -276,7 +276,7 @@ VkSurfaceKHR VulkanContext::createSurface(PlatformDevice* platform)
 	VK_CHECK_RESULT(glfwCreateWindowSurface(
 		instance,
 		reinterpret_cast<PlatformGLFW3*>(platform)->getGLFW3Handle(),
-		nullptr,
+		getVkAllocator(),
 		&surface
 	));
 	return surface;
@@ -741,7 +741,7 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 		createInfo.enabledLayerCount = 0;
 	}
 	VkDevice device;
-	VK_CHECK_RESULT(vkCreateDevice(physicalDevice, &createInfo, NULL, &device));
+	VK_CHECK_RESULT(vkCreateDevice(physicalDevice, &createInfo, getVkAllocator(), &device));
 
 	// Retrieve queues from device
 	static const char* s_queueName[EnumCount<QueueType>()] = {
@@ -770,7 +770,7 @@ VkCommandPool createCommandPool(VkDevice device, uint32_t queueIndex)
 	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	VkCommandPool commandPool;
-	vkCreateCommandPool(device, &createInfo, nullptr, &commandPool);
+	vkCreateCommandPool(device, &createInfo, getVkAllocator(), &commandPool);
 	return commandPool;
 }
 
@@ -865,24 +865,24 @@ void VulkanContext::shutdown()
 {
 	for (auto& rp : m_descriptorSetLayouts)
 	{
-		vkDestroyDescriptorSetLayout(device, rp.second, nullptr);
+		vkDestroyDescriptorSetLayout(device, rp.second, getVkAllocator());
 		//vkDestroyPipelineLayout(device, rp.second.pipelineLayout, nullptr);
 	}
 	for (auto& rp : m_pipelineLayout)
 	{
-		vkDestroyPipelineLayout(device, rp.second, nullptr);
+		vkDestroyPipelineLayout(device, rp.second, getVkAllocator());
 	}
 	for (auto& rp : m_renderPassState)
 	{
-		vkDestroyRenderPass(device, rp.second, nullptr);
+		vkDestroyRenderPass(device, rp.second, getVkAllocator());
 	}
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
-		vkDestroyCommandPool(device, commandPool[i], nullptr);
-	vkDestroySurfaceKHR(instance, surface, nullptr);
-	vkDestroyDevice(device, nullptr);
+		vkDestroyCommandPool(device, commandPool[i], getVkAllocator());
+	vkDestroySurfaceKHR(instance, surface, getVkAllocator());
+	vkDestroyDevice(device, getVkAllocator());
 	// physical device
-	vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-	vkDestroyInstance(instance, nullptr);
+	vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, getVkAllocator());
+	vkDestroyInstance(instance, getVkAllocator());
 }
 
 uint32_t VulkanContext::getPhysicalDeviceCount() const

@@ -198,7 +198,7 @@ VkDescriptorSetLayout VulkanDescriptorSet::createVkDescriptorSetLayout(VkDevice 
 		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
 	VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &layoutInfo, getVkAllocator(), &descriptorSetLayout));
 	return descriptorSetLayout;
 }
 VkDescriptorPool VulkanDescriptorPool::createVkDescriptorPool(VkDevice device, const ShaderBindingState& bindings, uint32_t size)
@@ -222,7 +222,7 @@ VkDescriptorPool VulkanDescriptorPool::createVkDescriptorPool(VkDevice device, c
 	poolInfo.maxSets = size;
 
 	VkDescriptorPool pool = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, nullptr, &pool));
+	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, getVkAllocator(), &pool));
 	return pool;
 }
 // https://jorenjoestar.github.io/post/vulkan_bindless_texture/
@@ -252,7 +252,7 @@ ShaderHandle VulkanGraphicDevice::createShader(const char* name, ShaderType type
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(bytes);
 
 	VulkanShader* vk_shader = m_shaderPool.acquire(name, type);
-	VK_CHECK_RESULT(vkCreateShaderModule(m_context.device, &createInfo, nullptr, &vk_shader->vk_module));
+	VK_CHECK_RESULT(vkCreateShaderModule(m_context.device, &createInfo, getVkAllocator(), &vk_shader->vk_module));
 
 	setDebugName(m_context.device, vk_shader->vk_module, name);
 	return ShaderHandle{ vk_shader };
@@ -262,7 +262,7 @@ void VulkanGraphicDevice::destroy(ShaderHandle shader)
 	if (get(shader) == nullptr) return;
 
 	VulkanShader* vk_shader = getVk<VulkanShader>(shader);
-	vkDestroyShaderModule(m_context.device, vk_shader->vk_module, nullptr);
+	vkDestroyShaderModule(m_context.device, vk_shader->vk_module, getVkAllocator());
 
 	m_shaderPool.release(vk_shader);
 }
@@ -400,7 +400,7 @@ void VulkanDescriptorPool::create(VulkanContext& context)
 
 void VulkanDescriptorPool::destroy(VulkanContext& context)
 {
-	vkDestroyDescriptorPool(context.device, vk_pool, nullptr);
+	vkDestroyDescriptorPool(context.device, vk_pool, getVkAllocator());
 }
 
 // -----------------------------------------------------------------

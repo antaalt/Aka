@@ -39,13 +39,15 @@ void* LinearAllocator::alignedAllocate_internal(size_t size, size_t alignement, 
 	return static_cast<uint8_t*>(block->mem) + offset;
 }
 
-void LinearAllocator::deallocate_internal(void* address, size_t size)
+void LinearAllocator::deallocate_internal(void* address)
 {
+	AKA_UNUSED(address);
 	// Linear allocator does not need to deallocate.
 }
 
-void LinearAllocator::alignedDeallocate_internal(void* address, size_t size)
+void LinearAllocator::alignedDeallocate_internal(void* address)
 {
+	AKA_UNUSED(address);
 	// Linear allocator does not need to deallocate.
 }
 

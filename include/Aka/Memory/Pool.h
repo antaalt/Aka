@@ -156,7 +156,7 @@ inline Pool<T, ChunkCountPerBlock>::~Pool()
 	{
 		Block* currentBlock = nextBlock;
 		nextBlock = currentBlock->m_next;
-		m_allocator.deallocate(currentBlock, 1);
+		m_allocator.deallocate(currentBlock);
 	} while (nextBlock != nullptr);
 }
 template <typename T, size_t ChunkCountPerBlock>

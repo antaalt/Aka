@@ -1,6 +1,7 @@
 #include <Aka/Memory/AllocatorTracker.hpp>
 
 #include <Aka/Core/Config.h>
+#include <Aka/Memory/Allocator.h>
 
 #include <iostream>
 #include <vector>
@@ -8,41 +9,6 @@
 namespace aka {
 
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
-
-const char* toString(AllocatorMemoryType type)
-{
-	switch (type)
-	{
-	case AllocatorMemoryType::Temporary:
-		return "Temporary";
-	case AllocatorMemoryType::Persistent:
-		return "Persistent";
-	default:
-		return "Unknown";
-	}
-}
-const char* toString(AllocatorCategory category)
-{
-	switch (category)
-	{
-	case AllocatorCategory::Default:
-		return "Default";
-	case AllocatorCategory::Graphic:
-		return "Graphic";
-	case AllocatorCategory::String:
-		return "String";
-	case AllocatorCategory::Vector:
-		return "Vector";
-	case AllocatorCategory::Pool:
-		return "Pool";
-	case AllocatorCategory::List:
-		return "List";
-	case AllocatorCategory::Component:
-		return "Component";
-	default:
-		return "Unknown";
-	}
-}
 
 AllocatorTracker::AllocatorTracker() 
 {
@@ -81,7 +47,7 @@ void AllocatorTracker::allocate(const void* const pointer, AllocatorMemoryType t
 {
 	if (pointer == nullptr)
 		return;
-	//std::cout << "Allocation for " << data.info->name() << " of " << data.count << " elements of size " << data.elementSize << std::endl;
+	//std::cout << "Allocation for   " << data.info->name() << " of " << data.count << " elements of size " << data.elementSize << " with alignment of " << data.alignment <<  std::endl;
 	AKA_ASSERT(EnumIsInRange(type), "Invalid allocator type");
 	AKA_ASSERT(EnumIsInRange(category), "Invalid allocator category");
 	AKA_ASSERT(data.elementSize > 0, "Invalid allocation");
@@ -90,6 +56,7 @@ void AllocatorTracker::allocate(const void* const pointer, AllocatorMemoryType t
 	tracking.m_memoryAllocated += data.elementSize * data.count;
 	tracking.m_allocations.insert(std::make_pair(pointer, data));
 }
+
 void AllocatorTracker::deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category)
 {
 	if (pointer == nullptr)
@@ -100,12 +67,13 @@ void AllocatorTracker::deallocate(const void* const pointer, AllocatorMemoryType
 	AKA_ASSERT(tracking.m_memoryAllocated > tracking.m_memoryDeallocated, "Invalid deallocation");
 	AKA_ASSERT(tracking.m_allocation > tracking.m_deallocation, "Invalid deallocation");
 	const AllocationTrackingData& data = it->second;
-	//std::cout << "Deallocation for " << data.info->name() << " of " << data.count << " elements of size " << data.elementSize << std::endl;
+	//std::cout << "Deallocation for " << data.info->name() << " of " << data.count << " elements of size " << data.elementSize << " with alignment of " << data.alignment << std::endl;
 	tracking.m_memoryDeallocated += data.elementSize * data.count;
 	tracking.m_deallocation += 1;
 
 	tracking.m_allocations.erase(pointer);
 }
+
 AllocatorTracker& getAllocatorTracker()
 { 
 	static AllocatorTracker s_instance;

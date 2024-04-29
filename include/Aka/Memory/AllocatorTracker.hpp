@@ -17,10 +17,11 @@ struct AllocationTrackingData
 {
 	// typeid pointer live till the end of program
 	const std::type_info* info = nullptr;
+	size_t alignment = 0;
 	size_t elementSize = 0;
 	size_t count = 0;
 
-	template <typename T> static AllocationTrackingData create(size_t count);
+	template <typename T> static AllocationTrackingData create(size_t count, size_t alignment = 0);
 };
 
 struct AllocatorTrackingData 
@@ -93,8 +94,8 @@ public:
 	AllocatorTracker();
 	~AllocatorTracker();
 
-	template <typename T>
-	void allocate(const void* const pointer, size_t count, AllocatorMemoryType type, AllocatorCategory category);
+	template <typename T> void allocate(const void* const pointer, size_t count, AllocatorMemoryType type, AllocatorCategory category);
+	template <typename T> void alignedAllocate(const void* const pointer, size_t count, size_t alignment, AllocatorMemoryType type, AllocatorCategory category);
 	void allocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data);
 	void deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category);
 
@@ -126,10 +127,11 @@ private:
 AllocatorTracker& getAllocatorTracker();
 
 template <typename T>
-static AllocationTrackingData AllocationTrackingData::create(size_t count) {
+static AllocationTrackingData AllocationTrackingData::create(size_t count, size_t alignment) {
 	AllocationTrackingData data;
 	data.info = &typeid(T);
 	data.elementSize = sizeof(T);
+	data.alignment = alignment;
 	data.count = count;
 	return data;
 }
@@ -138,6 +140,12 @@ template <typename T>
 void AllocatorTracker::allocate(const void* const pointer, size_t count, AllocatorMemoryType type, AllocatorCategory category)
 {
 	allocate(pointer, type, category, AllocationTrackingData::create<T>(count));
+}
+
+template <typename T>
+void AllocatorTracker::alignedAllocate(const void* const pointer, size_t count, size_t alignment, AllocatorMemoryType type, AllocatorCategory category)
+{
+	allocate(pointer, type, category, AllocationTrackingData::create<T>(count, alignment));
 }
 #endif
 

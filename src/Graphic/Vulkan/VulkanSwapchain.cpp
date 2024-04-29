@@ -183,7 +183,7 @@ void VulkanSwapchain::recreate(VulkanGraphicDevice* _device)
 	VkSwapchainKHR oldSwapchain = m_swapchain;
 	createSwapchain(_device, m_platform, m_swapchain);
 	createImageViews(_device);
-	vkDestroySwapchainKHR(_device->getVkDevice(), oldSwapchain, nullptr);
+	vkDestroySwapchainKHR(_device->getVkDevice(), oldSwapchain, getVkAllocator());
 	recreateFramebuffers(_device);
 
 	// Recreate pipeline to resize them if flag set.
@@ -378,7 +378,7 @@ void VulkanSwapchain::createSwapchain(VulkanGraphicDevice* _device, PlatformDevi
 	createInfo.clipped = VK_TRUE; // Clip pixels hidden by another window
 	createInfo.oldSwapchain = _oldSwapchain; // Old swapchain need to be destroyed elsewhere.
 
-	VK_CHECK_RESULT(vkCreateSwapchainKHR(_device->getVkDevice(), &createInfo, nullptr, &m_swapchain));
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(_device->getVkDevice(), &createInfo, getVkAllocator(), &m_swapchain));
 }
 void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 {
@@ -474,7 +474,7 @@ void VulkanSwapchain::createFrames(VulkanGraphicDevice* _device)
 }
 void VulkanSwapchain::destroySwapchain(VulkanGraphicDevice* _device)
 {
-	vkDestroySwapchainKHR(_device->getVkDevice(), m_swapchain, nullptr);
+	vkDestroySwapchainKHR(_device->getVkDevice(), m_swapchain, getVkAllocator());
 	m_swapchain = VK_NULL_HANDLE;
 }
 void VulkanSwapchain::destroyImageViews(VulkanGraphicDevice* _device)

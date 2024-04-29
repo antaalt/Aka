@@ -95,46 +95,40 @@ const char* getVkObjectName(VkObjectType objectType)
 	case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV: return "VkAccelerationStructureNV";
 	}
 }
-
 #if defined(VK_DEBUG_ALLOCATION)
-void* allocateCallback(void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
-{
-	void* ptr = Memory::allocAlligned(alignment, size);
-	memset(ptr, 0, size);
-	Logger::debug("[vulkan] Allocating <", (const char*)pUserData, "> (bytes: ", size, ", alignment:", alignment, ", scope:", allocationScope, ")");
-	return ptr;
-}
-void freeCallback(void* pUserData, void* pMemory)
-{
-	Memory::freeAligned(pMemory);
-	Logger::debug("[vulkan] Freeing <", (const char*)pUserData, ">");
-}
-void* reallocationCallback(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
-{
-	Logger::debug("[vulkan] Reallocating <", (const char*)pUserData, "> (bytes: ", size, ", alignment:", alignment, ", scope:", allocationScope, ")");
-	return Memory::reallocAligned(pOriginal, alignment, size);
-}
+// Tag for memory tracking
+struct VulkanHandle {
+	byte_t byte;
+};
+static_assert(sizeof(VulkanHandle) == 1);
 #endif
 
-VkAllocationCallbacks* getVkAllocator(VkObjectType objectType)
+VkAllocationCallbacks* getVkAllocator()
 {
 #if defined(VK_DEBUG_ALLOCATION)
-	static thread_local HashMap<VkObjectType, std::unique_ptr<VkAllocationCallbacks>> callbacks;
-	auto it = callbacks.find(objectType);
-	if (it == callbacks.end())
+	static std::unique_ptr<VkAllocationCallbacks> allocator = nullptr;
+	if (allocator == nullptr)
 	{
-		std::unique_ptr<VkAllocationCallbacks> callback = std::make_unique<VkAllocationCallbacks>();
-		callback->pfnAllocation = allocateCallback;
-		callback->pfnFree = freeCallback;
-		callback->pfnInternalAllocation = nullptr;
-		callback->pfnInternalFree = nullptr;
-		callback->pfnReallocation = reallocationCallback;
-		callback->pUserData = (void*)getVkObjectName(objectType);
-		VkAllocationCallbacks* ptr = callback.get();
-		auto it = callbacks.insert(std::make_pair(objectType, std::move(callback)));
-		return ptr;
+		allocator = std::make_unique<VkAllocationCallbacks>();
+		allocator->pfnAllocation = [](void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) -> void*
+		{
+			return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedAllocate<VulkanHandle>(size, alignment, AllocatorFlags::None);
+		};
+		allocator->pfnFree = [](void* pUserData, void* pMemory)
+		{
+			mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedDeallocate(pMemory);
+		};
+		allocator->pfnInternalAllocation = nullptr; // Should do ?
+		allocator->pfnInternalFree = nullptr; // Should do ?
+		allocator->pfnReallocation = [](void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) -> void*
+		{
+			// No realloc, so free + alloc
+			mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedDeallocate(pOriginal);
+			return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedAllocate<VulkanHandle>(size, alignment, AllocatorFlags::None);
+		};
+		allocator->pUserData = nullptr;
 	}
-	return it->second.get();
+	return allocator.get();
 #else
 	return nullptr; // Default allocator
 #endif

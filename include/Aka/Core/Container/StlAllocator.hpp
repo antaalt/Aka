@@ -56,9 +56,9 @@ public:
 		return return_value;
 	}
 	// Deallocate storage obtained by a call to allocate.
-	void deallocate(pointer p, size_type s)
+	void deallocate(pointer p, size_type)
 	{
-		mem::getAllocator(Type, Category).deallocate(p, s);
+		mem::getAllocator(Type, Category).deallocate(p);
 	}
 	// Return the largest possible storage available through a call to allocate.
 	size_type max_size() const throw()

@@ -84,10 +84,10 @@ void Scene::toArchive_internal(ArchiveSaveContext& _context, Renderer* _renderer
 	ArchiveScene& scene = _context.getArchive<ArchiveScene>(getID());
 
 	// Place all nodes in an array for serialization
-	std::vector<Node*> nodes;
+	Vector<Node*> nodes;
 	auto recurseDebug = std::function<void(Node*)>();
 	recurseDebug = [&recurseDebug, &nodes](Node* parent) {
-		nodes.push_back(parent);
+		nodes.append(parent);
 		// Serialized child
 		for (uint32_t i = 0; i < parent->getChildCount(); i++)
 		{

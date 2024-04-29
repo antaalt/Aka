@@ -16,13 +16,12 @@ void* DefaultAllocator::alignedAllocate_internal(size_t size, size_t alignement,
 	return Memory::allocAlligned(alignement, size);
 }
 
-void DefaultAllocator::deallocate_internal(void* elements, size_t size)
+void DefaultAllocator::deallocate_internal(void* elements)
 {
-	// size should be the same than call for allocate.
 	Memory::free(elements);
 }
 
-void DefaultAllocator::alignedDeallocate_internal(void* elements, size_t size)
+void DefaultAllocator::alignedDeallocate_internal(void* elements)
 {
 	Memory::freeAligned(elements);
 }

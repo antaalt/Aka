@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#define VK_DEBUG_ALLOCATION
+//#define VK_DEBUG_ALLOCATION
 
 #define VK_CHECK_RESULT(result)				\
 {											\
@@ -30,6 +30,8 @@ namespace aka {
 namespace gfx {
 
 template <typename T> struct VulkanTypeTrait { static const VkObjectType debugType = VK_OBJECT_TYPE_UNKNOWN; };
+template <> struct VulkanTypeTrait<VkInstance> { static const VkObjectType debugType = VK_OBJECT_TYPE_INSTANCE; };
+template <> struct VulkanTypeTrait<VkDevice> { static const VkObjectType debugType = VK_OBJECT_TYPE_DEVICE; };
 template <> struct VulkanTypeTrait<VkImage> { static const VkObjectType debugType = VK_OBJECT_TYPE_IMAGE; };
 template <> struct VulkanTypeTrait<VkDeviceMemory> { static const VkObjectType debugType = VK_OBJECT_TYPE_DEVICE_MEMORY; };
 template <> struct VulkanTypeTrait<VkImageView> { static const VkObjectType debugType = VK_OBJECT_TYPE_IMAGE_VIEW; };
@@ -49,10 +51,8 @@ template <> struct VulkanTypeTrait<VkQueue> { static const VkObjectType debugTyp
 const char* getVkErrorString(VkResult result);
 // Get an object name
 const char* getVkObjectName(VkObjectType objectType);
-// Get allocation callback for given object type
-VkAllocationCallbacks* getVkAllocator(VkObjectType objectType);
-// Get allocation callback for given object type
-template<typename T> VkAllocationCallbacks* getVkAllocator() { return getVkAllocator(VulkanTypeTrait<T>::debugType); }
+// Get allocation callback for tracking memory
+VkAllocationCallbacks* getVkAllocator();
 
 };
 };

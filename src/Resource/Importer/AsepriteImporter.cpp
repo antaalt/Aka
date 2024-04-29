@@ -322,7 +322,7 @@ Aseprite Aseprite::parse(Stream& reader)
 					Aseprite::Word celType = archive.read<Aseprite::Word>();
 					archive.skim(7);
 
-					std::vector<uint8_t> pixels;
+					Vector<uint8_t> pixels;
 					if (celType == 0)
 					{
 						// raw cel
@@ -348,7 +348,7 @@ Aseprite Aseprite::parse(Stream& reader)
 							// Deflate data
 							mz_ulong size = (mz_ulong)pixels.size();
 							mz_ulong deflateBytes = (mz_ulong)(chunkSize - (archive.offset() - chunkOffset));
-							std::vector<uint8_t> bytes(deflateBytes);
+							Vector<uint8_t> bytes(deflateBytes);
 							archive.read(bytes.data(), bytes.size());
 							if (MZ_OK != mz_uncompress(pixels.data(), &size, bytes.data(), deflateBytes))
 								throw std::runtime_error("Failed to uncompress image.");
@@ -411,7 +411,7 @@ Aseprite Aseprite::parse(Stream& reader)
 					if ((flags & 0x02) == 0x02)
 					{
 						Aseprite::DWord iccProfileLength = archive.read<Aseprite::DWord>();
-						std::vector<Aseprite::Byte> iccProfileData(iccProfileLength);
+						Vector<Aseprite::Byte> iccProfileData(iccProfileLength);
 						archive.read(iccProfileData.data(), iccProfileData.size());
 					}
 					break;
@@ -422,13 +422,13 @@ Aseprite Aseprite::parse(Stream& reader)
 					Aseprite::Word width = archive.read<Aseprite::Word>();
 					Aseprite::Word height = archive.read<Aseprite::Word>();
 					archive.skim(8);
-					std::string maskName;
+					String maskName;
 					{
 						Aseprite::Word stringLength = archive.read<Aseprite::Word>();
 						maskName.resize(stringLength);
 						archive.read<char>(maskName.data(), maskName.size()); // UTF-8
 					}
-					std::vector<Aseprite::Byte> bytes(height * ((width + 7) / 8));
+					Vector<Aseprite::Byte> bytes(height * ((width + 7) / 8));
 					archive.read(bytes.data(), bytes.size());
 					break;
 				}
@@ -474,7 +474,7 @@ Aseprite Aseprite::parse(Stream& reader)
 						ase.palette[firstColor * 4 + iEntry * 4 + 1] = archive.read<Aseprite::Byte>();
 						ase.palette[firstColor * 4 + iEntry * 4 + 2] = archive.read<Aseprite::Byte>();
 						ase.palette[firstColor * 4 + iEntry * 4 + 3] = archive.read<Aseprite::Byte>();
-						std::string colorName = "none";
+						String colorName = "none";
 						if ((entryFlags & 0x01) == 0x01)
 						{
 							Aseprite::Word stringLength = archive.read<Aseprite::Word>();
@@ -513,7 +513,7 @@ Aseprite Aseprite::parse(Stream& reader)
 					Aseprite::DWord sliceKeyCount = archive.read<Aseprite::DWord>();
 					Aseprite::DWord flags = archive.read<Aseprite::DWord>(); // 1 -> 9 patch slice, 2 -> has pivot information
 					Aseprite::DWord reserved = archive.read<Aseprite::DWord>();
-					std::string slicesName;
+					String slicesName;
 					{
 						Aseprite::Word stringLength = archive.read<Aseprite::Word>();
 						slicesName.resize(stringLength);
