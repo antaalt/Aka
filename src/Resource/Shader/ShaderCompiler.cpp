@@ -300,8 +300,8 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 	shader.addProcesses(processes);
 
 	// Set include directories
-	std::vector<Path> paths;
-	paths.push_back(key.path.getAbsolutePath().up());
+	Vector<Path> paths;
+	paths.append(key.path.getAbsolutePath().up());
 	Includer includer(paths.data(), paths.size(), key.path.getType());
 
 	if (!shader.parse(&defaultConf, default_version, false, messages, includer))
@@ -406,10 +406,10 @@ ShaderReflectionData ShaderCompiler::reflect(const ShaderCompilationResult& comp
 	// TODO what if blob is HLSL or such
 	AKA_ASSERT(blob.size() % 4 == 0, "Invalid size");
 	const uint32_t* d = static_cast<const uint32_t*>(blob.data());
-	std::vector<uint32_t> spriv(d, d + blob.size() / 4);
+	std::vector<uint32_t> spirv(d, d + blob.size() / 4);
 	try
 	{
-		spirv_cross::Compiler compiler(spriv); // TODO cache spirv to avoid reparsing
+		spirv_cross::Compiler compiler(spirv); // TODO cache spirv to avoid reparsing
 		spv::ExecutionModel executionModel = compiler.get_execution_model();
 		// --- Reflect vertex bindings
 		if (executionModel == spv::ExecutionModel::ExecutionModelVertex)

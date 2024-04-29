@@ -66,11 +66,6 @@ namespace aka {
 // Type traits
 template <typename T> using UnderlyingType = ::std::underlying_type_t<T>;
 
-// Containers
-//template <typename T> using Vector = ::std::vector<T>;
-//template <typename T> using TreeMap = ::std::map<T>;
-//template <typename T> using HashMap = ::std::unordered_map<T>;
-
 template <typename T, size_t N>
 constexpr size_t countof(T const (&)[N])
 {

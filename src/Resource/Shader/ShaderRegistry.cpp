@@ -384,14 +384,14 @@ bool ShaderRegistry::reload(const ShaderKey& _shaderKey, gfx::GraphicDevice* dev
 	m_shadersFileData[_shaderKey] = ShaderFileData{ shaderData, Timestamp::now() };
 
 	// Get all dependant program to recompile.
-	std::vector<ProgramKey> programToReload;
+	Vector<ProgramKey> programToReload;
 	for (std::pair<const ProgramKey, gfx::ProgramHandle>& program : m_programs)
 	{
 		for (const ShaderKey& programShader : program.first.shaders)
 		{
 			if (programShader == _shaderKey)
 			{
-				programToReload.push_back(program.first);
+				programToReload.append(program.first);
 			}
 		}
 	}

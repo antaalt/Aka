@@ -5,8 +5,13 @@
 #include <Aka/Core/Config.h>
 #include <Aka/Memory/Memory.h>
 #include <Aka/Core/Geometry.h>
+#include <Aka/Core/Container/StlAllocator.hpp>
 
 namespace aka {
+
+// Override default vector for memory tracking
+template <typename T> 
+using vector = ::std::vector<T, AkaStlAllocator<T, AllocatorMemoryType::Persistent, AllocatorCategory::Vector>>;
 
 template <typename T>
 class Vector final
@@ -35,6 +40,7 @@ public:
 	bool operator<=(const Vector<T>& vector) const;
 	bool operator>=(const Vector<T>& vector) const;
 
+	T& append();
 	T& append(const Vector<T>& vector);
 	T& append(const T* start, const T* end);
 	T& append(const T& value);
@@ -208,6 +214,15 @@ template <typename T>
 inline bool Vector<T>::operator>=(const Vector<T>& value) const
 {
 	return !(*this < value);
+}
+template <typename T>
+inline T& Vector<T>::append()
+{
+	size_t newSize = m_size + 1;
+	reserve(newSize);
+	std::uninitialized_default_construct(end(), end() + 1);
+	m_size = newSize;
+	return last();
 }
 template <typename T>
 inline T& Vector<T>::append(const Vector<T>& vector)

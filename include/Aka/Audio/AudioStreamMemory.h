@@ -7,7 +7,7 @@ namespace aka {
 class AudioStreamMemory : public AudioStream
 {
 public:
-    AudioStreamMemory(const std::vector<AudioFrame>& data, uint32_t frequency, uint32_t channels);
+    AudioStreamMemory(const Vector<AudioFrame>& data, uint32_t frequency, uint32_t channels);
     AudioStreamMemory(const AudioFrame* data, size_t length, uint32_t frequency, uint32_t channels);
 
     bool load(const Path& path, Audio *audio) const override;
@@ -21,7 +21,7 @@ public:
     uint32_t channels() const override;
     uint64_t samples() const override;
 private:
-    std::vector<AudioFrame> m_frames;
+    Vector<AudioFrame> m_frames;
     size_t m_offset;
     uint32_t m_frequency;
     uint32_t m_channels;

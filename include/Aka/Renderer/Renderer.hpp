@@ -135,18 +135,18 @@ private: // Backbuffer
 	gfx::RenderPassHandle m_backbufferRenderPass;
 private: // Views
 	gfx::DescriptorPoolHandle m_viewDescriptorPool;
-	std::map<ViewHandle, View> m_views;
+	HashMap<ViewHandle, View> m_views;
 	uint32_t m_viewSeed = 0;
 	bool m_viewDirty[gfx::MaxFrameInFlight];
 private: // Material & textures
 	bool m_materialDirty = 0;
 	TextureID m_nextTextureID = (TextureID)0;
 	uint32_t materialSeed;
-	std::set<TextureID> m_availableTexureID;
+	HashSet<TextureID> m_availableTexureID;
 	gfx::DescriptorPoolHandle m_bindlessPool;
 	gfx::DescriptorSetHandle m_bindlessDescriptorSet;
 	Vector<MaterialData> m_materials;
-	std::map<MaterialHandle, uint32_t> m_materialIndex;
+	HashMap<MaterialHandle, uint32_t> m_materialIndex;
 	gfx::BufferHandle m_materialBuffer;
 	gfx::BufferHandle m_materialStagingBuffer;
 	gfx::DescriptorSetHandle m_materialSet;

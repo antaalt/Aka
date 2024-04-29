@@ -27,7 +27,7 @@ template<> struct ArchiveTrait<Material> { using Archive = ArchiveMaterial; };
 template <typename T>
 class ResourceIterator
 {
-	using Iterator = typename std::map<AssetID, ResourceHandle<T>>::iterator;
+	using Iterator = typename HashMap<AssetID, ResourceHandle<T>>::iterator;
 	static_assert(std::is_base_of<Resource, T>::value, "This should inherit Resource");
 public:
 	explicit ResourceIterator(Iterator& value) : m_value(value) {}
@@ -54,17 +54,17 @@ class ResourceRange
 {
 	static_assert(std::is_base_of<Resource, T>::value, "This should inherit Resource");
 public:
-	ResourceRange(std::map<AssetID, ResourceHandle<T>>& resources) : m_resources(resources) {}
+	ResourceRange(HashMap<AssetID, ResourceHandle<T>>& resources) : m_resources(resources) {}
 
 	ResourceIterator<T> begin() { return ResourceIterator<T>(m_resources.begin()); }
 	ResourceIterator<T> end() { return ResourceIterator<T>(m_resources.end()); }
 private:
-	std::map<AssetID, ResourceHandle<T>>& m_resources;
+	HashMap<AssetID, ResourceHandle<T>>& m_resources;
 };
 
 struct AssetIterator {
 private:
-	using Iterator = std::map<AssetID, AssetInfo>::iterator;
+	using Iterator = HashMap<AssetID, AssetInfo>::iterator;
 public:
 	explicit AssetIterator(Iterator& value) : m_value(value) {}
 	AssetIterator& operator++()
@@ -86,12 +86,12 @@ private:
 };
 
 struct AssetRange {
-	AssetRange(std::map<AssetID, AssetInfo>& assets) : m_assetInfo(assets) {}
+	AssetRange(HashMap<AssetID, AssetInfo>& assets) : m_assetInfo(assets) {}
 
 	AssetIterator begin() { return AssetIterator(m_assetInfo.begin()); }
 	AssetIterator end() { return AssetIterator(m_assetInfo.end()); }
 private:
-	std::map<AssetID, AssetInfo>& m_assetInfo;
+	HashMap<AssetID, AssetInfo>& m_assetInfo;
 };
 
 
@@ -147,11 +147,11 @@ public:
 
 private:
 	template <typename T>
-	using ResourceMap = std::map<AssetID, ResourceHandle<T>>;
+	using ResourceMap = HashMap<AssetID, ResourceHandle<T>>;
 	template <typename T>
 	ResourceMap<T>& getResourceMap();
 private:
-	std::map<AssetID, AssetInfo> m_assetInfo;
+	HashMap<AssetID, AssetInfo> m_assetInfo;
 private:
 	ResourceMap<StaticMesh> m_staticMeshes;
 	ResourceMap<SkeletalMesh> m_skeletalMeshes;

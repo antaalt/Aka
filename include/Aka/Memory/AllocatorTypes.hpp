@@ -21,6 +21,7 @@ enum class AllocatorCategory : uint8_t {
 	Audio,
 	String,
 	Vector,
+	Map,
 	Pool,
 	List,
 	Component,

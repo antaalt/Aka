@@ -3,6 +3,7 @@
 #include <Aka/OS/Path.h>
 #include <Aka/OS/Archive.h>
 #include <Aka/Resource/Asset.hpp>
+#include <Aka/Core/Container/HashMap.hpp>
 
 #include <set>
 #include <map>
@@ -27,7 +28,7 @@ const char* getArchiveParseResultString(ArchiveParseResult _result);
 
 struct Archive;
 
-using AssetLoadCache = std::map<AssetID, Archive*>;
+using AssetLoadCache = HashMap<AssetID, Archive*>;
 
 struct ArchiveLoadContext final
 {

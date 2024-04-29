@@ -38,7 +38,7 @@ struct Watcher
 	}
 
 	HANDLE mDirHandle;
-	std::vector<BYTE> mBuffer;
+	Vector<BYTE> mBuffer;
 	DWORD mNotifyFilter;
 	bool mStopNow;
 	FileWatcher* mFileWatcher;

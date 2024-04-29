@@ -25,7 +25,7 @@ struct OS
 	// Get the temporary folder directory
 	static Path temp();
 	// Enumerate all path in a directory.
-	static std::vector<Path> enumerate(const Path& path);
+	static Vector<Path> enumerate(const Path& path);
 
 	struct File
 	{

@@ -5,6 +5,7 @@
 #include <Aka/OS/Path.h>
 #include <Aka/Core/Encoding.h>
 #include <Aka/Core/Container/Vector.h>
+#include <Aka/Core/Container/HashMap.hpp>
 
 #include <map>
 #include <stdint.h>
@@ -150,7 +151,7 @@ protected:
 	PlatformFlag m_flags;
 	Keyboard m_keyboard;
 	Mouse m_mouse;
-	std::map<GamepadID, Gamepad> m_gamepads;
+	HashMap<GamepadID, Gamepad> m_gamepads;
 };
 
 };

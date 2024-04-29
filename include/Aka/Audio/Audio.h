@@ -11,7 +11,7 @@ struct AudioSampleStereo
 
 // Raw audio
 struct Audio {
-    std::vector<AudioFrame> frames;
+    Vector<AudioFrame> frames;
     float duration;
     uint32_t channels;
     uint32_t frequency;

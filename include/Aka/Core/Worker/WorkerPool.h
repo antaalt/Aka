@@ -48,7 +48,7 @@ private:
 	mutable std::mutex m_mutex;
 	std::condition_variable m_condition;
 	std::list<Job*> m_jobs;
-	std::vector<std::thread> m_workers;
+	Vector<std::thread> m_workers;
 	bool m_running;
 };
 

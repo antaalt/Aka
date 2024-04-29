@@ -38,12 +38,12 @@ public:
 	// Unsubscribe all listeners from event
 	static void unsubscribe();
 private:
-	static std::vector<T> m_events;
+	static Vector<T> m_events;
 	static std::set<EventListener<T>*> m_listeners;
 };
 
 template<typename T>
-std::vector<T> EventDispatcher<T>::m_events;
+Vector<T> EventDispatcher<T>::m_events;
 template<typename T>
 std::set<EventListener<T>*> EventDispatcher<T>::m_listeners;
 
@@ -61,7 +61,7 @@ template <typename T>
 template <typename... Args>
 inline void EventDispatcher<T>::emit(Args&&... args)
 {
-	m_events.emplace_back(std::forward<Args>(args)...);
+	m_events.append(std::forward<Args>(args)...);
 }
 template <typename T>
 inline void EventDispatcher<T>::trigger(T&& event)

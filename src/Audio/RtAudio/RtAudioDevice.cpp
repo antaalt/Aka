@@ -132,7 +132,7 @@ void RtAudioDevice::process(AudioFrame* buffer, uint32_t frames)
 	if (m_streams.size() == 0)
 		return; // No audio to process
 	// Mix all audiodecoder
-	std::vector<AudioFrame> tmp(frames * m_channelCount);
+	Vector<AudioFrame> tmp(frames * m_channelCount);
 	for (auto it = m_streams.begin(); it != m_streams.end();)
 	{
 		std::set<AudioStream*>::iterator current = it++;

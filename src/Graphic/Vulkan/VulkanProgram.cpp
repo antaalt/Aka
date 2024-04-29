@@ -82,9 +82,9 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 	const VulkanDescriptorSet* vk_set = reinterpret_cast<const VulkanDescriptorSet*>(set);
 	if (vk_set->vk_descriptorSet == VK_NULL_HANDLE)
 		return;
-	std::vector<VkWriteDescriptorSet> descriptorWrites(size, VkWriteDescriptorSet{});
-	std::vector<VkDescriptorImageInfo> imageDescriptors;
-	std::vector<VkDescriptorBufferInfo> bufferDescriptors;
+	Vector<VkWriteDescriptorSet> descriptorWrites(size, VkWriteDescriptorSet{});
+	Vector<VkDescriptorImageInfo> imageDescriptors;
+	Vector<VkDescriptorBufferInfo> bufferDescriptors;
 	imageDescriptors.reserve(size);
 	bufferDescriptors.reserve(size);
 
@@ -110,7 +110,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 				vk_texture->type == TextureType::Texture2DArray,
 				"Invalid texture binding, skipping."
 			);
-			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace_back();
+			VkDescriptorImageInfo& vk_image = imageDescriptors.append();
 			vk_image.imageView = vk_texture->getImageView(device, update.texture.layer, update.texture.mipLevel);
 			vk_image.sampler = vk_sampler->vk_sampler;
 			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Resource, vk_texture->format);
@@ -120,7 +120,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 		case ShaderBindingType::StorageImage: {
 			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(update.texture.texture);
 			AKA_ASSERT(vk_texture->type == TextureType::Texture2D, "Invalid texture binding, skipping.");
-			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace_back();
+			VkDescriptorImageInfo& vk_image = imageDescriptors.append();
 			vk_image.imageView = vk_texture->getImageView(device, update.texture.layer, update.texture.mipLevel);
 			vk_image.sampler = VK_NULL_HANDLE;
 			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Storage, vk_texture->format);
@@ -130,7 +130,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 		case ShaderBindingType::StorageBuffer:
 		case ShaderBindingType::UniformBuffer: {
 			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(update.buffer.handle);
-			VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace_back();
+			VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.append();
 			if (buffer == nullptr) // No buffer
 			{
 				vk_buffer.buffer = VK_NULL_HANDLE;
@@ -204,7 +204,7 @@ VkDescriptorSetLayout VulkanDescriptorSet::createVkDescriptorSetLayout(VkDevice 
 VkDescriptorPool VulkanDescriptorPool::createVkDescriptorPool(VkDevice device, const ShaderBindingState& bindings, uint32_t size)
 {
 	AKA_ASSERT(bindings.count > 0, "Invalid inputs");
-	std::vector<VkDescriptorPoolSize> vk_poolSizes(bindings.count, VkDescriptorPoolSize{});
+	Vector<VkDescriptorPoolSize> vk_poolSizes(bindings.count, VkDescriptorPoolSize{});
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;

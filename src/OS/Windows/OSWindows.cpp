@@ -189,7 +189,7 @@ bool OS::File::copy(const Path& src, const Path& dst)
 	return true;
 }
 
-std::vector<Path> OS::enumerate(const Path& path)
+Vector<Path> OS::enumerate(const Path& path)
 {
 	const wchar_t separator = '/';
 	StringWide wstr = Utf8ToWchar(path.cstr());
@@ -200,7 +200,7 @@ std::vector<Path> OS::enumerate(const Path& path)
 	else
 		searchString = wstr.append(separator).append(L'*');
 	HANDLE hFind = FindFirstFile(searchString.cstr(), &data);
-	std::vector<Path> paths;
+	Vector<Path> paths;
 	if (hFind != INVALID_HANDLE_VALUE) {
 		do {
 			if (data.dwFileAttributes == INVALID_FILE_ATTRIBUTES)
@@ -213,13 +213,13 @@ std::vector<Path> OS::enumerate(const Path& path)
 			{
 				// Directory
 				String str = WcharToUtf8(data.cFileName);
-				paths.push_back(str + '/');
+				paths.append(str + '/');
 			}
 			else
 			{
 				// File
 				String str = WcharToUtf8(data.cFileName);
-				paths.push_back(str);
+				paths.append(str);
 				// size :((unsigned long long)data.nFileSizeHigh * ((unsigned long long)MAXDWORD + 1ULL)) + (unsigned long long)data.nFileSizeLow;
 			}
 		} while (FindNextFile(hFind, &data));

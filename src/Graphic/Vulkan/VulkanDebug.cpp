@@ -2,6 +2,7 @@
 
 #include <Aka/OS/Logger.h>
 #include <Aka/Memory/Memory.h>
+#include <Aka/Core/Container/HashMap.hpp>
 
 #include <map>
 
@@ -118,7 +119,7 @@ void* reallocationCallback(void* pUserData, void* pOriginal, size_t size, size_t
 VkAllocationCallbacks* getVkAllocator(VkObjectType objectType)
 {
 #if defined(VK_DEBUG_ALLOCATION)
-	static thread_local std::map<VkObjectType, std::unique_ptr<VkAllocationCallbacks>> callbacks;
+	static thread_local HashMap<VkObjectType, std::unique_ptr<VkAllocationCallbacks>> callbacks;
 	auto it = callbacks.find(objectType);
 	if (it == callbacks.end())
 	{

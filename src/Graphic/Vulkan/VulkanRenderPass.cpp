@@ -24,8 +24,8 @@ void VulkanRenderPass::destroy(VulkanGraphicDevice* device)
 
 VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderPassState& state)
 {
-	std::vector<VkAttachmentDescription> vk_attachments(state.count, VkAttachmentDescription{});
-	std::vector<VkAttachmentReference> vk_colorAttachmentsReferences(state.count, VkAttachmentReference{});
+	Vector<VkAttachmentDescription> vk_attachments(state.count, VkAttachmentDescription{});
+	Vector<VkAttachmentReference> vk_colorAttachmentsReferences(state.count, VkAttachmentReference{});
 	VkAttachmentReference vk_depthAttachment{};
 	for (size_t i = 0; i < state.count; i++)
 	{
@@ -60,7 +60,7 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 		vk_depthAttachment.attachment = static_cast<uint32_t>(vk_attachments.size());
 		vk_depthAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // TODO DEPTH_AND_STENCIL_SEPARATELY
 
-		vk_attachments.push_back(depthAttachment);
+		vk_attachments.append(depthAttachment);
 	}
 	VkSubpassDescription subpassInfo{};
 	subpassInfo.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -70,7 +70,7 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 		subpassInfo.pDepthStencilAttachment = &vk_depthAttachment;
 	subpassInfo.pResolveAttachments = nullptr; // For MSAA
 
-	std::vector<VkSubpassDependency> dependencies;
+	Vector<VkSubpassDependency> dependencies;
 	//if(framebufferDesc.swapchain)
 	{
 		dependencies.resize(1);

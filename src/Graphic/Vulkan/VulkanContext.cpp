@@ -92,7 +92,7 @@ static bool isDeviceSupportingRequiredExtensions(VkPhysicalDevice physicalDevice
 {
 	uint32_t extensionCount = 0;
 	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr));
-	std::vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
+	Vector<VkExtensionProperties> availableDeviceExtensions(extensionCount);
 	VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableDeviceExtensions.data()));
 	for (size_t i = 0; i < s_requiredDeviceExtensionCount; i++)
 	{
@@ -119,7 +119,7 @@ static bool hasValidationLayerSupport(const char*const* validationLayers, size_t
 	uint32_t availableLayerCount;
 	VK_CHECK_RESULT(vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr));
 
-	std::vector<VkLayerProperties> availableLayers(availableLayerCount);
+	Vector<VkLayerProperties> availableLayers(availableLayerCount);
 	VK_CHECK_RESULT(vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data()));
 
 	for (size_t i = 0; i < count; i++)
@@ -189,8 +189,8 @@ VkDescriptorSetLayout VulkanContext::getDescriptorSetLayout(const ShaderBindingS
 VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount)
 {
 	PipelineLayoutKey pair = std::make_pair(
-		std::vector<VkDescriptorSetLayout>(layouts, layouts + layoutCount),
-		std::vector<VkPushConstantRange>(constants, constants + constantCount)
+		Vector<VkDescriptorSetLayout>(layouts, layoutCount),
+		Vector<VkPushConstantRange>(constants, constantCount)
 	);
 	auto it = m_pipelineLayout.find(pair);
 	if (it != m_pipelineLayout.end())
@@ -216,7 +216,7 @@ VkInstance VulkanContext::createInstance(const char** instanceExtensions, size_t
 {
 	uint32_t extensionCount = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-	std::vector<VkExtensionProperties> extensions(extensionCount);
+	Vector<VkExtensionProperties> extensions(extensionCount);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
 	for (size_t i = 0; i < instanceExtensionCount; i++)
@@ -659,19 +659,19 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 	if (hasSurface)
 		uniqueQueueFamilies.insert(presentQueue.familyIndex);
 
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::map<uint32_t, std::vector<float>> priorities;
+	Vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	HashMap<uint32_t, Vector<float>> priorities;
 	for (uint32_t queueFamily : uniqueQueueFamilies) {
 		// Only handle separated queue here, ignore present shared with graphics.
 		for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 			if (queues[i].familyIndex == queueFamily)
-				priorities[queueFamily].push_back(1.f); // TODO More prio for graphic ?
+				priorities[queueFamily].append(1.f); // TODO More prio for graphic ?
 		VkDeviceQueueCreateInfo queueCreateInfo = {};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex = queueFamily;
 		queueCreateInfo.queueCount = (uint32_t)priorities[queueFamily].size();
 		queueCreateInfo.pQueuePriorities = priorities[queueFamily].data();
-		queueCreateInfos.push_back(queueCreateInfo);
+		queueCreateInfos.append(queueCreateInfo);
 	}
 
 	// --- Create device

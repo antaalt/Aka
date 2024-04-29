@@ -14,7 +14,7 @@ VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKH
 {
 	uint32_t formatCount;
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr));
-	std::vector<VkSurfaceFormatKHR> formats;
+	Vector<VkSurfaceFormatKHR> formats;
 	if (formatCount == 0)
 	{
 		Logger::error("No valid format for surface");
@@ -38,7 +38,7 @@ VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKH
 	return formats[0];
 }
 
-bool isPresentModeAvailable(const std::vector<VkPresentModeKHR>& presentModes, VkPresentModeKHR presentMode)
+bool isPresentModeAvailable(const Vector<VkPresentModeKHR>& presentModes, VkPresentModeKHR presentMode)
 {
 	return presentModes.end() != std::find(presentModes.begin(), presentModes.end(), presentMode);
 }
@@ -48,7 +48,7 @@ VkPresentModeKHR getPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR su
 	uint32_t presentModeCount;
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr));
 
-	std::vector<VkPresentModeKHR> presentModes;
+	Vector<VkPresentModeKHR> presentModes;
 	if (presentModeCount == 0)
 	{
 		Logger::error("No valid present mode for surface");
@@ -84,7 +84,7 @@ VkExtent2D getSurfaceExtent(VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* 
 	}
 }
 
-VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
 	for (VkFormat format : candidates) 
 	{
@@ -103,9 +103,13 @@ VkFormat findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<
 }
 
 VkFormat findDepthFormat(VkPhysicalDevice physicalDevice) {
+	Vector<VkFormat> formats;
+	formats.append(VK_FORMAT_D32_SFLOAT);
+	formats.append(VK_FORMAT_D32_SFLOAT_S8_UINT);
+	formats.append(VK_FORMAT_D24_UNORM_S8_UINT);
 	return findSupportedFormat(
 		physicalDevice,
-		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+		formats,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
 	);
@@ -351,9 +355,9 @@ void VulkanSwapchain::createSwapchain(VulkanGraphicDevice* _device, PlatformDevi
 		singleImageFamilies.insert(_device->getVkQueueIndex(queue));
 	singleImageFamilies.insert(_device->getVkPresentQueueIndex());
 
-	std::vector<uint32_t> singleImageFamiliesData;
+	Vector<uint32_t> singleImageFamiliesData;
 	for (uint32_t f : singleImageFamilies)
-		singleImageFamiliesData.push_back(f);
+		singleImageFamiliesData.append(f);
 
 	// We need concurrent mode only if graphic queue & present queue different.
 	// We suppose async compute & async transfer dont deal with swapchain.

@@ -156,6 +156,7 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 			DefaultAllocatorType("TemporaryAudioMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Audio
 			DefaultAllocatorType("TemporaryStringMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
 			DefaultAllocatorType("TemporaryVectorMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
+			DefaultAllocatorType("TemporaryMapMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Map, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Map
 			DefaultAllocatorType("TemporaryPoolMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
 			DefaultAllocatorType("TemporaryListMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
 			DefaultAllocatorType("TemporaryComponentMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
@@ -168,6 +169,7 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 			DefaultAllocatorType("PersistentAudioMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Audio
 			DefaultAllocatorType("PersistentStringMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
 			DefaultAllocatorType("PersistentVectorMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
+			DefaultAllocatorType("PersistentMapMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Map, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Map
 			DefaultAllocatorType("PersistentPoolMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
 			DefaultAllocatorType("PersistentListMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
 			DefaultAllocatorType("PersistentComponentMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component

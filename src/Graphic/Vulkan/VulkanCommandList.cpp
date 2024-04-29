@@ -160,7 +160,7 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 	VulkanRenderPass* vk_renderPass = m_device->getVk<VulkanRenderPass>(renderPass);
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 
-	std::vector<VkClearValue> clearValues(vk_framebuffer->count);
+	Vector<VkClearValue> clearValues(vk_framebuffer->count);
 	for (VkClearValue& vk_clear : clearValues)
 	{
 		vk_clear.depthStencil = VkClearDepthStencilValue{ clear.depth, clear.stencil };
@@ -170,7 +170,7 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 	{
 		VkClearValue depthClear{};
 		depthClear.depthStencil = VkClearDepthStencilValue{ clear.depth, clear.stencil };
-		clearValues.push_back(depthClear);
+		clearValues.append(depthClear);
 	}
 
 	VkRenderPassBeginInfo beginInfo{};
@@ -324,7 +324,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_framebuffer != nullptr, "Need an active render pass.");
 
-	std::vector<VkClearAttachment> attachments;
+	Vector<VkClearAttachment> attachments;
 	if (!isNull(mask & ClearMask::Color))
 	{
 		for (uint32_t i = 0; i < this->vk_framebuffer->count; i++)
@@ -335,7 +335,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 			att.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			att.clearValue.color = VkClearColorValue{ color[0], color[1], color[2], color[3] };
 			att.colorAttachment = i;
-			attachments.push_back(att);
+			attachments.append(att);
 		}
 	}
 	if (this->vk_framebuffer->depth.texture != gfx::TextureHandle::null)
@@ -351,7 +351,7 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 		att.aspectMask = aspect;
 		att.clearValue.depthStencil = VkClearDepthStencilValue{ depth, stencil };
 		att.colorAttachment = this->vk_framebuffer->count; // depth is last
-		attachments.push_back(att);
+		attachments.append(att);
 	}
 
 	VkClearRect clearRect{};

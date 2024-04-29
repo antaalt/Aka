@@ -26,7 +26,7 @@ struct std::hash<VkPushConstantRange>
 		return hash;
 	}
 };
-using PipelineLayoutKey = std::pair<std::vector<VkDescriptorSetLayout>, std::vector<VkPushConstantRange>>;
+using PipelineLayoutKey = std::pair<aka::Vector<VkDescriptorSetLayout>, aka::Vector<VkPushConstantRange>>;
 
 template <>
 struct std::less<VkPushConstantRange>

@@ -39,8 +39,8 @@ private:
 	bool m_dirty[gfx::MaxFrameInFlight];
 
 private:
-	std::map<AssetID, uint32_t> m_assetIndex;
-	std::map<InstanceHandle, uint32_t> m_instanceIndex;
+	HashMap<AssetID, uint32_t> m_assetIndex;
+	HashMap<InstanceHandle, uint32_t> m_instanceIndex;
 	// TODO move to gpu with compute.
 	std::vector<StaticMeshInstance> m_instanceDatas; // Updated frequently.
 	std::vector<gpu::StaticMeshAssetData> m_instanceAssetDatas; // Updated rarely

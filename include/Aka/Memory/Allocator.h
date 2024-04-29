@@ -4,6 +4,9 @@
 #include <Aka/Memory/AllocatorTracker.hpp>
 #include <Aka/Memory/AllocatorTypes.hpp>
 
+#include <map>
+#include <unordered_map>
+
 namespace aka {
 
 constexpr const char* toString(AllocatorMemoryType _type);

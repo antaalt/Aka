@@ -98,7 +98,7 @@ private:
 	std::unordered_map<BackbufferHandle, Backbuffer> m_backbuffers;
 	TextureFormat m_colorFormat;
 	TextureFormat m_depthFormat;
-	std::vector<BackBufferTextures> m_backbufferTextures;
+	Vector<BackBufferTextures> m_backbufferTextures;
 };
 
 };

@@ -8,18 +8,17 @@
 
 namespace aka {
 
-AudioStreamMemory::AudioStreamMemory(const std::vector<AudioFrame>& data, uint32_t frequency, uint32_t channels) :
+AudioStreamMemory::AudioStreamMemory(const Vector<AudioFrame>& data, uint32_t frequency, uint32_t channels) :
     AudioStreamMemory(data.data(), data.size(), frequency, channels)
 {
 }
 
 AudioStreamMemory::AudioStreamMemory(const AudioFrame* data, size_t length, uint32_t frequency, uint32_t channels) :
-    m_frames(length),
+    m_frames(data, length),
     m_offset(0),
     m_frequency(frequency),
     m_channels(channels)
 {
-    memcpy(m_frames.data(), data, length);
 }
 
 bool AudioStreamMemory::load(const Path& path, Audio *audio) const

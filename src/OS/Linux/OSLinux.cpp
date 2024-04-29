@@ -126,16 +126,16 @@ bool OS::File::copy(const Path& src, const Path& dst)
 }
 
 
-std::vector<Path> OS::enumerate(const Path& path)
+Vector<Path> OS::enumerate(const Path& path)
 {
 	DIR* dp;
 	struct dirent* dirp;
-	std::vector<Path> paths;
+	Vector<Path> paths;
 	if ((dp = opendir(path.cstr())) != NULL)
 	{
 		while ((dirp = readdir(dp)) != NULL)
 		{
-			paths.push_back(path.str() + dirp->d_name);
+			paths.append(path.str() + dirp->d_name);
 		}
 		closedir(dp);
 	}
