@@ -22,14 +22,14 @@ Application::Application(const Config& config) :
 	m_platform(PlatformDevice::create(config.platform)),
 	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
 	m_audio(AudioDevice::create(config.audio)),
-	m_program(new ShaderRegistry),
-	m_assets(new AssetLibrary),
-	m_root(new Layer),
+	m_program(mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic)),
+	m_assets(mem::akaNew<AssetLibrary>(AllocatorMemoryType::Persistent, AllocatorCategory::Archive)),
+	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Persistent, AllocatorCategory::Default)),
 	m_needClientResize(false),
 	m_width(0),
 	m_height(0),
 	m_running(true),
-	m_renderer(new Renderer(m_graphic, m_assets))
+	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, m_graphic, m_assets))
 {
 }
 Application::~Application()
@@ -38,10 +38,10 @@ Application::~Application()
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
-	delete m_root;
-	delete m_assets;
-	delete m_program;
-	delete m_renderer;
+	mem::akaDelete(m_root);
+	mem::akaDelete(m_assets);
+	mem::akaDelete(m_program);
+	mem::akaDelete(m_renderer);
 }
 bool Application::create()
 {

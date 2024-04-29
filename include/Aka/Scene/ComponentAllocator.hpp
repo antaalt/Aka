@@ -99,12 +99,12 @@ public:
 		getDefaultComponentAllocators().add(m_componentID, create());
 	}
 	ComponentAllocator<T>* create() {
-		return new ComponentAllocator<T>(m_componentID, m_name);
+		return mem::akaNew<ComponentAllocator<T>>(AllocatorMemoryType::Persistent, AllocatorCategory::Component, m_componentID, m_name);
 	}
-	void destroy(ComponentAllocator<T>* _allocator) {
+	/*void destroy(ComponentAllocator<T>* _allocator) {
 		AKA_ASSERT(_allocator->getComponentID() == m_componentID, "Invalid component ID");
-		delete _allocator;
-	}
+		mem::akaDelete(_allocator);
+	}*/
 private:
 	ComponentID m_componentID;
 	const char* m_name;

@@ -134,7 +134,7 @@ CameraComponent::CameraComponent(Node* node) :
 }
 CameraComponent::~CameraComponent()
 {
-	delete m_projection;
+	mem::akaDelete(m_projection);
 }
 
 void ArchiveCameraComponent::parse(BinaryArchive& archive)
@@ -192,10 +192,10 @@ void CameraComponent::fromArchive(const ArchiveCameraComponent& archive)
 	switch (archive.projectionType)
 	{
 	case CameraProjectionType::Orthographic:
-		m_projection = new CameraOrthographic;
+		m_projection = mem::akaNew<CameraOrthographic>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
 		break;
 	case CameraProjectionType::Perpective:
-		m_projection = new CameraPerspective;
+		m_projection = mem::akaNew<CameraPerspective>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
 		break;
 	default:
 		AKA_UNREACHABLE;

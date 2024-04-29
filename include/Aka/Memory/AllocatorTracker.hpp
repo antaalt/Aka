@@ -9,7 +9,7 @@
 
 namespace aka {
 
-//#define AKA_TRACK_MEMORY_ALLOCATIONS
+#define AKA_TRACK_MEMORY_ALLOCATIONS
 
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 
@@ -23,35 +23,10 @@ struct AllocationTrackingData
 	template <typename T> static AllocationTrackingData create(size_t count);
 };
 
-struct AllocatorTracker
+struct AllocatorTrackingData 
 {
-public:
-	AllocatorTracker();
-	~AllocatorTracker();
-
-	template <typename T>
-	void allocate(const void* const pointer, size_t count, AllocatorMemoryType type, AllocatorCategory category);
-	void allocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data);
-	void deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category);
-private:
-	// Override class new & delete to not use global ones.
-	void* operator new(std::size_t n) noexcept(false)
-	{
-		return malloc(sizeof(n));
-	}
-	void operator delete(void* p, std::size_t n) throw()
-	{
-		free(p);
-	}
-	void* operator new[](std::size_t n) noexcept(false)
-	{
-		return malloc(sizeof(n));
-	}
-	void operator delete[](void* p, std::size_t n) throw()
-	{
-		free(p);
-	}
 	// custom allocator based on malloc to store allocations without tracking its own allocations.
+private:
 	template <class T>
 	struct malloc_allocator {
 		typedef size_t size_type;
@@ -98,14 +73,52 @@ private:
 			p->~T();
 		}
 	};
+	using AllocationMap = std::map<const void*, AllocationTrackingData, std::less<const void*>, malloc_allocator<std::pair<const void* const, AllocationTrackingData>>>;
+public:
+	size_t m_allocation = 0;
+	size_t m_deallocation = 0;
+	size_t m_memoryAllocated = 0;
+	size_t m_memoryDeallocated = 0;
+	AllocationMap m_allocations;
+
+	AllocationMap::iterator begin() { return m_allocations.begin(); }
+	AllocationMap::iterator end() { return m_allocations.end(); }
+	AllocationMap::const_iterator begin() const { return m_allocations.begin(); }
+	AllocationMap::const_iterator end() const { return m_allocations.end(); }
+};
+
+struct AllocatorTracker
+{
+public:
+	AllocatorTracker();
+	~AllocatorTracker();
+
+	template <typename T>
+	void allocate(const void* const pointer, size_t count, AllocatorMemoryType type, AllocatorCategory category);
+	void allocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data);
+	void deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category);
+
+	const AllocatorTrackingData& get(AllocatorMemoryType _type, AllocatorCategory _category) { return m_data[EnumToIndex(_type)][EnumToIndex(_category)]; }
 private:
-	struct AllocatorTrackingData {
-		size_t m_allocation = 0;
-		size_t m_deallocation = 0;
-		size_t m_memoryAllocated = 0;
-		size_t m_memoryDeallocated = 0;
-		std::map<const void*, AllocationTrackingData, std::less<const void*>, malloc_allocator<std::pair<const void* const, AllocationTrackingData>>> m_allocations;
-	};
+	// Override class new & delete to not use global ones.
+	void* operator new(std::size_t n) noexcept(false)
+	{
+		return malloc(sizeof(n));
+	}
+	void operator delete(void* p, std::size_t n) throw()
+	{
+		free(p);
+	}
+	void* operator new[](std::size_t n) noexcept(false)
+	{
+		return malloc(sizeof(n));
+	}
+	void operator delete[](void* p, std::size_t n) throw()
+	{
+		free(p);
+	}
+	
+private:
 	// TODO map with allocator as pointer key
 	AllocatorTrackingData m_data[EnumCount<AllocatorMemoryType>()][EnumCount<AllocatorCategory>()];
 };

@@ -68,7 +68,7 @@ ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::Descripto
 void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 {
 	AKA_ASSERT(m_renderData == nullptr, "");
-	m_renderData = new ImGuiRenderData;
+	m_renderData = mem::akaNew<ImGuiRenderData>(AllocatorMemoryType::Temporary, AllocatorCategory::Graphic);
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -275,7 +275,7 @@ void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 	vkDestroyDescriptorPool(vk_device->getVkDevice(), m_renderData->descriptorPool, nullptr);
 	vk_device->destroy(m_renderData->renderPass);
 	vk_device->destroy(m_renderData->backbuffer);
-	delete m_renderData;
+	mem::akaDelete(m_renderData);
 }
 
 void ImGuiLayer::onLayerPreRender()

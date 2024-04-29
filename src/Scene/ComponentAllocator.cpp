@@ -35,7 +35,8 @@ ComponentAllocatorMap::~ComponentAllocatorMap()
 {
 	for (const auto& component : m_container)
 	{
-		delete component.second;
+		//std::cout << "Unregistering component " << component.second->getName() << std::endl;
+		mem::akaDelete(component.second);
 	}
 }
 

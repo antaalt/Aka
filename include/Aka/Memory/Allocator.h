@@ -6,6 +6,9 @@
 
 namespace aka {
 
+constexpr const char* toString(AllocatorMemoryType _type);
+constexpr const char* toString(AllocatorCategory _category);
+
 struct MemoryBlock
 {
 	MemoryBlock(void* mem, size_t _size);

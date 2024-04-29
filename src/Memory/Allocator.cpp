@@ -6,6 +6,34 @@
 
 namespace aka {
 
+
+constexpr const char* toString(AllocatorMemoryType _type)
+{
+	switch (_type)
+	{
+	case aka::AllocatorMemoryType::Temporary: return "Temporary";
+	case aka::AllocatorMemoryType::Persistent: return "Persistent";
+	default: return "Unknown";
+	}
+}
+constexpr const char* toString(AllocatorCategory _category)
+{
+	switch (_category)
+	{
+	case aka::AllocatorCategory::Default: return "Default";
+	case aka::AllocatorCategory::Graphic: return "Graphic";
+	case aka::AllocatorCategory::Audio: return "Audio";
+	case aka::AllocatorCategory::String: return "String";
+	case aka::AllocatorCategory::Vector: return "Vector";
+	case aka::AllocatorCategory::Pool: return "Pool";
+	case aka::AllocatorCategory::List: return "List";
+	case aka::AllocatorCategory::Component: return "Component";
+	case aka::AllocatorCategory::Archive: return "Archive";
+	case aka::AllocatorCategory::Editor: return "Editor";
+	default: return "Unkown";
+	}
+}
+
 MemoryBlock::MemoryBlock(void* mem, size_t _size) :
 	mem(mem),
 	size(_size),

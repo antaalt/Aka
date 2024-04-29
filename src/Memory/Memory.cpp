@@ -64,6 +64,7 @@ void* Memory::raw() const
 void* Memory::alloc(size_t size)
 {
 	// TODO request os memory with brk / mmap
+	// https://learn.microsoft.com/fr-fr/windows/win32/memory/comparing-memory-allocation-methods
 	return ::malloc(size);
 }
 
@@ -152,22 +153,26 @@ Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persis
 		{ // AllocatorMemoryType::Temporary
 			DefaultAllocatorType("TemporaryDefaultMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
 			DefaultAllocatorType("TemporaryGfxMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
+			DefaultAllocatorType("TemporaryAudioMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Audio
 			DefaultAllocatorType("TemporaryStringMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
 			DefaultAllocatorType("TemporaryVectorMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
 			DefaultAllocatorType("TemporaryPoolMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
 			DefaultAllocatorType("TemporaryListMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
 			DefaultAllocatorType("TemporaryComponentMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
 			DefaultAllocatorType("TemporaryArchiveMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Archive, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Archive
+			DefaultAllocatorType("TemporaryEditorMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Editor
 		},
 		{ // AllocatorMemoryType::Persistent
 			DefaultAllocatorType("PersistentDefaultMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
 			DefaultAllocatorType("PersistentGfxMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
+			DefaultAllocatorType("PersistentAudioMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Audio
 			DefaultAllocatorType("PersistentStringMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
 			DefaultAllocatorType("PersistentVectorMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
 			DefaultAllocatorType("PersistentPoolMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
 			DefaultAllocatorType("PersistentListMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
 			DefaultAllocatorType("PersistentComponentMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
 			DefaultAllocatorType("PersistentArchiveMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Archive, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Archive
+			DefaultAllocatorType("PersistentEditorMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Editor
 		},
 	};
 	return AllocatorType[EnumToIndex(memory)][EnumToIndex(category)];

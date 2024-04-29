@@ -8,15 +8,15 @@ namespace aka {
 AudioDevice* AudioDevice::create(const AudioConfig& config)
 {
 #if defined(AKA_USE_RTAUDIO)
-	return new RtAudioDevice(config);
+	return mem::akaNew<RtAudioDevice>(AllocatorMemoryType::Persistent, AllocatorCategory::Audio, config);
 #else
-	return new DummyAudioDevice(config);
+	return mem::akaNew<DummyAudioDevice>(AllocatorMemoryType::Persistent, AllocatorCategory::Audio, config);
 #endif
 }
 
 void AudioDevice::destroy(AudioDevice* device)
 {
-	delete device;
+	mem::akaDelete(device);
 }
 
 

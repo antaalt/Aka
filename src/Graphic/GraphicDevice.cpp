@@ -12,7 +12,7 @@ GraphicDevice* GraphicDevice::create(GraphicAPI api)
 	{
 #if defined(AKA_USE_VULKAN)
 	case GraphicAPI::Vulkan:
-		return new VulkanGraphicDevice();
+		return mem::akaNew<VulkanGraphicDevice>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
 #endif
 	default:
 		return nullptr;
@@ -21,7 +21,7 @@ GraphicDevice* GraphicDevice::create(GraphicAPI api)
 
 void GraphicDevice::destroy(GraphicDevice* device)
 {
-	delete device;
+	mem::akaDelete(device);
 }
 
 };
