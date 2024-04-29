@@ -25,31 +25,8 @@ RigidBodyComponent::~RigidBodyComponent()
 {
 }
 
-enum class Shape
-{
-	Sphere,
-	Plane,
-	Cube,
-};
-
 struct RigidBody;
 
-struct ContactData {
-	// Rigid body 1 impacted in collision
-	RigidBody* rb1;
-	// Rigid body 2 impacted in collision
-	RigidBody* rb2;
-	// Contact point of the entity 1 in local space.
-	vec3f surfaceHit1;
-	// Contact point of the entity 2 in local space.
-	vec3f surfaceHit2;
-	// Contact normal of the entity 1 in local space
-	vec3f normal1;
-	// Contact normal of the entity 2 in local space
-	vec3f normal2;
-	// Penetration depth, aka magnitude of the collision.
-	float penetration;
-};
 
 // XPBD
 struct Particle
@@ -68,7 +45,7 @@ struct Particle
 	vec3f previousPosition;
 };
 static const float sphereRadius = 0.5f;
-struct RigidBody
+struct RigidBody // TODO: component
 {
 	// Different for every shapes...
 	// https://www.toppr.com/guides/physics/system-of-particles-and-rotational-dynamics/moment-of-inertia/
@@ -108,10 +85,9 @@ struct RigidBody
 	mat3f inertiaInverse; // represent the center of gravity of object, based on center of mass.
 	float massInverse; // 1/kg2
 
+	// Cache
 	vec3f previousPosition;
 	quatf previousOrientation;
-
-	// Cache
 	float lagrange = 0.f;
 
 	bool isDynamic() const { return massInverse > 0.f; }
@@ -130,23 +106,6 @@ struct RigidBody
 		}
 	}
 
-	float getMagnitude()
-	{
-		// Depends on shape
-		Shape shape;
-		switch (shape)
-		{
-		case Shape::Sphere:
-			// Distance between two body (with)
-			break;
-		case Shape::Plane:
-			break;
-		case Shape::Cube:
-			break;
-		default:
-			break;
-		}
-	}
 
 	static void solvePositionConstraint(ContactData& contact, float dt)
 	{

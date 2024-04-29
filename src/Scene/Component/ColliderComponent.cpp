@@ -12,7 +12,7 @@ ArchiveColliderComponent::ArchiveColliderComponent(ArchiveComponentVersionType _
 
 void ArchiveColliderComponent::parse(BinaryArchive& archive)
 {
-	archive.parse<ShapeType>(shape);
+	archive.parse<ColliderShapeType>(shape);
 }
 
 ColliderComponent::ColliderComponent(Node* node) :
@@ -22,7 +22,7 @@ ColliderComponent::ColliderComponent(Node* node) :
 }
 ColliderComponent::~ColliderComponent()
 {
-	delete m_shape;
+	mem::akaDelete(m_shape);
 }
 void ColliderComponent::onBecomeActive(AssetLibrary* library, Renderer* _renderer)
 {
@@ -49,14 +49,14 @@ void ColliderComponent::fromArchive(const ArchiveColliderComponent& archive)
 {
 	AKA_ASSERT(m_shape == nullptr, "");
 	switch (archive.shape) {
-	case ShapeType::Box:
-		m_shape = new Box3D;
+	case ColliderShapeType::Cube:
+		m_shape = mem::akaNew<ColliderCube>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
 		break;
-	case ShapeType::Sphere:
-		m_shape = new Sphere3D;
+	case ColliderShapeType::Sphere:
+		m_shape = mem::akaNew<ColliderSphere>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
 		break;
-	case ShapeType::Plane:
-		m_shape = new Plane3D;
+	case ColliderShapeType::Plane:
+		m_shape = mem::akaNew<ColliderPlane>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
 		break;
 	default:
 		AKA_NOT_IMPLEMENTED;
