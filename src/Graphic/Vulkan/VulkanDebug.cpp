@@ -122,9 +122,7 @@ VkAllocationCallbacks* getVkAllocator()
 		allocator->pfnInternalFree = nullptr; // Should do ?
 		allocator->pfnReallocation = [](void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) -> void*
 		{
-			// No realloc, so free + alloc
-			mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedDeallocate(pOriginal);
-			return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedAllocate<VulkanHandle>(size, alignment, AllocatorFlags::None);
+			return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedReallocate<VulkanHandle>(pOriginal, size, alignment, AllocatorFlags::None);
 		};
 		allocator->pUserData = nullptr;
 	}

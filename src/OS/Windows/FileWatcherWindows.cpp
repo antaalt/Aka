@@ -255,7 +255,7 @@ struct FileWatcher::OSData
 			}
 		} while (m_initOK);
 	}
-	std::set<WatchStruct*> m_watches;
+	HashSet<WatchStruct*> m_watches;
 
 	HANDLE m_iocp;
 	std::thread m_thread;

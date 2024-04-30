@@ -26,4 +26,14 @@ void DefaultAllocator::alignedDeallocate_internal(void* elements)
 	Memory::freeAligned(elements);
 }
 
+void* DefaultAllocator::reallocate_internal(void* elements, size_t size, AllocatorFlags flags)
+{
+	return Memory::realloc(elements, size);
+}
+
+void* DefaultAllocator::alignedReallocate_internal(void* elements, size_t size, size_t alignment, AllocatorFlags flags)
+{
+	return Memory::reallocAligned(elements, alignment, size);
+}
+
 };

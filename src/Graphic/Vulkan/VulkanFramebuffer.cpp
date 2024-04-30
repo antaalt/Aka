@@ -21,7 +21,7 @@ void VulkanFramebuffer::create(VulkanGraphicDevice* device)
 
 void VulkanFramebuffer::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroyFramebuffer(device->getVkDevice(), vk_framebuffer, nullptr);
+	vkDestroyFramebuffer(device->getVkDevice(), vk_framebuffer, getVkAllocator());
 	vk_framebuffer = VK_NULL_HANDLE;
 }
 
@@ -66,7 +66,7 @@ VkFramebuffer VulkanFramebuffer::createVkFramebuffer(VulkanGraphicDevice* device
 	framebufferInfo.layers = 1;
 
 	VkFramebuffer vk_framebufferHandle = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateFramebuffer(device->getVkDevice(), &framebufferInfo, nullptr, &vk_framebufferHandle));
+	VK_CHECK_RESULT(vkCreateFramebuffer(device->getVkDevice(), &framebufferInfo, getVkAllocator(), &vk_framebufferHandle));
 	return vk_framebufferHandle;
 }
 

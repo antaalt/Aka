@@ -48,7 +48,7 @@
 
 namespace aka {
 
-struct VulkanContext
+struct D3D12Context
 {
 	void initialize(PlatformDevice* platform, const GraphicConfig& config);
 	void shutdown();

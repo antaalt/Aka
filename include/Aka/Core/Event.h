@@ -1,9 +1,7 @@
 #pragma once
 
 #include <Aka/Core/Container/String.h>
-
-#include <vector>
-#include <set>
+#include <Aka/Core/Container/HashMap.hpp>
 
 namespace aka {
 
@@ -39,13 +37,13 @@ public:
 	static void unsubscribe();
 private:
 	static Vector<T> m_events;
-	static std::set<EventListener<T>*> m_listeners;
+	static HashSet<EventListener<T>*> m_listeners;
 };
 
 template<typename T>
 Vector<T> EventDispatcher<T>::m_events;
 template<typename T>
-std::set<EventListener<T>*> EventDispatcher<T>::m_listeners;
+HashSet<EventListener<T>*> EventDispatcher<T>::m_listeners;
 
 template<typename T>
 inline EventListener<T>::EventListener()

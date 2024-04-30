@@ -18,7 +18,7 @@ void VulkanFence::create(VulkanGraphicDevice* device)
 
 void VulkanFence::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroySemaphore(device->getVkDevice(), vk_sempahore, nullptr);
+	vkDestroySemaphore(device->getVkDevice(), vk_sempahore, getVkAllocator());
 	vk_sempahore = VK_NULL_HANDLE;
 }
 
@@ -43,7 +43,7 @@ VkSemaphore VulkanFence::createVkTimelineSemaphore(VulkanGraphicDevice* device, 
 	createInfo.flags = 0;
 
 	VkSemaphore timelineSemaphore;
-	vkCreateSemaphore(device->getVkDevice(), &createInfo, nullptr, &timelineSemaphore);
+	vkCreateSemaphore(device->getVkDevice(), &createInfo, getVkAllocator(), &timelineSemaphore);
 	return timelineSemaphore;
 }
 

@@ -55,11 +55,13 @@ private:
 			pointer temp = (pointer)malloc(s * sizeof(T));
 			if (temp == NULL)
 				throw std::bad_alloc();
+			m_used += s;
 			return temp;
 		}
 
-		void deallocate(pointer p, size_type) {
+		void deallocate(pointer p, size_type s) {
 			free(p);
+			m_used -= s;
 		}
 
 		size_type max_size() const throw() {
@@ -73,6 +75,9 @@ private:
 		void destroy(pointer p) {
 			p->~T();
 		}
+		size_t getUsedMemory() const { return m_used; }
+	private:
+		size_t m_used = 0;
 	};
 	using AllocationMap = std::map<const void*, AllocationTrackingData, std::less<const void*>, malloc_allocator<std::pair<const void* const, AllocationTrackingData>>>;
 public:
@@ -86,6 +91,10 @@ public:
 	AllocationMap::iterator end() { return m_allocations.end(); }
 	AllocationMap::const_iterator begin() const { return m_allocations.begin(); }
 	AllocationMap::const_iterator end() const { return m_allocations.end(); }
+
+	size_t getUsedMemory() const {
+		return m_allocations.get_allocator().getUsedMemory() + sizeof(AllocatorTrackingData);
+	}
 };
 
 struct AllocatorTracker
@@ -96,31 +105,18 @@ public:
 
 	template <typename T> void allocate(const void* const pointer, size_t count, AllocatorMemoryType type, AllocatorCategory category);
 	template <typename T> void alignedAllocate(const void* const pointer, size_t count, size_t alignment, AllocatorMemoryType type, AllocatorCategory category);
+	template <typename T> void reallocate(const void* const pOriginal, const void* const pNew, size_t count, AllocatorMemoryType type, AllocatorCategory category);
+	template <typename T> void alignedReallocate(const void* const pOriginal, const void* const pNew, size_t count, size_t alignment, AllocatorMemoryType type, AllocatorCategory category);
 	void allocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data);
 	void deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category);
+	void reallocate(const void* const pOriginal, const void* const pNew, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data);
 
 	const AllocatorTrackingData& get(AllocatorMemoryType _type, AllocatorCategory _category) { return m_data[EnumToIndex(_type)][EnumToIndex(_category)]; }
+
+	size_t getUsedMemory() const;
+	size_t getUsedMemory(AllocatorMemoryType _type) const;
+	size_t getUsedMemory(AllocatorMemoryType _type, AllocatorCategory _category) const;
 private:
-	// Override class new & delete to not use global ones.
-	void* operator new(std::size_t n) noexcept(false)
-	{
-		return malloc(sizeof(n));
-	}
-	void operator delete(void* p, std::size_t n) throw()
-	{
-		free(p);
-	}
-	void* operator new[](std::size_t n) noexcept(false)
-	{
-		return malloc(sizeof(n));
-	}
-	void operator delete[](void* p, std::size_t n) throw()
-	{
-		free(p);
-	}
-	
-private:
-	// TODO map with allocator as pointer key
 	AllocatorTrackingData m_data[EnumCount<AllocatorMemoryType>()][EnumCount<AllocatorCategory>()];
 };
 
@@ -146,6 +142,16 @@ template <typename T>
 void AllocatorTracker::alignedAllocate(const void* const pointer, size_t count, size_t alignment, AllocatorMemoryType type, AllocatorCategory category)
 {
 	allocate(pointer, type, category, AllocationTrackingData::create<T>(count, alignment));
+}
+template <typename T> 
+void AllocatorTracker::reallocate(const void* const pOriginal, const void* const pNew, size_t count, AllocatorMemoryType type, AllocatorCategory category)
+{
+	reallocate(pOriginal, pNew, type, category, AllocationTrackingData::create<T>(count));
+}
+template <typename T> 
+void AllocatorTracker::alignedReallocate(const void* const pOriginal, const void* const pNew, size_t count, size_t alignment, AllocatorMemoryType type, AllocatorCategory category)
+{
+	reallocate(pOriginal, pNew, type, category, AllocationTrackingData::create<T>(count, alignment));
 }
 #endif
 

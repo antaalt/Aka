@@ -1,6 +1,7 @@
 #include "RtAudioDevice.h"
 
 #include <Aka/OS/Logger.h>
+#include <Aka/Core/Container/HashMap.hpp>
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #pragma comment(lib, "dsound.lib")
@@ -135,7 +136,7 @@ void RtAudioDevice::process(AudioFrame* buffer, uint32_t frames)
 	Vector<AudioFrame> tmp(frames * m_channelCount);
 	for (auto it = m_streams.begin(); it != m_streams.end();)
 	{
-		std::set<AudioStream*>::iterator current = it++;
+		HashSet<AudioStream*>::iterator current = it++;
 		AudioStream* stream = (*current);
 		if (!stream->decode(tmp.data(), frames * m_channelCount))
 			m_streams.erase(current);

@@ -12,31 +12,29 @@ Blob::Blob() :
 }
 
 Blob::Blob(size_t size) :
-	m_bytes(new byte_t[size]),
+	m_bytes(mem::akaNewArray<byte_t>(size, AllocatorMemoryType::Persistent, AllocatorCategory::Vector)),
 	m_size(size)
 {
 }
 
 Blob::Blob(const void* bytes, size_t size) :
-	m_bytes(new byte_t[size]),
+	m_bytes(mem::akaNewArray<byte_t>(size, AllocatorMemoryType::Persistent, AllocatorCategory::Vector)),
 	m_size(size)
 {
 	memcpy(m_bytes, bytes, size);
 }
 
 Blob::Blob(const Blob& blob) :
-	m_bytes(new byte_t[blob.m_size]),
-	m_size(blob.m_size)
+	Blob(blob.data(), blob.size())
 {
-	memcpy(m_bytes, blob.m_bytes, blob.m_size);
 }
 
 Blob& Blob::operator=(const Blob& blob)
 {
 	if (m_size != blob.m_size)
 	{
-		delete[] m_bytes;
-		m_bytes = new byte_t[blob.m_size];
+		mem::akaDeleteArray(m_bytes);
+		m_bytes = mem::akaNewArray<byte_t>(blob.m_size, AllocatorMemoryType::Persistent, AllocatorCategory::Vector);
 		m_size = blob.m_size;
 	}
 	memcpy(m_bytes, blob.m_bytes, blob.m_size);
@@ -60,7 +58,7 @@ Blob& Blob::operator=(Blob&& blob) noexcept
 
 Blob::~Blob()
 {
-	delete[] m_bytes;
+	mem::akaDeleteArray(m_bytes);
 }
 
 void* Blob::data()

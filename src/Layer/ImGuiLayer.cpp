@@ -65,10 +65,20 @@ ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::Descripto
 	}
 }
 
+struct ImGuiAllocation { uint8_t data; };
+static_assert(sizeof(ImGuiAllocation) == 1);
+
 void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 {
+	ImGui::SetAllocatorFunctions([](size_t sz, void* user_data) -> void* {
+		return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Editor).allocate<ImGuiAllocation>(sz);
+	}, 
+	[](void* ptr, void* user_data) {
+		mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Editor).deallocate(ptr);
+	}, nullptr);
+
 	AKA_ASSERT(m_renderData == nullptr, "");
-	m_renderData = mem::akaNew<ImGuiRenderData>(AllocatorMemoryType::Temporary, AllocatorCategory::Graphic);
+	m_renderData = mem::akaNew<ImGuiRenderData>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

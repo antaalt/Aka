@@ -29,8 +29,8 @@ void VulkanBuffer::create(VulkanGraphicDevice* device)
 }
 void VulkanBuffer::destroy(VulkanGraphicDevice* device)
 {
-	vkFreeMemory(device->getVkDevice(), vk_memory, nullptr);
-	vkDestroyBuffer(device->getVkDevice(), vk_buffer, nullptr);
+	vkFreeMemory(device->getVkDevice(), vk_memory, getVkAllocator());
+	vkDestroyBuffer(device->getVkDevice(), vk_buffer, getVkAllocator());
 	vk_buffer = VK_NULL_HANDLE;
 	vk_memory = VK_NULL_HANDLE;
 }
@@ -55,7 +55,7 @@ VkBuffer VulkanBuffer::createVkBuffer(VkDevice device, VkDeviceSize size, VkBuff
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	VkBuffer vk_buffer = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferInfo, nullptr, &vk_buffer));
+	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferInfo, getVkAllocator(), &vk_buffer));
 	return vk_buffer;
 }
 
@@ -70,7 +70,7 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	allocInfo.memoryTypeIndex = VulkanContext::findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
 	VkDeviceMemory vk_memory = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkAllocateMemory(device, &allocInfo, nullptr, &vk_memory));
+	VK_CHECK_RESULT(vkAllocateMemory(device, &allocInfo, getVkAllocator(), &vk_memory));
 
 	VK_CHECK_RESULT(vkBindBufferMemory(device, vk_buffer, vk_memory, 0));
 	return vk_memory;
@@ -261,8 +261,8 @@ void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, size_t o
 		vkCmdCopyBuffer(cmd, vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
 		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
 
-		vkFreeMemory(getVkDevice(), vk_stagingMemory, nullptr);
-		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, nullptr);
+		vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
+		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
 	}
 	else
 	{
@@ -300,8 +300,8 @@ void VulkanGraphicDevice::download(BufferHandle buffer, void* data, size_t offse
 		memcpy(mapped, data, static_cast<size_t>(size));
 		vkUnmapMemory(getVkDevice(), vk_stagingMemory);
 
-		vkFreeMemory(getVkDevice(), vk_stagingMemory, nullptr);
-		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, nullptr);
+		vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
+		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
 	}
 	else
 	{

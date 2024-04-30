@@ -74,6 +74,39 @@ void AllocatorTracker::deallocate(const void* const pointer, AllocatorMemoryType
 	tracking.m_allocations.erase(pointer);
 }
 
+void AllocatorTracker::reallocate(const void* const pOriginal, const void* const pNew, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data)
+{
+	if (pOriginal == nullptr || pNew == nullptr)
+		return;
+	deallocate(pOriginal, type, category);
+	allocate(pNew, type, category, data);
+}
+size_t AllocatorTracker::getUsedMemory() const
+{
+	size_t used = 0;
+	for (AllocatorMemoryType type : EnumRange<AllocatorMemoryType>())
+	{
+		for (AllocatorCategory category : EnumRange<AllocatorCategory>())
+		{
+			used += getUsedMemory(type, category);
+		}
+	}
+	return used;
+}
+size_t AllocatorTracker::getUsedMemory(AllocatorMemoryType _type) const
+{
+	size_t used = 0;
+	for (AllocatorCategory category : EnumRange<AllocatorCategory>())
+	{
+		used += getUsedMemory(_type, category);
+	}
+	return used;
+}
+size_t AllocatorTracker::getUsedMemory(AllocatorMemoryType _type, AllocatorCategory _category) const
+{
+	return m_data[EnumToIndex(_type)][EnumToIndex(_category)].getUsedMemory();
+}
+
 AllocatorTracker& getAllocatorTracker()
 { 
 	static AllocatorTracker s_instance;

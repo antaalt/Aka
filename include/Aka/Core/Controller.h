@@ -33,9 +33,9 @@ private:
 	size_t m_pressed;
 
 private:
-	std::set<KeyboardKey> m_keyboardKeys;
-	std::set<MouseButton> m_mouseButtons;
-	std::set<GamepadButton> m_gamepadButtons;
+	HashSet<KeyboardKey> m_keyboardKeys;
+	HashSet<MouseButton> m_mouseButtons;
+	HashSet<GamepadButton> m_gamepadButtons;
 };
 
 struct MotionController : Controller
@@ -61,8 +61,8 @@ private:
 	};
 
 	bool m_mouseAxis;
-	std::set<KeyboardAxis> m_keyboardAxis;
-	std::set<GamepadAxis> m_gamepadAxis;
+	TreeSet<KeyboardAxis> m_keyboardAxis;
+	TreeSet<GamepadAxis> m_gamepadAxis;
 };
 
 };

@@ -98,7 +98,7 @@ void* Memory::realloc(void* data, size_t size)
 void* Memory::reallocAligned(void* data, size_t alignment, size_t size)
 {
 #if defined(AKA_PLATFORM_WINDOWS)
-	return _aligned_realloc(data, alignment, size);
+	return _aligned_realloc(data, size, alignment);
 #else // POSIX
 	free(data); // No aligned realloc for POSIX
 	return aligned_alloc(alignment, size);

@@ -2,10 +2,13 @@
 
 #if defined(AKA_USE_VULKAN)
 
+#include <Aka/Memory/AllocatorTracker.hpp>
 
 #include <vulkan/vulkan.h>
 
-//#define VK_DEBUG_ALLOCATION
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+#define VK_DEBUG_ALLOCATION
+#endif
 
 #define VK_CHECK_RESULT(result)				\
 {											\

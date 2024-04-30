@@ -51,4 +51,19 @@ void LinearAllocator::alignedDeallocate_internal(void* address)
 	// Linear allocator does not need to deallocate.
 }
 
+void* LinearAllocator::reallocate_internal(void* elements, size_t size, AllocatorFlags flags)
+{
+	AKA_UNUSED(elements);
+	// Linear allocator does not need to deallocate.
+	return allocate_internal(size);
+}
+
+void* LinearAllocator::alignedReallocate_internal(void* elements, size_t size, size_t alignment, AllocatorFlags flags)
+{
+	AKA_UNUSED(elements);
+	// Linear allocator does not need to deallocate.
+	return alignedAllocate_internal(alignment, size);
+}
+
+
 };

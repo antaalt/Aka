@@ -323,8 +323,8 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
 
 	// Free staging buffer
-	vkFreeMemory(getVkDevice(), stagingBufferMemory, nullptr);
-	vkDestroyBuffer(getVkDevice(), stagingBuffer, nullptr);
+	vkFreeMemory(getVkDevice(), stagingBufferMemory, getVkAllocator());
+	vkDestroyBuffer(getVkDevice(), stagingBuffer, getVkAllocator());
 
 	return handle;
 }
@@ -459,7 +459,7 @@ void VulkanTexture::create(VulkanGraphicDevice* device)
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = device->findMemoryType(memRequirements.memoryTypeBits, properties);
 
-	VK_CHECK_RESULT(vkAllocateMemory(device->getVkDevice(), &allocInfo, nullptr, &vk_memory));
+	VK_CHECK_RESULT(vkAllocateMemory(device->getVkDevice(), &allocInfo, getVkAllocator(), &vk_memory));
 
 	VK_CHECK_RESULT(vkBindImageMemory(device->getVkDevice(), vk_image, vk_memory, 0));
 
@@ -475,13 +475,13 @@ void VulkanTexture::destroy(VulkanGraphicDevice* device)
 {
 	for (VkImageView& view : vk_view)
 	{
-		vkDestroyImageView(device->getVkDevice(), view, nullptr);
+		vkDestroyImageView(device->getVkDevice(), view, getVkAllocator());
 		view = VK_NULL_HANDLE;
 	}
 	if (vk_memory != 0) // If no memory used, image not allocated here (swapchain)
 	{
-		vkFreeMemory(device->getVkDevice(), vk_memory, nullptr);
-		vkDestroyImage(device->getVkDevice(), vk_image, nullptr);
+		vkFreeMemory(device->getVkDevice(), vk_memory, getVkAllocator());
+		vkDestroyImage(device->getVkDevice(), vk_image, getVkAllocator());
 		vk_memory = VK_NULL_HANDLE;
 		vk_image = VK_NULL_HANDLE;
 	}
@@ -524,8 +524,8 @@ void VulkanTexture::upload(VulkanGraphicDevice* device, const void* const* data,
 	VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic), cmd, device->getVkQueue(QueueType::Graphic));
 
 	// Free staging buffer
-	vkFreeMemory(device->getVkDevice(), stagingBufferMemory, nullptr);
-	vkDestroyBuffer(device->getVkDevice(), stagingBuffer, nullptr);
+	vkFreeMemory(device->getVkDevice(), stagingBufferMemory, getVkAllocator());
+	vkDestroyBuffer(device->getVkDevice(), stagingBuffer, getVkAllocator());
 }
 
 VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags)
@@ -547,7 +547,7 @@ VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t h
 	imageInfo.flags = flags;
 
 	VkImage image;
-	VK_CHECK_RESULT(vkCreateImage(device, &imageInfo, nullptr, &image));
+	VK_CHECK_RESULT(vkCreateImage(device, &imageInfo, getVkAllocator(), &image));
 	return image;
 }
 
@@ -565,7 +565,7 @@ VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkI
 	viewInfo.subresourceRange.layerCount = layerCount;
 
 	VkImageView view;
-	VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, nullptr, &view));
+	VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, getVkAllocator(), &view));
 	return view;
 }
 

@@ -156,7 +156,7 @@ struct VulkanContext
 	VulkanQueue presentQueue;
 
 	VkCommandPool commandPool[EnumCount<QueueType>()];
-	VkDebugUtilsMessengerEXT debugMessenger;
+	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
 	PlatformDevice* getPlatform() { return m_platform; }
 

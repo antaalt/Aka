@@ -350,7 +350,7 @@ void VulkanSwapchain::createSwapchain(VulkanGraphicDevice* _device, PlatformDevi
 	if (true)
 		createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; // For blitting operations.
 
-	std::set<uint32_t> singleImageFamilies;
+	HashSet<uint32_t> singleImageFamilies;
 	for (QueueType queue : EnumRange<QueueType>())
 		singleImageFamilies.insert(_device->getVkQueueIndex(queue));
 	singleImageFamilies.insert(_device->getVkPresentQueueIndex());
@@ -413,7 +413,7 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		viewInfo.subresourceRange.layerCount = 1;
 
 		VkImageView view = VK_NULL_HANDLE;
-		VK_CHECK_RESULT(vkCreateImageView(_device->getVkDevice(), &viewInfo, nullptr, &view));
+		VK_CHECK_RESULT(vkCreateImageView(_device->getVkDevice(), &viewInfo, getVkAllocator(), &view));
 
 		// Create color texture
 		String str = String::format("SwapChain%u", i);
@@ -565,13 +565,13 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 	fenceSignaledInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	// Semaphores & Fences
-	VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &acquireSemaphore));
+	VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, getVkAllocator(), &acquireSemaphore));
 	setDebugName(device->getVkDevice(), acquireSemaphore, "AcquireSemaphore");
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
-		VK_CHECK_RESULT(vkCreateFence(device->getVkDevice(), &fenceSignaledInfo, nullptr, &presentFence[i]));
+		VK_CHECK_RESULT(vkCreateFence(device->getVkDevice(), &fenceSignaledInfo, getVkAllocator(), &presentFence[i]));
 		setDebugName(device->getVkDevice(), presentFence[i], "presentFence");
-		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, nullptr, &presentSemaphore[i]));
+		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, getVkAllocator(), &presentSemaphore[i]));
 		setDebugName(device->getVkDevice(), presentSemaphore[i], "PresentSemaphore%u", i);
 	}
 	// Command buffers
@@ -583,7 +583,7 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 		createInfo.queueFamilyIndex = device->getVkQueueIndex(queue);
 		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-		VK_CHECK_RESULT(vkCreateCommandPool(device->getVkDevice(), &createInfo, nullptr, &commandPool[EnumToIndex(queue)]));
+		VK_CHECK_RESULT(vkCreateCommandPool(device->getVkDevice(), &createInfo, getVkAllocator(), &commandPool[EnumToIndex(queue)]));
 
 		// Allocate primary command buffers from frame command pool
 		VkCommandBufferAllocateInfo allocateInfo{};
@@ -600,15 +600,15 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 
 void VulkanFrame::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroySemaphore(device->getVkDevice(), acquireSemaphore, nullptr);
+	vkDestroySemaphore(device->getVkDevice(), acquireSemaphore, getVkAllocator());
 	acquireSemaphore = VK_NULL_HANDLE;
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
-		vkDestroyCommandPool(device->getVkDevice(), commandPool[i], nullptr);
+		vkDestroyCommandPool(device->getVkDevice(), commandPool[i], getVkAllocator());
 		commandPool[i] = VK_NULL_HANDLE;
-		vkDestroyFence(device->getVkDevice(), presentFence[i], nullptr);
+		vkDestroyFence(device->getVkDevice(), presentFence[i], getVkAllocator());
 		presentFence[i] = VK_NULL_HANDLE;
-		vkDestroySemaphore(device->getVkDevice(), presentSemaphore[i], nullptr);
+		vkDestroySemaphore(device->getVkDevice(), presentSemaphore[i], getVkAllocator());
 		presentSemaphore[i] = VK_NULL_HANDLE;
 	}
 }

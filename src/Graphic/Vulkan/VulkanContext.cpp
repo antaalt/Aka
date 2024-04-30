@@ -205,7 +205,7 @@ VkPipelineLayout VulkanContext::getPipelineLayout(const VkDescriptorSetLayout* l
 	pipelineLayoutCreateInfo.pPushConstantRanges = constants;
 
 	VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, getVkAllocator(), &pipelineLayout));
 
 	m_pipelineLayout.insert(std::make_pair(pair, pipelineLayout));
 
@@ -653,7 +653,7 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 	}
 
 	// Queues
-	std::set<uint32_t> uniqueQueueFamilies;
+	HashSet<uint32_t> uniqueQueueFamilies;
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 		uniqueQueueFamilies.insert(queues[i].familyIndex);
 	if (hasSurface)

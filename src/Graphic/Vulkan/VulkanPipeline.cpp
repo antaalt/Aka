@@ -375,7 +375,7 @@ void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 
 void VulkanGraphicPipeline::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroyPipeline(device->getVkDevice(), vk_pipeline, nullptr);
+	vkDestroyPipeline(device->getVkDevice(), vk_pipeline, getVkAllocator());
 	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
 
@@ -531,7 +531,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	// TODO: cache
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &gfxPipelineInfo, nullptr, &pipeline));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &gfxPipelineInfo, getVkAllocator(), &pipeline));
 	return pipeline;
 }
 
@@ -639,7 +639,7 @@ void VulkanComputePipeline::create(VulkanGraphicDevice* device)
 
 void VulkanComputePipeline::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroyPipeline(device->getVkDevice(), vk_pipeline, nullptr);
+	vkDestroyPipeline(device->getVkDevice(), vk_pipeline, getVkAllocator());
 	// TODO unref.
 	//vkDestroyPipelineLayout(m_context.device, vk_pipeline->vk_pipelineLayout, nullptr);
 
@@ -666,7 +666,7 @@ VkPipeline VulkanComputePipeline::createVkComputePipeline(VkDevice device, VkPip
 	createInfo.stage = shaderStage;
 
 	VkPipeline pipeline;
-	VK_CHECK_RESULT(vkCreateComputePipelines(device, nullptr, 1, &createInfo, nullptr, &pipeline));
+	VK_CHECK_RESULT(vkCreateComputePipelines(device, nullptr, 1, &createInfo, getVkAllocator(), &pipeline));
 	return pipeline;
 }
 

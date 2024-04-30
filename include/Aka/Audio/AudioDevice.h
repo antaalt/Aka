@@ -4,6 +4,7 @@
 #include <set>
 
 #include <Aka/Audio/AudioStream.h>
+#include <Aka/Core/Container/HashMap.hpp>
 
 namespace aka {
 
@@ -42,7 +43,7 @@ protected:
 protected:
 	uint32_t m_frequency;
 	uint32_t m_channelCount;
-	std::set<AudioStream*> m_streams;
+	HashSet<AudioStream*> m_streams;
 };
 
 };

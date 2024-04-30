@@ -115,7 +115,7 @@ void VulkanSampler::create(VulkanContext& context)
 
 void VulkanSampler::destroy(VulkanContext& context)
 {
-	vkDestroySampler(context.device, vk_sampler, nullptr);
+	vkDestroySampler(context.device, vk_sampler, getVkAllocator());
 	vk_sampler = VK_NULL_HANDLE;
 }
 
@@ -157,7 +157,7 @@ VkSampler VulkanSampler::createVkSampler(
 	samplerInfo.maxLod = static_cast<float>(mipLevels);
 
 	VkSampler sampler = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkCreateSampler(device, &samplerInfo, nullptr, &sampler));
+	VK_CHECK_RESULT(vkCreateSampler(device, &samplerInfo, getVkAllocator(), &sampler));
 
 	return sampler;
 }

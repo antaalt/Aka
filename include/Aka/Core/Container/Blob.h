@@ -22,7 +22,7 @@ public:
 	const void* data() const;
 	size_t size() const;
 private:
-	void* m_bytes;
+	byte_t* m_bytes;
 	size_t m_size;
 };
 
