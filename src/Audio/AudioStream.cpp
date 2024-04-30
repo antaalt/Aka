@@ -13,7 +13,7 @@ AudioStream* AudioStream::openStream(const Path& path)
 {
     if (OS::File::extension(path) == "mp3")
     {
-        AudioStreamMp3* mp3 = mem::akaNew<AudioStreamMp3>(AllocatorMemoryType::Persistent, AllocatorCategory::Audio); // TODO pool
+        AudioStreamMp3* mp3 = mem::akaNew<AudioStreamMp3>(AllocatorMemoryType::Object, AllocatorCategory::Audio); // TODO pool
         if (mp3->open(path))
             return mp3;
         Logger::error("Failed to load audio file : ", OS::File::name(path));
@@ -34,7 +34,7 @@ AudioStream* AudioStream::loadMemory(const Path& path)
         Audio audio;
         if (!mp3.load(path, &audio))
             return nullptr;
-        return mem::akaNew<AudioStreamMemory>(AllocatorMemoryType::Persistent, AllocatorCategory::Audio, audio.frames, audio.frequency, audio.channels);
+        return mem::akaNew<AudioStreamMemory>(AllocatorMemoryType::Object, AllocatorCategory::Audio, audio.frames, audio.frequency, audio.channels);
     }
     else
     {

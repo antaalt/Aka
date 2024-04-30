@@ -10,20 +10,19 @@
 namespace aka {
 
 // Override default vector for memory tracking
-template <typename T> 
-using vector = ::std::vector<T, AkaStlAllocator<T, AllocatorMemoryType::Persistent, AllocatorCategory::Vector>>;
+template <typename T, AllocatorCategory Category = AllocatorCategory::Global>
+using vector = ::std::vector<T, AkaStlAllocator<T, AllocatorMemoryType::Vector, Category>>;
 
-template <typename T>
+template <typename T, AllocatorCategory Category = AllocatorCategory::Global>
 class Vector final
 {
-	using AllocatorType = Allocator;
 	static const size_t defaultCapacity = 16;
 public:
 	Vector();
-	explicit Vector(AllocatorType& allocator);
-	explicit Vector(const T* data, size_t size, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
-	explicit Vector(size_t size, const T& defaultValue, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
-	explicit Vector(size_t size, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector));
+	explicit Vector(Allocator& allocator);
+	explicit Vector(const T* data, size_t size, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::Vector, Category));
+	explicit Vector(size_t size, const T& defaultValue, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::Vector, Category));
+	explicit Vector(size_t size, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::Vector, Category));
 	Vector(const Vector& vector);
 	Vector(Vector&& vector);
 	Vector& operator=(const Vector& vector);
@@ -33,15 +32,15 @@ public:
 	T& operator[](size_t index);
 	const T& operator[](size_t index) const;
 
-	bool operator==(const Vector<T>& vector) const;
-	bool operator!=(const Vector<T>& vector) const;
-	bool operator<(const Vector<T>& vector) const;
-	bool operator>(const Vector<T>& vector) const;
-	bool operator<=(const Vector<T>& vector) const;
-	bool operator>=(const Vector<T>& vector) const;
+	bool operator==(const Vector<T, Category>& vector) const;
+	bool operator!=(const Vector<T, Category>& vector) const;
+	bool operator<(const Vector<T, Category>& vector) const;
+	bool operator>(const Vector<T, Category>& vector) const;
+	bool operator<=(const Vector<T, Category>& vector) const;
+	bool operator>=(const Vector<T, Category>& vector) const;
 
 	T& append();
-	T& append(const Vector<T>& vector);
+	T& append(const Vector<T, Category>& vector);
 	T& append(const T* start, const T* end);
 	T& append(const T& value);
 	T& append(T&& value);
@@ -88,27 +87,27 @@ public:
 	// Pointer to ending of vector
 	const T* end() const;
 private:
-	AllocatorType& m_allocator;
+	Allocator& m_allocator;
 	T* m_data;
 	size_t m_size;
 	size_t m_capacity;
 };
 
-template <typename T>
-inline Vector<T>::Vector() :
-	Vector(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector))
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector() :
+	Vector(mem::getAllocator(AllocatorMemoryType::Vector, Category))
 {
 }
-template<typename T>
-inline Vector<T>::Vector(AllocatorType& allocator) :
+template<typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector(Allocator& allocator) :
 	m_allocator(allocator),
 	m_data(m_allocator.allocate<T>(defaultCapacity)),
 	m_size(0),
 	m_capacity(defaultCapacity)
 {
 }
-template <typename T>
-inline Vector<T>::Vector(const T* data, size_t size, AllocatorType& allocator) :
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector(const T* data, size_t size, Allocator& allocator) :
 	m_allocator(allocator),
 	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
@@ -116,8 +115,8 @@ inline Vector<T>::Vector(const T* data, size_t size, AllocatorType& allocator) :
 {
 	std::uninitialized_copy(data, data + size, begin());
 }
-template <typename T>
-inline Vector<T>::Vector(size_t size, const T& value, AllocatorType& allocator) :
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector(size_t size, const T& value, Allocator& allocator) :
 	m_allocator(allocator),
 	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
@@ -125,8 +124,8 @@ inline Vector<T>::Vector(size_t size, const T& value, AllocatorType& allocator) 
 {
 	std::uninitialized_fill(begin(), end(), value);
 }
-template <typename T>
-inline Vector<T>::Vector(size_t size, AllocatorType& allocator) :
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector(size_t size, Allocator& allocator) :
 	m_allocator(allocator),
 	m_data(m_allocator.allocate<T>(max(size, defaultCapacity))),
 	m_size(size),
@@ -134,14 +133,14 @@ inline Vector<T>::Vector(size_t size, AllocatorType& allocator) :
 {
 	std::uninitialized_default_construct(begin(), end());
 }
-template <typename T>
-inline Vector<T>::Vector(const Vector& vector) :
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector(const Vector& vector) :
 	Vector(vector.data(), vector.size()) // No allocator
 {
 }
-template <typename T>
-inline Vector<T>::Vector(Vector&& vector) :
-	m_allocator(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Vector)),
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::Vector(Vector&& vector) :
+	m_allocator(mem::getAllocator(AllocatorMemoryType::Vector, Category)),
 	m_data(nullptr),
 	m_size(0),
 	m_capacity(0)
@@ -151,15 +150,15 @@ inline Vector<T>::Vector(Vector&& vector) :
 	std::swap(m_size, vector.m_size);
 	std::swap(m_capacity, vector.m_capacity);
 }
-template <typename T>
-inline Vector<T>& Vector<T>::operator=(const Vector& vector)
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>& Vector<T, Category>::operator=(const Vector& vector)
 {
 	resize(vector.size());
 	std::copy(vector.begin(), vector.end(), begin());
 	return *this;
 }
-template <typename T>
-inline Vector<T>& Vector<T>::operator=(Vector&& vector)
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>& Vector<T, Category>::operator=(Vector&& vector)
 {
 	//std::swap(m_allocator, vector.m_allocator);
 	std::swap(m_data, vector.m_data);
@@ -167,56 +166,56 @@ inline Vector<T>& Vector<T>::operator=(Vector&& vector)
 	std::swap(m_capacity, vector.m_capacity);
 	return *this;
 }
-template <typename T>
-inline Vector<T>::~Vector()
+template <typename T, AllocatorCategory Category>
+inline Vector<T, Category>::~Vector()
 {
 	std::destroy(begin(), end());
 	m_allocator.deallocate(m_data);
 }
-template <typename T>
-inline T& Vector<T>::operator[](size_t index)
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::operator[](size_t index)
 {
 	AKA_ASSERT(index < m_size, "Out of range");
 	return m_data[index];
 }
-template <typename T>
-inline const T& Vector<T>::operator[](size_t index) const
+template <typename T, AllocatorCategory Category>
+inline const T& Vector<T, Category>::operator[](size_t index) const
 {
 	AKA_ASSERT(index < m_size, "Out of range");
 	return m_data[index];
 }
-template <typename T>
-inline bool Vector<T>::operator==(const Vector<T>& value) const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::operator==(const Vector<T, Category>& value) const
 {
 	return (size() == value.size()) && std::equal(begin(), end(), value.begin());
 }
-template <typename T>
-inline bool Vector<T>::operator!=(const Vector<T>& value) const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::operator!=(const Vector<T, Category>& value) const
 {
 	return (size() != value.size()) || !std::equal(begin(), end(), value.begin());
 }
-template <typename T>
-inline bool Vector<T>::operator<(const Vector<T>& value) const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::operator<(const Vector<T, Category>& value) const
 {
 	return std::lexicographical_compare(begin(), end(), value.begin(), value.end());
 }
-template <typename T>
-inline bool Vector<T>::operator>(const Vector<T>& value) const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::operator>(const Vector<T, Category>& value) const
 {
 	return value < *this;
 }
-template <typename T>
-inline bool Vector<T>::operator<=(const Vector<T>& value) const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::operator<=(const Vector<T, Category>& value) const
 {
 	return !(value < *this);
 }
-template <typename T>
-inline bool Vector<T>::operator>=(const Vector<T>& value) const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::operator>=(const Vector<T, Category>& value) const
 {
 	return !(*this < value);
 }
-template <typename T>
-inline T& Vector<T>::append()
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::append()
 {
 	size_t newSize = m_size + 1;
 	reserve(newSize);
@@ -224,13 +223,13 @@ inline T& Vector<T>::append()
 	m_size = newSize;
 	return last();
 }
-template <typename T>
-inline T& Vector<T>::append(const Vector<T>& vector)
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::append(const Vector<T, Category>& vector)
 {
 	return append(vector.begin(), vector.end());
 }
-template <typename T>
-inline T& Vector<T>::append(const T* _start, const T* _end)
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::append(const T* _start, const T* _end)
 {
 	AKA_ASSERT(_end >= _start, "Invalid range");
 	T* b = begin();
@@ -242,8 +241,8 @@ inline T& Vector<T>::append(const T* _start, const T* _end)
 	m_size = m_size + range;
 	return last();
 }
-template <typename T>
-inline T& Vector<T>::append(const T& value)
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::append(const T& value)
 {
 	size_t newSize = m_size + 1;
 	reserve(newSize);
@@ -251,8 +250,8 @@ inline T& Vector<T>::append(const T& value)
 	m_size = newSize;
 	return last();
 }
-template <typename T>
-inline T& Vector<T>::append(T&& value)
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::append(T&& value)
 {
 	size_t newSize = m_size + 1;
 	reserve(newSize);
@@ -260,16 +259,16 @@ inline T& Vector<T>::append(T&& value)
 	m_size = newSize;
 	return last();
 }
-template<typename T>
+template<typename T, AllocatorCategory Category>
 template<typename ...Args>
-inline T& Vector<T>::emplace(Args ...args)
+inline T& Vector<T, Category>::emplace(Args ...args)
 {
 	size_t off = m_size;
 	resize(m_size + 1, T(std::forward<Args>(args)...));
 	return last();
 }
-template <typename T>
-inline void Vector<T>::remove(T* _start, T* _end)
+template <typename T, AllocatorCategory Category>
+inline void Vector<T, Category>::remove(T* _start, T* _end)
 {
 	AKA_ASSERT(_start >= begin() || _start < end(), "Start not in range");
 	AKA_ASSERT(_end > begin() || _end <= end(), "End not in range");
@@ -278,23 +277,23 @@ inline void Vector<T>::remove(T* _start, T* _end)
 	std::destroy(_start + (end() - _end), end());
 	m_size -= (_end - _start);
 }
-template <typename T>
-inline void Vector<T>::remove(T* value)
+template <typename T, AllocatorCategory Category>
+inline void Vector<T, Category>::remove(T* value)
 {
 	remove(value, value + 1);
 }
-template <typename T>
-inline size_t Vector<T>::size() const
+template <typename T, AllocatorCategory Category>
+inline size_t Vector<T, Category>::size() const
 {
 	return m_size;
 }
-template <typename T>
-inline size_t Vector<T>::capacity() const
+template <typename T, AllocatorCategory Category>
+inline size_t Vector<T, Category>::capacity() const
 {
 	return m_capacity;
 }
-template <typename T>
-inline void Vector<T>::resize(size_t size)
+template <typename T, AllocatorCategory Category>
+inline void Vector<T, Category>::resize(size_t size)
 {
 	if (m_size == size)
 		return;
@@ -310,8 +309,8 @@ inline void Vector<T>::resize(size_t size)
 	}
 	m_size = size;
 }
-template <typename T>
-inline void Vector<T>::resize(size_t size, const T& defaultValue)
+template <typename T, AllocatorCategory Category>
+inline void Vector<T, Category>::resize(size_t size, const T& defaultValue)
 {
 	if (m_size == size)
 		return;
@@ -327,8 +326,8 @@ inline void Vector<T>::resize(size_t size, const T& defaultValue)
 	}
 	m_size = size;
 }
-template <typename T>
-inline void Vector<T>::reserve(size_t size)
+template <typename T, AllocatorCategory Category>
+inline void Vector<T, Category>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
@@ -342,64 +341,64 @@ inline void Vector<T>::reserve(size_t size)
 	m_capacity = size;
 	m_data = buffer;
 }
-template <typename T>
-inline void Vector<T>::clear()
+template <typename T, AllocatorCategory Category>
+inline void Vector<T, Category>::clear()
 {
 	std::destroy(begin(), end());
 	m_size = 0;
 }
-template <typename T>
-inline bool Vector<T>::empty() const
+template <typename T, AllocatorCategory Category>
+inline bool Vector<T, Category>::empty() const
 {
 	return m_size == 0;
 }
-template <typename T>
-inline T* Vector<T>::data()
+template <typename T, AllocatorCategory Category>
+inline T* Vector<T, Category>::data()
 {
 	return m_data;
 }
-template <typename T>
-inline const T* Vector<T>::data() const
+template <typename T, AllocatorCategory Category>
+inline const T* Vector<T, Category>::data() const
 {
 	return m_data;
 }
-template <typename T>
-inline T& Vector<T>::first()
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::first()
 {
 	return m_data[0];
 }
-template <typename T>
-inline const T& Vector<T>::first() const
+template <typename T, AllocatorCategory Category>
+inline const T& Vector<T, Category>::first() const
 {
 	return m_data[0];
 }
-template <typename T>
-inline T& Vector<T>::last()
+template <typename T, AllocatorCategory Category>
+inline T& Vector<T, Category>::last()
 {
 	return m_data[m_size - 1];
 }
-template <typename T>
-inline const T& Vector<T>::last() const
+template <typename T, AllocatorCategory Category>
+inline const T& Vector<T, Category>::last() const
 {
 	return m_data[m_size - 1];
 }
-template <typename T>
-inline T* Vector<T>::begin()
+template <typename T, AllocatorCategory Category>
+inline T* Vector<T, Category>::begin()
 {
 	return m_data;
 }
-template <typename T>
-inline T* Vector<T>::end()
+template <typename T, AllocatorCategory Category>
+inline T* Vector<T, Category>::end()
 {
 	return m_data + m_size;
 }
-template <typename T>
-inline const T* Vector<T>::begin() const
+template <typename T, AllocatorCategory Category>
+inline const T* Vector<T, Category>::begin() const
 {
 	return m_data;
 }
-template <typename T>
-inline const T* Vector<T>::end() const
+template <typename T, AllocatorCategory Category>
+inline const T* Vector<T, Category>::end() const
 {
 	return m_data + m_size;
 }

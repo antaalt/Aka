@@ -64,7 +64,7 @@ ComponentAllocatorMap& getDefaultComponentAllocators() {
 	AllocatorTracker& tracker = getAllocatorTracker();
 #endif
 	// Pass allocator to ComponentAllocator so that it outlives it & avoid a crash because allocator is used in pool destructor but it was already destroyed.
-	static ComponentAllocatorMap s_defaultComponentAllocators(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Component));
+	static ComponentAllocatorMap s_defaultComponentAllocators(mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Component));
 	return s_defaultComponentAllocators;
 }
 

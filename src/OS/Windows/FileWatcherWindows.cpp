@@ -174,7 +174,7 @@ WatchStruct* CreateWatch(LPCTSTR szDirectory, bool recursive, DWORD mNotifyFilte
 	if (tWatch == nullptr)
 		return nullptr;
 
-	Watcher* pWatch = mem::akaNew<Watcher>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+	Watcher* pWatch = mem::akaNew<Watcher>(AllocatorMemoryType::Object, AllocatorCategory::Global);
 	tWatch->watcher = pWatch;
 
 	pWatch->mDirHandle = CreateFileW(
@@ -263,7 +263,7 @@ struct FileWatcher::OSData
 };
 
 FileWatcher::FileWatcher() :
-	m_osData(mem::akaNew<OSData>(AllocatorMemoryType::Persistent, AllocatorCategory::Default))
+	m_osData(mem::akaNew<OSData>(AllocatorMemoryType::Object, AllocatorCategory::Global))
 {
 }
 FileWatcher::~FileWatcher()

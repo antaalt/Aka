@@ -31,7 +31,7 @@ private:
     vec2u m_elementCount; // Number of possible elements in the 2D atlas
     vec2u m_elementSize; // Fixed size of each element
     Image m_image; // Final image
-    std::vector<Rect> m_regions; // Different regions of the atlas
+    Vector<Rect> m_regions; // Different regions of the atlas
 };
 
 };

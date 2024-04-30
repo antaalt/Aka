@@ -100,7 +100,7 @@ private:
 
 template <typename T, size_t ChunkCountPerBlock>
 inline Pool<T, ChunkCountPerBlock>::Pool() :
-	Pool(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Pool))
+	Pool(mem::getAllocator(AllocatorMemoryType::Pool, AllocatorCategory::Global))
 {
 }
 

@@ -24,6 +24,10 @@
 namespace aka {
 namespace gfx {
 
+template <typename T>
+using Vector = ::aka::Vector<T, AllocatorCategory::Graphic>;
+using String = ::aka::Str<char, AllocatorCategory::Graphic>;
+
 enum class GraphicAPI : uint8_t
 {
 	Unknown,

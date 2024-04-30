@@ -112,17 +112,17 @@ VkAllocationCallbacks* getVkAllocator()
 		allocator = std::make_unique<VkAllocationCallbacks>();
 		allocator->pfnAllocation = [](void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) -> void*
 		{
-			return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedAllocate<VulkanHandle>(size, alignment, AllocatorFlags::None);
+			return mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Graphic).alignedAllocate<VulkanHandle>(size, alignment, AllocatorFlags::None);
 		};
 		allocator->pfnFree = [](void* pUserData, void* pMemory)
 		{
-			mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedDeallocate(pMemory);
+			mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Graphic).alignedDeallocate(pMemory);
 		};
 		allocator->pfnInternalAllocation = nullptr; // Should do ?
 		allocator->pfnInternalFree = nullptr; // Should do ?
 		allocator->pfnReallocation = [](void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) -> void*
 		{
-			return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic).alignedReallocate<VulkanHandle>(pOriginal, size, alignment, AllocatorFlags::None);
+			return mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Graphic).alignedReallocate<VulkanHandle>(pOriginal, size, alignment, AllocatorFlags::None);
 		};
 		allocator->pUserData = nullptr;
 	}

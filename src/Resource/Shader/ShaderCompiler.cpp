@@ -169,9 +169,9 @@ public:
 				if (OS::File::read(header, &str))
 				{
 					// Destroyed in releaseInclude
-					char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
+					char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::String, AllocatorCategory::Graphic);
 					Memory::copy(data, str.cstr(), str.length() + 1);
-					return mem::akaNew<IncludeResult>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
+					return mem::akaNew<IncludeResult>(AllocatorMemoryType::String, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
 				}
 			}
 		}
@@ -196,9 +196,9 @@ public:
 			if (OS::File::read(header, &str))
 			{
 				// Destroyed in releaseInclude
-				char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
+				char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::String, AllocatorCategory::Graphic);
 				Memory::copy(data, str.cstr(), str.length() + 1);
-				return mem::akaNew<IncludeResult>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
+				return mem::akaNew<IncludeResult>(AllocatorMemoryType::String, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
 			}
 		}
 		return nullptr;

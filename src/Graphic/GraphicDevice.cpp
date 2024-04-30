@@ -12,7 +12,7 @@ GraphicDevice* GraphicDevice::create(GraphicAPI api)
 	{
 #if defined(AKA_USE_VULKAN)
 	case GraphicAPI::Vulkan:
-		return mem::akaNew<VulkanGraphicDevice>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
+		return mem::akaNew<VulkanGraphicDevice>(AllocatorMemoryType::Object, AllocatorCategory::Graphic);
 #endif
 	default:
 		return nullptr;

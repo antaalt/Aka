@@ -12,9 +12,9 @@ namespace aka {
 RtAudioDevice::RtAudioDevice(const AudioConfig& config) :
 	AudioDevice(config),
 #if defined(AKA_PLATFORM_WINDOWS)
-	m_audio(mem::akaNew<RtAudio>(AllocatorMemoryType::Persistent, AllocatorCategory::Audio, RtAudio::Api::WINDOWS_DS))
+	m_audio(mem::akaNew<RtAudio>(AllocatorMemoryType::Object, AllocatorCategory::Audio, RtAudio::Api::WINDOWS_DS))
 #else
-	m_audio(mem::akaNew<RtAudio>(AllocatorMemoryType::Persistent, AllocatorCategory::Audio, RtAudio::Api::LINUX_PULSE))
+	m_audio(mem::akaNew<RtAudio>(AllocatorMemoryType::Object, AllocatorCategory::Audio, RtAudio::Api::LINUX_PULSE))
 #endif
 {
 }

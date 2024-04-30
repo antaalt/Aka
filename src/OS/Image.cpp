@@ -11,9 +11,9 @@
 
 struct StbAllocation { uint8_t data; };
 static_assert(sizeof(StbAllocation) == 1);
-#define STBI_MALLOC(sz)           (::aka::mem::getAllocator(::aka::AllocatorMemoryType::Temporary, ::aka::AllocatorCategory::Default).allocate<StbAllocation>(sz))
-#define STBI_REALLOC(p,newsz)     (::aka::mem::getAllocator(::aka::AllocatorMemoryType::Temporary, ::aka::AllocatorCategory::Default).reallocate<StbAllocation>(p, newsz))
-#define STBI_FREE(p)              (::aka::mem::getAllocator(::aka::AllocatorMemoryType::Temporary, ::aka::AllocatorCategory::Default).deallocate(p))
+#define STBI_MALLOC(sz)           (::aka::mem::getAllocator(::aka::AllocatorMemoryType::Object, ::aka::AllocatorCategory::Global).allocate<StbAllocation>(sz))
+#define STBI_REALLOC(p,newsz)     (::aka::mem::getAllocator(::aka::AllocatorMemoryType::Object, ::aka::AllocatorCategory::Global).reallocate<StbAllocation>(p, newsz))
+#define STBI_FREE(p)              (::aka::mem::getAllocator(::aka::AllocatorMemoryType::Object, ::aka::AllocatorCategory::Global).deallocate(p))
 
 #include <stb_image.h>
 #include <stb_image_write.h>

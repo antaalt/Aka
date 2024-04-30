@@ -71,14 +71,14 @@ static_assert(sizeof(ImGuiAllocation) == 1);
 void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 {
 	ImGui::SetAllocatorFunctions([](size_t sz, void* user_data) -> void* {
-		return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Editor).allocate<ImGuiAllocation>(sz);
+		return mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Editor).allocate<ImGuiAllocation>(sz);
 	}, 
 	[](void* ptr, void* user_data) {
-		mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Editor).deallocate(ptr);
+		mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Editor).deallocate(ptr);
 	}, nullptr);
 
 	AKA_ASSERT(m_renderData == nullptr, "");
-	m_renderData = mem::akaNew<ImGuiRenderData>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic);
+	m_renderData = mem::akaNew<ImGuiRenderData>(AllocatorMemoryType::Object, AllocatorCategory::Graphic);
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

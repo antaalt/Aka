@@ -50,13 +50,13 @@ void ColliderComponent::fromArchive(const ArchiveColliderComponent& archive)
 	AKA_ASSERT(m_shape == nullptr, "");
 	switch (archive.shape) {
 	case ColliderShapeType::Cube:
-		m_shape = mem::akaNew<ColliderCube>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+		m_shape = mem::akaNew<ColliderCube>(AllocatorMemoryType::Object, AllocatorCategory::Global);
 		break;
 	case ColliderShapeType::Sphere:
-		m_shape = mem::akaNew<ColliderSphere>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+		m_shape = mem::akaNew<ColliderSphere>(AllocatorMemoryType::Object, AllocatorCategory::Global);
 		break;
 	case ColliderShapeType::Plane:
-		m_shape = mem::akaNew<ColliderPlane>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+		m_shape = mem::akaNew<ColliderPlane>(AllocatorMemoryType::Object, AllocatorCategory::Global);
 		break;
 	default:
 		AKA_NOT_IMPLEMENTED;

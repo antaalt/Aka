@@ -23,7 +23,7 @@ PlatformFlag operator~(const PlatformFlag& flag)
 PlatformDevice* PlatformDevice::create(const PlatformConfig& config)
 {
 #if defined(AKA_USE_GLFW3)
-	return mem::akaNew<PlatformGLFW3>(AllocatorMemoryType::Persistent, AllocatorCategory::Default, config);
+	return mem::akaNew<PlatformGLFW3>(AllocatorMemoryType::Object, AllocatorCategory::Global, config);
 #else
 	Logger::critical("No platform defined.");
 	return nullptr;

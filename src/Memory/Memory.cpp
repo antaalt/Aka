@@ -145,36 +145,83 @@ namespace mem {
 using DefaultAllocatorType = DefaultAllocator;
 
 // There should be some memory manager running everyframe & updating all blocks.
-Allocator& getAllocator(AllocatorMemoryType memory = AllocatorMemoryType::Persistent, AllocatorCategory category = AllocatorCategory::Default)
+Allocator& getAllocator(AllocatorMemoryType memory, AllocatorCategory category)
 {
-	static DefaultAllocator GlobalMemoryAllocator("GlobalMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+	static DefaultAllocator GlobalMemoryAllocator("GlobalMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Global);
 
 	static DefaultAllocatorType AllocatorType[EnumCount<AllocatorMemoryType>()][EnumCount<AllocatorCategory>()] = {
-		{ // AllocatorMemoryType::Temporary
-			DefaultAllocatorType("TemporaryDefaultMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
-			DefaultAllocatorType("TemporaryGfxMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
-			DefaultAllocatorType("TemporaryAudioMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Audio
-			DefaultAllocatorType("TemporaryStringMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
-			DefaultAllocatorType("TemporaryVectorMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
-			DefaultAllocatorType("TemporaryMapMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Map, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Map
-			DefaultAllocatorType("TemporaryPoolMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
-			DefaultAllocatorType("TemporaryListMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
-			DefaultAllocatorType("TemporaryComponentMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
-			DefaultAllocatorType("TemporaryArchiveMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Archive, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Archive
-			DefaultAllocatorType("TemporaryEditorMemoryAllocator", AllocatorMemoryType::Temporary, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Editor
+		{ // AllocatorMemoryType::Vector
+			DefaultAllocatorType("VectorGlobalMemoryAllocator", AllocatorMemoryType::Vector, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("VectorGfxMemoryAllocator", AllocatorMemoryType::Vector, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("VectorAudioMemoryAllocator", AllocatorMemoryType::Vector, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("VectorAssetsMemoryAllocator", AllocatorMemoryType::Vector, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("VectorComponentMemoryAllocator", AllocatorMemoryType::Vector, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("VectorEditorMemoryAllocator", AllocatorMemoryType::Vector, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+			
 		},
-		{ // AllocatorMemoryType::Persistent
-			DefaultAllocatorType("PersistentDefaultMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Default, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Default
-			DefaultAllocatorType("PersistentGfxMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Graphic
-			DefaultAllocatorType("PersistentAudioMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Audio
-			DefaultAllocatorType("PersistentStringMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::String, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::String
-			DefaultAllocatorType("PersistentVectorMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Vector, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Vector
-			DefaultAllocatorType("PersistentMapMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Map, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Map
-			DefaultAllocatorType("PersistentPoolMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Pool, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Pool
-			DefaultAllocatorType("PersistentListMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::List, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::List
-			DefaultAllocatorType("PersistentComponentMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Component
-			DefaultAllocatorType("PersistentArchiveMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Archive, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Archive
-			DefaultAllocatorType("PersistentEditorMemoryAllocator", AllocatorMemoryType::Persistent, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20), // AllocatorCategory::Editor
+		{ // AllocatorMemoryType::Map
+			DefaultAllocatorType("MapGlobalMemoryAllocator", AllocatorMemoryType::Map, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("MapGfxMemoryAllocator", AllocatorMemoryType::Map, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("MapAudioMemoryAllocator", AllocatorMemoryType::Map, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("MapAssetsMemoryAllocator", AllocatorMemoryType::Map, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("MapComponentMemoryAllocator", AllocatorMemoryType::Map, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("MapEditorMemoryAllocator", AllocatorMemoryType::Map, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::Blob
+			DefaultAllocatorType("BlobGlobalMemoryAllocator", AllocatorMemoryType::Blob, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("BlobGfxMemoryAllocator", AllocatorMemoryType::Blob, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("BlobAudioMemoryAllocator", AllocatorMemoryType::Blob, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("BlobAssetsMemoryAllocator", AllocatorMemoryType::Blob, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("BlobComponentMemoryAllocator", AllocatorMemoryType::Blob, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("BlobEditorMemoryAllocator", AllocatorMemoryType::Blob, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::Set
+			DefaultAllocatorType("SetGlobalMemoryAllocator", AllocatorMemoryType::Set, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("SetGfxMemoryAllocator", AllocatorMemoryType::Set, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("SetAudioMemoryAllocator", AllocatorMemoryType::Set, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("SetAssetsMemoryAllocator", AllocatorMemoryType::Set, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("SetComponentMemoryAllocator", AllocatorMemoryType::Set, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("SetEditorMemoryAllocator", AllocatorMemoryType::Set, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::List
+			DefaultAllocatorType("ListGlobalMemoryAllocator", AllocatorMemoryType::List, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ListGfxMemoryAllocator", AllocatorMemoryType::List, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ListAudioMemoryAllocator", AllocatorMemoryType::List, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ListAssetsMemoryAllocator", AllocatorMemoryType::List, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ListComponentMemoryAllocator", AllocatorMemoryType::List, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ListEditorMemoryAllocator", AllocatorMemoryType::List, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::String
+			DefaultAllocatorType("StringGlobalMemoryAllocator", AllocatorMemoryType::String, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("StringGfxMemoryAllocator", AllocatorMemoryType::String, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("StringAudioMemoryAllocator", AllocatorMemoryType::String, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("StringAssetsMemoryAllocator", AllocatorMemoryType::String, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("StringComponentMemoryAllocator", AllocatorMemoryType::String, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("StringEditorMemoryAllocator", AllocatorMemoryType::String, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::Pool
+			DefaultAllocatorType("PoolGlobalMemoryAllocator", AllocatorMemoryType::Pool, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("PoolGfxMemoryAllocator", AllocatorMemoryType::Pool, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("PoolAudioMemoryAllocator", AllocatorMemoryType::Pool, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("PoolAssetsMemoryAllocator", AllocatorMemoryType::Pool, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("PoolComponentMemoryAllocator", AllocatorMemoryType::Pool, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("PoolEditorMemoryAllocator", AllocatorMemoryType::Pool, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::Object
+			DefaultAllocatorType("ObjectGlobalMemoryAllocator", AllocatorMemoryType::Object, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ObjectGfxMemoryAllocator", AllocatorMemoryType::Object, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ObjectAudioMemoryAllocator", AllocatorMemoryType::Object, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ObjectAssetsMemoryAllocator", AllocatorMemoryType::Object, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ObjectComponentMemoryAllocator", AllocatorMemoryType::Object, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("ObjectEditorMemoryAllocator", AllocatorMemoryType::Object, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
+		},
+		{ // AllocatorMemoryType::Raw
+			DefaultAllocatorType("RawGlobalMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Global, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("RawGfxMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Graphic, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("RawAudioMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Audio, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("RawAssetsMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Assets, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("RawComponentMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Component, &GlobalMemoryAllocator, 1U << 20),
+			DefaultAllocatorType("RawEditorMemoryAllocator", AllocatorMemoryType::Raw, AllocatorCategory::Editor, &GlobalMemoryAllocator, 1U << 20),
 		},
 	};
 	return AllocatorType[EnumToIndex(memory)][EnumToIndex(category)];
@@ -189,26 +236,26 @@ using byte_t = uint8_t;
 void* operator new(std::size_t n) noexcept(false)
 {
 	using namespace aka;
-	return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).allocate<byte_t>(n, AllocatorFlags::None);
+	return mem::getAllocator(AllocatorMemoryType::Raw, AllocatorCategory::Global).allocate<byte_t>(n, AllocatorFlags::None);
 }
 void operator delete(void* p, std::size_t) throw()
 {
 	using namespace aka;
-	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate(static_cast<byte_t*>(p));
+	mem::getAllocator(AllocatorMemoryType::Raw, AllocatorCategory::Global).deallocate(static_cast<byte_t*>(p));
 }
 void* operator new[](std::size_t n) noexcept(false)
 {
 	using namespace aka;
-	return mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).allocate<byte_t>(n, AllocatorFlags::None);
+	return mem::getAllocator(AllocatorMemoryType::Raw, AllocatorCategory::Global).allocate<byte_t>(n, AllocatorFlags::None);
 }
 void operator delete[](void* p) throw()
 {
 	using namespace aka;
-	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate(static_cast<byte_t*>(p));
+	mem::getAllocator(AllocatorMemoryType::Raw, AllocatorCategory::Global).deallocate(static_cast<byte_t*>(p));
 }
 void operator delete[](void* p, std::size_t) throw()
 {
 	using namespace aka;
-	mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Default).deallocate(static_cast<byte_t*>(p));
+	mem::getAllocator(AllocatorMemoryType::Raw, AllocatorCategory::Global).deallocate(static_cast<byte_t*>(p));
 }
 #endif

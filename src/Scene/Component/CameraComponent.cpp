@@ -192,10 +192,10 @@ void CameraComponent::fromArchive(const ArchiveCameraComponent& archive)
 	switch (archive.projectionType)
 	{
 	case CameraProjectionType::Orthographic:
-		m_projection = mem::akaNew<CameraOrthographic>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+		m_projection = mem::akaNew<CameraOrthographic>(AllocatorMemoryType::Object, AllocatorCategory::Global);
 		break;
 	case CameraProjectionType::Perpective:
-		m_projection = mem::akaNew<CameraPerspective>(AllocatorMemoryType::Persistent, AllocatorCategory::Default);
+		m_projection = mem::akaNew<CameraPerspective>(AllocatorMemoryType::Object, AllocatorCategory::Global);
 		break;
 	default:
 		AKA_UNREACHABLE;

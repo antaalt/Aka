@@ -22,14 +22,14 @@ Application::Application(const Config& config) :
 	m_platform(PlatformDevice::create(config.platform)),
 	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
 	m_audio(AudioDevice::create(config.audio)),
-	m_program(mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic)),
-	m_assets(mem::akaNew<AssetLibrary>(AllocatorMemoryType::Persistent, AllocatorCategory::Archive)),
-	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Persistent, AllocatorCategory::Default)),
+	m_program(mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Object, AllocatorCategory::Graphic)),
+	m_assets(mem::akaNew<AssetLibrary>(AllocatorMemoryType::Object, AllocatorCategory::Assets)),
+	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Object, AllocatorCategory::Global)),
 	m_needClientResize(false),
 	m_width(0),
 	m_height(0),
 	m_running(true),
-	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, m_graphic, m_assets))
+	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_graphic, m_assets))
 {
 }
 Application::~Application()

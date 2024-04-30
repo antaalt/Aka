@@ -5,7 +5,7 @@ namespace aka {
 
 using namespace Microsoft::WRL;
 
-using AdapterList = std::vector<ComPtr<IDXGIAdapter4>>;
+using AdapterList = vector<ComPtr<IDXGIAdapter4>>;
 
 bool CheckTearingSupport()
 {

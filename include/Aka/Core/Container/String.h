@@ -11,10 +11,9 @@
 
 namespace aka {
 
-template <typename T = char>
+template <typename T = char, AllocatorCategory Category = AllocatorCategory::Global>
 class Str final
 {
-	using AllocatorType = Allocator;
 	static const size_t defaultCapacity = 16;
 public:
 	using Char = T;
@@ -22,13 +21,13 @@ public:
 public:
 	Str();
 	Str(const T* string);
-	explicit Str(AllocatorType& allocator);
-	explicit Str(const T* string, AllocatorType& allocator);
-	explicit Str(const T* string, size_t length, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
-	explicit Str(size_t length, T character, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
-	explicit Str(size_t length, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
-	Str(const Str& string, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
-	Str(Str&& string, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::String));
+	explicit Str(Allocator& allocator);
+	explicit Str(const T* string, Allocator& allocator);
+	explicit Str(const T* string, size_t length, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::String, Category));
+	explicit Str(size_t length, T character, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::String, Category));
+	explicit Str(size_t length, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::String, Category));
+	Str(const Str& string, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::String, Category));
+	Str(Str&& string, Allocator& allocator = mem::getAllocator(AllocatorMemoryType::String, Category));
 	Str& operator=(const Str& string);
 	Str& operator=(Str&& string);
 	Str& operator=(const T* string);
@@ -123,7 +122,7 @@ public:
 	Str substr(size_t start, size_t len) const;
 
 private:
-	AllocatorType& m_allocator;
+	Allocator& m_allocator;
 	T* m_string;
 	size_t m_length;
 	size_t m_capacity;
@@ -134,38 +133,38 @@ using StringWide = Str<wchar_t>;
 using String16 = Str<char16_t>;
 using String32 = Str<char32_t>;
 
-template<typename T>
-inline Str<T>::Str() :
-	Str<T>(Str<T>::null(), 0)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str() :
+	Str<T, Category>(Str<T, Category>::null(), 0)
 {
 }
-template<typename T>
-inline Str<T>::Str(const T* string) :
-	Str<T>(string, Str<T>::length(string))
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(const T* string) :
+	Str<T, Category>(string, Str<T, Category>::length(string))
 {
 }
-template<typename T>
-inline Str<T>::Str(AllocatorType& allocator) :
-	Str<T>(Str<T>::null(), 0, allocator)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(Allocator& allocator) :
+	Str<T, Category>(Str<T, Category>::null(), 0, allocator)
 {
 }
-template<typename T>
-inline Str<T>::Str(const T* str, AllocatorType& allocator) :
-	Str<T>(str, Str<T>::length(str), allocator)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(const T* str, Allocator& allocator) :
+	Str<T, Category>(str, Str<T, Category>::length(str), allocator)
 {
 }
-template<typename T>
-inline Str<T>::Str(const T* str, size_t length, AllocatorType& allocator) :
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(const T* str, size_t length, Allocator& allocator) :
 	m_allocator(allocator),
 	m_string(m_allocator.allocate<T>(max(length + 1, defaultCapacity))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
-	Str<T>::copy(m_string, m_length, str);
+	Str<T, Category>::copy(m_string, m_length, str);
 	m_string[length] = '\0';
 }
-template<typename T>
-inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(size_t length, T character, Allocator& allocator) :
 	m_allocator(allocator),
 	m_string(m_allocator.allocate<T>(max(length + 1, defaultCapacity))),
 	m_length(length),
@@ -175,21 +174,21 @@ inline Str<T>::Str(size_t length, T character, AllocatorType& allocator) :
 		m_string[i] = character;
 	m_string[length] = '\0';
 }
-template<typename T>
-inline Str<T>::Str(size_t length, AllocatorType& allocator) :
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(size_t length, Allocator& allocator) :
 	m_allocator(allocator),
 	m_string(m_allocator.allocate<T>(max(length + 1, defaultCapacity))),
 	m_length(length),
 	m_capacity(max(length + 1, defaultCapacity))
 {
 }
-template<typename T>
-inline Str<T>::Str(const Str<T>& str, AllocatorType& allocator) :
-	Str<T>(str.m_string, str.m_length)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(const Str<T, Category>& str, Allocator& allocator) :
+	Str<T, Category>(str.m_string, str.m_length)
 {
 }
-template<typename T>
-inline Str<T>::Str(Str<T>&& string, AllocatorType& allocator) :
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::Str(Str<T, Category>&& string, Allocator& allocator) :
 	m_allocator(allocator),
 	m_string(nullptr),
 	m_length(0),
@@ -200,15 +199,15 @@ inline Str<T>::Str(Str<T>&& string, AllocatorType& allocator) :
 	std::swap(m_length, string.m_length);
 	std::swap(m_capacity, string.m_capacity);
 }
-template<typename T>
-inline Str<T>& Str<T>::operator=(const Str<T>& str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::operator=(const Str<T, Category>& str)
 {
 	resize(str.m_length);
-	Str<T>::copy(m_string, str.m_length, str.m_string);
+	Str<T, Category>::copy(m_string, str.m_length, str.m_string);
 	return *this;
 }
-template<typename T>
-inline Str<T>& Str<T>::operator=(Str<T>&& str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::operator=(Str<T, Category>&& str)
 {
 	//std::swap(m_allocator, str.m_allocator);
 	std::swap(m_string, str.m_string);
@@ -216,138 +215,138 @@ inline Str<T>& Str<T>::operator=(Str<T>&& str)
 	std::swap(m_capacity, str.m_capacity);
 	return *this;
 }
-template<typename T>
-inline Str<T>& Str<T>::operator=(const T* str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::operator=(const T* str)
 {
-	size_t length = Str<T>::length(str);
+	size_t length = Str<T, Category>::length(str);
 	resize(length);
-	Str<T>::copy(m_string, length, str);
+	Str<T, Category>::copy(m_string, length, str);
 	return *this;
 }
-template<typename T>
-inline Str<T>::~Str()
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>::~Str()
 {
 	m_allocator.deallocate(m_string);
 }
-template<typename T>
-inline T& Str<T>::operator[](size_t index)
+template<typename T, AllocatorCategory Category>
+inline T& Str<T, Category>::operator[](size_t index)
 {
 	AKA_ASSERT(index <= m_length, "Out of range");
 	return m_string[index];
 }
-template<typename T>
-inline const T& Str<T>::operator[](size_t index) const
+template<typename T, AllocatorCategory Category>
+inline const T& Str<T, Category>::operator[](size_t index) const
 {
 	AKA_ASSERT(index <= m_length, "Out of range");
 	return m_string[index];
 }
-template<typename T>
-inline bool Str<T>::operator==(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator==(const Str<T, Category>& str) const
 {
-	return Str<T>::compare(m_string, str.m_string) == 0;
+	return Str<T, Category>::compare(m_string, str.m_string) == 0;
 }
-template<typename T>
-inline bool Str<T>::operator!=(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator!=(const Str<T, Category>& str) const
 {
-	return Str<T>::compare(m_string, str.m_string) != 0;
+	return Str<T, Category>::compare(m_string, str.m_string) != 0;
 }
-template<typename T>
-inline bool Str<T>::operator<(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator<(const Str<T, Category>& str) const
 {
 	return std::lexicographical_compare(begin(), end(), str.begin(), str.end());
 }
-template<typename T>
-inline bool Str<T>::operator>(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator>(const Str<T, Category>& str) const
 {
 	return str < *this;
 }
-template<typename T>
-inline bool Str<T>::operator<=(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator<=(const Str<T, Category>& str) const
 {
 	return !(str < *this);
 }
-template<typename T>
-inline bool Str<T>::operator>=(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator>=(const Str<T, Category>& str) const
 {
 	return !(*this < str);
 }
-template<typename T>
-inline bool Str<T>::operator==(const T* str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator==(const T* str) const
 {
-	return Str<T>::compare(m_string, str) == 0;
+	return Str<T, Category>::compare(m_string, str) == 0;
 }
-template<typename T>
-inline bool Str<T>::operator!=(const T* str) const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::operator!=(const T* str) const
 {
-	return Str<T>::compare(m_string, str) != 0;
+	return Str<T, Category>::compare(m_string, str) != 0;
 }
-template<typename T>
-inline Str<T>& Str<T>::operator+=(const Str<T>& str)
-{
-	return append(str);
-}
-template<typename T>
-inline Str<T>& Str<T>::operator+=(const T* str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::operator+=(const Str<T, Category>& str)
 {
 	return append(str);
 }
-template<typename T>
-inline Str<T>& Str<T>::operator+=(T c)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::operator+=(const T* str)
+{
+	return append(str);
+}
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::operator+=(T c)
 {
 	return append(c);
 }
-template<typename T>
-inline Str<T> Str<T>::operator+(const Str<T>& str) const
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> Str<T, Category>::operator+(const Str<T, Category>& str) const
 {
-	Str<T> out(*this);
+	Str<T, Category> out(*this);
 	out.append(str);
 	return out;
 }
-template<typename T>
-inline Str<T> Str<T>::operator+(const T* str) const
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> Str<T, Category>::operator+(const T* str) const
 {
-	Str<T> out(*this);
+	Str<T, Category> out(*this);
 	out.append(str);
 	return out;
 }
-template<typename T>
-inline Str<T> Str<T>::operator+(T c) const
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> Str<T, Category>::operator+(T c) const
 {
-	Str<T> out(*this);
+	Str<T, Category> out(*this);
 	out.append(c);
 	return out;
 }
-template<typename T>
-inline Str<T>& Str<T>::append(const Str<T>& str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::append(const Str<T, Category>& str)
 {
 	size_t off = m_length;
 	size_t len = str.length();
 	resize(off + len);
-	Str<T>::copy(m_string + off, len, str.cstr());
+	Str<T, Category>::copy(m_string + off, len, str.cstr());
 	return *this;
 }
-template<typename T>
-inline Str<T>& Str<T>::append(const T* str, size_t length)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::append(const T* str, size_t length)
 {
 	size_t off = m_length;
 	size_t len = length;
 	resize(off + len);
-	Str<T>::copy(m_string + off, len, str);
+	Str<T, Category>::copy(m_string + off, len, str);
 	m_string[m_length] = '\0';
 	return *this;
 }
-template<typename T>
-inline Str<T>& Str<T>::append(const T* str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::append(const T* str)
 {
 	size_t off = m_length;
-	size_t len = Str<T>::length(str);
+	size_t len = Str<T, Category>::length(str);
 	resize(off + len);
-	Str<T>::copy(m_string + off, len, str);
+	Str<T, Category>::copy(m_string + off, len, str);
 	m_string[m_length] = '\0';
 	return *this;
 }
-template<typename T>
-inline Str<T>& Str<T>::append(T c)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category>& Str<T, Category>::append(T c)
 {
 	size_t len = m_length + 1;
 	resize(len);
@@ -355,169 +354,160 @@ inline Str<T>& Str<T>::append(T c)
 	m_string[len] = '\0';
 	return *this;
 }
-template<typename T>
-inline size_t Str<T>::length() const
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::length() const
 {
 	return m_length;
 }
-template<typename T>
-inline size_t Str<T>::size() const
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::size() const
 {
 	return m_length;
 }
-template<typename T>
-inline size_t Str<T>::capacity() const
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::capacity() const
 {
 	return m_capacity;
 }
-template<typename T>
-inline void Str<T>::resize(size_t length)
+template<typename T, AllocatorCategory Category>
+inline void Str<T, Category>::resize(size_t length)
 {
 	if (m_length == length)
 		return;
 	reserve(length + 1);
 	m_length = length;
 }
-template<typename T>
-inline void Str<T>::reserve(size_t size)
+template<typename T, AllocatorCategory Category>
+inline void Str<T, Category>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
 	size_t oldCapacity = m_capacity;
 	size_t newCapacity = max(size, defaultCapacity);
 	T* buffer = m_allocator.allocate<T>(newCapacity);
-	Str<T>::copy(buffer, oldCapacity, m_string);
+	Str<T, Category>::copy(buffer, oldCapacity, m_string);
 	m_allocator.deallocate(m_string);
 	m_capacity = newCapacity;
 	m_string = buffer;
 }
-template<typename T>
-inline void Str<T>::clear()
+template<typename T, AllocatorCategory Category>
+inline void Str<T, Category>::clear()
 {
 	m_length = 0;
 	m_string[0] = '\0';
 }
-template<typename T>
-inline bool Str<T>::empty() const
+template<typename T, AllocatorCategory Category>
+inline bool Str<T, Category>::empty() const
 {
 	return m_length == 0;
 }
-template<typename T>
-inline T* Str<T>::cstr()
+template<typename T, AllocatorCategory Category>
+inline T* Str<T, Category>::cstr()
 {
 	return m_string;
 }
-template<typename T>
-inline const T* Str<T>::cstr() const
+template<typename T, AllocatorCategory Category>
+inline const T* Str<T, Category>::cstr() const
 {
 	return m_string;
 }
-template<typename T>
-inline T* Str<T>::data()
+template<typename T, AllocatorCategory Category>
+inline T* Str<T, Category>::data()
 {
 	return m_string;
 }
-template<typename T>
-inline const T* Str<T>::data() const
+template<typename T, AllocatorCategory Category>
+inline const T* Str<T, Category>::data() const
 {
 	return m_string;
 }
-template<typename T>
-inline T Str<T>::last() const
+template<typename T, AllocatorCategory Category>
+inline T Str<T, Category>::last() const
 {
 	return m_string[m_length - 1];
 }
-template<typename T>
-inline T* Str<T>::begin()
+template<typename T, AllocatorCategory Category>
+inline T* Str<T, Category>::begin()
 {
 	return m_string;
 }
-template<typename T>
-inline T* Str<T>::end()
+template<typename T, AllocatorCategory Category>
+inline T* Str<T, Category>::end()
 {
 	return m_string + m_length;
 }
-template<typename T>
-inline const T* Str<T>::begin() const
+template<typename T, AllocatorCategory Category>
+inline const T* Str<T, Category>::begin() const
 {
 	return m_string;
 }
-template<typename T>
-inline const T* Str<T>::end() const
+template<typename T, AllocatorCategory Category>
+inline const T* Str<T, Category>::end() const
 {
 	return m_string + m_length;
 }
-template <typename T>
-inline T* Str<T>::copy(T* dst, size_t count, const T* src)
+template<typename T, AllocatorCategory Category>
+inline T* Str<T, Category>::copy(T* dst, size_t count, const T* src)
 {
 	size_t size = 0;
 	T* tmp = dst;
 	while ((*tmp++ = *src++) != 0 && size++ < count);
 	return dst;
 }
-template <typename T>
-inline size_t Str<T>::length(const T* string)
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::length(const T* string)
 {
 	if (string == nullptr) return 0;
 	const T* tmp = string;
 	for (; (*tmp) != 0; ++tmp);
 	return tmp - string;
 }
-template <typename T>
-inline int Str<T>::compare(const T* lhs, const T* rhs)
+template<typename T, AllocatorCategory Category>
+inline int Str<T, Category>::compare(const T* lhs, const T* rhs)
 {
 	for (; *lhs && (*lhs == *rhs); lhs++, rhs++) {}
 	return (unsigned char)(*lhs) - (unsigned char)(*rhs);
 }
-template <>
-template <typename ...Args>
-inline Str<char> Str<char>::format(const char* string, Args ...args)
+template<typename T, AllocatorCategory Category>
+template<typename ...Args>
+inline Str<T, Category> Str<T, Category>::format(const T* string, Args ...args)
 {
-	int size = snprintf(nullptr, 0, string, args...);
-	String formattedString(size);
-	int newSize = snprintf(formattedString.cstr(), size + 1, string, args...);
-	AKA_ASSERT(newSize == size, "Invalid formatting");
-	return formattedString;
+	if constexpr (std::is_same<char, T>::value)
+	{
+		int size = snprintf(nullptr, 0, string, args...);
+		Str<char, Category> formattedString(size);
+		int newSize = snprintf(formattedString.cstr(), size + 1, string, args...);
+		AKA_ASSERT(newSize == size, "Invalid formatting");
+		return formattedString;
+	}
+	else if constexpr (std::is_same<wchar_t, T>::value)
+	{
+		int size = snprintf(nullptr, 0, string, args...);
+		Str<wchar_t, Category> formattedString(size);
+		int newSize = swprintf(formattedString.cstr(), size + 1, string, args...);
+		AKA_ASSERT(newSize == size, "Invalid formatting");
+		return formattedString;
+	}
+	else
+	{
+		AKA_NOT_IMPLEMENTED;
+	}
 }
-template <>
-template <typename ...Args>
-inline Str<wchar_t> Str<wchar_t>::format(const wchar_t* string, Args ...args)
-{
-	int size = snprintf(nullptr, 0, string, args...);
-	StringWide formattedString(size);
-	int newSize = swprintf(formattedString.cstr(), size + 1, string, args...);
-	AKA_ASSERT(newSize == size, "Invalid formatting");
-	return formattedString;
-}
-template <>
-template <typename ...Args>
-inline Str<char16_t> Str<char16_t>::format(const char16_t* string, Args ...args)
-{
-	AKA_NOT_IMPLEMENTED;
-	return String16();
-}
-template <>
-template <typename ...Args>
-inline Str<char32_t> Str<char32_t>::format(const char32_t* string, Args ...args)
-{
-	AKA_NOT_IMPLEMENTED;
-	return String32();
-}
-template <typename T>
-inline size_t Str<T>::find(T character, size_t offset) const
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::find(T character, size_t offset) const
 {
 	return findFirst(character, offset);
 }
-template <typename T>
-inline size_t Str<T>::findFirst(T character, size_t offset) const
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::findFirst(T character, size_t offset) const
 {
 	for (size_t i = offset; i < m_length; ++i)
 		if (character == m_string[i])
 			return i;
 	return invalid;
 }
-template <typename T>
-inline size_t Str<T>::findLast(T character, size_t offset) const
+template<typename T, AllocatorCategory Category>
+inline size_t Str<T, Category>::findLast(T character, size_t offset) const
 {
 	if (m_length == 0)
 		return invalid;
@@ -527,28 +517,28 @@ inline size_t Str<T>::findLast(T character, size_t offset) const
 	return invalid;
 }
 
-template<typename T>
+template<typename T, AllocatorCategory Category>
 template<typename U, typename ...Args>
-inline Str<T> Str<T>::from(U t, Args ...args)
+inline Str<T, Category> Str<T, Category>::from(U t, Args ...args)
 {
-	return Str<T>::from(t) + Str<T>::from(args...);
+	return Str<T, Category>::from(t) + Str<T, Category>::from(args...);
 }
 
-template<typename T>
+template<typename T, AllocatorCategory Category>
 template<typename U>
-inline Str<T> Str<T>::from(U value)
+inline Str<T, Category> Str<T, Category>::from(U value)
 {
 	std::basic_stringstream<T> sstr;
 	sstr << value;
 	std::string str = sstr.str();
-	return Str<T>(str.c_str(), str.size());
+	return Str<T, Category>(str.c_str(), str.size());
 }
 
-template <typename T>
-inline Vector<Str<T>> Str<T>::split(T c) const
+template<typename T, AllocatorCategory Category>
+inline Vector<Str<T, Category>> Str<T, Category>::split(T c) const
 {
 	size_t offset = 0;
-	Vector<Str<T>> strings;
+	Vector<Str<T, Category>> strings;
 	for (size_t i = 0; i < m_length; ++i)
 	{
 		// TODO handle multiple identical characters following.
@@ -563,40 +553,56 @@ inline Vector<Str<T>> Str<T>::split(T c) const
 		strings.append(substr(offset, m_length - offset));
 	return strings;
 }
-template <typename T>
-inline Str<T> Str<T>::substr(size_t start) const
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> Str<T, Category>::substr(size_t start) const
 {
 	return substr(start, m_length - start);
 }
-template <typename T>
-inline Str<T> Str<T>::substr(size_t start, size_t len) const
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> Str<T, Category>::substr(size_t start, size_t len) const
 {
-	Str<T> str(len);
-	Str<T>::copy(str.m_string, len, m_string + start);
+	Str<T, Category> str(len);
+	Str<T, Category>::copy(str.m_string, len, m_string + start);
 	str[len] = '\0';
 	return str;
 }
-template <typename T>
-inline Str<T> operator+(T c, const Str<T>& str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> operator+(T c, const Str<T, Category>& str)
 {
-	return Str<T>(1, c) + str;
+	return Str<T, Category>(1, c) + str;
 }
-template <typename T>
-inline Str<T> operator+(const T* s, const Str<T>& str)
+template<typename T, AllocatorCategory Category>
+inline Str<T, Category> operator+(const T* s, const Str<T, Category>& str)
 { 
-	return Str<T>(s) + str;
+	return Str<T, Category>(s) + str;
 }
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const Str<T>& str)
+template<typename T, AllocatorCategory Category>
+std::ostream& operator<<(std::ostream& os, const Str<T, Category>& str)
 {
 	os << str.cstr();
 	return os;
 }
 
-template <> const char* Str<char>::null();
-template <> const wchar_t* Str<wchar_t>::null();
-template <> const char16_t* Str<char16_t>::null();
-template <> const char32_t* Str<char32_t>::null();
+template<typename T, AllocatorCategory Category>
+const T* Str<T, Category>::null()
+{
+	if constexpr (std::is_same<char, T>::value)
+	{
+		return "";
+	}
+	else if constexpr (std::is_same<wchar_t, T>::value)
+	{
+		return L"";
+	}
+	else if constexpr (std::is_same<char16_t, T>::value)
+	{
+		return u"";
+	}
+	else if constexpr (std::is_same<char32_t, T>::value)
+	{
+		return U"";
+	}
+}
 
 };
 

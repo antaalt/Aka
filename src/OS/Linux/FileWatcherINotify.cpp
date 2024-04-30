@@ -27,7 +27,7 @@ struct FileWatcher::OSData
 };
 
 FileWatcher::FileWatcher() :
-	m_osData(mem::akaNew<OSData>(AllocatorMemoryType::Persistent, AllocatorCategory::Default))
+	m_osData(mem::akaNew<OSData>(AllocatorMemoryType::Object, AllocatorCategory::Global))
 {
 	// TODO: implement this https://github.com/SpartanJ/efsw/blob/master/src/efsw/FileWatcherInotify.cpp
 }

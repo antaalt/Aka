@@ -35,7 +35,7 @@ class ComponentAllocator : public ComponentAllocatorBase
 public:
 	ComponentAllocator(ComponentID _componentID, const char* _name) :
 		ComponentAllocatorBase(_componentID, _name),
-		m_pool(mem::getAllocator(AllocatorMemoryType::Persistent, AllocatorCategory::Component))
+		m_pool(mem::getAllocator(AllocatorMemoryType::Pool, AllocatorCategory::Component))
 	{
 	}
 	T* allocate(Node* _node)
@@ -99,7 +99,7 @@ public:
 		getDefaultComponentAllocators().add(m_componentID, create());
 	}
 	ComponentAllocator<T>* create() {
-		return mem::akaNew<ComponentAllocator<T>>(AllocatorMemoryType::Persistent, AllocatorCategory::Component, m_componentID, m_name);
+		return mem::akaNew<ComponentAllocator<T>>(AllocatorMemoryType::Object, AllocatorCategory::Component, m_componentID, m_name);
 	}
 	/*void destroy(ComponentAllocator<T>* _allocator) {
 		AKA_ASSERT(_allocator->getComponentID() == m_componentID, "Invalid component ID");

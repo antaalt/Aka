@@ -31,8 +31,8 @@ Renderer::Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library) :
 {
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 		m_instanceRenderer[EnumToIndex(instanceType)] = nullptr;
-	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)] = mem::akaNew<StaticMeshInstanceRenderer>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, std::ref(*this));
-	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)] = mem::akaNew<SkeletalMeshInstanceRenderer>(AllocatorMemoryType::Persistent, AllocatorCategory::Graphic, std::ref(*this));
+	m_instanceRenderer[EnumToIndex(InstanceType::StaticMesh3D)] = mem::akaNew<StaticMeshInstanceRenderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, std::ref(*this));
+	m_instanceRenderer[EnumToIndex(InstanceType::SkeletalMesh3D)] = mem::akaNew<SkeletalMeshInstanceRenderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, std::ref(*this));
 }
 Renderer::~Renderer()
 {

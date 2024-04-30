@@ -11,8 +11,15 @@ const char* toString(AllocatorMemoryType _type)
 {
 	switch (_type)
 	{
-	case aka::AllocatorMemoryType::Temporary: return "Temporary";
-	case aka::AllocatorMemoryType::Persistent: return "Persistent";
+	case aka::AllocatorMemoryType::Vector: return "Vector";
+	case aka::AllocatorMemoryType::Map: return "Map";
+	case aka::AllocatorMemoryType::Set: return "Set";
+	case aka::AllocatorMemoryType::Blob: return "Blob";
+	case aka::AllocatorMemoryType::List: return "List";
+	case aka::AllocatorMemoryType::String: return "String";
+	case aka::AllocatorMemoryType::Pool: return "Pool";
+	case aka::AllocatorMemoryType::Object: return "Object";
+	case aka::AllocatorMemoryType::Raw: return "Raw";
 	default: return "Unknown";
 	}
 }
@@ -20,16 +27,11 @@ const char* toString(AllocatorCategory _category)
 {
 	switch (_category)
 	{
-	case aka::AllocatorCategory::Default: return "Default";
+	case aka::AllocatorCategory::Global: return "Global";
 	case aka::AllocatorCategory::Graphic: return "Graphic";
 	case aka::AllocatorCategory::Audio: return "Audio";
-	case aka::AllocatorCategory::String: return "String";
-	case aka::AllocatorCategory::Vector: return "Vector";
-	case aka::AllocatorCategory::Map: return "Map";
-	case aka::AllocatorCategory::Pool: return "Pool";
-	case aka::AllocatorCategory::List: return "List";
+	case aka::AllocatorCategory::Assets: return "Assets";
 	case aka::AllocatorCategory::Component: return "Component";
-	case aka::AllocatorCategory::Archive: return "Archive";
 	case aka::AllocatorCategory::Editor: return "Editor";
 	default: return "Unkown";
 	}

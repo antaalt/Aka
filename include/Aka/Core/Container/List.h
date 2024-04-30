@@ -28,8 +28,8 @@ public:
 public:
 	List();
 	explicit List(AllocatorType& allocator);
-	List(const List& list, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::List, AllocatorCategory::List));
-	List(List&& list, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::List, AllocatorCategory::List));
+	List(const List& list, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::List, AllocatorCategory::Global));
+	List(List&& list, AllocatorType& allocator = mem::getAllocator(AllocatorMemoryType::List, AllocatorCategory::Global));
 	List& operator=(const List& list);
 	List& operator=(List&& list);
 	~List();

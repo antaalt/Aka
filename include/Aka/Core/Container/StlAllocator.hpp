@@ -6,7 +6,7 @@
 namespace aka {
 
 
-template <class T1, AllocatorMemoryType Type = AllocatorMemoryType::Persistent, AllocatorCategory Category = AllocatorCategory::Default> class AkaStlAllocator;
+template <class T1, AllocatorMemoryType Type = AllocatorMemoryType::Raw, AllocatorCategory Category = AllocatorCategory::Global> class AkaStlAllocator;
 
 // Specialize for void
 template <AllocatorMemoryType Type, AllocatorCategory Category> class AkaStlAllocator<void, Type, Category>
