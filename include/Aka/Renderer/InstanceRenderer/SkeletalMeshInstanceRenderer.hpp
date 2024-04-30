@@ -45,11 +45,11 @@ private:
 	HashMap<AssetID, uint32_t> m_assetIndex;
 	HashMap<InstanceHandle, uint32_t> m_instanceIndex;
 	// TODO move to gpu with compute.
-	vector<SkeletalMeshInstance> m_instanceDatas; // Updated every frame for bones.
-	vector<gpu::SkeletalMeshAssetData> m_instanceAssetDatas; // Updated rarely
-	vector<gpu::SkeletalMeshBatchData> m_instanceBatchDatas; // Updated rarely
+	gfx::vector<SkeletalMeshInstance> m_instanceDatas; // Updated every frame for bones.
+	gfx::vector<gpu::SkeletalMeshAssetData> m_instanceAssetDatas; // Updated rarely
+	gfx::vector<gpu::SkeletalMeshBatchData> m_instanceBatchDatas; // Updated rarely
 
-	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
+	gfx::Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
 
 private:
 	gfx::BackbufferHandle m_backbuffer;

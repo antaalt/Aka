@@ -42,11 +42,11 @@ private:
 	HashMap<AssetID, uint32_t> m_assetIndex;
 	HashMap<InstanceHandle, uint32_t> m_instanceIndex;
 	// TODO move to gpu with compute.
-	vector<StaticMeshInstance> m_instanceDatas; // Updated frequently.
-	vector<gpu::StaticMeshAssetData> m_instanceAssetDatas; // Updated rarely
-	vector<gpu::StaticMeshBatchData> m_instanceBatchDatas; // Updated rarely
+	gfx::vector<StaticMeshInstance> m_instanceDatas; // Updated frequently.
+	gfx::vector<gpu::StaticMeshAssetData> m_instanceAssetDatas; // Updated rarely
+	gfx::vector<gpu::StaticMeshBatchData> m_instanceBatchDatas; // Updated rarely
 
-	Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
+	gfx::Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
 
 private:
 	gfx::BackbufferHandle m_backbuffer;

@@ -25,6 +25,8 @@ namespace aka {
 namespace gfx {
 
 template <typename T>
+using vector = ::aka::vector<T, AllocatorCategory::Graphic>;
+template <typename T>
 using Vector = ::aka::Vector<T, AllocatorCategory::Graphic>;
 using String = ::aka::Str<char, AllocatorCategory::Graphic>;
 
