@@ -58,7 +58,7 @@
 #define AKA_CRASH(...) throw std::runtime_error(__VA_ARGS__);
 #endif
 
-#define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented")
+#define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented for function : " __FUNCTION__)
 #define AKA_UNREACHABLE AKA_ASSERT(false, "Code unreachable reached.")
 
 namespace aka {

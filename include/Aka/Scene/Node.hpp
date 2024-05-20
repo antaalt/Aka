@@ -15,7 +15,8 @@ enum class NodeUpdateFlag : uint32_t
 	None				= 0,
 
 	TransformUpdated	= 1 << 0,
-	HierarchyUpdated	= 1 << 1,
+	TransformDirty		= 1 << 1,
+	HierarchyUpdated	= 1 << 2,
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(NodeUpdateFlag);
 
@@ -97,7 +98,7 @@ private: // Hierarchy
 
 public: // Transforms
 	// Set local transform
-	void setLocalTransform(const mat4f& transform);
+	void setLocalTransform(const mat4f& transform, bool _computeWorld = false);
 	// Get the local transform
 	const mat4f& getLocalTransform() const;
 	// Get the world transform

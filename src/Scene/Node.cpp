@@ -102,9 +102,10 @@ void Node::updateComponentLifecycle(AssetLibrary* library, Renderer* renderer)
 
 void Node::prepareUpdate()
 {
-	if (asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
+	if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags))
 	{
 		m_cacheWorldTransform = computeWorldTransform();
+		m_updateFlags &= ~NodeUpdateFlag::TransformDirty;
 		for (ComponentMap::value_type& component : m_componentsActive)
 		{
 			component.second->transformUpdate();
@@ -164,7 +165,7 @@ void Node::removeChild(Node* child)
 }
 void Node::setParent(Node* parent)
 {
-	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated);
+	setUpdateFlag(NodeUpdateFlag::HierarchyUpdated | NodeUpdateFlag::TransformUpdated | NodeUpdateFlag::TransformDirty);
 	if (m_parent)
 		m_parent->removeChild(this);
 	m_parent = parent;
@@ -205,6 +206,7 @@ const mat4f& Node::getLocalTransform() const
 }
 const mat4f& Node::getWorldTransform() const
 {
+	AKA_ASSERT(!asBool(NodeUpdateFlag::TransformDirty & m_updateFlags), "Getting dirty world transform. Should call computeWorldTransform instead here as it was updated and not cached yet.");
 	return m_cacheWorldTransform;
 }
 mat4f Node::getParentTransform() const
@@ -213,15 +215,24 @@ mat4f Node::getParentTransform() const
 		return getParent()->getWorldTransform();
 	return mat4f::identity();
 }
-void Node::setLocalTransform(const mat4f& transform)
+void Node::setLocalTransform(const mat4f& _transform, bool _computeWorld)
 {
-	setUpdateFlag(NodeUpdateFlag::TransformUpdated);
-	m_localTransform = transform;
+	m_localTransform = _transform;
+	if (_computeWorld)
+	{
+		m_cacheWorldTransform = computeWorldTransform();
+		setUpdateFlag(NodeUpdateFlag::TransformUpdated);
+	}
+	else
+	{
+		// Delay update.
+		setUpdateFlag(NodeUpdateFlag::TransformUpdated | NodeUpdateFlag::TransformDirty);
+	}
 }
 mat4f Node::computeWorldTransform() const
 {
 	if (getParent())
-		return getParent()->getWorldTransform() * m_localTransform;
+		return getParent()->computeWorldTransform() * m_localTransform;
 	return m_localTransform;
 }
 
