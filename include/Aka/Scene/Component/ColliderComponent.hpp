@@ -7,19 +7,21 @@ namespace aka {
 struct ContactData
 {
 	// Node 1 impacted in collision
-	Node* node1;
+	Node* node1 = nullptr;
 	// Node 2 impacted in collision
-	Node* node2;
+	Node* node2 = nullptr;
 	// Contact point of the entity 1 in local space.
-	point3f surfaceHit1;
+	point3f surfaceHit1 = point3f::zero();
 	// Contact point of the entity 2 in local space.
-	point3f surfaceHit2;
+	point3f surfaceHit2 = point3f::zero();
 	// Contact normal of the entity 1 in local space
-	vec3f normal1;
+	vec3f normal1 = vec3f::up();
 	// Contact normal of the entity 2 in local space
-	vec3f normal2;
+	vec3f normal2 = vec3f::up();
 	// Penetration depth, aka magnitude of the collision.
-	float penetration;
+	float penetration = 0.f;
+
+	static const ContactData Invalid;
 
 	bool isColliding() const;
 };
@@ -82,7 +84,7 @@ public:
 	void onUpdate(Time _time) override;
 
 public:
-	bool isColliding(ColliderComponent& _other, ContactData& _contact);
+	ContactData computeContactData(ColliderComponent& _other);
 	ColliderShapeType getShapeType() const { return m_shape->getShapeType(); }
 public:
 	void fromArchive(const ArchiveColliderComponent& archive) override;

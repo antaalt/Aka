@@ -99,6 +99,7 @@ vec3f getExternalForces()
 void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 {
 	// Dirty temp hack to simulate a system executing only once per frame.
+	// With this dirty hack, onFixedUpdate change local transform, but next fixed update, we get world transform that is not cached yet.
 	if (getNode()->getName() != "Sphere0")
 		return;
 
@@ -150,23 +151,28 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 				body.m_lagrange = 0.f;
 			}
 			// Gather collisions pair
+			// TODO: broad phase + narrow phase + octree + lot of things
 			Vector<ContactData> collisions;
-			for (ColliderComponent& collider : getNode()->getAllocator().components<ColliderComponent>())
+			PoolRange<ColliderComponent> range = getNode()->getAllocator().components<ColliderComponent>();
+			for (PoolIterator<ColliderComponent> it = range.begin(); it != range.end(); it++)
 			{
+				ColliderComponent& collider = *it;
 				if (!collider.getNode()->has<RigidBodyComponent>())
 					continue; // Skip collider with rigidbody as main collider for testing.
 
 				// Loop & check collisions
-				for (ColliderComponent& otherCollider : getNode()->getAllocator().components<ColliderComponent>())
+				if (it != range.end())
 				{
-					// skip self intersection
-					if (&otherCollider == &collider)
-						continue;
-					ContactData contact;
-					if (collider.isColliding(otherCollider, contact))
+					PoolIterator<ColliderComponent> itAfter = it; // Skip self
+					for (PoolIterator<ColliderComponent> itOther = ++itAfter; itOther != range.end(); itOther++)
 					{
-						// TODO: avoid duplicate & sort by most prio object.
-						collisions.append(contact);
+						ColliderComponent& otherCollider = *itOther;
+						ContactData contact = collider.computeContactData(otherCollider);
+						if (contact.isColliding())
+						{
+							// TODO: avoid duplicate & sort by most prio object.
+							collisions.append(contact);
+						}
 					}
 				}
 			}
@@ -194,7 +200,7 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 				const Node* bodyParent = body.getNode()->getParent();
 				const mat4f worldToLocal = bodyParent ? mat4f::inverse(bodyParent->getWorldTransform()) : mat4f::identity();
 				const mat4f updatedTransform = worldToLocal * mat4f::TRS(body.m_position, body.m_orientation, mat4f::extractScale(body.getNode()->getWorldTransform()));
-				body.getNode()->setLocalTransform(updatedTransform);
+				body.getNode()->setLocalTransform(updatedTransform, true); // Should run this once per update instead of once per fixedUpdate.
 			}
 		}
 		// TODO: solveVelocities

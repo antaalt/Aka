@@ -6,6 +6,8 @@
 
 namespace aka {
 
+const ContactData ContactData::Invalid = {};
+
 bool ContactData::isColliding() const
 {
 	AKA_ASSERT(node1 != node2, "Self intersection.");
@@ -46,125 +48,133 @@ void ColliderComponent::onRenderUpdate(AssetLibrary* library, Renderer* _rendere
 void ColliderComponent::onUpdate(Time deltaTime)
 {
 }
-ContactData computeCollisionSphereToSphere(Node* node1, Node* node2, const point3f& position1, float radius1, const point3f& position2, float radius2)
+ContactData computeCollision(Node* node1, Node* node2, const ColliderSphere& sphere1, const ColliderSphere& sphere2)
 {
-	vec3f direction = position2 - position1;
+	AKA_ASSERT(sphere1.getShapeType() == ColliderShapeType::Sphere, "Invalid shape");
+	AKA_ASSERT(sphere2.getShapeType() == ColliderShapeType::Sphere, "Invalid shape");
+	point3f worldPos1 = node1->getWorldTransform().multiplyPoint(sphere1.m_offset);
+	point3f worldPos2 = node2->getWorldTransform().multiplyPoint(sphere2.m_offset);
+
+	vec3f direction = worldPos2 - worldPos1;
 	float distance = vec3f::length(direction);
-	direction = distance == 0.f ? vec3f::up() : direction / distance;
+	direction = distance == 0.f ? direction : direction / distance;
 	ContactData contact;
 	contact.node1 = node1;
 	contact.node2 = node2;
-	contact.surfaceHit1 = position1 + direction * radius1;
-	contact.surfaceHit2 = position2 - direction * radius2;
+	contact.surfaceHit1 = worldPos1 + direction * sphere1.m_radius;
+	contact.surfaceHit2 = worldPos2 - direction * sphere2.m_radius;
 	contact.normal1 = direction;
 	contact.normal2 = -contact.normal1;
-	contact.penetration = distance - radius1 - radius2;
+	contact.penetration = distance - sphere1.m_radius - sphere2.m_radius;
 	return contact;
 }
 
-ContactData computeCollisionSphereToPlane(Node* nodeSphere, Node* nodePlane, const point3f& spherePosition, float sphereRadius, const point3f& pointOnPlane, const vec3f& planeNormal)
+ContactData computeCollision(Node* nodeSphere, Node* nodePlane, const ColliderSphere& sphere, const ColliderPlane& plane)
 {
-	vec3f direction = -planeNormal;
-	float distance = vec3f::dot(vec3f(planeNormal), spherePosition - pointOnPlane);
+	AKA_ASSERT(sphere.getShapeType() == ColliderShapeType::Sphere, "Invalid shape");
+	AKA_ASSERT(plane.getShapeType() == ColliderShapeType::Plane, "Invalid shape");
+	point3f worldPosSphere = nodeSphere->getWorldTransform().multiplyPoint(sphere.m_offset);
+	point3f worldPosPlane = nodePlane->getWorldTransform().multiplyPoint(plane.m_offset);
+	vec3f worldRadiusSphere = mat4f::extractScale(nodeSphere->getWorldTransform());
+	vec3f worldNormalPlane = vec3f::normalize(nodePlane->getWorldTransform().multiplyVector(plane.m_normal));
+
+	vec3f direction = -worldNormalPlane;
+	float distance = vec3f::dot(vec3f(worldNormalPlane), worldPosSphere - worldPosPlane);
 	ContactData contact;
 	contact.node1 = nodeSphere;
 	contact.node2 = nodePlane;
-	contact.surfaceHit1 = spherePosition + vec3f(direction * sphereRadius);
-	contact.surfaceHit2 = spherePosition + vec3f(direction * distance);
+	contact.surfaceHit1 = worldPosSphere + direction * worldRadiusSphere;
+	contact.surfaceHit2 = worldPosSphere + vec3f(direction * distance);
 	contact.normal1 = vec3f::normalize(direction);
-	contact.normal2 = planeNormal;
-	contact.penetration = distance - sphereRadius;
+	contact.normal2 = worldNormalPlane;
+	contact.penetration = distance - sphere.m_radius;
 	return contact;
 }
-ContactData computeCollisionPlaneToSphere(Node* nodePlane, Node* nodeSphere, const point3f& pointOnPlane, const vec3f& planeNormal, const point3f& spherePosition, float sphereRadius)
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderPlane& plane, const ColliderSphere& sphere)
 {
-	ContactData contact = computeCollisionSphereToPlane(nodeSphere, nodePlane, spherePosition, sphereRadius, pointOnPlane, planeNormal);
+	ContactData contact = computeCollision(nodeSphere, nodePlane, sphere, plane);
 	std::swap(contact.node1, contact.node2);
 	std::swap(contact.surfaceHit1, contact.surfaceHit2);
 	std::swap(contact.normal1, contact.normal2);
 	return contact;
 }
-bool ColliderComponent::isColliding(ColliderComponent& _other, ContactData& _contact)
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderCube& cube1, const ColliderCube& cube2)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ContactData::Invalid;
+}
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderPlane& plane1, const ColliderPlane& plane2)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ContactData::Invalid;
+}
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderSphere& sphere, const ColliderCube& cube)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ContactData::Invalid;
+}
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderCube& cube, const ColliderSphere& sphere)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ContactData::Invalid;
+}
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderPlane& plane, const ColliderCube& cube)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ContactData::Invalid;
+}
+ContactData computeCollision(Node* nodePlane, Node* nodeSphere, const ColliderCube& cube, const ColliderPlane& plane)
+{
+	AKA_NOT_IMPLEMENTED;
+	return ContactData::Invalid;
+}
+template <typename ColliderShape1, typename ColliderShape2>
+ContactData computeCollisionT(Node* nodeShape1, Node* nodeShape2, const ColliderShape& shape1, const ColliderShape& shape2)
+{
+	static_assert(std::is_base_of<ColliderShape, ColliderShape1>::value);
+	static_assert(std::is_base_of<ColliderShape, ColliderShape2>::value);
+	AKA_ASSERT(shape1.getShapeType() == ColliderShape1().getShapeType(), "Invalid type");
+	AKA_ASSERT(shape2.getShapeType() == ColliderShape2().getShapeType(), "Invalid type");
+	return computeCollision(nodeShape1, nodeShape2, reinterpret_cast<const ColliderShape1&>(shape1), reinterpret_cast<const ColliderShape2&>(shape2));
+}
+ContactData ColliderComponent::computeContactData(ColliderComponent& _other)
 {
 	switch (m_shape->getShapeType())
 	{
 	case ColliderShapeType::Cube:
-		AKA_NOT_IMPLEMENTED;
-		Logger::error("No collision detection yet for cube");
-		return false;
-	case ColliderShapeType::Sphere: {
-		const ColliderSphere* collider1 = reinterpret_cast<const ColliderSphere*>(m_shape);
 		switch (_other.m_shape->getShapeType())
 		{
-		case ColliderShapeType::Cube:
-			AKA_NOT_IMPLEMENTED;
-			Logger::error("No collision detection yet for Sphere / Cube");
-			return false;
-		case ColliderShapeType::Sphere: {
-			const ColliderSphere* collider2 = reinterpret_cast<const ColliderSphere*>(_other.m_shape);
-			// TODO: might not need transforming as we expect local space, but might need to rotate though
-			_contact = computeCollisionSphereToSphere(
-				getNode(),
-				_other.getNode(),
-				getNode()->getWorldTransform().multiplyPoint(collider1->m_offset),
-				collider1->m_radius, // TODO: scale
-				_other.getNode()->getWorldTransform().multiplyPoint(collider2->m_offset),
-				collider2->m_radius // TODO: scale
-			);
-			return _contact.isColliding();
+		case ColliderShapeType::Cube:   return computeCollisionT<ColliderCube, ColliderCube>  (getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		case ColliderShapeType::Sphere: return computeCollisionT<ColliderCube, ColliderSphere>(getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		case ColliderShapeType::Plane:  return computeCollisionT<ColliderCube, ColliderPlane> (getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		default: AKA_NOT_IMPLEMENTED;   return ContactData::Invalid;
 		}
-		case ColliderShapeType::Plane: {
-			const ColliderPlane* collider2 = reinterpret_cast<const ColliderPlane*>(_other.m_shape);
-			_contact = computeCollisionSphereToPlane(
-				getNode(),
-				_other.getNode(),
-				getNode()->getWorldTransform().multiplyPoint(collider1->m_offset),
-				collider1->m_radius, // TODO: scale
-				_other.getNode()->getWorldTransform().multiplyPoint(collider2->m_offset),
-				vec3f::normalize(_other.getNode()->getWorldTransform().multiplyVector(collider2->m_normal))
-			);
-			return _contact.isColliding();
-		}
-		default:
-			AKA_UNREACHABLE;
-			return false;
-		}
-		break;
-	}
-	case ColliderShapeType::Plane: {
-		const ColliderPlane* collider1 = reinterpret_cast<const ColliderPlane*>(m_shape);
-		switch (_other.m_shape->getShapeType())
-		{
-		case ColliderShapeType::Cube:
-			AKA_NOT_IMPLEMENTED;
-			Logger::error("No collision detection yet for Plane / Cube");
-			return false;
-		case ColliderShapeType::Sphere: {
-			const ColliderSphere* collider2 = reinterpret_cast<const ColliderSphere*>(_other.m_shape);
-			// TODO: might not need transforming as we expect local space, but might need to rotate though
-			_contact = computeCollisionPlaneToSphere(
-				getNode(),
-				_other.getNode(),
-				getNode()->getWorldTransform().multiplyPoint(collider1->m_offset),
-				vec3f::normalize(_other.getNode()->getWorldTransform().multiplyVector(collider1->m_normal)),
-				_other.getNode()->getWorldTransform().multiplyPoint(collider2->m_offset),
-				collider2->m_radius
-			);
-			return _contact.isColliding();
-		}
-		case ColliderShapeType::Plane:
-			AKA_NOT_IMPLEMENTED;
-			Logger::error("No collision detection yet for Plane / Plane");
-			return false;
-		default:
-			AKA_UNREACHABLE;
-			return false;
-		}
-		return false;
-	}
-	default:
 		AKA_UNREACHABLE;
-		return false;
+		return ContactData::Invalid;
+	case ColliderShapeType::Sphere:
+		switch (_other.m_shape->getShapeType())
+		{
+		case ColliderShapeType::Cube:   return computeCollisionT<ColliderSphere, ColliderCube>  (getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		case ColliderShapeType::Sphere: return computeCollisionT<ColliderSphere, ColliderSphere>(getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		case ColliderShapeType::Plane:  return computeCollisionT<ColliderSphere, ColliderPlane> (getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		default: AKA_NOT_IMPLEMENTED;   return ContactData::Invalid;
+		}
+		AKA_UNREACHABLE;
+		return ContactData::Invalid;
+	case ColliderShapeType::Plane: {
+		switch (_other.m_shape->getShapeType())
+		{
+		case ColliderShapeType::Cube:   return computeCollisionT<ColliderPlane, ColliderCube>  (getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		case ColliderShapeType::Sphere: return computeCollisionT<ColliderPlane, ColliderSphere>(getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		case ColliderShapeType::Plane:  return computeCollisionT<ColliderPlane, ColliderPlane> (getNode(), _other.getNode(), *m_shape, *_other.m_shape);
+		default: AKA_NOT_IMPLEMENTED;   return ContactData::Invalid;
+		}
+		AKA_UNREACHABLE;
+		return ContactData::Invalid;
+	}
+	default: 
+		AKA_NOT_IMPLEMENTED; 
+		return ContactData::Invalid;
 	}
 }
 void ColliderComponent::fromArchive(const ArchiveColliderComponent& archive)

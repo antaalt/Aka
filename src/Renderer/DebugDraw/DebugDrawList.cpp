@@ -161,7 +161,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 	{
 		m_vertexBufferSize[i] = 10000;
-		m_vertexBuffer[i] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, sizeof(DebugVertex) * m_vertexBufferSize[i], gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		m_vertexBuffer[i] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(DebugVertex) * m_vertexBufferSize[i]), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 	}
 }
 
@@ -190,7 +190,7 @@ void DebugDrawList::prepare(gfx::FrameHandle frame, gfx::GraphicDevice* _device)
 		{
 			_device->destroy(m_vertexBuffer[frameIndex.value()]);
 			m_vertexBufferSize[frameIndex.value()] = m_vertices.size();
-			m_vertexBuffer[frameIndex.value()] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, sizeof(DebugVertex) * m_vertices.size(), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+			m_vertexBuffer[frameIndex.value()] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(DebugVertex) * m_vertices.size()), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 		}
 		_device->upload(m_vertexBuffer[frameIndex.value()], m_vertices.data(), 0, m_vertices.size() * sizeof(DebugVertex));
 	}
