@@ -97,6 +97,24 @@ void DebugDrawList::draw3DSphere(const mat4f& transform, const color4f& color)
 		}
 	}
 }
+void DebugDrawList::draw3DPlane(const mat4f& transform, const color4f& color)
+{
+	// Vertices
+	const DebugVertex s_planeVertices[4] = {
+		DebugVertex{transform.multiplyPoint(point3f(-1.0f, 0.0f, -1.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(-1.0f, 0.0f,  1.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(1.0f,  0.0f,  1.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(1.0f,  0.0f, -1.0f)), color},
+	};
+	m_vertices.append(s_planeVertices[0]);
+	m_vertices.append(s_planeVertices[1]);
+	m_vertices.append(s_planeVertices[1]);
+	m_vertices.append(s_planeVertices[2]);
+	m_vertices.append(s_planeVertices[2]);
+	m_vertices.append(s_planeVertices[3]);
+	m_vertices.append(s_planeVertices[3]);
+	m_vertices.append(s_planeVertices[0]);
+}
 void DebugDrawList::draw3DLine(const point3f* positions, size_t count, const color4f& color)
 {
 	// Merge
@@ -142,7 +160,8 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	);
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 	{
-		m_vertexBuffer[i] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, sizeof(DebugVertex) * 10000, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		m_vertexBufferSize[i] = 10000;
+		m_vertexBuffer[i] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, sizeof(DebugVertex) * m_vertexBufferSize[i], gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 	}
 }
 
@@ -167,6 +186,12 @@ void DebugDrawList::prepare(gfx::FrameHandle frame, gfx::GraphicDevice* _device)
 	{
 		// TOOD use staging buffer instead
 		gfx::FrameIndex frameIndex = _device->getFrameIndex(frame);
+		if (m_vertexBufferSize[frameIndex.value()] < m_vertices.size())
+		{
+			_device->destroy(m_vertexBuffer[frameIndex.value()]);
+			m_vertexBufferSize[frameIndex.value()] = m_vertices.size();
+			m_vertexBuffer[frameIndex.value()] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, sizeof(DebugVertex) * m_vertices.size(), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		}
 		_device->upload(m_vertexBuffer[frameIndex.value()], m_vertices.data(), 0, m_vertices.size() * sizeof(DebugVertex));
 	}
 }
@@ -180,6 +205,7 @@ void DebugDrawList::render(gfx::GraphicDevice* _device, gfx::FrameHandle frame, 
 	{
 		gfx::FrameIndex frameIndex = _device->getFrameIndex(frame);
 		gfx::CommandList* cmd = _device->getGraphicCommandList(frame);
+		gfx::ScopedCmdMarker marker(cmd, "DebugDrawList", 0.f, 0.f, 0.5f);
 		cmd->beginRenderPass(m_backbufferRenderPass, _device->get(m_backbuffer, frame));
 		cmd->bindVertexBuffer(0, m_vertexBuffer[frameIndex.value()]);
 		cmd->bindPipeline(m_pipeline);

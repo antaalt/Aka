@@ -44,11 +44,13 @@ protected:
 public:
 	void draw3DFrustum(const mat4f& projection, const color4f& color);
 	void draw3DSphere(const mat4f& transform, const color4f& color);
+	void draw3DPlane(const mat4f& transform, const color4f& color);
 	void draw3DCube(const mat4f& transform, const color4f& color);
 	void draw3DLine(const point3f* positions, size_t count, const color4f& color);
 private:
 	Vector<DebugVertex> m_vertices;
 	gfx::BufferHandle m_vertexBuffer[gfx::MaxFrameInFlight];
+	uint32_t m_vertexBufferSize[gfx::MaxFrameInFlight];
 	gfx::RenderPassHandle m_backbufferRenderPass;
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::GraphicPipelineHandle m_pipeline;
