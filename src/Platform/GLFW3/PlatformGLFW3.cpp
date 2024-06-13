@@ -408,11 +408,32 @@ PlatformGLFW3::~PlatformGLFW3()
 {
 }
 
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+// Tag for memory tracking
+struct GlfwAllocHandle {
+	byte_t byte;
+};
+static_assert(sizeof(GlfwAllocHandle) == 1);
+#endif
+
 void PlatformGLFW3::initialize(const PlatformConfig& config)
 {
 	glfwSetErrorCallback([](int error, const char* description) {
 		Logger::error("[GLFW][", error, "] ", description);
 		});
+#if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	GLFWallocator allocator{};
+	allocator.allocate = [](size_t size, void* user) -> void* {
+		return mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Platform).allocate<GlfwAllocHandle>(size, AllocatorFlags::None);
+	};
+	allocator.deallocate = [](void* block, void* user) {
+		mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Platform).deallocate(block);
+	};
+	allocator.reallocate = [](void* block, size_t size, void* user) -> void* {
+		return mem::getAllocator(AllocatorMemoryType::Object, AllocatorCategory::Platform).reallocate<GlfwAllocHandle>(block, size, AllocatorFlags::None);
+	};
+	glfwInitAllocator(&allocator);
+#endif
 	// TODO glfw context static to handle multiple window creation
 	if (glfwInit() != GLFW_TRUE)
 		throw std::runtime_error("Could not init GLFW");
