@@ -223,6 +223,7 @@ private:
 
 ShaderCompiler::ShaderCompiler()
 {
+	// This took some megabytes in footprint but greatly increase shader compilation time.
 	glslang::InitializeProcess();
 }
 
@@ -306,14 +307,7 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 
 	if (!shader.parse(&defaultConf, default_version, false, messages, includer))
 	{
-		std::stringstream sstream;
-		sstream << "entryPoint(";
-		sstream << key.entryPoint;
-		sstream << "), macros(";
-		for (auto macro : key.macros)
-			sstream << macro + ",";
-		sstream << ")";
-		Logger::error("Failed to parse shader ", sstream.str(), " : ", shader.getInfoLog());
+		Logger::error("Failed to parse shader ", key, " : ", shader.getInfoLog());
 		return ShaderCompilationResult();
 	}
 	program.addShader(&shader);

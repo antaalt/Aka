@@ -110,7 +110,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 				vk_texture->type == TextureType::Texture2DArray,
 				"Invalid texture binding, skipping."
 			);
-			VkDescriptorImageInfo& vk_image = imageDescriptors.append();
+			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace();
 			vk_image.imageView = vk_texture->getImageView(device, update.texture.layer, update.texture.mipLevel);
 			vk_image.sampler = vk_sampler->vk_sampler;
 			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Resource, vk_texture->format);
@@ -120,7 +120,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 		case ShaderBindingType::StorageImage: {
 			VulkanTexture* vk_texture = device->getVk<VulkanTexture>(update.texture.texture);
 			AKA_ASSERT(vk_texture->type == TextureType::Texture2D, "Invalid texture binding, skipping.");
-			VkDescriptorImageInfo& vk_image = imageDescriptors.append();
+			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace();
 			vk_image.imageView = vk_texture->getImageView(device, update.texture.layer, update.texture.mipLevel);
 			vk_image.sampler = VK_NULL_HANDLE;
 			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Storage, vk_texture->format);
@@ -130,7 +130,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 		case ShaderBindingType::StorageBuffer:
 		case ShaderBindingType::UniformBuffer: {
 			VulkanBuffer* buffer = device->getVk<VulkanBuffer>(update.buffer.handle);
-			VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.append();
+			VkDescriptorBufferInfo& vk_buffer = bufferDescriptors.emplace();
 			if (buffer == nullptr) // No buffer
 			{
 				vk_buffer.buffer = VK_NULL_HANDLE;

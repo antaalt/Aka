@@ -11,47 +11,61 @@ void DebugDrawList::draw3DFrustum(const mat4f& projection, const color4f& color)
 }
 void DebugDrawList::draw3DCube(const mat4f& transform, const color4f& color)
 {
+	reserveBlock(8 * 3);
+	const DebugVertex s_planeVertices[8] = {
+		DebugVertex{transform.multiplyPoint(point3f(-1, -1, -1)), color}, // 0
+		DebugVertex{transform.multiplyPoint(point3f( 1, -1, -1)), color}, // 1
+		DebugVertex{transform.multiplyPoint(point3f(-1, -1,  1)), color}, // 2
+		DebugVertex{transform.multiplyPoint(point3f(-1,  1, -1)), color}, // 3
+		DebugVertex{transform.multiplyPoint(point3f( 1, -1,  1)), color}, // 4
+		DebugVertex{transform.multiplyPoint(point3f(-1,  1,  1)), color}, // 5
+		DebugVertex{transform.multiplyPoint(point3f( 1,  1, -1)), color}, // 6
+		DebugVertex{transform.multiplyPoint(point3f( 1,  1,  1)), color}, // 7
+	};
 	// Face 1
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1, -1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1, -1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1,  1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1,  1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1, -1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1,  1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1, -1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1,  1, -1)), color4f(color) });
+	m_vertices.append(s_planeVertices[0]);
+	m_vertices.append(s_planeVertices[1]);
+	m_vertices.append(s_planeVertices[3]);
+	m_vertices.append(s_planeVertices[6]);
+	m_vertices.append(s_planeVertices[0]);
+	m_vertices.append(s_planeVertices[3]);
+	m_vertices.append(s_planeVertices[1]);
+	m_vertices.append(s_planeVertices[6]);
 
 	// Face 2
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1, -1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1, -1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1,  1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1,  1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1, -1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1,  1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1, -1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1,  1,  1)), color4f(color) });
+	m_vertices.append(s_planeVertices[2]);
+	m_vertices.append(s_planeVertices[4]);
+	m_vertices.append(s_planeVertices[5]);
+	m_vertices.append(s_planeVertices[7]);
+	m_vertices.append(s_planeVertices[2]);
+	m_vertices.append(s_planeVertices[5]);
+	m_vertices.append(s_planeVertices[4]);
+	m_vertices.append(s_planeVertices[7]);
 
 	// Face connect
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1, -1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1, -1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1,  1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(-1,  1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1, -1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1, -1,  1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1,  1, -1)), color4f(color) });
-	m_vertices.append(DebugVertex{ transform.multiplyPoint(point3f(1,  1,  1)), color4f(color) });
+	m_vertices.append(s_planeVertices[0]);
+	m_vertices.append(s_planeVertices[2]);
+	m_vertices.append(s_planeVertices[3]);
+	m_vertices.append(s_planeVertices[5]);
+	m_vertices.append(s_planeVertices[1]);
+	m_vertices.append(s_planeVertices[4]);
+	m_vertices.append(s_planeVertices[6]);
+	m_vertices.append(s_planeVertices[7]);
 }
 void DebugDrawList::draw3DSphere(const mat4f& transform, const color4f& color)
 {
 	// http://www.songho.ca/opengl/gl_sphere.html
-	uint32_t segmentCount = 16;
-	uint32_t ringCount = 16;
+	const uint32_t segmentCount = 16;
+	const uint32_t ringCount = 16;
+
+	reserveBlock((segmentCount - 1) * ringCount * 6);
 
 	anglef sectorStep = 2.f * pi<float> / (float)ringCount;
 	anglef stackStep = pi<float> / (float)segmentCount;
 	anglef ringAngle, segmentAngle;
 
 	Vector<DebugVertex> vertices;
+	vertices.reserve((segmentCount + 1) * (ringCount + 1));
 	for (uint32_t i = 0; i <= segmentCount; ++i)
 	{
 		segmentAngle = pi<float> / 2.f - (float)i * stackStep; // starting from pi/2 to -pi/2
@@ -62,14 +76,13 @@ void DebugDrawList::draw3DSphere(const mat4f& transform, const color4f& color)
 		// the first and last vertices have same position and normal, but different uv
 		for (uint32_t j = 0; j <= ringCount; ++j)
 		{
-			DebugVertex v;
+			DebugVertex& v = vertices.emplace();
 			ringAngle = (float)j * sectorStep; // starting from 0 to 2pi
 			v.point[0] = xy * cos(ringAngle); // r * cos(u) * cos(v)
 			v.point[1] = xy * sin(ringAngle); // r * cos(u) * sin(v)
 			v.point[2] = z;
 			v.point = transform.multiplyPoint(v.point);
 			v.color = color;
-			vertices.append(v);
 		}
 	}
 	for (uint32_t i = 0; i < segmentCount; ++i)
@@ -99,6 +112,7 @@ void DebugDrawList::draw3DSphere(const mat4f& transform, const color4f& color)
 }
 void DebugDrawList::draw3DPlane(const mat4f& transform, const color4f& color)
 {
+	reserveBlock(8);
 	// Vertices
 	const DebugVertex s_planeVertices[4] = {
 		DebugVertex{transform.multiplyPoint(point3f(-1.0f, 0.0f, -1.0f)), color},
@@ -120,7 +134,16 @@ void DebugDrawList::draw3DLine(const point3f* positions, size_t count, const col
 	// Merge
 	for (size_t i = 0; i < count; i++)
 	{
-		m_vertices.append(DebugVertex{ positions[i], color4f(color) });
+		m_vertices.append(DebugVertex{ positions[i], color });
+	}
+}
+static const size_t s_blockSize = 10'000;
+void DebugDrawList::reserveBlock(size_t _count)
+{
+	// Reserve a new block if not enough size to avoid allocation overhead.
+	if (m_vertices.size() + _count > m_vertices.capacity())
+	{
+		m_vertices.reserve(m_vertices.capacity() + s_blockSize);
 	}
 }
 
@@ -160,8 +183,9 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	);
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 	{
-		m_vertexBufferSize[i] = 10000;
-		m_vertexBuffer[i] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(DebugVertex) * m_vertexBufferSize[i]), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
+		m_vertices.reserve(s_blockSize);
+		m_vertexBufferSize[i] = s_blockSize;
+		m_vertexBuffer[i] = _device->createBuffer("DebugDrawVertexBuffer", gfx::BufferType::Vertex, (uint32_t)(sizeof(DebugVertex) * s_blockSize), gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 	}
 }
 

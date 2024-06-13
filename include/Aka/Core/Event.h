@@ -59,7 +59,7 @@ template <typename T>
 template <typename... Args>
 inline void EventDispatcher<T>::emit(Args&&... args)
 {
-	m_events.append(std::forward<Args>(args)...);
+	m_events.emplace(std::forward<Args>(args)...);
 }
 template <typename T>
 inline void EventDispatcher<T>::trigger(T&& event)

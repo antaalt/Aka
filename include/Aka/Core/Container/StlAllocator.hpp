@@ -15,7 +15,7 @@ public:
 	typedef void* pointer;
 	typedef const void* const_pointer;
 	typedef void value_type;
-	template <class U1> struct rebind { typedef AkaStlAllocator<U1> other; };
+	template <class U1> struct rebind { typedef AkaStlAllocator<U1, Type, Category> other; };
 };
 
 template <class T, AllocatorMemoryType Type, AllocatorCategory Category>

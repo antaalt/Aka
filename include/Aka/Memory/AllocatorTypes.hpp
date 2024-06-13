@@ -18,15 +18,17 @@ enum class AllocatorMemoryType : uint8_t
 	Pool,
 	Object,
 	Raw, // untracked new (malloc not tracked)
+	RawArray, // untracked new[]
 
 
 	First = Vector,
-	Last = Raw,
+	Last = RawArray,
 };
 
 enum class AllocatorCategory : uint8_t
 {
 	Global,
+	Platform,
 	Graphic,
 	Audio,
 	Assets,

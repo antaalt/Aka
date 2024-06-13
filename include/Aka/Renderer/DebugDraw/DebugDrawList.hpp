@@ -48,6 +48,8 @@ public:
 	void draw3DCube(const mat4f& transform, const color4f& color);
 	void draw3DLine(const point3f* positions, size_t count, const color4f& color);
 private:
+	void reserveBlock(size_t _count);
+private:
 	Vector<DebugVertex> m_vertices;
 	gfx::BufferHandle m_vertexBuffer[gfx::MaxFrameInFlight];
 	size_t m_vertexBufferSize[gfx::MaxFrameInFlight];

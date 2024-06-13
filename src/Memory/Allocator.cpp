@@ -20,7 +20,8 @@ const char* toString(AllocatorMemoryType _type)
 	case aka::AllocatorMemoryType::Pool: return "Pool";
 	case aka::AllocatorMemoryType::Object: return "Object";
 	case aka::AllocatorMemoryType::Raw: return "Raw";
-	default: return "Unknown";
+	case aka::AllocatorMemoryType::RawArray: return "RawArray";
+	default: AKA_NOT_IMPLEMENTED; return "Unknown";
 	}
 }
 const char* toString(AllocatorCategory _category)
@@ -28,12 +29,13 @@ const char* toString(AllocatorCategory _category)
 	switch (_category)
 	{
 	case aka::AllocatorCategory::Global: return "Global";
+	case aka::AllocatorCategory::Platform: return "Platform";
 	case aka::AllocatorCategory::Graphic: return "Graphic";
 	case aka::AllocatorCategory::Audio: return "Audio";
 	case aka::AllocatorCategory::Assets: return "Assets";
 	case aka::AllocatorCategory::Component: return "Component";
 	case aka::AllocatorCategory::Editor: return "Editor";
-	default: return "Unkown";
+	default: AKA_NOT_IMPLEMENTED; return "Unkown";
 	}
 }
 

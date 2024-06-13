@@ -39,7 +39,6 @@ public:
 	bool operator<=(const Vector<T, Category>& vector) const;
 	bool operator>=(const Vector<T, Category>& vector) const;
 
-	T& append();
 	T& append(const Vector<T, Category>& vector);
 	T& append(const T* start, const T* end);
 	T& append(const T& value);
@@ -215,15 +214,6 @@ inline bool Vector<T, Category>::operator>=(const Vector<T, Category>& value) co
 	return !(*this < value);
 }
 template <typename T, AllocatorCategory Category>
-inline T& Vector<T, Category>::append()
-{
-	size_t newSize = m_size + 1;
-	reserve(newSize);
-	std::uninitialized_default_construct(end(), end() + 1);
-	m_size = newSize;
-	return last();
-}
-template <typename T, AllocatorCategory Category>
 inline T& Vector<T, Category>::append(const Vector<T, Category>& vector)
 {
 	return append(vector.begin(), vector.end());
@@ -246,7 +236,7 @@ inline T& Vector<T, Category>::append(const T& value)
 {
 	size_t newSize = m_size + 1;
 	reserve(newSize);
-	std::uninitialized_fill(end(), end() + 1, value);
+	new (end()) T(value);
 	m_size = newSize;
 	return last();
 }
@@ -255,7 +245,7 @@ inline T& Vector<T, Category>::append(T&& value)
 {
 	size_t newSize = m_size + 1;
 	reserve(newSize);
-	std::uninitialized_move(&value, &value + 1, end());
+	new (end()) T(std::move(value));
 	m_size = newSize;
 	return last();
 }
@@ -331,14 +321,14 @@ inline void Vector<T, Category>::reserve(size_t size)
 {
 	if (size <= m_capacity)
 		return;
-	T* b = begin();
-	T* e = end();
 	size_t oldCapacity = m_capacity;
-	T* buffer = m_allocator.allocate<T>(size);
-	std::uninitialized_move(b, e, buffer);
-	std::destroy(b, e);
+	size_t newCapacity = oldCapacity + oldCapacity / 2; // * 1.5 growth
+	if (newCapacity < size)
+		newCapacity = size; // insufficient growth.
+	T* buffer = m_allocator.allocate<T>(newCapacity);
+	std::uninitialized_move(begin(), end(), buffer);
 	m_allocator.deallocate(m_data);
-	m_capacity = size;
+	m_capacity = newCapacity;
 	m_data = buffer;
 }
 template <typename T, AllocatorCategory Category>
