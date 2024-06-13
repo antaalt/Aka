@@ -16,9 +16,51 @@ void ArchiveRigidBodyComponent::parse(BinaryArchive& archive)
 	//archive.parse<AssetID>(assetID);
 }
 
+// Different for every shapes
+// https://www.toppr.com/guides/physics/system-of-particles-and-rotational-dynamics/moment-of-inertia/
+static mat3f computeSphereInertiaMatrix(float radius, float mass) {
+	return mat3f::identity() * (2.f / 5.f * mass * radius);
+}
+static mat3f computeRectangleInertiaMatrix(float height, float width, float mass) {
+	return mat3f::identity() * (1.f / 12.f * mass * (height * height + width * width));
+}
+
+mat3f getInertiaInverseMatrix(Node* _node, float _mass)
+{
+	if (_node->has<ColliderComponent>())
+	{
+		ColliderComponent& component = _node->get<ColliderComponent>();
+		switch (component.getShapeType())
+		{
+		case ColliderShapeType::Plane:
+			AKA_NOT_IMPLEMENTED;
+			return mat3f::identity();
+		case ColliderShapeType::Sphere: {
+			const ColliderSphere* sphereShape = reinterpret_cast<const ColliderSphere*>(component.getShape());
+			vec3f scale = mat4f::extractScale(_node->getWorldTransform());
+			float maxScale = max(scale.x, max(scale.y, scale.z));
+			return mat3f::inverse(computeSphereInertiaMatrix(maxScale * sphereShape->m_radius, _mass));
+		}
+		case ColliderShapeType::Cube:
+			//return mat3f::inverse(computeRectangleInertiaMatrix());
+			AKA_NOT_IMPLEMENTED;
+			return mat3f::identity();
+		default:
+			AKA_NOT_IMPLEMENTED;
+			return mat3f::identity();
+		}
+	}
+	else
+	{
+		// Cant know the shape here. RigidBody should have a collider to work correctly.
+		return mat3f::identity();
+	}
+}
+
 RigidBodyComponent::RigidBodyComponent(Node* node) :
 	Component(node),
-	m_velocity(0.f)
+	m_velocity(0.f),
+	m_inertiaInverse()
 {
 }
 RigidBodyComponent::~RigidBodyComponent()
@@ -44,11 +86,6 @@ struct Particle
 
 	vec3f previousPosition;
 };
-// Different for every shapes...
-// https://www.toppr.com/guides/physics/system-of-particles-and-rotational-dynamics/moment-of-inertia/
-mat3f computeSphereInertiaMatrix(float radius, float mass) {
-	return mat3f::identity() * (2.f / 5.f * mass * radius);
-}
 
 // TODO: make component aswell
 static Vector<Particle> particles;
@@ -133,6 +170,7 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 
 				// Should we retrieve torque from other elements in contact here ?
 				// TODO: externalTorque probably invalid here.
+				body.m_inertiaInverse = getInertiaInverseMatrix(body.getNode(), 1.f / body.m_massInverse);
 				const mat3f inertia = mat3f::inverse(body.m_inertiaInverse);
 				vec3f externalTorque = inertia * body.m_angularVelocity; // T = Iw
 				body.m_previousOrientation = body.m_orientation;

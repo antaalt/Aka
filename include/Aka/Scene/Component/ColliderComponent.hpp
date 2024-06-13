@@ -86,6 +86,7 @@ public:
 public:
 	ContactData computeContactData(ColliderComponent& _other);
 	ColliderShapeType getShapeType() const { return m_shape->getShapeType(); }
+	const ColliderShape* getShape() const { return m_shape; }
 public:
 	void fromArchive(const ArchiveColliderComponent& archive) override;
 	void toArchive(ArchiveColliderComponent& archive) override;

@@ -48,7 +48,6 @@ private:
 	quatf m_orientation = quatf::identity(); // rad
 	vec3f m_velocity = vec3f::zero(); // m/s
 	vec3f m_angularVelocity = vec3f::zero(); // rad/s
-	// TODO: computeSphereInertiaMatrix
 	mat3f m_inertiaInverse = mat3f::identity(); // represent the center of gravity of object, based on center of mass.
 	float m_massInverse = 0.f; // 1/kg2, mass inverse of zero means static, unmovable object (with infinite mass)
 
