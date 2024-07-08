@@ -388,6 +388,8 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
 	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
 	VkPhysicalDeviceFeatures2 features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+	VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricsFeature{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR };
+	meshShaderFeatures.pNext = &fragmentShaderBarycentricsFeature;
 	timelineSemaphoreFeatures.pNext = &meshShaderFeatures;
 	indexingFeatures.pNext = &timelineSemaphoreFeatures;
 	features.pNext = &indexingFeatures;
@@ -461,6 +463,16 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 			{
 				Logger::warn("Bindless resources not supported.");
 				supportedFeatureMask &= ~PhysicalDeviceFeatures::BindlessResources;
+			}
+			break;
+		}
+		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR: {
+			VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR* barycentricFeatures = reinterpret_cast<VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR*>(base);
+			bool barycentricSupport = barycentricFeatures->fragmentShaderBarycentric == VK_TRUE;
+			if (!barycentricSupport)
+			{
+				Logger::warn("Barycentric not supported.");
+				supportedFeatureMask &= ~PhysicalDeviceFeatures::Barycentric;
 			}
 			break;
 		}
@@ -549,7 +561,7 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 			{
 				maxScore = score;
 				physicalDevicePicked = physicalDevice;
-				physicalDeviceFeatures = supportedFeatureMask;
+				physicalDeviceFeatures = _requestedFeatures;
 				physicalDeviceLimits = supportedDeviceLimits;
 			}
 		}
@@ -708,6 +720,16 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 		next = &meshShaderFeatures;
 	}
 
+	// VK_VERSION_1_0
+	VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricsFeature{};
+	if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::Barycentric))
+	{
+		fragmentShaderBarycentricsFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
+		fragmentShaderBarycentricsFeature.pNext = next;
+		fragmentShaderBarycentricsFeature.fragmentShaderBarycentric = VK_TRUE;
+		next = &fragmentShaderBarycentricsFeature;
+	}
+
 	// VK_VERSION_1_1
 	VkPhysicalDeviceFeatures2 deviceFeatures {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -845,6 +867,10 @@ bool VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::BindlessResources))
 		{
 			usedDeviceExtensions.append(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+		}
+		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::Barycentric))
+		{
+			usedDeviceExtensions.append(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
 		}
 		device = createLogicalDevice(usedDeviceExtensions.data(), (uint32_t)usedDeviceExtensions.size());
 

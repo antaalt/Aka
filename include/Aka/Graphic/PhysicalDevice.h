@@ -11,13 +11,14 @@ enum class PhysicalDeviceFeatures
 
 	BindlessResources = 1 << 0,
 	MeshShader = 1 << 1,
-	RenderDocAttachment = 1 << 2,
+	Barycentric = 1 << 2,
+	RenderDocAttachment = 1 << 3,
 
-	Required = BindlessResources,
+	Required = BindlessResources | Barycentric,
 	Optional = MeshShader | RenderDocAttachment,
-	Default = Required | RenderDocAttachment,
 
-	All = MeshShader | BindlessResources | RenderDocAttachment,
+	All = Optional | Required,
+	Default = Required | RenderDocAttachment,
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(PhysicalDeviceFeatures);
 
