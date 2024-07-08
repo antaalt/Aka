@@ -216,11 +216,14 @@ bool Program::isCompatible(const ShaderPipelineLayout& _layout) const
 		{
 			const ShaderBindingLayout& layoutBinding = _layout.sets[iSet].bindings[iBinding];
 			const ShaderBindingLayout& shaderBinding = layout.sets[iSet].bindings[iBinding];
-			compatible &= shaderBinding.type == layoutBinding.type;
-			// Cant retrieve bindless count from spirv-cross, so we ignore it here for flag & count
-			compatible &= shaderBinding.flags == layoutBinding.flags || asBool(layoutBinding.flags & ShaderBindingFlag::Bindless);
-			compatible &= shaderBinding.count == layoutBinding.count || asBool(layoutBinding.flags & ShaderBindingFlag::Bindless);
-			compatible &= (shaderBinding.stages & layoutBinding.stages) == shaderBinding.stages;
+			if (shaderBinding.type != ShaderBindingType::None)
+			{
+				compatible &= shaderBinding.type == layoutBinding.type;
+				// Cant retrieve bindless count from spirv-cross, so we ignore it here for flag & count
+				compatible &= shaderBinding.flags == layoutBinding.flags || asBool(layoutBinding.flags & ShaderBindingFlag::Bindless);
+				compatible &= shaderBinding.count == layoutBinding.count || asBool(layoutBinding.flags & ShaderBindingFlag::Bindless);
+				compatible &= (shaderBinding.stages & layoutBinding.stages) == shaderBinding.stages;
+			}
 		}
 	}
 	for (uint32_t i = 0; i < layout.constantCount; i++)
