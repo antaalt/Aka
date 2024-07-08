@@ -17,6 +17,11 @@
 #error "Undetected API"
 #endif
 
+// Z up as default now.
+#if !defined(GEOMETRY_Y_UP) && !defined(GEOMETRY_Z_UP)
+#define GEOMETRY_Z_UP
+#endif
+
 // No need even though we are using vulkan as we work it around with viewport flip. 
 // Check VulkanGraphicPipeline::createVkGraphicPipeline
 //#define GEOMETRY_REVERSED_Y

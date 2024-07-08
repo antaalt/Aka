@@ -68,7 +68,7 @@ bool CameraArcball::update(Time deltaTime)
 		float y = -mouse.delta().y * deltaTime.seconds();
 		anglef pitch = anglef::radian(y);
 		anglef yaw = anglef::radian(x);
-		vec3f upCamera = vec3f(0, 1, 0);
+		vec3f upCamera = vec3f::up();
 		vec3f forwardCamera = vec3f::normalize(target - position);
 		vec3f rightCamera = vec3f::normalize(vec3f::cross(forwardCamera, vec3f(upCamera)));
 		position = mat4f::rotate(rightCamera, pitch).multiplyPoint(point3f(position - target)) + vec3f(target);
@@ -79,7 +79,7 @@ bool CameraArcball::update(Time deltaTime)
 	{
 		float x = -mouse.delta().x * deltaTime.seconds();
 		float y = -mouse.delta().y * deltaTime.seconds();
-		vec3f upCamera = vec3f(0, 1, 0); // TODO change it when close to up
+		vec3f upCamera = vec3f::up(); // TODO change it when close to up
 		vec3f forwardCamera = vec3f::normalize(target - position);
 		vec3f rightCamera = vec3f::normalize(vec3f::cross(forwardCamera, vec3f(upCamera)));
 		vec3f move = rightCamera * x * speed / 2.f + upCamera * y * speed / 2.f;
@@ -112,7 +112,7 @@ void CameraArcball::set(const aabbox<>& bbox)
 	float dist = bbox.extent().norm();
 	position = bbox.max * 1.2f;
 	target = bbox.center();
-	up = norm3f(0, 1, 0);
+	up = norm3f(vec3f::up());
 	speed = dist;
 }
 

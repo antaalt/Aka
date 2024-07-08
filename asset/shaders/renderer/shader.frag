@@ -27,7 +27,7 @@ layout(set = 2, binding = 0) uniform sampler2D  u_textures[];
 
 void main()
 {
-	vec3 sunDir = vec3(0, 1, 0);
+	vec3 sunDir = vec3(0, 0, 1);
 	float cosTheta = dot(sunDir, normalize(v_worldNormal));
 	MaterialData material = u_material.data[v_materialID]; // cant use v_materialID yet, cuz its per instance & not batch.
 	vec4 albedo = texture(u_textures[material.albedoID], v_uv) * material.color * v_color;

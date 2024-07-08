@@ -15,11 +15,11 @@ void DebugDrawList::draw3DCube(const mat4f& transform, const color4f& color)
 	const DebugVertex s_planeVertices[8] = {
 		DebugVertex{transform.multiplyPoint(point3f(-1, -1, -1)), color}, // 0
 		DebugVertex{transform.multiplyPoint(point3f( 1, -1, -1)), color}, // 1
-		DebugVertex{transform.multiplyPoint(point3f(-1, -1,  1)), color}, // 2
-		DebugVertex{transform.multiplyPoint(point3f(-1,  1, -1)), color}, // 3
-		DebugVertex{transform.multiplyPoint(point3f( 1, -1,  1)), color}, // 4
+		DebugVertex{transform.multiplyPoint(point3f(-1,  1, -1)), color}, // 2
+		DebugVertex{transform.multiplyPoint(point3f(-1, -1, 1)), color}, // 3
+		DebugVertex{transform.multiplyPoint(point3f( 1,  1, -1)), color}, // 4
 		DebugVertex{transform.multiplyPoint(point3f(-1,  1,  1)), color}, // 5
-		DebugVertex{transform.multiplyPoint(point3f( 1,  1, -1)), color}, // 6
+		DebugVertex{transform.multiplyPoint(point3f( 1, -1,  1)), color}, // 6
 		DebugVertex{transform.multiplyPoint(point3f( 1,  1,  1)), color}, // 7
 	};
 	// Face 1
@@ -115,10 +115,10 @@ void DebugDrawList::draw3DPlane(const mat4f& transform, const color4f& color)
 	reserveBlock(8);
 	// Vertices
 	const DebugVertex s_planeVertices[4] = {
-		DebugVertex{transform.multiplyPoint(point3f(-1.0f, 0.0f, -1.0f)), color},
-		DebugVertex{transform.multiplyPoint(point3f(-1.0f, 0.0f,  1.0f)), color},
-		DebugVertex{transform.multiplyPoint(point3f(1.0f,  0.0f,  1.0f)), color},
-		DebugVertex{transform.multiplyPoint(point3f(1.0f,  0.0f, -1.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(-1.0f, -1.0f, 0.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(-1.0f,  1.0f, 0.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(1.0f,   1.0f, 0.0f)), color},
+		DebugVertex{transform.multiplyPoint(point3f(1.0f,  -1.0f, 0.0f)), color},
 	};
 	m_vertices.append(s_planeVertices[0]);
 	m_vertices.append(s_planeVertices[1]);

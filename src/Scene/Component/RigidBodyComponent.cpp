@@ -129,8 +129,8 @@ void RigidBodyComponent::onRenderUpdate(AssetLibrary* library, Renderer* _render
 
 vec3f getExternalForces()
 {
-	const vec3f gravity(0.f, -9.81f, 0.f);
-	const vec3f airResistance(0.f, 1.f, 0.f);
+	const vec3f gravity = vec3f::up() * -9.81f;
+	const vec3f airResistance = vec3f::down() * 1.f;
 	return gravity + airResistance;
 }
 void RigidBodyComponent::onFixedUpdate(Time _deltaTime)

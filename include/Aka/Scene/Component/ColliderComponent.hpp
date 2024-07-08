@@ -48,7 +48,7 @@ struct ColliderSphere : ColliderShape
 {
 	ColliderSphere() : ColliderShape(ColliderShapeType::Sphere) {}
 	// TODO: get these data somehow
-	point3f m_offset = point3f(0, 0, 0); // Collider offset from node transform
+	point3f m_offset = point3f::zero(); // Collider offset from node transform
 	float m_radius = 1.f;
 };
 struct ColliderCube : ColliderShape
@@ -60,8 +60,8 @@ struct ColliderCube : ColliderShape
 struct ColliderPlane : ColliderShape
 {
 	ColliderPlane() : ColliderShape(ColliderShapeType::Plane) {}
-	point3f m_offset = point3f(0, 0, 0); // Collider offset from node transform
-	vec3f m_normal = vec3f(0, 1, 0);
+	point3f m_offset = point3f::zero(); // Collider offset from node transform
+	vec3f m_normal = vec3f::up();
 };
 
 struct ArchiveColliderComponent : ArchiveComponent
