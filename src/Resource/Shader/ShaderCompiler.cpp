@@ -241,22 +241,28 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 		return ShaderCompilationResult();
 
 	EShLanguage stage = EShLanguage::EShLangVertex;
+	String shaderStageMacro = "";
 	switch (key.type)
 	{
 	case ShaderType::Vertex:
 		stage = EShLangVertex;
+		shaderStageMacro = "AKA_STAGE_VERTEX";
 		break;
 	case ShaderType::Fragment:
 		stage = EShLangFragment;
+		shaderStageMacro = "AKA_STAGE_FRAGMENT";
 		break;
 	case ShaderType::Compute:
 		stage = EShLangCompute;
+		shaderStageMacro = "AKA_STAGE_COMPUTE";
 		break;
 	case ShaderType::Task:
 		stage = EShLangTask;
+		shaderStageMacro = "AKA_STAGE_TASK";
 		break;
 	case ShaderType::Mesh:
 		stage = EShLangMesh;
+		shaderStageMacro = "AKA_STAGE_MESH";
 		break;
 	default:
 		return ShaderCompilationResult();
@@ -282,7 +288,8 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 	// Set define values
 	std::vector<std::string> processes;
 	// TODO: check if define does not already exist.
-	String defs = "#extension GL_GOOGLE_include_directive : require\n";
+	String defs = String::format("#extension GL_GOOGLE_include_directive : require\n#define %s\n", shaderStageMacro.cstr());
+	defs += "#define AKA_FLIP_UV\n";
 	// TODO: move these defines in key.macro ? as mandatory macros
 #if defined(AKA_ORIGIN_TOP_LEFT)
 	defs += "#define AKA_FLIP_UV\n";
