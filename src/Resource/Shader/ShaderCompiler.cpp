@@ -268,7 +268,7 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 		return ShaderCompilationResult();
 	}
 	
-	EShMessages messages = EShMsgDefault;
+	EShMessages messages = static_cast<EShMessages>(EShMsgDefault | EShMsgDebugInfo | EShMsgCascadingErrors);
 	int default_version = 110; // 110 for desktop
 	glslang::TProgram program;
 	glslang::TShader shader(stage);
