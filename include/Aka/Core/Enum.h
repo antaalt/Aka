@@ -103,7 +103,7 @@ template<typename Type, typename Container = uint32_t>
 struct EnumMask
 {
 	static_assert(std::is_enum<Type>::value, "This is an enum mask");
-	static_assert(EnumCount<Type>() <= sizeof(T) * CHAR_BIT );
+	static_assert(EnumCount<Type>() <= sizeof(Type) * CHAR_BIT );
 public:
 	EnumMask() = default;
 	explicit EnumMask(Type _type) : m_mask(1U << EnumToIndex(_type)) {}
@@ -166,10 +166,10 @@ private:
 
 
 #define AKA_IMPLEMENT_BITMASK_OPERATOR(EnumClassType) \
-inline constexpr EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<UnderlyingType<EnumClassType>>(rhs)); }  \
-inline constexpr EnumClassType operator|(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) | static_cast<UnderlyingType<EnumClassType>>(rhs)); } \
-inline constexpr EnumClassType& operator|=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) | static_cast<UnderlyingType<EnumClassType>>(rhs)); return lhs; } \
-inline constexpr EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<UnderlyingType<EnumClassType>>(rhs));  return lhs; } \
+inline constexpr EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); }  \
+inline constexpr EnumClassType operator|(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) | static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); } \
+inline constexpr EnumClassType& operator|=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) | static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); return lhs; } \
+inline constexpr EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<::aka::UnderlyingType<EnumClassType>>(rhs));  return lhs; } \
 inline constexpr EnumClassType operator~(EnumClassType value) { return static_cast<EnumClassType>(~static_cast<::aka::UnderlyingType<EnumClassType>>(value)); } \
 inline constexpr bool has(EnumClassType mask, EnumClassType flag) { return (mask & flag) == flag; } \
 inline constexpr bool asBool(EnumClassType mask) { return mask != (EnumClassType)0; } \
