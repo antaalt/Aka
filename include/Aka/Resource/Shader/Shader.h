@@ -52,6 +52,7 @@ struct ProgramKey
 
 bool operator<(const ShaderKey& lhs, const ShaderKey& rhs);
 bool operator==(const ShaderKey& lhs, const ShaderKey& rhs);
+bool operator!=(const ShaderKey& lhs, const ShaderKey& rhs);
 
 bool operator<(const ProgramKey& lhs, const ProgramKey& rhs);
 bool operator==(const ProgramKey& lhs, const ProgramKey& rhs);

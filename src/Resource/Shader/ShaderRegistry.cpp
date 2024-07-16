@@ -76,7 +76,8 @@ ShaderRegistry::ShaderRegistry()
 				{
 				case FileWatchAction::Updated: {
 					std::lock_guard guard(m_fileWatcherMutex);
-					m_shaderToReload.append(key.first);
+					if (m_shaderReloading != key.first && std::find(m_shaderToReload.begin(), m_shaderToReload.end(), key.first) == m_shaderToReload.end())
+						m_shaderToReload.append(key.first);
 					break;
 				}
 				default:
@@ -95,7 +96,8 @@ ShaderRegistry::ShaderRegistry()
 					{
 					case FileWatchAction::Updated: {
 						std::lock_guard guard(m_fileWatcherMutex);
-						m_shaderToReload.append(key.first);
+						if (m_shaderReloading != key.first && std::find(m_shaderToReload.begin(), m_shaderToReload.end(), key.first) == m_shaderToReload.end())
+							m_shaderToReload.append(key.first);
 						break;
 					}
 					default:
@@ -448,6 +450,10 @@ void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 	}
 	for (const ShaderKey& shader : shadersToReload)
 	{
+		{
+			std::lock_guard guard(m_fileWatcherMutex);
+			m_shaderReloading = shader;
+		}
 		// Sometime, the file is marked as updated but the system is not finished writing the file, we will get contention error.
 		// So wait for the write to finish.
 		std::this_thread::sleep_for(std::chrono::milliseconds{ 50 });
@@ -455,6 +461,10 @@ void ShaderRegistry::reloadIfChanged(gfx::GraphicDevice* device)
 		if (!reload(shader, device))
 		{
 			Logger::warn("Failed to reload ", shader);
+		}
+		{
+			std::lock_guard guard(m_fileWatcherMutex);
+			m_shaderReloading = ShaderKey();
 		}
 	}
 }

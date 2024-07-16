@@ -22,6 +22,10 @@ bool operator==(const ShaderKey& lhs, const ShaderKey& rhs)
 {
 	return (rhs.entryPoint == lhs.entryPoint) && (rhs.macros == lhs.macros) && (rhs.type == lhs.type) && (rhs.path == lhs.path);
 }
+bool operator!=(const ShaderKey& lhs, const ShaderKey& rhs)
+{
+	return (rhs.entryPoint != lhs.entryPoint) || (rhs.macros != lhs.macros) || (rhs.type != lhs.type) || (rhs.path != lhs.path);
+}
 
 bool operator<(const ProgramKey& lhs, const ProgramKey& rhs)
 {

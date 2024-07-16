@@ -65,6 +65,7 @@ private:
 	FileWatcher m_fileWatcher;
 	std::mutex m_fileWatcherMutex;
 	Vector<ShaderKey> m_shaderToReload;
+	ShaderKey m_shaderReloading;
 #endif
 };
 
