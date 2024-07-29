@@ -88,6 +88,7 @@ Image ImageDecoder::fromDisk(const Path& _path)
 	stbi_uc* data = stbi_load(_path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
+		Logger::error("Failed to decode image ", _path, " from disk: ", stbi_failure_reason());
 		return Image{};
 	}
 	else
@@ -114,6 +115,7 @@ Image ImageDecoder::fromMemory(const byte_t* _data, size_t _size)
 	stbi_uc* data = stbi_load_from_memory(_data, (int)_size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
+		Logger::error("Failed to decode image from memory: ", stbi_failure_reason());
 		return Image{};
 	}
 	else
@@ -136,6 +138,7 @@ ImageHdr ImageDecoder::fromDiskHdr(const Path& _path)
 	float* data = stbi_loadf(_path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
+		Logger::error("Failed to decode hdr image ", _path, " from disk: ", stbi_failure_reason());
 		return ImageHdr{};
 	}
 	else
@@ -162,6 +165,7 @@ ImageHdr ImageDecoder::fromMemoryHdr(const byte_t* _data, size_t _size)
 	float* data = stbi_loadf_from_memory(_data, (int)_size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
+		Logger::error("Failed to decode hdr image from memory: ", stbi_failure_reason());
 		return ImageHdr{};
 	}
 	else
