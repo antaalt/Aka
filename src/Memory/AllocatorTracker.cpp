@@ -76,9 +76,10 @@ void AllocatorTracker::deallocate(const void* const pointer, AllocatorMemoryType
 
 void AllocatorTracker::reallocate(const void* const pOriginal, const void* const pNew, AllocatorMemoryType type, AllocatorCategory category, const AllocationTrackingData& data)
 {
-	if (pOriginal == nullptr || pNew == nullptr)
+	if (pNew == nullptr)
 		return;
-	deallocate(pOriginal, type, category);
+	if (pOriginal != nullptr)
+		deallocate(pOriginal, type, category);
 	allocate(pNew, type, category, data);
 }
 size_t AllocatorTracker::getUsedMemory() const

@@ -128,10 +128,9 @@ void Allocator::deallocate(void* elements)
 template <typename Type, typename Metadata>
 Type* Allocator::reallocate(void* elements, size_t count, AllocatorFlags flags)
 {
-	if (elements == nullptr)
-		return nullptr;
 	// TODO: handle metadata alignment
-	void* data = reallocate_internal(static_cast<void*>(asByte(elements) - getMetadataSize<Metadata>()), count * sizeof(Type) + getMetadataSize<Metadata>(), flags);
+	void* elementMetadata = elements ? static_cast<void*>(asByte(elements) - getMetadataSize<Metadata>()) : nullptr;
+	void* data = reallocate_internal(elementMetadata, count * sizeof(Type) + getMetadataSize<Metadata>(), flags);
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	AllocatorTracker& tracker = getAllocatorTracker();
 	void* pOriginal = static_cast<void*>(asByte(elements) - getMetadataSize<Metadata>());
@@ -169,10 +168,9 @@ void Allocator::alignedDeallocate(void* elements)
 template<typename Type, typename Metadata>
 inline Type* Allocator::alignedReallocate(void* elements, size_t count, size_t alignment, AllocatorFlags flags)
 {
-	if (elements == nullptr)
-		return nullptr;
 	// TODO: handle metadata alignment
-	void* data = alignedReallocate_internal(static_cast<void*>(asByte(elements) - getMetadataSize<Metadata>()), count * sizeof(Type) + getMetadataSize<Metadata>(), alignment, flags);
+	void* elementMetadata = elements ? static_cast<void*>(asByte(elements) - getMetadataSize<Metadata>()) : nullptr;
+	void* data = alignedReallocate_internal(elementMetadata, count * sizeof(Type) + getMetadataSize<Metadata>(), alignment, flags);
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	AllocatorTracker& tracker = getAllocatorTracker();
 	void* pOriginal = static_cast<void*>(asByte(elements) - getMetadataSize<Metadata>());
