@@ -7,9 +7,10 @@
 namespace aka {
 namespace gfx {
 
-Shader::Shader(const char* name, ShaderType type) : 
+Shader::Shader(const char* name, const char* entryPoint, ShaderType type) :
 	Resource(name, ResourceType::Shader),
-	type(type)
+	type(type),
+	entryPoint(entryPoint)
 {
 }
 
@@ -20,9 +21,9 @@ ShaderMask getShaderMask(ShaderType type)
 	return static_cast<ShaderMask>(1 << EnumToIndex(type));
 }
 
-ShaderHandle Shader::create(const char* name, ShaderType type, const void* content, size_t size)
+ShaderHandle Shader::create(const char* name, ShaderType type, const char* entryPoint, const void* content, size_t size)
 {
-	return Application::app()->graphic()->createShader(name, type, content, size);
+	return Application::app()->graphic()->createShader(name, type, entryPoint, content, size);
 }
 
 void Shader::destroy(ShaderHandle shader)

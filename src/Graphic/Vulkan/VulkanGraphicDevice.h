@@ -41,7 +41,7 @@ public:
 	PhysicalDeviceLimits getLimits() const override;
 
 	// Shaders
-	ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) override;
+	ShaderHandle createShader(const char* name, ShaderType type, const char* entryPoint, const void* data, size_t size) override;
 	void destroy(ShaderHandle handle) override;
 	const Shader* get(ShaderHandle handle) override;
 

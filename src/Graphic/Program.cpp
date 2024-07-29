@@ -208,8 +208,8 @@ bool Program::hasComputeStage() const
 bool Program::isCompatible(const ShaderPipelineLayout& _layout) const
 {
 	bool compatible = true;
-	compatible &= layout.constantCount == _layout.constantCount;
-	compatible &= layout.setCount == _layout.setCount;
+	compatible &= layout.constantCount <= _layout.constantCount;
+	compatible &= layout.setCount <= _layout.setCount;
 	for (uint32_t iSet = 0; iSet < layout.setCount; iSet++)
 	{
 		for (uint32_t iBinding = 0; iBinding < layout.sets[iSet].count; iBinding++)

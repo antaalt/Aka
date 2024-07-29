@@ -280,6 +280,7 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 	// Glslang does not support multiple entry point, but SPIRV supports it.
 	// To support it, we would need a different backend.
 	shader.setEntryPoint(key.entryPoint.cstr());
+	shader.setSourceEntryPoint(key.entryPoint.cstr());
 	shader.setInvertY(false);
 	shader.setEnvInput(glslang::EShSourceGlsl, stage, glslang::EShClientVulkan, default_version);
 	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3); // Minimum required VK version

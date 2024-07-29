@@ -154,7 +154,7 @@ std::tuple<gfx::ShaderHandle, ShaderReflectionData> CompileShader(const ShaderKe
 #endif
 	String shaderDebugName = OS::File::name(_shaderKey.path.getAbsolutePath());
 	ShaderReflectionData data = _compiler.reflect(shaderCompilationResult, _shaderKey.entryPoint.cstr());
-	gfx::ShaderHandle handle = _device->createShader(shaderDebugName.cstr(), _shaderKey.type, shaderCompilationResult.blob.data(), shaderCompilationResult.blob.size());
+	gfx::ShaderHandle handle = _device->createShader(shaderDebugName.cstr(), _shaderKey.type, _shaderKey.entryPoint.cstr(), shaderCompilationResult.blob.data(), shaderCompilationResult.blob.size());
 	return std::make_tuple(handle, data);
 }
 

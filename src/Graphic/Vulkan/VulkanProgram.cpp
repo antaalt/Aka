@@ -242,7 +242,7 @@ VkDescriptorSet VulkanDescriptorSet::createVkDescriptorSet(VkDevice device, VkDe
 	return set;
 }
 
-ShaderHandle VulkanGraphicDevice::createShader(const char* name, ShaderType type, const void* bytes, size_t size)
+ShaderHandle VulkanGraphicDevice::createShader(const char* name, ShaderType type, const char* entryPoint, const void* bytes, size_t size)
 {	
 	if (size == 0 || bytes == nullptr)
 		return ShaderHandle::null;
@@ -251,7 +251,7 @@ ShaderHandle VulkanGraphicDevice::createShader(const char* name, ShaderType type
 	createInfo.codeSize = size;
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(bytes);
 
-	VulkanShader* vk_shader = m_shaderPool.acquire(name, type);
+	VulkanShader* vk_shader = m_shaderPool.acquire(name, entryPoint, type);
 	VK_CHECK_RESULT(vkCreateShaderModule(m_context.device, &createInfo, getVkAllocator(), &vk_shader->vk_module));
 
 	setDebugName(m_context.device, vk_shader->vk_module, name);
@@ -272,8 +272,8 @@ const Shader* VulkanGraphicDevice::get(ShaderHandle handle)
 	return static_cast<const Shader*>(handle.__data);
 }
 
-VulkanShader::VulkanShader(const char* name, ShaderType type) :
-	Shader(name, type),
+VulkanShader::VulkanShader(const char* name, const char* entryPoint, ShaderType type) :
+	Shader(name, entryPoint, type),
 	vk_module(VK_NULL_HANDLE)
 {
 }

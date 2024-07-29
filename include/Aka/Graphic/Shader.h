@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <Aka/Graphic/Resource.h>
+#include <Aka/Core/Container/String.h>
 
 namespace aka {
 namespace gfx {
@@ -48,12 +49,13 @@ using ShaderHandle = ResourceHandle<Shader>;
 
 struct Shader : Resource
 {
-	Shader(const char* name, ShaderType type);
+	Shader(const char* name, const char* entryPoint, ShaderType type);
 	virtual ~Shader() {}
 
 	ShaderType type;
+	String entryPoint;
 
-	static ShaderHandle create(const char* name, ShaderType type, const void* content, size_t size);
+	static ShaderHandle create(const char* name, ShaderType type, const char* entryPoint, const void* content, size_t size);
 	static void destroy(ShaderHandle shader);
 };
 

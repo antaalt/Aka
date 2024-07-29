@@ -134,7 +134,7 @@ public:
 	virtual PhysicalDeviceLimits getLimits() const  = 0;
 
 	// Shaders
-	virtual ShaderHandle createShader(const char* name, ShaderType type, const void* data, size_t size) = 0;
+	virtual ShaderHandle createShader(const char* name, ShaderType type, const char* entryPoint, const void* data, size_t size) = 0;
 	virtual void destroy(ShaderHandle handle) = 0;
 	virtual const Shader* get(ShaderHandle handle) = 0;
 
@@ -161,6 +161,7 @@ public:
 	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
 	virtual void destroy(FramebufferHandle framebuffer) = 0;
 	virtual void destroy(BackbufferHandle backbuffer) = 0;
+	// Should pass args here to be able to control backbuffer attachments.
 	virtual BackbufferHandle createBackbuffer(RenderPassHandle handle) = 0;
 	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
 	virtual FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) = 0;

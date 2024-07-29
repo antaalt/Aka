@@ -13,7 +13,7 @@ class VulkanGraphicDevice;
 
 struct VulkanShader : Shader
 {
-	VulkanShader(const char* name, ShaderType type);
+	VulkanShader(const char* name, const char* entryPoint, ShaderType type);
 
 	VkShaderModule vk_module;
 };

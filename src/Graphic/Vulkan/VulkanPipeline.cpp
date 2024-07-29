@@ -510,7 +510,7 @@ VkPipeline VulkanGraphicPipeline::createVkGraphicPipeline(
 		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStage.stage = tovk(shaders[i]->type);
 		shaderStage.module = shaders[i]->vk_module;
-		shaderStage.pName = "main";
+		shaderStage.pName = shaders[i]->entryPoint.cstr();
 	}
 
 	VkGraphicsPipelineCreateInfo gfxPipelineInfo{};
@@ -655,7 +655,7 @@ VkPipeline VulkanComputePipeline::createVkComputePipeline(VkDevice device, VkPip
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = tovk(ShaderType::Compute);
 	shaderStage.module = shader->vk_module;
-	shaderStage.pName = "main"; // This member has to be 'main', regardless of the actual entry point of the shader
+	shaderStage.pName = shader->entryPoint.cstr();
 
 	VkComputePipelineCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
