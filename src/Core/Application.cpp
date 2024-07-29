@@ -31,6 +31,10 @@ Application::Application(const Config& config) :
 	m_running(true),
 	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_graphic, m_assets))
 {
+	if (!OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()))
+	{
+		throw std::runtime_error("Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
+	}
 }
 Application::~Application()
 {
