@@ -286,27 +286,23 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3); // Minimum required VK version
 	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4); // Minimum required for mesh shader EXT
 
-	// Set define values
-	std::vector<std::string> processes;
 	// TODO: check if define does not already exist.
-	String defs = String::format("#extension GL_GOOGLE_include_directive : require\n#define %s\n", shaderStageMacro.cstr());
-	defs += "#define AKA_FLIP_UV\n";
+	String defs = String::format("#extension GL_GOOGLE_include_directive : require\n#define %s 1\n", shaderStageMacro.cstr());
+	defs += "#define AKA_FLIP_UV 1\n";
 	// TODO: move these defines in key.macro ? as mandatory macros
 #if defined(AKA_ORIGIN_TOP_LEFT)
-	defs += "#define AKA_FLIP_UV\n";
+	defs += "#define AKA_FLIP_UV 1\n";
 #endif
 #if defined(AKA_ORIGIN_TOP_LEFT)
-	defs += "#define AKA_ORIGIN_TOP_LEFT\n";
+	defs += "#define AKA_ORIGIN_TOP_LEFT 1\n";
 #elif defined(AKA_ORIGIN_BOTTOM_LEFT)
-	defs += "#define AKA_ORIGIN_BOTTOM_LEFT\n";
+	defs += "#define AKA_ORIGIN_BOTTOM_LEFT 1\n";
 #endif
-	for (const String& string : key.macros)
+	for (const Macro& macro : key.macros)
 	{
-		defs += "#define " + string + "\n";
-		processes.push_back("D" + std::string(string.data(), string.size()));
+		defs += "#define " + macro.key + " "+ macro.value + "\n";
 	}
 	shader.setPreamble(defs.cstr());
-	shader.addProcesses(processes);
 
 	// Set include directories
 	Vector<Path> paths;

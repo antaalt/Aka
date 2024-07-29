@@ -7,10 +7,20 @@ ShaderKey ShaderKey::generate(const AssetPath& path, ShaderType type)
 {
 	return ShaderKey{
 		path,
-		Vector<String>(),
+		Vector<Macro>(),
 		type,
 		"main"
 	};
+}
+
+bool operator==(const Macro& lhs, const Macro& rhs)
+{
+	return lhs.key == rhs.key && lhs.value == rhs.value;
+}
+
+bool operator!=(const Macro& lhs, const Macro& rhs)
+{
+	return lhs.key != rhs.key || lhs.value != rhs.value;
 }
 
 bool operator<(const ShaderKey& lhs, const ShaderKey& rhs)
@@ -69,9 +79,11 @@ const char* toString(gfx::ShaderType type)
 std::ostream& operator<<(std::ostream& os, const ShaderKey& key)
 {
 	aka::String macros;
-	for (aka::String macro : key.macros)
+	for (aka::Macro macro : key.macros)
 	{
-		macros.append(macro);
+		macros.append(macro.key);
+		macros.append("=");
+		macros.append(macro.value);
 		if (macro != key.macros.last())
 			macros.append(",");
 	}

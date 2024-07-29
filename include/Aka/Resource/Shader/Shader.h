@@ -27,10 +27,16 @@ struct ShaderReflectionData
 	Vector<AssetPath> dependencies;
 };
 
+struct Macro
+{
+	String key;
+	String value;
+};
+
 struct ShaderKey
 {
 	AssetPath path;
-	Vector<String> macros;
+	Vector<Macro> macros;
 
 	ShaderType type;
 	String entryPoint = "main";
@@ -38,7 +44,8 @@ struct ShaderKey
 	ShaderKey& setPath(const AssetPath& _path) { path = _path; return *this; }
 	ShaderKey& setType(ShaderType _type) { type = _type; return *this; }
 	ShaderKey& setEntryPoint(const String& _entryPoint) { entryPoint = _entryPoint; return *this; }
-	ShaderKey& addMacro(const String& _macro) { macros.append(_macro); return *this; }
+	ShaderKey& addMacro(const String& _macro) { macros.append(Macro{ _macro, "" }); return *this; }
+	ShaderKey& addMacro(const String& _macro, const String& _value) { macros.append(Macro{ _macro, _value }); return *this; }
 
 	static ShaderKey generate(const AssetPath& path, ShaderType type);
 };
@@ -49,6 +56,9 @@ struct ProgramKey
 
 	ProgramKey& add(const ShaderKey& key) { shaders.append(key); return *this; }
 };
+
+bool operator==(const Macro& lhs, const Macro& rhs);
+bool operator!=(const Macro& lhs, const Macro& rhs);
 
 bool operator<(const ShaderKey& lhs, const ShaderKey& rhs);
 bool operator==(const ShaderKey& lhs, const ShaderKey& rhs);
@@ -70,7 +80,10 @@ struct std::hash<aka::ShaderKey>
 		size_t hash = 0;
 		aka::hash::fnv(hash, key.entryPoint.cstr(), key.entryPoint.length());
 		for (auto& shader : key.macros)
-			aka::hash::fnv(hash, shader.cstr(), shader.length());
+		{
+			aka::hash::fnv(hash, shader.key.cstr(), shader.key.length());
+			aka::hash::fnv(hash, shader.value.cstr(), shader.value.length());
+		}
 		aka::hash::fnv(hash, key.path.cstr(), key.path.size());
 		aka::hash::fnv(hash, &key.type, sizeof(aka::gfx::ShaderType));
 		return hash;
