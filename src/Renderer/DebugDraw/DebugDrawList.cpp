@@ -165,12 +165,17 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	gfx::ShaderPipelineLayout layout{};
 	layout.addConstant(constant);
 
-	// TODO: create depth
 	gfx::RenderPassState state{};
 	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
-	
+	state.setDepth(gfx::TextureFormat::Depth24Stencil8, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
+
+	// TODO: share depth & render pass between renderer
+	m_depth = _device->createTexture("StaticDepth", width, height, 1, gfx::TextureType::Texture2D, 1, 1, gfx::TextureFormat::Depth24Stencil8, gfx::TextureUsage::RenderTarget);
 	m_backbufferRenderPass = _device->createRenderPass("BackbufferPassHandle", state);
-	m_backbuffer = _device->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, nullptr);
+	gfx::Attachment depthAttachment;
+	depthAttachment.texture = m_depth;
+	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
+	m_backbuffer = _device->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, &depthAttachment);
 
 	m_pipeline = _device->createGraphicPipeline(
 		"DebugDraw",

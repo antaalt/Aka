@@ -53,6 +53,7 @@ private:
 	Vector<DebugVertex> m_vertices;
 	gfx::BufferHandle m_vertexBuffer[gfx::MaxFrameInFlight];
 	size_t m_vertexBufferSize[gfx::MaxFrameInFlight];
+	gfx::TextureHandle m_depth;
 	gfx::RenderPassHandle m_backbufferRenderPass;
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::GraphicPipelineHandle m_pipeline;

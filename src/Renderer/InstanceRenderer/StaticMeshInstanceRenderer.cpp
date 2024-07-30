@@ -68,14 +68,22 @@ void StaticMeshInstanceRenderer::createPipeline()
 	m_programKey.add(ShaderVertex).add(ShaderFragment);
 	registry->add(m_programKey, getDevice());
 
-	// TODO: create depth
 	gfx::RenderPassState state{};
 	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
-	
-	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", state);
-	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, nullptr);
-	gfx::ProgramHandle programHandle = registry->get(m_programKey);
+	state.setDepth(gfx::TextureFormat::Depth24Stencil8, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
 
+	// TODO: share depth & render pass between renderer
+	uint32_t width = 0;
+	uint32_t height = 0;
+	getDevice()->getBackbufferSize(width, height);
+	m_depth = getDevice()->createTexture("StaticDepth", width, height, 1, gfx::TextureType::Texture2D, 1, 1, gfx::TextureFormat::Depth24Stencil8, gfx::TextureUsage::RenderTarget);
+	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", state);
+	gfx::Attachment depthAttachment;
+	depthAttachment.texture = m_depth;
+	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
+	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, &depthAttachment);
+
+	gfx::ProgramHandle programHandle = registry->get(m_programKey);
 	// Create pipeline
 	m_pipeline = getDevice()->createGraphicPipeline(
 		"Graphic pipeline",
@@ -98,6 +106,7 @@ void StaticMeshInstanceRenderer::destroyPipeline()
 	getDevice()->destroy(m_pipeline);
 	getDevice()->destroy(m_backbuffer);
 	getDevice()->destroy(m_backbufferRenderPass);
+	getDevice()->destroy(m_depth);
 }
 
 void StaticMeshInstanceRenderer::prepare(gfx::FrameHandle frame)

@@ -49,6 +49,7 @@ private:
 	gfx::Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
 
 private:
+	gfx::TextureHandle m_depth;
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::RenderPassHandle m_backbufferRenderPass;
 };
