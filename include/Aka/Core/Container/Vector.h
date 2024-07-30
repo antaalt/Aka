@@ -221,6 +221,7 @@ inline T& Vector<T, Category>::append(const Vector<T, Category>& vector)
 template <typename T, AllocatorCategory Category>
 inline T& Vector<T, Category>::append(const T* _start, const T* _end)
 {
+	AKA_ASSERT(_start != nullptr && _end != nullptr, "Invalid inputs.");
 	AKA_ASSERT(_end >= _start, "Invalid range");
 	T* b = begin();
 	T* e = end();

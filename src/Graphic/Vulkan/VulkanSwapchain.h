@@ -36,7 +36,6 @@ struct VulkanFrame : Frame
 struct BackBufferTextures
 {
 	TextureHandle color;
-	TextureHandle depth; // TODO should not be here...
 };
 
 
@@ -57,7 +56,7 @@ public:
 	VulkanFrame* acquireNextImage(VulkanGraphicDevice* context);
 	SwapchainStatus present(VulkanGraphicDevice* device, VulkanFrame& frame);
 
-	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle);
+	BackbufferHandle createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depthAttachment);
 	Backbuffer* getBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 	void destroyBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 

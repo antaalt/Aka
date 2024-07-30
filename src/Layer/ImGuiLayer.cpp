@@ -127,8 +127,10 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 		//gfx::VulkanProgram::createVkDescriptorSet()
 	}
 	{
-		m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
-		m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
+		gfx::RenderPassState state{};
+		state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
+		m_renderData->renderPass = _renderer->getDevice()->createRenderPass("BackbufferPassHandle", state);
+		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("Backbuffer", m_renderData->renderPass, nullptr, 0, nullptr);
 	}
 
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
@@ -334,8 +336,7 @@ void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 	const gfx::Framebuffer* fb = _renderer->getDevice()->get(framebuffer);
 	{
 		gfx::ScopedCmdMarker marker(cmd, "ImGui", &Color::red.x);
-		cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
-		cmd->transition(fb->depth.texture, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
+		cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
 		cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getVkCommandBuffer());
 		cmd->endRenderPass();
@@ -349,11 +350,6 @@ void ImGuiLayer::onLayerPostRender()
 
 void ImGuiLayer::onLayerResize(uint32_t width, uint32_t height)
 {
-	gfx::GraphicDevice* device = Application::app()->graphic();
-	device->destroy(m_renderData->backbuffer);
-	device->destroy(m_renderData->renderPass);
-	m_renderData->renderPass = device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
-	m_renderData->backbuffer = device->createBackbuffer(m_renderData->renderPass);
 }
 
 };

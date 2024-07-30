@@ -273,7 +273,7 @@ SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFram
 	return status;
 }
 
-BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle)
+BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, RenderPassHandle handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depthAttachment)
 {
 	RenderPassState state = device->get(handle)->state;
 	BackbufferHandle bbhandle = BackbufferHandle{ (void*)std::hash<RenderPassState>{}(state) };
@@ -285,9 +285,11 @@ BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, 
 	backbuffer.renderPass = handle;
 	for (uint32_t i = 0; i < m_imageCount; i++)
 	{
-		Attachment color = Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
-		Attachment depth = Attachment{ m_backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
-		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, &color, 1, &depth);
+		Vector<Attachment> attachments;
+		attachments.append(Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 });
+		if (_additionalAttachments != nullptr)
+			attachments.append(_additionalAttachments, _additionalAttachments + _count);
+		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, attachments.data(), (uint32_t)attachments.size(), _depthAttachment);
 		backbuffer.handles.append(fb);
 	}
 	auto itInsert = m_backbuffers.insert(std::make_pair(bbhandle, std::move(backbuffer)));
@@ -436,33 +438,7 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		}
 		// No memory
 
-		// Create depth texture
-		gfx::TextureHandle depthTexture;
-		if (hasDepth)
-		{
-			String str = String::format("SwapchainDepthImage%u", i);
-			// Layout should be set to default.
-			depthTexture = _device->createTexture(
-				str.cstr(),
-				m_width, m_height, 1,
-				TextureType::Texture2D,
-				1,
-				1,
-				m_depthFormat,
-				TextureUsage::RenderTarget,
-				nullptr
-			);
-			VulkanTexture* vk_depth = _device->getVk<VulkanTexture>(depthTexture);
-
-			{
-				VkCommandBuffer cmd = VulkanCommandList::createSingleTime("TransitionBackbuffer", _device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic));
-				VulkanTexture::transitionImageLayout(cmd, vk_depth->vk_image, ResourceAccessType::Undefined, ResourceAccessType::Present, m_depthFormat);
-				VulkanCommandList::endSingleTime(_device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic), cmd, _device->getVkQueue(QueueType::Graphic));
-			}
-		}
-
 		m_backbufferTextures[i].color = colorTexture;
-		m_backbufferTextures[i].depth = depthTexture;
 	}
 }
 void VulkanSwapchain::createFrames(VulkanGraphicDevice* _device)
@@ -482,7 +458,6 @@ void VulkanSwapchain::destroyImageViews(VulkanGraphicDevice* _device)
 	for (BackBufferTextures backbuffer : m_backbufferTextures)
 	{
 		_device->destroy(backbuffer.color);
-		_device->destroy(backbuffer.depth);
 	}
 	m_backbufferTextures.clear();
 }
@@ -516,17 +491,80 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 
 		RenderPassState state = _device->get(backbuffer.renderPass)->state;
 		AKA_ASSERT(bbhandle.__data == (void*)std::hash<RenderPassState>{}(state), "Invalid render pass");
-		// Create a framebuffer for backbuffer compatible with given render pass.
+		
+		Vector<Vector<Attachment>> attachments(m_imageCount);
+		Vector<Attachment> depthAttachment(m_imageCount, {});
+		if (backbuffer.handles.size() > 0)
+		{
+			VulkanFramebuffer* vk_framebuffer = _device->getVk<VulkanFramebuffer>(backbuffer.handles.first());
+			VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Recreate backbuffer", _device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic));	
+			for (uint32_t iAtt = 0; iAtt < vk_framebuffer->count; iAtt++)
+			{
+				if (state.colors[iAtt].format == TextureFormat::Swapchain)
+				{
+					for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+						attachments[iImage].append(Attachment{ m_backbufferTextures[iImage].color, AttachmentFlag::None, 0, 0 });
+					continue; // Dont resize swapchain here.
+				}
+				else
+				{
+					for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+						attachments[iImage].append(Attachment{ vk_framebuffer->colors[iAtt].texture, AttachmentFlag::None, 0, 0 });
+				}
+				if (asBool(vk_framebuffer->colors[iAtt].flag & AttachmentFlag::BackbufferAutoResize))
+				{
+					VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->colors[iAtt].texture);
+					attachment->destroy(_device);
+					attachment->width = m_width;
+					attachment->height = m_height;
+					attachment->create(_device);
+					// Ensure valid transitions
+					ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
+					VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
+					VulkanTexture::transitionImageLayout(cmd,
+						attachment->vk_image,
+						ResourceAccessType::Undefined,
+						finalAccessType,
+						attachment->format
+					);
+				}
+			}
+			if (vk_framebuffer->depth.texture != gfx::TextureHandle::null)
+			{
+				for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+					depthAttachment[iImage] = vk_framebuffer->depth;
+				if (asBool(vk_framebuffer->depth.flag & AttachmentFlag::BackbufferAutoResize))
+				{
+					VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
+					attachment->destroy(_device);
+					attachment->width = m_width;
+					attachment->height = m_height;
+					attachment->create(_device);
+					// Ensure valid transitions
+					ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
+					VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
+					VulkanTexture::transitionImageLayout(cmd,
+						attachment->vk_image,
+						ResourceAccessType::Undefined,
+						finalAccessType,
+						attachment->format
+					);
+				}
+			}
+			VulkanCommandList::endSingleTime(_device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic), cmd, _device->getVkQueue(QueueType::Graphic));
+		}
+		// Destroy previous framebuffer
 		for (FramebufferHandle handle : backbuffer.handles)
 		{
 			_device->destroy(handle);
 		}
 		backbuffer.handles.clear();
+		// Recreate framebuffer
 		for (uint32_t i = 0; i < m_imageCount; i++)
 		{
-			Attachment color = Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 };
-			Attachment depth = Attachment{ m_backbufferTextures[i].depth, AttachmentFlag::None, 0, 0 };
-			FramebufferHandle fb = _device->createFramebuffer("Backbuffer", backbuffer.renderPass, &color, 1, &depth);
+			Attachment* pDepthAttachment = depthAttachment[i].texture != TextureHandle::null ? &depthAttachment[i] : nullptr;
+			Attachment* pAdditionalAttachments = attachments[i].data();
+			FramebufferHandle fb = _device->createFramebuffer("Backbuffer", backbuffer.renderPass, pAdditionalAttachments, (uint32_t)attachments[i].size(), pDepthAttachment);
 			backbuffer.handles.append(fb);
 		}
 	}

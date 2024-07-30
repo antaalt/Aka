@@ -104,18 +104,12 @@ void VulkanGraphicDevice::destroy(BackbufferHandle handle)
 	m_swapchain.destroyBackbuffer(this, handle);
 }
 
-BackbufferHandle VulkanGraphicDevice::createBackbuffer(RenderPassHandle handle)
+BackbufferHandle VulkanGraphicDevice::createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depthAttachment)
 {
-	return m_swapchain.createBackbuffer(this, handle);
-}
-
-RenderPassHandle VulkanGraphicDevice::createBackbufferRenderPass(AttachmentLoadOp loadOp, AttachmentStoreOp storeOp, ResourceAccessType initialLayout, ResourceAccessType finalLayout)
-{
-	AKA_ASSERT(!((loadOp == AttachmentLoadOp::Load) && (initialLayout == ResourceAccessType::Undefined)), "Cannot load from undefined layout");
-	RenderPassState state{};
-	state.addColor(m_swapchain.getColorFormat(), loadOp, storeOp, initialLayout, finalLayout);
-	state.setDepth(m_swapchain.getDepthFormat(), loadOp, storeOp, initialLayout, finalLayout);
-	return createRenderPass("RenderPassBackbuffer", state);
+	AKA_ASSERT(_handle != RenderPassHandle::null, "No render pass set.");
+	if (_count + 1 > FramebufferMaxColorAttachmentCount)
+		return BackbufferHandle::null;
+	return m_swapchain.createBackbuffer(this, _handle, _additionalAttachments, _count, _depthAttachment);
 }
 
 FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, FrameHandle frame)

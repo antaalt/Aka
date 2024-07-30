@@ -11,6 +11,8 @@ namespace gfx {
 
 class VulkanGraphicDevice;
 
+ResourceAccessType getInitialResourceAccessType(TextureFormat format, TextureUsage flags);
+
 struct VulkanTexture : Texture
 {
 	VulkanTexture(const char* name, uint32_t width, uint32_t height, uint32_t depth, TextureType type, uint32_t levels, uint32_t layers, TextureFormat format, TextureUsage flags);

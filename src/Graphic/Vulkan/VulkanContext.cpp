@@ -942,6 +942,8 @@ VkFormat VulkanContext::tovk(TextureFormat format)
 	default:
 		AKA_ASSERT(false, "Invalid texture format");
 		return VK_FORMAT_UNDEFINED;
+	case TextureFormat::Swapchain:
+		return VK_FORMAT_B8G8R8A8_UNORM; // TODO: retrieve dynamically
 	case TextureFormat::R8:
 	case TextureFormat::R8U:
 		return VK_FORMAT_R8_UNORM; // VK_FORMAT_R8_UINT

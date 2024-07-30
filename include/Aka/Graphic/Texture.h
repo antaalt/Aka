@@ -27,6 +27,7 @@ AKA_IMPLEMENT_BITMASK_OPERATOR(TextureUsage);
 enum class TextureFormat : uint8_t
 {
 	Unknown,
+	Swapchain, // swapchain format
 
 	R8,
 	R8U,

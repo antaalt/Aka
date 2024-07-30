@@ -165,8 +165,13 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	gfx::ShaderPipelineLayout layout{};
 	layout.addConstant(constant);
 
-	m_backbufferRenderPass = _device->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
-	m_backbuffer = _device->createBackbuffer(m_backbufferRenderPass);
+	// TODO: create depth
+	gfx::RenderPassState state{};
+	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
+	
+	m_backbufferRenderPass = _device->createRenderPass("BackbufferPassHandle", state);
+	m_backbuffer = _device->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, nullptr);
+
 	m_pipeline = _device->createGraphicPipeline(
 		"DebugDraw",
 		m_program,

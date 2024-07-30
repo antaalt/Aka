@@ -49,11 +49,11 @@ Framebuffer::Framebuffer(const char* name, uint32_t width, uint32_t height, Rend
 	renderPass(handle),
 	width(width),
 	height(height),
-	count(count)
+	count(count),
+	depth(depth ? *depth : Attachment{})
 {
 	memcpy(this->colors, colors, sizeof(Attachment) * count);
-	if (depth)
-		this->depth = *depth;
+	
 }
 
 FramebufferHandle Framebuffer::create(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth)

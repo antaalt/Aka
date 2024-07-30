@@ -161,9 +161,7 @@ public:
 	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) = 0;
 	virtual void destroy(FramebufferHandle framebuffer) = 0;
 	virtual void destroy(BackbufferHandle backbuffer) = 0;
-	// Should pass args here to be able to control backbuffer attachments.
-	virtual BackbufferHandle createBackbuffer(RenderPassHandle handle) = 0;
-	virtual RenderPassHandle createBackbufferRenderPass(AttachmentLoadOp loadOp = AttachmentLoadOp::Clear, AttachmentStoreOp storeOp = AttachmentStoreOp::Store, ResourceAccessType initialLayout = ResourceAccessType::Undefined, ResourceAccessType finalLayout = ResourceAccessType::Present) = 0;
+	virtual BackbufferHandle createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depth) = 0;
 	virtual FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
 	virtual void getBackbufferSize(uint32_t& width, uint32_t& height) = 0;

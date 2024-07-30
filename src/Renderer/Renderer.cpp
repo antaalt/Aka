@@ -492,8 +492,12 @@ uint32_t Renderer::getMaterialIndex(MaterialHandle handle)
 }
 void Renderer::createBackbuffer()
 {
-	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Clear);
-	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
+	// TODO: create depth
+	gfx::RenderPassState state{};
+	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Undefined, gfx::ResourceAccessType::Present);
+	
+	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", state);
+	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, nullptr);
 }
 void Renderer::destroyBackbuffer()
 {

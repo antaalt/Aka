@@ -68,8 +68,12 @@ void StaticMeshInstanceRenderer::createPipeline()
 	m_programKey.add(ShaderVertex).add(ShaderFragment);
 	registry->add(m_programKey, getDevice());
 
-	m_backbufferRenderPass = getDevice()->createBackbufferRenderPass(gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present);
-	m_backbuffer = getDevice()->createBackbuffer(m_backbufferRenderPass);
+	// TODO: create depth
+	gfx::RenderPassState state{};
+	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
+	
+	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", state);
+	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, nullptr);
 	gfx::ProgramHandle programHandle = registry->get(m_programKey);
 
 	// Create pipeline

@@ -39,16 +39,16 @@ struct RenderPassState
 {
 	struct Attachment
 	{
-		TextureFormat format;
-		AttachmentLoadOp loadOp;
-		AttachmentStoreOp storeOp;
-		ResourceAccessType initialLayout; // Needed if loadOp = load
-		ResourceAccessType finalLayout;
+		TextureFormat format = TextureFormat::Unknown;
+		AttachmentLoadOp loadOp = AttachmentLoadOp::Clear;
+		AttachmentStoreOp storeOp = AttachmentStoreOp::Store;
+		ResourceAccessType initialLayout = ResourceAccessType::Undefined; // Needed if loadOp = load
+		ResourceAccessType finalLayout = ResourceAccessType::Undefined;
 	};
 
-	uint32_t count; // color attachment count
-	Attachment colors[FramebufferMaxColorAttachmentCount];
-	Attachment depth;
+	uint32_t count = 0; // color attachment count
+	Attachment colors[FramebufferMaxColorAttachmentCount] = {};
+	Attachment depth = {};
 
 	bool hasDepthStencil() const { return depth.format != TextureFormat::Unknown; }
 

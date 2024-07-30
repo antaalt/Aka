@@ -13,6 +13,7 @@ enum class AttachmentFlag : uint8_t
 {
 	None					= 0,
 	AttachTextureObject		= 1 << 0, // Attach the object instead of the layer
+	BackbufferAutoResize	= 1 << 1, // Auto resize attachment following backbuffer size
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(AttachmentFlag)
 
