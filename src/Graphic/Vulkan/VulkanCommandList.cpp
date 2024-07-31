@@ -161,10 +161,9 @@ void VulkanCommandList::beginRenderPass(RenderPassHandle renderPass, Framebuffer
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 
 	Vector<VkClearValue> clearValues(vk_framebuffer->count);
-	for (VkClearValue& vk_clear : clearValues)
+	for (uint32_t i = 0; i < vk_framebuffer->count; i++)
 	{
-		vk_clear.depthStencil = VkClearDepthStencilValue{ clear.depth, clear.stencil };
-		memcpy(vk_clear.color.float32, clear.color, sizeof(float) * 4);
+		memcpy(clearValues[i].color.float32, clear.colors[i], sizeof(float) * 4);
 	}
 	if (vk_framebuffer->hasDepthStencil())
 	{
@@ -318,8 +317,7 @@ void VulkanCommandList::bindIndexBuffer(BufferHandle buffer, IndexFormat format,
 	vkCmdBindIndexBuffer(vk_command, buffers, offset, indexType);
 	this->vk_indices = vk_buffer;
 }
-
-void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, uint32_t stencil) 
+void VulkanCommandList::clearAll(ClearMask mask, const float* color, float depth, uint32_t stencil)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(vk_framebuffer != nullptr, "Need an active render pass.");
@@ -360,6 +358,52 @@ void VulkanCommandList::clear(ClearMask mask, const float* color, float depth, u
 	clearRect.rect.extent = VkExtent2D{ vk_framebuffer->width, vk_framebuffer->height };
 	clearRect.rect.offset = VkOffset2D{ 0, 0 };
 	vkCmdClearAttachments(vk_command, (uint32_t)attachments.size(), attachments.data(), 1, &clearRect);
+}
+
+void VulkanCommandList::clearColor(uint32_t slot, const float* color)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(vk_framebuffer != nullptr, "Need an active render pass.");
+	AKA_ASSERT(slot < vk_framebuffer->count, "Slot out of bounds.");
+
+	const Texture* tex = m_device->get(vk_framebuffer->colors[slot].texture);
+	AKA_ASSERT(Texture::isColor(tex->format), "Texture is not color.");
+	VkClearAttachment att{};
+	att.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	att.clearValue.color = VkClearColorValue{ color[0], color[1], color[2], color[3] };
+	att.colorAttachment = slot;
+
+	VkClearRect clearRect{};
+	clearRect.baseArrayLayer = 0;
+	clearRect.layerCount = 1;
+	clearRect.rect.extent = VkExtent2D{ vk_framebuffer->width, vk_framebuffer->height };
+	clearRect.rect.offset = VkOffset2D{ 0, 0 };
+	vkCmdClearAttachments(vk_command, 1, &att, 1, &clearRect);
+}
+void VulkanCommandList::clearDepthStencil(ClearMask mask, float depth, uint32_t stencil)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(vk_framebuffer != nullptr, "Need an active render pass.");
+	AKA_ASSERT(this->vk_framebuffer->depth.texture != gfx::TextureHandle::null, "No depth texture in framebuffer.");
+
+	const Texture* tex = m_device->get(vk_framebuffer->depth.texture);
+	VkImageAspectFlags aspect = 0;
+	if (Texture::hasDepth(tex->format))
+		aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+	if (Texture::hasStencil(tex->format))
+		aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	AKA_ASSERT(aspect != 0, "Invalid depth image.");
+	VkClearAttachment att{};
+	att.aspectMask = aspect;
+	att.clearValue.depthStencil = VkClearDepthStencilValue{ depth, stencil };
+	att.colorAttachment = this->vk_framebuffer->count; // depth is last
+
+	VkClearRect clearRect{};
+	clearRect.baseArrayLayer = 0;
+	clearRect.layerCount = 1;
+	clearRect.rect.extent = VkExtent2D{ vk_framebuffer->width, vk_framebuffer->height };
+	clearRect.rect.offset = VkOffset2D{ 0, 0 };
+	vkCmdClearAttachments(vk_command, 1, &att, 1, &clearRect);
 }
 
 void VulkanCommandList::clearColor(TextureHandle handle, const float* color)

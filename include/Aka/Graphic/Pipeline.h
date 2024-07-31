@@ -174,10 +174,25 @@ struct VertexState
 
 struct ClearState
 {
-	ClearMask mask;
-	float color[4];
-	float depth;
-	uint32_t stencil;
+	float colors[FramebufferMaxColorAttachmentCount][4] = { 0.f };
+	float depth = 0.f;
+	uint32_t stencil = 0;
+
+	ClearState& setColor(uint32_t slot, float r, float g, float b, float a)
+	{
+		colors[slot][0] = r;
+		colors[slot][1] = g;
+		colors[slot][2] = b;
+		colors[slot][3] = a;
+		return *this;
+	}
+
+	ClearState& setDepthStencil(float depth, uint32_t stencil)
+	{
+		depth = depth;
+		stencil = stencil;
+		return *this;
+	}
 };
 
 enum class FillMode : uint8_t
@@ -551,8 +566,8 @@ const StencilState StencilStateDisabled = StencilState{ StencilState::Face{ Sten
 const StencilState StencilStateDefault = StencilStateDisabled;
 
 // Clear
-const ClearState ClearStateAll = ClearState{ ClearMask::All, {0.f, 0.f, 0.f, 1.f}, 1.f, 0 };
-const ClearState ClearStateNone = ClearState{ ClearMask::None, {0.f, 0.f, 0.f, 1.f}, 1.f, 0 };
+const ClearState ClearStateWhite = ClearState{ {{ 1.f, 1.f, 1.f, 1.f }}, 1.f, 0 };
+const ClearState ClearStateBlack = ClearState{ {{ 0.f, 0.f, 0.f, 1.f }}, 1.f, 0 };
 
 
 bool operator<(const VertexBufferLayout& lhs, const VertexBufferLayout& rhs);

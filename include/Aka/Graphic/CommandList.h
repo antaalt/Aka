@@ -45,7 +45,7 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void reset() = 0;
 
-	virtual void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear = ClearStateNone) = 0;
+	virtual void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear = ClearStateBlack) = 0;
 	virtual void endRenderPass() = 0;
 
 	virtual void bindPipeline(GraphicPipelineHandle handle) = 0;
@@ -60,7 +60,9 @@ struct AKA_NO_VTABLE CommandList
 	virtual void bindVertexBuffers(uint32_t binding, uint32_t bindingCount, const BufferHandle* handles, const uint32_t* offsets = nullptr) = 0;
 	virtual void bindIndexBuffer(BufferHandle handle, IndexFormat format, uint32_t offset = 0) = 0;
 
-	virtual void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
+	virtual void clearAll(ClearMask mask, const float* color, float depth, uint32_t stencil) = 0;
+	virtual void clearColor(uint32_t slot, const float* color) = 0;
+	virtual void clearDepthStencil(ClearMask mask, float depth, uint32_t stencil) = 0;
 	virtual void clearColor(TextureHandle handle, const float* color) = 0;
 	virtual void clearDepthStencil(TextureHandle handle, float depth, uint32_t stencil) = 0;
 

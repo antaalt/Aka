@@ -337,7 +337,7 @@ void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 	{
 		gfx::ScopedCmdMarker marker(cmd, "ImGui", &Color::red.x);
 		cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
-		cmd->beginRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearState{});
+		cmd->beginRenderPass(m_renderData->renderPass, framebuffer);
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getVkCommandBuffer());
 		cmd->endRenderPass();
 	}

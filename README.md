@@ -169,7 +169,7 @@ struct Game :
 		cmd->bindVertexBuffer(0, vertexBuffer);
 		cmd->bindPipeline(pipeline);
 		cmd->bindDescriptorSet(0, set);
-		cmd->beginRenderPass(renderPass, device->get(backbuffer, _frame), gfx::ClearState{ gfx::ClearMask::All, {1.f, 1.f, 1.f, 1.f}, 1.f, 1 });
+		cmd->beginRenderPass(renderPass, device->get(backbuffer, _frame), gfx::ClearState{ {{1.f, 1.f, 1.f, 1.f}}, 1.f, 1 });
 		cmd->draw(36, 0, 1);
 		cmd->endRenderPass();
 	}

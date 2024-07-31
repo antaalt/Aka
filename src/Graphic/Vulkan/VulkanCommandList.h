@@ -21,7 +21,7 @@ struct VulkanCommandList : CommandList
 
 	void reset() override;
 
-	void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear = ClearStateNone) override;
+	void beginRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear = ClearStateBlack) override;
 	void endRenderPass() override;
 
 	void bindPipeline(GraphicPipelineHandle pipeline) override;
@@ -36,7 +36,9 @@ struct VulkanCommandList : CommandList
 	void bindVertexBuffers(uint32_t binding, uint32_t bindingCount, const BufferHandle* buffers, const uint32_t* offsets = nullptr) override;
 	void bindIndexBuffer(BufferHandle buffer, IndexFormat format, uint32_t offset = 0) override;
 
-	void clear(ClearMask mask, const float* color, float depth, uint32_t stencil) override;
+	void clearAll(ClearMask mask, const float* color, float depth, uint32_t stencil) override;
+	void clearColor(uint32_t slot, const float* color) override;
+	void clearDepthStencil(ClearMask mask, float depth, uint32_t stencil) override;
 
 	void clearColor(TextureHandle handle, const float* color) override;
 	void clearDepthStencil(TextureHandle handle, float depth, uint32_t stencil) override;
