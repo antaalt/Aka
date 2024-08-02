@@ -105,10 +105,10 @@ public:
 	const Buffer* get(BufferHandle buffer) override;
 
 	// Framebuffer
-	FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth) override;
+	FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count = 1, const Attachment* depth = nullptr) override;
 	void destroy(FramebufferHandle handle) override;
 	void destroy(BackbufferHandle handle) override;
-	BackbufferHandle createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depth) override;
+	BackbufferHandle createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments = nullptr, uint32_t _count = 0, const Attachment* _depth = nullptr) override;
 	FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
 	void getBackbufferSize(uint32_t& width, uint32_t& height) override;

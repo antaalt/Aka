@@ -100,6 +100,9 @@ bool operator!=(const RenderPassState& lhs, const RenderPassState& rhs)
 	{
 		if (lhs.colors[i].format != rhs.colors[i].format) return true;
 		if (lhs.colors[i].loadOp != rhs.colors[i].loadOp) return true;
+		if (lhs.colors[i].storeOp != rhs.colors[i].storeOp) return true;
+		if (lhs.colors[i].initialLayout != rhs.colors[i].initialLayout) return true;
+		if (lhs.colors[i].finalLayout != rhs.colors[i].finalLayout) return true;
 	}
 	if (lhs.depth.format != rhs.depth.format) return true;
 	if (lhs.depth.loadOp != rhs.depth.loadOp) return true;

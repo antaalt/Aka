@@ -129,8 +129,8 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	{
 		gfx::RenderPassState state{};
 		state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
-		m_renderData->renderPass = _renderer->getDevice()->createRenderPass("BackbufferPassHandle", state);
-		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("Backbuffer", m_renderData->renderPass, nullptr, 0, nullptr);
+		m_renderData->renderPass = _renderer->getDevice()->createRenderPass("ImGuiBackbufferPassHandle", state);
+		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("ImGuiBackbuffer", m_renderData->renderPass, nullptr, 0, nullptr);
 	}
 
 	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
