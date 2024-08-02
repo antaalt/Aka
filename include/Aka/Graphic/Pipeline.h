@@ -180,17 +180,17 @@ struct ClearState
 
 	ClearState& setColor(uint32_t slot, float r, float g, float b, float a)
 	{
-		colors[slot][0] = r;
-		colors[slot][1] = g;
-		colors[slot][2] = b;
-		colors[slot][3] = a;
+		this->colors[slot][0] = r;
+		this->colors[slot][1] = g;
+		this->colors[slot][2] = b;
+		this->colors[slot][3] = a;
 		return *this;
 	}
 
 	ClearState& setDepthStencil(float depth, uint32_t stencil)
 	{
-		depth = depth;
-		stencil = stencil;
+		this->depth = depth;
+		this->stencil = stencil;
 		return *this;
 	}
 };
