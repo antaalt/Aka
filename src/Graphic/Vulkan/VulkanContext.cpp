@@ -384,14 +384,17 @@ bool areQueuesAdequate(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 // Should have generic limits + features data that are computed from vk & D3D with common selection process based on generic data.
 std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDeviceScore(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceProperties2& properties)
 {
+	VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomicFloatFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT };
+	VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricsFeature{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR };
 	VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT };
 	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
 	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
-	VkPhysicalDeviceFeatures2 features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
-	VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricsFeature{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR };
+	fragmentShaderBarycentricsFeature.pNext = &atomicFloatFeatures;
 	meshShaderFeatures.pNext = &fragmentShaderBarycentricsFeature;
 	timelineSemaphoreFeatures.pNext = &meshShaderFeatures;
 	indexingFeatures.pNext = &timelineSemaphoreFeatures;
+
+	VkPhysicalDeviceFeatures2 features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
 	features.pNext = &indexingFeatures;
 	vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
 	PhysicalDeviceFeatures supportedFeatureMask = PhysicalDeviceFeatures::All;
@@ -473,6 +476,19 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 			{
 				Logger::warn("Barycentric not supported.");
 				supportedFeatureMask &= ~PhysicalDeviceFeatures::Barycentric;
+			}
+			break;
+		}
+		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT: {
+			VkPhysicalDeviceShaderAtomicFloatFeaturesEXT* atomicFloatFeatures = reinterpret_cast<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT*>(base);
+			bool atomicFloatSupport = true;
+			// TODO: check only buffers ?
+			atomicFloatSupport &= atomicFloatFeatures->shaderBufferFloat32Atomics == VK_TRUE;
+			atomicFloatSupport &= atomicFloatFeatures->shaderBufferFloat32AtomicAdd == VK_TRUE;
+			if (!atomicFloatSupport)
+			{
+				Logger::warn("Atomic float not supported.");
+				supportedFeatureMask &= ~PhysicalDeviceFeatures::AtomicFloat;
 			}
 			break;
 		}
@@ -731,6 +747,17 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 	}
 
 	// VK_VERSION_1_1
+	VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomicFloatFeatures{};
+	if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::AtomicFloat))
+	{
+		atomicFloatFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
+		atomicFloatFeatures.pNext = next;
+		atomicFloatFeatures.shaderBufferFloat32AtomicAdd = VK_TRUE;
+		atomicFloatFeatures.shaderBufferFloat32Atomics = VK_TRUE;
+		next = &atomicFloatFeatures;
+	}
+
+	// VK_VERSION_1_1
 	VkPhysicalDeviceFeatures2 deviceFeatures {};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext = next;
@@ -863,6 +890,10 @@ bool VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::MeshShader))
 		{
 			usedDeviceExtensions.append(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+		}
+		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::AtomicFloat))
+		{
+			usedDeviceExtensions.append(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
 		}
 		if (asBool(physicalDeviceFeatures & PhysicalDeviceFeatures::BindlessResources))
 		{

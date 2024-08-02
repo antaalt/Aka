@@ -12,10 +12,11 @@ enum class PhysicalDeviceFeatures
 	BindlessResources = 1 << 0,
 	MeshShader = 1 << 1,
 	Barycentric = 1 << 2,
-	RenderDocAttachment = 1 << 3,
+	AtomicFloat = 1 << 3,
+	RenderDocAttachment = 1 << 4,
 
 	Required = BindlessResources | Barycentric,
-	Optional = MeshShader | RenderDocAttachment,
+	Optional = MeshShader | RenderDocAttachment | AtomicFloat,
 
 	All = Optional | Required,
 	Default = Required | RenderDocAttachment,
