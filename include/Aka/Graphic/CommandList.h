@@ -36,6 +36,37 @@ struct BlitRegion
 	uint32_t mipLevel;
 };
 
+struct DispatchIndirectCommand
+{
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+};
+
+struct DrawIndexedIndirectCommand
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int32_t  vertexOffset;
+	uint32_t firstInstance;
+};
+
+struct DrawIndirectCommand
+{
+	uint32_t vertexCount;
+	uint32_t instanceCount;
+	uint32_t firstVertex;
+	uint32_t firstInstance;
+};
+
+struct DrawMeshTasksIndirectCommand
+{
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+};
+
 struct AKA_NO_VTABLE CommandList
 {
 	virtual ~CommandList() {}
@@ -68,10 +99,14 @@ struct AKA_NO_VTABLE CommandList
 
 	virtual void push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask) = 0;
 
-	virtual void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1U, uint32_t instanceOffset = 0) = 0;
-	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1U, uint32_t instanceOffset = 0) = 0;
+	virtual void draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount = 1U, uint32_t instanceOffset = 0U) = 0;
+	virtual void drawIndirect(BufferHandle buffer, uint32_t offset = 0U, uint32_t drawCount = 1U, uint32_t stride = sizeof(DrawIndirectCommand)) = 0;
+	virtual void drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount = 1U, uint32_t instanceOffset = 0U) = 0;
+	virtual void drawIndexedIndirect(BufferHandle buffer, uint32_t offset = 0U, uint32_t drawCount = 1U, uint32_t stride = sizeof(DrawIndexedIndirectCommand)) = 0;
 	virtual void drawMeshTasks(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) = 0;
+	virtual void drawMeshTasksIndirect(BufferHandle buffer, uint32_t offset = 0U, uint32_t drawCount = 1U, uint32_t stride = sizeof(DrawMeshTasksIndirectCommand)) = 0;
 	virtual void dispatch(uint32_t groupCountX = 1U, uint32_t groupCountY = 1U, uint32_t groupCountZ = 1U) = 0;
+	virtual void dispatchIndirect(BufferHandle buffer, uint32_t offset = 0U) = 0;
 
 	virtual void copy(BufferHandle src, BufferHandle dst) = 0;
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;

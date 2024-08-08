@@ -463,27 +463,50 @@ void VulkanCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32
 	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Vertex), "Trying draw but vertex shader is missing");
 	vkCmdDraw(vk_command, vertexCount, instanceCount, vertexOffset, instanceOffset);
 }
+void VulkanCommandList::drawIndirect(BufferHandle buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Mesh), "Trying draw indexed but vertex shader is missing");
+	vkCmdDrawIndirect(vk_command, m_device->getVk<VulkanBuffer>(buffer)->vk_buffer, offset, drawCount, stride);
+	//vkCmdDrawIndirectCount(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+}
 void VulkanCommandList::drawIndexed(uint32_t indexCount, uint32_t indexOffset, uint32_t vertexOffset, uint32_t instanceCount, uint32_t instanceOffset)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Vertex), "Trying draw indexed but vertex shader is missing");
 	vkCmdDrawIndexed(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
-	//vkCmdDrawIndirect(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
-	//vkCmdDrawIndirectCount(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
+}
+void VulkanCommandList::drawIndexedIndirect(BufferHandle buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Vertex), "Trying draw indexed but vertex shader is missing");
+	vkCmdDrawIndexedIndirect(vk_command, m_device->getVk<VulkanBuffer>(buffer)->vk_buffer, offset, drawCount, stride);
+	//vkCmdDrawIndexedIndirectCount(vk_command, indexCount, instanceCount, indexOffset, vertexOffset, instanceOffset);
 }
 void VulkanCommandList::drawMeshTasks(uint32_t groupX, uint32_t groupY, uint32_t groupZ)
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
-	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Mesh), "Trying draw indexed but vertex shader is missing");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Mesh), "Trying draw mesh task but vertex shader is missing");
 	vkCmdDrawMeshTasksEXT(vk_command, groupX, groupY, groupZ);
+}
+void VulkanCommandList::drawMeshTasksIndirect(BufferHandle buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_graphicPipeline->program)->hasShaderStage(ShaderType::Mesh), "Trying draw mesh task but vertex shader is missing");
+	vkCmdDrawMeshTasksIndirectEXT(vk_command, m_device->getVk<VulkanBuffer>(buffer)->vk_buffer, offset, drawCount, stride);
 	//vkCmdDrawMeshTasksIndirectCountEXT(vk_command, groupX, groupY, groupZ);
-	//vkCmdDrawMeshTasksIndirectEXT(vk_command, groupX, groupY, groupZ);
 }
 void VulkanCommandList::dispatch(uint32_t groupX, uint32_t groupY, uint32_t groupZ) 
 {
 	AKA_ASSERT(m_recording, "Trying to record something but not recording");
 	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_computePipeline->program)->hasShaderStage(ShaderType::Compute), "Trying dispatch but compute shader is missing");
 	vkCmdDispatch(vk_command, groupX, groupY, groupZ);
+}
+void VulkanCommandList::dispatchIndirect(BufferHandle buffer, uint32_t offset)
+{
+	AKA_ASSERT(m_recording, "Trying to record something but not recording");
+	AKA_ASSERT(m_device->getVk<VulkanProgram>(vk_computePipeline->program)->hasShaderStage(ShaderType::Compute), "Trying dispatch but compute shader is missing");
+	vkCmdDispatchIndirect(vk_command, m_device->getVk<VulkanBuffer>(buffer)->vk_buffer, offset);
 }
 
 void VulkanCommandList::copy(BufferHandle src, BufferHandle dst)

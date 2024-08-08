@@ -1067,24 +1067,20 @@ VkIndexType VulkanContext::tovk(IndexFormat format)
 	}
 }
 
-VkBufferUsageFlagBits VulkanContext::tovk(BufferType type)
+VkBufferUsageFlags VulkanContext::tovk(BufferType type)
 {
-	switch (type)
-	{
-	case BufferType::Vertex:
-		return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	case BufferType::Index:
-		return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	default:
-		AKA_ASSERT(false, "Invalid buffer type");
-		[[fallthrough]];
-	case BufferType::Uniform:
-		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	case BufferType::Storage:
-		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	case BufferType::Indirect:
-		return VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-	}
+	VkBufferUsageFlags flags = 0;
+	if (has(type, BufferType::Vertex))
+		flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	if (has(type, BufferType::Index))
+		flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+	if (has(type, BufferType::Uniform))
+		flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	if (has(type, BufferType::Storage))
+		flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	if (has(type, BufferType::Indirect))
+		flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+	return flags;
 }
 
 // Resource usage	| Default	| Dynamic	| Immutable	| Staging

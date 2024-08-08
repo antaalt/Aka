@@ -54,9 +54,9 @@ bool valid(ShaderBindingType binding, BufferType buffer)
 	switch (binding)
 	{
 	case ShaderBindingType::UniformBuffer:
-		return buffer == BufferType::Uniform;
+		return has(buffer, BufferType::Uniform);
 	case ShaderBindingType::StorageBuffer:
-		return buffer == BufferType::Storage;
+		return has(buffer, BufferType::Storage);
 	default:
 		return false;
 	}
@@ -143,7 +143,8 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 				vkGetPhysicalDeviceProperties(device->getVkPhysicalDevice(), &properties);
 				AKA_ASSERT(
 					(update.buffer.offset % properties.limits.minStorageBufferOffsetAlignment == 0) && (buffer->type == gfx::BufferType::Storage) ||
-					(update.buffer.offset % properties.limits.minUniformBufferOffsetAlignment == 0) && (buffer->type == gfx::BufferType::Uniform),
+					(update.buffer.offset % properties.limits.minUniformBufferOffsetAlignment == 0) && (buffer->type == gfx::BufferType::Uniform) ||
+					((buffer->type != gfx::BufferType::Storage) && (buffer->type != gfx::BufferType::Uniform)),
 					"Invalid offset"
 				);
 				AKA_ASSERT(valid(binding.type, buffer->type), "Invalid buffer binding, skipping.");

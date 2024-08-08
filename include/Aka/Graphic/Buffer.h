@@ -11,15 +11,13 @@ enum class BufferType : uint8_t
 {
 	Unknown,
 
-	Vertex,
-	Index,
-	Uniform,
-	Storage,
-	Indirect,
-
-	First = Vertex,
-	Last = Indirect,
+	Vertex = 1 << 0,
+	Index = 1 << 1,
+	Uniform = 1 << 2,
+	Storage = 1 << 3,
+	Indirect = 1 << 4,
 };
+AKA_IMPLEMENT_BITMASK_OPERATOR(BufferType);
 
 enum class BufferUsage : uint8_t
 {
