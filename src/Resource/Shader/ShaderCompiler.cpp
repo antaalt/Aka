@@ -149,56 +149,31 @@ public:
 	}
 	IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override
 	{
-		for (const Path& systemDirectory : m_systemDirectories)
+		return nullptr;
+	}
+	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
+	{
+		// TODO: avoid copy here
+		Vector<Path> directories;
+		directories.append(m_systemDirectories);
+		directories.append(m_includedPaths);
+		for (const Path& systemDirectory : directories)
 		{
 			// TODO Ensure / at the end
 			Path header = systemDirectory + headerName;
 			if (OS::File::exist(header))
 			{
-				// Compute relative path & register the dependency.
-				Path relativePath = OS::relative(header, AssetPath("", m_assetPathType).getAbsolutePath());
-				// Remove ./ at beginning of path.
-				if (relativePath.size() > 2 && relativePath[0] == '.' && relativePath[1] == '/')
-				{
-					relativePath = Path(relativePath.string().substr(2, relativePath.size() - 2));
-				}
-				AssetPath assetPath = AssetPath(relativePath.cstr(), m_assetPathType);
-				m_dependencies.append(assetPath);
+				registerDependency(header);
 				// Read file
 				String str;
 				if (OS::File::read(header, &str))
 				{
+					m_includedPaths.append(header.up());
 					// Destroyed in releaseInclude
 					char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::String, AllocatorCategory::Graphic);
 					Memory::copy(data, str.cstr(), str.length() + 1);
 					return mem::akaNew<IncludeResult>(AllocatorMemoryType::String, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
 				}
-			}
-		}
-		return nullptr;
-	}
-	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
-	{
-		Path header = OS::cwd() + headerName;
-		if (OS::File::exist(header))
-		{
-			// Compute relative path & register the dependency.
-			Path relativePath = OS::relative(header, AssetPath("", m_assetPathType).getAbsolutePath());
-			// Remove ./ at beginning of path.
-			if (relativePath.size() > 2 && relativePath[0] == '.' && relativePath[1] == '/')
-			{
-				relativePath = Path(relativePath.string().substr(2, relativePath.size() - 2));
-			}
-			AssetPath assetPath = AssetPath(relativePath.cstr(), m_assetPathType);
-			m_dependencies.append(assetPath);
-			// Read file
-			String str;
-			if (OS::File::read(header, &str))
-			{
-				// Destroyed in releaseInclude
-				char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::String, AllocatorCategory::Graphic);
-				Memory::copy(data, str.cstr(), str.length() + 1);
-				return mem::akaNew<IncludeResult>(AllocatorMemoryType::String, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
 			}
 		}
 		return nullptr;
@@ -216,8 +191,22 @@ public:
 		return m_dependencies;
 	}
 private:
+	void registerDependency(const Path& path)
+	{
+		// Compute relative path & register the dependency.
+		Path relativePath = OS::relative(path, AssetPath("", m_assetPathType).getAbsolutePath());
+		// Remove ./ at beginning of path.
+		if (relativePath.size() > 2 && relativePath[0] == '.' && relativePath[1] == '/')
+		{
+			relativePath = Path(relativePath.string().substr(2, relativePath.size() - 2));
+		}
+		AssetPath assetPath = AssetPath(relativePath.cstr(), m_assetPathType);
+		m_dependencies.append(assetPath);
+	}
+private:
 	AssetPathType m_assetPathType;
 	Vector<Path> m_systemDirectories;
+	Vector<Path> m_includedPaths;
 	Vector<AssetPath> m_dependencies;
 };
 
