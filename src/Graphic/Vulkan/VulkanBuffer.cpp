@@ -266,7 +266,7 @@ void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, size_t o
 	}
 	else
 	{
-		throw std::runtime_error("Cannot upload to an immutable buffer");
+		AKA_ASSERT(false, "Cannot upload to an immutable buffer");
 	}
 }
 
@@ -305,7 +305,7 @@ void VulkanGraphicDevice::download(BufferHandle buffer, void* data, size_t offse
 	}
 	else
 	{
-		throw std::runtime_error("Cannot download from an immutable buffer");
+		AKA_ASSERT(false, "Cannot download from an immutable buffer");
 	}
 }
 

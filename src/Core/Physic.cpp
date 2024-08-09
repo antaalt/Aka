@@ -1,5 +1,7 @@
 #include <Aka/Core/Physic.h>
 
+#include <Aka/Core/Config.h>
+
 namespace aka {
 
 vec2f Line2D::nearest(const vec2f& point) const
@@ -15,7 +17,8 @@ bool Line2D::inside(const vec2f& point) const
 
 vec2f Rect2D::nearest(const vec2f& point) const
 {
-	throw std::runtime_error("Not implemented");
+	AKA_NOT_IMPLEMENTED;
+	return vec2f(0.f, 0.f);
 }
 
 bool Rect2D::inside(const vec2f& point) const
@@ -253,7 +256,8 @@ bool Collision2D::overlap(const Shape2D& s0, const Shape2D& s1, Collision2D* col
 
 bool Collision2D::overlap(const Rect2D& r0, const Rect2D& r1, Collision2D* collision)
 {
-	throw std::runtime_error("Not implemented");
+	AKA_NOT_IMPLEMENTED;
+	return false;
 }
 
 bool Collision2D::overlap(const AABB2D& a1, const AABB2D& a2, Collision2D* collision)
@@ -315,7 +319,7 @@ bool Collision2D::overlap(const Circle2D& c, const Rect2D& r, Collision2D* colli
 	DA.start = r.D; DA.end = r.A;
 	if (r.inside(c.pos) || overlap(AB, c) || overlap(BC, c) || overlap(CD, c) || overlap(DA, c))
 	{
-		throw std::runtime_error("Not implemented");
+		AKA_NOT_IMPLEMENTED;
 		collision->separation = vec2f();
 		return true;
 	}
@@ -331,7 +335,8 @@ bool Collision2D::overlap(const Rect2D& r, const Circle2D& c, Collision2D* colli
 
 bool Collision2D::overlap(const AABB2D& a, const Rect2D& r, Collision2D* collision)
 {
-	throw std::runtime_error("Not implemented");
+	AKA_NOT_IMPLEMENTED;
+	return false;
 }
 
 bool Collision2D::overlap(const Rect2D& r, const AABB2D& a, Collision2D* collision)

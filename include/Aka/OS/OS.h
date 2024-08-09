@@ -110,6 +110,7 @@ enum class AlertModalType
 	Question,
 	Warning,
 	Error,
+	Critical,
 };
 
 enum class AlertModalMessage
@@ -117,6 +118,10 @@ enum class AlertModalMessage
 	Yes,
 	No,
 	Ok,
+	Ignore,
+	Retry,
+	Abort,
+	Cancel
 };
 
 // Open a modal with a display message

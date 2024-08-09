@@ -963,7 +963,7 @@ uint32_t VulkanContext::findMemoryType(VkPhysicalDevice physicalDevice, uint32_t
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
 	// Should check if device local if VkPhysicalDeviceMemoryProperties::memoryHeaps has VK_MEMORY_HEAP_DEVICE_LOCAL_BIT
-	throw std::runtime_error("failed to find suitable memory type!");
+	AKA_ASSERT(false, "Failed to find suitable memory type!");
 }
 
 VkFormat VulkanContext::tovk(TextureFormat format)

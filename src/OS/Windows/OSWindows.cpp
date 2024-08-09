@@ -379,9 +379,12 @@ AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const 
 		type = MB_ICONQUESTION | MB_YESNO;
 		break;
 	case AlertModalType::Warning:
-		type = MB_ICONWARNING | MB_OK;
+		type = MB_ICONWARNING | MB_CANCELTRYCONTINUE;
 		break;
 	case AlertModalType::Error:
+		type = MB_ICONERROR | MB_ABORTRETRYIGNORE;
+		break;
+	case AlertModalType::Critical: // unrecoverable
 		type = MB_ICONERROR | MB_OK;
 		break;
 	}
@@ -397,6 +400,14 @@ AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const 
 		return AlertModalMessage::Yes;
 	case IDNO:
 		return AlertModalMessage::No;
+	case IDIGNORE:
+		return AlertModalMessage::Ignore;
+	case IDRETRY:
+		return AlertModalMessage::Retry;
+	case IDABORT:
+		return AlertModalMessage::Abort;
+	case IDCANCEL:
+		return AlertModalMessage::Cancel;
 	default:
 	case IDOK:
 		return AlertModalMessage::Ok;

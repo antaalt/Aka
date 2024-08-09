@@ -22,7 +22,7 @@ void ButtonController::add(GamepadButton button)
 
 void ButtonController::add(GamepadAxis axis, float threshold)
 {
-	throw std::runtime_error("Not implemented");
+	AKA_NOT_IMPLEMENTED;
 }
 
 bool ButtonController::down() const

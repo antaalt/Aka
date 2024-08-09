@@ -220,7 +220,7 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
-		throw std::runtime_error("Failed to acquire swapchain image");
+		AKA_ASSERT(false, "Failed to acquire swapchain image");
 	}
 	AKA_ASSERT(imageIndex < getImageCount(), "Invalid image index");
 	AKA_ASSERT(MaxFrameInFlight <= getImageCount(), "More frames in flight than image available. May induce bugs in application.");

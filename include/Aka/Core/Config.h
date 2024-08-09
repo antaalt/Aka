@@ -23,6 +23,9 @@
 
 #define AKA_UNUSED(x) (void)(x)
 
+// Return true on retry
+bool handleAssert(const char* _filename, int _line, const char* _assertion, const char* message, ...);
+
 #if defined(AKA_DEBUG)
 	#if defined(_MSC_VER)
 		#include <cstdio>
@@ -38,18 +41,11 @@
 		#define AKA_PRINT(...) fprintf(stderr, __VA_ARGS__);
 	#endif
 
-	#define AKA_ASSERT(condition, message)				\
-	do													\
-	{													\
-		if (condition) break;							\
-		AKA_PRINT(										\
-		"Error : %s\nAssertion (%s) failed at %s:%d\n", \
-		message,										\
-		(#condition),									\
-		__FILE__,										\
-		__LINE__);										\
-		AKA_DEBUG_BREAK;								\
-	} while(0)
+	#define AKA_ASSERT(condition, ...)									\
+	do																	\
+	{																	\
+		if (condition) break;											\
+	} while(handleAssert(__FILE__, __LINE__, (#condition), __VA_ARGS__))
 	#define AKA_CRASH(...) do { AKA_ASSERT(false, __VA_ARGS__); throw std::runtime_error(__VA_ARGS__); } while(0)
 #else
 	#define AKA_ASSERT(condition, message) AKA_UNUSED(0)

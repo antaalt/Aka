@@ -31,10 +31,9 @@ Application::Application(const Config& config) :
 	m_running(true),
 	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_graphic, m_assets))
 {
-	if (!OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()))
-	{
-		throw std::runtime_error("Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
-	}
+	AKA_ASSERT(s_app == nullptr, "Application instance already created");
+	s_app = this;
+	AKA_ASSERT(OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()), "Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
 }
 Application::~Application()
 {
@@ -196,13 +195,10 @@ AssetLibrary* Application::assets()
 
 void Application::run(Application* app)
 {
-	if (app == nullptr)
-		throw std::invalid_argument("No app set.");
+	AKA_ASSERT(app != nullptr, "No app set.");
 	
 	const Time timestep = Time::milliseconds(10);
 	const Time maxUpdate = Time::milliseconds(100);
-
-	s_app = app;
 
 	// Early exit on failure.
 	if (!app->create())
