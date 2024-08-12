@@ -21,6 +21,18 @@ namespace aka {
 //	}
 // If this structure is respected, it will work with all following helpers.
 // This way, when zero initialized, the enum is invalid. To cast it as an index, use EnumToIndex
+//
+// For bitmask, the structure should instead follow the All convention:
+//	enum class Type : uint32_t 
+// {
+//		None,
+//		
+//		MyValue0 = 1 << 0,
+//		MyValue1 = 1 << 1,
+//		MyValue2 = 1 << 2,
+// 
+//		All = MyValue0 | MyValue1 | MyValue2,
+//	}
 
 template <typename T>
 inline constexpr UnderlyingType<T> EnumToValue(T value)
@@ -99,7 +111,53 @@ private:
 	T m_begin, m_end;
 };
 
-template<typename Type, typename Container = uint32_t>
+template <typename Type>
+struct EnumBitIterator
+{
+public:
+	explicit EnumBitIterator(Type _mask) :
+		m_mask(_mask),
+		m_value(static_cast<Type>(1U << countTrailingZero(static_cast<uint64_t>(_mask))))
+	{
+		// Clear first value.
+		m_mask &= ~m_value;
+	}
+	EnumBitIterator& operator++()
+	{
+		m_value = static_cast<Type>(1U << countTrailingZero(static_cast<uint64_t>(m_mask)));
+		m_mask &= ~m_value;
+		return *this;
+	}
+	EnumBitIterator operator++(int)
+	{
+		EnumBitIterator old = m_mask;
+		++(*this);
+		return old;
+	}
+	const Type& operator*() const { return m_value; }
+	bool operator==(const EnumBitIterator& value) const { return value.m_value == m_value; }
+	bool operator!=(const EnumBitIterator& value) const { return value.m_value != m_value; }
+private:
+	Type m_mask;
+	Type m_value;
+};
+
+template <typename T>
+class EnumBitRange
+{
+public:
+	EnumBitRange() : EnumBitRange(
+		T::All, 
+		static_cast<T>(0)
+	) {}
+	explicit EnumBitRange(T _mask) : m_begin(_mask), m_end(static_cast<T>(0)) {}
+	EnumBitIterator<T> begin() const { return EnumBitIterator<T>(m_begin); }
+	EnumBitIterator<T> end() const { return EnumBitIterator<T>(m_end); }
+private:
+	T m_begin, m_end;
+};
+
+/*template<typename Type, typename Container = uint32_t>
 struct EnumMask
 {
 	static_assert(std::is_enum<Type>::value, "This is an enum mask");
@@ -162,14 +220,14 @@ public:
 	Iterator end() { return Iterator(*this, Type::Last); }
 private:
 	Container m_mask = 0;
-};
+};*/
 
 
 #define AKA_IMPLEMENT_BITMASK_OPERATOR(EnumClassType) \
-inline constexpr EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); }  \
+inline constexpr EnumClassType operator&(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); } \
 inline constexpr EnumClassType operator|(EnumClassType lhs, EnumClassType rhs) { return static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) | static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); } \
 inline constexpr EnumClassType& operator|=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) | static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); return lhs; } \
-inline constexpr EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<::aka::UnderlyingType<EnumClassType>>(rhs));  return lhs; } \
+inline constexpr EnumClassType& operator&=(EnumClassType& lhs, EnumClassType rhs) { lhs = static_cast<EnumClassType>(static_cast<::aka::UnderlyingType<EnumClassType>>(lhs) & static_cast<::aka::UnderlyingType<EnumClassType>>(rhs)); return lhs; } \
 inline constexpr EnumClassType operator~(EnumClassType value) { return static_cast<EnumClassType>(~static_cast<::aka::UnderlyingType<EnumClassType>>(value)); } \
 inline constexpr bool has(EnumClassType mask, EnumClassType flag) { return (mask & flag) == flag; } \
 inline constexpr bool asBool(EnumClassType mask) { return mask != (EnumClassType)0; } \

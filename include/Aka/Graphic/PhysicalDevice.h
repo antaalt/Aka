@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+#include <Aka/Core/Enum.h>
+#include <Aka/Core/Config.h>
+
 namespace aka {
 namespace gfx {
 
@@ -15,15 +18,18 @@ enum class PhysicalDeviceFeatures
 	AtomicFloat = 1 << 3,
 	RenderDocAttachment = 1 << 4,
 
-	Required = BindlessResources | Barycentric,
-	Optional = MeshShader | RenderDocAttachment | AtomicFloat,
+	Required = BindlessResources,
+	Optional = MeshShader | RenderDocAttachment | AtomicFloat | Barycentric,
 
 	All = Optional | Required,
 	Default = Required | RenderDocAttachment,
 };
+
 AKA_IMPLEMENT_BITMASK_OPERATOR(PhysicalDeviceFeatures);
 
 static_assert((PhysicalDeviceFeatures::Optional & PhysicalDeviceFeatures::Required) == PhysicalDeviceFeatures::None);
+
+const char* toString(PhysicalDeviceFeatures _features);
 
 struct PhysicalDeviceLimits
 {

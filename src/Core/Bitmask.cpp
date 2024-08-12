@@ -43,6 +43,8 @@ uint32_t countLeadingZero(uint32_t x)
 		return 31 - result;
 	else
 		return 32;
+	// Might be replaced by bsr which behave differently on other architectures...
+	//return __lzcnt(x);
 #else
 	// Count leading zero
 	return __builtin_clz(x); // GCC
@@ -69,6 +71,7 @@ uint32_t countLeadingZero(uint64_t x)
 		return 63 - result;
 	else
 		return 64;
+	//return __lzcnt64(x);
 #else
 	// Count leading zero
 	return __builtin_clzll(x); // GCC
@@ -86,6 +89,52 @@ uint32_t countTrailingZero(uint64_t x)
 	// Count trailing zero
 	return __builtin_ctzll(x); // GCC
 #endif
+}
+uint32_t findMostSignificantBit(uint32_t x)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	unsigned long result = 0;
+	if (_BitScanReverse64(&result, x))
+		return result;
+	else
+		return 0;
+#else
+	uint32_t bitpos = 0;
+	while (x != 0)
+	{
+		++bitpos;
+		x = x >> 1;
+	}
+	return bitpos;
+#endif
+}
+uint32_t findMostSignificantBit(uint64_t x)
+{
+#if defined(AKA_PLATFORM_WINDOWS)
+	unsigned long result = 0;
+	if (_BitScanReverse64(&result, x))
+		return result;
+	else
+		return 0;
+#else
+	uint32_t bitpos = 0;
+	while (x != 0)
+	{
+		++bitpos;
+		x = x >> 1;
+	}
+	return bitpos;
+#endif
+}
+uint32_t findLeastSignificantBit(uint32_t x)
+{
+	// Same
+	return countTrailingZero(x);
+}
+uint32_t findLeastSignificantBit(uint64_t x)
+{
+	// Same
+	return countTrailingZero(x);
 }
 
 uint32_t countBitRange(uint32_t value)

@@ -16,12 +16,12 @@ BitField::BitField(uint32_t bitCount) :
 
 bool BitField::operator[](size_t index) const
 {
-	return (m_container[index / 8] >> (index & bitmask(8))) & 0x1;
+	return (m_container[index / 8] >> (index & bitmask<uint32_t>(8))) & 0x1;
 }
 
 void BitField::set(size_t index)
 {
-	m_container[index / 8] |= 1U << (index & bitmask(8));
+	m_container[index / 8] |= 1U << (index & bitmask<uint32_t>(8));
 }
 
 void BitField::set(size_t index, bool value)
@@ -31,17 +31,17 @@ void BitField::set(size_t index, bool value)
 
 void BitField::clear(size_t index)
 {
-	m_container[index / 8] &= ~(1U << (index & bitmask(8)));
+	m_container[index / 8] &= ~(1U << (index & bitmask<uint32_t>(8)));
 }
 
 void BitField::toggle(size_t index)
 {
-	m_container[index / 8] ^= 1U << (index & bitmask(8));
+	m_container[index / 8] ^= 1U << (index & bitmask<uint32_t>(8));
 }
 
 bool BitField::check(size_t index) const
 {
-	return (m_container[index / 8] >> (index & bitmask(8))) & 0x1;
+	return (m_container[index / 8] >> (index & bitmask<uint32_t>(8))) & 0x1;
 }
 void BitField::resize(size_t bitCount)
 {

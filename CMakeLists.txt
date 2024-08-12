@@ -113,6 +113,7 @@ add_library (Aka
 	"src/Graphic/RenderPass.cpp" 
 	"src/Graphic/Fence.cpp"
 	"src/Graphic/DescriptorPool.cpp" 
+	"src/Graphic/PhysicalDevice.cpp"
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"

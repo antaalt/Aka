@@ -24,7 +24,7 @@
 #define AKA_UNUSED(x) (void)(x)
 
 // Return true on retry
-bool handleAssert(const char* _filename, int _line, const char* _assertion, const char* message, ...);
+bool handleAssert(const char* _filename, int _line, const char* _assertion, bool _allowRecover, const char* message, ...);
 
 #if defined(AKA_DEBUG)
 	#if defined(_MSC_VER)
@@ -45,8 +45,13 @@ bool handleAssert(const char* _filename, int _line, const char* _assertion, cons
 	do																	\
 	{																	\
 		if (condition) break;											\
-	} while(handleAssert(__FILE__, __LINE__, (#condition), __VA_ARGS__))
-	#define AKA_CRASH(...) do { AKA_ASSERT(false, __VA_ARGS__); throw std::runtime_error(__VA_ARGS__); } while(0)
+	} while(handleAssert(__FILE__, __LINE__, (#condition), true, __VA_ARGS__))
+
+	#define AKA_CRASH(...)												\
+	do {																\
+		handleAssert(__FILE__, __LINE__, nullptr, false, __VA_ARGS__);	\
+		throw std::runtime_error("Unexpected event occured");	\
+	} while(0)
 #else
 	#define AKA_ASSERT(condition, message) AKA_UNUSED(0)
 	#define AKA_DEBUG_BREAK AKA_UNUSED(0)

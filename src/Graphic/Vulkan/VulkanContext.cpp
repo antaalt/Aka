@@ -409,7 +409,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 		score += 10;
 		break;
 	default:
-		Logger::error("No suitable device type found.");
+		Logger::error(properties.properties.deviceName, ": Device type invalid. Skipping.");
 		return std::make_tuple(0, PhysicalDeviceFeatures::None, PhysicalDeviceLimits{});
 	};
 	//score += properties.limits.maxImageDimension2D;
@@ -427,7 +427,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 	renderDocRequiredFeatures &= features.features.sampleRateShading == VK_TRUE; // render doc
 	if (!renderDocRequiredFeatures)
 	{
-		Logger::warn("Does not support required extension for renderdoc.");
+		Logger::warn(properties.properties.deviceName, ": Does not support required extension for renderdoc.");
 		supportedFeatureMask = ~PhysicalDeviceFeatures::RenderDocAttachment;
 	}
 
@@ -443,7 +443,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 			meshShaderSupport &= meshShaderFeatures->meshShader == VK_TRUE;
 			if (!meshShaderSupport)
 			{
-				Logger::warn("Mesh shader not supported.");
+				Logger::warn(properties.properties.deviceName, ": Extension mesh shader not supported.");
 				supportedFeatureMask &= ~PhysicalDeviceFeatures::MeshShader;
 			}
 			break;
@@ -464,7 +464,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 			bindlessSupport &= indexingFeatures->descriptorBindingVariableDescriptorCount == VK_TRUE;
 			if (!bindlessSupport)
 			{
-				Logger::warn("Bindless resources not supported.");
+				Logger::warn(properties.properties.deviceName, ": Extension descriptor indexing not supported.");
 				supportedFeatureMask &= ~PhysicalDeviceFeatures::BindlessResources;
 			}
 			break;
@@ -474,7 +474,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 			bool barycentricSupport = barycentricFeatures->fragmentShaderBarycentric == VK_TRUE;
 			if (!barycentricSupport)
 			{
-				Logger::warn("Barycentric not supported.");
+				Logger::warn(properties.properties.deviceName, ": Extension barycentric not supported.");
 				supportedFeatureMask &= ~PhysicalDeviceFeatures::Barycentric;
 			}
 			break;
@@ -487,7 +487,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 			atomicFloatSupport &= atomicFloatFeatures->shaderBufferFloat32AtomicAdd == VK_TRUE;
 			if (!atomicFloatSupport)
 			{
-				Logger::warn("Atomic float not supported.");
+				Logger::warn(properties.properties.deviceName, ": Extension atomic float not supported.");
 				supportedFeatureMask &= ~PhysicalDeviceFeatures::AtomicFloat;
 			}
 			break;
@@ -533,7 +533,7 @@ std::tuple<uint32_t, PhysicalDeviceFeatures, PhysicalDeviceLimits> getPhysicalDe
 	
 	if (!requiredFeatures)
 	{
-		Logger::error("Some required features are not supported.");
+		Logger::error(properties.properties.deviceName, ": Some required features are not supported. Skipping device.");
 		return std::make_tuple(0, supportedFeatureMask, limits);
 	}
 	return std::make_tuple(score, supportedFeatureMask, limits);
@@ -545,7 +545,7 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
 	if (deviceCount == 0)
 	{
-		Logger::error("No physical device found.");
+		AKA_CRASH("No physical device found");
 		return std::make_tuple(VK_NULL_HANDLE, PhysicalDeviceFeatures::None, PhysicalDeviceLimits{});
 	}
 	Vector<VkPhysicalDevice> physicalDevices(deviceCount);
@@ -583,17 +583,32 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 		}
 		else
 		{
-			String reason;
-			if (!hasValidScore) reason += "invalid gpu, ";
-			if (!hasRequestedFeatures) reason += "unsupported features, ";
-			if (!hasValidSwapchain) reason += "unvalid swapchain, ";
-			if (!hasValidQueues) reason += "unvalid queues, ";
-			if (!hasValidExtensions) reason += "unvalid extensions, ";
-			Logger::warn("Candidate physical device ", deviceProperties.properties.deviceName, " rejected for following resons: ", reason);
+			Vector<String> reasons;
+			if (!hasValidScore) reasons.append("Invalid GPU");
+			if (!hasRequestedFeatures)
+			{
+				PhysicalDeviceFeatures unsupportedFeatures = _requestedFeatures & ~supportedFeatureMask;
+				for (PhysicalDeviceFeatures features : EnumBitRange(unsupportedFeatures))
+				{
+					reasons.append(String::format("Required physical device feature not supported: %s", toString(features)));
+				}
+			}
+			if (!hasValidSwapchain) reasons.append("Invalid swapchain");
+			if (!hasValidQueues) reasons.append("Invalid queues");
+			if (!hasValidExtensions) reasons.append("Invalid required extensions");
+			String formattedReason;
+			for (size_t i = 0; i < reasons.size(); i++)
+			{
+				formattedReason.append(reasons[i]);
+				if (i != reasons.size() - 1)
+					formattedReason.append(", ");
+			}
+			Logger::warn("Candidate physical device ", deviceProperties.properties.deviceName, " rejected for following reason(s): ", formattedReason);
 		}
 	}
 	if (physicalDevicePicked == VK_NULL_HANDLE)
 	{
+		AKA_CRASH("No compatible physical device found");
 		return std::make_tuple(VK_NULL_HANDLE, PhysicalDeviceFeatures::None, PhysicalDeviceLimits{});
 	}
 	else
@@ -964,6 +979,7 @@ uint32_t VulkanContext::findMemoryType(VkPhysicalDevice physicalDevice, uint32_t
 			return i;
 	// Should check if device local if VkPhysicalDeviceMemoryProperties::memoryHeaps has VK_MEMORY_HEAP_DEVICE_LOCAL_BIT
 	AKA_ASSERT(false, "Failed to find suitable memory type!");
+	return 0;
 }
 
 VkFormat VulkanContext::tovk(TextureFormat format)

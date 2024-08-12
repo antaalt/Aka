@@ -348,7 +348,7 @@ gfx::BufferHandle Renderer::getGeometryBuffer(GeometryBufferHandle handle)
 
 uint32_t Renderer::getGeometryBufferOffset(GeometryBufferHandle handle)
 {
-	return static_cast<uint32_t>(handle) & bitmask(30); // Remove id bit
+	return static_cast<uint32_t>(handle) & bitmask<uint32_t>(30); // Remove id bit
 }
 
 void Renderer::render(gfx::FrameHandle frame)

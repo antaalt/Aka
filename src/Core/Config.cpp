@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-bool handleAssert(const char* _filename, int _line, const char* _assertion, const char* message, ...)
+bool handleAssert(const char* _filename, int _line, const char* _assertion, bool _allowRecover, const char* message, ...)
 {
 	using namespace aka;
 	va_list arg1, arg2;
@@ -20,11 +20,12 @@ bool handleAssert(const char* _filename, int _line, const char* _assertion, cons
 	vsnprintf(messageFormatted.cstr(), size, message, arg2);
 	va_end(arg2);
 	String titleFormatted = String::format("Assertion failed in file %s", _filename);
-	String messageFormattedFull = String::format("%s\n\nFailed Assertion at %s:%d:\n%s", messageFormatted.cstr(), _filename, _line, _assertion);
-	AlertModalMessage result = AlertModal(AlertModalType::Error, titleFormatted.cstr(), messageFormattedFull.cstr());
+	String messageFormattedFull = String::format("%s\n\nFailed Assertion at %s:%d:\n%s", messageFormatted.cstr(), _filename, _line, _assertion ? _assertion : "error");
+	AlertModalMessage result = AlertModal(_allowRecover ? AlertModalType::Error : AlertModalType::Critical, titleFormatted.cstr(), messageFormattedFull.cstr());
 	switch (result)
 	{
 	default:
+	case AlertModalMessage::Ok:
 	case AlertModalMessage::Abort:
 		std::abort();
 		return false;
