@@ -208,6 +208,7 @@ void DebugDrawList::destroy(gfx::GraphicDevice* _device)
 	_device->destroy(m_pipeline);
 	_device->destroy(m_backbufferRenderPass);
 	_device->destroy(m_backbuffer);
+	_device->destroy(m_depth);
 }
 void DebugDrawList::resize(gfx::GraphicDevice* _device, uint32_t width, uint32_t height)
 {
