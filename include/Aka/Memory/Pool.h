@@ -258,10 +258,10 @@ inline void Pool<T, ChunkCountPerBlock>::release()
 template <typename T, size_t ChunkCountPerBlock>
 inline void Pool<T, ChunkCountPerBlock>::release(std::function<void(T&)>&& deleter)
 {
-	size_t count = 0;
 	Block* currentBlock = m_block;
 	do
 	{
+		size_t count = 0;
 		Chunk* chunks = currentBlock->m_chunks;
 		// Call destructors
 		for (size_t index = 0; index < ChunkCountPerBlock; index++)
