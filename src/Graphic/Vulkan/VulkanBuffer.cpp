@@ -252,14 +252,13 @@ void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, size_t o
 		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
 		memcpy(mapped, data, static_cast<size_t>(size));
 		vkUnmapMemory(getVkDevice(), vk_stagingMemory);
-
-		VkCommandBuffer cmd = VulkanCommandList::createSingleTime("UploadingBuffer", getVkDevice(), getVkCommandPool(QueueType::Graphic));
-		VkBufferCopy region{};
-		region.srcOffset = 0;
-		region.dstOffset = offset;
-		region.size = size;
-		vkCmdCopyBuffer(cmd, vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
-		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+		executeVk("Uploading from staging buffer", [=](VulkanCommandList& cmd) {
+			VkBufferCopy region{};
+			region.srcOffset = 0;
+			region.dstOffset = offset;
+			region.size = size;
+			vkCmdCopyBuffer(cmd.getVkCommandBuffer(), vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
+		}, QueueType::Graphic);
 
 		vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
 		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
@@ -285,14 +284,14 @@ void VulkanGraphicDevice::download(BufferHandle buffer, void* data, size_t offse
 	{
 		VkBuffer vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 		VkDeviceMemory vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		
-		VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Downloading buffer", getVkDevice(), getVkCommandPool(QueueType::Graphic));
-		VkBufferCopy region{};
-		region.srcOffset = offset;
-		region.dstOffset = 0;
-		region.size = size;// VK_WHOLE_SIZE ?
-		vkCmdCopyBuffer(cmd, vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
-		VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+
+		executeVk("Uploading from staging buffer", [=](VulkanCommandList& cmd) {
+			VkBufferCopy region{};
+			region.srcOffset = offset;
+			region.dstOffset = 0;
+			region.size = size;// VK_WHOLE_SIZE ?
+			vkCmdCopyBuffer(cmd.getVkCommandBuffer(), vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
+		}, QueueType::Graphic);
 
 		void* mapped = nullptr;
 		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_stagingMemory, 0, size, 0, &mapped));
@@ -315,9 +314,9 @@ void gfx::VulkanGraphicDevice::copy(BufferHandle src, BufferHandle dst)
 	VulkanBuffer* vk_dstBuffer = getVk<VulkanBuffer>(dst);
 	AKA_ASSERT(vk_srcBuffer->size == vk_dstBuffer->size, "");
 
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Copying buffer", getVkDevice(), getVkCommandPool(QueueType::Graphic));
-	vk_dstBuffer->copyFrom(cmd, vk_srcBuffer);
-	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+	executeVk("Uploading from staging buffer", [=](VulkanCommandList& cmd) {
+		vk_dstBuffer->copyFrom(cmd.getVkCommandBuffer(), vk_srcBuffer);
+	}, QueueType::Graphic);
 }
 
 void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)

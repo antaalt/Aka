@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <functional>
 
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Config.h>
@@ -204,11 +205,12 @@ public:
 	virtual FenceValue read(FenceHandle handle) = 0;
 
 	// Command lists
-	virtual CommandList* acquireCommandList(QueueType queue) = 0;
-	virtual void release(CommandList* cmd) = 0;
+	virtual CommandEncoder* acquireCommandEncoder(QueueType queue) = 0;
+	virtual void execute(const char* _name, std::function<void(CommandList&)> _callback, QueueType _queue) = 0;
+	virtual void release(CommandEncoder* cmd) = 0;
 	// Frame command lists
-	virtual CommandList* acquireCommandList(FrameHandle frame, QueueType queue) = 0;
-	virtual void release(FrameHandle frame, CommandList* cmd) = 0;
+	virtual CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) = 0;
+	virtual void release(FrameHandle frame, CommandEncoder* cmd) = 0;
 	// Frame main command lists
 	virtual FrameIndex getFrameIndex(FrameHandle frame) = 0;
 	virtual CommandList* getCopyCommandList(FrameHandle frame) = 0;
@@ -216,7 +218,7 @@ public:
 	virtual CommandList* getComputeCommandList(FrameHandle frame) = 0;
 
 	// Command submit
-	virtual void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
+	virtual void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
 	virtual void wait(QueueType queue) = 0;
 	// Debug submit markers
 	virtual void beginMarker(QueueType queue, const char* name, const float* color) = 0;

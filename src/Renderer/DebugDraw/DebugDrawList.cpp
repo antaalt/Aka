@@ -240,14 +240,14 @@ void DebugDrawList::render(gfx::GraphicDevice* _device, gfx::FrameHandle frame, 
 	{
 		gfx::FrameIndex frameIndex = _device->getFrameIndex(frame);
 		gfx::CommandList* cmd = _device->getGraphicCommandList(frame);
-		gfx::ScopedCmdMarker marker(cmd, "DebugDrawList", 0.f, 0.f, 0.5f);
-		cmd->beginRenderPass(m_backbufferRenderPass, _device->get(m_backbuffer, frame));
-		cmd->bindVertexBuffer(0, m_vertexBuffer[frameIndex.value()]);
-		cmd->bindPipeline(m_pipeline);
-		mat4f mvp = projection * view;
-		cmd->push(0, sizeof(mat4f), &mvp, gfx::ShaderMask::Vertex);
-		cmd->draw((uint32_t)m_vertices.size(), 0, 1, 0);
-		cmd->endRenderPass();
+		gfx::ScopedCmdMarker marker(*cmd, "DebugDrawList", 0.f, 0.f, 0.5f);
+		cmd->executeRenderPass(m_backbufferRenderPass, _device->get(m_backbuffer, frame), gfx::ClearStateWhite, [&](gfx::RenderPassCommandList& cmd) {
+			cmd.bindVertexBuffer(0, m_vertexBuffer[frameIndex.value()]);
+			cmd.bindPipeline(m_pipeline);
+			mat4f mvp = projection * view;
+			cmd.push(0, sizeof(mat4f), &mvp, gfx::ShaderMask::Vertex);
+			cmd.draw((uint32_t)m_vertices.size(), 0, 1, 0);
+		});
 	}
 }
 void DebugDrawList::clear()

@@ -206,7 +206,7 @@ void SkeletalMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 		getDevice()->unmap(m_instanceBufferStaging);
 
 		// Upload now as we have frame in flight
-		gfx::ScopedCmdMarker marker(cmd, "PrepareSkeletalMeshInstanceBuffers");
+		gfx::ScopedCmdMarker marker(*cmd, "PrepareSkeletalMeshInstanceBuffers");
 		getDevice()->copy(m_instanceBufferStaging, m_instanceBuffer[frameIndex.value()]);
 
 		// TODO should not upload them everytime, frame in flight.
@@ -223,27 +223,27 @@ void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle fra
 	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
 	// TODO each view should have somewhere its target written.
 	gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
-	cmd->beginRenderPass(m_backbufferRenderPass, fb);
-	if (m_drawIndexedBuffer.size() > 0)
-	{
-		gfx::ScopedCmdMarker marker(cmd, "RenderSkeletalMeshInstances");
-
-		cmd->bindPipeline(m_pipeline);
-		cmd->bindDescriptorSet(0, view.descriptor[frameIndex.value()]);
-		cmd->bindDescriptorSet(1, getRenderer().getMaterialDescriptorSet());
-		cmd->bindDescriptorSet(2, getRenderer().getBindlessDescriptorSet());
-		cmd->bindDescriptorSet(3, m_modelDescriptorSet);
-		// TODO use bindless
-		cmd->bindVertexBuffer(0, getRenderer().getVertexGeometryBuffer(), 0);
-		cmd->bindVertexBuffer(1, m_instanceBuffer[frameIndex.value()], 0);
-		cmd->bindIndexBuffer(getRenderer().getIndexGeometryBuffer(), gfx::IndexFormat::UnsignedInt, 0);
-		// TODO upload command on GPU & use indirect.
-		for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer)
+	gfx::ScopedCmdMarker marker(*cmd, "RenderSkeletalMeshInstances");
+	cmd->executeRenderPass(m_backbufferRenderPass, fb, gfx::ClearStateWhite, [&](gfx::RenderPassCommandList& cmd) {
+		if (m_drawIndexedBuffer.size() > 0)
 		{
-			cmd->drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
+
+			cmd.bindPipeline(m_pipeline);
+			cmd.bindDescriptorSet(0, view.descriptor[frameIndex.value()]);
+			cmd.bindDescriptorSet(1, getRenderer().getMaterialDescriptorSet());
+			cmd.bindDescriptorSet(2, getRenderer().getBindlessDescriptorSet());
+			cmd.bindDescriptorSet(3, m_modelDescriptorSet);
+			// TODO use bindless
+			cmd.bindVertexBuffer(0, getRenderer().getVertexGeometryBuffer(), 0);
+			cmd.bindVertexBuffer(1, m_instanceBuffer[frameIndex.value()], 0);
+			cmd.bindIndexBuffer(getRenderer().getIndexGeometryBuffer(), gfx::IndexFormat::UnsignedInt, 0);
+			// TODO upload command on GPU & use indirect.
+			for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer)
+			{
+				cmd.drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
+			}
 		}
-	}
-	cmd->endRenderPass();
+	});
 }
 
 InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)

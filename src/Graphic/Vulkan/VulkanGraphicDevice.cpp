@@ -69,20 +69,8 @@ void VulkanGraphicDevice::shutdown()
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
-	//AKA_ASSERT(m_commandListPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_texturePool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_samplerPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_bufferPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_shaderPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_programPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_framebufferPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_graphicPipelinePool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_computePipelinePool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_descriptorSetPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_descriptorPoolPool.count() == 0, "Resource destroy missing");
-	//AKA_ASSERT(m_renderPassPool.count() == 0, "Resource destroy missing");
 	// TODO check recursive release issue
-	m_commandListPool.release([this](VulkanCommandList& res) { Logger::warn("Leaking command list."); this->release(&res); });
+	m_commandEncoderPool.release([this](VulkanCommandEncoder& res) { Logger::warn("Leaking command list."); this->release(&res); });
 	m_texturePool.release([this](VulkanTexture& res) { Logger::warn("Leaking texture ", res.name); this->destroy(TextureHandle{ &res }); });
 	m_samplerPool.release([this](VulkanSampler& res) { Logger::warn("Leaking sampler ", res.name); this->destroy(SamplerHandle{ &res }); });
 	m_bufferPool.release([this](VulkanBuffer& res) { Logger::warn("Leaking buffer ", res.name); this->destroy(BufferHandle{ &res }); });
@@ -115,16 +103,17 @@ PhysicalDeviceLimits VulkanGraphicDevice::getLimits() const
 	return m_context.physicalDeviceLimits;
 }
 
-CommandList* VulkanGraphicDevice::acquireCommandList(FrameHandle frame, QueueType queue)
+CommandEncoder* VulkanGraphicDevice::acquireCommandEncoder(FrameHandle frame, QueueType queue)
 {
 	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+
 	return vk_frame.allocateCommand(this, queue);
 }
 
-void VulkanGraphicDevice::release(FrameHandle frame, CommandList* cmd)
+void VulkanGraphicDevice::release(FrameHandle frame, CommandEncoder* cmd)
 {
 	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
-	return vk_frame.releaseCommand(reinterpret_cast<VulkanCommandList*>(cmd));
+	return vk_frame.releaseCommand(reinterpret_cast<VulkanCommandEncoder*>(cmd));
 }
 
 FrameHandle VulkanGraphicDevice::frame()
@@ -151,8 +140,8 @@ FrameHandle VulkanGraphicDevice::frame()
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
 		color4f markerColor(0.6f, 0.6f, 0.6f, 1.f);
-		vk_frame->mainCommandLists[i].begin();
-		vk_frame->mainCommandLists[i].beginMarker(s_commandName[i], markerColor.data);
+		CommandList* cmd = vk_frame->mainCommandEncoders[i]->begin();
+		cmd->beginMarker(s_commandName[i], markerColor.data);
 	}
 	return FrameHandle{ vk_frame };
 }
@@ -163,8 +152,10 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
-		vk_frame.mainCommandLists[i].endMarker();
-		vk_frame.mainCommandLists[i].end();
+		VulkanCommandEncoder* encoder = vk_frame.mainCommandEncoders[i];
+		VulkanCommandList& cmd = encoder->getCommandList();
+		cmd.endMarker();
+		encoder->end(&cmd);
 	}
 
 	// Submit
@@ -177,9 +168,9 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
 
 	VkCommandBuffer cmds[EnumCount<QueueType>()] = {
-		vk_frame.mainCommandLists[EnumToIndex(QueueType::Graphic)].vk_command,
-		vk_frame.mainCommandLists[EnumToIndex(QueueType::Compute)].vk_command,
-		vk_frame.mainCommandLists[EnumToIndex(QueueType::Copy)].vk_command,
+		vk_frame.mainCommandEncoders[EnumToIndex(QueueType::Graphic)]->getVkCommandBuffer(),
+		vk_frame.mainCommandEncoders[EnumToIndex(QueueType::Compute)]->getVkCommandBuffer(),
+		vk_frame.mainCommandEncoders[EnumToIndex(QueueType::Copy)]->getVkCommandBuffer(),
 	};
 	static const char* s_queueName[EnumCount<QueueType>()] = {
 		"Graphic queue",

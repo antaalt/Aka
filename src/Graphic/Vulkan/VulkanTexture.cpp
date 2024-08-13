@@ -254,73 +254,74 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	VkBuffer stagingBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 	VkImageSubresourceRange subResource = VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), 0, levels, 0, layers };
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Uploading textures & mips", getVkDevice(), getVkCommandPool(QueueType::Graphic));
-	if (data != nullptr && data[0] != nullptr)
-	{
-		// Create staging buffer
-		VkDeviceSize imageSize = vk_texture->width * vk_texture->height * Texture::size(vk_texture->format);
-		VkDeviceSize bufferSize = imageSize * vk_texture->layers;
-		stagingBuffer = VulkanBuffer::createVkBuffer(
-			getVkDevice(),
-			bufferSize,
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-		);
-		stagingBufferMemory = VulkanBuffer::createVkDeviceMemory(
-			getVkDevice(),
-			getVkPhysicalDevice(),
-			stagingBuffer,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		);
-
-		// Upload to staging buffer
-		void* stagingData;
-		vkMapMemory(getVkDevice(), stagingBufferMemory, 0, bufferSize, 0, &stagingData);
-		for (uint32_t iLayer = 0; iLayer < vk_texture->layers; iLayer++)
+	executeVk("Uploading textures & mips", [&](VulkanCommandList& cmd) {
+		VkCommandBuffer vk_cmd = cmd.getVkCommandBuffer();
+		if (data != nullptr && data[0] != nullptr)
 		{
-			void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
-			memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
-		}
-		vkUnmapMemory(getVkDevice(), stagingBufferMemory);
+			// Create staging buffer
+			VkDeviceSize imageSize = vk_texture->width * vk_texture->height * Texture::size(vk_texture->format);
+			VkDeviceSize bufferSize = imageSize * vk_texture->layers;
+			stagingBuffer = VulkanBuffer::createVkBuffer(
+				getVkDevice(),
+				bufferSize,
+				VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+			);
+			stagingBufferMemory = VulkanBuffer::createVkDeviceMemory(
+				getVkDevice(),
+				getVkPhysicalDevice(),
+				stagingBuffer,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+			);
 
-		// Prepare for transfer
-		VulkanTexture::transitionImageLayout(cmd,
-			vk_texture->vk_image,
-			ResourceAccessType::Undefined,
-			ResourceAccessType::CopyDST,
-			format,
-			0U,
-			vk_texture->levels,
-			0U,
-			vk_texture->layers
-		);
-		// Copy buffer to image
-		vk_texture->copyBufferToImage(cmd, stagingBuffer);
+			// Upload to staging buffer
+			void* stagingData;
+			vkMapMemory(getVkDevice(), stagingBufferMemory, 0, bufferSize, 0, &stagingData);
+			for (uint32_t iLayer = 0; iLayer < vk_texture->layers; iLayer++)
+			{
+				void* offset = static_cast<char*>(stagingData) + imageSize * iLayer;
+				memcpy(offset, data[iLayer], static_cast<size_t>(imageSize));
+			}
+			vkUnmapMemory(getVkDevice(), stagingBufferMemory);
 
-		// Generate mips
-		if (has(flags, TextureUsage::GenerateMips))
-		{
-			vk_texture->generateMips(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, finalLayout);
+			// Prepare for transfer
+			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(),
+				vk_texture->vk_image,
+				ResourceAccessType::Undefined,
+				ResourceAccessType::CopyDST,
+				format,
+				0U,
+				vk_texture->levels,
+				0U,
+				vk_texture->layers
+			);
+			// Copy buffer to image
+			vk_texture->copyBufferToImage(vk_cmd, stagingBuffer);
+
+			// Generate mips
+			if (has(flags, TextureUsage::GenerateMips))
+			{
+				vk_texture->generateMips(vk_cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, finalLayout);
+			}
+			else
+			{
+				VulkanTexture::transitionImageLayout(vk_cmd,
+					vk_texture->vk_image,
+					ResourceAccessType::CopyDST,
+					finalAccessType,
+					format
+				);
+			}
 		}
 		else
 		{
-			VulkanTexture::transitionImageLayout(cmd,
+			VulkanTexture::transitionImageLayout(vk_cmd,
 				vk_texture->vk_image,
-				ResourceAccessType::CopyDST,
+				ResourceAccessType::Undefined,
 				finalAccessType,
 				format
 			);
 		}
-	}
-	else
-	{
-		VulkanTexture::transitionImageLayout(cmd,
-			vk_texture->vk_image,
-			ResourceAccessType::Undefined,
-			finalAccessType,
-			format
-		);
-	}
-	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+	}, QueueType::Graphic);
 
 	// Free staging buffer
 	vkFreeMemory(getVkDevice(), stagingBufferMemory, getVkAllocator());
@@ -346,9 +347,9 @@ void VulkanGraphicDevice::copy(TextureHandle src, TextureHandle dst)
 	VulkanTexture* vk_src = getVk<VulkanTexture>(src);
 	VulkanTexture* vk_dst = getVk<VulkanTexture>(dst);
 
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Copying textures", getVkDevice(), getVkCommandPool(QueueType::Graphic));
-	vk_dst->copyFrom(cmd, vk_src);
-	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+	executeVk("Copying textures", [=](VulkanCommandList& cmd) {
+		vk_dst->copyFrom(cmd.getVkCommandBuffer(), vk_src);
+	}, QueueType::Graphic);
 }
 
 void VulkanGraphicDevice::destroy(TextureHandle texture)
@@ -364,17 +365,17 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
 	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Transition resource", getVkDevice(), getVkCommandPool(QueueType::Graphic));
-	VulkanTexture::transitionImageLayout(
-		cmd,
-		vk_texture->vk_image, 
-		src,
-		dst,
-		vk_texture->format,
-		0, vk_texture->levels, 
-		0, vk_texture->layers
-	);
-	VulkanCommandList::endSingleTime(getVkDevice(), getVkCommandPool(QueueType::Graphic), cmd, getVkQueue(QueueType::Graphic));
+	executeVk("Transition resource", [=](VulkanCommandList& cmd) {
+		VulkanTexture::transitionImageLayout(
+			cmd.getVkCommandBuffer(),
+			vk_texture->vk_image,
+			src,
+			dst,
+			vk_texture->format,
+			0, vk_texture->levels,
+			0, vk_texture->layers
+		);
+	}, QueueType::Graphic);
 }
 
 const Texture* VulkanGraphicDevice::get(TextureHandle handle)
@@ -519,9 +520,9 @@ void VulkanTexture::upload(VulkanGraphicDevice* device, const void* const* data,
 	vkUnmapMemory(device->getVkDevice(), stagingBufferMemory);
 
 	// Copy buffer to image
-	VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Upload texture", device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic));
-	copyBufferToImage(cmd, stagingBuffer);
-	VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(QueueType::Graphic), cmd, device->getVkQueue(QueueType::Graphic));
+	device->executeVk("Upload texture", [=](VulkanCommandList& cmd) {
+		copyBufferToImage(cmd.getVkCommandBuffer(), stagingBuffer);
+	},QueueType::Graphic);
 
 	// Free staging buffer
 	vkFreeMemory(device->getVkDevice(), stagingBufferMemory, getVkAllocator());

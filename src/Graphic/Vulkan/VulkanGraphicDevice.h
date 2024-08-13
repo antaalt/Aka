@@ -152,9 +152,11 @@ public:
 	FenceValue read(FenceHandle handle) override;
 
 	// Command list
-	CommandList* acquireCommandList(QueueType queue) override;
-	void release(CommandList* cmd) override;
-	void submit(CommandList* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
+	CommandEncoder* acquireCommandEncoder(QueueType queue) override;
+	void execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue) override;
+	void executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue);
+	void release(CommandEncoder* cmd) override;
+	void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
 	void wait(QueueType queue) override;
 	void beginMarker(QueueType queue, const char* name, const float* color) override;
 	void endMarker(QueueType queue) override;
@@ -164,8 +166,8 @@ public:
 	CommandList* getCopyCommandList(FrameHandle frame) override;
 	CommandList* getGraphicCommandList(FrameHandle frame) override;
 	CommandList* getComputeCommandList(FrameHandle frame) override;
-	CommandList* acquireCommandList(FrameHandle frame, QueueType queue) override;
-	void release(FrameHandle frame, CommandList* cmd) override;
+	CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) override;
+	void release(FrameHandle frame, CommandEncoder* cmd) override;
 
 	// Frame
 	FrameHandle frame() override;
@@ -227,7 +229,7 @@ private: // Pools
 	Pool<VulkanDescriptorSet> m_descriptorSetPool;
 	Pool<VulkanDescriptorPool> m_descriptorPoolPool;
 	Pool<VulkanFence> m_fencePool;
-	Pool<VulkanCommandList> m_commandListPool;
+	Pool<VulkanCommandEncoder> m_commandEncoderPool;
 };
 
 };

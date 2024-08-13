@@ -366,7 +366,7 @@ void Renderer::render(gfx::FrameHandle frame)
 	{
 		MaterialData* data = static_cast<MaterialData*>(m_device->map(m_materialStagingBuffer, gfx::BufferMap::Write));
 		Memory::copy(data, m_materials.data(), m_materials.size() * sizeof(MaterialData));
-		gfx::ScopedCmdMarker marker(cmd, "UpdateMaterialData");
+		gfx::ScopedCmdMarker marker(*cmd, "UpdateMaterialData");
 		m_device->unmap(m_materialStagingBuffer);
 		cmd->transition(m_materialBuffer, gfx::ResourceAccessType::Resource, gfx::ResourceAccessType::CopyDST);
 		cmd->copy(m_materialStagingBuffer, m_materialBuffer);
@@ -378,9 +378,9 @@ void Renderer::render(gfx::FrameHandle frame)
 	if (m_views.size() > 0)
 	{
 		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
-		cmd->beginRenderPass(m_backbufferRenderPass, fb, gfx::ClearState().setColor(0, 0.f, 1.f, 0.f, 1.f));
-		// Here we could execute custom code...
-		cmd->endRenderPass();
+		cmd->executeRenderPass(m_backbufferRenderPass, fb, gfx::ClearState().setColor(0, 0.f, 1.f, 0.f, 1.f), [](gfx::RenderPassCommandList& cmd) {
+			// Here we could execute custom code...
+		});
 	}
 	// Color views.
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)

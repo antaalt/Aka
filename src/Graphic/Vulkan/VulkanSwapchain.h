@@ -19,17 +19,17 @@ struct VulkanFrame : Frame
 	void destroy(VulkanGraphicDevice* device);
 
 	void wait(VkDevice device);
-	VulkanCommandList* allocateCommand(VulkanGraphicDevice* device, QueueType queue);
-	void releaseCommand(VulkanCommandList* commandList);
+	VulkanCommandEncoder* allocateCommand(VulkanGraphicDevice* device, QueueType queue);
+	void releaseCommand(VulkanCommandEncoder* commandList);
 
 	VkSemaphore presentSemaphore[EnumCount<QueueType>()];
 	VkSemaphore acquireSemaphore;
 	VkFence presentFence[EnumCount<QueueType>()];
 
-	VulkanCommandList mainCommandLists[EnumCount<QueueType>()];
+	VulkanCommandEncoder* mainCommandEncoders[EnumCount<QueueType>()];
 
 	VkCommandPool commandPool[EnumCount<QueueType>()];
-	Vector<VulkanCommandList> commandLists[EnumCount<QueueType>()];
+	Vector<VulkanCommandEncoder*> commandEncoders[EnumCount<QueueType>()];
 };
 
 

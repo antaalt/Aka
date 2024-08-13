@@ -301,9 +301,9 @@ void ImGuiLayer::onLayerPreRender()
 	if (!ImGui::GetIO().Fonts->TexID)
 	{
 		gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
-		VkCommandBuffer cmdBuffer = gfx::VulkanCommandList::createSingleTime("Create ImGui fonts", device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic));
-		ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
-		gfx::VulkanCommandList::endSingleTime(device->getVkDevice(), device->getVkCommandPool(gfx::QueueType::Graphic), cmdBuffer, device->getVkQueue(gfx::QueueType::Graphic));
+		device->executeVk("Transition backbuffer after creation", [&](gfx::VulkanCommandList& cmd) {
+			ImGui_ImplVulkan_CreateFontsTexture(cmd.getVkCommandBuffer());
+		}, gfx::QueueType::Graphic);
 
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
@@ -317,7 +317,7 @@ void ImGuiLayer::onLayerPreRender()
 void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 {
 	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(frame);
-	gfx::VulkanCommandList* vk_cmd = reinterpret_cast<gfx::VulkanCommandList*>(cmd);
+	gfx::VulkanCommandList* vk_cmd = dynamic_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
 	// TODO do not enforce backbuffer
@@ -335,11 +335,12 @@ void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 	gfx::FramebufferHandle framebuffer = _renderer->getDevice()->get(m_renderData->backbuffer, frame);
 	const gfx::Framebuffer* fb = _renderer->getDevice()->get(framebuffer);
 	{
-		gfx::ScopedCmdMarker marker(cmd, "ImGui", &Color::red.x);
+		gfx::ScopedCmdMarker marker(*cmd, "ImGui", &Color::red.x);
 		cmd->transition(fb->colors[0].texture, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
-		cmd->beginRenderPass(m_renderData->renderPass, framebuffer);
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd->getVkCommandBuffer());
-		cmd->endRenderPass();
+		cmd->executeRenderPass(m_renderData->renderPass, framebuffer, gfx::ClearStateWhite, [](gfx::RenderPassCommandList& cmd) {
+			gfx::VulkanRenderPassCommandList& vk_cmd = dynamic_cast<gfx::VulkanRenderPassCommandList&>(cmd);
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk_cmd.getVkCommandBuffer());
+		});
 	}
 #endif
 }

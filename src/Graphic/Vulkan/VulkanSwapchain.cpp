@@ -431,11 +431,9 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		vk_colorTexture->vk_view[0] = view; // Set main image view
 		setDebugName(_device->getVkDevice(), vk_images[i], "SwapchainColor", i);
 		setDebugName(_device->getVkDevice(), view, "SwapchainColorView", i);
-		{
-			VkCommandBuffer cmd = VulkanCommandList::createSingleTime("TransitionBackbuffer", _device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic));
-			VulkanTexture::transitionImageLayout(cmd, vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
-			VulkanCommandList::endSingleTime(_device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic), cmd, _device->getVkQueue(QueueType::Graphic));
-		}
+		_device->executeVk("Transition backbuffer after creation", [&](VulkanCommandList& cmd) {
+			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(), vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
+		}, QueueType::Graphic);
 		// No memory
 
 		m_backbufferTextures[i].color = colorTexture;
@@ -497,61 +495,61 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 		if (backbuffer.handles.size() > 0)
 		{
 			VulkanFramebuffer* vk_framebuffer = _device->getVk<VulkanFramebuffer>(backbuffer.handles.first());
-			VkCommandBuffer cmd = VulkanCommandList::createSingleTime("Recreate backbuffer", _device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic));	
-			for (uint32_t iAtt = 0; iAtt < vk_framebuffer->count; iAtt++)
-			{
-				if (state.colors[iAtt].format == TextureFormat::Swapchain)
+			_device->executeVk("Recreating backbuffer", [&](VulkanCommandList& cmd) {
+				for (uint32_t iAtt = 0; iAtt < vk_framebuffer->count; iAtt++)
+				{
+					if (state.colors[iAtt].format == TextureFormat::Swapchain)
+					{
+						for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+							attachments[iImage].append(Attachment{ m_backbufferTextures[iImage].color, AttachmentFlag::None, 0, 0 });
+						continue; // Dont resize swapchain here.
+					}
+					else
+					{
+						for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+							attachments[iImage].append(Attachment{ vk_framebuffer->colors[iAtt].texture, AttachmentFlag::None, 0, 0 });
+					}
+					if (asBool(vk_framebuffer->colors[iAtt].flag & AttachmentFlag::BackbufferAutoResize))
+					{
+						VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->colors[iAtt].texture);
+						attachment->destroy(_device);
+						attachment->width = m_width;
+						attachment->height = m_height;
+						attachment->create(_device);
+						// Ensure valid transitions
+						ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
+						VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
+						VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(),
+							attachment->vk_image,
+							ResourceAccessType::Undefined,
+							finalAccessType,
+							attachment->format
+						);
+					}
+				}
+				if (vk_framebuffer->depth.texture != gfx::TextureHandle::null)
 				{
 					for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
-						attachments[iImage].append(Attachment{ m_backbufferTextures[iImage].color, AttachmentFlag::None, 0, 0 });
-					continue; // Dont resize swapchain here.
+						depthAttachment[iImage] = vk_framebuffer->depth;
+					if (asBool(vk_framebuffer->depth.flag & AttachmentFlag::BackbufferAutoResize))
+					{
+						VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
+						attachment->destroy(_device);
+						attachment->width = m_width;
+						attachment->height = m_height;
+						attachment->create(_device);
+						// Ensure valid transitions
+						ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
+						VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
+						VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(),
+							attachment->vk_image,
+							ResourceAccessType::Undefined,
+							finalAccessType,
+							attachment->format
+						);
+					}
 				}
-				else
-				{
-					for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
-						attachments[iImage].append(Attachment{ vk_framebuffer->colors[iAtt].texture, AttachmentFlag::None, 0, 0 });
-				}
-				if (asBool(vk_framebuffer->colors[iAtt].flag & AttachmentFlag::BackbufferAutoResize))
-				{
-					VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->colors[iAtt].texture);
-					attachment->destroy(_device);
-					attachment->width = m_width;
-					attachment->height = m_height;
-					attachment->create(_device);
-					// Ensure valid transitions
-					ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
-					VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
-					VulkanTexture::transitionImageLayout(cmd,
-						attachment->vk_image,
-						ResourceAccessType::Undefined,
-						finalAccessType,
-						attachment->format
-					);
-				}
-			}
-			if (vk_framebuffer->depth.texture != gfx::TextureHandle::null)
-			{
-				for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
-					depthAttachment[iImage] = vk_framebuffer->depth;
-				if (asBool(vk_framebuffer->depth.flag & AttachmentFlag::BackbufferAutoResize))
-				{
-					VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
-					attachment->destroy(_device);
-					attachment->width = m_width;
-					attachment->height = m_height;
-					attachment->create(_device);
-					// Ensure valid transitions
-					ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
-					VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
-					VulkanTexture::transitionImageLayout(cmd,
-						attachment->vk_image,
-						ResourceAccessType::Undefined,
-						finalAccessType,
-						attachment->format
-					);
-				}
-			}
-			VulkanCommandList::endSingleTime(_device->getVkDevice(), _device->getVkCommandPool(QueueType::Graphic), cmd, _device->getVkQueue(QueueType::Graphic));
+			}, QueueType::Graphic);
 		}
 		// Destroy previous framebuffer
 		for (FramebufferHandle handle : backbuffer.handles)
@@ -632,7 +630,9 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 
 		VkCommandBuffer cmd;
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(device->getVkDevice(), &allocateInfo, &cmd));
-		mainCommandLists[EnumToIndex(queue)] = VulkanCommandList(device, cmd, queue, false);
+		mainCommandEncoders[EnumToIndex(queue)] = mem::akaNew<VulkanCommandEncoder>(
+			AllocatorMemoryType::Raw, AllocatorCategory::Graphic,
+			device, cmd, queue, false);
 	}
 }
 
@@ -642,6 +642,7 @@ void VulkanFrame::destroy(VulkanGraphicDevice* device)
 	acquireSemaphore = VK_NULL_HANDLE;
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
+		mem::akaDelete<VulkanCommandEncoder>(mainCommandEncoders[i]);
 		vkDestroyCommandPool(device->getVkDevice(), commandPool[i], getVkAllocator());
 		commandPool[i] = VK_NULL_HANDLE;
 		vkDestroyFence(device->getVkDevice(), presentFence[i], getVkAllocator());
@@ -663,7 +664,7 @@ void VulkanFrame::wait(VkDevice device)
 	));
 }
 
-VulkanCommandList* VulkanFrame::allocateCommand(VulkanGraphicDevice* device, QueueType queue)
+VulkanCommandEncoder* VulkanFrame::allocateCommand(VulkanGraphicDevice* device, QueueType queue)
 {
 	// Allocate primary command buffers from frame command pool
 	VkCommandBufferAllocateInfo allocateInfo{};
@@ -674,16 +675,17 @@ VulkanCommandList* VulkanFrame::allocateCommand(VulkanGraphicDevice* device, Que
 
 	VkCommandBuffer cmd;
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device->getVkDevice(), &allocateInfo, &cmd));
-	commandLists[EnumToIndex(queue)].append(VulkanCommandList(device, cmd, queue, false));
+	// TODO: this invalidate previous pointers...
+	commandEncoders[EnumToIndex(queue)].append(mem::akaNew<VulkanCommandEncoder>(AllocatorMemoryType::Raw, AllocatorCategory::Graphic, device, cmd, queue, false));
 
-	return &commandLists[EnumToIndex(queue)].last();
+	return commandEncoders[EnumToIndex(queue)].last();
 }
 
-void VulkanFrame::releaseCommand(VulkanCommandList* commandList)
+void VulkanFrame::releaseCommand(VulkanCommandEncoder* commandList)
 {
 	VkCommandBuffer cmd = commandList->getVkCommandBuffer();
 	vkFreeCommandBuffers(commandList->getDevice()->getVkDevice(), commandPool[EnumToIndex(commandList->getQueueType())], 1, &cmd);
-	commandLists[EnumToIndex(commandList->getQueueType())].remove(commandList);
+	commandEncoders[EnumToIndex(commandList->getQueueType())].remove(&commandList);
 }
 
 };
