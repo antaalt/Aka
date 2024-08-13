@@ -143,7 +143,12 @@ void DebugDrawList::reserveBlock(size_t _count)
 	// Reserve a new block if not enough size to avoid allocation overhead.
 	if (m_vertices.size() + _count > m_vertices.capacity())
 	{
-		m_vertices.reserve(m_vertices.capacity() + s_blockSize);
+		size_t blockCount = 1;
+		if (_count > s_blockSize)
+		{
+			blockCount = (_count + s_blockSize - 1) / s_blockSize;
+		}
+		m_vertices.reserve(m_vertices.capacity() + blockCount * s_blockSize);
 	}
 }
 
