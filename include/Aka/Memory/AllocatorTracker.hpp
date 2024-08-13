@@ -79,18 +79,26 @@ private:
 	private:
 		size_t m_used = 0;
 	};
+public:
+	struct TypeAllocationInfo
+	{
+		size_t count = 0;
+		size_t elementSize = 0;
+		size_t uniqueAllocation = 0;
+	};
+private:
 	using AllocationMap = std::map<const void*, AllocationTrackingData, std::less<const void*>, malloc_allocator<std::pair<const void* const, AllocationTrackingData>>>;
+	using TypeAllocationMap = std::map<const std::type_info*, TypeAllocationInfo, std::less<const std::type_info*>, malloc_allocator<std::pair<const std::type_info* const, TypeAllocationInfo>>>;
 public:
 	size_t m_allocation = 0;
 	size_t m_deallocation = 0;
 	size_t m_memoryAllocated = 0;
 	size_t m_memoryDeallocated = 0;
 	AllocationMap m_allocations;
+	TypeAllocationMap m_typeAllocations;
 
-	AllocationMap::iterator begin() { return m_allocations.begin(); }
-	AllocationMap::iterator end() { return m_allocations.end(); }
-	AllocationMap::const_iterator begin() const { return m_allocations.begin(); }
-	AllocationMap::const_iterator end() const { return m_allocations.end(); }
+	const AllocationMap& getAllocationMap() const { return m_allocations; }
+	const TypeAllocationMap& getTypeAllocationMap() const { return m_typeAllocations; }
 
 	size_t getUsedMemory() const {
 		return m_allocations.get_allocator().getUsedMemory() + sizeof(AllocatorTrackingData);

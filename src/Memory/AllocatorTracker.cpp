@@ -55,6 +55,19 @@ void AllocatorTracker::allocate(const void* const pointer, AllocatorMemoryType t
 	tracking.m_allocation += 1;
 	tracking.m_memoryAllocated += data.elementSize * data.count;
 	tracking.m_allocations.insert(std::make_pair(pointer, data));
+	// Fill memory infos
+	auto it = tracking.m_typeAllocations.find(data.info);
+	if (it == tracking.m_typeAllocations.end())
+	{
+		tracking.m_typeAllocations.insert(std::make_pair(data.info, AllocatorTrackingData::TypeAllocationInfo{ data.count, data.elementSize, 1 }));
+	}
+	else
+	{
+		AllocatorTrackingData::TypeAllocationInfo& typeInfo = tracking.m_typeAllocations[data.info];
+		AKA_ASSERT(typeInfo.elementSize == data.elementSize, "Mismatching element size");
+		typeInfo.count += data.count;
+		typeInfo.uniqueAllocation++;
+	}
 }
 
 void AllocatorTracker::deallocate(const void* const pointer, AllocatorMemoryType type, AllocatorCategory category)
@@ -71,6 +84,17 @@ void AllocatorTracker::deallocate(const void* const pointer, AllocatorMemoryType
 	tracking.m_memoryDeallocated += data.elementSize * data.count;
 	tracking.m_deallocation += 1;
 
+	// Fill memory infos
+	auto itType = tracking.m_typeAllocations.find(data.info);
+	AKA_ASSERT(itType != tracking.m_typeAllocations.end(), "Failed to retrieve type info");
+	AllocatorTrackingData::TypeAllocationInfo& typeInfo = tracking.m_typeAllocations[data.info];
+	AKA_ASSERT(typeInfo.elementSize == data.elementSize, "Mismatching element size");
+	AKA_ASSERT(typeInfo.count >= data.count, "Removing too many elements");
+	AKA_ASSERT(typeInfo.uniqueAllocation > 0, "Removing too many elements");
+	typeInfo.count -= data.count;
+	typeInfo.uniqueAllocation--;
+
+	// Erase allocation
 	tracking.m_allocations.erase(pointer);
 }
 
