@@ -37,7 +37,12 @@ public:
 	// Queue size
 	size_t size() const;
 
-	// Add a job to a worker
+	// Create a job from arguments & add job to worker.
+	template <typename T, typename ...Args>
+	void addJob(Args ...args);
+
+private:
+	// Add a job to a worker. Take ownership.
 	void add(Job* job);
 
 private:
@@ -51,5 +56,14 @@ private:
 	Vector<std::thread> m_workers;
 	bool m_running;
 };
+
+
+template<typename T, typename ...Args>
+inline void WorkerPool::addJob(Args ...args)
+{
+	static_assert(std::is_base_of<Job, T>::value, "Trying to add object that is not a job.");
+	Job* job = mem::akaNew<T>(AllocatorMemoryType::Object, AllocatorCategory::Global, std::forward<Args>(args)...);
+	add(job);
+}
 
 };

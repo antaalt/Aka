@@ -17,8 +17,19 @@ enum class JobStatus
 class Job
 {
 public:
-	Job();
-	virtual ~Job();
+	virtual ~Job() {}
+	// Execute the job and setup running flag
+	void operator()() { execute(); }
+protected:
+	// Execute the job
+	virtual void execute() = 0;
+};
+
+class TrackedJob
+{
+public:
+	TrackedJob();
+	virtual ~TrackedJob();
 	// Check if the job is running
 	JobStatus status() const;
 	// Reset the job status only if finished
