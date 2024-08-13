@@ -23,7 +23,6 @@ struct VulkanTexture : Texture
 
 	void create(VulkanGraphicDevice* context);
 	void destroy(VulkanGraphicDevice* context);
-	void upload(VulkanGraphicDevice* context, const void* const* data, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
 	static VkImage createVkImage(VkDevice device, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkImageCreateFlags flags);
 	static VkImageView createVkImageView(VkDevice device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspect, uint32_t mipCount, uint32_t layerCount, uint32_t baseMips = 0, uint32_t baseLayer = 0);

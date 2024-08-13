@@ -37,12 +37,12 @@ void VulkanBuffer::destroy(VulkanGraphicDevice* device)
 
 void VulkanBuffer::copyFrom(VkCommandBuffer cmd, VulkanBuffer* src, uint32_t srcOffset, uint32_t dstOffset, uint32_t range)
 {
-	AKA_ASSERT(size == src->size, "Invalid sizes");
+	AKA_ASSERT((range == ~0U) ? size == src->size : range <= size, "Invalid sizes");
 
 	VkBufferCopy region{};
 	region.srcOffset = srcOffset;
 	region.dstOffset = dstOffset;
-	region.size = (range == ~0U) ? src->size : range;
+	region.size = (range == ~0U) ? src->size : range; // VK_WHOLE_SIZE
 	vkCmdCopyBuffer(cmd, src->vk_buffer, vk_buffer, 1, &region);
 }
 
@@ -244,24 +244,41 @@ void VulkanGraphicDevice::upload(BufferHandle buffer, const void* data, size_t o
 	}
 	else if (VulkanBuffer::isTransferable(vk_buffer->usage))
 	{
-		VkBuffer vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-		VkDeviceMemory vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		// Use shared memory heap if small enough.
+		VkBuffer vk_stagingBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory vk_stagingMemory = VK_NULL_HANDLE;
+		if (size > m_stagingUploadHeapSize)
+		{
+			Logger::warn("Uploading some big boy to buffer ", vk_buffer->name,", allocating ", size, " staging bytes for upload.");
+			vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+			vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		}
+		else
+		{
+			vk_stagingBuffer = m_stagingUploadBuffer;
+			vk_stagingMemory = m_stagingUploadMemory;
+		}
 		
 		void* mapped = nullptr;
 		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_stagingMemory, 0, size, 0, &mapped));
 		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
 		memcpy(mapped, data, static_cast<size_t>(size));
 		vkUnmapMemory(getVkDevice(), vk_stagingMemory);
-		executeVk("Uploading from staging buffer", [=](VulkanCommandList& cmd) {
+
+		String debugName = String::format("UploadStagingBufferTo%s", vk_buffer->name);
+		executeVk(debugName.cstr(), [=](VulkanCommandList& cmd) {
 			VkBufferCopy region{};
 			region.srcOffset = 0;
 			region.dstOffset = offset;
 			region.size = size;
 			vkCmdCopyBuffer(cmd.getVkCommandBuffer(), vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
-		}, QueueType::Graphic);
+		}, QueueType::Copy, false);  // Blocking
 
-		vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
-		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
+		if (vk_stagingBuffer != m_stagingUploadBuffer)
+		{
+			vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
+			vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
+		}
 	}
 	else
 	{
@@ -282,25 +299,40 @@ void VulkanGraphicDevice::download(BufferHandle buffer, void* data, size_t offse
 	}
 	else if (VulkanBuffer::isTransferable(vk_buffer->usage))
 	{
-		VkBuffer vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-		VkDeviceMemory vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-		executeVk("Uploading from staging buffer", [=](VulkanCommandList& cmd) {
+		// Use shared memory heap if small enough.
+		VkBuffer vk_stagingBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory vk_stagingMemory = VK_NULL_HANDLE;
+		if (size > m_stagingDownloadHeapSize)
+		{
+			Logger::warn("Downloading some big boy from buffer ", vk_buffer->name, ", allocating ", size, " staging bytes for download.");
+			vk_stagingBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+			vk_stagingMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), vk_stagingBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		}
+		else
+		{
+			vk_stagingBuffer = m_stagingDownloadBuffer;
+			vk_stagingMemory = m_stagingDownloadMemory;
+		}
+		String debugName = String::format("DownloadBuffer%sToStaging", vk_buffer->name);
+		executeVk(debugName.cstr(), [=](VulkanCommandList& cmd) {
 			VkBufferCopy region{};
 			region.srcOffset = offset;
 			region.dstOffset = 0;
 			region.size = size;// VK_WHOLE_SIZE ?
-			vkCmdCopyBuffer(cmd.getVkCommandBuffer(), vk_stagingBuffer, vk_buffer->vk_buffer, 1, &region);
-		}, QueueType::Graphic);
+			vkCmdCopyBuffer(cmd.getVkCommandBuffer(), vk_buffer->vk_buffer, vk_stagingBuffer, 1, &region);
+		}, QueueType::Copy, false); // Blocking
 
 		void* mapped = nullptr;
 		VK_CHECK_RESULT(vkMapMemory(getVkDevice(), vk_stagingMemory, 0, size, 0, &mapped));
 		AKA_ASSERT(mapped != nullptr, "Failed to map memory");
-		memcpy(mapped, data, static_cast<size_t>(size));
+		memcpy(data, mapped, static_cast<size_t>(size));
 		vkUnmapMemory(getVkDevice(), vk_stagingMemory);
 
-		vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
-		vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
+		if (vk_stagingBuffer != m_stagingDownloadBuffer)
+		{
+			vkFreeMemory(getVkDevice(), vk_stagingMemory, getVkAllocator());
+			vkDestroyBuffer(getVkDevice(), vk_stagingBuffer, getVkAllocator());
+		}
 	}
 	else
 	{
@@ -313,10 +345,10 @@ void gfx::VulkanGraphicDevice::copy(BufferHandle src, BufferHandle dst)
 	VulkanBuffer* vk_srcBuffer = getVk<VulkanBuffer>(src);
 	VulkanBuffer* vk_dstBuffer = getVk<VulkanBuffer>(dst);
 	AKA_ASSERT(vk_srcBuffer->size == vk_dstBuffer->size, "");
-
-	executeVk("Uploading from staging buffer", [=](VulkanCommandList& cmd) {
+	String debugName = String::format("CopyBuffer%sTo%s", vk_srcBuffer->name, vk_dstBuffer->name);
+	executeVk(debugName.cstr(), [=](VulkanCommandList& cmd) {
 		vk_dstBuffer->copyFrom(cmd.getVkCommandBuffer(), vk_srcBuffer);
-	}, QueueType::Graphic);
+	}, QueueType::Copy, false); // Blocking
 }
 
 void* VulkanGraphicDevice::map(BufferHandle buffer, BufferMap map)

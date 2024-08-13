@@ -22,25 +22,36 @@ CommandEncoder* VulkanGraphicDevice::acquireCommandEncoder(QueueType queue)
 
 	return m_commandEncoderPool.acquire(this, cmd, queue, true);
 }
-void VulkanGraphicDevice::execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue)
+void VulkanGraphicDevice::execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue, bool async)
 {
 	CommandEncoder* cmd = acquireCommandEncoder(queue);
 	cmd->record([c = move(callback), _name](CommandList& cmd) {
 		ScopedCmdMarker marker(cmd, _name, 1.f, 1.f, 1.f, 1.f);
 		c(cmd);
 	});
-	submit(cmd);
-	wait(queue);
-	release(cmd);
+	if (async)
+	{
+		// Delay command destruction
+		submit(cmd, m_copyFenceHandle, m_copyFenceCounter, m_copyFenceCounter + 1);
+		++m_copyFenceCounter;
+		m_commandEncoderToRelease.append(dynamic_cast<VulkanCommandEncoder*>(cmd));
+	}
+	else
+	{
+		// Block & wait for execution to complete
+		submit(cmd);
+		wait(queue);
+		release(cmd);
+	}
 }
 
-void VulkanGraphicDevice::executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue)
+void VulkanGraphicDevice::executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue, bool async)
 {
 	execute(_name, [vk_callback = move(callback)](CommandList& command) {
 		// We cant use reinterpret_cast because of virtual & multiple inheritance.
 		VulkanCommandList& vk_command = dynamic_cast<VulkanCommandList&>(command);
 		vk_callback(vk_command);
-	}, queue);
+	}, queue, async);
 }
 
 void VulkanGraphicDevice::release(CommandEncoder* cmd)
@@ -49,7 +60,7 @@ void VulkanGraphicDevice::release(CommandEncoder* cmd)
 	VkCommandBuffer vk_command = vk_cmd->getVkCommandBuffer();
 	vkFreeCommandBuffers(m_context.device, getVkCommandPool(vk_cmd->getQueueType()), 1, &vk_command);
 
-	m_commandEncoderPool.release();
+	m_commandEncoderPool.release(vk_cmd);
 }
 
 void VulkanGraphicDevice::submit(CommandEncoder* command, FenceHandle handle, FenceValue waitValue, FenceValue signalValue)
@@ -82,6 +93,7 @@ void VulkanGraphicDevice::submit(CommandEncoder* command, FenceHandle handle, Fe
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.pNext = &timelineInfo;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &vk_cmd;
 	submitInfo.pWaitDstStageMask = waitStages;
@@ -90,7 +102,15 @@ void VulkanGraphicDevice::submit(CommandEncoder* command, FenceHandle handle, Fe
 	submitInfo.waitSemaphoreCount = semaphoreCount;
 	submitInfo.pWaitSemaphores = waitSemaphore;
 
+	static const char* s_commandName[EnumCount<QueueType>()] = {
+		"Graphic queue",
+		"Compute queue",
+		"Copy queue",
+	};
+	color4f markerColor(0.8f, 0.8f, 0.8f, 1.f);
+	beginMarker(vk_command->getQueueType(), s_commandName[EnumToIndex(vk_command->getQueueType())], markerColor.data);
 	VK_CHECK_RESULT(vkQueueSubmit(vk_queue, 1, &submitInfo, VK_NULL_HANDLE));
+	endMarker(vk_command->getQueueType());
 }
 
 void VulkanGraphicDevice::wait(QueueType queue)
@@ -532,12 +552,12 @@ void VulkanComputePassCommandList::dispatchIndirect(BufferHandle buffer, uint32_
 	vkCmdDispatchIndirect(getVkCommandBuffer(), getDevice()->getVk<VulkanBuffer>(buffer)->vk_buffer, offset);
 }
 
-void VulkanGenericCommandList::copy(BufferHandle src, BufferHandle dst)
+void VulkanGenericCommandList::copy(BufferHandle src, BufferHandle dst, uint32_t srcOffset, uint32_t dstOffset, uint32_t range)
 {
 	VulkanBuffer* vk_src = getDevice()->getVk<VulkanBuffer>(src);
 	VulkanBuffer* vk_dst = getDevice()->getVk<VulkanBuffer>(dst);
 
-	vk_dst->copyFrom(getVkCommandBuffer(), vk_src);
+	vk_dst->copyFrom(getVkCommandBuffer(), vk_src, srcOffset, dstOffset, range);
 }
 
 void VulkanGenericCommandList::copy(TextureHandle src, TextureHandle dst)
@@ -578,51 +598,6 @@ VulkanGraphicDevice* VulkanGenericCommandList::getDevice()
 {
 	return m_device;
 }
-
-/*VkCommandBuffer VulkanCommandList::createSingleTime(const char* debugName, VkDevice device, VkCommandPool commandPool)
-{
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = commandPool;
-	allocInfo.commandBufferCount = 1;
-
-	VkCommandBuffer commandBuffer;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer));
-
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-	VkDebugUtilsLabelEXT label{};
-	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-	label.color[0] = 0.f;
-	label.color[0] = 0.f;
-	label.color[0] = 0.f;
-	label.color[0] = 1.f;
-	label.pLabelName = debugName;
-	vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &label);
-
-	return commandBuffer;
-}
-
-void VulkanCommandList::endSingleTime(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue graphicsQueue)
-{
-	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
-	VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
-
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	VK_CHECK_RESULT(vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-	VK_CHECK_RESULT(vkQueueWaitIdle(graphicsQueue));
-
-	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-}*/
 
 VkQueue VulkanGraphicDevice::getVkQueue(QueueType type)
 {

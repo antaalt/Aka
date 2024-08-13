@@ -25,7 +25,7 @@ struct VulkanGenericCommandList : virtual GenericCommandList
 	void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) override;
 	void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) override;
 
-	void copy(BufferHandle src, BufferHandle dst) override;
+	void copy(BufferHandle src, BufferHandle dst, uint32_t srcOffset = 0U, uint32_t dstOffset = 0U, uint32_t range = ~0U) override;
 	void copy(TextureHandle src, TextureHandle dst) override;
 	void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) override;
 

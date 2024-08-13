@@ -75,7 +75,7 @@ struct GenericCommandList
 	virtual void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) = 0;
 	virtual void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) = 0;
 
-	virtual void copy(BufferHandle src, BufferHandle dst) = 0;
+	virtual void copy(BufferHandle src, BufferHandle dst, uint32_t srcOffset = 0U, uint32_t dstOffset = 0U, uint32_t range = ~0U) = 0;
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 	virtual void blit(TextureHandle src, TextureHandle dst, const BlitRegion& srcRegion, const BlitRegion& dstRegion, Filter filter) = 0;
 

@@ -27,7 +27,9 @@ private:
 	void destroyPipeline();
 private:
 	gfx::BufferHandle m_assetBuffer;
+	gfx::BufferHandle m_assetBufferStaging;
 	gfx::BufferHandle m_batchBuffer;
+	gfx::BufferHandle m_batchBufferStaging;
 	gfx::BufferHandle m_instanceBufferStaging;
 	gfx::BufferHandle m_instanceBuffer[gfx::MaxFrameInFlight];
 	gfx::DescriptorPoolHandle m_modelDescriptorPool;
@@ -36,7 +38,8 @@ private:
 
 	gfx::GraphicPipelineHandle m_pipeline;
 	ProgramKey m_programKey;
-	bool m_dirty[gfx::MaxFrameInFlight];
+	bool m_dirtyInstance[gfx::MaxFrameInFlight];
+	bool m_dirtyAsset[gfx::MaxFrameInFlight];
 
 private:
 	HashMap<AssetID, uint32_t> m_assetIndex;

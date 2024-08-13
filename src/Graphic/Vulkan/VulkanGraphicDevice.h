@@ -144,7 +144,7 @@ public:
 	const ComputePipeline* get(ComputePipelineHandle handle) override;
 
 	// Fence
-	FenceHandle createFence(const char* name) override;
+	FenceHandle createFence(const char* name, FenceValue value) override;
 	void destroy(FenceHandle handle) override;
 	const Fence* get(FenceHandle handle) override;
 	void wait(FenceHandle handle, FenceValue waitValue) override;
@@ -153,8 +153,8 @@ public:
 
 	// Command list
 	CommandEncoder* acquireCommandEncoder(QueueType queue) override;
-	void execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue) override;
-	void executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue);
+	void execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue, bool async = true) override;
+	void executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue, bool async = true);
 	void release(CommandEncoder* cmd) override;
 	void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
 	void wait(QueueType queue) override;
@@ -216,6 +216,17 @@ private:
 	friend class VulkanSwapchain;
 	VulkanContext m_context;
 	VulkanSwapchain m_swapchain;
+	// Improve upload / download with persistent staging memory
+	const uint32_t m_stagingUploadHeapSize = 1 << 23; // 8 Mo
+	VkDeviceMemory m_stagingUploadMemory = VK_NULL_HANDLE;
+	VkBuffer m_stagingUploadBuffer = VK_NULL_HANDLE;
+	const uint32_t m_stagingDownloadHeapSize = 1 << 23; // 8 Mo
+	VkDeviceMemory m_stagingDownloadMemory = VK_NULL_HANDLE;
+	VkBuffer m_stagingDownloadBuffer = VK_NULL_HANDLE;
+	// Delayed command encoder release
+	FenceHandle m_copyFenceHandle = FenceHandle::null;
+	FenceValue m_copyFenceCounter = 0;
+	Vector<VulkanCommandEncoder*> m_commandEncoderToRelease;
 private: // Pools
 	Pool<VulkanTexture> m_texturePool;
 	Pool<VulkanSampler> m_samplerPool;

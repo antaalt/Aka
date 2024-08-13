@@ -433,7 +433,7 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		setDebugName(_device->getVkDevice(), view, "SwapchainColorView", i);
 		_device->executeVk("Transition backbuffer after creation", [&](VulkanCommandList& cmd) {
 			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(), vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
-		}, QueueType::Graphic);
+		}, QueueType::Graphic, false);
 		// No memory
 
 		m_backbufferTextures[i].color = colorTexture;
@@ -549,7 +549,7 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 						);
 					}
 				}
-			}, QueueType::Graphic);
+			}, QueueType::Graphic, false);
 		}
 		// Destroy previous framebuffer
 		for (FramebufferHandle handle : backbuffer.handles)

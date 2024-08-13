@@ -41,6 +41,9 @@ void StaticMeshInstanceRenderer::create()
 	updates.append(gfx::DescriptorUpdate::storageBuffer(1, 0, m_batchBuffer, 0, sizeof(gpu::StaticMeshBatchData) * MaxBatchCount));
 	getDevice()->update(m_modelDescriptorSet, updates.data(), updates.size());
 
+	m_batchBufferStaging = getDevice()->createBuffer("StaticMeshBatchStagingBuffer", gfx::BufferType::Storage, (uint32_t)(10 * sizeof(gpu::StaticMeshBatchData)), gfx::BufferUsage::Staging, gfx::BufferCPUAccess::Write);
+	m_assetBufferStaging = getDevice()->createBuffer("StaticMeshAssetStagingBuffer", gfx::BufferType::Storage, (uint32_t)(10 * sizeof(gpu::StaticMeshAssetData)), gfx::BufferUsage::Staging, gfx::BufferCPUAccess::Write);
+
 	createPipeline();
 }
 void StaticMeshInstanceRenderer::destroy()
@@ -53,6 +56,8 @@ void StaticMeshInstanceRenderer::destroy()
 	getDevice()->destroy(m_batchBuffer);
 	getDevice()->free(m_modelDescriptorSet);
 	getDevice()->destroy(m_modelDescriptorPool);
+	getDevice()->destroy(m_assetBufferStaging);
+	getDevice()->destroy(m_batchBufferStaging);
 }
 
 void StaticMeshInstanceRenderer::createPipeline()
@@ -118,7 +123,7 @@ void StaticMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 
 	// TODO: should run this for each views.
 	// TODO: should use a compute shader for creating indirect buffers
-	if (m_dirty[frameIndex.value()]) // if a transform changed or a material
+	if (m_dirtyInstance[frameIndex.value()] || m_dirtyAsset[frameIndex.value()]) // if a transform changed or a material
 	{
 		// Generate draw command & fill instance buffer.
 		m_drawIndexedBuffer.clear();
@@ -190,15 +195,42 @@ void StaticMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 		}
 		getDevice()->unmap(m_instanceBufferStaging);
 
-		// Upload now as we have frame in flight
-		gfx::ScopedCmdMarker marker(*cmd, "PrepareStaticMeshInstanceBuffers");
-		getDevice()->copy(m_instanceBufferStaging, m_instanceBuffer[frameIndex.value()]);
+		// Recreate staging if required.
+		uint32_t sizeAsset = (uint32_t)(m_instanceAssetDatas.size() * sizeof(gpu::StaticMeshAssetData));
+		uint32_t sizeBatch = (uint32_t)(m_instanceBatchDatas.size() * sizeof(gpu::StaticMeshBatchData));
+		if (getDevice()->get(m_assetBufferStaging)->size < sizeBatch)
+		{
+			getDevice()->destroy(m_assetBufferStaging);
+			m_assetBufferStaging = getDevice()->createBuffer("StaticMeshAssetStagingBuffer", gfx::BufferType::Storage, sizeAsset, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::Write);
+		}
+		if (getDevice()->get(m_batchBufferStaging)->size < sizeBatch)
+		{
+			getDevice()->destroy(m_batchBufferStaging);
+			m_batchBufferStaging = getDevice()->createBuffer("StaticMeshBatchStagingBuffer", gfx::BufferType::Storage, sizeBatch, gfx::BufferUsage::Staging, gfx::BufferCPUAccess::Write);
+		}
+		{
+			void* data = getDevice()->map(m_assetBufferStaging, gfx::BufferMap::Write);
+			memcpy(data, m_instanceAssetDatas.data(), (uint32_t)(m_instanceAssetDatas.size() * sizeof(gpu::StaticMeshAssetData)));
+			getDevice()->unmap(m_assetBufferStaging);
+		}
+		{
+			void* data = getDevice()->map(m_batchBufferStaging, gfx::BufferMap::Write);
+			memcpy(data, m_instanceBatchDatas.data(), (uint32_t)(m_instanceBatchDatas.size() * sizeof(gpu::StaticMeshBatchData)));
+			getDevice()->unmap(m_batchBufferStaging);
+		}
 
-		// TODO should not upload them everytime, frame in flight.
-		getDevice()->upload(m_assetBuffer, m_instanceAssetDatas.data(), 0, (uint32_t)(m_instanceAssetDatas.size() * sizeof(gpu::StaticMeshAssetData)));
-		getDevice()->upload(m_batchBuffer, m_instanceBatchDatas.data(), 0, (uint32_t)(m_instanceBatchDatas.size() * sizeof(gpu::StaticMeshBatchData)));
-		
-		m_dirty[frameIndex.value()] = false;
+		// Upload now as we have frame in flight
+		getDevice()->execute("PrepareStaticMeshInstanceBuffers", [=](gfx::CommandList& cmd) {
+			cmd.copy(m_instanceBufferStaging, m_instanceBuffer[frameIndex.value()]);
+			if (m_dirtyAsset[frameIndex.value()])
+			{
+				cmd.copy(m_assetBufferStaging, m_assetBuffer, 0, 0, sizeAsset);
+				cmd.copy(m_batchBufferStaging, m_batchBuffer, 0, 0, sizeBatch);
+			}
+		}, gfx::QueueType::Copy); // Async
+
+		m_dirtyInstance[frameIndex.value()] = false;
+		m_dirtyAsset[frameIndex.value()] = false;
 	}
 }
 
@@ -212,7 +244,6 @@ void StaticMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame
 	cmd->executeRenderPass(m_backbufferRenderPass, fb, gfx::ClearStateWhite, [&](gfx::RenderPassCommandList& cmd) {
 		if (m_drawIndexedBuffer.size() > 0)
 		{
-
 			cmd.bindPipeline(m_pipeline);
 			cmd.bindDescriptorSet(0, view.descriptor[frameIndex.value()]);
 			cmd.bindDescriptorSet(1, getRenderer().getMaterialDescriptorSet());
@@ -239,10 +270,11 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 
 	ResourceHandle<StaticMesh> meshHandle = getRenderer().getLibrary()->get<StaticMesh>(assetID);
 	const StaticMesh& mesh = meshHandle.get();
-
+	bool dirtyAsset = false;
 	auto itAsset = m_assetIndex.find(assetID);
 	if (itAsset == m_assetIndex.end())
 	{
+		dirtyAsset = true;
 		const uint32_t assetIndex = (uint32_t)m_instanceAssetDatas.size();
 		const uint32_t batchOffset = (uint32_t)m_instanceBatchDatas.size();
 
@@ -310,9 +342,13 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 			m_instanceDatas.push_back(instance);
 		}
 	}
-
+	if (dirtyAsset)
+	{
+		for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
+			m_dirtyAsset[i] = true;
+	}
 	for (uint32_t i =0; i< gfx::MaxFrameInFlight; i++)
-		m_dirty[i] = true;
+		m_dirtyInstance[i] = true;
 
 	return instanceHandle;
 }
@@ -324,7 +360,7 @@ void StaticMeshInstanceRenderer::updateInstanceTransform(InstanceHandle instance
 	m_instanceDatas[it->second].setTransform(transform);
 
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
-		m_dirty[i] = true;
+		m_dirtyInstance[i] = true;
 }
 void StaticMeshInstanceRenderer::destroyInstance(InstanceHandle instanceHandle)
 {
@@ -364,7 +400,7 @@ void StaticMeshInstanceRenderer::destroyInstance(InstanceHandle instanceHandle)
 	AKA_NOT_IMPLEMENTED;
 	*/
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
-		m_dirty[i] = true;
+		m_dirtyInstance[i] = true;
 }
 
 }

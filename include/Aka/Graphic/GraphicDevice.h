@@ -197,7 +197,7 @@ public:
 	virtual const ComputePipeline* get(ComputePipelineHandle handle) = 0;
 
 	// Fence
-	virtual FenceHandle createFence(const char* name) = 0;
+	virtual FenceHandle createFence(const char* name, FenceValue value) = 0;
 	virtual void destroy(FenceHandle handle) = 0;
 	virtual const Fence* get(FenceHandle handle) = 0;
 	virtual void wait(FenceHandle handle, FenceValue waitValue) = 0;
@@ -206,7 +206,7 @@ public:
 
 	// Command lists
 	virtual CommandEncoder* acquireCommandEncoder(QueueType queue) = 0;
-	virtual void execute(const char* _name, std::function<void(CommandList&)> _callback, QueueType _queue) = 0;
+	virtual void execute(const char* _name, std::function<void(CommandList&)> _callback, QueueType _queue, bool async = true) = 0;
 	virtual void release(CommandEncoder* cmd) = 0;
 	// Frame command lists
 	virtual CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) = 0;

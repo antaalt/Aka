@@ -60,12 +60,32 @@ bool VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConf
 #endif
 	if (!m_context.initialize(platform, cfg))
 		return false;
-	return m_swapchain.initialize(this, platform);
+	if (!m_swapchain.initialize(this, platform))
+		return false;
+	// Create shared staging memory for improved upload
+	m_stagingUploadBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), m_stagingUploadHeapSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+	m_stagingUploadMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), m_stagingUploadBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	// Create shared staging memory for improved download
+	m_stagingDownloadBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), m_stagingDownloadHeapSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+	m_stagingDownloadMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), m_stagingDownloadBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	// Create copy fence 
+	m_copyFenceCounter = 0;
+	m_copyFenceHandle = createFence("CopyFence", m_copyFenceCounter);
+	return true;
 }
 
 void VulkanGraphicDevice::shutdown()
 {
 	wait();
+
+	destroy(m_copyFenceHandle);
+
+	vkFreeMemory(getVkDevice(), m_stagingUploadMemory, getVkAllocator());
+	vkDestroyBuffer(getVkDevice(), m_stagingUploadBuffer, getVkAllocator());
+
+	vkFreeMemory(getVkDevice(), m_stagingDownloadMemory, getVkAllocator());
+	vkDestroyBuffer(getVkDevice(), m_stagingDownloadBuffer, getVkAllocator());
+
 	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
@@ -148,6 +168,20 @@ FrameHandle VulkanGraphicDevice::frame()
 
 SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 {
+	if (m_commandEncoderToRelease.size() > 0)
+	{
+		// Wait for queue to complete before presenting.
+		// Not optimal but we need some way to destroy them & ensure job is done before submitting main work.
+		wait(m_copyFenceHandle, m_copyFenceCounter);
+		// Should reset them though...
+		//m_copyFenceCounter = 0; // Reset
+		//signal(m_copyFenceHandle, m_copyFenceCounter);
+		for (VulkanCommandEncoder* encoder : m_commandEncoderToRelease)
+		{
+			release(encoder);
+		}
+		m_commandEncoderToRelease.clear();
+	}
 	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)

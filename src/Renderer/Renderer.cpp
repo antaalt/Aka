@@ -391,7 +391,7 @@ void Renderer::render(gfx::FrameHandle frame)
 		if (view.type != ViewType::Color)
 			continue;
 
-		if (m_viewDirty) // TODO one dirty per view.
+		if (m_viewDirty[frameIndex.value()]) // TODO one dirty per view.
 		{
 			ViewData ubo;
 			ubo.view = view.data.view;

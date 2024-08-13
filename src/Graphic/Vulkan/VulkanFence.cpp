@@ -11,9 +11,9 @@ VulkanFence::VulkanFence(const char* name) :
 {
 }
 
-void VulkanFence::create(VulkanGraphicDevice* device)
+void VulkanFence::create(VulkanGraphicDevice* device, FenceValue value)
 {
-	vk_sempahore = VulkanFence::createVkTimelineSemaphore(device, 0);
+	vk_sempahore = VulkanFence::createVkTimelineSemaphore(device, value);
 }
 
 void VulkanFence::destroy(VulkanGraphicDevice* device)
@@ -47,12 +47,12 @@ VkSemaphore VulkanFence::createVkTimelineSemaphore(VulkanGraphicDevice* device, 
 	return timelineSemaphore;
 }
 
-FenceHandle VulkanGraphicDevice::createFence(const char* name)
+FenceHandle VulkanGraphicDevice::createFence(const char* name, FenceValue value)
 {
 	VulkanFence* vk_fence = m_fencePool.acquire(name);
 	AKA_ASSERT(vk_fence != nullptr, "Fence failed to be allocated");
 
-	vk_fence->create(this);
+	vk_fence->create(this, value);
 
 	return FenceHandle{ vk_fence };
 }
