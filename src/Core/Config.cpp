@@ -30,6 +30,7 @@ bool handleAssert(const char* _filename, int _line, const char* _assertion, bool
 		std::abort();
 		return false;
 	case AlertModalMessage::Retry:
+		AKA_DEBUG_BREAK;
 		return true; // Do not break
 	case AlertModalMessage::Ignore:
 		return false; // Do not break

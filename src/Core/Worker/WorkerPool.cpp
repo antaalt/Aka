@@ -106,6 +106,7 @@ void WorkerPool::loop()
 				for (auto& job : m_jobs)
 				{
 					(*job)();
+					mem::akaDelete(job);
 				}
 				m_jobs.clear();
 				return;
@@ -117,6 +118,7 @@ void WorkerPool::loop()
 		for (auto& job : localQueue)
 		{
 			(*job)();
+			mem::akaDelete(job);
 		}
 	}
 }

@@ -2,21 +2,21 @@
 
 namespace aka {
 
-Job::Job() :
+TrackedJob::TrackedJob() :
 	m_status(JobStatus::Waiting)
 {
 }
 
-Job::~Job()
+TrackedJob::~TrackedJob()
 {
 }
-JobStatus Job::status() const
+JobStatus TrackedJob::status() const
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_status;
 }
 
-void Job::reset()
+void TrackedJob::reset()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	if (m_status != JobStatus::Finished)
@@ -24,7 +24,7 @@ void Job::reset()
 	m_status = JobStatus::Waiting;
 }
 
-void Job::operator()()
+void TrackedJob::operator()()
 {
 	std::unique_lock<std::mutex> lock(m_mutex);
 	m_status = JobStatus::Running;
