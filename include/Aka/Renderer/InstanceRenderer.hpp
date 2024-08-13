@@ -27,7 +27,6 @@ public:
 protected:
 	gfx::GraphicDevice* getDevice();
 	Renderer& getRenderer();
-	AssetLibrary& getAssetLibrary();
 private:
 	Renderer& m_renderer;
 };

@@ -59,8 +59,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		Logger::warn(message, pCallbackData->pMessage);
 		break;
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+		AKA_ASSERT(false, pCallbackData->pMessage);
 		Logger::error(message, pCallbackData->pMessage);
-		AKA_DEBUG_BREAK;
 		break;
 	}
 	return VK_FALSE;
