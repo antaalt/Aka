@@ -110,13 +110,14 @@ void Renderer::create()
 		m_geometryDataBuffer = getDevice()->createBuffer("GeometryDataBuffer", gfx::BufferType::Storage, MaxGeometryBufferSize, gfx::BufferUsage::Default, gfx::BufferCPUAccess::None);
 	}
 
+	createBackbuffer();
+
 	for (InstanceType instanceType : EnumRange<InstanceType>())
 	{
 		if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
 			continue;
 		m_instanceRenderer[EnumToIndex(instanceType)]->create();
 	}
-	createBackbuffer();
 
 	m_debugDrawList.create(getDevice(), m_width, m_height);
 }
@@ -374,49 +375,47 @@ void Renderer::render(gfx::FrameHandle frame)
 		m_materialDirty = false;
 	}
 
-	// Simple clear + transition render pass.
-	if (m_views.size() > 0)
-	{
-		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
-		cmd->executeRenderPass(m_backbufferRenderPass, fb, gfx::ClearState().setColor(0, 0.f, 1.f, 0.f, 1.f), [](gfx::RenderPassCommandList& cmd) {
-			// Here we could execute custom code...
-		});
-	}
-	// Color views.
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{
 		const ViewHandle viewHandle = viewPair.first;
 		const View& view = viewPair.second;
 
-		if (view.type != ViewType::Color)
-			continue;
+		// TODO: framebuffer should be per view.
+		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
+		gfx::ClearState clearState{};
+		clearState.setColor(0, 0.f, 1.f, 0.f, 1.f);
+		clearState.setDepthStencil(1.f, 0);
+		cmd->executeRenderPass(m_backbufferRenderPass, fb, clearState, [=](gfx::RenderPassCommandList& cmd) {
+			AKA_ASSERT(view.type == ViewType::Color, "Only main view supported for now.");
 
-		if (m_viewDirty[frameIndex.value()]) // TODO one dirty per view.
-		{
-			ViewData ubo;
-			ubo.view = view.data.view;
-			ubo.projection = view.data.projection;
-			m_device->upload(view.buffer[frameIndex.value()], &ubo, 0, sizeof(ViewData));
-			m_viewDirty[frameIndex.value()] = false;
-		}
+			if (m_viewDirty[frameIndex.value()]) // TODO: one dirty per view.
+			{
+				ViewData ubo;
+				ubo.view = view.data.view;
+				ubo.projection = view.data.projection;
+				m_device->upload(view.buffer[frameIndex.value()], &ubo, 0, sizeof(ViewData));
+				m_viewDirty[frameIndex.value()] = false;
+			}
 
-		// TODO should prepare be per view ?
-		for (InstanceType instanceType : EnumRange<InstanceType>())
-		{
-			if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
-				continue;
-			m_instanceRenderer[EnumToIndex(instanceType)]->prepare(frame);
-		}
-		//if (view.main)
+			// TODO should prepare be per view ?
+			for (InstanceType instanceType : EnumRange<InstanceType>())
+			{
+				if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+					continue;
+				m_instanceRenderer[EnumToIndex(instanceType)]->prepare(view, frame);
+			}
+			//if (view.main)
 			m_debugDrawList.prepare(frame, getDevice());
-		for (InstanceType instanceType : EnumRange<InstanceType>())
-		{
-			if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
-				continue;
-			m_instanceRenderer[EnumToIndex(instanceType)]->render(view, frame);
-		}
-		//if (view.main)
-			m_debugDrawList.render(getDevice(), frame, view.data.view, view.data.projection);
+			for (InstanceType instanceType : EnumRange<InstanceType>())
+			{
+				if (m_instanceRenderer[EnumToIndex(instanceType)] == nullptr)
+					continue;
+				m_instanceRenderer[EnumToIndex(instanceType)]->render(view, frame, cmd);
+			}
+			//if (view.main)
+			m_debugDrawList.render(getDevice(), frame, view.data.view, view.data.projection, cmd);
+		});
+		break; // For now only one main view.
 	}
 	m_debugDrawList.clear();
 }
@@ -493,16 +492,23 @@ uint32_t Renderer::getMaterialIndex(MaterialHandle handle)
 void Renderer::createBackbuffer()
 {
 	// TODO: create depth
-	gfx::RenderPassState state{};
-	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Undefined, gfx::ResourceAccessType::Present);
+	m_backbufferRenderPassState = {};
+	m_backbufferRenderPassState.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Undefined, gfx::ResourceAccessType::Present);
+	m_backbufferRenderPassState.setDepth(gfx::TextureFormat::Depth24Stencil8, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
+
+	m_depth = getDevice()->createTexture("RendererDepth", m_width, m_height, 1, gfx::TextureType::Texture2D, 1, 1, gfx::TextureFormat::Depth24Stencil8, gfx::TextureUsage::RenderTarget);
+	gfx::Attachment depthAttachment;
+	depthAttachment.texture = m_depth;
+	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
 	
-	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", state);
-	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, nullptr);
+	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", m_backbufferRenderPassState);
+	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, &depthAttachment);
 }
 void Renderer::destroyBackbuffer()
 {
 	m_device->destroy(m_backbuffer);
 	m_device->destroy(m_backbufferRenderPass);
+	m_device->destroy(m_depth);
 }
 
 };

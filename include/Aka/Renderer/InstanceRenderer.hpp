@@ -18,8 +18,8 @@ public:
 
 	virtual void create() = 0;
 	virtual void destroy() = 0;
-	virtual void prepare(gfx::FrameHandle _frame) = 0;
-	virtual void render(const View& view, gfx::FrameHandle _frame) = 0;
+	virtual void prepare(const View& view, gfx::FrameHandle _frame) = 0;
+	virtual void render(const View& view, gfx::FrameHandle _frame, gfx::RenderPassCommandList& cmd) = 0;
 
 	virtual InstanceHandle createInstance(AssetID assetID) = 0;
 	virtual void updateInstanceTransform(InstanceHandle instanceHandle, const mat4f& transform) = 0;

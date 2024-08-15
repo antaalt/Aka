@@ -39,7 +39,7 @@ protected:
 	void destroy(gfx::GraphicDevice* _device);
 	void resize(gfx::GraphicDevice* _device, uint32_t width, uint32_t height);
 	void prepare(gfx::FrameHandle frame, gfx::GraphicDevice* _device);
-	void render(gfx::GraphicDevice* _device, gfx::FrameHandle frame, const mat4f& view, const mat4f& projection);
+	void render(gfx::GraphicDevice* _device, gfx::FrameHandle frame, const mat4f& view, const mat4f& projection, gfx::RenderPassCommandList& cmd);
 	void clear();
 public:
 	void draw3DFrustum(const mat4f& projection, const color4f& color);

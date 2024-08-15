@@ -73,29 +73,13 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 	m_programKey.add(ShaderVertex).add(ShaderFragment);
 	registry->add(m_programKey, getDevice());
 
-	gfx::RenderPassState state{};
-	state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
-	state.setDepth(gfx::TextureFormat::Depth24Stencil8, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Attachment, gfx::ResourceAccessType::Attachment);
-	
-	// TODO: share depth & render pass between renderer
-	uint32_t width = 0;
-	uint32_t height = 0;
-	getDevice()->getBackbufferSize(width, height);
-	m_depth = getDevice()->createTexture("SkeletalDepth", width, height, 1, gfx::TextureType::Texture2D, 1, 1, gfx::TextureFormat::Depth24Stencil8, gfx::TextureUsage::RenderTarget);
-	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", state);
-	gfx::Attachment depthAttachment;
-	depthAttachment.texture = m_depth;
-	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
-	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, &depthAttachment);
-	gfx::ProgramHandle programHandle = registry->get(m_programKey);
-
 	// Create pipeline
 	m_pipeline = getDevice()->createGraphicPipeline(
 		"Graphic pipeline",
-		programHandle,
+		registry->get(m_programKey),
 		gfx::PrimitiveType::Triangles,
 		m_layout,
-		getDevice()->get(m_backbufferRenderPass)->state,
+		getRenderer().getRenderPassState(),
 		gfx::VertexState {}.add(SkeletalVertex::getState()).add(SkeletalMeshInstance::getState()),
 		gfx::ViewportStateBackbuffer,
 		gfx::DepthStateLessEqual,
@@ -109,14 +93,11 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 void SkeletalMeshInstanceRenderer::destroyPipeline()
 {
 	getDevice()->destroy(m_pipeline);
-	getDevice()->destroy(m_backbuffer);
-	getDevice()->destroy(m_backbufferRenderPass);
-	getDevice()->destroy(m_depth);
 }
 
-void SkeletalMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
+void SkeletalMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle frame)
 {
-	if (m_instanceDatas.size() == 0)
+	if (m_instanceDatas.size() == 0 /*|| !view.main*/)
 		return;
 	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(frame);
 	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
@@ -217,33 +198,27 @@ void SkeletalMeshInstanceRenderer::prepare(gfx::FrameHandle frame)
 	}
 }
 
-void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame)
+void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame, gfx::RenderPassCommandList& cmd)
 {
-	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(frame);
 	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
-	// TODO each view should have somewhere its target written.
-	gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
-	gfx::ScopedCmdMarker marker(*cmd, "RenderSkeletalMeshInstances");
-	cmd->executeRenderPass(m_backbufferRenderPass, fb, gfx::ClearStateWhite, [&](gfx::RenderPassCommandList& cmd) {
-		if (m_drawIndexedBuffer.size() > 0)
+	gfx::ScopedCmdMarker marker(cmd, "RenderSkeletalMeshInstances");
+	if (m_drawIndexedBuffer.size() > 0)
+	{
+		cmd.bindPipeline(m_pipeline);
+		cmd.bindDescriptorSet(0, view.descriptor[frameIndex.value()]);
+		cmd.bindDescriptorSet(1, getRenderer().getMaterialDescriptorSet());
+		cmd.bindDescriptorSet(2, getRenderer().getBindlessDescriptorSet());
+		cmd.bindDescriptorSet(3, m_modelDescriptorSet);
+		// TODO use bindless
+		cmd.bindVertexBuffer(0, getRenderer().getVertexGeometryBuffer(), 0);
+		cmd.bindVertexBuffer(1, m_instanceBuffer[frameIndex.value()], 0);
+		cmd.bindIndexBuffer(getRenderer().getIndexGeometryBuffer(), gfx::IndexFormat::UnsignedInt, 0);
+		// TODO upload command on GPU & use indirect.
+		for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer)
 		{
-
-			cmd.bindPipeline(m_pipeline);
-			cmd.bindDescriptorSet(0, view.descriptor[frameIndex.value()]);
-			cmd.bindDescriptorSet(1, getRenderer().getMaterialDescriptorSet());
-			cmd.bindDescriptorSet(2, getRenderer().getBindlessDescriptorSet());
-			cmd.bindDescriptorSet(3, m_modelDescriptorSet);
-			// TODO use bindless
-			cmd.bindVertexBuffer(0, getRenderer().getVertexGeometryBuffer(), 0);
-			cmd.bindVertexBuffer(1, m_instanceBuffer[frameIndex.value()], 0);
-			cmd.bindIndexBuffer(getRenderer().getIndexGeometryBuffer(), gfx::IndexFormat::UnsignedInt, 0);
-			// TODO upload command on GPU & use indirect.
-			for (gfx::DrawIndexedIndirectCommand& batch : m_drawIndexedBuffer)
-			{
-				cmd.drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
-			}
+			cmd.drawIndexed(batch.indexCount, batch.firstIndex, batch.vertexOffset, batch.instanceCount, batch.firstInstance);
 		}
-	});
+	}
 }
 
 InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)

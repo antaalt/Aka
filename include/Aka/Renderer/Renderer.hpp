@@ -122,6 +122,7 @@ public:
 	AssetLibrary* getLibrary() { return m_library; }
 	gfx::GraphicDevice* getDevice() { return m_device; }
 	DebugDrawList& getDebugDrawList() { return m_debugDrawList; }
+	gfx::RenderPassState getRenderPassState() { return m_backbufferRenderPassState; }
 private:
 	AssetLibrary* m_library;
 	gfx::GraphicDevice* m_device;
@@ -131,6 +132,8 @@ private:
 private: // Backbuffer
 	void createBackbuffer();
 	void destroyBackbuffer();
+	gfx::RenderPassState m_backbufferRenderPassState;
+	gfx::TextureHandle m_depth;
 	gfx::BackbufferHandle m_backbuffer;
 	gfx::RenderPassHandle m_backbufferRenderPass;
 private: // Views

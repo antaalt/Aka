@@ -16,8 +16,8 @@ public:
 
 	void create() override;
 	void destroy() override;
-	void prepare(gfx::FrameHandle frame) override;
-	void render(const View& view, gfx::FrameHandle frame) override;
+	void prepare(const View& view, gfx::FrameHandle frame) override;
+	void render(const View& view, gfx::FrameHandle frame, gfx::RenderPassCommandList& cmd) override;
 
 	InstanceHandle createInstance(AssetID assetID) override;
 	void updateBoneInstanceTransform(InstanceHandle instanceHandle, uint32_t boneIndex, const mat4f& transform);
@@ -50,11 +50,6 @@ private:
 	gfx::vector<gpu::SkeletalMeshBatchData> m_instanceBatchDatas; // Updated rarely
 
 	gfx::Vector<gfx::DrawIndexedIndirectCommand> m_drawIndexedBuffer;
-
-private:
-	gfx::TextureHandle m_depth;
-	gfx::BackbufferHandle m_backbuffer;
-	gfx::RenderPassHandle m_backbufferRenderPass;
 };
 
 
