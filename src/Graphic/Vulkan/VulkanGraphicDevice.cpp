@@ -172,10 +172,11 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 	{
 		// Wait for queue to complete before presenting.
 		// Not optimal but we need some way to destroy them & ensure job is done before submitting main work.
+		// How to handle async queue then ?
+		// Copy queue can be expected to finish before frame start though.
 		wait(m_copyFenceHandle, m_copyFenceCounter);
 		// Should reset them though...
 		//m_copyFenceCounter = 0; // Reset
-		//signal(m_copyFenceHandle, m_copyFenceCounter);
 		for (VulkanCommandEncoder* encoder : m_commandEncoderToRelease)
 		{
 			release(encoder);

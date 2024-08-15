@@ -32,6 +32,7 @@ void VulkanGraphicDevice::execute(const char* _name, std::function<void(CommandL
 	if (async)
 	{
 		// Delay command destruction
+		AKA_ASSERT(m_copyFenceCounter != InvalidFenceValue, "CopyFenceCounter reached max.");
 		submit(cmd, m_copyFenceHandle, m_copyFenceCounter, m_copyFenceCounter + 1);
 		++m_copyFenceCounter;
 		m_commandEncoderToRelease.append(dynamic_cast<VulkanCommandEncoder*>(cmd));
@@ -76,10 +77,10 @@ void VulkanGraphicDevice::submit(CommandEncoder* command, FenceHandle handle, Fe
 	VkTimelineSemaphoreSubmitInfo timelineInfo;
 	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 	timelineInfo.pNext = NULL;
-	timelineInfo.waitSemaphoreValueCount = 1;
-	timelineInfo.pWaitSemaphoreValues = &waitValue;
-	timelineInfo.signalSemaphoreValueCount = 1;
-	timelineInfo.pSignalSemaphoreValues = &signalValue;
+	timelineInfo.waitSemaphoreValueCount = (waitValue != InvalidFenceValue) ? 1 : 0;
+	timelineInfo.pWaitSemaphoreValues = (waitValue != InvalidFenceValue) ? &waitValue : nullptr;
+	timelineInfo.signalSemaphoreValueCount = (signalValue != InvalidFenceValue) ? 1 : 0;
+	timelineInfo.pSignalSemaphoreValues = (signalValue != InvalidFenceValue) ? &signalValue : nullptr;
 
 	uint32_t semaphoreCount = 0;
 	VkSemaphore waitSemaphore[1] = { VK_NULL_HANDLE };

@@ -151,11 +151,11 @@ struct CommandEncoder
 
 struct ScopedCmdMarker
 {
-	ScopedCmdMarker(CommandList& cmd, const char* name, float r = 0.8f, float g = 0.8f, float b = 0.8f, float a = 1.f) : m_command(cmd) { color4f c(r, g, b, a); m_command.beginMarker(name, c.data); }
-	ScopedCmdMarker(CommandList& cmd, const char* name, const float* colors) : m_command(cmd) { m_command.beginMarker(name, colors); }
+	ScopedCmdMarker(GenericCommandList& cmd, const char* name, float r = 0.8f, float g = 0.8f, float b = 0.8f, float a = 1.f) : m_command(cmd) { color4f c(r, g, b, a); m_command.beginMarker(name, c.data); }
+	ScopedCmdMarker(GenericCommandList& cmd, const char* name, const float* colors) : m_command(cmd) { m_command.beginMarker(name, colors); }
 	~ScopedCmdMarker() { m_command.endMarker(); }
 private:
-	CommandList& m_command;
+	GenericCommandList& m_command;
 };
 
 };
