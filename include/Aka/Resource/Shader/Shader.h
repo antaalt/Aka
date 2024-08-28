@@ -29,6 +29,12 @@ struct ShaderReflectionData
 
 struct Macro
 {
+	Macro() {}
+	Macro(const char* key) : key(key), value("") {}
+	Macro(const char* key, const char* value) : key(key), value(value) {}
+	Macro(const char* key, uint32_t value) : key(key), value(std::to_string(value).c_str()) {}
+	Macro(const char* key, float value) : key(key), value(std::to_string(value).c_str()) {}
+
 	String key;
 	String value;
 };
@@ -44,8 +50,8 @@ struct ShaderKey
 	ShaderKey& setPath(const AssetPath& _path) { path = _path; return *this; }
 	ShaderKey& setType(ShaderType _type) { type = _type; return *this; }
 	ShaderKey& setEntryPoint(const String& _entryPoint) { entryPoint = _entryPoint; return *this; }
-	ShaderKey& addMacro(const String& _macro) { macros.append(Macro{ _macro, "" }); return *this; }
-	ShaderKey& addMacro(const String& _macro, const String& _value) { macros.append(Macro{ _macro, _value }); return *this; }
+	ShaderKey& addMacro(const Macro& _macro) { macros.append(_macro); return *this; }
+	ShaderKey& addMacros(const Macro* _macros, size_t _count) { macros.append(_macros, _macros + _count); return *this; }
 
 	static ShaderKey generate(const AssetPath& path, ShaderType type);
 };
