@@ -82,12 +82,14 @@ void VulkanGraphicDevice::submit(CommandEncoder* command, FenceHandle handle, Fe
 	timelineInfo.signalSemaphoreValueCount = (signalValue != InvalidFenceValue) ? 1 : 0;
 	timelineInfo.pSignalSemaphoreValues = (signalValue != InvalidFenceValue) ? &signalValue : nullptr;
 
-	uint32_t semaphoreCount = 0;
+	uint32_t waitSemaphoreCount = 0;
+	uint32_t signalSemaphoreCount = 0;
 	VkSemaphore waitSemaphore[1] = { VK_NULL_HANDLE };
 	VkSemaphore signalSemaphore[1] = { VK_NULL_HANDLE };
 	if (handle != FenceHandle::null)
 	{
-		semaphoreCount = 1;
+		waitSemaphoreCount = waitValue != InvalidFenceValue ? 1 : 0;
+		signalSemaphoreCount = signalValue != InvalidFenceValue ? 1 : 0;
 		waitSemaphore[0] = vk_fence->vk_sempahore;
 		signalSemaphore[0] = vk_fence->vk_sempahore; // TODO handle invalid values...
 	}
@@ -98,9 +100,9 @@ void VulkanGraphicDevice::submit(CommandEncoder* command, FenceHandle handle, Fe
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &vk_cmd;
 	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.signalSemaphoreCount = semaphoreCount;
+	submitInfo.signalSemaphoreCount = signalSemaphoreCount;
 	submitInfo.pSignalSemaphores = signalSemaphore;
-	submitInfo.waitSemaphoreCount = semaphoreCount;
+	submitInfo.waitSemaphoreCount = waitSemaphoreCount;
 	submitInfo.pWaitSemaphores = waitSemaphore;
 
 	static const char* s_commandName[EnumCount<QueueType>()] = {
@@ -142,14 +144,14 @@ CommandList* VulkanGraphicDevice::getComputeCommandList(FrameHandle frame)
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Compute)]->getCommandList();
 }
 
-VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer cmd) :
-	VulkanGenericCommandList(device, cmd)
+VulkanCommandList::VulkanCommandList(VulkanGraphicDevice* device, QueueType queueType, VkCommandBuffer cmd) :
+	VulkanGenericCommandList(device, queueType, cmd)
 {
 }
 
 VulkanCommandEncoder::VulkanCommandEncoder(VulkanGraphicDevice* device, VkCommandBuffer command, QueueType queue, bool oneTimeSubmit) :
 	m_device(device),
-	m_commandList(device, command),
+	m_commandList(device, queue, command),
 	m_oneTimeSubmit(oneTimeSubmit),
 	m_queue(queue)
 {
@@ -282,11 +284,11 @@ void VulkanRenderPassCommandList::bindDescriptorSets(const DescriptorSetHandle* 
 }
 
 VulkanComputePassCommandList::VulkanComputePassCommandList(VulkanCommandList& cmd) :
-	VulkanGenericCommandList(cmd.getDevice(), cmd.getVkCommandBuffer())
+	VulkanGenericCommandList(cmd.getDevice(), cmd.getQueueType(), cmd.getVkCommandBuffer())
 {
 }
 VulkanRenderPassCommandList::VulkanRenderPassCommandList(VulkanCommandList& cmd, VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer) :
-	VulkanGenericCommandList(cmd.getDevice(), cmd.getVkCommandBuffer()),
+	VulkanGenericCommandList(cmd.getDevice(), cmd.getQueueType(), cmd.getVkCommandBuffer()),
 	m_renderPass(renderPass),
 	m_framebuffer(framebuffer)
 {
@@ -333,6 +335,7 @@ void VulkanGenericCommandList::transition(TextureHandle texture, ResourceAccessT
 	VulkanTexture* vk_texture = getDevice()->getVk<VulkanTexture>(texture);
 	VulkanTexture::transitionImageLayout(
 		getVkCommandBuffer(),
+		getQueueType(),
 		vk_texture->vk_image,
 		src,
 		dst, 
@@ -344,6 +347,7 @@ void VulkanGenericCommandList::transition(BufferHandle buffer, ResourceAccessTyp
 	VulkanBuffer* vk_buffer = getDevice()->getVk<VulkanBuffer>(buffer);
 	VulkanBuffer::transitionBuffer(
 		getVkCommandBuffer(),
+		getQueueType(),
 		vk_buffer->vk_buffer,
 		vk_buffer->size,
 		0,
@@ -598,6 +602,10 @@ VkCommandBuffer VulkanGenericCommandList::getVkCommandBuffer()
 VulkanGraphicDevice* VulkanGenericCommandList::getDevice()
 {
 	return m_device;
+}
+QueueType VulkanGenericCommandList::getQueueType()
+{
+	return m_queueType;
 }
 
 VkQueue VulkanGraphicDevice::getVkQueue(QueueType type)

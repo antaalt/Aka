@@ -30,6 +30,7 @@ struct VulkanTexture : Texture
 
 	static void transitionImageLayout(
 		VkCommandBuffer cmd,
+		QueueType queueType,
 		VkImage image,
 		ResourceAccessType oldLayout,
 		ResourceAccessType newLayout,
@@ -38,6 +39,17 @@ struct VulkanTexture : Texture
 		uint32_t levelCount = 1,
 		uint32_t layer = 0,
 		uint32_t layerCount = 1
+	);
+	static void transferTexture(
+		VulkanGraphicDevice* device,
+		QueueType srcQueueType,
+		QueueType dstQueueType,
+		VkImage image,
+		ResourceAccessType oldAccess,
+		ResourceAccessType newAccess,
+		TextureFormat format,  
+		uint32_t level, uint32_t levelCount, 
+		uint32_t layer, uint32_t layerCount
 	);
 	static void insertMemoryBarrier(
 		VkCommandBuffer cmd,
@@ -48,7 +60,9 @@ struct VulkanTexture : Texture
 		VkPipelineStageFlags srcStage,
 		VkPipelineStageFlags dstStage,
 		VkAccessFlags srcAccess,
-		VkAccessFlags dstAccess
+		VkAccessFlags dstAccess, 
+		uint32_t srcQueueFamilyIndex,
+		uint32_t dstQueueFamilyIndex
 	);
 
 	VkImageView getMainImageView() const;

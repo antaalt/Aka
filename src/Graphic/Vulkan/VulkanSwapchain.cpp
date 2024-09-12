@@ -432,7 +432,7 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		setDebugName(_device->getVkDevice(), vk_images[i], "SwapchainColor", i);
 		setDebugName(_device->getVkDevice(), view, "SwapchainColorView", i);
 		_device->executeVk("Transition backbuffer after creation", [&](VulkanCommandList& cmd) {
-			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(), vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
+			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(), cmd.getQueueType(), vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
 		}, QueueType::Graphic, false);
 		// No memory
 
@@ -520,6 +520,7 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 						ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
 						VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
 						VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(),
+							cmd.getQueueType(),
 							attachment->vk_image,
 							ResourceAccessType::Undefined,
 							finalAccessType,
@@ -541,7 +542,9 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 						// Ensure valid transitions
 						ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
 						VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, attachment->format);
-						VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(),
+						VulkanTexture::transitionImageLayout(
+							cmd.getVkCommandBuffer(),
+							cmd.getQueueType(),
 							attachment->vk_image,
 							ResourceAccessType::Undefined,
 							finalAccessType,

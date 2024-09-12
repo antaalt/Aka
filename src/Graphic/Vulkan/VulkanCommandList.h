@@ -21,7 +21,7 @@ struct VulkanFramebuffer;
 
 struct VulkanGenericCommandList : virtual GenericCommandList
 {
-	VulkanGenericCommandList(VulkanGraphicDevice* device, VkCommandBuffer cmd) : m_device(device), m_cmd(cmd) {}
+	VulkanGenericCommandList(VulkanGraphicDevice* device, QueueType queueType, VkCommandBuffer cmd) : m_device(device), m_cmd(cmd), m_queueType(queueType) {}
 	void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) override;
 	void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) override;
 
@@ -37,9 +37,11 @@ struct VulkanGenericCommandList : virtual GenericCommandList
 public:
 	VkCommandBuffer getVkCommandBuffer();
 	VulkanGraphicDevice* getDevice();
+	QueueType getQueueType();
 private:
 	VulkanGraphicDevice* m_device;
 	VkCommandBuffer m_cmd;
+	QueueType m_queueType;
 };
 
 struct VulkanComputePassCommandList final : virtual ComputePassCommandList, VulkanGenericCommandList
@@ -88,7 +90,7 @@ private:
 };
 struct VulkanCommandList : virtual CommandList, VulkanGenericCommandList
 {
-	VulkanCommandList(VulkanGraphicDevice* device, VkCommandBuffer cmd);
+	VulkanCommandList(VulkanGraphicDevice* device, QueueType queueType, VkCommandBuffer cmd);
 	void executeRenderPass(RenderPassHandle renderPass, FramebufferHandle framebuffer, const ClearState& clear, std::function<void(RenderPassCommandList&)> callback) override;
 	void executeComputePass(std::function<void(ComputePassCommandList&)> callback) override;
 private:

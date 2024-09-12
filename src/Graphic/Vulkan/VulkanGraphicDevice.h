@@ -78,6 +78,7 @@ public:
 	void copy(TextureHandle src, TextureHandle dst) override;
 	void destroy(TextureHandle texture) override;
 	void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) override;
+	void transfer(TextureHandle texture, QueueType srcQueue, QueueType dstQueue, ResourceAccessType src, ResourceAccessType dst) override;
 	const Texture* get(TextureHandle texture) override;
 
 	// Sampler
@@ -102,6 +103,8 @@ public:
 	void* map(BufferHandle buffer, BufferMap map) override;
 	void unmap(BufferHandle buffer) override;
 	void destroy(BufferHandle buffer) override;
+	void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) override;
+	void transfer(BufferHandle buffer, QueueType srcQueue, QueueType dstQueue, ResourceAccessType src, ResourceAccessType dst) override;
 	const Buffer* get(BufferHandle buffer) override;
 
 	// Framebuffer
@@ -156,7 +159,7 @@ public:
 	void execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue, bool async = true) override;
 	void executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue, bool async = true);
 	void release(CommandEncoder* cmd) override;
-	void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) override;
+	void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = InvalidFenceValue, FenceValue signalValue = InvalidFenceValue) override;
 	void wait(QueueType queue) override;
 	void beginMarker(QueueType queue, const char* name, const float* color) override;
 	void endMarker(QueueType queue) override;

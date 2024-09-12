@@ -25,8 +25,9 @@ struct VulkanBuffer : Buffer
 	static VkBuffer createVkBuffer(VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage);
 	static VkDeviceMemory createVkDeviceMemory(VkDevice device, VkPhysicalDevice physicalDevice, VkBuffer buffer, VkMemoryPropertyFlags properties);
 	
-	static void transitionBuffer(VkCommandBuffer cmd, VkBuffer buffer, size_t size, size_t offset, ResourceAccessType oldAccess, ResourceAccessType newAccess);
-	static void insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer, size_t size, size_t offset, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
+	static void transitionBuffer(VkCommandBuffer cmd, QueueType queueType, VkBuffer buffer, size_t size, size_t offset, ResourceAccessType oldAccess, ResourceAccessType newAccess);
+	static void transferBuffer(VulkanGraphicDevice* device, QueueType srcQueueType, QueueType dstQueueType, VkBuffer buffer, ResourceAccessType oldAccess, ResourceAccessType newAccess);
+	static void insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer, size_t size, size_t offset, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex);
 
 	static bool isMappable(BufferUsage usage);
 	static bool isTransferable(BufferUsage usage);

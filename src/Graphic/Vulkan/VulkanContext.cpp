@@ -72,7 +72,8 @@ static constexpr const bool s_enableValidationLayers = true;
 static constexpr const bool s_enableValidationLayers = false;
 #endif
 static constexpr const char* s_validationLayers[] = {
-	"VK_LAYER_KHRONOS_validation"
+	"VK_LAYER_KHRONOS_validation",
+	"VK_LAYER_KHRONOS_synchronization2"
 };
 static constexpr const size_t s_validationLayerCount = sizeof(s_validationLayers) / sizeof(*s_validationLayers);
 
@@ -144,7 +145,7 @@ void populateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfo)
 	debugCreateInfo = {};
 	debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+	debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;//| VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
 	debugCreateInfo.pfnUserCallback = debugCallback;
 	debugCreateInfo.pUserData = nullptr; // Optional
 }
@@ -360,11 +361,14 @@ bool areQueuesAdequate(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 	for (uint32_t iQueue = 0; iQueue < queueFamilyCount; ++iQueue)
 	{
 		const VkQueueFamilyProperties& queueFamily = queueFamilies[iQueue];
-		if (!hasAsyncCompute && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+		const bool isGraphicQueue = (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT);
+		const bool isComputeQueue = (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT);
+		const bool isCopyQueue = (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT);
+		if (!hasAsyncCompute && isComputeQueue && !isGraphicQueue && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 		{
 			hasAsyncCompute = true;
 		}
-		if (!hasAsyncCopy && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+		if (!hasAsyncCopy && isCopyQueue && !isGraphicQueue && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 		{
 			hasAsyncCopy = true;
 		}
@@ -663,14 +667,17 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 	for (uint32_t iQueue = 0; iQueue < queueFamilyCount; ++iQueue)
 	{
 		const VkQueueFamilyProperties& queueFamily = queueFamilies[iQueue];
-		if (!isQueuePicked[EnumToIndex(QueueType::Compute)] && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+		const bool isGraphicQueue = (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT);
+		const bool isComputeQueue = (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT);
+		const bool isCopyQueue = (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT);
+		if (!isQueuePicked[EnumToIndex(QueueType::Compute)] && isComputeQueue && !isGraphicQueue && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 		{
 			isQueuePicked[EnumToIndex(QueueType::Compute)] = true;
 			queues[EnumToIndex(QueueType::Compute)].familyIndex = iQueue;
 			queues[EnumToIndex(QueueType::Compute)].index = queueFamilySlotCount[iQueue]++;
 			AKA_ASSERT(queueFamilySlotCount[iQueue] <= queueFamily.queueCount, "Too many queues");
 		}
-		if (!isQueuePicked[EnumToIndex(QueueType::Copy)] && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
+		if (!isQueuePicked[EnumToIndex(QueueType::Copy)] && isCopyQueue && !isGraphicQueue && (queueFamilySlotCount[iQueue] < queueFamily.queueCount))
 		{
 			isQueuePicked[EnumToIndex(QueueType::Copy)] = true;
 			queues[EnumToIndex(QueueType::Copy)].familyIndex = iQueue;

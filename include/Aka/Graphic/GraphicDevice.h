@@ -155,6 +155,8 @@ public:
 	virtual void* map(BufferHandle buffer, BufferMap map) = 0;
 	virtual void unmap(BufferHandle buffer) = 0;
 	virtual void destroy(BufferHandle buffer) = 0;
+	virtual void transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst) = 0;
+	virtual void transfer(BufferHandle buffer, QueueType srcQueue, QueueType dstQueue, ResourceAccessType src, ResourceAccessType dst) = 0;
 	virtual const Buffer* get(BufferHandle handle) = 0;
 
 	// Textures
@@ -164,6 +166,7 @@ public:
 	virtual void copy(TextureHandle src, TextureHandle dst) = 0;
 	virtual void destroy(TextureHandle texture) = 0;
 	virtual void transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst) = 0;
+	virtual void transfer(TextureHandle texture, QueueType srcQueue, QueueType dstQueue, ResourceAccessType src, ResourceAccessType dst) = 0;
 	virtual const Texture* get(TextureHandle handle) = 0;
 
 	// Samplers
@@ -218,7 +221,7 @@ public:
 	virtual CommandList* getComputeCommandList(FrameHandle frame) = 0;
 
 	// Command submit
-	virtual void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = 0U, FenceValue signalValue = 0U) = 0;
+	virtual void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = InvalidFenceValue, FenceValue signalValue = InvalidFenceValue) = 0;
 	virtual void wait(QueueType queue) = 0;
 	// Debug submit markers
 	virtual void beginMarker(QueueType queue, const char* name, const float* color) = 0;

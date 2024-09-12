@@ -2,6 +2,7 @@
 
 #include "VulkanTexture.h"
 #include "VulkanGraphicDevice.h"
+#include "VulkanBarrier.h"
 
 namespace aka {
 namespace gfx {
@@ -21,100 +22,84 @@ VkImageAspectFlags VulkanTexture::getAspectFlag(TextureFormat format)
 	return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
-// https://themaister.net/blog/2019/08/14/yet-another-blog-explaining-vulkan-synchronization/
-// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPipelineStageFlagBits.html
-// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
-VkAccessFlags accessFlagForLayout(ResourceAccessType type, TextureFormat format, bool src)
+void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, QueueType queueType, VkImage image, ResourceAccessType oldLayout, ResourceAccessType newLayout, TextureFormat format, uint32_t level, uint32_t levelCount, uint32_t layer, uint32_t layerCount)
 {
-	bool depth = Texture::hasDepth(format);
-	bool stencil = Texture::hasStencil(format);
-	switch (type)
-	{
-	default:
-		AKA_ASSERT(false, "Invalid access type");
-		[[fallthrough]];
-	case ResourceAccessType::Undefined:
-#if defined(VK_VERSION_1_3)
-		return VK_ACCESS_NONE;
-#else
-		return 0;
-#endif
-	case ResourceAccessType::Resource: // Read only
-		return VK_ACCESS_SHADER_READ_BIT; // Only for shader read
-		//return VK_ACCESS_MEMORY_READ_BIT; // Most general purpose
-		//return VK_ACCESS_HOST_READ_BIT; // access on host (VK_PIPELINE_STAGE_HOST_BIT)
-	case ResourceAccessType::Attachment:
-		//if (depth || stencil) return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT; // VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT or VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT 
-		//else return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT; // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT 
-		if (depth || stencil) return VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		else return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	case ResourceAccessType::Storage:
-		return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-	case ResourceAccessType::CopySRC:
-		return VK_ACCESS_TRANSFER_READ_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
-	case ResourceAccessType::CopyDST:
-		return VK_ACCESS_TRANSFER_WRITE_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
-	case ResourceAccessType::Present:
-		return VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-	}
-}
-
-VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, TextureFormat format, bool src)
-{
-	bool depth = Texture::hasDepth(format);
-	bool stencil = Texture::hasStencil(format);
-	switch (type)
-	{
-	default:
-		AKA_ASSERT(false, "Invalid access type");
-		[[fallthrough]];
-	case ResourceAccessType::Undefined:
-		return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	case ResourceAccessType::Resource:
-		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
-#if 0 // Tesselation support...
-			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
-			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
-#endif
-			;
-	case ResourceAccessType::Attachment:
-		if (depth || stencil) return VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // TODO: VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
-		else return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	case ResourceAccessType::Storage:
-		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
-#if 0 // Tesselation support...
-			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
-			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
-#endif
-			;
-	case ResourceAccessType::CopySRC:
-		return VK_PIPELINE_STAGE_TRANSFER_BIT;
-	case ResourceAccessType::CopyDST:
-		return VK_PIPELINE_STAGE_TRANSFER_BIT;
-	case ResourceAccessType::Present:
-		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	}
-}
-
-void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, VkImage image, ResourceAccessType oldLayout, ResourceAccessType newLayout, TextureFormat format, uint32_t level,	uint32_t levelCount, uint32_t layer, uint32_t layerCount)
-{
-	if (oldLayout == newLayout)
-		return; // TODO barrier
+	std::pair<VulkanPipelineStageAccess, VulkanPipelineStageAccess> pipelineStageAccess = getTexturePipelineStageAccess(queueType, oldLayout, newLayout, format);
 	VulkanTexture::insertMemoryBarrier(
 		cmd, 
 		image,
 		VulkanContext::tovk(oldLayout, format), 
 		VulkanContext::tovk(newLayout, format),
 		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
-		pipelineStageForLayout(oldLayout, format, true),
-		pipelineStageForLayout(newLayout, format, false),
-		accessFlagForLayout(oldLayout, format, true),
-		accessFlagForLayout(newLayout, format, false)
+		pipelineStageAccess.first.stage,
+		pipelineStageAccess.second.stage,
+		pipelineStageAccess.first.access,
+		pipelineStageAccess.second.access,
+		VK_QUEUE_FAMILY_IGNORED,
+		VK_QUEUE_FAMILY_IGNORED
 	);
+}
+void VulkanTexture::transferTexture(
+	VulkanGraphicDevice* device,
+	QueueType srcQueueType,
+	QueueType dstQueueType,
+	VkImage image,
+	ResourceAccessType oldAccess,
+	ResourceAccessType newAccess,
+	TextureFormat format,  
+	uint32_t level, uint32_t levelCount, 
+	uint32_t layer, uint32_t layerCount
+)
+{
+	AKA_ASSERT(srcQueueType != dstQueueType, "Transfering texture on same queue...");
+	// Create sync 
+	FenceHandle fence = device->createFence("TransferTextureFence", 0);
+	FenceValue syncValue = 42;
+	// Create first sync
+	CommandEncoder* srcEncoder = device->acquireCommandEncoder(srcQueueType);
+	srcEncoder->record([=](CommandList& cmd) {
+		VulkanCommandList& vk_command = dynamic_cast<VulkanCommandList&>(cmd);
+		std::pair<VulkanPipelineStageAccess, VulkanPipelineStageAccess> pipelineStageAccess = getBufferPipelineStageAccess(srcQueueType, oldAccess, ResourceAccessType::Undefined);
+		VulkanTexture::insertMemoryBarrier(
+			vk_command.getVkCommandBuffer(),
+			image,
+			VulkanContext::tovk(oldAccess, format), 
+			VulkanContext::tovk(newAccess, format),
+			VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
+			pipelineStageAccess.first.stage,
+			pipelineStageAccess.second.stage,
+			pipelineStageAccess.first.access,
+			pipelineStageAccess.second.access,
+			device->getVkQueueIndex(srcQueueType),
+			device->getVkQueueIndex(dstQueueType)
+		);
+	});
+	device->submit(srcEncoder, fence, InvalidFenceValue, syncValue);
+	// Create second sync
+	CommandEncoder* dstEncoder = device->acquireCommandEncoder(dstQueueType);
+	dstEncoder->record([=](CommandList& cmd) {
+		VulkanCommandList& vk_command = dynamic_cast<VulkanCommandList&>(cmd);
+		std::pair<VulkanPipelineStageAccess, VulkanPipelineStageAccess> pipelineStageAccess = getBufferPipelineStageAccess(dstQueueType, ResourceAccessType::Undefined, newAccess);
+		VulkanTexture::insertMemoryBarrier(
+			vk_command.getVkCommandBuffer(),
+			image,
+			VulkanContext::tovk(oldAccess, format), 
+			VulkanContext::tovk(newAccess, format),
+			VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
+			pipelineStageAccess.first.stage, // BOTTOM OF PIPE ?
+			pipelineStageAccess.second.stage,
+			pipelineStageAccess.first.access,
+			pipelineStageAccess.second.access,
+			device->getVkQueueIndex(srcQueueType),
+			device->getVkQueueIndex(dstQueueType)
+		);
+	});
+	device->submit(dstEncoder, fence, syncValue);
+	device->wait(dstQueueType); //TODO: blocking, should delay somehow.
+	device->release(srcEncoder);
+	device->release(dstEncoder);
+
+	device->destroy(fence);
 }
 
 void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffer)
@@ -285,6 +270,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 
 			// Prepare for transfer
 			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(),
+				cmd.getQueueType(),
 				vk_texture->vk_image,
 				ResourceAccessType::Undefined,
 				ResourceAccessType::CopyDST,
@@ -305,6 +291,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 			else
 			{
 				VulkanTexture::transitionImageLayout(vk_cmd,
+					cmd.getQueueType(),
 					vk_texture->vk_image,
 					ResourceAccessType::CopyDST,
 					finalAccessType,
@@ -315,6 +302,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 		else
 		{
 			VulkanTexture::transitionImageLayout(vk_cmd,
+				cmd.getQueueType(),
 				vk_texture->vk_image,
 				ResourceAccessType::Undefined,
 				finalAccessType,
@@ -408,18 +396,25 @@ void VulkanGraphicDevice::destroy(TextureHandle texture)
 
 void VulkanGraphicDevice::transition(TextureHandle texture, ResourceAccessType src, ResourceAccessType dst)
 {
-	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
-	executeVk("Transition resource", [=](VulkanCommandList& cmd) {
-		VulkanTexture::transitionImageLayout(
-			cmd.getVkCommandBuffer(),
-			vk_texture->vk_image,
-			src,
-			dst,
-			vk_texture->format,
-			0, vk_texture->levels,
-			0, vk_texture->layers
-		);
+	execute("Transition resource", [=](CommandList& cmd) {
+		cmd.transition(texture, src, dst);
 	}, QueueType::Graphic, false); // Blocking
+}
+void VulkanGraphicDevice::transfer(TextureHandle texture, QueueType srcQueue, QueueType dstQueue, ResourceAccessType src, ResourceAccessType dst) 
+{
+	VulkanTexture* vk_texture = getVk<VulkanTexture>(texture);
+	VulkanTexture::transferTexture(
+		this, 
+		srcQueue, dstQueue,
+		vk_texture->vk_image,
+		src,
+		dst,
+		vk_texture->format,
+		0,
+		vk_texture->levels,
+		0,
+		vk_texture->layers
+	);
 }
 
 const Texture* VulkanGraphicDevice::get(TextureHandle handle)
@@ -547,7 +542,7 @@ VkImage VulkanTexture::createVkImage(VkDevice device, uint32_t width, uint32_t h
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_PREINITIALIZED
 	imageInfo.usage = usage;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Ownership must be explicitely transfered
 	imageInfo.flags = flags;
 
 	VkImage image;
@@ -573,14 +568,14 @@ VkImageView VulkanTexture::createVkImageView(VkDevice device, VkImage image, VkI
 	return view;
 }
 
-void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subResource, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess)
+void VulkanTexture::insertMemoryBarrier(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange subResource, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex)
 {
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+	barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
 	barrier.image = image;
 	barrier.subresourceRange = subResource;
 	barrier.srcAccessMask = srcAccess;

@@ -1,5 +1,6 @@
 #include "VulkanBuffer.h"
 #include "VulkanGraphicDevice.h"
+#include "VulkanBarrier.h"
 
 namespace aka {
 namespace gfx {
@@ -52,7 +53,7 @@ VkBuffer VulkanBuffer::createVkBuffer(VkDevice device, VkDeviceSize size, VkBuff
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size = size;
 	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Ownership must be explicitely transfered
 
 	VkBuffer vk_buffer = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkCreateBuffer(device, &bufferInfo, getVkAllocator(), &vk_buffer));
@@ -76,85 +77,27 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	return vk_memory;
 }
 
-
-VkPipelineStageFlags pipelineStageForLayout(ResourceAccessType type, bool src)
+void VulkanGraphicDevice::transition(BufferHandle buffer, ResourceAccessType src, ResourceAccessType dst)
 {
-	// TODO for buffers also
-	// VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-	// VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
-	switch (type)
-	{
-	default:
-		AKA_ASSERT(false, "Invalid access type");
-		[[fallthrough]];
-	case ResourceAccessType::Undefined:
-		return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	case ResourceAccessType::Resource:
-		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
-#if 0 // Tesselation support...
-			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
-			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
-#endif
-			;
-	case ResourceAccessType::Attachment:
-		AKA_ASSERT(false, "Weird");
-		return VK_PIPELINE_STAGE_NONE; // Cant have buffer as attachment
-	case ResourceAccessType::Storage:
-		return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-			| VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			| VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
-#if 0 // Tesselation support...
-			| VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
-			| VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
-#endif
-			;
-	case ResourceAccessType::CopySRC:
-		return VK_PIPELINE_STAGE_TRANSFER_BIT;
-	case ResourceAccessType::CopyDST:
-		return VK_PIPELINE_STAGE_TRANSFER_BIT;
-	case ResourceAccessType::Present:
-		AKA_ASSERT(false, "Weird");
-		return VK_PIPELINE_STAGE_NONE; // Cant present a buffer
-	}
+	execute("Transition resource", [=](CommandList& cmd) {
+		cmd.transition(buffer, src, dst);
+	}, QueueType::Graphic, false); // Blocking
 }
-
-// Check VulkanTexture::accessFlagForLayout for more info
-VkAccessFlags accessFlagForLayout(ResourceAccessType type, bool src)
+void VulkanGraphicDevice::transfer(BufferHandle buffer, QueueType srcQueue, QueueType dstQueue, ResourceAccessType src, ResourceAccessType dst) 
 {
-	switch (type)
-	{
-	default:
-		AKA_ASSERT(false, "Invalid access type");
-		[[fallthrough]];
-	case ResourceAccessType::Undefined:
-#if defined(VK_VERSION_1_3)
-		return VK_ACCESS_NONE;
-#else
-		return 0;
-#endif
-	case ResourceAccessType::Resource: // Read only
-		return VK_ACCESS_SHADER_READ_BIT; // Only for shader read
-		//return VK_ACCESS_MEMORY_READ_BIT; // Most general purpose
-		//return VK_ACCESS_HOST_READ_BIT; // access on host (VK_PIPELINE_STAGE_HOST_BIT)
-	case ResourceAccessType::Attachment:
-		AKA_ASSERT(false, "Weird");
-		return VK_ACCESS_NONE;
-	case ResourceAccessType::Storage:
-		return VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-	case ResourceAccessType::CopySRC:
-		return VK_ACCESS_TRANSFER_READ_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
-	case ResourceAccessType::CopyDST:
-		return VK_ACCESS_TRANSFER_WRITE_BIT; // VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT 
-	case ResourceAccessType::Present:
-		AKA_ASSERT(false, "Weird");
-		return VK_ACCESS_NONE;
-	}
+	VulkanBuffer* vk_buffer = getVk<VulkanBuffer>(buffer);
+	VulkanBuffer::transferBuffer(
+		this, 
+		srcQueue, dstQueue,
+		vk_buffer->vk_buffer,
+		src,
+		dst
+	);
 }
 
 void VulkanBuffer::transitionBuffer(
 	VkCommandBuffer cmd,
+	QueueType queueType,
 	VkBuffer buffer,
 	size_t size,
 	size_t offset,
@@ -162,26 +105,29 @@ void VulkanBuffer::transitionBuffer(
 	ResourceAccessType newAccess
 )
 {
+	std::pair<VulkanPipelineStageAccess, VulkanPipelineStageAccess> pipelineStageAccess = getBufferPipelineStageAccess(queueType, oldAccess, newAccess);
 	VulkanBuffer::insertMemoryBarrier(
 		cmd,
 		buffer,
 		size,
 		offset,
-		accessFlagForLayout(oldAccess, true),
-		accessFlagForLayout(newAccess, false),
-		pipelineStageForLayout(oldAccess, true),
-		pipelineStageForLayout(newAccess, true)
+		pipelineStageAccess.first.stage,
+		pipelineStageAccess.second.stage,
+		pipelineStageAccess.first.access,
+		pipelineStageAccess.second.access,
+		VK_QUEUE_FAMILY_IGNORED,
+		VK_QUEUE_FAMILY_IGNORED
 	);
 }
-void VulkanBuffer::insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer, size_t size, size_t offset, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage)
+void VulkanBuffer::insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer, size_t size, size_t offset, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex)
 {
 	VkBufferMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 	barrier.buffer = buffer;
 	barrier.offset = offset;
 	barrier.size = size;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+	barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
 	barrier.srcAccessMask = srcAccess;
 	barrier.dstAccessMask = dstAccess;
 
@@ -193,6 +139,63 @@ void VulkanBuffer::insertMemoryBarrier(VkCommandBuffer command, VkBuffer buffer,
 		1, &barrier,
 		0, nullptr
 	);
+}
+void VulkanBuffer::transferBuffer(
+	VulkanGraphicDevice* device,
+	QueueType srcQueueType,
+	QueueType dstQueueType,
+	VkBuffer buffer,
+	ResourceAccessType oldAccess,
+	ResourceAccessType newAccess
+)
+{
+	AKA_ASSERT(srcQueueType != dstQueueType, "Transfering buffer on same queue...");
+	// Create sync 
+	FenceHandle fence = device->createFence("TransferFence", 0);
+	FenceValue syncValue = 42;
+	// Create first sync
+	CommandEncoder* srcEncoder = device->acquireCommandEncoder(srcQueueType);
+	srcEncoder->record([=](CommandList& cmd) {
+		VulkanCommandList& vk_command = dynamic_cast<VulkanCommandList&>(cmd);
+		std::pair<VulkanPipelineStageAccess, VulkanPipelineStageAccess> pipelineStageAccess = getBufferPipelineStageAccess(srcQueueType, oldAccess, ResourceAccessType::Undefined);
+		VulkanBuffer::insertMemoryBarrier(
+			vk_command.getVkCommandBuffer(),
+			buffer,
+			VK_WHOLE_SIZE, // TODO: Transfer whole buffer, can we transfer partial ?
+			0,
+			pipelineStageAccess.first.stage,
+			pipelineStageAccess.second.stage,
+			pipelineStageAccess.first.access,
+			pipelineStageAccess.second.access,
+			device->getVkQueueIndex(srcQueueType),
+			device->getVkQueueIndex(dstQueueType)
+		);
+	});
+	device->submit(srcEncoder, fence, InvalidFenceValue, syncValue);
+	
+	CommandEncoder* dstEncoder = device->acquireCommandEncoder(dstQueueType);
+	dstEncoder->record([=](CommandList& cmd) {
+		VulkanCommandList& vk_command = dynamic_cast<VulkanCommandList&>(cmd);
+		std::pair<VulkanPipelineStageAccess, VulkanPipelineStageAccess> pipelineStageAccess = getBufferPipelineStageAccess(dstQueueType, ResourceAccessType::Undefined, newAccess);
+		VulkanBuffer::insertMemoryBarrier(
+			vk_command.getVkCommandBuffer(),
+			buffer,
+			VK_WHOLE_SIZE, // TODO: Transfer whole buffer, can we transfer partial ?
+			0,
+			pipelineStageAccess.first.stage, // BOTTOM OF PIPE ?
+			pipelineStageAccess.second.stage,
+			pipelineStageAccess.first.access,
+			pipelineStageAccess.second.access,
+			device->getVkQueueIndex(srcQueueType),
+			device->getVkQueueIndex(dstQueueType)
+		);
+	});
+	device->submit(dstEncoder, fence, syncValue);
+	device->wait(dstQueueType); // This should not be blocking ideally. Return a fence ?
+	device->release(srcEncoder);
+	device->release(dstEncoder);
+
+	device->destroy(fence);
 }
 
 bool VulkanBuffer::isMappable(BufferUsage usage)

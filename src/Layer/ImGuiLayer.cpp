@@ -303,7 +303,7 @@ void ImGuiLayer::onLayerPreRender()
 		gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
 		device->executeVk("Transition backbuffer after creation", [&](gfx::VulkanCommandList& cmd) {
 			ImGui_ImplVulkan_CreateFontsTexture(cmd.getVkCommandBuffer());
-		}, gfx::QueueType::Copy, false);
+		}, gfx::QueueType::Graphic, false);
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 	ImGui_ImplVulkan_NewFrame(); // Nothing done
