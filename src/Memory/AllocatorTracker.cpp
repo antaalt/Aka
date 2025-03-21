@@ -18,25 +18,30 @@ AllocatorTracker::~AllocatorTracker()
 	size_t totalLeak = 0;
 	for (AllocatorMemoryType type : EnumRange<AllocatorMemoryType>())
 	{
-		std::cout << "----- AllocatorMemoryType::" << toString(type) << " ------------" << std::endl;
+		std::cout << "AllocatorMemoryType::" << toString(type)<< std::endl;
 		for (AllocatorCategory category : EnumRange<AllocatorCategory>())
 		{
 			size_t totalLeakCategory = 0;
-			std::cout << "	--- AllocatorCategory::" << toString(category) << " ------------" << std::endl;
 			const AllocatorTrackingData& data = m_data[EnumToIndex(type)][EnumToIndex(category)];
-			std::cout << "		" << data.m_allocation << " allocations for " << data.m_memoryAllocated << " bytes" << std::endl;
-			std::cout << "		" << data.m_deallocation << " deallocations for " << data.m_memoryDeallocated << " bytes" << std::endl;
-			std::cout << "		" << data.m_allocation - data.m_deallocation << " allocation leak detected for " << data.m_memoryAllocated - data.m_memoryDeallocated << " bytes" << std::endl;
-			if (data.m_allocations.size() > 0)
-				std::cout << "		--" << std::endl;
-			for (const auto& alloc : data.m_allocations)
+			std::cout << "	AllocatorCategory::" << toString(category) << ": " << data.m_allocation << " allocations" << " for " << data.m_memoryDeallocated << " bytes" << std::endl;
+			const bool isLeaking = data.m_allocations.size() > 0;
+			if (isLeaking)
 			{
-				const AllocationTrackingData& data = alloc.second;
-				std::cout << "		Leaking " << data.info->name() << " (size(" << data.elementSize << " bytes) count(" << data.count << "))" << std::endl;
-				totalLeakCategory += data.elementSize * data.count;
+				std::cout << "		" << data.m_allocation << " allocations for " << data.m_memoryAllocated << " bytes" << std::endl;
+				std::cout << "		" << data.m_deallocation << " deallocations for " << data.m_memoryDeallocated << " bytes" << std::endl;
+				std::cout << "		" << data.m_allocation - data.m_deallocation << " allocation leak detected for " << data.m_memoryAllocated - data.m_memoryDeallocated << " bytes" << std::endl;
 			}
-			std::cout << "		--" << std::endl;
-			std::cout << "		Total leaks category detected : " << totalLeakCategory << " bytes" << std::endl;
+			if (isLeaking) {
+				std::cout << "		--" << std::endl;
+				for (const auto& alloc : data.m_allocations)
+				{
+					const AllocationTrackingData& data = alloc.second;
+					std::cout << "		Leaking " << data.info->name() << " (size(" << data.elementSize << " bytes) count(" << data.count << "))" << std::endl;
+					totalLeakCategory += data.elementSize * data.count;
+				}
+				std::cout << "		--" << std::endl;
+				std::cout << "		Total leaks category detected : " << totalLeakCategory << " bytes" << std::endl;
+			}
 			totalLeak += totalLeakCategory;
 		}
 	}
