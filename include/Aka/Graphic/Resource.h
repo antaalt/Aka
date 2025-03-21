@@ -23,6 +23,8 @@ enum class ResourceType : uint8_t
 	Shader,
 	RenderPass,
 	Fence,
+	Swapchain,
+	Surface,
 	Frame,
 
 	First = Buffer,

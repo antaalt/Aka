@@ -46,8 +46,10 @@ void Renderer::create()
 {
 	// Create instance buffer (need resize depending on count ?)
 	ShaderRegistry* registry = Application::app()->program();
-
-	getDevice()->getBackbufferSize(m_width, m_height);
+	PlatformWindow* window = Application::app()->window();
+	gfx::SwapchainExtent extent = getDevice()->getSwapchainExtent(window->swapchain());
+	m_width = extent.width;
+	m_height = extent.height;
 
 	{ // View
 		m_viewDescriptorLayout.add(gfx::ShaderBindingType::UniformBuffer, gfx::ShaderMask::Vertex);
@@ -292,7 +294,7 @@ GeometryBufferHandle Renderer::allocateGeometryVertex(void* data, size_t size, s
 	// Align allocation.
 	m_geometryVertexBufferAllocOffset = align(m_geometryVertexBufferAllocOffset, alignement);
 
-	AKA_ASSERT(size + m_geometryVertexBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	AKA_ASSERT(size + m_geometryVertexBufferAllocOffset <= MaxGeometryBufferSize, "MaxGeometryBufferSize reached");
 	uint32_t idBitmask = (1U << 31); // Mark it as vertex
 	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryVertexBufferAllocOffset | idBitmask);
 	getDevice()->upload(m_geometryVertexBuffer, data, m_geometryVertexBufferAllocOffset, uSize);
@@ -305,7 +307,7 @@ GeometryBufferHandle Renderer::allocateGeometryIndex(void* data, size_t size, si
 	// Align allocation.
 	m_geometryIndexBufferAllocOffset = align(m_geometryIndexBufferAllocOffset, alignement);
 
-	AKA_ASSERT(size + m_geometryIndexBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	AKA_ASSERT(size + m_geometryIndexBufferAllocOffset <= MaxGeometryBufferSize, "MaxGeometryBufferSize reached");
 	uint32_t idBitmask = 0;
 	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryIndexBufferAllocOffset | idBitmask);
 	getDevice()->upload(m_geometryIndexBuffer, data, m_geometryIndexBufferAllocOffset, uSize);
@@ -318,7 +320,7 @@ GeometryBufferHandle Renderer::allocateGeometryData(void* data, size_t size, siz
 	// Align allocation.
 	m_geometryDataBufferAllocOffset = align(m_geometryDataBufferAllocOffset, alignement);
 
-	AKA_ASSERT(size + m_geometryDataBufferAllocOffset <= MaxGeometryBufferSize, "Out of bounds");
+	AKA_ASSERT(size + m_geometryDataBufferAllocOffset <= MaxGeometryBufferSize, "MaxGeometryBufferSize reached");
 	uint32_t idBitmask = (1U << 30);
 	GeometryBufferHandle handle = static_cast<GeometryBufferHandle>(m_geometryDataBufferAllocOffset | idBitmask);
 	getDevice()->upload(m_geometryDataBuffer, data, m_geometryDataBufferAllocOffset, uSize);
@@ -354,8 +356,9 @@ uint32_t Renderer::getGeometryBufferOffset(GeometryBufferHandle handle)
 
 void Renderer::render(gfx::FrameHandle frame)
 {
-	gfx::CommandList* cmd = m_device->getGraphicCommandList(frame);
-	gfx::FrameIndex frameIndex = m_device->getFrameIndex(frame);
+	PlatformWindow* window = Application::app()->window();
+	gfx::CommandList* cmd = m_device->getGraphicCommandList(window->swapchain(), frame);
+	gfx::FrameIndex frameIndex = m_device->getFrameIndex(window->swapchain(), frame);
 
 	if (m_bindlessTextureUpdates.size() > 0)
 	{
@@ -381,7 +384,7 @@ void Renderer::render(gfx::FrameHandle frame)
 		const View& view = viewPair.second;
 
 		// TODO: framebuffer should be per view.
-		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, frame);
+		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, window->swapchain(), frame);
 		gfx::ClearState clearState{};
 		clearState.setColor(0, 0.f, 1.f, 0.f, 1.f);
 		clearState.setDepthStencil(1.f, 0);
@@ -491,6 +494,7 @@ uint32_t Renderer::getMaterialIndex(MaterialHandle handle)
 }
 void Renderer::createBackbuffer()
 {
+	PlatformWindow* window = Application::app()->window();
 	// TODO: create depth
 	m_backbufferRenderPassState = {};
 	m_backbufferRenderPassState.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Undefined, gfx::ResourceAccessType::Present);
@@ -502,11 +506,12 @@ void Renderer::createBackbuffer()
 	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
 	
 	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", m_backbufferRenderPassState);
-	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", m_backbufferRenderPass, nullptr, 0, &depthAttachment);
+	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", window->swapchain(), m_backbufferRenderPass, nullptr, 0, &depthAttachment);
 }
 void Renderer::destroyBackbuffer()
 {
-	m_device->destroy(m_backbuffer);
+	PlatformWindow* window = Application::app()->window();
+	m_device->destroy(window->swapchain(), m_backbuffer);
 	m_device->destroy(m_backbufferRenderPass);
 	m_device->destroy(m_depth);
 }

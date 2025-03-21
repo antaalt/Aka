@@ -87,9 +87,9 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
 
-	PlatformGLFW3* platform = reinterpret_cast<PlatformGLFW3*>(Application::app()->platform());
+	PlatformWindowGLFW3* window = reinterpret_cast<PlatformWindowGLFW3*>(Application::app()->window());
 #if defined(AKA_USE_OPENGL)
-	ImGui_ImplGlfw_InitForOpenGL(platform->getGLFW3Handle(), true);
+	ImGui_ImplGlfw_InitForOpenGL(window->getGLFW3Handle(), true);
 
 	float glLanguageVersion = (float)atof((char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 	std::stringstream ss;
@@ -97,7 +97,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	ImGui_ImplOpenGL3_Init(ss.str().c_str());
 #elif defined(AKA_USE_D3D11)
 	D3D11Device* device = reinterpret_cast<D3D11Device*>(Application::graphic());
-	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
+	ImGui_ImplGlfw_InitForVulkan(window->getGLFW3Handle(), true);
 	ImGui_ImplDX11_Init(device->device(), device->context());
 #elif defined(AKA_USE_VULKAN)
 	gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_renderer->getDevice());
@@ -130,10 +130,10 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 		gfx::RenderPassState state{};
 		state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
 		m_renderData->renderPass = _renderer->getDevice()->createRenderPass("ImGuiBackbufferPassHandle", state);
-		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("ImGuiBackbuffer", m_renderData->renderPass, nullptr, 0, nullptr);
+		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("ImGuiBackbuffer", window->swapchain(), m_renderData->renderPass, nullptr, 0, nullptr);
 	}
 
-	ImGui_ImplGlfw_InitForVulkan(platform->getGLFW3Handle(), true);
+	ImGui_ImplGlfw_InitForVulkan(window->getGLFW3Handle(), true);
 	ImGui_ImplVulkan_InitInfo info{};
 	info.Instance = device->getVkInstance();
 	info.PhysicalDevice = device->getVkPhysicalDevice();
@@ -143,7 +143,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	info.PipelineCache = VK_NULL_HANDLE;
 	info.DescriptorPool = m_renderData->descriptorPool;
 	info.MinImageCount = 2; // >= 2
-	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount()); // >= MinImageCount
+	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount(window->swapchain())); // >= MinImageCount
 	info.CheckVkResultFn = [](VkResult err) {
 		VK_CHECK_RESULT(err);
 	};
@@ -274,6 +274,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 
 void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 {
+	PlatformWindow* window = Application::app()->window();
 	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_renderer->getDevice());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
@@ -286,7 +287,7 @@ void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 	ImGui::DestroyContext();
 	vkDestroyDescriptorPool(vk_device->getVkDevice(), m_renderData->descriptorPool, nullptr);
 	vk_device->destroy(m_renderData->renderPass);
-	vk_device->destroy(m_renderData->backbuffer);
+	vk_device->destroy(window->swapchain(), m_renderData->backbuffer);
 	mem::akaDelete(m_renderData);
 }
 
@@ -315,7 +316,8 @@ void ImGuiLayer::onLayerPreRender()
 
 void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 {
-	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(frame);
+	PlatformWindow* window = Application::app()->window();
+	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(window->swapchain(), frame);
 	gfx::VulkanCommandList* vk_cmd = dynamic_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
@@ -331,7 +333,7 @@ void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
-	gfx::FramebufferHandle framebuffer = _renderer->getDevice()->get(m_renderData->backbuffer, frame);
+	gfx::FramebufferHandle framebuffer = _renderer->getDevice()->get(m_renderData->backbuffer, window->swapchain(), frame);
 	const gfx::Framebuffer* fb = _renderer->getDevice()->get(framebuffer);
 	{
 		gfx::ScopedCmdMarker marker(*cmd, "ImGui", &Color::red.x);

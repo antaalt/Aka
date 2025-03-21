@@ -121,26 +121,27 @@ void VulkanGraphicDevice::wait(QueueType queue)
 	VK_CHECK_RESULT(vkQueueWaitIdle(getVkQueue(queue)));
 }
 
-FrameIndex VulkanGraphicDevice::getFrameIndex(FrameHandle frame)
+FrameIndex VulkanGraphicDevice::getFrameIndex(SwapchainHandle handle, FrameHandle frame)
 {
-	return m_swapchain.getVkFrameIndex(frame);
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	return vk_swapchain->getVkFrameIndex(frame);
 }
 
-CommandList* VulkanGraphicDevice::getCopyCommandList(FrameHandle frame)
+CommandList* VulkanGraphicDevice::getCopyCommandList(SwapchainHandle handle, FrameHandle frame)
 {
-	VulkanFrame* vk_frame = const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(frame.__typedData));
+	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Copy)]->getCommandList();
 }
 
-CommandList* VulkanGraphicDevice::getGraphicCommandList(FrameHandle frame)
+CommandList* VulkanGraphicDevice::getGraphicCommandList(SwapchainHandle handle, FrameHandle frame)
 {
-	VulkanFrame* vk_frame = const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(frame.__typedData));
+	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Graphic)]->getCommandList();
 }
 
-CommandList* VulkanGraphicDevice::getComputeCommandList(FrameHandle frame)
+CommandList* VulkanGraphicDevice::getComputeCommandList(SwapchainHandle handle, FrameHandle frame)
 {
-	VulkanFrame* vk_frame = const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(frame.__typedData));
+	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Compute)]->getCommandList();
 }
 

@@ -110,11 +110,24 @@ public:
 	// Framebuffer
 	FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count = 1, const Attachment* depth = nullptr) override;
 	void destroy(FramebufferHandle handle) override;
-	void destroy(BackbufferHandle handle) override;
-	BackbufferHandle createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments = nullptr, uint32_t _count = 0, const Attachment* _depth = nullptr) override;
-	FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
-	void getBackbufferSize(uint32_t& width, uint32_t& height) override;
+
+	// Surface
+	SurfaceHandle createSurface(const char* name, PlatformWindow* window) override;
+	const Surface* get(SurfaceHandle handle) override;
+	void destroy(SurfaceHandle handle) override;
+
+	// Swapchain
+	SwapchainHandle createSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) override;
+	void destroy(SwapchainHandle backbuffer) override;
+	const Swapchain* get(SwapchainHandle swapchain) override;
+	BackbufferHandle createBackbuffer(const char* _name, SwapchainHandle swapchainHandle, RenderPassHandle _handle, const Attachment* _additionalAttachments = nullptr, uint32_t _count = 0, const Attachment* _depth = nullptr) override;
+	void destroy(SwapchainHandle _swapchainHandle, BackbufferHandle handle) override;
+	FramebufferHandle get(BackbufferHandle handle, SwapchainHandle _swapchainHandle, FrameHandle frame) override;
+	SwapchainExtent getSwapchainExtent(SwapchainHandle handle) override;
+	TextureFormat getSwapchainFormat(SwapchainHandle handle) override;
+	uint32_t getSwapchainImageCount(SwapchainHandle handle) override;
+	void resize(SwapchainHandle handle, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) override;
 
 	// RenderPass
 	RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) override;
@@ -165,16 +178,17 @@ public:
 	void endMarker(QueueType queue) override;
 
 	// Frame command lists
-	FrameIndex getFrameIndex(FrameHandle frame) override;
-	CommandList* getCopyCommandList(FrameHandle frame) override;
-	CommandList* getGraphicCommandList(FrameHandle frame) override;
-	CommandList* getComputeCommandList(FrameHandle frame) override;
-	CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) override;
-	void release(FrameHandle frame, CommandEncoder* cmd) override;
+	FrameIndex getFrameIndex(SwapchainHandle handle, FrameHandle frame) override;
+	CommandList* getCopyCommandList(SwapchainHandle handle, FrameHandle frame) override;
+	CommandList* getGraphicCommandList(SwapchainHandle handle, FrameHandle frame) override;
+	CommandList* getComputeCommandList(SwapchainHandle handle, FrameHandle frame) override;
+	CommandEncoder* acquireCommandEncoder(SwapchainHandle handle, FrameHandle frame, QueueType queue) override;
+	void release(SwapchainHandle handle, FrameHandle frame, CommandEncoder* cmd) override;
 
 	// Frame
-	FrameHandle frame() override;
-	SwapchainStatus present(FrameHandle frame) override;
+	const Frame* get(FrameHandle handle) override;
+	FrameHandle frame(SwapchainHandle handle) override;
+	SwapchainStatus present(SwapchainHandle handle, FrameHandle frame) override;
 	void wait() override;
 
 	// Tools
@@ -190,8 +204,6 @@ public:
 	}
 
 public:
-	uint32_t getSwapchainImageCount() { return m_swapchain.getImageCount(); }
-public:
 	VkInstance getVkInstance() { return m_context.instance; }
 	VkDevice getVkDevice() { return m_context.device; }
 	VkPhysicalDevice getVkPhysicalDevice() { return m_context.physicalDevice; }
@@ -200,7 +212,6 @@ public:
 	VkQueue getVkPresentQueue();
 	uint32_t getVkQueueIndex(QueueType queue);
 	uint32_t getVkPresentQueueIndex();
-	VkSurfaceKHR getVkSurface() { return m_context.surface; }
 	VkRenderPass getVkRenderPass(const RenderPassState& state) { return m_context.getRenderPass(state); }
 	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state) { return m_context.getDescriptorSetLayout(state); }
 	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount) { return m_context.getPipelineLayout(layouts, layoutCount, constants, constantCount); }
@@ -218,7 +229,7 @@ private:
 private:
 	friend class VulkanSwapchain;
 	VulkanContext m_context;
-	VulkanSwapchain m_swapchain;
+	//VulkanSwapchain m_swapchain;
 	// Improve upload / download with persistent staging memory
 	const uint32_t m_stagingUploadHeapSize = 1 << 23; // 8 Mo
 	VkDeviceMemory m_stagingUploadMemory = VK_NULL_HANDLE;
@@ -243,6 +254,8 @@ private: // Pools
 	Pool<VulkanDescriptorSet> m_descriptorSetPool;
 	Pool<VulkanDescriptorPool> m_descriptorPoolPool;
 	Pool<VulkanFence> m_fencePool;
+	Pool<VulkanSwapchain> m_swapchainPool;
+	Pool<VulkanSurface> m_surfacePool;
 	Pool<VulkanCommandEncoder> m_commandEncoderPool;
 };
 

@@ -218,7 +218,7 @@ struct Position
 
 struct Keyboard 
 {
-	friend class PlatformDevice;
+	friend class PlatformWindow;
 	// Is key just pressed
 	bool down(KeyboardKey key) const;
 	// Is key just released
@@ -245,7 +245,7 @@ protected:
 
 struct Mouse
 {
-	friend class PlatformDevice;
+	friend class PlatformWindow;
 	// Is mouse button just pressed
 	bool down(MouseButton button) const;
 	// Is mouse button just released
@@ -278,7 +278,7 @@ enum class GamepadID : unsigned int {};
 
 struct Gamepad
 {
-	friend class PlatformDevice;
+	friend class PlatformWindow;
 	// Get gamepad name
 	const char* name(GamepadID gid) const;
 	// Is gamepad button just pressed

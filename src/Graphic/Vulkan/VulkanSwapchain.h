@@ -2,6 +2,7 @@
 
 #include "VulkanContext.h"
 #include <Aka/Core/Container/Vector.h>
+#include <Aka/Graphic/Swapchain.h>
 #include <Aka/Core/Event.h>
 
 #include "VulkanFramebuffer.h"
@@ -32,6 +33,19 @@ struct VulkanFrame : Frame
 	Vector<VulkanCommandEncoder*> commandEncoders[EnumCount<QueueType>()];
 };
 
+class VulkanSurface : public Surface
+{
+public:
+	VulkanSurface(const char* name, PlatformWindow* window);
+
+	void create(VulkanGraphicDevice* device);
+	void destroy(VulkanGraphicDevice* device);
+
+	static VkSurfaceKHR createSurface(VulkanGraphicDevice* device, PlatformWindow* platform);
+
+	VkSurfaceKHR vk_surface;
+};
+
 
 struct BackBufferTextures
 {
@@ -42,16 +56,17 @@ struct BackBufferTextures
 class VulkanGraphicDevice;
 
 class VulkanSwapchain : 
+	public Swapchain,
 	EventListener<BackbufferResizeEvent>
 {
 public:
-	VulkanSwapchain();
+	VulkanSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type);
 
-	bool initialize(VulkanGraphicDevice* device, PlatformDevice* platform);
+	bool initialize(VulkanGraphicDevice* device);
 	void shutdown(VulkanGraphicDevice* device);
 
 	void onReceive(const BackbufferResizeEvent& e) override;
-	void recreate(VulkanGraphicDevice* device);
+	void recreate(VulkanGraphicDevice* device, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type);
 
 	VulkanFrame* acquireNextImage(VulkanGraphicDevice* context);
 	SwapchainStatus present(VulkanGraphicDevice* device, VulkanFrame& frame);
@@ -60,20 +75,14 @@ public:
 	Backbuffer* getBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 	void destroyBackbuffer(VulkanGraphicDevice* device, BackbufferHandle handle);
 
-	uint32_t getImageCount() const { return m_imageCount; }
 	FrameIndex getCurrentFrameIndex() const { return m_currentFrameIndex; }
-	TextureFormat getColorFormat() const { return m_colorFormat; }
-	TextureFormat getDepthFormat() const { return m_depthFormat; }
 
 	VulkanFrame& getVkFrame(FrameHandle handle);
 	FrameIndex getVkFrameIndex(FrameHandle handle);
 	VulkanFrame& getVkFrame(FrameIndex index) { return m_frames[index.value()]; }
 	const VulkanFrame& getVkFrame(FrameIndex index) const { return m_frames[index.value()]; }
-
-	uint32_t width() const { return m_width; }
-	uint32_t height() const { return m_height; }
 private:
-	void createSwapchain(VulkanGraphicDevice* _device, PlatformDevice* _platform, VkSwapchainKHR _oldSwapchain);
+	void createSwapchain(VulkanGraphicDevice* _device, VkSwapchainKHR _oldSwapchain);
 	void createImageViews(VulkanGraphicDevice* _device);
 	void createFrames(VulkanGraphicDevice* _device);
 
@@ -85,18 +94,12 @@ private:
 	void recreateFramebuffers(VulkanGraphicDevice* _device);
 private:
 	bool m_needRecreation;
-	uint32_t m_width, m_height;
 	VkFormat m_surfaceFormat;
-	PlatformDevice* m_platform;
 	VkSwapchainKHR m_swapchain;
-	//VkSurfaceKHR m_surface;
-	uint32_t m_imageCount;
 	FrameIndex m_currentFrameIndex;
 	VulkanFrame m_frames[MaxFrameInFlight];
 
 	std::unordered_map<BackbufferHandle, Backbuffer> m_backbuffers;
-	TextureFormat m_colorFormat;
-	TextureFormat m_depthFormat;
 	Vector<BackBufferTextures> m_backbufferTextures;
 };
 

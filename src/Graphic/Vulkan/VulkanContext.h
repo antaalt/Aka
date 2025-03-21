@@ -150,7 +150,6 @@ struct VulkanContext
 	VkPhysicalDevice physicalDevice;
 	PhysicalDeviceFeatures physicalDeviceFeatures;
 	PhysicalDeviceLimits physicalDeviceLimits;
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	// swapchain
 	VulkanQueue queues[EnumCount<QueueType>()];
 	VulkanQueue presentQueue;
@@ -174,7 +173,6 @@ private:
 	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout; // Should not cache this, heavy to cache, and not that useful...
 private:
 	VkInstance createInstance(const char** instanceExtensions, size_t instanceExtensionCount);
-	VkSurfaceKHR createSurface(PlatformDevice* platform);
 	const char** getPlatformRequiredInstanceExtension(const PlatformDevice* platform, uint32_t* count);
 	std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> pickPhysicalDevice(PhysicalDeviceFeatures _requestedFeatures);
 	VkDevice createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount);

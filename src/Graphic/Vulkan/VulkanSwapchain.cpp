@@ -10,6 +10,96 @@
 namespace aka {
 namespace gfx {
 
+VulkanSurface::VulkanSurface(const char* name, PlatformWindow* window) :
+	Surface(name, window),
+	vk_surface(VK_NULL_HANDLE)
+{
+
+}
+void VulkanSurface::create(VulkanGraphicDevice* device)
+{
+	vk_surface = createSurface(device, window);
+}
+void VulkanSurface::destroy(VulkanGraphicDevice* device)
+{
+	vkDestroySurfaceKHR(device->getVkInstance(), vk_surface, getVkAllocator());
+	vk_surface = VK_NULL_HANDLE;
+}
+VkSurfaceKHR VulkanSurface::createSurface(VulkanGraphicDevice* device, PlatformWindow* window)
+{
+	VkSurfaceKHR surface;
+	VK_CHECK_RESULT(glfwCreateWindowSurface(
+		device->getVkInstance(),
+		reinterpret_cast<PlatformWindowGLFW3*>(window)->getGLFW3Handle(), // TODO: other platform.
+		getVkAllocator(),
+		&surface
+	));
+	return surface;
+}
+SurfaceHandle VulkanGraphicDevice::createSurface(const char* name, PlatformWindow* window)
+{
+	VulkanSurface* vk_surface = m_surfacePool.acquire(name, window);
+	vk_surface->create(this);
+	return SurfaceHandle{ vk_surface };
+}
+const Surface* VulkanGraphicDevice::get(SurfaceHandle handle)
+{
+	return static_cast<const Surface*>(handle.__data);
+}
+void VulkanGraphicDevice::destroy(SurfaceHandle handle)
+{
+	if (handle == SurfaceHandle::null) return;
+
+	VulkanSurface* vk_surface = getVk<VulkanSurface>(handle);
+	vk_surface->destroy(this);
+
+	m_surfacePool.release(vk_surface);
+}
+
+SwapchainHandle VulkanGraphicDevice::createSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type)
+{
+	VulkanSwapchain* vk_swapchain = m_swapchainPool.acquire(name, surface, width, height, format, mode, type);
+	vk_swapchain->initialize(this);
+
+	return SwapchainHandle{ vk_swapchain };
+}
+void VulkanGraphicDevice::destroy(SwapchainHandle swapchain)
+{
+	if (swapchain == SwapchainHandle::null) return;
+
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(swapchain);
+	vk_swapchain->shutdown(this);
+
+	m_swapchainPool.release(vk_swapchain);
+}
+const Swapchain* VulkanGraphicDevice::get(SwapchainHandle swapchain)
+{
+	return static_cast<const Swapchain*>(swapchain.__data);
+}
+SwapchainExtent VulkanGraphicDevice::getSwapchainExtent(SwapchainHandle handle)
+{
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	return SwapchainExtent{
+		vk_swapchain->width,
+		vk_swapchain->height
+	};
+}
+TextureFormat VulkanGraphicDevice::getSwapchainFormat(SwapchainHandle handle)
+{
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	return vk_swapchain->format;
+}
+uint32_t VulkanGraphicDevice::getSwapchainImageCount(SwapchainHandle handle)
+{
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	return vk_swapchain->imageCount;
+}
+void VulkanGraphicDevice::resize(SwapchainHandle handle, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type)
+{
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	vk_swapchain->recreate(this, width, height, format, mode, type);
+}
+
 VkSurfaceFormatKHR getSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
 	uint32_t formatCount;
@@ -67,20 +157,23 @@ VkPresentModeKHR getPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR su
 
 	return bestMode;
 }
-VkExtent2D getSurfaceExtent(VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window)
+
+VkExtent2D getSurfaceExtent(VkSurfaceCapabilitiesKHR& capabilities, uint32_t w, uint32_t h)
 {
+	// TODO: if we are in borderless, take capabilities.maxImageExtent instead.
+	// Need to move this up to App.
+	// App should not store width & height & instead retrieve swapchain interface from device, & request extent struct.
+	
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
 		return capabilities.currentExtent;
 	}
 	else
 	{
-		int w, h;
-		glfwGetFramebufferSize(window, &w, &h);
 		return VkExtent2D{
-			max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, static_cast<uint32_t>(w))),
-			max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, static_cast<uint32_t>(h)))
-		};;
+			max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, w)),
+			max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, h))
+		};
 	}
 }
 
@@ -119,27 +212,22 @@ bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-VulkanSwapchain::VulkanSwapchain() : 
+VulkanSwapchain::VulkanSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) :
+	Swapchain(name, surface, width, height, format, mode, type),
 	m_needRecreation(false),
-	m_width(0),
-	m_height(0),
 	m_surfaceFormat(VK_FORMAT_UNDEFINED),
-	m_platform(nullptr),
 	m_swapchain(VK_NULL_HANDLE),
-	m_imageCount(0),
 	m_currentFrameIndex{ 0 },
 	m_frames{},
 	m_backbuffers{},
-	m_colorFormat(TextureFormat::Unknown),
-	m_depthFormat(TextureFormat::Unknown),
 	m_backbufferTextures{}
 {
 }
 
-bool VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* platform)
+bool VulkanSwapchain::initialize(VulkanGraphicDevice* device)
 {
 	AKA_ASSERT(m_swapchain == VK_NULL_HANDLE, "Cannot call initialize with already initialized swapchain.");
-	createSwapchain(device, platform, VK_NULL_HANDLE);
+	createSwapchain(device, VK_NULL_HANDLE);
 	createImageViews(device);
 	createFrames(device);
 	return true;
@@ -148,10 +236,8 @@ bool VulkanSwapchain::initialize(VulkanGraphicDevice* device, PlatformDevice* pl
 void VulkanSwapchain::shutdown(VulkanGraphicDevice* _device)
 {
 	m_needRecreation = false;
-	m_imageCount = 0;
+	imageCount = 0;
 	m_currentFrameIndex = FrameIndex(0);
-	m_colorFormat = TextureFormat::Unknown;
-	m_depthFormat = TextureFormat::Unknown;
 	destroyFrames(_device);
 	destroyFramebuffers(_device);
 	destroyImageViews(_device);
@@ -160,28 +246,21 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* _device)
 
 void VulkanSwapchain::onReceive(const BackbufferResizeEvent& e)
 {
-	if (e.width != m_width || e.height != m_height)
+	if (e.width != this->width || e.height != this->height)
 	{
 		m_needRecreation = true;
 	}
 }
 
-void VulkanSwapchain::recreate(VulkanGraphicDevice* _device)
+void VulkanSwapchain::recreate(VulkanGraphicDevice* _device, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type)
 {
-	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(m_platform);
-	int width = 0, height = 0;
-	glfwGetFramebufferSize(glfw3->getGLFW3Handle(), &width, &height);
-	while (width == 0 || height == 0) // Wait while window minimized
-	{
-		glfwGetFramebufferSize(glfw3->getGLFW3Handle(), &width, &height);
-		glfwWaitEvents();
-	}
-
 	_device->wait();
 
 	destroyImageViews(_device);
 	VkSwapchainKHR oldSwapchain = m_swapchain;
-	createSwapchain(_device, m_platform, m_swapchain);
+	this->width = width;
+	this->height = height;
+	createSwapchain(_device, m_swapchain);
 	createImageViews(_device);
 	vkDestroySwapchainKHR(_device->getVkDevice(), oldSwapchain, getVkAllocator());
 	recreateFramebuffers(_device);
@@ -215,15 +294,15 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		recreate(device);
+		recreate(device, this->width, this->height, this->format, this->mode, this->type);
 		return nullptr; // Do not draw this frame.
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		AKA_ASSERT(false, "Failed to acquire swapchain image");
 	}
-	AKA_ASSERT(imageIndex < getImageCount(), "Invalid image index");
-	AKA_ASSERT(MaxFrameInFlight <= getImageCount(), "More frames in flight than image available. May induce bugs in application.");
+	AKA_ASSERT(imageIndex < imageCount, "Invalid image index");
+	AKA_ASSERT(MaxFrameInFlight <= imageCount, "More frames in flight than image available. May induce bugs in application.");
 
 	// Only reset the fence if we are submitting work
 	VkFence fences[EnumCount<QueueType>()] = {
@@ -261,7 +340,7 @@ SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFram
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_needRecreation)
 	{
 		m_needRecreation = false;
-		recreate(device);
+		recreate(device, this->width, this->height, this->format, this->mode, this->type);
 		status = SwapchainStatus::Recreated;
 	}
 	else if (result != VK_SUCCESS)
@@ -283,7 +362,7 @@ BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, 
 	// Create a framebuffer for backbuffer compatible with given render pass.
 	Backbuffer backbuffer(String::format("Backbuffer%ul", bbhandle).cstr());
 	backbuffer.renderPass = handle;
-	for (uint32_t i = 0; i < m_imageCount; i++)
+	for (uint32_t i = 0; i < imageCount; i++)
 	{
 		Vector<Attachment> attachments;
 		attachments.append(Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 });
@@ -319,30 +398,28 @@ void VulkanSwapchain::destroyBackbuffer(VulkanGraphicDevice* device, BackbufferH
 	// Should ref count state to do not destroy shared backbuffer.
 }
 
-void VulkanSwapchain::createSwapchain(VulkanGraphicDevice* _device, PlatformDevice* _platform, VkSwapchainKHR _oldSwapchain)
+void VulkanSwapchain::createSwapchain(VulkanGraphicDevice* _device, VkSwapchainKHR _oldSwapchain)
 {
-	PlatformGLFW3* glfw3 = reinterpret_cast<PlatformGLFW3*>(_platform);
-	m_platform = _platform;
-
+	VulkanSurface* vk_surface = _device->getVk<VulkanSurface>(this->surface);
 	VkSurfaceCapabilitiesKHR capabilities;
-	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device->getVkPhysicalDevice(), _device->getVkSurface(), &capabilities));
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device->getVkPhysicalDevice(), vk_surface->vk_surface, &capabilities));
 
-	VkSurfaceFormatKHR surfaceFormat = getSurfaceFormat(_device->getVkPhysicalDevice(), _device->getVkSurface());
-	VkPresentModeKHR bestMode = getPresentMode(_device->getVkPhysicalDevice(), _device->getVkSurface());
-	VkExtent2D extent = getSurfaceExtent(capabilities, glfw3->getGLFW3Handle());
-	m_imageCount = capabilities.minImageCount + 1; // Request more than the minimum to avoid driver overhead
+	VkSurfaceFormatKHR surfaceFormat = getSurfaceFormat(_device->getVkPhysicalDevice(), vk_surface->vk_surface);
+	VkPresentModeKHR bestMode = getPresentMode(_device->getVkPhysicalDevice(), vk_surface->vk_surface);
+	VkExtent2D extent = getSurfaceExtent(capabilities, width, height);
+	imageCount = capabilities.minImageCount + 1; // Request more than the minimum to avoid driver overhead
 	if (capabilities.maxImageCount == 0) // Unlimited count allowed
 		capabilities.maxImageCount = 4;
-	m_imageCount = clamp(gfx::MaxFrameInFlight + 1, capabilities.minImageCount, capabilities.maxImageCount);
+	imageCount = clamp(gfx::MaxFrameInFlight + 1, capabilities.minImageCount, capabilities.maxImageCount);
 	m_surfaceFormat = surfaceFormat.format;
-	m_width = extent.width;
-	m_height = extent.height;
+	this->width = extent.width;
+	this->height = extent.height;
 
 	// Create swapchain
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = _device->getVkSurface();
-	createInfo.minImageCount = m_imageCount;
+	createInfo.surface = vk_surface->vk_surface;
+	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = extent;
@@ -386,21 +463,19 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 {
 	VkFormat vk_depthFormat = findDepthFormat(_device->getVkPhysicalDevice());
 	VkFormat vk_colorFormat = m_surfaceFormat;
-	// TODO convert vulkan format to aka format
-	m_colorFormat = TextureFormat::BGRA8;
-	m_depthFormat = TextureFormat::Depth32F;
-	AKA_ASSERT(VulkanContext::tovk(m_colorFormat) == vk_colorFormat, "Invalid color format");
-	AKA_ASSERT(VulkanContext::tovk(m_depthFormat) == vk_depthFormat, "Invalid depth format");
+	// TODO: convert vulkan format to aka format
+	this->format = TextureFormat::BGRA8;
+	AKA_ASSERT(VulkanContext::tovk(this->format) == vk_colorFormat, "Invalid color format");
 
 	const bool hasDepth = true;
 	const bool hasStencil = false;
 	// Get images & layout
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device->getVkDevice(), m_swapchain, &m_imageCount, nullptr));
-	Vector<VkImage> vk_images(m_imageCount);
-	m_backbufferTextures.resize(m_imageCount);
-	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device->getVkDevice(), m_swapchain, &m_imageCount, vk_images.data()));
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device->getVkDevice(), m_swapchain, &imageCount, nullptr));
+	Vector<VkImage> vk_images(imageCount);
+	m_backbufferTextures.resize(imageCount);
+	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device->getVkDevice(), m_swapchain, &imageCount, vk_images.data()));
 
-	for (size_t i = 0; i < m_imageCount; i++)
+	for (size_t i = 0; i < imageCount; i++)
 	{
 		// Create swapchain view
 		VkImageViewCreateInfo viewInfo{};
@@ -419,10 +494,10 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 
 		// Create color texture
 		String str = String::format("SwapChain%u", i);
-		VulkanTexture* vk_colorTexture = _device->m_texturePool.acquire(str.cstr(), m_width, m_height, 1,
+		VulkanTexture* vk_colorTexture = _device->m_texturePool.acquire(str.cstr(), this->width, this->height, 1,
 			TextureType::Texture2D,
 			1, 1,
-			m_colorFormat,
+			this->format,
 			TextureUsage::RenderTarget
 		);
 		// Cannot transition color images yet as they are not acquired.
@@ -432,7 +507,7 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		setDebugName(_device->getVkDevice(), vk_images[i], "SwapchainColor", i);
 		setDebugName(_device->getVkDevice(), view, "SwapchainColorView", i);
 		_device->executeVk("Transition backbuffer after creation", [&](VulkanCommandList& cmd) {
-			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(), cmd.getQueueType(), vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, m_colorFormat);
+			VulkanTexture::transitionImageLayout(cmd.getVkCommandBuffer(), cmd.getQueueType(), vk_images[i], ResourceAccessType::Undefined, ResourceAccessType::Present, this->format);
 		}, QueueType::Graphic, false);
 		// No memory
 
@@ -490,8 +565,8 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 		RenderPassState state = _device->get(backbuffer.renderPass)->state;
 		AKA_ASSERT(bbhandle.__data == (void*)std::hash<RenderPassState>{}(state), "Invalid render pass");
 		
-		Vector<Vector<Attachment>> attachments(m_imageCount);
-		Vector<Attachment> depthAttachment(m_imageCount, {});
+		Vector<Vector<Attachment>> attachments(imageCount);
+		Vector<Attachment> depthAttachment(imageCount, {});
 		if (backbuffer.handles.size() > 0)
 		{
 			VulkanFramebuffer* vk_framebuffer = _device->getVk<VulkanFramebuffer>(backbuffer.handles.first());
@@ -500,21 +575,21 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 				{
 					if (state.colors[iAtt].format == TextureFormat::Swapchain)
 					{
-						for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+						for (uint32_t iImage = 0; iImage < imageCount; iImage++)
 							attachments[iImage].append(Attachment{ m_backbufferTextures[iImage].color, AttachmentFlag::None, 0, 0 });
 						continue; // Dont resize swapchain here.
 					}
 					else
 					{
-						for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+						for (uint32_t iImage = 0; iImage < imageCount; iImage++)
 							attachments[iImage].append(Attachment{ vk_framebuffer->colors[iAtt].texture, AttachmentFlag::None, 0, 0 });
 					}
 					if (asBool(vk_framebuffer->colors[iAtt].flag & AttachmentFlag::BackbufferAutoResize))
 					{
 						VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->colors[iAtt].texture);
 						attachment->destroy(_device);
-						attachment->width = m_width;
-						attachment->height = m_height;
+						attachment->width = this->width;
+						attachment->height = this->height;
 						attachment->create(_device);
 						// Ensure valid transitions
 						ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
@@ -530,14 +605,14 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 				}
 				if (vk_framebuffer->depth.texture != gfx::TextureHandle::null)
 				{
-					for (uint32_t iImage = 0; iImage < m_imageCount; iImage++)
+					for (uint32_t iImage = 0; iImage < imageCount; iImage++)
 						depthAttachment[iImage] = vk_framebuffer->depth;
 					if (asBool(vk_framebuffer->depth.flag & AttachmentFlag::BackbufferAutoResize))
 					{
 						VulkanTexture* attachment = _device->getVk<VulkanTexture>(vk_framebuffer->depth.texture);
 						attachment->destroy(_device);
-						attachment->width = m_width;
-						attachment->height = m_height;
+						attachment->width = this->width;
+						attachment->height = this->height;
 						attachment->create(_device);
 						// Ensure valid transitions
 						ResourceAccessType finalAccessType = getInitialResourceAccessType(attachment->format, attachment->flags);
@@ -561,7 +636,7 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 		}
 		backbuffer.handles.clear();
 		// Recreate framebuffer
-		for (uint32_t i = 0; i < m_imageCount; i++)
+		for (uint32_t i = 0; i < imageCount; i++)
 		{
 			Attachment* pDepthAttachment = depthAttachment[i].texture != TextureHandle::null ? &depthAttachment[i] : nullptr;
 			Attachment* pAdditionalAttachments = attachments[i].data();

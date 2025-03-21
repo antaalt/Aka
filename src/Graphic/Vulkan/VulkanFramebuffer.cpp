@@ -99,35 +99,31 @@ void VulkanGraphicDevice::destroy(FramebufferHandle framebuffer)
 	m_framebufferPool.release(vk_framebuffer);
 }
 
-void VulkanGraphicDevice::destroy(BackbufferHandle handle)
+void VulkanGraphicDevice::destroy(SwapchainHandle _swapchainHandle, BackbufferHandle handle)
 {
-	m_swapchain.destroyBackbuffer(this, handle);
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(_swapchainHandle);
+	vk_swapchain->destroyBackbuffer(this, handle);
 }
 
-BackbufferHandle VulkanGraphicDevice::createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depthAttachment)
+BackbufferHandle VulkanGraphicDevice::createBackbuffer(const char* _name, SwapchainHandle _swapchainHandle, RenderPassHandle _handle, const Attachment* _additionalAttachments, uint32_t _count, const Attachment* _depthAttachment)
 {
 	AKA_ASSERT(_handle != RenderPassHandle::null, "No render pass set.");
 	if (_count + 1 > FramebufferMaxColorAttachmentCount)
 		return BackbufferHandle::null;
-	return m_swapchain.createBackbuffer(this, _handle, _additionalAttachments, _count, _depthAttachment);
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(_swapchainHandle);
+	return vk_swapchain->createBackbuffer(this, _handle, _additionalAttachments, _count, _depthAttachment);
 }
 
-FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, FrameHandle frame)
+FramebufferHandle VulkanGraphicDevice::get(BackbufferHandle handle, SwapchainHandle _swapchainHandle, FrameHandle frame)
 {
-	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
-	return m_swapchain.getBackbuffer(this, handle)->handles[vk_frame.getImageIndex().value()];
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(_swapchainHandle);
+	VulkanFrame& vk_frame = vk_swapchain->getVkFrame(frame);
+	return vk_swapchain->getBackbuffer(this, handle)->handles[vk_frame.getImageIndex().value()];
 }
 
 const Framebuffer* VulkanGraphicDevice::get(FramebufferHandle handle)
 {
 	return static_cast<const Framebuffer*>(handle.__data);
-}
-
-void VulkanGraphicDevice::getBackbufferSize(uint32_t& width, uint32_t& height)
-{
-	// TODO handle when rendering offscreen
-	width = m_swapchain.width();
-	height = m_swapchain.height();
 }
 
 };

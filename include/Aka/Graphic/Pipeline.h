@@ -6,6 +6,7 @@
 #include <Aka/Graphic/Framebuffer.h>
 #include <Aka/Graphic/RenderPass.h>
 #include <Aka/Graphic/Resource.h>
+#include <Aka/Graphic/Swapchain.h>
 #include <Aka/Core/Container/Vector.h>
 #include <Aka/OS/Image.h>
 
@@ -465,6 +466,7 @@ struct ViewportState
 	Rect viewport;
 	Rect scissor;
 	ViewportFlags flags = ViewportFlags::None;
+	gfx::SwapchainHandle swapchain = gfx::SwapchainHandle::null;
 
 	ViewportState& offset(int32_t x, int32_t y) 
 	{
@@ -480,6 +482,14 @@ struct ViewportState
 		viewport.h = h;
 		scissor.w = w;
 		scissor.h = h;
+		return *this;
+	}
+	ViewportState& backbuffer(gfx::SwapchainHandle _swapchain)
+	{
+		// Need reference to swapchain in order to track size.
+		// TODO: this will break on swapchain recreation...
+		flags |= ViewportFlags::BackbufferAutoResize;
+		swapchain = _swapchain;
 		return *this;
 	}
 };
@@ -536,7 +546,8 @@ struct RaytracingPipeline : Resource
 const VertexState VertexStateEmpty = VertexState{};
 
 // Viewport
-const ViewportState ViewportStateBackbuffer = ViewportState{ Rect{}, Rect{}, ViewportFlags::BackbufferAutoResize };
+//const ViewportState ViewportStateBackbuffer = ViewportState{ Rect{}, Rect{}, ViewportFlags::BackbufferAutoResize, gfx::SwapchainHandle::null };
+const ViewportState ViewportStateDefault = ViewportState{ Rect{0, 0, 1, 1}, Rect{0, 0, 1, 1}, ViewportFlags::None, gfx::SwapchainHandle::null };
 
 // Blending
 const BlendState BlendStateNormal = BlendState{ BlendMode::One, BlendMode::Zero, BlendOp::Add, BlendMode::One, BlendMode::Zero, BlendOp::Add, ColorMask::Rgba, 0xffffffff };

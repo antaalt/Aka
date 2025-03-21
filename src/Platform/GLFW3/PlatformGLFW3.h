@@ -7,13 +7,13 @@ struct GLFWwindow;
 
 namespace aka {
 
-class PlatformGLFW3 : public PlatformDevice
+class PlatformWindowGLFW3 : public PlatformWindow
 {
 public:
-	PlatformGLFW3(const PlatformConfig& config);
-	~PlatformGLFW3();
+	PlatformWindowGLFW3(const PlatformWindowConfig& cfg);
+	~PlatformWindowGLFW3();
 
-	void initialize(const PlatformConfig& config) override;
+	void initialize() override;
 	void shutdown() override;
 
 	void poll() override;
@@ -25,6 +25,19 @@ public:
 	void* getNativeHandle();
 private:
 	GLFWwindow* m_window;
+};
+
+class PlatformGLFW3 : public PlatformDevice
+{
+public:
+	PlatformGLFW3();
+	~PlatformGLFW3();
+
+	void initialize() override;
+	void shutdown() override;
+
+	PlatformWindow* createWindow(const PlatformWindowConfig& cfg) override;
+	void destroyWindow(PlatformWindow* window) override;
 };
 
 };

@@ -19,15 +19,14 @@ Application* Application::s_app = nullptr;
 
 Application::Application(const Config& config) :
 	m_config((OS::setcwd(config.directory), config)), // Some comma operator magic !
-	m_platform(PlatformDevice::create(config.platform)),
+	m_platform(PlatformDevice::create()),
+	m_window(nullptr), // Deferred creation
+	m_windowInitConfig(config.platform),
 	m_graphic(gfx::GraphicDevice::create(config.graphic.api)),
 	m_audio(AudioDevice::create(config.audio)),
 	m_program(mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Object, AllocatorCategory::Graphic)),
 	m_assets(mem::akaNew<AssetLibrary>(AllocatorMemoryType::Object, AllocatorCategory::Assets)),
 	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Object, AllocatorCategory::Global)),
-	m_needClientResize(false),
-	m_width(0),
-	m_height(0),
 	m_running(true),
 	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_graphic, m_assets))
 {
@@ -38,6 +37,7 @@ Application::Application(const Config& config) :
 Application::~Application()
 {
 	// Destroy all pointers
+	m_platform->destroyWindow(m_window);
 	AudioDevice::destroy(m_audio);
 	gfx::GraphicDevice::destroy(m_graphic);
 	PlatformDevice::destroy(m_platform);
@@ -55,13 +55,13 @@ bool Application::create()
 	AKA_ASSERT(m_assets != nullptr, "No assets");
 	AKA_ASSERT(m_root != nullptr, "No layers");
 
-	m_platform->initialize(m_config.platform);
+	m_platform->initialize();
+	m_window = m_platform->createWindow(m_windowInitConfig);
 	if (!m_graphic->initialize(m_platform, m_config.graphic))
 		return false;
+	m_window->initialize(m_graphic);
 	m_audio->initialize(m_config.audio);
 	m_renderer->create();
-	m_width = m_config.platform.width;
-	m_height = m_config.platform.height;
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
 	m_root->create(renderer());
 	onCreate(m_config.argc, m_config.argv);
@@ -124,13 +124,12 @@ void Application::postRender()
 void Application::end()
 {
 }
-void Application::resize()
+void Application::resize(uint32_t width, uint32_t height)
 {
-	m_needClientResize = false;
-	EventDispatcher<AppResizeEvent>::trigger(AppResizeEvent{ m_width, m_height });
-	m_renderer->resize(m_width, m_height);
-	m_root->resize(m_width, m_height);
-	onResize(m_width, m_height);
+	EventDispatcher<AppResizeEvent>::trigger(AppResizeEvent{ width, height });
+	m_renderer->resize(width, height);
+	m_root->resize(width, height);
+	onResize(width, height);
 
 }
 void Application::onReceive(const WindowResizeEvent& event)
@@ -141,16 +140,6 @@ void Application::onReceive(const WindowResizeEvent& event)
 void Application::onReceive(const QuitEvent& event)
 {
 	m_running = false;
-}
-
-uint32_t Application::width() const
-{
-	return m_width;
-}
-
-uint32_t Application::height() const
-{
-	return m_height;
 }
 
 Layer& Application::getRoot()
@@ -176,6 +165,10 @@ Renderer* aka::Application::renderer()
 PlatformDevice* Application::platform()
 {
 	return m_platform;
+}
+PlatformWindow* Application::window()
+{
+	return m_window;
 }
 
 AudioDevice* Application::audio()
@@ -207,6 +200,8 @@ void Application::run(Application* app)
 	gfx::GraphicDevice* graphic = app->m_graphic;
 	Renderer* renderer = app->m_renderer;
 	PlatformDevice* platform = app->m_platform;
+	PlatformWindow* window = app->m_window;
+	gfx::SwapchainHandle swapchain = window->swapchain();
 	
 	Time lastTick = Time::now();
 	Time accumulator = Time::zero();
@@ -223,31 +218,27 @@ void Application::run(Application* app)
 			app->fixedUpdate(timestep);
 			accumulator -= timestep;
 		}
-		platform->poll();
+		window->poll();
 		app->update(deltaTime);
 		// Rendering
-		gfx::FrameHandle frame = graphic->frame();
+		gfx::FrameHandle frame = graphic->frame(swapchain);
 		if (frame != gfx::FrameHandle::null)
 		{
 			app->preRender();
 			app->render(renderer, frame);
 			app->postRender();
-			gfx::SwapchainStatus status = graphic->present(frame);
+			gfx::SwapchainStatus status = graphic->present(swapchain, frame);
 			if (status == gfx::SwapchainStatus::Recreated)
 			{
-				app->m_needClientResize = true;
-				graphic->getBackbufferSize(app->m_width, app->m_height);
+				
+				gfx::SwapchainExtent extent = graphic->getSwapchainExtent(swapchain);
+				app->resize(extent.width, extent.height);
 			}
 		}
 		else
 		{
-			app->m_needClientResize = true;
-			graphic->getBackbufferSize(app->m_width, app->m_height);
-		}
-
-		if (app->m_needClientResize)
-		{
-			app->resize();
+			gfx::SwapchainExtent extent = graphic->getSwapchainExtent(swapchain);
+			app->resize(extent.width, extent.height);
 		}
 
 		app->end();

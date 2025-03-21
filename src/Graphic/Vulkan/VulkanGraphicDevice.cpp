@@ -14,15 +14,14 @@ namespace aka {
 namespace gfx {
 
 VulkanGraphicDevice::VulkanGraphicDevice() :
-	m_context(),
-	m_swapchain()
+	m_context()
 {
 }
 
 VulkanGraphicDevice::~VulkanGraphicDevice()
 {
 }
-
+// Should decorelate swapchain creation from device.
 bool VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConfig& cfg)
 {
 #ifdef ENABLE_RENDERDOC_CAPTURE
@@ -60,8 +59,6 @@ bool VulkanGraphicDevice::initialize(PlatformDevice* platform, const GraphicConf
 #endif
 	if (!m_context.initialize(platform, cfg))
 		return false;
-	if (!m_swapchain.initialize(this, platform))
-		return false;
 	// Create shared staging memory for improved upload
 	m_stagingUploadBuffer = VulkanBuffer::createVkBuffer(getVkDevice(), m_stagingUploadHeapSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 	m_stagingUploadMemory = VulkanBuffer::createVkDeviceMemory(getVkDevice(), getVkPhysicalDevice(), m_stagingUploadBuffer, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -86,7 +83,6 @@ void VulkanGraphicDevice::shutdown()
 	vkFreeMemory(getVkDevice(), m_stagingDownloadMemory, getVkAllocator());
 	vkDestroyBuffer(getVkDevice(), m_stagingDownloadBuffer, getVkAllocator());
 
-	m_swapchain.shutdown(this);
 	// Release all resources before destroying context.
 	// We still check if resources where cleanly destroyed before releasing the remains.
 	// TODO check recursive release issue
@@ -101,6 +97,8 @@ void VulkanGraphicDevice::shutdown()
 	m_computePipelinePool.release([this](VulkanComputePipeline& res) { Logger::warn("Leaking compute pipeline", res.name); this->destroy(ComputePipelineHandle{&res}); });
 	//m_descriptorSetPool.release([this](const VulkanDescriptorSet& res) { Logger::warn("Leaking descriptor set", res.name); this->free(DescriptorSetHandle{ &res }); });
 	m_descriptorPoolPool.release([this](const VulkanDescriptorPool& res) { Logger::warn("Leaking desciptor pool", res.name); this->destroy(DescriptorPoolHandle{ &res }); });
+	m_swapchainPool.release([this](const VulkanSwapchain& res) { Logger::warn("Leaking swapchain ", res.name); this->destroy(SwapchainHandle{ &res }); });
+	m_surfacePool.release([this](const VulkanSurface& res) { Logger::warn("Leaking surface ", res.name); this->destroy(SurfaceHandle{ &res }); });
 	m_renderPassPool.release([this](const VulkanRenderPass& res) { Logger::warn("Leaking render pass ", res.name); this->destroy(RenderPassHandle{ &res }); });
 	// Destroy context
 	m_context.shutdown();
@@ -123,30 +121,38 @@ PhysicalDeviceLimits VulkanGraphicDevice::getLimits() const
 	return m_context.physicalDeviceLimits;
 }
 
-CommandEncoder* VulkanGraphicDevice::acquireCommandEncoder(FrameHandle frame, QueueType queue)
+CommandEncoder* VulkanGraphicDevice::acquireCommandEncoder(SwapchainHandle handle, FrameHandle frame, QueueType queue)
 {
-	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	VulkanFrame& vk_frame = vk_swapchain->getVkFrame(frame);
 
 	return vk_frame.allocateCommand(this, queue);
 }
 
-void VulkanGraphicDevice::release(FrameHandle frame, CommandEncoder* cmd)
+void VulkanGraphicDevice::release(SwapchainHandle handle, FrameHandle frame, CommandEncoder* cmd)
 {
-	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
+	VulkanFrame& vk_frame = vk_swapchain->getVkFrame(frame);
 	return vk_frame.releaseCommand(reinterpret_cast<VulkanCommandEncoder*>(cmd));
 }
 
-FrameHandle VulkanGraphicDevice::frame()
+const Frame* VulkanGraphicDevice::get(FrameHandle handle)
 {
+	return static_cast<const Frame*>(handle.__data);
+}
+FrameHandle VulkanGraphicDevice::frame(SwapchainHandle handle)
+{
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	if (m_renderDocContext && m_captureState == RenderDocCaptureState::PendingCapture)
 	{
 		m_captureState = RenderDocCaptureState::Capturing;
-		m_renderDocContext->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), m_context.getPlatform()->getNativeHandle());
+		// Match all window by passing NULL
+		m_renderDocContext->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), NULL);
 		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
 	}
 #endif
-	VulkanFrame* vk_frame = m_swapchain.acquireNextImage(this);
+	VulkanFrame* vk_frame = vk_swapchain->acquireNextImage(this);
 	if (vk_frame == nullptr)
 	{
 		Logger::error("Failed to acquire next swapchain image.");
@@ -166,8 +172,9 @@ FrameHandle VulkanGraphicDevice::frame()
 	return FrameHandle{ vk_frame };
 }
 
-SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
+SwapchainStatus VulkanGraphicDevice::present(SwapchainHandle handle, FrameHandle frame)
 {
+	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
 	if (m_commandEncoderToRelease.size() > 0)
 	{
 		// Wait for queue to complete before presenting.
@@ -183,7 +190,7 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 		}
 		m_commandEncoderToRelease.clear();
 	}
-	VulkanFrame& vk_frame = m_swapchain.getVkFrame(frame);
+	VulkanFrame& vk_frame = vk_swapchain->getVkFrame(frame);
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
@@ -238,7 +245,7 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 	}
 
 	// Present
-	SwapchainStatus status = m_swapchain.present(this, vk_frame);
+	SwapchainStatus status = vk_swapchain->present(this, vk_frame);
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	// Capture frame
@@ -246,7 +253,7 @@ SwapchainStatus VulkanGraphicDevice::present(FrameHandle frame)
 	if (m_renderDocContext && m_captureState == RenderDocCaptureState::Capturing)
 	{
 		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
-		bool captureSucceeded = m_renderDocContext->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), m_context.getPlatform()->getNativeHandle());
+		bool captureSucceeded = m_renderDocContext->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(getVkInstance()), NULL);
 		uint32_t captureCount = m_renderDocContext->GetNumCaptures();
 		if (captureSucceeded)
 		{

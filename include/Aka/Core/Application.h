@@ -20,7 +20,7 @@ struct Config
 {
 	gfx::GraphicConfig graphic = {};
 	AudioConfig audio = {};
-	PlatformConfig platform = {};
+	PlatformWindowConfig platform = {};
 	Path directory = "../../../"; // Default build path for CMake relative to project
 	int argc = 0;
 	char** argv = nullptr;
@@ -79,7 +79,7 @@ private:
 	// Last function called in a loop
 	void end();
 	// Resize the app
-	void resize();
+	void resize(uint32_t width, uint32_t height);
 	// Called on app resize
 	void onReceive(const WindowResizeEvent& event) override;
 	// Called on app quit request
@@ -102,10 +102,6 @@ protected:
 	// Called on app resize
 	virtual void onResize(uint32_t width, uint32_t height) {}
 public:
-	// Get the current app width
-	uint32_t width() const;
-	// Get the current app height
-	uint32_t height() const;
 	// Get the root layer
 	Layer& getRoot();
 public:
@@ -119,6 +115,8 @@ public:
 	Renderer* renderer();
 	// Get the platform device
 	PlatformDevice* platform();
+	// Get the main window device
+	PlatformWindow* window();
 	// Get the audio device
 	AudioDevice* audio();
 	// Get the program manager
@@ -129,6 +127,8 @@ private:
 	static Application* s_app;
 	Config m_config;
 	PlatformDevice* m_platform;
+	PlatformWindow* m_window;
+	PlatformWindowConfig m_windowInitConfig;
 	gfx::GraphicDevice* m_graphic;
 	AudioDevice* m_audio;
 	ShaderRegistry* m_program;
@@ -136,8 +136,6 @@ private:
 	Renderer* m_renderer;
 private:
 	Layer* m_root;
-	uint32_t m_width, m_height;
-	bool m_needClientResize;
 	bool m_running;
 };
 

@@ -8,8 +8,8 @@
 namespace aka {
 
 static const uint32_t MaxInstanceCount = 500;
-static const uint32_t MaxAssetCount = 500;
-static const uint32_t MaxBatchCount = 500;
+static const uint32_t MaxAssetCount = 2000;
+static const uint32_t MaxBatchCount = 2000;
 
 StaticMeshInstanceRenderer::StaticMeshInstanceRenderer(Renderer& _renderer) :
 	InstanceRenderer(_renderer)
@@ -63,6 +63,7 @@ void StaticMeshInstanceRenderer::destroy()
 void StaticMeshInstanceRenderer::createPipeline()
 {
 	ShaderRegistry* registry = Application::app()->program();
+	PlatformWindow* window = Application::app()->window();
 	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
 	const aka::AssetPath ShaderFragmentPath = AssetPath("shaders/renderer/shader.frag", AssetPathType::Common);
 
@@ -82,7 +83,7 @@ void StaticMeshInstanceRenderer::createPipeline()
 		m_layout,
 		getRenderer().getRenderPassState(),
 		gfx::VertexState{}.add(StaticVertex::getState()).add(StaticMeshInstance::getState()),
-		gfx::ViewportStateBackbuffer,
+		gfx::ViewportState{}.backbuffer(window->swapchain()),
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDefault,
 		gfx::CullStateDefault,
@@ -98,10 +99,11 @@ void StaticMeshInstanceRenderer::destroyPipeline()
 
 void StaticMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle frame)
 {
+	PlatformWindow* window = Application::app()->window();
 	if (m_instanceDatas.size() == 0 /*|| !view.main*/)
 		return;
-	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(frame);
-	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
+	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(window->swapchain(), frame);
+	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(window->swapchain(), frame);
 
 	// TODO: should run this for each views.
 	// TODO: should use a compute shader for creating indirect buffers
@@ -218,7 +220,8 @@ void StaticMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle fram
 
 void StaticMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame, gfx::RenderPassCommandList& cmd)
 {
-	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
+	PlatformWindow* window = Application::app()->window();
+	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(window->swapchain(), frame);
 	gfx::ScopedCmdMarker marker(cmd, "RenderStaticMeshInstances");
 	if (m_drawIndexedBuffer.size() > 0)
 	{
@@ -280,6 +283,7 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 			batchData.min; // TODO
 			batchData.max;
 			m_instanceBatchDatas.push_back(batchData);
+			AKA_ASSERT(m_instanceBatchDatas.size() < MaxBatchCount, "Too many batches");
 		}
 
 		m_assetIndex.insert(std::make_pair(assetID, assetIndex));

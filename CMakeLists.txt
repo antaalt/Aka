@@ -115,6 +115,8 @@ add_library (Aka
 	"src/Graphic/Fence.cpp"
 	"src/Graphic/DescriptorPool.cpp" 
 	"src/Graphic/PhysicalDevice.cpp"
+	"src/Graphic/Swapchain.cpp" 
+	"src/Graphic/Surface.cpp"
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"
@@ -135,6 +137,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
+	"src/Platform/PlatformWindow.cpp" 
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)

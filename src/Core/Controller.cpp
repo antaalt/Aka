@@ -43,9 +43,9 @@ bool ButtonController::up() const
 void ButtonController::update()
 {
 	Application* app = Application::app();
-	PlatformDevice* platform = app->platform();
-	const Keyboard& keyboard = platform->keyboard();
-	const Mouse& mouse = platform->mouse();
+	PlatformWindow* window = app->window();
+	const Keyboard& keyboard = window->keyboard();
+	const Mouse& mouse = window->mouse();
 	m_down = 0;
 	m_up = 0;
 	for (KeyboardKey key : m_keyboardKeys)
@@ -76,9 +76,9 @@ void ButtonController::update()
 	}
 	// TODO all gid ?
 	GamepadID gid = (GamepadID)0;
-	if (platform->connected(gid))
+	if (window->connected(gid))
 	{
-		const Gamepad& gamepad = platform->gamepad(gid);
+		const Gamepad& gamepad = window->gamepad(gid);
 		for (GamepadButton button : m_gamepadButtons)
 		{
 			if (gamepad.down(gid, button))
@@ -118,9 +118,9 @@ const Position& MotionController::delta() const
 void MotionController::update()
 {
 	Application* app = Application::app();
-	PlatformDevice* platform = app->platform();
-	const Keyboard& keyboard = platform->keyboard();
-	const Mouse& mouse = platform->mouse();
+	PlatformWindow* window = app->window();
+	const Keyboard& keyboard = window->keyboard();
+	const Mouse& mouse = window->mouse();
 	m_delta = { 0.f };
 	if (m_mouseAxis)
 	{
@@ -129,9 +129,9 @@ void MotionController::update()
 		m_delta.y += pos.y;
 	}
 	GamepadID gid = (GamepadID)0;
-	if (platform->connected(gid))
+	if (window->connected(gid))
 	{
-		const Gamepad& gamepad = platform->gamepad(gid);
+		const Gamepad& gamepad = window->gamepad(gid);
 		for (GamepadAxis axis : m_gamepadAxis)
 		{
 			const Position& pos = gamepad.axis(gid, axis);

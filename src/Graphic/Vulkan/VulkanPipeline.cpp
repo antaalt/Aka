@@ -346,13 +346,16 @@ void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 	}
 	if (asBool(viewport.flags & ViewportFlags::BackbufferAutoResize))
 	{
+		AKA_ASSERT(viewport.swapchain != gfx::SwapchainHandle::null, "Missing swapchain");
+		SwapchainExtent extent = device->getSwapchainExtent(viewport.swapchain);
 		viewport.viewport.x = 0;
 		viewport.viewport.y = 0;
 		viewport.scissor.x = 0;
 		viewport.scissor.y = 0;
-		device->getBackbufferSize(viewport.viewport.w, viewport.viewport.h);
-		viewport.scissor.w = viewport.viewport.w;
-		viewport.scissor.h = viewport.viewport.h;
+		viewport.viewport.w = extent.width;
+		viewport.viewport.h = extent.height;
+		viewport.scissor.w = extent.width;
+		viewport.scissor.h = extent.height;
 	}
 	// Here read flag & setup 
 	vk_pipeline = VulkanGraphicPipeline::createVkGraphicPipeline(

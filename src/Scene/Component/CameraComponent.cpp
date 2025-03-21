@@ -59,7 +59,8 @@ bool CameraArcball::update(Time deltaTime)
 {
 	Application* app = Application::app();
 	PlatformDevice* platform = app->platform();
-	const Mouse& mouse = platform->mouse();
+	PlatformWindow* window = app->window();
+	const Mouse& mouse = window->mouse();
 	bool dirty = false;
 	// https://gamedev.stackexchange.com/questions/53333/how-to-implement-a-basic-arcball-camera-in-opengl-with-glm
 	if (mouse.pressed(MouseButton::ButtonLeft) && (mouse.delta().x != 0.f || mouse.delta().y != 0.f))

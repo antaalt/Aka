@@ -61,6 +61,7 @@ void SkeletalMeshInstanceRenderer::destroy()
 
 void SkeletalMeshInstanceRenderer::createPipeline()
 {
+	PlatformWindow* window = Application::app()->window();
 	ShaderRegistry* registry = Application::app()->program();
 	// TODO: Should use JSON for this ? JSON that can be generated with a script reading all files in shaders folder (generating DB)
 	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
@@ -81,7 +82,7 @@ void SkeletalMeshInstanceRenderer::createPipeline()
 		m_layout,
 		getRenderer().getRenderPassState(),
 		gfx::VertexState {}.add(SkeletalVertex::getState()).add(SkeletalMeshInstance::getState()),
-		gfx::ViewportStateBackbuffer,
+		gfx::ViewportState{}.backbuffer(window->swapchain()),
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDefault,
 		gfx::CullStateDefault,
@@ -97,10 +98,11 @@ void SkeletalMeshInstanceRenderer::destroyPipeline()
 
 void SkeletalMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle frame)
 {
+	PlatformWindow* window = Application::app()->window();
 	if (m_instanceDatas.size() == 0 /*|| !view.main*/)
 		return;
-	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(frame);
-	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
+	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(window->swapchain(), frame);
+	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(window->swapchain(), frame);
 
 	if (m_dirtyBones[frameIndex.value()])
 	{
@@ -200,7 +202,8 @@ void SkeletalMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle fr
 
 void SkeletalMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame, gfx::RenderPassCommandList& cmd)
 {
-	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
+	PlatformWindow* window = Application::app()->window();
+	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(window->swapchain(), frame);
 	gfx::ScopedCmdMarker marker(cmd, "RenderSkeletalMeshInstances");
 	if (m_drawIndexedBuffer.size() > 0)
 	{

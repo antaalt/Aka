@@ -6,7 +6,6 @@
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Config.h>
 #include <Aka/Core/StrictType.h>
-#include <Aka/Platform/PlatformDevice.h>
 
 #include <Aka/Graphic/Resource.h>
 #include <Aka/Graphic/Texture.h>
@@ -21,8 +20,12 @@
 #include <Aka/Graphic/DescriptorPool.h>
 #include <Aka/Graphic/PhysicalDevice.h>
 #include <Aka/Graphic/Fence.h>
+#include <Aka/Graphic/Swapchain.h>
 
 namespace aka {
+
+class PlatformDevice;
+
 namespace gfx {
 
 template <typename T>
@@ -136,11 +139,24 @@ public:
 	// Framebuffer
 	virtual FramebufferHandle createFramebuffer(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count = 1, const Attachment* depth = nullptr) = 0;
 	virtual void destroy(FramebufferHandle framebuffer) = 0;
-	virtual void destroy(BackbufferHandle backbuffer) = 0;
-	virtual BackbufferHandle createBackbuffer(const char* _name, RenderPassHandle _handle, const Attachment* _additionalAttachments = nullptr, uint32_t _count = 0, const Attachment* _depth = nullptr) = 0;
-	virtual FramebufferHandle get(BackbufferHandle handle, FrameHandle frame) = 0;
+	virtual void destroy(SwapchainHandle _swapchainHandle, BackbufferHandle backbuffer) = 0;
+	virtual FramebufferHandle get(BackbufferHandle handle, SwapchainHandle _swapchainHandle, FrameHandle frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
-	virtual void getBackbufferSize(uint32_t& width, uint32_t& height) = 0;
+
+	// Surface
+	virtual SurfaceHandle createSurface(const char* name, PlatformWindow* window) = 0;
+	virtual const Surface* get(SurfaceHandle handle) = 0;
+	virtual void destroy(SurfaceHandle surface) = 0;
+
+	// Swapchain
+	virtual SwapchainHandle createSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) = 0;
+	virtual void destroy(SwapchainHandle backbuffer) = 0;
+	virtual const Swapchain* get(SwapchainHandle swapchain) = 0;
+	virtual BackbufferHandle createBackbuffer(const char* _name, SwapchainHandle swapchainHandle, RenderPassHandle _handle, const Attachment* _additionalAttachments = nullptr, uint32_t _count = 0, const Attachment* _depth = nullptr) = 0;
+	virtual SwapchainExtent getSwapchainExtent(SwapchainHandle handle) = 0;
+	virtual TextureFormat getSwapchainFormat(SwapchainHandle handle) = 0;
+	virtual uint32_t getSwapchainImageCount(SwapchainHandle handle) = 0;
+	virtual void resize(SwapchainHandle handle, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) = 0;
 
 	// RenderPass
 	virtual RenderPassHandle createRenderPass(const char* name, const RenderPassState& state) = 0;
@@ -182,7 +198,7 @@ public:
 		const ShaderPipelineLayout& layout,
 		const RenderPassState& renderPass,
 		const VertexState& vertices = VertexStateEmpty,
-		const ViewportState& viewport = ViewportStateBackbuffer,
+		const ViewportState& viewport = ViewportStateDefault,
 		const DepthState& depth = DepthStateDefault,
 		const StencilState& stencil = StencilStateDefault,
 		const CullState& culling = CullStateDefault,
@@ -211,14 +227,6 @@ public:
 	virtual CommandEncoder* acquireCommandEncoder(QueueType queue) = 0;
 	virtual void execute(const char* _name, std::function<void(CommandList&)> _callback, QueueType _queue, bool async = true) = 0;
 	virtual void release(CommandEncoder* cmd) = 0;
-	// Frame command lists
-	virtual CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) = 0;
-	virtual void release(FrameHandle frame, CommandEncoder* cmd) = 0;
-	// Frame main command lists
-	virtual FrameIndex getFrameIndex(FrameHandle frame) = 0;
-	virtual CommandList* getCopyCommandList(FrameHandle frame) = 0;
-	virtual CommandList* getGraphicCommandList(FrameHandle frame) = 0;
-	virtual CommandList* getComputeCommandList(FrameHandle frame) = 0;
 
 	// Command submit
 	virtual void submit(CommandEncoder* command, FenceHandle handle = FenceHandle::null, FenceValue waitValue = InvalidFenceValue, FenceValue signalValue = InvalidFenceValue) = 0;
@@ -231,11 +239,21 @@ public:
 	virtual void screenshot(void* data) = 0;
 	// Capture the frame with render doc.
 	virtual void capture() = 0;
+	// Wait for GPU operations to complete
+	virtual void wait() = 0;
 
 	// Frame
-	virtual FrameHandle frame() = 0;
-	virtual SwapchainStatus present(FrameHandle frame) = 0;
-	virtual void wait() = 0;
+	virtual const Frame* get(FrameHandle handle) = 0;
+	virtual FrameHandle frame(SwapchainHandle handle) = 0;
+	virtual SwapchainStatus present(SwapchainHandle handle, FrameHandle frame) = 0;
+	// Frame command lists
+	virtual CommandEncoder* acquireCommandEncoder(SwapchainHandle handle, FrameHandle frame, QueueType queue) = 0;
+	virtual void release(SwapchainHandle handle, FrameHandle frame, CommandEncoder* cmd) = 0;
+	// Frame main command lists
+	virtual FrameIndex getFrameIndex(SwapchainHandle handle, FrameHandle frame) = 0;
+	virtual CommandList* getCopyCommandList(SwapchainHandle handle, FrameHandle frame) = 0;
+	virtual CommandList* getGraphicCommandList(SwapchainHandle handle, FrameHandle frame) = 0;
+	virtual CommandList* getComputeCommandList(SwapchainHandle handle, FrameHandle frame) = 0;
 };
 
 struct ScopedQueueMarker

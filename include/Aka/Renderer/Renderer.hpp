@@ -47,7 +47,7 @@ struct RendererMaterial
 static const uint32_t MaxViewCount = 5;
 static const uint32_t MaxBindlessResources = 16536;
 static const uint32_t MaxMaterialCount = 200;
-static const uint32_t MaxGeometryBufferSize = 1 << 28;
+static const uint32_t MaxGeometryBufferSize = 1 << 30; // 1Go
 
 class Renderer final
 {

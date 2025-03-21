@@ -271,18 +271,6 @@ VkInstance VulkanContext::createInstance(const char** instanceExtensions, size_t
 	return instance;
 }
 
-VkSurfaceKHR VulkanContext::createSurface(PlatformDevice* platform)
-{
-	VkSurfaceKHR surface;
-	VK_CHECK_RESULT(glfwCreateWindowSurface(
-		instance,
-		reinterpret_cast<PlatformGLFW3*>(platform)->getGLFW3Handle(),
-		getVkAllocator(),
-		&surface
-	));
-	return surface;
-}
-
 const char** VulkanContext::getPlatformRequiredInstanceExtension(const PlatformDevice* platform, uint32_t* count)
 {
 	// Pointer is owned by glfw here.
@@ -571,8 +559,9 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 		std::tie(score, supportedFeatureMask, supportedDeviceLimits) = getPhysicalDeviceScore(physicalDevice, deviceProperties);
 		bool hasValidScore = score > 0;
 		bool hasRequestedFeatures = (_requestedFeatures & supportedFeatureMask) == _requestedFeatures;
-		bool hasValidSwapchain = isSwapchainAdequate(physicalDevice, surface);
-		bool hasValidQueues = areQueuesAdequate(physicalDevice, surface);
+		// TODO_SURFACE: For now disable these check, need to create surface before picking device
+		bool hasValidSwapchain = true;// isSwapchainAdequate(physicalDevice, surface);
+		bool hasValidQueues = true;// areQueuesAdequate(physicalDevice, surface);
 		bool hasValidExtensions = isDeviceSupportingRequiredExtensions(physicalDevice);
 		if (hasValidScore && hasRequestedFeatures && hasValidSwapchain && hasValidQueues && hasValidExtensions)
 		{
@@ -623,7 +612,8 @@ std::tuple<VkPhysicalDevice, PhysicalDeviceFeatures, PhysicalDeviceLimits> Vulka
 
 VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount)
 {
-	const bool hasSurface = surface != VK_NULL_HANDLE;
+	// TODO_SURFACE: restore
+	const bool hasSurface = true;// surface != VK_NULL_HANDLE;
 	// --- Get device family queue
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -644,8 +634,9 @@ VkDevice VulkanContext::createLogicalDevice(const char* const* deviceExtensions,
 			if (hasSurface)
 			{
 				VkBool32 presentSupport = VK_FALSE;
-				VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, iQueue, surface, &presentSupport));
-				if (presentSupport == VK_TRUE)
+				// TODO_SURFACE: restore
+				//VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, iQueue, surface, &presentSupport));
+				//if (presentSupport == VK_TRUE)
 				{
 					presentQueue.familyIndex = iQueue;
 					presentQueue.index = queueFamilySlotCount[iQueue]++;
@@ -897,7 +888,6 @@ bool VulkanContext::initialize(PlatformDevice* platform, const GraphicConfig& co
 	}
 	instance = createInstance(instanceExtensions.data(), instanceExtensionCount);
 	debugMessenger = createDebugMessenger(instance);
-	surface = createSurface(platform);
 
 	std::tie(physicalDevice, physicalDeviceFeatures, physicalDeviceLimits) = pickPhysicalDevice(config.features);
 
@@ -957,7 +947,6 @@ void VulkanContext::shutdown()
 	}
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 		vkDestroyCommandPool(device, commandPool[i], getVkAllocator());
-	vkDestroySurfaceKHR(instance, surface, getVkAllocator());
 	vkDestroyDevice(device, getVkAllocator());
 	// physical device
 	vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, getVkAllocator());

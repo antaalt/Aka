@@ -388,8 +388,8 @@ AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const 
 		type = MB_ICONERROR | MB_OK;
 		break;
 	}
-	PlatformDevice* platform = Application::app()->platform();
-	HWND handle = (HWND)platform->getNativeHandle();
+	PlatformWindow* window = Application::app()->window();
+	HWND handle = (HWND)window->getNativeHandle();
 
 	StringWide wstr = Utf8ToWchar(message);
 	StringWide wstrTitle = Utf8ToWchar(title);
