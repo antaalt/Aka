@@ -30,9 +30,9 @@ void PlatformWindow::initialize(gfx::GraphicDevice* _device)
 }
 void PlatformWindow::shutdown(gfx::GraphicDevice* _device)
 {
-	shutdown();
 	_device->destroy(m_swapchain);
 	_device->destroy(m_surface);
+	shutdown();
 }
 const Mouse& PlatformWindow::mouse() const
 {

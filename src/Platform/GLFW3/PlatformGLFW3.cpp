@@ -663,6 +663,7 @@ void PlatformWindowGLFW3::initialize()
 
 void PlatformWindowGLFW3::shutdown()
 {
+	glfwDestroyWindow(m_window);
 }
 
 void PlatformWindowGLFW3::poll()
