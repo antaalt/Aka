@@ -77,6 +77,7 @@ void Application::destroy()
 	m_renderer->destroy();
 	m_program->destroy(m_graphic);
 	m_audio->shutdown();
+	m_window->shutdown(m_graphic);
 	m_graphic->shutdown();
 	m_platform->shutdown();
 
@@ -230,7 +231,6 @@ void Application::run(Application* app)
 			gfx::SwapchainStatus status = graphic->present(swapchain, frame);
 			if (status == gfx::SwapchainStatus::Recreated)
 			{
-				
 				gfx::SwapchainExtent extent = graphic->getSwapchainExtent(swapchain);
 				app->resize(extent.width, extent.height);
 			}

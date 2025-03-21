@@ -452,7 +452,8 @@ void PlatformGLFW3::destroyWindow(PlatformWindow* window)
 }
 
 PlatformWindowGLFW3::PlatformWindowGLFW3(const PlatformWindowConfig& cfg) :
-	PlatformWindow(cfg)
+	PlatformWindow(cfg),
+	m_window(nullptr)
 {
 }
 
@@ -664,6 +665,7 @@ void PlatformWindowGLFW3::initialize()
 void PlatformWindowGLFW3::shutdown()
 {
 	glfwDestroyWindow(m_window);
+	m_window = nullptr;
 }
 
 void PlatformWindowGLFW3::poll()
