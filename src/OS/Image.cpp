@@ -81,15 +81,14 @@ ImageFileFormat ImageDecoder::getFileFormat(const Blob& _blob)
 {
 	return ImageFileFormat::Unknown;
 }
-Image ImageDecoder::fromDisk(const Path& _path)
+Result<Image> ImageDecoder::fromDisk(const Path& _path)
 {
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
 	stbi_uc* data = stbi_load(_path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Failed to decode image ", _path, " from disk: ", stbi_failure_reason());
-		return Image{};
+		return Result<Image>::error(Error{ String::format("Failed to decode image ", _path, " from disk: ", stbi_failure_reason()) });
 	}
 	else
 	{
@@ -101,22 +100,21 @@ Image ImageDecoder::fromDisk(const Path& _path)
 		img.height = static_cast<uint32_t>(y);
 		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return img;
+		return Result<Image>::ok(img);
 	}
 }
-Image ImageDecoder::fromMemory(const Blob& _blob)
+Result<Image> ImageDecoder::fromMemory(const Blob& _blob)
 {
 	return fromMemory((const byte_t*)_blob.data(), _blob.size());
 }
-Image ImageDecoder::fromMemory(const byte_t* _data, size_t _size)
+Result<Image> ImageDecoder::fromMemory(const byte_t* _data, size_t _size)
 {
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
 	stbi_uc* data = stbi_load_from_memory(_data, (int)_size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Failed to decode image from memory: ", stbi_failure_reason());
-		return Image{};
+		return Result<Image>::error(Error{ String::format("Failed to decode image from memory: ", stbi_failure_reason()) });
 	}
 	else
 	{
@@ -128,18 +126,17 @@ Image ImageDecoder::fromMemory(const byte_t* _data, size_t _size)
 		img.height = static_cast<uint32_t>(y);
 		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return img;
+		return Result<Image>::ok(img);
 	}
 }
-ImageHdr ImageDecoder::fromDiskHdr(const Path& _path)
+Result<ImageHdr> ImageDecoder::fromDiskHdr(const Path& _path)
 {
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
 	float* data = stbi_loadf(_path.cstr(), &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Failed to decode hdr image ", _path, " from disk: ", stbi_failure_reason());
-		return ImageHdr{};
+		return Result<ImageHdr>::error(Error{ String::format("Failed to decode hdr image ", _path, " from disk: ", stbi_failure_reason()) });
 	}
 	else
 	{
@@ -151,22 +148,21 @@ ImageHdr ImageDecoder::fromDiskHdr(const Path& _path)
 		img.height = static_cast<uint32_t>(y);
 		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return img;
+		return Result<ImageHdr>::ok(img);
 	}
 }
-ImageHdr ImageDecoder::fromMemoryHdr(const Blob& _blob)
+Result<ImageHdr> ImageDecoder::fromMemoryHdr(const Blob& _blob)
 {
 	return fromMemoryHdr((const byte_t*)_blob.data(), _blob.size());
 }
-ImageHdr ImageDecoder::fromMemoryHdr(const byte_t* _data, size_t _size)
+Result<ImageHdr> ImageDecoder::fromMemoryHdr(const byte_t* _data, size_t _size)
 {
 	int x, y, channel;
 	stbi_set_flip_vertically_on_load(defaultFlipImageAtLoad);
 	float* data = stbi_loadf_from_memory(_data, (int)_size, &x, &y, &channel, STBI_rgb_alpha);
 	if (data == nullptr)
 	{
-		Logger::error("Failed to decode hdr image from memory: ", stbi_failure_reason());
-		return ImageHdr{};
+		return Result<ImageHdr>::error(Error{ String::format("Failed to decode hdr image from memory: ", stbi_failure_reason()) });
 	}
 	else
 	{
@@ -178,7 +174,7 @@ ImageHdr ImageDecoder::fromMemoryHdr(const byte_t* _data, size_t _size)
 		img.height = static_cast<uint32_t>(y);
 		img.components = ImageComponent::RGBA;
 		stbi_image_free(data);
-		return img;
+		return Result<ImageHdr>::ok(img);
 	}
 }
 
@@ -190,7 +186,7 @@ bool ImageEncoder::toDisk(const Path& _path, Image& _image, ImageFileFormat _for
 	int error = stbi_write_jpg(_path.cstr(), _image.width, _image.height, c, _image.bytes.data(), (uint32_t)_quality * 50);
 	return error != 0;
 }
-Blob ImageEncoder::toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality)
+Result<Blob> ImageEncoder::toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality)
 {
 	AKA_NOT_IMPLEMENTED;
 	/*const uint32_t c = getImageComponentCount(_image.components);
@@ -205,7 +201,7 @@ Blob ImageEncoder::toMemory(Image& _image, ImageFileFormat _format, ImageQuality
 	if (data.size() == 0 || outLength == 0)
 		return Blob();
 	return data;*/
-	return Blob();
+	return Result<Blob>::ok(Blob());
 }
 bool ImageEncoder::toDisk(const Path& _path, ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
 {
@@ -217,7 +213,7 @@ bool ImageEncoder::toDisk(const Path& _path, ImageHdr& _image, ImageFileFormat _
 	AKA_NOT_IMPLEMENTED;
 	return false;
 }
-Blob ImageEncoder::toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
+Result<Blob> ImageEncoder::toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality)
 {
 	/*AKA_ASSERT(m_format == ImageFormat::Float, "Invalid format");
 	AKA_ASSERT(m_bytes.size() == m_width * m_height * m_components * sizeof(float), "Invalid size");
@@ -231,7 +227,7 @@ Blob ImageEncoder::toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQual
 	if (data.size() == 0 || outLength == 0)
 		return std::vector<uint8_t>();*/
 	AKA_NOT_IMPLEMENTED;
-	return Blob();
+	return Result<Blob>::ok(Blob());
 }
 
 };

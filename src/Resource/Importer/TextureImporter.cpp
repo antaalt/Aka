@@ -19,11 +19,12 @@ TextureImporter::TextureImporter(AssetLibrary* _library) :
 ImportResult TextureImporter::import(const Path & path)
 {
 	// TODO handle HDR / ENVMAP / CUBEMAP / ARRAY
-	Image img = ImageDecoder::fromDisk(path);
-	if (img.size() == 0)
+	Result<Image> imgRes = ImageDecoder::fromDisk(path);
+	if (imgRes.isErr())
 		return ImportResult::CouldNotReadFile;
 
 	ArchiveImage image(registerAsset(AssetType::Image, getName()));
+	Image img = imgRes.getData();
 	image.width = img.width;
 	image.height = img.height;
 	image.channels = img.getComponents();
@@ -35,11 +36,12 @@ ImportResult TextureImporter::import(const Path & path)
 
 ImportResult TextureImporter::import(const Blob & blob)
 {
-	Image img = ImageDecoder::fromMemory(blob);
-	if (img.size() == 0)
+	Result<Image> imgRes = ImageDecoder::fromMemory(blob);
+	if (imgRes.isErr())
 		return ImportResult::CouldNotReadFile;
 		
 	ArchiveImage image(registerAsset(AssetType::Image, getName()));
+	Image img = imgRes.getData();
 	image.width = img.width;
 	image.height = img.height;
 	image.channels = img.getComponents();

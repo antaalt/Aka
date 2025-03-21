@@ -6,6 +6,7 @@
 #include <Aka/Core/Enum.h>
 #include <Aka/Core/Geometry.h>
 #include <Aka/Core/Container/Vector.h>
+#include <Aka/Core/Result.hpp>
 
 // D3D / Metal / Consoles origin convention is top left
 // OpenGL / OpenGL ES origin convention is bottom left
@@ -75,6 +76,8 @@ struct Img
 	Img(uint32_t width, uint32_t height, ImageComponent components);
 	Img(uint32_t width, uint32_t height, ImageComponent components, const T* data);
 
+
+
 	void set(uint32_t x, uint32_t y, const Pixel& pixel);
 	Pixel get(uint32_t x, uint32_t y) const;
 	void clear();
@@ -95,25 +98,24 @@ struct Img
 using Image = Img<byte_t>;
 using ImageHdr = Img<float>;
 
-
 struct ImageDecoder
 {
 	static ImageFileFormat getFileFormat(const Path& _path);
 	static ImageFileFormat getFileFormat(const Blob& _blob);
-	static Image fromDisk(const Path& _path);
-	static Image fromMemory(const Blob& _blob);
-	static Image fromMemory(const byte_t* _data, size_t _size);
-	static ImageHdr fromDiskHdr(const Path& _path);
-	static ImageHdr fromMemoryHdr(const Blob& _blob);
-	static ImageHdr fromMemoryHdr(const byte_t* _data, size_t _size);
+	static Result<Image> fromDisk(const Path& _path);
+	static Result<Image> fromMemory(const Blob& _blob);
+	static Result<Image> fromMemory(const byte_t* _data, size_t _size);
+	static Result<ImageHdr> fromDiskHdr(const Path& _path);
+	static Result<ImageHdr> fromMemoryHdr(const Blob& _blob);
+	static Result<ImageHdr> fromMemoryHdr(const byte_t* _data, size_t _size);
 };
 
 struct ImageEncoder
 {
 	static bool toDisk(const Path& _path, Image& _image, ImageFileFormat _format, ImageQuality _quality);
-	static Blob toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality);
+	static Result<Blob> toMemory(Image& _image, ImageFileFormat _format, ImageQuality _quality);
 	static bool toDisk(const Path& _path, ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality);
-	static Blob toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality);
+	static Result<Blob> toMemory(ImageHdr& _image, ImageFileFormat _format, ImageQuality _quality);
 };
 
 
