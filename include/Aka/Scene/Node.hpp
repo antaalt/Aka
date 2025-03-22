@@ -98,7 +98,7 @@ private: // Hierarchy
 
 public: // Transforms
 	// Set local transform
-	void setLocalTransform(const mat4f& transform, bool _computeWorld = false);
+	void setLocalTransform(const mat4f& transform, bool _computeWorld = true);
 	// Get the local transform
 	const mat4f& getLocalTransform() const;
 	// Get the world transform

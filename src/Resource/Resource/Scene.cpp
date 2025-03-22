@@ -38,7 +38,7 @@ void Scene::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _render
 	for (const ArchiveSceneNode& node : scene.nodes)
 	{
 		Node* sceneNode = m_allocator.create(node.name.cstr());
-		sceneNode->setLocalTransform(node.transform);
+		sceneNode->setLocalTransform(node.transform, true);
 		if (node.parentID != ArchiveSceneID::Invalid)
 		{
 			Node* parent = nodes[EnumToValue(node.parentID)];

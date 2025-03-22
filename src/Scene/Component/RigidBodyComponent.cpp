@@ -238,7 +238,7 @@ void RigidBodyComponent::onFixedUpdate(Time _deltaTime)
 				const Node* bodyParent = body.getNode()->getParent();
 				const mat4f worldToLocal = bodyParent ? mat4f::inverse(bodyParent->getWorldTransform()) : mat4f::identity();
 				const mat4f updatedTransform = worldToLocal * mat4f::TRS(body.m_position, body.m_orientation, mat4f::extractScale(body.getNode()->getWorldTransform()));
-				body.getNode()->setLocalTransform(updatedTransform, true); // Should run this once per update instead of once per fixedUpdate.
+				body.getNode()->setLocalTransform(updatedTransform); // Should run this once per update instead of once per fixedUpdate.
 			}
 		}
 		// TODO: solveVelocities
