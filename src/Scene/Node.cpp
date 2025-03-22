@@ -102,10 +102,16 @@ void Node::updateComponentLifecycle(AssetLibrary* library, Renderer* renderer)
 
 void Node::prepareUpdate()
 {
-	if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags))
+	if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags) || asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
 	{
-		m_cacheWorldTransform = computeWorldTransform();
-		m_updateFlags &= ~NodeUpdateFlag::TransformDirty;
+		if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags)) {
+			m_cacheWorldTransform = computeWorldTransform();
+			m_updateFlags &= ~NodeUpdateFlag::TransformDirty;
+			// Need to propagate dirtiness to all childs.
+			visitChildrens([](Node* node) {
+				node->setUpdateFlag(NodeUpdateFlag::TransformDirty);
+				});
+		}
 		for (ComponentMap::value_type& component : m_componentsActive)
 		{
 			component.second->transformUpdate();
@@ -197,6 +203,8 @@ void Node::visitChildrens(std::function<void(Node*)> _callback)
 	for (Node* child : m_childrens) 
 	{
 		_callback(child);
+		// Recurse childrens.
+		child->visitChildrens(_callback);
 	}
 }
 
