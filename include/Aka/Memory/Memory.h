@@ -151,6 +151,8 @@ template <typename T>
 void akaDeleteArray(const T*const & pointer)
 {
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
+	if (pointer == nullptr)
+		return;
 	// Retrieve metadata
 	const AkaNewArrayHead* metadata = reinterpret_cast<const AkaNewArrayHead*>(pointer) - 1;
 	AllocatorMemoryType type = metadata->type;
