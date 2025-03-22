@@ -330,7 +330,7 @@ void VulkanGraphicPipeline::create(VulkanGraphicDevice* device)
 	{
 		constants[i].offset = layout.constants[i].offset;
 		constants[i].size = layout.constants[i].size;
-		constants[i].stageFlags = VulkanContext::tovk(layout.constants[i].shader);
+		constants[i].stageFlags = vk::convert(layout.constants[i].shader);
 	}
 	vk_pipelineLayout = device->getVkPipelineLayout(layouts, layout.setCount, constants, layout.constantCount);
 	// Create Pipeline
@@ -629,7 +629,7 @@ void VulkanComputePipeline::create(VulkanGraphicDevice* device)
 	{
 		constants[i].offset = layout.constants[i].offset;
 		constants[i].size = layout. constants[i].size;
-		constants[i].stageFlags = VulkanContext::tovk(layout.constants[i].shader);
+		constants[i].stageFlags = vk::convert(layout.constants[i].shader);
 	}
 	vk_pipelineLayout = device->getVkPipelineLayout(layouts, layout.setCount, constants, layout.constantCount);
 	// Create Pipeline

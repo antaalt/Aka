@@ -1,5 +1,7 @@
 #include <Aka/Platform/PlatformWindow.h>
 
+#include <Aka/Graphic/Instance.h>
+
 namespace aka {
 
 PlatformWindow::PlatformWindow(const PlatformWindowConfig& config) :
@@ -22,16 +24,14 @@ PlatformWindow::~PlatformWindow()
 {
 }
 
-void PlatformWindow::initialize(gfx::GraphicDevice* _device)
+void PlatformWindow::initialize(gfx::Instance* _instance)
 {
 	initialize();
-	m_surface = _device->createSurface(String::format("%sSurface", m_name.cstr()).cstr(), this);
-	m_swapchain = _device->createSwapchain(String::format("%sSwapchain", m_name.cstr()).cstr(), m_surface, m_width, m_height, gfx::TextureFormat::BGRA8, gfx::SwapchainMode::Windowed, gfx::SwapchainType::Performance);
+	m_surface = _instance->createSurface(String::format("%sSurface", m_name.cstr()).cstr(), this);
 }
-void PlatformWindow::shutdown(gfx::GraphicDevice* _device)
+void PlatformWindow::shutdown(gfx::Instance* _instance)
 {
-	_device->destroy(m_swapchain);
-	_device->destroy(m_surface);
+	_instance->destroy(m_surface);
 	shutdown();
 }
 const Mouse& PlatformWindow::mouse() const
@@ -172,9 +172,5 @@ PlatformWindowFlag PlatformWindow::flags() const
 gfx::SurfaceHandle PlatformWindow::surface() const
 {
 	return m_surface;
-}
-gfx::SwapchainHandle PlatformWindow::swapchain() const
-{
-	return m_swapchain;
 }
 }

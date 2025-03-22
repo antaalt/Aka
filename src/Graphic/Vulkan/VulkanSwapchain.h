@@ -1,8 +1,9 @@
 #pragma once
 
-#include "VulkanContext.h"
+#include "VulkanCommon.hpp"
 #include <Aka/Core/Container/Vector.h>
 #include <Aka/Graphic/Swapchain.h>
+#include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Core/Event.h>
 
 #include "VulkanFramebuffer.h"
@@ -11,10 +12,12 @@
 namespace aka {
 namespace gfx {
 
+class VulkanInstance;
+
 struct VulkanFrame : Frame
 {
-	VulkanFrame();
-	VulkanFrame(const char* name);
+	VulkanFrame(FrameIndex frame);
+	VulkanFrame(const char* name, FrameIndex frame);
 
 	void create(VulkanGraphicDevice* device);
 	void destroy(VulkanGraphicDevice* device);
@@ -38,10 +41,10 @@ class VulkanSurface : public Surface
 public:
 	VulkanSurface(const char* name, PlatformWindow* window);
 
-	void create(VulkanGraphicDevice* device);
-	void destroy(VulkanGraphicDevice* device);
+	void create(VulkanInstance* instance);
+	void destroy(VulkanInstance* instance);
 
-	static VkSurfaceKHR createSurface(VulkanGraphicDevice* device, PlatformWindow* platform);
+	static VkSurfaceKHR createSurface(VulkanInstance* instance, PlatformWindow* platform);
 
 	VkSurfaceKHR vk_surface;
 };

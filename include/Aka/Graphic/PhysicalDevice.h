@@ -51,5 +51,11 @@ struct PhysicalDeviceLimits
 	uint32_t maxMeshShaderWorkGroupInvocations;
 };
 
+struct PhysicalDevice
+{
+	PhysicalDeviceLimits limits;
+	PhysicalDeviceFeatures features;
+};
+
 };
 };

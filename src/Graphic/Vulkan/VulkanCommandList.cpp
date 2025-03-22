@@ -14,11 +14,11 @@ CommandEncoder* VulkanGraphicDevice::acquireCommandEncoder(QueueType queue)
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandBufferCount = 1;
-	allocateInfo.commandPool = m_context.commandPool[EnumToIndex(queue)];
+	allocateInfo.commandPool = m_commandPool[EnumToIndex(queue)];
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
 	VkCommandBuffer cmd = VK_NULL_HANDLE;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_context.device, &allocateInfo, &cmd));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &allocateInfo, &cmd));
 
 	return m_commandEncoderPool.acquire(this, cmd, queue, true);
 }
@@ -59,7 +59,7 @@ void VulkanGraphicDevice::release(CommandEncoder* cmd)
 {
 	VulkanCommandEncoder* vk_cmd = reinterpret_cast<VulkanCommandEncoder*>(cmd);
 	VkCommandBuffer vk_command = vk_cmd->getVkCommandBuffer();
-	vkFreeCommandBuffers(m_context.device, getVkCommandPool(vk_cmd->getQueueType()), 1, &vk_command);
+	vkFreeCommandBuffers(m_device, getVkCommandPool(vk_cmd->getQueueType()), 1, &vk_command);
 
 	m_commandEncoderPool.release(vk_cmd);
 }
@@ -121,25 +121,25 @@ void VulkanGraphicDevice::wait(QueueType queue)
 	VK_CHECK_RESULT(vkQueueWaitIdle(getVkQueue(queue)));
 }
 
-FrameIndex VulkanGraphicDevice::getFrameIndex(SwapchainHandle handle, FrameHandle frame)
+FrameIndex VulkanGraphicDevice::getFrameIndex(FrameHandle frame)
 {
-	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
-	return vk_swapchain->getVkFrameIndex(frame);
+	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
+	return vk_frame->getFrameIndex();
 }
 
-CommandList* VulkanGraphicDevice::getCopyCommandList(SwapchainHandle handle, FrameHandle frame)
+CommandList* VulkanGraphicDevice::getCopyCommandList(FrameHandle frame)
 {
 	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Copy)]->getCommandList();
 }
 
-CommandList* VulkanGraphicDevice::getGraphicCommandList(SwapchainHandle handle, FrameHandle frame)
+CommandList* VulkanGraphicDevice::getGraphicCommandList(FrameHandle frame)
 {
 	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Graphic)]->getCommandList();
 }
 
-CommandList* VulkanGraphicDevice::getComputeCommandList(SwapchainHandle handle, FrameHandle frame)
+CommandList* VulkanGraphicDevice::getComputeCommandList(FrameHandle frame)
 {
 	VulkanFrame* vk_frame = getVk<VulkanFrame>(frame);
 	return &vk_frame->mainCommandEncoders[EnumToIndex(QueueType::Compute)]->getCommandList();
@@ -376,7 +376,7 @@ void VulkanRenderPassCommandList::bindIndexBuffer(BufferHandle buffer, IndexForm
 {
 	VulkanBuffer* vk_buffer = getDevice()->getVk<VulkanBuffer>(buffer);
 	VkBuffer buffers = vk_buffer->vk_buffer;
-	VkIndexType indexType = VulkanContext::tovk(format);
+	VkIndexType indexType = vk::convert(format);
 	vkCmdBindIndexBuffer(getVkCommandBuffer(), buffers, offset, indexType);
 }
 void VulkanRenderPassCommandList::clearAll(ClearMask mask, const float* color, float depth, uint32_t stencil)
@@ -473,7 +473,7 @@ void VulkanGenericCommandList::clearColor(TextureHandle handle, const float* col
 	range.baseMipLevel = 0;
 	range.layerCount = 1;
 	range.levelCount = 1;
-	vkCmdClearColorImage(getVkCommandBuffer(), texture->vk_image, VulkanContext::tovk(ResourceAccessType::Resource, texture->format), &values, 1, &range);
+	vkCmdClearColorImage(getVkCommandBuffer(), texture->vk_image, vk::convert(ResourceAccessType::Resource, texture->format), &values, 1, &range);
 }
 
 void VulkanGenericCommandList::clearDepthStencil(TextureHandle handle, float depth, uint32_t stencil)
@@ -489,21 +489,21 @@ void VulkanGenericCommandList::clearDepthStencil(TextureHandle handle, float dep
 	range.baseMipLevel = 0;
 	range.layerCount = 1;
 	range.levelCount = 1;
-	vkCmdClearDepthStencilImage(getVkCommandBuffer(), texture->vk_image, VulkanContext::tovk(ResourceAccessType::Resource, texture->format), &values, 1, &range);
+	vkCmdClearDepthStencilImage(getVkCommandBuffer(), texture->vk_image, vk::convert(ResourceAccessType::Resource, texture->format), &values, 1, &range);
 }
 
 void VulkanRenderPassCommandList::push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask)
 {
 	AKA_ASSERT(m_boundPipeline != nullptr, "No pipeline bound");
 	VkPipelineLayout layout = m_boundPipeline->vk_pipelineLayout;
-	vkCmdPushConstants(getVkCommandBuffer(), layout, VulkanContext::tovk(mask), offset, range, data);
+	vkCmdPushConstants(getVkCommandBuffer(), layout, vk::convert(mask), offset, range, data);
 }
 
 void VulkanComputePassCommandList::push(uint32_t offset, uint32_t range, const void* data, ShaderMask mask)
 {
 	AKA_ASSERT(m_boundPipeline != nullptr, "No pipeline bound");
 	VkPipelineLayout layout = m_boundPipeline->vk_pipelineLayout;
-	vkCmdPushConstants(getVkCommandBuffer(), layout, VulkanContext::tovk(mask), offset, range, data);
+	vkCmdPushConstants(getVkCommandBuffer(), layout, vk::convert(mask), offset, range, data);
 }
 
 void VulkanRenderPassCommandList::draw(uint32_t vertexCount, uint32_t vertexOffset, uint32_t instanceCount, uint32_t instanceOffset)
@@ -612,23 +612,23 @@ QueueType VulkanGenericCommandList::getQueueType()
 VkQueue VulkanGraphicDevice::getVkQueue(QueueType type)
 {
 	AKA_ASSERT(EnumToIndex(type) < EnumCount<QueueType>(), "Invalid queue");
-	return m_context.queues[EnumToIndex(type)].queue;
+	return m_queues[EnumToIndex(type)].queue;
 }
 
 VkQueue VulkanGraphicDevice::getVkPresentQueue()
 {
-	return m_context.presentQueue.queue;
+	return m_presentQueue.queue;
 }
 
 uint32_t VulkanGraphicDevice::getVkQueueIndex(QueueType type)
 {
 	AKA_ASSERT(EnumToIndex(type) < EnumCount<QueueType>(), "Invalid queue");
-	return m_context.queues[EnumToIndex(type)].familyIndex;
+	return m_queues[EnumToIndex(type)].familyIndex;
 }
 
 uint32_t VulkanGraphicDevice::getVkPresentQueueIndex()
 {
-	return m_context.presentQueue.familyIndex;
+	return m_presentQueue.familyIndex;
 }
 
 };

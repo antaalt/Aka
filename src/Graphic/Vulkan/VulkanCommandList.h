@@ -4,7 +4,8 @@
 
 #include <Aka/Graphic/CommandList.h>
 
-#include "VulkanContext.h"
+#include "VulkanCommon.hpp"
+#include "VulkanPipeline.h"
 
 #if defined(AKA_PLATFORM_WINDOWS)
 #pragma warning(push)

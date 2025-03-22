@@ -159,7 +159,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 
 	const ProgramKey ProgramGraphic = ProgramKey().add(ShaderVertex).add(ShaderFragment);
 	ShaderRegistry* program = Application::app()->program();
-	PlatformWindow* window = Application::app()->window();
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	program->add(ProgramGraphic, _device);
 	gfx::ProgramHandle m_program = program->get(ProgramGraphic);
 
@@ -181,7 +181,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 	gfx::Attachment depthAttachment;
 	depthAttachment.texture = m_depth;
 	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
-	m_backbuffer = _device->createBackbuffer("Backbuffer", window->swapchain(), m_backbufferRenderPass, nullptr, 0, &depthAttachment);
+	m_backbuffer = _device->createBackbuffer("Backbuffer", swapchain, m_backbufferRenderPass, nullptr, 0, &depthAttachment);
 
 	m_pipeline = _device->createGraphicPipeline(
 		"DebugDraw",
@@ -190,7 +190,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 		layout,
 		_device->get(m_backbufferRenderPass)->state,
 		gfx::VertexState{}.add(DebugVertex::getVertexLayout()),
-		gfx::ViewportState{}.backbuffer(window->swapchain()),
+		gfx::ViewportState{}.backbuffer(swapchain),
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDisabled,
 		gfx::CullStateDefault,
@@ -207,14 +207,14 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 
 void DebugDrawList::destroy(gfx::GraphicDevice* _device)
 {
-	PlatformWindow* window = Application::app()->window();
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 	{
 		_device->destroy(m_vertexBuffer[i]);
 	}
 	_device->destroy(m_pipeline);
 	_device->destroy(m_backbufferRenderPass);
-	_device->destroy(window->swapchain(), m_backbuffer);
+	_device->destroy(swapchain, m_backbuffer);
 	_device->destroy(m_depth);
 }
 void DebugDrawList::resize(gfx::GraphicDevice* _device, uint32_t width, uint32_t height)
@@ -224,11 +224,10 @@ void DebugDrawList::resize(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 }
 void DebugDrawList::prepare(gfx::FrameHandle frame, gfx::GraphicDevice* _device)
 {
-	PlatformWindow* window = Application::app()->window();
 	if (m_vertices.size() > 0)
 	{
 		// TOOD use staging buffer instead
-		gfx::FrameIndex frameIndex = _device->getFrameIndex(window->swapchain(), frame);
+		gfx::FrameIndex frameIndex = _device->getFrameIndex(frame);
 		if (m_vertexBufferSize[frameIndex.value()] < m_vertices.size())
 		{
 			_device->destroy(m_vertexBuffer[frameIndex.value()]);
@@ -240,11 +239,10 @@ void DebugDrawList::prepare(gfx::FrameHandle frame, gfx::GraphicDevice* _device)
 }
 void DebugDrawList::render(gfx::GraphicDevice* _device, gfx::FrameHandle frame, const mat4f& view, const mat4f& projection, gfx::RenderPassCommandList& cmd)
 {
-	PlatformWindow* window = Application::app()->window();
 	// Should convert DebugDrawList to instance renderer...
 	if (m_vertices.size() > 0)
 	{
-		gfx::FrameIndex frameIndex = _device->getFrameIndex(window->swapchain(), frame);
+		gfx::FrameIndex frameIndex = _device->getFrameIndex(frame);
 		gfx::ScopedCmdMarker marker(cmd, "DebugDrawList", 0.f, 0.f, 0.5f);
 		cmd.bindVertexBuffer(0, m_vertexBuffer[frameIndex.value()]);
 		cmd.bindPipeline(m_pipeline);

@@ -28,8 +28,8 @@ void VulkanTexture::transitionImageLayout(VkCommandBuffer cmd, QueueType queueTy
 	VulkanTexture::insertMemoryBarrier(
 		cmd, 
 		image,
-		VulkanContext::tovk(oldLayout, format), 
-		VulkanContext::tovk(newLayout, format),
+		vk::convert(oldLayout, format), 
+		vk::convert(newLayout, format),
 		VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
 		pipelineStageAccess.first.stage,
 		pipelineStageAccess.second.stage,
@@ -63,8 +63,8 @@ void VulkanTexture::transferTexture(
 		VulkanTexture::insertMemoryBarrier(
 			vk_command.getVkCommandBuffer(),
 			image,
-			VulkanContext::tovk(oldAccess, format), 
-			VulkanContext::tovk(newAccess, format),
+			vk::convert(oldAccess, format), 
+			vk::convert(newAccess, format),
 			VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
 			pipelineStageAccess.first.stage,
 			pipelineStageAccess.second.stage,
@@ -83,8 +83,8 @@ void VulkanTexture::transferTexture(
 		VulkanTexture::insertMemoryBarrier(
 			vk_command.getVkCommandBuffer(),
 			image,
-			VulkanContext::tovk(oldAccess, format), 
-			VulkanContext::tovk(newAccess, format),
+			vk::convert(oldAccess, format), 
+			vk::convert(newAccess, format),
 			VkImageSubresourceRange{ VulkanTexture::getAspectFlag(format), level, levelCount, layer, layerCount },
 			pipelineStageAccess.first.stage, // BOTTOM OF PIPE ?
 			pipelineStageAccess.second.stage,
@@ -192,7 +192,7 @@ void VulkanTexture::blitFrom(VkCommandBuffer cmd, VulkanTexture* texture, const 
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&blit,
-		VulkanContext::tovk(filter)
+		vk::convert(filter)
 	);
 }
 
@@ -233,7 +233,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 	TextureHandle handle = TextureHandle{ vk_texture };
 
 	ResourceAccessType finalAccessType = getInitialResourceAccessType(format, flags);
-	VkImageLayout finalLayout = VulkanContext::tovk(finalAccessType, format);
+	VkImageLayout finalLayout = vk::convert(finalAccessType, format);
 
 	// Use shared memory heap if small enough.
 	VkBuffer vk_stagingBuffer = VK_NULL_HANDLE;
@@ -457,7 +457,7 @@ void VulkanTexture::create(VulkanGraphicDevice* device)
 {
 	AKA_ASSERT(layers > 0, "Should have at least 1 layer");
 	AKA_ASSERT(levels > 0, "Should have at least 1 mips");
-	VkFormat vk_format = VulkanContext::tovk(format);
+	VkFormat vk_format = vk::convert(format);
 	VkImageTiling vk_tiling = VK_IMAGE_TILING_OPTIMAL; // TODO control this (flag dependent ? staging ?)
 	VkImageUsageFlags vk_usage = 0;
 	VkImageCreateFlags vk_flags = 0;
@@ -602,7 +602,7 @@ VkImageView VulkanTexture::getImageView(VulkanGraphicDevice* device, uint32_t la
 	VkImageCreateFlags vk_flags;
 	if (vk_view[index] == VK_NULL_HANDLE)
 	{
-		vk_view[index] = createVkImageView(device->getVkDevice(), vk_image, getVkImageViewType(type, vk_flags, width, height), VulkanContext::tovk(format), VulkanTexture::getAspectFlag(format), 1, 1, mipLevel, layer);
+		vk_view[index] = createVkImageView(device->getVkDevice(), vk_image, getVkImageViewType(type, vk_flags, width, height), vk::convert(format), VulkanTexture::getAspectFlag(format), 1, 1, mipLevel, layer);
 		setDebugName(device->getVkDevice(), vk_view[index], name, "ImageView", index);
 	}
 	return vk_view[index];

@@ -63,7 +63,7 @@ void StaticMeshInstanceRenderer::destroy()
 void StaticMeshInstanceRenderer::createPipeline()
 {
 	ShaderRegistry* registry = Application::app()->program();
-	PlatformWindow* window = Application::app()->window();
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
 	const aka::AssetPath ShaderFragmentPath = AssetPath("shaders/renderer/shader.frag", AssetPathType::Common);
 
@@ -83,7 +83,7 @@ void StaticMeshInstanceRenderer::createPipeline()
 		m_layout,
 		getRenderer().getRenderPassState(),
 		gfx::VertexState{}.add(StaticVertex::getState()).add(StaticMeshInstance::getState()),
-		gfx::ViewportState{}.backbuffer(window->swapchain()),
+		gfx::ViewportState{}.backbuffer(swapchain),
 		gfx::DepthStateLessEqual,
 		gfx::StencilStateDefault,
 		gfx::CullStateDefault,
@@ -99,11 +99,10 @@ void StaticMeshInstanceRenderer::destroyPipeline()
 
 void StaticMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle frame)
 {
-	PlatformWindow* window = Application::app()->window();
 	if (m_instanceDatas.size() == 0 /*|| !view.main*/)
 		return;
-	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(window->swapchain(), frame);
-	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(window->swapchain(), frame);
+	gfx::CommandList* cmd = getDevice()->getGraphicCommandList(frame);
+	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
 
 	// TODO: should run this for each views.
 	// TODO: should use a compute shader for creating indirect buffers
@@ -220,8 +219,7 @@ void StaticMeshInstanceRenderer::prepare(const View& view, gfx::FrameHandle fram
 
 void StaticMeshInstanceRenderer::render(const View& view, gfx::FrameHandle frame, gfx::RenderPassCommandList& cmd)
 {
-	PlatformWindow* window = Application::app()->window();
-	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(window->swapchain(), frame);
+	gfx::FrameIndex frameIndex = getDevice()->getFrameIndex(frame);
 	gfx::ScopedCmdMarker marker(cmd, "RenderStaticMeshInstances");
 	if (m_drawIndexedBuffer.size() > 0)
 	{

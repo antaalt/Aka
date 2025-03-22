@@ -3,7 +3,7 @@
 
 #if defined(AKA_USE_VULKAN)
 
-#include "VulkanContext.h"
+#include "VulkanCommon.hpp"
 
 namespace aka {
 namespace gfx {

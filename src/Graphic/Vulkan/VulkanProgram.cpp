@@ -1,11 +1,13 @@
 #include "VulkanProgram.h"
 
+#include "VulkanCommon.hpp"
 #include "VulkanGraphicDevice.h"
 
 namespace aka {
 namespace gfx {
 
-VkDescriptorType VulkanContext::tovk(ShaderBindingType type)
+namespace vk {
+VkDescriptorType convert(ShaderBindingType type)
 {
 	switch (type)
 	{
@@ -23,7 +25,7 @@ VkDescriptorType VulkanContext::tovk(ShaderBindingType type)
 	}
 }
 
-VkShaderStageFlags VulkanContext::tovk(ShaderMask shaderType)
+VkShaderStageFlags convert(ShaderMask shaderType)
 {
 	VkShaderStageFlags flags = 0;
 	if (has(shaderType, ShaderMask::Vertex))
@@ -48,7 +50,7 @@ VkShaderStageFlags VulkanContext::tovk(ShaderMask shaderType)
 	}
 	return flags;
 }
-
+}
 bool valid(ShaderBindingType binding, BufferType buffer)
 {
 	switch (binding)
@@ -96,7 +98,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 		descriptorWrites[iUpdate].dstSet = vk_set->vk_descriptorSet;
 		descriptorWrites[iUpdate].dstBinding = update.binding;
 		descriptorWrites[iUpdate].dstArrayElement = update.index;
-		descriptorWrites[iUpdate].descriptorType = VulkanContext::tovk(binding.type);
+		descriptorWrites[iUpdate].descriptorType = vk::convert(binding.type);
 		descriptorWrites[iUpdate].descriptorCount = 1; // Here we update only one desc set, so do not use binding.count;
 
 		switch (binding.type)
@@ -113,7 +115,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace();
 			vk_image.imageView = vk_texture->getImageView(device, update.texture.layer, update.texture.mipLevel);
 			vk_image.sampler = vk_sampler->vk_sampler;
-			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Resource, vk_texture->format);
+			vk_image.imageLayout = vk::convert(ResourceAccessType::Resource, vk_texture->format);
 			descriptorWrites[iUpdate].pImageInfo = &vk_image;
 			break;
 		}
@@ -123,7 +125,7 @@ void VulkanDescriptorSet::updateDescriptorSet(VulkanGraphicDevice* device, const
 			VkDescriptorImageInfo& vk_image = imageDescriptors.emplace();
 			vk_image.imageView = vk_texture->getImageView(device, update.texture.layer, update.texture.mipLevel);
 			vk_image.sampler = VK_NULL_HANDLE;
-			vk_image.imageLayout = VulkanContext::tovk(ResourceAccessType::Storage, vk_texture->format);
+			vk_image.imageLayout = vk::convert(ResourceAccessType::Storage, vk_texture->format);
 			descriptorWrites[iUpdate].pImageInfo = &vk_image;
 			break;
 		}
@@ -175,9 +177,9 @@ VkDescriptorSetLayout VulkanDescriptorSet::createVkDescriptorSetLayout(VkDevice 
 		const ShaderBindingLayout& binding = bindings.bindings[i];
 		vk_bindings[i].binding = i;
 		vk_bindings[i].descriptorCount = binding.count;
-		vk_bindings[i].descriptorType = VulkanContext::tovk(binding.type);
+		vk_bindings[i].descriptorType = vk::convert(binding.type);
 		vk_bindings[i].pImmutableSamplers = nullptr;
-		vk_bindings[i].stageFlags = VulkanContext::tovk(binding.stages);
+		vk_bindings[i].stageFlags = vk::convert(binding.stages);
 		if (asBool(binding.flags & ShaderBindingFlag::Bindless))
 			vk_flags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT; // Allow null values within array
 		if (asBool(binding.flags & ShaderBindingFlag::UpdateAfterBind))
@@ -212,7 +214,7 @@ VkDescriptorPool VulkanDescriptorPool::createVkDescriptorPool(VkDevice device, c
 	for (uint32_t i = 0; i < bindings.count; i++)
 	{
 		const ShaderBindingLayout& binding = bindings.bindings[i];
-		vk_poolSizes[i].type = VulkanContext::tovk(binding.type);
+		vk_poolSizes[i].type = vk::convert(binding.type);
 		vk_poolSizes[i].descriptorCount = binding.count;
 		if (asBool(binding.flags & ShaderBindingFlag::UpdateAfterBind))
 			poolInfo.flags |= VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
@@ -253,9 +255,9 @@ ShaderHandle VulkanGraphicDevice::createShader(const char* name, ShaderType type
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(bytes);
 
 	VulkanShader* vk_shader = m_shaderPool.acquire(name, entryPoint, type);
-	VK_CHECK_RESULT(vkCreateShaderModule(m_context.device, &createInfo, getVkAllocator(), &vk_shader->vk_module));
+	VK_CHECK_RESULT(vkCreateShaderModule(m_device, &createInfo, getVkAllocator(), &vk_shader->vk_module));
 
-	setDebugName(m_context.device, vk_shader->vk_module, name);
+	vk::setDebugName(m_device, vk_shader->vk_module, name);
 	return ShaderHandle{ vk_shader };
 }
 void VulkanGraphicDevice::destroy(ShaderHandle shader)
@@ -263,7 +265,7 @@ void VulkanGraphicDevice::destroy(ShaderHandle shader)
 	if (get(shader) == nullptr) return;
 
 	VulkanShader* vk_shader = getVk<VulkanShader>(shader);
-	vkDestroyShaderModule(m_context.device, vk_shader->vk_module, getVkAllocator());
+	vkDestroyShaderModule(m_device, vk_shader->vk_module, getVkAllocator());
 
 	m_shaderPool.release(vk_shader);
 }
@@ -371,7 +373,7 @@ const Program* VulkanGraphicDevice::get(ProgramHandle handle)
 DescriptorPoolHandle VulkanGraphicDevice::createDescriptorPool(const char* name, const ShaderBindingState& bindings, uint32_t size)
 {
 	VulkanDescriptorPool* vk_pool = m_descriptorPoolPool.acquire(name, bindings, size);
-	vk_pool->create(m_context);
+	vk_pool->create(this);
 
 	return DescriptorPoolHandle{ vk_pool };
 }
@@ -384,7 +386,7 @@ const DescriptorPool* VulkanGraphicDevice::get(DescriptorPoolHandle handle)
 void VulkanGraphicDevice::destroy(DescriptorPoolHandle pool)
 {
 	VulkanDescriptorPool* vk_pool = getVk<VulkanDescriptorPool>(pool);
-	vk_pool->destroy(m_context);
+	vk_pool->destroy(this);
 	m_descriptorPoolPool.release(vk_pool);
 }
 
@@ -394,14 +396,14 @@ VulkanDescriptorPool::VulkanDescriptorPool(const char* name, const ShaderBinding
 {
 }
 
-void VulkanDescriptorPool::create(VulkanContext& context)
+void VulkanDescriptorPool::create(VulkanGraphicDevice* device)
 {
-	vk_pool = VulkanDescriptorPool::createVkDescriptorPool(context.device, bindings, size);
+	vk_pool = VulkanDescriptorPool::createVkDescriptorPool(device->getVkDevice(), bindings, size);
 }
 
-void VulkanDescriptorPool::destroy(VulkanContext& context)
+void VulkanDescriptorPool::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroyDescriptorPool(context.device, vk_pool, getVkAllocator());
+	vkDestroyDescriptorPool(device->getVkDevice(), vk_pool, getVkAllocator());
 }
 
 // -----------------------------------------------------------------
@@ -411,7 +413,7 @@ DescriptorSetHandle VulkanGraphicDevice::allocateDescriptorSet(const char* name,
 	VulkanDescriptorSet* vk_descriptor = m_descriptorSetPool.acquire(name, bindings, pool);
 
 	vk_descriptor->vk_pool = getVk<VulkanDescriptorPool>(pool)->vk_pool;
-	vk_descriptor->create(m_context);
+	vk_descriptor->create(this);
 
 	return DescriptorSetHandle{ vk_descriptor };
 }
@@ -424,7 +426,7 @@ void VulkanGraphicDevice::update(DescriptorSetHandle descriptorSet, const Descri
 void VulkanGraphicDevice::free(DescriptorSetHandle descriptorSet)
 {
 	VulkanDescriptorSet* vk_descriptor = getVk<VulkanDescriptorSet>(descriptorSet);
-	vk_descriptor->destroy(m_context);
+	vk_descriptor->destroy(this);
 	m_descriptorSetPool.release(vk_descriptor);
 }
 
@@ -439,22 +441,22 @@ VulkanDescriptorSet::VulkanDescriptorSet(const char* name, const ShaderBindingSt
 {
 }
 
-void VulkanDescriptorSet::create(VulkanContext& context)
+void VulkanDescriptorSet::create(VulkanGraphicDevice* device)
 {
-	VkDescriptorSetLayout layout = context.getDescriptorSetLayout(bindings);
+	VkDescriptorSetLayout layout = device->getVkDescriptorSetLayout(bindings);
 	vk_descriptorSet = VulkanDescriptorSet::createVkDescriptorSet(
-		context.device,
+		device->getVkDevice(),
 		vk_pool,
 		&layout,
 		(layout == VK_NULL_HANDLE ? 0 : 1)
 	);
-	setDebugName(context.device, vk_descriptorSet, "VkDescriptorSet_", name);
+	setDebugName(device->getVkDevice(), vk_descriptorSet, "VkDescriptorSet_", name);
 }
 
-void VulkanDescriptorSet::destroy(VulkanContext& context)
+void VulkanDescriptorSet::destroy(VulkanGraphicDevice* device)
 {
 	// only call free if VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT set
-	VK_CHECK_RESULT(vkFreeDescriptorSets(context.device, vk_pool, 1, &vk_descriptorSet));
+	VK_CHECK_RESULT(vkFreeDescriptorSets(device->getVkDevice(), vk_pool, 1, &vk_descriptorSet));
 	vk_descriptorSet = VK_NULL_HANDLE;
 	vk_pool = VK_NULL_HANDLE; // Do not own
 }

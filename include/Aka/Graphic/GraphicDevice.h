@@ -28,6 +28,8 @@ class PlatformDevice;
 
 namespace gfx {
 
+class Instance;
+
 template <typename T>
 using vector = ::aka::vector<T, AllocatorCategory::Graphic>;
 template <typename T>
@@ -58,12 +60,17 @@ static constexpr uint32_t MaxFrameInFlight = 3; // number of frames to deal with
 
 struct Frame : Resource
 {
-	Frame(const char* name) : Resource(name, ResourceType::Frame){}
+	Frame(const char* name, FrameIndex frameIndex) : Resource(name, ResourceType::Frame), m_frame(frameIndex) {}
 	virtual ~Frame() {}
 
 	void setImageIndex(ImageIndex index) { m_image = index; }
 	ImageIndex getImageIndex() const { return m_image; }
+	FrameIndex getFrameIndex() const {
+		AKA_ASSERT(m_frame.value() < gfx::MaxFrameInFlight, "Invalid index");
+		return m_frame;
+	}
 protected:
+	FrameIndex m_frame;
 	ImageIndex m_image;
 };
 
@@ -100,10 +107,7 @@ public:
 	GraphicDevice() {}
 	virtual ~GraphicDevice() {}
 
-	static GraphicDevice* create(GraphicAPI api);
-	static void destroy(GraphicDevice* device);
-
-	virtual bool initialize(PlatformDevice* platform, const GraphicConfig& cfg) = 0;
+	virtual bool initialize(gfx::SurfaceHandle surface) = 0;
 	virtual void shutdown() = 0;
 
 	// Device
@@ -142,11 +146,6 @@ public:
 	virtual void destroy(SwapchainHandle _swapchainHandle, BackbufferHandle backbuffer) = 0;
 	virtual FramebufferHandle get(BackbufferHandle handle, SwapchainHandle _swapchainHandle, FrameHandle frame) = 0;
 	virtual const Framebuffer* get(FramebufferHandle handle) = 0;
-
-	// Surface
-	virtual SurfaceHandle createSurface(const char* name, PlatformWindow* window) = 0;
-	virtual const Surface* get(SurfaceHandle handle) = 0;
-	virtual void destroy(SurfaceHandle surface) = 0;
 
 	// Swapchain
 	virtual SwapchainHandle createSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) = 0;
@@ -247,13 +246,13 @@ public:
 	virtual FrameHandle frame(SwapchainHandle handle) = 0;
 	virtual SwapchainStatus present(SwapchainHandle handle, FrameHandle frame) = 0;
 	// Frame command lists
-	virtual CommandEncoder* acquireCommandEncoder(SwapchainHandle handle, FrameHandle frame, QueueType queue) = 0;
-	virtual void release(SwapchainHandle handle, FrameHandle frame, CommandEncoder* cmd) = 0;
+	virtual CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) = 0;
+	virtual void release(FrameHandle frame, CommandEncoder* cmd) = 0;
 	// Frame main command lists
-	virtual FrameIndex getFrameIndex(SwapchainHandle handle, FrameHandle frame) = 0;
-	virtual CommandList* getCopyCommandList(SwapchainHandle handle, FrameHandle frame) = 0;
-	virtual CommandList* getGraphicCommandList(SwapchainHandle handle, FrameHandle frame) = 0;
-	virtual CommandList* getComputeCommandList(SwapchainHandle handle, FrameHandle frame) = 0;
+	virtual FrameIndex getFrameIndex(FrameHandle frame) = 0;
+	virtual CommandList* getCopyCommandList(FrameHandle frame) = 0;
+	virtual CommandList* getGraphicCommandList(FrameHandle frame) = 0;
+	virtual CommandList* getComputeCommandList(FrameHandle frame) = 0;
 };
 
 struct ScopedQueueMarker

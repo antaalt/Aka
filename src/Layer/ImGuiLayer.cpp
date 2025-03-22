@@ -28,7 +28,6 @@
 #include "Graphic/D3D11/D3D11Backbuffer.h"
 #endif
 #if defined(AKA_USE_VULKAN)
-#include "Graphic/Vulkan/VulkanContext.h"
 #include "Graphic/Vulkan/VulkanGraphicDevice.h"
 #include <backends/imgui_impl_vulkan.h>
 #endif
@@ -86,7 +85,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	PlatformWindowGLFW3* window = reinterpret_cast<PlatformWindowGLFW3*>(Application::app()->window());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplGlfw_InitForOpenGL(window->getGLFW3Handle(), true);
@@ -130,7 +129,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 		gfx::RenderPassState state{};
 		state.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Load, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Present, gfx::ResourceAccessType::Present);
 		m_renderData->renderPass = _renderer->getDevice()->createRenderPass("ImGuiBackbufferPassHandle", state);
-		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("ImGuiBackbuffer", window->swapchain(), m_renderData->renderPass, nullptr, 0, nullptr);
+		m_renderData->backbuffer = _renderer->getDevice()->createBackbuffer("ImGuiBackbuffer", swapchain, m_renderData->renderPass, nullptr, 0, nullptr);
 	}
 
 	ImGui_ImplGlfw_InitForVulkan(window->getGLFW3Handle(), true);
@@ -143,7 +142,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	info.PipelineCache = VK_NULL_HANDLE;
 	info.DescriptorPool = m_renderData->descriptorPool;
 	info.MinImageCount = 2; // >= 2
-	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount(window->swapchain())); // >= MinImageCount
+	info.ImageCount = static_cast<uint32_t>(device->getSwapchainImageCount(swapchain)); // >= MinImageCount
 	info.CheckVkResultFn = [](VkResult err) {
 		VK_CHECK_RESULT(err);
 	};
@@ -274,7 +273,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 
 void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 {
-	PlatformWindow* window = Application::app()->window();
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_renderer->getDevice());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
@@ -287,7 +286,7 @@ void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 	ImGui::DestroyContext();
 	vkDestroyDescriptorPool(vk_device->getVkDevice(), m_renderData->descriptorPool, nullptr);
 	vk_device->destroy(m_renderData->renderPass);
-	vk_device->destroy(window->swapchain(), m_renderData->backbuffer);
+	vk_device->destroy(swapchain, m_renderData->backbuffer);
 	mem::akaDelete(m_renderData);
 }
 
@@ -316,8 +315,8 @@ void ImGuiLayer::onLayerPreRender()
 
 void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 {
-	PlatformWindow* window = Application::app()->window();
-	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(window->swapchain(), frame);
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(frame);
 	gfx::VulkanCommandList* vk_cmd = dynamic_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();
 #if defined(AKA_USE_OPENGL)
@@ -333,7 +332,7 @@ void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #elif defined(AKA_USE_VULKAN)
 	// TODO do not enforce backbuffer
-	gfx::FramebufferHandle framebuffer = _renderer->getDevice()->get(m_renderData->backbuffer, window->swapchain(), frame);
+	gfx::FramebufferHandle framebuffer = _renderer->getDevice()->get(m_renderData->backbuffer, swapchain, frame);
 	const gfx::Framebuffer* fb = _renderer->getDevice()->get(framebuffer);
 	{
 		gfx::ScopedCmdMarker marker(*cmd, "ImGui", &Color::red.x);

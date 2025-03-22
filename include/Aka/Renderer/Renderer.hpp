@@ -52,14 +52,14 @@ static const uint32_t MaxGeometryBufferSize = 1 << 30; // 1Go
 class Renderer final
 {
 public:
-	Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library);
+	Renderer(AssetLibrary* _library);
 	Renderer(const Renderer&) = delete;
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(const Renderer&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 	~Renderer();
 
-	void create();
+	void create(gfx::GraphicDevice* _device);
 	void destroy();
 
 	// -- Instances

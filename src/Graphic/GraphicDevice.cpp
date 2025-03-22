@@ -5,24 +5,5 @@
 namespace aka {
 namespace gfx {
 
-
-GraphicDevice* GraphicDevice::create(GraphicAPI api)
-{
-	switch (api)
-	{
-#if defined(AKA_USE_VULKAN)
-	case GraphicAPI::Vulkan:
-		return mem::akaNew<VulkanGraphicDevice>(AllocatorMemoryType::Object, AllocatorCategory::Graphic);
-#endif
-	default:
-		return nullptr;
-	}
-}
-
-void GraphicDevice::destroy(GraphicDevice* device)
-{
-	mem::akaDelete(device);
-}
-
 };
 };

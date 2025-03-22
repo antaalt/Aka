@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanContext.h"
 #include "VulkanTexture.h"
 #include "VulkanBuffer.h"
 #include "VulkanProgram.h"
@@ -12,10 +11,12 @@
 #include "VulkanRenderPass.h"
 #include "VulkanFence.h"
 #include "VulkanDebug.h"
+#include "VulkanCommon.hpp"
 
 #include <Aka/Memory/Pool.h>
 #include <Aka/Core/Config.h>
 #include <Aka/OS/OS.h>
+
 
 #define ENABLE_RENDERDOC_CAPTURE 1
 
@@ -23,16 +24,90 @@
 struct RENDERDOC_API_1_6_0;
 #endif
 
+template <>
+struct std::hash<VkPushConstantRange>
+{
+	size_t operator()(const VkPushConstantRange& data) const
+	{
+		size_t hash = 0;
+		aka::hash::combine(hash, data.offset);
+		aka::hash::combine(hash, data.size);
+		aka::hash::combine(hash, data.stageFlags);
+		return hash;
+	}
+};
+using PipelineLayoutKey = std::pair<aka::gfx::Vector<VkDescriptorSetLayout>, aka::gfx::Vector<VkPushConstantRange>>;
+
+template <>
+struct std::less<VkPushConstantRange>
+{
+	bool operator()(const VkPushConstantRange& lhs, const VkPushConstantRange& rhs) const
+	{
+		if (lhs.offset < rhs.offset) return true;
+		else if (lhs.offset > rhs.offset) return false;
+
+		if (lhs.size < rhs.size) return true;
+		else if (lhs.size > rhs.size) return false;
+
+		if (lhs.stageFlags < rhs.stageFlags) return true;
+		else if (lhs.stageFlags > rhs.stageFlags) return false;
+
+		return false; // equal
+	}
+};
+
+struct PipelineLayoutKeyFunctor
+{
+	bool operator()(const PipelineLayoutKey& left, const PipelineLayoutKey& right) const
+	{
+		if (left.first != right.first) return false;
+		for (size_t i = 0; i < right.second.size(); i++)
+		{
+			if (right.second[i].offset != left.second[i].offset) return false;
+			if (right.second[i].size != left.second[i].size) return false;
+			if (right.second[i].stageFlags != left.second[i].stageFlags) return false;
+		}
+		return true;
+	}
+	size_t operator()(const PipelineLayoutKey& data) const
+	{
+		size_t hash = 0;
+		for (VkDescriptorSetLayout layout : data.first)
+		{
+			aka::hash::combine(hash, layout);
+		}
+		for (VkPushConstantRange range : data.second)
+		{
+			aka::hash::combine(hash, range.offset);
+			aka::hash::combine(hash, range.size);
+			aka::hash::combine(hash, range.stageFlags);
+		}
+		return hash;
+	}
+};
+
+
+
 namespace aka {
 namespace gfx {
+
+struct VulkanQueue
+{
+	static constexpr uint32_t invalidFamilyIndex = ~0;
+
+	uint32_t familyIndex = invalidFamilyIndex; // family index
+	uint32_t index = 0; // Index in family
+	VkQueue queue = VK_NULL_HANDLE;
+};
+
 
 class VulkanGraphicDevice : public GraphicDevice
 {
 public:
-	VulkanGraphicDevice();
+	VulkanGraphicDevice(VulkanInstance* instance, VkPhysicalDevice _device, PhysicalDeviceFeatures features, const PhysicalDeviceLimits& limits);
 	~VulkanGraphicDevice();
 
-	bool initialize(PlatformDevice* platform, const GraphicConfig& cfg) override;
+	bool initialize(gfx::SurfaceHandle surface) override;
 	void shutdown() override;
 
 	GraphicAPI getApi() const override;
@@ -112,11 +187,6 @@ public:
 	void destroy(FramebufferHandle handle) override;
 	const Framebuffer* get(FramebufferHandle handle) override;
 
-	// Surface
-	SurfaceHandle createSurface(const char* name, PlatformWindow* window) override;
-	const Surface* get(SurfaceHandle handle) override;
-	void destroy(SurfaceHandle handle) override;
-
 	// Swapchain
 	SwapchainHandle createSwapchain(const char* name, SurfaceHandle surface, uint32_t width, uint32_t height, TextureFormat format, SwapchainMode mode, SwapchainType type) override;
 	void destroy(SwapchainHandle backbuffer) override;
@@ -178,12 +248,12 @@ public:
 	void endMarker(QueueType queue) override;
 
 	// Frame command lists
-	FrameIndex getFrameIndex(SwapchainHandle handle, FrameHandle frame) override;
-	CommandList* getCopyCommandList(SwapchainHandle handle, FrameHandle frame) override;
-	CommandList* getGraphicCommandList(SwapchainHandle handle, FrameHandle frame) override;
-	CommandList* getComputeCommandList(SwapchainHandle handle, FrameHandle frame) override;
-	CommandEncoder* acquireCommandEncoder(SwapchainHandle handle, FrameHandle frame, QueueType queue) override;
-	void release(SwapchainHandle handle, FrameHandle frame, CommandEncoder* cmd) override;
+	FrameIndex getFrameIndex(FrameHandle frame) override;
+	CommandList* getCopyCommandList(FrameHandle frame) override;
+	CommandList* getGraphicCommandList(FrameHandle frame) override;
+	CommandList* getComputeCommandList(FrameHandle frame) override;
+	CommandEncoder* acquireCommandEncoder(FrameHandle frame, QueueType queue) override;
+	void release(FrameHandle frame, CommandEncoder* cmd) override;
 
 	// Frame
 	const Frame* get(FrameHandle handle) override;
@@ -204,18 +274,19 @@ public:
 	}
 
 public:
-	VkInstance getVkInstance() { return m_context.instance; }
-	VkDevice getVkDevice() { return m_context.device; }
-	VkPhysicalDevice getVkPhysicalDevice() { return m_context.physicalDevice; }
-	VkCommandPool getVkCommandPool(QueueType queue) { return m_context.commandPool[EnumToIndex(queue)]; }
+	VkInstance getVkInstance();
+	VkDevice getVkDevice() { return m_device; }
+	VkPhysicalDevice getVkPhysicalDevice() { return m_physicalDevice; }
+	VkCommandPool getVkCommandPool(QueueType queue) { return m_commandPool[EnumToIndex(queue)]; }
 	VkQueue getVkQueue(QueueType type);
 	VkQueue getVkPresentQueue();
 	uint32_t getVkQueueIndex(QueueType queue);
 	uint32_t getVkPresentQueueIndex();
-	VkRenderPass getVkRenderPass(const RenderPassState& state) { return m_context.getRenderPass(state); }
-	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state) { return m_context.getDescriptorSetLayout(state); }
-	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount) { return m_context.getPipelineLayout(layouts, layoutCount, constants, constantCount); }
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) { return m_context.findMemoryType(typeFilter, properties); }
+	VkRenderPass getVkRenderPass(const RenderPassState& state);
+	VkDescriptorSetLayout getVkDescriptorSetLayout(const ShaderBindingState& state);
+	VkPipelineLayout getVkPipelineLayout(const VkDescriptorSetLayout* layouts, uint32_t layoutCount, const VkPushConstantRange* constants, uint32_t constantCount);
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	static uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 private:
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	OS::Library m_renderDocLibrary;
@@ -227,8 +298,23 @@ private:
 	} m_captureState = RenderDocCaptureState::Idle;
 #endif
 private:
+	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
+	std::unordered_map<ShaderBindingState, VkDescriptorSetLayout> m_descriptorSetLayouts;
+	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout; // Should not cache this, heavy to cache, and not that useful...
+private:
+	VkDevice createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount, gfx::SurfaceHandle surface);
+private:
 	friend class VulkanSwapchain;
-	VulkanContext m_context;
+	VulkanInstance* m_instance;
+	VkDevice m_device;
+	VkPhysicalDevice m_physicalDevice;
+	PhysicalDeviceFeatures m_physicalDeviceFeatures;
+	PhysicalDeviceLimits m_physicalDeviceLimits;
+	// swapchain
+	VulkanQueue m_queues[EnumCount<QueueType>()];
+	VulkanQueue m_presentQueue;
+
+	VkCommandPool m_commandPool[EnumCount<QueueType>()];
 	//VulkanSwapchain m_swapchain;
 	// Improve upload / download with persistent staging memory
 	const uint32_t m_stagingUploadHeapSize = 1 << 23; // 8 Mo
@@ -255,7 +341,6 @@ private: // Pools
 	Pool<VulkanDescriptorPool> m_descriptorPoolPool;
 	Pool<VulkanFence> m_fencePool;
 	Pool<VulkanSwapchain> m_swapchainPool;
-	Pool<VulkanSurface> m_surfacePool;
 	Pool<VulkanCommandEncoder> m_commandEncoderPool;
 };
 

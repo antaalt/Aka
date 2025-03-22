@@ -64,7 +64,7 @@ SamplerHandle VulkanGraphicDevice::createSampler(
 		wrapU, wrapV, wrapW,
 		anisotropy
 	);
-	vk_sampler->create(m_context);
+	vk_sampler->create(this);
 
 	return SamplerHandle{ vk_sampler };
 }
@@ -74,7 +74,7 @@ void VulkanGraphicDevice::destroy(SamplerHandle sampler)
 	if (sampler == SamplerHandle::null) return;
 
 	VulkanSampler* vk_sampler = getVk<VulkanSampler>(sampler);
-	vk_sampler->destroy(m_context);
+	vk_sampler->destroy(this);
 	m_samplerPool.release(vk_sampler);
 }
 
@@ -89,7 +89,7 @@ VulkanSampler::VulkanSampler(const char* name, Filter min, Filter mag, SamplerMi
 {
 }
 
-void VulkanSampler::create(VulkanContext& context)
+void VulkanSampler::create(VulkanGraphicDevice* device)
 {
 	VkFilter vk_filterMin = tovk(filterMin);
 	VkFilter vk_filterMag = tovk(filterMag);
@@ -99,8 +99,8 @@ void VulkanSampler::create(VulkanContext& context)
 	VkSamplerAddressMode vk_wrapW = tovk(wrapW);
 
 	vk_sampler = VulkanSampler::createVkSampler(
-		context.device,
-		context.physicalDevice,
+		device->getVkDevice(),
+		device->getVkPhysicalDevice(),
 		vk_filterMin,
 		vk_filterMag,
 		vk_mipmapMode,
@@ -110,12 +110,12 @@ void VulkanSampler::create(VulkanContext& context)
 		vk_wrapW,
 		anisotropy
 	);
-	setDebugName(context.device, vk_sampler, "VkSampler_", name);
+	setDebugName(device->getVkDevice(), vk_sampler, "VkSampler_", name);
 }
 
-void VulkanSampler::destroy(VulkanContext& context)
+void VulkanSampler::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroySampler(context.device, vk_sampler, getVkAllocator());
+	vkDestroySampler(device->getVkDevice(), vk_sampler, getVkAllocator());
 	vk_sampler = VK_NULL_HANDLE;
 }
 

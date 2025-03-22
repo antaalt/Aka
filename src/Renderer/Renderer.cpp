@@ -24,9 +24,9 @@ const char* getInstanceTypeName(InstanceType type)
 	return s_instanceTypeName[EnumToIndex(type)];
 }
 
-Renderer::Renderer(gfx::GraphicDevice* _device, AssetLibrary* _library) :
+Renderer::Renderer(AssetLibrary* _library) :
 	m_instanceRenderer{ nullptr },
-	m_device(_device),
+	m_device(nullptr),
 	m_library(_library)
 {
 	for (InstanceType instanceType : EnumRange<InstanceType>())
@@ -42,12 +42,13 @@ Renderer::~Renderer()
 	}
 }
 
-void Renderer::create()
+void Renderer::create(gfx::GraphicDevice* _device)
 {
+	m_device = _device;
 	// Create instance buffer (need resize depending on count ?)
 	ShaderRegistry* registry = Application::app()->program();
-	PlatformWindow* window = Application::app()->window();
-	gfx::SwapchainExtent extent = getDevice()->getSwapchainExtent(window->swapchain());
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainExtent extent = getDevice()->getSwapchainExtent(swapchain);
 	m_width = extent.width;
 	m_height = extent.height;
 
@@ -356,9 +357,8 @@ uint32_t Renderer::getGeometryBufferOffset(GeometryBufferHandle handle)
 
 void Renderer::render(gfx::FrameHandle frame)
 {
-	PlatformWindow* window = Application::app()->window();
-	gfx::CommandList* cmd = m_device->getGraphicCommandList(window->swapchain(), frame);
-	gfx::FrameIndex frameIndex = m_device->getFrameIndex(window->swapchain(), frame);
+	gfx::CommandList* cmd = m_device->getGraphicCommandList(frame);
+	gfx::FrameIndex frameIndex = m_device->getFrameIndex(frame);
 
 	if (m_bindlessTextureUpdates.size() > 0)
 	{
@@ -378,13 +378,14 @@ void Renderer::render(gfx::FrameHandle frame)
 		m_materialDirty = false;
 	}
 
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{
 		const ViewHandle viewHandle = viewPair.first;
 		const View& view = viewPair.second;
 
 		// TODO: framebuffer should be per view.
-		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, window->swapchain(), frame);
+		gfx::FramebufferHandle fb = getDevice()->get(m_backbuffer, swapchain, frame);
 		gfx::ClearState clearState{};
 		clearState.setColor(0, 0.f, 1.f, 0.f, 1.f);
 		clearState.setDepthStencil(1.f, 0);
@@ -494,7 +495,7 @@ uint32_t Renderer::getMaterialIndex(MaterialHandle handle)
 }
 void Renderer::createBackbuffer()
 {
-	PlatformWindow* window = Application::app()->window();
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
 	// TODO: create depth
 	m_backbufferRenderPassState = {};
 	m_backbufferRenderPassState.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Undefined, gfx::ResourceAccessType::Present);
@@ -506,12 +507,12 @@ void Renderer::createBackbuffer()
 	depthAttachment.flag = gfx::AttachmentFlag::BackbufferAutoResize;
 	
 	m_backbufferRenderPass = getDevice()->createRenderPass("BackbufferPassHandle", m_backbufferRenderPassState);
-	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", window->swapchain(), m_backbufferRenderPass, nullptr, 0, &depthAttachment);
+	m_backbuffer = getDevice()->createBackbuffer("Backbuffer", swapchain, m_backbufferRenderPass, nullptr, 0, &depthAttachment);
 }
 void Renderer::destroyBackbuffer()
 {
-	PlatformWindow* window = Application::app()->window();
-	m_device->destroy(window->swapchain(), m_backbuffer);
+	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	m_device->destroy(swapchain, m_backbuffer);
 	m_device->destroy(m_backbufferRenderPass);
 	m_device->destroy(m_depth);
 }

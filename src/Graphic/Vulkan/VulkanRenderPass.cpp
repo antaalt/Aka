@@ -1,7 +1,7 @@
 #include "VulkanRenderPass.h"
 
-#include "VulkanTexture.h"
 #include "VulkanGraphicDevice.h"
+#include "VulkanTexture.h"
 
 namespace aka {
 namespace gfx {
@@ -31,14 +31,14 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 	{
 		const RenderPassState::Attachment& attachment = state.colors[i];
 		VkAttachmentDescription& vk_attachment = vk_attachments[i];
-		vk_attachment.format = VulkanContext::tovk(attachment.format);
+		vk_attachment.format = vk::convert(attachment.format);
 		vk_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // TODO multisampling
-		vk_attachment.loadOp = VulkanContext::tovk(attachment.loadOp);
-		vk_attachment.storeOp = VulkanContext::tovk(attachment.storeOp);
-		vk_attachment.stencilLoadOp = VulkanContext::tovk(attachment.loadOp);
-		vk_attachment.stencilStoreOp = VulkanContext::tovk(attachment.storeOp);
-		vk_attachment.initialLayout = VulkanContext::tovk(attachment.initialLayout, attachment.format);
-		vk_attachment.finalLayout = VulkanContext::tovk(attachment.finalLayout, attachment.format);
+		vk_attachment.loadOp = vk::convert(attachment.loadOp);
+		vk_attachment.storeOp = vk::convert(attachment.storeOp);
+		vk_attachment.stencilLoadOp = vk::convert(attachment.loadOp);
+		vk_attachment.stencilStoreOp = vk::convert(attachment.storeOp);
+		vk_attachment.initialLayout = vk::convert(attachment.initialLayout, attachment.format);
+		vk_attachment.finalLayout = vk::convert(attachment.finalLayout, attachment.format);
 
 		vk_colorAttachmentsReferences[i].attachment = static_cast<uint32_t>(i);
 		vk_colorAttachmentsReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -48,14 +48,14 @@ VkRenderPass VulkanRenderPass::createVkRenderPass(VkDevice device, const RenderP
 	{
 		const RenderPassState::Attachment& attachment = state.depth;
 		VkAttachmentDescription depthAttachment = {};
-		depthAttachment.format = VulkanContext::tovk(attachment.format);
+		depthAttachment.format = vk::convert(attachment.format);
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = VulkanContext::tovk(attachment.loadOp);
-		depthAttachment.storeOp = VulkanContext::tovk(attachment.storeOp);
-		depthAttachment.stencilLoadOp = VulkanContext::tovk(attachment.loadOp);
-		depthAttachment.stencilStoreOp = VulkanContext::tovk(attachment.storeOp);
-		depthAttachment.initialLayout = VulkanContext::tovk(attachment.initialLayout, attachment.format);
-		depthAttachment.finalLayout = VulkanContext::tovk(attachment.finalLayout, attachment.format);
+		depthAttachment.loadOp = vk::convert(attachment.loadOp);
+		depthAttachment.storeOp = vk::convert(attachment.storeOp);
+		depthAttachment.stencilLoadOp = vk::convert(attachment.loadOp);
+		depthAttachment.stencilStoreOp = vk::convert(attachment.storeOp);
+		depthAttachment.initialLayout = vk::convert(attachment.initialLayout, attachment.format);
+		depthAttachment.finalLayout = vk::convert(attachment.finalLayout, attachment.format);
 
 		vk_depthAttachment.attachment = static_cast<uint32_t>(vk_attachments.size());
 		vk_depthAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // TODO DEPTH_AND_STENCIL_SEPARATELY

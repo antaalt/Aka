@@ -85,7 +85,7 @@ add_library (Aka
 	"src/Resource/AssetLibrary.cpp"
 	"src/Resource/AssetPath.cpp"
 
-	"src/Graphic/Vulkan/VulkanContext.cpp"
+	
 	"src/Graphic/Vulkan/VulkanGraphicDevice.cpp"
 	"src/Graphic/Vulkan/VulkanSwapchain.cpp"
 	"src/Graphic/Vulkan/VulkanBuffer.cpp"
@@ -99,6 +99,8 @@ add_library (Aka
 	"src/Graphic/Vulkan/VulkanRenderPass.cpp"
 	"src/Graphic/Vulkan/VulkanFence.cpp"
 	"src/Graphic/Vulkan/VulkanBarrier.cpp"
+	"src/Graphic/Vulkan/VulkanInstance.cpp"
+	"src/Graphic/Vulkan/VulkanCommon.cpp"
 	"src/Graphic/Vulkan/Extensions/VkDebugUtils.cpp"
 	"src/Graphic/Vulkan/Extensions/VkMeshShader.cpp"
 	"src/Graphic/Resource.cpp"
@@ -117,6 +119,7 @@ add_library (Aka
 	"src/Graphic/PhysicalDevice.cpp"
 	"src/Graphic/Swapchain.cpp" 
 	"src/Graphic/Surface.cpp"
+	"src/Graphic/Instance.cpp"
 
 	"src/OS/Path.cpp"
 	"src/OS/Image.cpp"
@@ -137,7 +140,7 @@ add_library (Aka
 	"src/Platform/Input.cpp"
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
-	"src/Platform/PlatformWindow.cpp" 
+	"src/Platform/PlatformWindow.cpp"
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)

@@ -3,9 +3,8 @@
 #include <Aka/Graphic/Pipeline.h>
 
 #if defined(AKA_USE_VULKAN)
-
-#include "VulkanContext.h"
-#include "Vulkanprogram.h"
+#include "VulkanProgram.h"
+#include "VulkanCommon.hpp"
 
 namespace aka {
 namespace gfx {

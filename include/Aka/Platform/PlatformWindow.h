@@ -49,9 +49,9 @@ public:
 	virtual	~PlatformWindow();
 
 	// Initialize window
-	void initialize(gfx::GraphicDevice* _device);
+	void initialize(gfx::Instance* _instance);
 	// Shutdown window
-	void shutdown(gfx::GraphicDevice* _device);
+	void shutdown(gfx::Instance* _instance);
 
 	// Get the width of the window
 	uint32_t width() const;
@@ -65,8 +65,6 @@ public:
 	PlatformWindowFlag flags() const;
 	// Get window surface
 	gfx::SurfaceHandle surface() const;
-	// Get window swapchain
-	gfx::SwapchainHandle swapchain() const;
 
 protected:
 	// Initialize window platform specific

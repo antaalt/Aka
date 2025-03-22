@@ -13,8 +13,8 @@ VulkanBuffer::VulkanBuffer(const char* name, BufferType type, uint32_t size, Buf
 }
 void VulkanBuffer::create(VulkanGraphicDevice* device)
 {
-	VkMemoryPropertyFlags properties = VulkanContext::tovk(usage);
-	VkBufferUsageFlags usages = VulkanContext::tovk(type);
+	VkMemoryPropertyFlags properties = vk::convert(usage);
+	VkBufferUsageFlags usages = vk::convert(type);
 
 	if (usage != BufferUsage::Immutable)
 	{
@@ -68,7 +68,7 @@ VkDeviceMemory VulkanBuffer::createVkDeviceMemory(VkDevice device, VkPhysicalDev
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = VulkanContext::findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = VulkanGraphicDevice::findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
 	VkDeviceMemory vk_memory = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkAllocateMemory(device, &allocInfo, getVkAllocator(), &vk_memory));

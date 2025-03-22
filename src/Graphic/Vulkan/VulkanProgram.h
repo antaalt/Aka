@@ -4,7 +4,7 @@
 #include <Aka/Graphic/Shader.h>
 #include <Aka/Graphic/DescriptorSet.h>
 
-#include "VulkanContext.h"
+#include "VulkanCommon.hpp"
 
 namespace aka {
 namespace gfx {
@@ -35,8 +35,8 @@ struct VulkanDescriptorPool : DescriptorPool
 
 	VkDescriptorPool vk_pool;
 
-	void create(VulkanContext& context);
-	void destroy(VulkanContext& context);
+	void create(VulkanGraphicDevice* context);
+	void destroy(VulkanGraphicDevice* context);
 
 	static VkDescriptorPool createVkDescriptorPool(VkDevice device, const ShaderBindingState& bindings, uint32_t size);
 };
@@ -48,8 +48,8 @@ struct VulkanDescriptorSet : DescriptorSet
 	VkDescriptorPool vk_pool; // Do not own it.
 	VkDescriptorSet vk_descriptorSet;
 
-	void create(VulkanContext& context);
-	void destroy(VulkanContext& context);
+	void create(VulkanGraphicDevice* context);
+	void destroy(VulkanGraphicDevice* context);
 
 	static void updateDescriptorSet(VulkanGraphicDevice* device, const DescriptorSet* set, const DescriptorUpdate* updates, size_t size);
 	static VkDescriptorSetLayout createVkDescriptorSetLayout(VkDevice device, const ShaderBindingState& bindings);

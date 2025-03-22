@@ -2,10 +2,12 @@
 #if defined(AKA_USE_VULKAN)
 #include <Aka/Graphic/Sampler.h>
 
-#include "VulkanContext.h"
+#include "VulkanCommon.hpp"
 
 namespace aka {
 namespace gfx {
+
+class VulkanGraphicDevice;
 
 struct VulkanSampler : Sampler
 {
@@ -13,8 +15,8 @@ struct VulkanSampler : Sampler
 
 	VkSampler vk_sampler;
 
-	void create(VulkanContext& context);
-	void destroy(VulkanContext& context);
+	void create(VulkanGraphicDevice* device);
+	void destroy(VulkanGraphicDevice* device);
 
 	static VkSampler createVkSampler(
 		VkDevice device, VkPhysicalDevice physicalDevice,

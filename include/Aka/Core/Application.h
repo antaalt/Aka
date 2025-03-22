@@ -3,6 +3,7 @@
 #include <Aka/Platform/Platform.h>
 #include <Aka/Platform/PlatformDevice.h>
 #include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Graphic/Instance.h>
 #include <Aka/Audio/AudioDevice.h>
 
 #include <Aka/Core/Event.h>
@@ -111,6 +112,8 @@ public:
 	static Application* app();
 	// Get the graphic device
 	gfx::GraphicDevice* graphic();
+	// Get the main swapchain
+	gfx::SwapchainHandle swapchain();
 	// Get the renderer
 	Renderer* renderer();
 	// Get the platform device
@@ -129,7 +132,10 @@ private:
 	PlatformDevice* m_platform;
 	PlatformWindow* m_window;
 	PlatformWindowConfig m_windowInitConfig;
-	gfx::GraphicDevice* m_graphic;
+	gfx::PhysicalDeviceFeatures m_physicalDeviceFeatures;
+	gfx::Instance* m_instance;
+	gfx::GraphicDevice* m_device;
+	gfx::SwapchainHandle m_swapchain;
 	AudioDevice* m_audio;
 	ShaderRegistry* m_program;
 	AssetLibrary* m_assets;
