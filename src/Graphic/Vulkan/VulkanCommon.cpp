@@ -7,6 +7,7 @@ namespace vk {
 
 VkFormat convert(TextureFormat format)
 {
+	// TODO: add srgb bool as arg.
 	switch (format)
 	{
 	default:
@@ -72,6 +73,16 @@ VkFormat convert(TextureFormat format)
 		return VK_FORMAT_D24_UNORM_S8_UINT;
 	case TextureFormat::Depth32FStencil8:
 		return VK_FORMAT_D32_SFLOAT_S8_UINT;
+	case TextureFormat::Bc1:
+		return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+	case TextureFormat::Bc2:
+		return VK_FORMAT_BC2_UNORM_BLOCK;
+	case TextureFormat::Bc3:
+		return VK_FORMAT_BC3_UNORM_BLOCK;
+	case TextureFormat::Bc4:
+		return VK_FORMAT_BC4_UNORM_BLOCK;
+	case TextureFormat::Bc5:
+		return VK_FORMAT_BC5_UNORM_BLOCK;
 	}
 	return VK_FORMAT_UNDEFINED;
 }

@@ -141,7 +141,7 @@ AssetID AssetLibrary::registerAsset(const AssetPath& _path, AssetType _assetType
 		// Should check hash aswell to validate content.
 		if (samePath && sameType && (!fileExist || validate(this, assetID, _assetType)) && !_overwrite)
 		{
-			Logger::warn("[register] Asset '", _path.cstr(), "' already exist but is identical. Using it.");
+			//Logger::warn("[register] Asset '", _path.cstr(), "' already exist but is identical. Using it.");
 			return assetID;
 		}
 		else if (_overwrite)

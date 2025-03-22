@@ -37,6 +37,23 @@ Texture::~Texture()
 	// TODO release texture
 }
 
+gfx::TextureFormat getTextureFormat(ArchiveImageFormat format)
+{
+	switch (format)
+	{
+	default:
+		AKA_NOT_IMPLEMENTED;
+	case ArchiveImageFormat::Uncompressed:
+	case ArchiveImageFormat::Compressed:
+		return gfx::TextureFormat::RGBA8;
+	case ArchiveImageFormat::Bc1: return gfx::TextureFormat::Bc1;
+	case ArchiveImageFormat::Bc2: return gfx::TextureFormat::Bc2;
+	case ArchiveImageFormat::Bc3: return gfx::TextureFormat::Bc3;
+	case ArchiveImageFormat::Bc4: return gfx::TextureFormat::Bc4;
+	case ArchiveImageFormat::Bc5: return gfx::TextureFormat::Bc5;
+	}
+}
+
 void Texture::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer)
 {
 	const ArchiveImage& imageArchive = _context.getArchive<ArchiveImage>(getID());
@@ -44,9 +61,12 @@ void Texture::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _rend
 	const void* data = imageArchive.data.data();
 	m_width = imageArchive.width;
 	m_height = imageArchive.height;
+	m_textureFormat = aka::getTextureFormat(imageArchive.format);
 	m_textureType = gfx::TextureType::Texture2D;
-	m_textureFormat = gfx::TextureFormat::RGBA8;
-	m_textureUsage = gfx::TextureUsage::ShaderResource | gfx::TextureUsage::GenerateMips;
+	m_textureUsage = gfx::TextureUsage::ShaderResource;
+	// Compressed texture should have their own mips (generation doesnt work for now).
+	if (!gfx::Texture::isCompressed(m_textureFormat))
+		m_textureUsage |= gfx::TextureUsage::GenerateMips;
 	m_layerCount = 1; // TODO
 	m_mipCount = gfx::Sampler::mipLevelCount(imageArchive.width, imageArchive.height);
 	m_textureHandle = _renderer->getDevice()->createTexture(

@@ -39,6 +39,16 @@ enum class ImageComponent : uint32_t
 };
 AKA_IMPLEMENT_BITMASK_OPERATOR(ImageComponent);
 
+enum class ImageCompression : uint32_t
+{
+	None,
+	Bc1,
+	Bc2,
+	Bc3,
+	Bc4,
+	Bc5,
+};
+
 uint32_t getImageComponentCount(ImageComponent _components);
 
 enum class ImageFileFormat
@@ -49,9 +59,10 @@ enum class ImageFileFormat
 	Png,
 	Tga,
 	Hdr,
+	Dds,
 
 	First = Jpeg,
-	Last = Hdr,
+	Last = Dds,
 };
 
 enum class ImageQuality
@@ -60,6 +71,8 @@ enum class ImageQuality
 	Medium,
 	High,
 };
+
+size_t getImageSize(uint32_t w, uint32_t h, ImageComponent components, ImageCompression compression);
 
 template <typename T>
 struct Img
@@ -76,8 +89,6 @@ struct Img
 	Img(uint32_t width, uint32_t height, ImageComponent components);
 	Img(uint32_t width, uint32_t height, ImageComponent components, const T* data);
 
-
-
 	void set(uint32_t x, uint32_t y, const Pixel& pixel);
 	Pixel get(uint32_t x, uint32_t y) const;
 	void clear();
@@ -91,6 +102,7 @@ struct Img
 	uint32_t width = 0;
 	uint32_t height = 0;
 	ImageComponent components = ImageComponent::RGBA;
+	ImageCompression compression = ImageCompression::None;
 	Vector<T> bytes;
 };
 

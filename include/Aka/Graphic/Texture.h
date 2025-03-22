@@ -75,6 +75,13 @@ enum class TextureFormat : uint8_t
 	Depth24Stencil8,
 	Depth32FStencil8, // avoid using it due to performances cost
 
+	// Compressed format
+	Bc1,
+	Bc2,
+	Bc3,
+	Bc4,
+	Bc5,
+
 	First = R8,
 	Last = Depth32FStencil8,
 };
@@ -127,8 +134,9 @@ struct Texture : Resource
 	static bool isDepthStencil(TextureFormat format);
 	static bool hasDepth(TextureFormat format);
 	static bool hasStencil(TextureFormat format);
+	static bool isCompressed(TextureFormat format);
 
-	static uint32_t size(TextureFormat format);
+	static uint32_t size(uint32_t width, uint32_t height, TextureFormat format);
 
 	static TextureHandle create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* data = nullptr);
 	static TextureHandle createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* const* data = nullptr);

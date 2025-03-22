@@ -115,8 +115,9 @@ void VulkanTexture::copyBufferToImage(VkCommandBuffer cmd, VkBuffer stagingBuffe
 			//for (uint32_t iLevel = 0; iLevel < levels; iLevel++)
 			uint32_t iLevel = 0;
 			{
+				AKA_ASSERT(iLayer == 0 || !Texture::isCompressed(format), "Layered compressed texture not supported yet.");
 				VkBufferImageCopy region{};
-				region.bufferOffset = width * height * size(format) * iLayer;
+				region.bufferOffset = size(width, height, format) * iLayer;
 				region.bufferRowLength = 0;
 				region.bufferImageHeight = 0;
 
@@ -244,7 +245,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 		if (data != nullptr && data[0] != nullptr)
 		{
 			// Create staging buffer
-			VkDeviceSize imageSize = vk_texture->width * vk_texture->height * Texture::size(vk_texture->format);
+			VkDeviceSize imageSize = Texture::size(vk_texture->width, vk_texture->height, vk_texture->format);
 			VkDeviceSize bufferSize = imageSize * vk_texture->layers;
 			if (imageSize > m_stagingUploadHeapSize)
 			{
@@ -331,7 +332,7 @@ void VulkanGraphicDevice::upload(TextureHandle texture, const void* const* data,
 		return;
 
 	// Create staging buffer
-	VkDeviceSize imageSize = vk_texture->width * vk_texture->height * Texture::size(vk_texture->format);
+	VkDeviceSize imageSize = Texture::size(vk_texture->width, vk_texture->height, vk_texture->format);
 	VkDeviceSize bufferSize = imageSize * vk_texture->layers;
 
 	VkBuffer vk_stagingBuffer = VK_NULL_HANDLE;

@@ -86,6 +86,11 @@ bool Texture::isColor(TextureFormat format)
 	case TextureFormat::BGRA16U:
 	case TextureFormat::BGRA16F:
 	case TextureFormat::BGRA32F:
+	case TextureFormat::Bc1:
+	case TextureFormat::Bc2:
+	case TextureFormat::Bc3:
+	case TextureFormat::Bc4:
+	case TextureFormat::Bc5:
 		return true;
 	default:
 		return false;
@@ -153,9 +158,23 @@ bool Texture::hasStencil(TextureFormat format)
 		return false;
 	}
 }
+bool Texture::isCompressed(TextureFormat format)
+{
+	switch (format)
+	{
+	case TextureFormat::Bc1:
+	case TextureFormat::Bc2:
+	case TextureFormat::Bc3:
+	case TextureFormat::Bc4:
+	case TextureFormat::Bc5:
+		return true;
+	default:
+		return false;
+	}
+}
 
 
-uint32_t Texture::size(TextureFormat format)
+uint32_t Texture::size(uint32_t width, uint32_t height, TextureFormat format)
 {
 	switch (format)
 	{
@@ -163,50 +182,57 @@ uint32_t Texture::size(TextureFormat format)
 		break;
 	case TextureFormat::R8:
 	case TextureFormat::R8U:
-		return 1;
+		return width * height;
 
 	case TextureFormat::R16:
 	case TextureFormat::R16U:
 	case TextureFormat::R16F:
-		return 2;
+		return width * height * 2;
 	case TextureFormat::R32F:
-		return 4;
+		return width * height * 4;
 	case TextureFormat::RG8:
 	case TextureFormat::RG8U:
-		return 2;
+		return width * height * 2;
 	case TextureFormat::RG16U:
 	case TextureFormat::RG16:
 	case TextureFormat::RG16F:
-		return 4;
+		return width * height * 4;
 	case TextureFormat::RG32F:
-		return 8;
+		return width * height * 8;
 	case TextureFormat::RGB8:
 	case TextureFormat::RGB8U:
-		return 3;
+		return width * height * 3;
 	case TextureFormat::RGB16:
 	case TextureFormat::RGB16U:
 	case TextureFormat::RGB16F:
-		return 6;
+		return width * height * 6;
 	case TextureFormat::RGB32F:
-		return 12;
+		return width * height * 12;
 	case TextureFormat::RGBA8:
 	case TextureFormat::RGBA8U:
-		return 4;
+		return width * height * 4;
 	case TextureFormat::RGBA16:
 	case TextureFormat::RGBA16U:
 	case TextureFormat::RGBA16F:
-		return 8;
+		return width * height * 8;
 	case TextureFormat::RGBA32F:
-		return 16;
+		return width * height * 16;
 	case TextureFormat::BGRA:
 	case TextureFormat::BGRA8:
-		return 4;
+		return width * height * 4;
 	case TextureFormat::BGRA16:
 	case TextureFormat::BGRA16U:
 	case TextureFormat::BGRA16F:
-		return 8;
+		return width * height * 8;
 	case TextureFormat::BGRA32F:
-		return 16;
+		return width* height * 16;
+	case TextureFormat::Bc1:
+	case TextureFormat::Bc4:
+		return ((width + 3) / 4) * ((height + 3) / 4) * 8; // bpe = 8
+	case TextureFormat::Bc2:
+	case TextureFormat::Bc3:
+	case TextureFormat::Bc5:
+		return ((width + 3) / 4) * ((height + 3) / 4) * 16; // bpe = 16
 	default:
 		return 0;
 	}
