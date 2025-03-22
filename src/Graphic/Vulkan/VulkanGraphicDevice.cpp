@@ -256,39 +256,6 @@ VkDevice VulkanGraphicDevice::createLogicalDevice(const char* const* deviceExten
 
 bool VulkanGraphicDevice::initialize(gfx::SurfaceHandle surface)
 {
-#ifdef ENABLE_RENDERDOC_CAPTURE
-	if (asBool(m_physicalDeviceFeatures & PhysicalDeviceFeatures::RenderDocAttachment))
-	{
-		// Load renderdoc before any context creation.
-		// TODO should use OS::Library::getLibraryPath();
-		// TODO linux has different path.
-		m_renderDocLibrary = OS::Library("C:/Program Files/RenderDoc/renderdoc.dll");
-		if (m_renderDocLibrary.isLoaded())
-		{
-			// https://renderdoc.org/docs/in_application_api.html
-			pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)m_renderDocLibrary.getProcess("RENDERDOC_GetAPI");
-			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_renderDocContext);
-			AKA_ASSERT(ret == 1, "Failed to retrieve renderdoc dll");
-			// Generate unique path depending on date to avoid blocking apps.
-			Date date = Date::localtime();
-			const String capturePath = String::format("aka-captures/%4u-%2u-%2u/%2u-%2u-%2u/", date.year, date.month, date.day, date.hour, date.minute, date.second);
-			m_renderDocContext->SetCaptureFilePathTemplate(capturePath.cstr());
-			RENDERDOC_InputButton button = eRENDERDOC_Key_F11;
-			m_renderDocContext->SetCaptureKeys(&button, 1);
-			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, true);
-			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, true);
-			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials, true);
-			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, true);
-			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_APIValidation, true);
-			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, false);
-			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
-		}
-		else
-		{
-			Logger::error("Failed to load renderdoc library.");
-		}
-	}
-#endif
 	// Create logical device.
 	Vector<const char*> usedDeviceExtensions;
 	for (uint32_t i = 0; i < m_instance->getRequiredDeviceExtensionCount(); i++)
@@ -415,12 +382,14 @@ FrameHandle VulkanGraphicDevice::frame(SwapchainHandle handle)
 {
 	VulkanSwapchain* vk_swapchain = getVk<VulkanSwapchain>(handle);
 #ifdef ENABLE_RENDERDOC_CAPTURE
-	if (m_renderDocContext && m_captureState == RenderDocCaptureState::PendingCapture)
+	RENDERDOC_API_1_6_0* context = m_instance->getRenderDocContext();
+	if (context && m_instance->getRenderDocCaptureState() == RenderDocCaptureState::PendingCapture)
 	{
-		m_captureState = RenderDocCaptureState::Capturing;
+		m_instance->setRenderDocCaptureState(RenderDocCaptureState::Capturing);
 		// Match all window by passing NULL
-		m_renderDocContext->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(m_instance->getVkInstance()), NULL);
-		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
+		VkInstance instance = m_instance->getVkInstance();
+		context->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(instance), NULL);
+		AKA_ASSERT(context->IsFrameCapturing() == 1, "Frame not capturing...");
 	}
 #endif
 	VulkanFrame* vk_frame = vk_swapchain->acquireNextImage(this);
@@ -521,30 +490,31 @@ SwapchainStatus VulkanGraphicDevice::present(SwapchainHandle handle, FrameHandle
 #ifdef ENABLE_RENDERDOC_CAPTURE
 	// Capture frame
 	// https://renderdoc.org/docs/in_application_api.html
-	if (m_renderDocContext && m_captureState == RenderDocCaptureState::Capturing)
+	RENDERDOC_API_1_6_0* context = m_instance->getRenderDocContext();
+	if (context && m_instance->getRenderDocCaptureState() == RenderDocCaptureState::Capturing)
 	{
-		AKA_ASSERT(m_renderDocContext->IsFrameCapturing() == 1, "Frame not capturing...");
-		bool captureSucceeded = m_renderDocContext->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(m_instance->getVkInstance()), NULL);
-		uint32_t captureCount = m_renderDocContext->GetNumCaptures();
+		AKA_ASSERT(context->IsFrameCapturing() == 1, "Frame not capturing...");
+		bool captureSucceeded = context->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(m_instance->getVkInstance()), NULL);
+		uint32_t captureCount = context->GetNumCaptures();
 		if (captureSucceeded)
 		{
-			m_captureState = RenderDocCaptureState::Idle;
+			m_instance->setRenderDocCaptureState(RenderDocCaptureState::Idle);
 			if (captureCount > 0)
 			{
 				uint32_t lastCaptureID = captureCount - 1;
-				bool inRange = m_renderDocContext->GetCapture(lastCaptureID, NULL, NULL, NULL);
+				bool inRange = context->GetCapture(lastCaptureID, NULL, NULL, NULL);
 				if (inRange) // if capture is valid
 				{
 					// With 1 as first arg, renderdoc will connect to process immediately, 
 					// so call ShowReplayUI after that.
-					if (m_renderDocContext->IsTargetControlConnected())
+					if (context->IsTargetControlConnected())
 					{
-						m_renderDocContext->ShowReplayUI();
+						context->ShowReplayUI();
 					}
 					else
 					{
 						// Zero if failed.
-						uint32_t processPID = m_renderDocContext->LaunchReplayUI(1, "");
+						uint32_t processPID = context->LaunchReplayUI(1, "");
 					}
 				}
 				else
@@ -559,6 +529,7 @@ SwapchainStatus VulkanGraphicDevice::present(SwapchainHandle handle, FrameHandle
 		}
 		else
 		{
+			m_instance->setRenderDocCaptureState(RenderDocCaptureState::Idle);
 			Logger::error("Renderdoc capture failed.");
 		}
 	}
@@ -669,9 +640,10 @@ void VulkanGraphicDevice::screenshot(void* data)
 void VulkanGraphicDevice::capture()
 {
 #ifdef ENABLE_RENDERDOC_CAPTURE
-	if (m_renderDocContext)
+	RENDERDOC_API_1_6_0* context = m_instance->getRenderDocContext();
+	if (context)
 	{
-		m_captureState = RenderDocCaptureState::PendingCapture;
+		m_instance->setRenderDocCaptureState(RenderDocCaptureState::PendingCapture);
 	}
 #else
 	Logger::warn("Capture disabled");

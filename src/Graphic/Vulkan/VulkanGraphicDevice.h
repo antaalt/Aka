@@ -18,12 +18,6 @@
 #include <Aka/OS/OS.h>
 
 
-#define ENABLE_RENDERDOC_CAPTURE 1
-
-#ifdef ENABLE_RENDERDOC_CAPTURE
-struct RENDERDOC_API_1_6_0;
-#endif
-
 template <>
 struct std::hash<VkPushConstantRange>
 {
@@ -288,15 +282,6 @@ public:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	static uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 private:
-#ifdef ENABLE_RENDERDOC_CAPTURE
-	OS::Library m_renderDocLibrary;
-	RENDERDOC_API_1_6_0* m_renderDocContext = nullptr;
-	enum class RenderDocCaptureState {
-		Idle,
-		PendingCapture,
-		Capturing,
-	} m_captureState = RenderDocCaptureState::Idle;
-#endif
 private:
 	std::unordered_map<RenderPassState, VkRenderPass> m_renderPassState;
 	std::unordered_map<ShaderBindingState, VkDescriptorSetLayout> m_descriptorSetLayouts;

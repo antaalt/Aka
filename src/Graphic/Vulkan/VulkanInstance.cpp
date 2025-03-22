@@ -6,6 +6,7 @@
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <renderdoc_app.h>
 
 #if defined(AKA_USE_VULKAN)
 
@@ -248,6 +249,40 @@ VulkanInstance::~VulkanInstance()
 }
 void VulkanInstance::initialize()
 {
+#ifdef ENABLE_RENDERDOC_CAPTURE
+	// TODO: reenable entry point.
+	if (s_enableValidationLayers)// asBool(m_physicalDeviceFeatures & PhysicalDeviceFeatures::RenderDocAttachment))
+	{
+		// Load renderdoc before any context creation.
+		// TODO should use OS::Library::getLibraryPath();
+		// TODO linux has different path.
+		m_renderDocLibrary = OS::Library("C:/Program Files/RenderDoc/renderdoc.dll");
+		if (m_renderDocLibrary.isLoaded())
+		{
+			// https://renderdoc.org/docs/in_application_api.html
+			pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)m_renderDocLibrary.getProcess("RENDERDOC_GetAPI");
+			int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_renderDocContext);
+			AKA_ASSERT(ret == 1, "Failed to retrieve renderdoc dll");
+			// Generate unique path depending on date to avoid blocking apps.
+			Date date = Date::localtime();
+			const String capturePath = String::format("aka-captures/%4u-%2u-%2u/%2u-%2u-%2u/", date.year, date.month, date.day, date.hour, date.minute, date.second);
+			m_renderDocContext->SetCaptureFilePathTemplate(capturePath.cstr());
+			RENDERDOC_InputButton button = eRENDERDOC_Key_F11;
+			m_renderDocContext->SetCaptureKeys(&button, 1);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_CaptureAllCmdLists, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_APIValidation, true);
+			m_renderDocContext->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, false);
+			m_renderDocContext->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+		}
+		else
+		{
+			Logger::error("Failed to load renderdoc library.");
+		}
+	}
+#endif
 	// We are using Vulkan 1.2 in this backend.
 	//clipSpacePositive = true; // VK clip space is [0, 1]
 	//originTextureBottomLeft = false; // VK start reading texture at top left.
