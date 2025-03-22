@@ -309,7 +309,7 @@ TextureHandle VulkanGraphicDevice::createTexture(
 				format
 			);
 		}
-	}, QueueType::Copy, false);
+	}, QueueType::Graphic, false);
 
 	// Free staging buffer
 	if (vk_stagingBuffer != m_stagingUploadBuffer)
