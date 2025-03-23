@@ -629,10 +629,10 @@ void PlatformWindowGLFW3::initialize()
 			EventDispatcher<MouseLeaveEvent>::emit();
 		}
 		});
+	for (int i = 0; i < GLFW_JOYSTICK_LAST; i++)
+		glfwSetJoystickUserPointer(i, this);
 	glfwSetJoystickCallback([](int jid, int event) {
-		// Lil hack to retrieve window as we dont have access to it from here...
-		GLFWwindow* window = glfwGetCurrentContext();
-		PlatformWindowGLFW3* p = static_cast<PlatformWindowGLFW3*>(glfwGetWindowUserPointer(window));
+		PlatformWindowGLFW3* p = static_cast<PlatformWindowGLFW3*>(glfwGetJoystickUserPointer(jid));
 		AKA_ASSERT(p != nullptr, "Invalid platform retrieved");
 		if (glfwJoystickIsGamepad(jid) == GLFW_FALSE)
 			return;
