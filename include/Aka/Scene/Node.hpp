@@ -92,6 +92,8 @@ public:
 	const Node* getChild(uint32_t iChild) const;
 	// Visit childrens
 	void visitChildrens(std::function<void(Node*)> _callback);
+	// Visit childrens & recurse their childrens.
+	void visitAllChildrens(std::function<void(Node*)> _callback);
 private: // Hierarchy
 	Node* m_parent;
 	Vector<Node*> m_childrens;

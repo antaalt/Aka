@@ -102,16 +102,13 @@ void Node::updateComponentLifecycle(AssetLibrary* library, Renderer* renderer)
 
 void Node::prepareUpdate()
 {
-	if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags) || asBool(NodeUpdateFlag::TransformUpdated & m_updateFlags))
+	if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags))
 	{
-		if (asBool(NodeUpdateFlag::TransformDirty & m_updateFlags)) {
-			m_cacheWorldTransform = computeWorldTransform();
-			m_updateFlags &= ~NodeUpdateFlag::TransformDirty;
-			// Need to propagate dirtiness to all childs.
-			visitChildrens([](Node* node) {
-				node->setUpdateFlag(NodeUpdateFlag::TransformDirty);
-				});
-		}
+		m_cacheWorldTransform = computeWorldTransform();
+		m_updateFlags &= ~NodeUpdateFlag::TransformDirty;
+		visitAllChildrens([this](Node* node) {
+			node->m_cacheWorldTransform = node->computeWorldTransform();
+		});
 		for (ComponentMap::value_type& component : m_componentsActive)
 		{
 			component.second->transformUpdate();
@@ -203,8 +200,15 @@ void Node::visitChildrens(std::function<void(Node*)> _callback)
 	for (Node* child : m_childrens) 
 	{
 		_callback(child);
+	}
+}
+void Node::visitAllChildrens(std::function<void(Node*)> _callback)
+{
+	for (Node* child : m_childrens)
+	{
+		_callback(child);
 		// Recurse childrens.
-		child->visitChildrens(_callback);
+		child->visitAllChildrens(_callback);
 	}
 }
 
@@ -229,12 +233,19 @@ void Node::setLocalTransform(const mat4f& _transform, bool _computeWorld)
 	if (_computeWorld)
 	{
 		m_cacheWorldTransform = computeWorldTransform();
+		visitAllChildrens([this](Node* node) {
+			node->m_cacheWorldTransform = node->computeWorldTransform();
+			node->setUpdateFlag(NodeUpdateFlag::TransformUpdated);
+		});
 		setUpdateFlag(NodeUpdateFlag::TransformUpdated);
 	}
 	else
 	{
 		// Delay update.
 		setUpdateFlag(NodeUpdateFlag::TransformUpdated | NodeUpdateFlag::TransformDirty);
+		visitAllChildrens([this](Node* node) {
+			node->setUpdateFlag(NodeUpdateFlag::TransformUpdated | NodeUpdateFlag::TransformDirty);
+		});
 	}
 }
 mat4f Node::computeWorldTransform() const
