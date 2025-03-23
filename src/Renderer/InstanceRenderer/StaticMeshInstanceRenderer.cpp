@@ -260,7 +260,7 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 		assetData.batchCount = mesh.getBatchCount();
 		assetData.batchOffset = batchOffset;
 		m_instanceAssetDatas.push_back(assetData);
-		AKA_ASSERT(m_instanceAssetDatas.size() < MaxAssetCount, "Too many asset");
+		AKA_ASSERT(m_instanceAssetDatas.size() <= MaxAssetCount, "Too many asset");
 
 
 		AKA_ASSERT(mesh.getIndexFormat() == gfx::IndexFormat::UnsignedInt, "");
@@ -282,7 +282,7 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 			batchData.min; // TODO
 			batchData.max;
 			m_instanceBatchDatas.push_back(batchData);
-			AKA_ASSERT(m_instanceBatchDatas.size() < MaxBatchCount, "Too many batches");
+			AKA_ASSERT(m_instanceBatchDatas.size() <= MaxBatchCount, "Too many batches");
 		}
 
 		m_assetIndex.insert(std::make_pair(assetID, assetIndex));
@@ -292,7 +292,7 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 		uint32_t instanceOffset = (uint32_t)m_instanceDatas.size();
 		m_instanceIndex.insert(std::make_pair(instanceHandle, instanceOffset));
 		m_instanceDatas.push_back(instance);
-		AKA_ASSERT(MaxInstanceCount > m_instanceDatas.size(), "Too many instances");
+		AKA_ASSERT(m_instanceDatas.size() <= MaxInstanceCount, "Too many instances");
 	}
 	else
 	{
@@ -315,13 +315,14 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 			}
 			m_instanceIndex.insert(std::make_pair(instanceHandle, instanceOffset));
 			m_instanceDatas.insert(m_instanceDatas.begin() + instanceOffset, instance);
+			AKA_ASSERT(m_instanceDatas.size() <= MaxInstanceCount, "Too many instances");
 		}
 		else
 		{
 			uint32_t instanceOffset = (uint32_t)m_instanceDatas.size();
 			m_instanceIndex.insert(std::make_pair(instanceHandle, instanceOffset));
 			m_instanceDatas.push_back(instance);
-			AKA_ASSERT(MaxInstanceCount > m_instanceDatas.size(), "Too many instances");
+			AKA_ASSERT(m_instanceDatas.size() <= MaxInstanceCount, "Too many instances");
 		}
 	}
 	if (dirtyAsset)
