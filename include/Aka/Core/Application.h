@@ -62,7 +62,7 @@ public:
 	virtual ~Application();
 private:
 	// Create the application and its resources.
-	bool create();
+	void create();
 	// Destroy everything related to the app.
 	void destroy();
 	// First function called in a loop
@@ -112,8 +112,6 @@ public:
 	static Application* app();
 	// Get the graphic device
 	gfx::GraphicDevice* graphic();
-	// Get the main swapchain
-	gfx::SwapchainHandle swapchain();
 	// Get the renderer
 	Renderer* renderer();
 	// Get the platform device
@@ -129,13 +127,10 @@ public:
 private:
 	static Application* s_app;
 	Config m_config;
+	gfx::Instance* m_instance;
 	PlatformDevice* m_platform;
 	PlatformWindow* m_window;
-	PlatformWindowConfig m_windowInitConfig;
-	gfx::PhysicalDeviceFeatures m_physicalDeviceFeatures;
-	gfx::Instance* m_instance;
 	gfx::GraphicDevice* m_device;
-	gfx::SwapchainHandle m_swapchain;
 	AudioDevice* m_audio;
 	ShaderRegistry* m_program;
 	AssetLibrary* m_assets;

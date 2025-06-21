@@ -18,7 +18,7 @@ struct ImGuiRenderData;
 class ImGuiLayer final : public Layer
 {
 public:
-	ImGuiLayer() : m_renderData(nullptr) {}
+	ImGuiLayer(PlatformWindow* window) : Layer(window), m_renderData(nullptr) {}
 	~ImGuiLayer() {}
 	struct Color {
 		static const ImVec4 red;

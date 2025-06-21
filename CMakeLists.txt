@@ -141,6 +141,7 @@ add_library (Aka
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
 	"src/Platform/PlatformWindow.cpp"
+ 	"src/Platform/PlatformView.cpp"
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)

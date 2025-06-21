@@ -32,7 +32,39 @@ void PlatformWindow::initialize(gfx::Instance* _instance)
 void PlatformWindow::shutdown(gfx::Instance* _instance)
 {
 	_instance->destroy(m_surface);
+	m_surface = gfx::SurfaceHandle::null;
 	shutdown();
+}
+void PlatformWindow::createResources(gfx::GraphicDevice* _device)
+{
+	m_swapchain = _device->createSwapchain(
+		String::format("%sSwapchain", m_name.cstr()).cstr(),
+		m_surface,
+		m_width, m_height,
+		gfx::TextureFormat::BGRA8,
+		gfx::SwapchainMode::Windowed,
+		gfx::SwapchainType::Performance
+	);
+}
+void PlatformWindow::destroyResources(gfx::GraphicDevice* _device)
+{
+	_device->destroy(m_swapchain);
+	m_swapchain = gfx::SwapchainHandle::null;
+}
+PlatformView* PlatformWindow::createView(CameraController* controller, CameraProjection* projection)
+{
+	if (controller != nullptr)
+	{
+		return mem::akaNew<PlatformView>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, controller, projection);
+	}
+	else
+	{
+		return mem::akaNew<PlatformView>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, projection);
+	}
+}
+void PlatformWindow::destroyView(PlatformView* view)
+{
+	mem::akaDelete(view);
 }
 const Mouse& PlatformWindow::mouse() const
 {
@@ -172,5 +204,9 @@ PlatformWindowFlag PlatformWindow::flags() const
 gfx::SurfaceHandle PlatformWindow::surface() const
 {
 	return m_surface;
+}
+gfx::SwapchainHandle PlatformWindow::swapchain() const
+{
+	return m_swapchain;
 }
 }

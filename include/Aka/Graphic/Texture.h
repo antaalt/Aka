@@ -137,11 +137,6 @@ struct Texture : Resource
 	static bool isCompressed(TextureFormat format);
 
 	static uint32_t size(uint32_t width, uint32_t height, TextureFormat format);
-
-	static TextureHandle create2D(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* data = nullptr);
-	static TextureHandle createCubemap(const char* name, uint32_t width, uint32_t height, TextureFormat format, TextureUsage flags, const void* const* data = nullptr);
-	static TextureHandle create2DArray(const char* name, uint32_t width, uint32_t height, uint32_t layers, TextureFormat format, TextureUsage flags, const void* const* data = nullptr);
-	static void destroy(TextureHandle texture);
 };
 
 struct SubTexture

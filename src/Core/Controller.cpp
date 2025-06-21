@@ -40,10 +40,8 @@ bool ButtonController::up() const
 	return m_up > 0;
 }
 
-void ButtonController::update()
+void ButtonController::update(PlatformWindow* window)
 {
-	Application* app = Application::app();
-	PlatformWindow* window = app->window();
 	const Keyboard& keyboard = window->keyboard();
 	const Mouse& mouse = window->mouse();
 	m_down = 0;
@@ -115,10 +113,8 @@ const Position& MotionController::delta() const
 	return m_delta;
 }
 
-void MotionController::update()
+void MotionController::update(PlatformWindow* window)
 {
-	Application* app = Application::app();
-	PlatformWindow* window = app->window();
 	const Keyboard& keyboard = window->keyboard();
 	const Mouse& mouse = window->mouse();
 	m_delta = { 0.f };

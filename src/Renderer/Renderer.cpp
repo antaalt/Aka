@@ -27,6 +27,8 @@ const char* getInstanceTypeName(InstanceType type)
 Renderer::Renderer(AssetLibrary* _library) :
 	m_instanceRenderer{ nullptr },
 	m_device(nullptr),
+	m_window(nullptr),
+	m_shaders(nullptr),
 	m_library(_library)
 {
 	for (InstanceType instanceType : EnumRange<InstanceType>())
@@ -44,10 +46,11 @@ Renderer::~Renderer()
 
 void Renderer::create(gfx::GraphicDevice* _device)
 {
+	m_window = Application::app()->window();
+	m_shaders = Application::app()->program();
 	m_device = _device;
 	// Create instance buffer (need resize depending on count ?)
-	ShaderRegistry* registry = Application::app()->program();
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = m_window->swapchain();
 	gfx::SwapchainExtent extent = getDevice()->getSwapchainExtent(swapchain);
 	m_width = extent.width;
 	m_height = extent.height;
@@ -378,7 +381,7 @@ void Renderer::render(gfx::FrameHandle frame)
 		m_materialDirty = false;
 	}
 
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = m_window->swapchain();
 	for (const std::pair<ViewHandle, View>& viewPair : m_views)
 	{
 		const ViewHandle viewHandle = viewPair.first;
@@ -495,7 +498,7 @@ uint32_t Renderer::getMaterialIndex(MaterialHandle handle)
 }
 void Renderer::createBackbuffer()
 {
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = m_window->swapchain();
 	// TODO: create depth
 	m_backbufferRenderPassState = {};
 	m_backbufferRenderPassState.addColor(gfx::TextureFormat::Swapchain, gfx::AttachmentLoadOp::Clear, gfx::AttachmentStoreOp::Store, gfx::ResourceAccessType::Undefined, gfx::ResourceAccessType::Present);
@@ -511,7 +514,7 @@ void Renderer::createBackbuffer()
 }
 void Renderer::destroyBackbuffer()
 {
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = m_window->swapchain();
 	m_device->destroy(swapchain, m_backbuffer);
 	m_device->destroy(m_backbufferRenderPass);
 	m_device->destroy(m_depth);

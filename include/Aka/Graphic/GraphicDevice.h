@@ -107,7 +107,7 @@ public:
 	GraphicDevice() {}
 	virtual ~GraphicDevice() {}
 
-	virtual bool initialize(gfx::SurfaceHandle surface) = 0;
+	virtual void initialize() = 0;
 	virtual void shutdown() = 0;
 
 	// Device

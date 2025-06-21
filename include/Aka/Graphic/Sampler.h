@@ -45,18 +45,6 @@ struct Sampler : Resource
 	float anisotropy;
 
 	static uint32_t mipLevelCount(uint32_t width, uint32_t height);
-
-	static SamplerHandle create(
-		const char* name,
-		Filter filterMin,
-		Filter filterMag,
-		SamplerMipMapMode mipmapMode,
-		SamplerAddressMode wrapU,
-		SamplerAddressMode wrapV,
-		SamplerAddressMode wrapW,
-		float anisotropy
-	);
-	static void destroy(SamplerHandle sampler);
 };
 
 };

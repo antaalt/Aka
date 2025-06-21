@@ -16,8 +16,9 @@
 namespace aka {
 namespace gfx {
 
-VulkanGraphicDevice::VulkanGraphicDevice(VulkanInstance* instance, VkPhysicalDevice _device, PhysicalDeviceFeatures features, const PhysicalDeviceLimits& limits) :
+VulkanGraphicDevice::VulkanGraphicDevice(VulkanInstance* instance, VulkanSurface* surface, VkPhysicalDevice _device, PhysicalDeviceFeatures features, const PhysicalDeviceLimits& limits) :
 	m_instance(instance),
+	m_surface(surface),
 	m_device(VK_NULL_HANDLE),
 	m_physicalDevice(_device),
 	m_physicalDeviceFeatures(features),
@@ -41,9 +42,9 @@ VkCommandPool createCommandPool(VkDevice device, uint32_t queueIndex)
 	vkCreateCommandPool(device, &createInfo, getVkAllocator(), &commandPool);
 	return commandPool;
 }
-VkDevice VulkanGraphicDevice::createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount, gfx::SurfaceHandle surface)
+VkDevice VulkanGraphicDevice::createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount)
 {
-	VkSurfaceKHR vk_surface = m_instance->getVk<VulkanSurface>(surface)->vk_surface;
+	VkSurfaceKHR vk_surface = m_surface->vk_surface;
 	const bool hasSurface = vk_surface != VK_NULL_HANDLE;
 	// --- Get device family queue
 	uint32_t queueFamilyCount = 0;
@@ -254,7 +255,7 @@ VkDevice VulkanGraphicDevice::createLogicalDevice(const char* const* deviceExten
 	return device;
 }
 
-bool VulkanGraphicDevice::initialize(gfx::SurfaceHandle surface)
+void VulkanGraphicDevice::initialize()
 {
 	// Create logical device.
 	Vector<const char*> usedDeviceExtensions;
@@ -278,7 +279,7 @@ bool VulkanGraphicDevice::initialize(gfx::SurfaceHandle surface)
 	{
 		usedDeviceExtensions.append(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
 	}
-	m_device = createLogicalDevice(usedDeviceExtensions.data(), usedDeviceExtensions.size(), surface);
+	m_device = createLogicalDevice(usedDeviceExtensions.data(), usedDeviceExtensions.size());
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
@@ -295,7 +296,6 @@ bool VulkanGraphicDevice::initialize(gfx::SurfaceHandle surface)
 	// Create copy fence 
 	m_copyFenceCounter = 0;
 	m_copyFenceHandle = createFence("CopyFence", m_copyFenceCounter);
-	return true;
 }
 
 void VulkanGraphicDevice::shutdown()

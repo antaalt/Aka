@@ -45,9 +45,6 @@ struct Framebuffer : Resource
 	Attachment depth;
 
 	bool hasDepthStencil() const { return depth.texture != TextureHandle::null; }
-
-	static FramebufferHandle create(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth);
-	static void destroy(FramebufferHandle framebuffer);
 };
 
 };

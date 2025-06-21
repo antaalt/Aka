@@ -51,11 +51,6 @@ struct DescriptorSet : Resource
 
 	DescriptorPoolHandle pool;
 	ShaderBindingState bindings;
-
-	static void update(DescriptorSetHandle descriptorSet, const DescriptorUpdate* update, size_t size);
-
-	static DescriptorSetHandle allocate(const char* name, const ShaderBindingState& state, DescriptorPoolHandle pool);
-	static void free(DescriptorSetHandle set);
 };
 
 };

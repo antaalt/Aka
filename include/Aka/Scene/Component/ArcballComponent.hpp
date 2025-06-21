@@ -23,8 +23,8 @@ public:
 	ArcballComponent(Node* node);
 	~ArcballComponent();
 
-	CameraArcball& getController() { return m_controller; }
-	const CameraArcball& getController() const { return m_controller; }
+	CameraArcball& getController() { return *m_controller; }
+	const CameraArcball& getController() const { return *m_controller; }
 
 public:
 	// Set bounds to focus for camera
@@ -35,6 +35,7 @@ public:
 	bool isUpdateEnabled() const;
 public:
 	void onBecomeActive(AssetLibrary* library, Renderer* _renderer) override;
+	void onBecomeInactive(AssetLibrary* library, Renderer* _renderer) override;
 	void onUpdate(Time deltaTime) override;
 public:
 	void fromArchive(const ArchiveArcballComponent& archive) override;
@@ -42,7 +43,9 @@ public:
 
 private:
 	bool m_updateEnabled;
-	CameraArcball m_controller;
+	bool m_dirtyBounds;
+	aabbox<> m_bounds;
+	CameraArcball* m_controller;
 };
 
 AKA_DECL_COMPONENT(ArcballComponent);

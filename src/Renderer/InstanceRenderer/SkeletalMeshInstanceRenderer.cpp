@@ -61,8 +61,8 @@ void SkeletalMeshInstanceRenderer::destroy()
 
 void SkeletalMeshInstanceRenderer::createPipeline()
 {
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
-	ShaderRegistry* registry = Application::app()->program();
+	gfx::SwapchainHandle swapchain = getRenderer().getWindow()->swapchain();
+	ShaderRegistry* registry = getRenderer().getShaderRegistry();
 	// TODO: Should use JSON for this ? JSON that can be generated with a script reading all files in shaders folder (generating DB)
 	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
 	const aka::AssetPath ShaderFragmentPath = AssetPath("shaders/renderer/shader.frag", AssetPathType::Common);

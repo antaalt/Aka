@@ -56,14 +56,5 @@ Framebuffer::Framebuffer(const char* name, uint32_t width, uint32_t height, Rend
 	
 }
 
-FramebufferHandle Framebuffer::create(const char* name, RenderPassHandle handle, const Attachment* attachments, uint32_t count, const Attachment* depth)
-{
-	return Application::app()->graphic()->createFramebuffer(name, handle, attachments, count, depth);
-}
-void Framebuffer::destroy(FramebufferHandle framebuffer)
-{
-	return Application::app()->graphic()->destroy(framebuffer);
-}
-
 };
 };

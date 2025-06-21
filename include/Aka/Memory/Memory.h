@@ -61,7 +61,8 @@ Allocator& getAllocator(AllocatorMemoryType memory, AllocatorCategory category);
 
 // Override default new for memory tracking.
 template <typename T, typename ...Args> T*   akaNew(AllocatorMemoryType type, AllocatorCategory category, Args ...args);
-template <typename T>					void akaDelete(const T* const & pointer);
+template <typename T>					void akaDelete(const T* pointer);
+template <typename T>					void akaSafeDelete(const T* const & pointer);
 template <typename T>					T*   akaNewArray(size_t count, AllocatorMemoryType type, AllocatorCategory category);
 template <typename T>					void akaDeleteArray(const T* const & pointer);
 
@@ -104,7 +105,13 @@ T* akaNew(AllocatorMemoryType type, AllocatorCategory category, Args ...args)
 }
 
 template <typename T>
-void akaDelete(const T* const & pointer)
+void akaSafeDelete(const T* const & pointer)
+{
+	akaDelete(pointer);
+	const_cast<T*&>(pointer) = nullptr;
+}
+template <typename T>
+void akaDelete(const T* pointer)
 {
 #if defined(AKA_TRACK_MEMORY_ALLOCATIONS)
 	if (pointer == nullptr)
@@ -118,7 +125,6 @@ void akaDelete(const T* const & pointer)
 	// Destroy data.
 	pointer->~T();
 	aka::mem::getAllocator(type, category).deallocate<AkaNewHead>(const_cast<T*>(pointer));
-	const_cast<T*&>(pointer) = nullptr; // Safe pointer invalidation
 #else
 	delete pointer;
 #endif

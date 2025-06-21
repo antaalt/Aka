@@ -104,12 +104,6 @@ struct Program : Resource
 	bool hasComputeStage() const;
 
 	bool isCompatible(const ShaderPipelineLayout& _layout) const;
-
-	static ProgramHandle createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout);
-	static ProgramHandle createMesh(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout);
-	static ProgramHandle createCompute(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout);
-	static void destroy(ProgramHandle program);
-
 private:
 	// Reflection data. Do not expose.
 	ShaderPipelineLayout layout;

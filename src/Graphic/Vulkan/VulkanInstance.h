@@ -41,7 +41,7 @@ public:
 	void destroy(SurfaceHandle surface) override;
 
 	// Device
-	GraphicDevice* pick(PhysicalDeviceFeatures features, gfx::SurfaceHandle surface) override;
+	GraphicDevice* pick(PhysicalDeviceFeatures features, PlatformWindow* window) override;
 	void destroy(GraphicDevice* device) override;
 
 public:

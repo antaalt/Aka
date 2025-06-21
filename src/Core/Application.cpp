@@ -20,24 +20,45 @@ Application* Application::s_app = nullptr;
 Application::Application(const Config& config) :
 	m_config((OS::setcwd(config.directory), config)), // Some comma operator magic !
 	m_platform(PlatformDevice::create()),
-	m_window(nullptr), // Deferred creation
-	m_physicalDeviceFeatures(config.graphic.features),
-	m_windowInitConfig(config.platform),
 	m_instance(gfx::Instance::create(config.graphic.api)),
+	m_window((m_platform->initialize(), m_platform->createWindow(config.platform))), // Some comma operator magic !
+	m_device((m_instance->initialize(), m_window->initialize(m_instance), m_instance->pick(config.graphic.features, m_window))), // Some comma operator magic !
 	m_audio(AudioDevice::create(config.audio)),
-	m_swapchain(gfx::SwapchainHandle::null),
 	m_program(mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Object, AllocatorCategory::Graphic)),
 	m_assets(mem::akaNew<AssetLibrary>(AllocatorMemoryType::Object, AllocatorCategory::Assets)),
-	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Object, AllocatorCategory::Global)),
+	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Object, AllocatorCategory::Global, m_window)),
 	m_running(true),
 	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_assets))
 {
 	AKA_ASSERT(s_app == nullptr, "Application instance already created");
-	s_app = this;
 	AKA_ASSERT(OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()), "Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
+	AKA_ASSERT(m_platform != nullptr, "No platform");
+	AKA_ASSERT(m_window != nullptr, "No window");
+	AKA_ASSERT(m_instance != nullptr, "No instance");
+	AKA_ASSERT(m_device != nullptr, "No graphics");
+	AKA_ASSERT(m_audio != nullptr, "No audio");
+	AKA_ASSERT(m_program != nullptr, "No shaders");
+	AKA_ASSERT(m_assets != nullptr, "No assets");
+	AKA_ASSERT(m_root != nullptr, "No layers");
+	s_app = this;
+	m_device->initialize();
+	m_window->createResources(m_device);
+	m_renderer->create(m_device);
+	m_audio->initialize(m_config.audio);
 }
 Application::~Application()
 {
+	graphic()->wait();
+	m_assets->destroy(m_renderer);
+	m_renderer->destroy();
+	m_program->destroy(m_device);
+	m_audio->shutdown();
+	m_window->destroyResources(m_device);
+	m_window->shutdown(m_instance);
+	m_device->shutdown();
+	m_instance->shutdown();
+	m_platform->shutdown();
+
 	// Destroy all pointers
 	m_platform->destroyWindow(m_window);
 	m_instance->destroy(m_device);
@@ -49,36 +70,11 @@ Application::~Application()
 	mem::akaDelete(m_program);
 	mem::akaDelete(m_renderer);
 }
-bool Application::create()
+void Application::create()
 {
-	AKA_ASSERT(m_platform != nullptr, "No platform");
-	AKA_ASSERT(m_device != nullptr, "No graphics");
-	AKA_ASSERT(m_audio != nullptr, "No audio");
-	AKA_ASSERT(m_program != nullptr, "No shaders");
-	AKA_ASSERT(m_assets != nullptr, "No assets");
-	AKA_ASSERT(m_root != nullptr, "No layers");
-
-	m_platform->initialize();
-	m_instance->initialize();
-	m_window = m_platform->createWindow(m_windowInitConfig);
-	m_window->initialize(m_instance);
-	m_device = m_instance->pick(m_physicalDeviceFeatures, m_window->surface());
-	if (!m_device->initialize(m_window->surface()))
-		return false;
-	m_swapchain = m_device->createSwapchain(
-		String::format("%sSwapchain", m_windowInitConfig.name.cstr()).cstr(), 
-		m_window->surface(), 
-		m_windowInitConfig.width, m_windowInitConfig.height, 
-		gfx::TextureFormat::BGRA8, 
-		gfx::SwapchainMode::Windowed, 
-		gfx::SwapchainType::Performance
-	);
-	m_audio->initialize(m_config.audio);
-	m_renderer->create(m_device);
 	EventDispatcher<AppCreateEvent>::trigger(AppCreateEvent{});
 	m_root->create(renderer());
 	onCreate(m_config.argc, m_config.argv);
-	return true;
 }
 void Application::destroy()
 {
@@ -86,16 +82,6 @@ void Application::destroy()
 	EventDispatcher<AppDestroyEvent>::trigger(AppDestroyEvent{});
 	m_root->destroy(renderer());
 	onDestroy();
-	m_assets->destroy(m_renderer);
-	m_renderer->destroy();
-	m_program->destroy(m_device);
-	m_audio->shutdown();
-	m_device->destroy(m_swapchain);
-	m_window->shutdown(m_instance);
-	m_device->shutdown();
-	m_instance->shutdown();
-	m_platform->shutdown();
-
 }
 void Application::start()
 {
@@ -172,10 +158,6 @@ gfx::GraphicDevice* Application::graphic()
 {
 	return m_device;
 }
-gfx::SwapchainHandle Application::swapchain()
-{
-	return m_swapchain;
-}
 
 Renderer* aka::Application::renderer()
 {
@@ -213,15 +195,13 @@ void Application::run(Application* app)
 	const Time timestep = Time::milliseconds(10);
 	const Time maxUpdate = Time::milliseconds(100);
 
-	// Early exit on failure.
-	if (!app->create())
-		return;
-
 	gfx::GraphicDevice* graphic = app->m_device;
 	Renderer* renderer = app->m_renderer;
 	PlatformDevice* platform = app->m_platform;
 	PlatformWindow* window = app->m_window;
-	gfx::SwapchainHandle swapchain = app->m_swapchain;
+	gfx::SwapchainHandle swapchain = window->swapchain();
+
+	app->create();
 	
 	Time lastTick = Time::now();
 	Time accumulator = Time::zero();
@@ -263,7 +243,6 @@ void Application::run(Application* app)
 		app->end();
 		EventDispatcher<QuitEvent>::dispatch();
 	} while (app->m_running);
-
 	app->destroy();
 }
 

@@ -17,6 +17,7 @@ enum class CameraProjectionType
 
 enum class CameraControllerType
 {
+	Virtual, // Not controllable
 	Arcball
 };
 
@@ -34,6 +35,10 @@ struct CameraProjection
 
 struct CameraController
 {
+	// A controller is linked to a window.
+	CameraController(PlatformWindow* window) : m_window(window) {}
+	virtual ~CameraController() {}
+
 	// Update the camera using delta time
 	virtual bool update(Time deltaTime) = 0;
 	// Get the transform of the controller
@@ -45,6 +50,13 @@ struct CameraController
 
 	// Set the camera to look for a bounding box
 	virtual void set(const aabbox<>& bbox) = 0;
+
+	// Get underlying window
+	PlatformWindow* getWindow() const { return m_window; }
+	// Set underlying window
+	void setWindow(PlatformWindow* window) { m_window = window; }
+private:
+	PlatformWindow* m_window;
 };
 
 struct CameraPerspective : CameraProjection
@@ -80,6 +92,8 @@ struct CameraOrthographic : CameraProjection
 
 struct CameraArcball : CameraController
 {
+	CameraArcball(PlatformWindow* window) : CameraController(window) {}
+
 	bool update(Time deltaTime) override;
 	mat4f transform() const override;
 	mat4f view() const override;

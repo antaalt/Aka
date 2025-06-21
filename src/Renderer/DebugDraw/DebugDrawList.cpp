@@ -159,7 +159,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 
 	const ProgramKey ProgramGraphic = ProgramKey().add(ShaderVertex).add(ShaderFragment);
 	ShaderRegistry* program = Application::app()->program();
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = Application::app()->window()->swapchain();
 	program->add(ProgramGraphic, _device);
 	gfx::ProgramHandle m_program = program->get(ProgramGraphic);
 
@@ -207,7 +207,7 @@ void DebugDrawList::create(gfx::GraphicDevice* _device, uint32_t width, uint32_t
 
 void DebugDrawList::destroy(gfx::GraphicDevice* _device)
 {
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = Application::app()->window()->swapchain();
 	for (uint32_t i = 0; i < gfx::MaxFrameInFlight; i++)
 	{
 		_device->destroy(m_vertexBuffer[i]);

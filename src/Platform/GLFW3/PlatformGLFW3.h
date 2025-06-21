@@ -13,9 +13,6 @@ public:
 	PlatformWindowGLFW3(const PlatformWindowConfig& cfg);
 	~PlatformWindowGLFW3();
 
-	void initialize() override;
-	void shutdown() override;
-
 	void poll() override;
 	void move(int32_t x, int32_t y) override;
 	void resize(uint32_t width, uint32_t height) override;
@@ -23,6 +20,9 @@ public:
 	void fullscreen(bool enabled) override;
 	GLFWwindow* getGLFW3Handle();
 	void* getNativeHandle();
+protected:
+	void initialize() override;
+	void shutdown() override;
 private:
 	GLFWwindow* m_window;
 };

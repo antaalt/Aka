@@ -28,7 +28,7 @@ void setDebugName(VkDevice device, T handle, Args ...args)
 	VK_CHECK_RESULT(vkSetDebugUtilsObjectNameEXT(device, &info));
 }
 
-VkFormat convert(TextureFormat format);
+VkFormat convert(TextureFormat format/*, bool srgb = false*/);
 VkFilter convert(Filter filter);
 VkIndexType convert(IndexFormat format);
 VkBufferUsageFlags convert(BufferType type);

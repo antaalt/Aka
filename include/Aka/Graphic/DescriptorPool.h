@@ -16,9 +16,6 @@ struct DescriptorPool : Resource
 
 	uint32_t size;
 	ShaderBindingState bindings;
-
-	static DescriptorPoolHandle create(const char* name, const ShaderBindingState& state, uint32_t size);
-	static void destroy(DescriptorPoolHandle set);
 };
 
 };

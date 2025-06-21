@@ -57,10 +57,9 @@ void CameraOrthographic::setFar(float far)
 
 bool CameraArcball::update(Time deltaTime)
 {
-	Application* app = Application::app();
-	PlatformDevice* platform = app->platform();
-	PlatformWindow* window = app->window();
-	const Mouse& mouse = window->mouse();
+	// Cannot control camera if no window.
+	AKA_ASSERT(getWindow() != nullptr, "Cannot update camera as it does not have window.");
+	const Mouse& mouse = getWindow()->mouse();
 	bool dirty = false;
 	// https://gamedev.stackexchange.com/questions/53333/how-to-implement-a-basic-arcball-camera-in-opengl-with-glm
 	if (mouse.pressed(MouseButton::ButtonLeft) && (mouse.delta().x != 0.f || mouse.delta().y != 0.f))

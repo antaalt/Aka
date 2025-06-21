@@ -21,7 +21,7 @@ public:
 	virtual void destroy(SurfaceHandle surface) = 0;
 
 	// Device
-	virtual GraphicDevice* pick(PhysicalDeviceFeatures features, gfx::SurfaceHandle surface) = 0;
+	virtual GraphicDevice* pick(PhysicalDeviceFeatures features, PlatformWindow* window) = 0;
 	virtual void destroy(GraphicDevice* device) = 0;
 
 	static Instance* create(GraphicAPI api);

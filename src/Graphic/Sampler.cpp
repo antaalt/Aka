@@ -23,21 +23,5 @@ uint32_t Sampler::mipLevelCount(uint32_t width, uint32_t height)
 	return static_cast<uint32_t>(aka::floor(aka::log2(aka::max(width, height)))) + 1U;
 }
 
-SamplerHandle Sampler::create(const char* name, Filter filterMin, Filter filterMag, SamplerMipMapMode mipmapMode, SamplerAddressMode wrapU, SamplerAddressMode wrapV, SamplerAddressMode wrapW, float anisotropy)
-{
-	return Application::app()->graphic()->createSampler(
-		name,
-		filterMin, filterMag,
-		mipmapMode,
-		wrapU, wrapV, wrapW, 
-		anisotropy
-	);
-}
-
-void Sampler::destroy(SamplerHandle sampler)
-{
-	Application::app()->graphic()->destroy(sampler);
-}
-
 };
 };

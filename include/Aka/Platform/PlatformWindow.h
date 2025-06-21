@@ -7,6 +7,7 @@
 #include <Aka/Core/Container/Vector.h>
 #include <Aka/Core/Container/HashMap.hpp>
 #include <Aka/Graphic/GraphicDevice.h>
+#include <Aka/Platform/PlatformView.hpp>
 
 #include <map>
 #include <stdint.h>
@@ -48,10 +49,25 @@ public:
 	PlatformWindow(const PlatformWindowConfig& _cfg);
 	virtual	~PlatformWindow();
 
-	// Initialize window
+	// Initialize window & surface
 	void initialize(gfx::Instance* _instance);
-	// Shutdown window
+	// Shutdown window & surface
 	void shutdown(gfx::Instance* _instance);
+	// Create window swapchain
+	void createResources(gfx::GraphicDevice* _device);
+	// Destroy window swapchain
+	void destroyResources(gfx::GraphicDevice* _device);
+
+	// Create a view for this window.
+	template <typename CameraController, typename CameraProjection>
+	PlatformView* createView(const mat4f& transform);
+	// Create a virtual view for this window without controller.
+	template <typename CameraProjection>
+	PlatformView* createVirtualView(const mat4f& transform);
+	// Create a view for this window.
+	PlatformView* createView(CameraController* controller, CameraProjection* projection);
+	// Destroy a view
+	void destroyView(PlatformView* view);
 
 	// Get the width of the window
 	uint32_t width() const;
@@ -65,7 +81,8 @@ public:
 	PlatformWindowFlag flags() const;
 	// Get window surface
 	gfx::SurfaceHandle surface() const;
-
+	// Get swapchain
+	gfx::SwapchainHandle swapchain() const;
 protected:
 	// Initialize window platform specific
 	virtual void initialize() = 0;
@@ -123,5 +140,21 @@ protected:
 	gfx::SurfaceHandle m_surface;
 	gfx::SwapchainHandle m_swapchain;
 };
+
+// Create a view for this window.
+template <typename CController, typename CProjection>
+PlatformView* PlatformWindow::createView(const mat4f& transform)
+{
+	static_assert(std::is_base_of<CameraController, CController>::value, "");
+	static_assert(std::is_base_of<CameraProjection, CProjection>::value, "");
+	return createView(transform, mem::akaNew<CController>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, this), mem::akaNew<CProjection>(AllocatorMemoryType::Object, AllocatorCategory::Graphic));
+}
+// Create a virtual view for this window without controller.
+template <typename CProjection>
+PlatformView* PlatformWindow::createVirtualView(const mat4f& transform)
+{
+	static_assert(std::is_base_of<CameraProjection, CProjection>::value, "");
+	return createView(transform, nullptr, mem::akaNew<CProjection>(AllocatorMemoryType::Object, AllocatorCategory::Graphic))
+}
 
 }

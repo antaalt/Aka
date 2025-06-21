@@ -85,8 +85,8 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
-	PlatformWindowGLFW3* window = reinterpret_cast<PlatformWindowGLFW3*>(Application::app()->window());
+	gfx::SwapchainHandle swapchain = getWindow()->swapchain();
+	PlatformWindowGLFW3* window = reinterpret_cast<PlatformWindowGLFW3*>(getWindow());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplGlfw_InitForOpenGL(window->getGLFW3Handle(), true);
 
@@ -273,7 +273,7 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 
 void ImGuiLayer::onLayerDestroy(Renderer* _renderer)
 {
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = getWindow()->swapchain();
 	gfx::VulkanGraphicDevice * vk_device = reinterpret_cast<gfx::VulkanGraphicDevice*>(_renderer->getDevice());
 #if defined(AKA_USE_OPENGL)
 	ImGui_ImplOpenGL3_Shutdown();
@@ -315,7 +315,7 @@ void ImGuiLayer::onLayerPreRender()
 
 void ImGuiLayer::onLayerRender(aka::Renderer* _renderer, gfx::FrameHandle frame)
 {
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	gfx::SwapchainHandle swapchain = getWindow()->swapchain();
 	gfx::CommandList* cmd = _renderer->getDevice()->getGraphicCommandList(frame);
 	gfx::VulkanCommandList* vk_cmd = dynamic_cast<gfx::VulkanCommandList*>(cmd);
 	ImGui::Render();

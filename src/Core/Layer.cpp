@@ -2,7 +2,8 @@
 
 namespace aka {
 
-Layer::Layer()
+Layer::Layer(PlatformWindow* window) :
+	m_window(window)
 {
 }
 Layer::~Layer()

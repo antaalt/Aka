@@ -62,8 +62,8 @@ void StaticMeshInstanceRenderer::destroy()
 
 void StaticMeshInstanceRenderer::createPipeline()
 {
-	ShaderRegistry* registry = Application::app()->program();
-	gfx::SwapchainHandle swapchain = Application::app()->swapchain();
+	ShaderRegistry* registry = getRenderer().getShaderRegistry();
+	gfx::SwapchainHandle swapchain = getRenderer().getWindow()->swapchain();
 	const aka::AssetPath ShaderVertexPath = AssetPath("shaders/renderer/shader.vert", AssetPathType::Common);
 	const aka::AssetPath ShaderFragmentPath = AssetPath("shaders/renderer/shader.frag", AssetPathType::Common);
 

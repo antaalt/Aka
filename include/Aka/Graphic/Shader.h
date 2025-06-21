@@ -54,9 +54,6 @@ struct Shader : Resource
 
 	ShaderType type;
 	String entryPoint;
-
-	static ShaderHandle create(const char* name, ShaderType type, const char* entryPoint, const void* content, size_t size);
-	static void destroy(ShaderHandle shader);
 };
 
 };

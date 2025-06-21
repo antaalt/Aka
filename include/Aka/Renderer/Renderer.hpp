@@ -121,10 +121,14 @@ private:
 public:
 	AssetLibrary* getLibrary() { return m_library; }
 	gfx::GraphicDevice* getDevice() { return m_device; }
+	PlatformWindow* getWindow() { return m_window; }
+	ShaderRegistry* getShaderRegistry() { return m_shaders; }
 	DebugDrawList& getDebugDrawList() { return m_debugDrawList; }
 	gfx::RenderPassState getRenderPassState() { return m_backbufferRenderPassState; }
 private:
 	AssetLibrary* m_library;
+	PlatformWindow* m_window;
+	ShaderRegistry* m_shaders;
 	gfx::GraphicDevice* m_device;
 private:
 	uint32_t m_width, m_height;

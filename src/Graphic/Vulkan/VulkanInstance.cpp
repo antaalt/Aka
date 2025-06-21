@@ -615,7 +615,7 @@ bool areQueuesAdequate(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 	return hasGraphicsAndPresent && hasAsyncCompute && hasAsyncCopy;
 }
 
-GraphicDevice* VulkanInstance::pick(PhysicalDeviceFeatures _requestedFeatures, gfx::SurfaceHandle surface)
+GraphicDevice* VulkanInstance::pick(PhysicalDeviceFeatures _requestedFeatures, PlatformWindow* window)
 {
 	uint32_t deviceCount = 0;
 	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr));
@@ -623,7 +623,8 @@ GraphicDevice* VulkanInstance::pick(PhysicalDeviceFeatures _requestedFeatures, g
 	{
 		return nullptr; // No device available.
 	}
-	VkSurfaceKHR vk_surface = getVk<VulkanSurface>(surface)->vk_surface;
+	VulkanSurface* surface = getVk<VulkanSurface>(window->surface());
+	VkSurfaceKHR vk_surface = surface->vk_surface;
 	Vector<VkPhysicalDevice> physicalDevices(deviceCount);
 	uint32_t maxScore = 0;
 	VkPhysicalDevice physicalDevicePicked = VK_NULL_HANDLE;
@@ -688,7 +689,7 @@ GraphicDevice* VulkanInstance::pick(PhysicalDeviceFeatures _requestedFeatures, g
 	}
 	else
 	{
-		return mem::akaNew<VulkanGraphicDevice>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, this, physicalDevicePicked, physicalDeviceFeatures, physicalDeviceLimits);
+		return mem::akaNew<VulkanGraphicDevice>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, this, surface,physicalDevicePicked, physicalDeviceFeatures, physicalDeviceLimits);
 	}
 }
 void VulkanInstance::destroy(GraphicDevice* device)

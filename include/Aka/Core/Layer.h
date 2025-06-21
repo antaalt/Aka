@@ -5,16 +5,22 @@
 
 namespace aka {
 
+class PlatformWindow;
+
 class Layer
 {
 public:
-	Layer();
+	explicit Layer(PlatformWindow* window);
 	Layer(const Layer&) = delete;
 	Layer(Layer&&) = delete;
 	Layer& operator=(const Layer&) = delete;
 	Layer& operator=(Layer&&) = delete;
 	virtual ~Layer();
+
+	// Add a child layer to this layer.
 	template <typename T, typename... Args> T* addLayer(Args&&... args);
+	// Set the window of this layer.
+	void setWindow(PlatformWindow* window) { m_window = window; }
 private:
 	friend class Application;
 	void create(Renderer* _renderer);
@@ -36,7 +42,10 @@ protected:
 	virtual void onLayerPostRender() {}
 
 	virtual void onLayerResize(uint32_t width, uint32_t height) {}
+
+	PlatformWindow* getWindow() const { return m_window; }
 private:
+	PlatformWindow* m_window;
 	Vector<Layer*> m_childrens;
 };
 

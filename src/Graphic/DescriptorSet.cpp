@@ -81,20 +81,5 @@ DescriptorSet::DescriptorSet(const char* name, const ShaderBindingState& binding
 {
 }
 
-DescriptorSetHandle DescriptorSet::allocate(const char* name, const ShaderBindingState& bindings, DescriptorPoolHandle pool)
-{
-	return Application::app()->graphic()->allocateDescriptorSet(name, bindings, pool);
-}
-
-void DescriptorSet::update(DescriptorSetHandle descriptorSet, const DescriptorUpdate* update, size_t size)
-{
-	Application::app()->graphic()->update(descriptorSet, update, size);
-}
-
-void DescriptorSet::free(DescriptorSetHandle descriptorSet)
-{
-	Application::app()->graphic()->free(descriptorSet);
-}
-
 };
 };

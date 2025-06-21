@@ -67,12 +67,6 @@ struct Buffer : Resource
 	BufferType type;
 	BufferUsage usage;
 	BufferCPUAccess access;
-
-	static BufferHandle createIndexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static BufferHandle createVertexBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static BufferHandle createUniformBuffer(const char* name, uint32_t size, BufferUsage usage, BufferCPUAccess access, const void* data = nullptr);
-	static BufferHandle createStagingBuffer(const char* name, uint32_t size, const void* data = nullptr);
-	static void destroy(BufferHandle buffer);
 };
 
 };

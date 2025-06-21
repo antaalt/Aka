@@ -98,10 +98,10 @@ struct VulkanQueue
 class VulkanGraphicDevice : public GraphicDevice
 {
 public:
-	VulkanGraphicDevice(VulkanInstance* instance, VkPhysicalDevice _device, PhysicalDeviceFeatures features, const PhysicalDeviceLimits& limits);
+	VulkanGraphicDevice(VulkanInstance* instance, VulkanSurface* surface, VkPhysicalDevice _device, PhysicalDeviceFeatures features, const PhysicalDeviceLimits& limits);
 	~VulkanGraphicDevice();
 
-	bool initialize(gfx::SurfaceHandle surface) override;
+	void initialize() override;
 	void shutdown() override;
 
 	GraphicAPI getApi() const override;
@@ -287,9 +287,10 @@ private:
 	std::unordered_map<ShaderBindingState, VkDescriptorSetLayout> m_descriptorSetLayouts;
 	std::unordered_map<PipelineLayoutKey, VkPipelineLayout, PipelineLayoutKeyFunctor, PipelineLayoutKeyFunctor> m_pipelineLayout; // Should not cache this, heavy to cache, and not that useful...
 private:
-	VkDevice createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount, gfx::SurfaceHandle surface);
+	VkDevice createLogicalDevice(const char* const* deviceExtensions, size_t deviceExtensionCount);
 private:
 	friend class VulkanSwapchain;
+	VulkanSurface* m_surface;
 	VulkanInstance* m_instance;
 	VkDevice m_device;
 	VkPhysicalDevice m_physicalDevice;

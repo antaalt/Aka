@@ -235,22 +235,5 @@ bool Program::isCompatible(const ShaderPipelineLayout& _layout) const
 	return compatible;
 }
 
-ProgramHandle Program::createVertex(const char* name, ShaderHandle vertex, ShaderHandle fragment, const ShaderPipelineLayout& layout)
-{
-	return Application::app()->graphic()->createVertexProgram(name, vertex, fragment, layout);
-}
-ProgramHandle Program::createMesh(const char* name, ShaderHandle task, ShaderHandle mesh, ShaderHandle fragment, const ShaderPipelineLayout& layout)
-{
-	return Application::app()->graphic()->createMeshProgram(name, task, mesh, fragment, layout);
-}
-ProgramHandle Program::createCompute(const char* name, ShaderHandle compute, const ShaderPipelineLayout& layout)
-{
-	return Application::app()->graphic()->createComputeProgram(name, compute, layout);
-}
-void Program::destroy(ProgramHandle program)
-{
-	Application::app()->graphic()->destroy(program);
-}
-
 };
 };

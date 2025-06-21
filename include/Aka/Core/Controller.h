@@ -11,7 +11,7 @@ namespace aka {
 struct Controller
 {
 	virtual ~Controller() {}
-	virtual void update() = 0;
+	virtual void update(PlatformWindow* window) = 0;
 };
 
 struct ButtonController : Controller
@@ -25,7 +25,7 @@ struct ButtonController : Controller
 	bool pressed() const;
 	bool up() const;
 
-	void update() override;
+	void update(PlatformWindow* window) override;
 
 private:
 	size_t m_down;
@@ -46,7 +46,7 @@ struct MotionController : Controller
 
 	const Position& delta() const;
 
-	void update() override;
+	void update(PlatformWindow* window) override;
 
 private:
 	Position m_delta;
