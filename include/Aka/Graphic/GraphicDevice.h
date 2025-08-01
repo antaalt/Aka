@@ -56,11 +56,13 @@ struct GraphicConfig
 CREATE_STRICT_TYPE(uint32_t, FrameIndex)
 CREATE_STRICT_TYPE(uint32_t, ImageIndex)
 
+const ImageIndex InvalidImageIndex = ImageIndex((ImageIndex::Type)~0);
+
 static constexpr uint32_t MaxFrameInFlight = 3; // number of frames to deal with concurrently
 
 struct Frame : Resource
 {
-	Frame(const char* name, FrameIndex frameIndex) : Resource(name, ResourceType::Frame), m_frame(frameIndex) {}
+	Frame(const char* name, FrameIndex frameIndex) : Resource(name, ResourceType::Frame), m_frame(frameIndex), m_image(InvalidImageIndex) {}
 	virtual ~Frame() {}
 
 	void setImageIndex(ImageIndex index) { m_image = index; }

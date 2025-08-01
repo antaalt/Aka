@@ -431,6 +431,8 @@ SwapchainStatus VulkanGraphicDevice::present(SwapchainHandle handle, FrameHandle
 		m_commandEncoderToRelease.clear();
 	}
 	VulkanFrame& vk_frame = vk_swapchain->getVkFrame(frame);
+	VulkanImage& vk_image = vk_swapchain->getVkImage(vk_frame.getImageIndex());
+	VulkanImageSynchronisation& vk_imageSync = vk_swapchain->getVkImageSync(vk_image.getImageSyncIndex());
 
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
@@ -462,11 +464,11 @@ SwapchainStatus VulkanGraphicDevice::present(SwapchainHandle handle, FrameHandle
 	for (QueueType queue : EnumRange<QueueType>())
 	{
 		uint32_t i = EnumToIndex(queue);
-		VkSemaphore signalSemaphore = vk_frame.presentSemaphore[i];
+		VkSemaphore signalSemaphore = vk_imageSync.presentSemaphore[i];
 		// Async compute & transfer do not need to wait for swapchain
 		Vector<VkSemaphore> waitSemaphores;
 		if (queue == QueueType::Graphic)
-			waitSemaphores.append(vk_frame.acquireSemaphore);
+			waitSemaphores.append(vk_imageSync.acquireSemaphore);
 		VkFence fence = vk_frame.presentFence[i];
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

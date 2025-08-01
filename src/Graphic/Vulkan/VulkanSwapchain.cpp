@@ -127,6 +127,8 @@ VkPresentModeKHR getPresentMode(VkPhysicalDevice physicalDevice, VkSurfaceKHR su
 	presentModes.resize(presentModeCount);
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data()));
 	// https://www.intel.com/content/www/us/en/developer/articles/training/api-without-secrets-introduction-to-vulkan-part-2.html?language=en#_Toc445674479
+	// SwapchainType
+	// Cannot uses flip model in vulkan sadly, but windows 11+ should upgrade these automatically ? Or only for dx11
 	VkPresentModeKHR bestMode;
 	if (isPresentModeAvailable(presentModes, VK_PRESENT_MODE_MAILBOX_KHR)) // VSync with lowest latency, no tearing.
 		bestMode = VK_PRESENT_MODE_MAILBOX_KHR;
@@ -200,7 +202,8 @@ VulkanSwapchain::VulkanSwapchain(const char* name, SurfaceHandle surface, uint32
 	m_currentFrameIndex{ 0 },
 	m_frames{ VulkanFrame(FrameIndex(0)), VulkanFrame(FrameIndex(1)), VulkanFrame(FrameIndex(2))},
 	m_backbuffers{},
-	m_backbufferTextures{}
+	m_images{},
+	m_imageSync{}
 {
 }
 
@@ -218,6 +221,7 @@ void VulkanSwapchain::shutdown(VulkanGraphicDevice* _device)
 	m_needRecreation = false;
 	imageCount = 0;
 	m_currentFrameIndex = FrameIndex(0);
+	m_currentImageSyncIndex = ImageSyncIndex(0);
 	destroyFrames(_device);
 	destroyFramebuffers(_device);
 	destroyImageViews(_device);
@@ -258,19 +262,21 @@ void VulkanSwapchain::recreate(VulkanGraphicDevice* _device, uint32_t width, uin
 
 VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 {
-	VulkanFrame& vk_frame = m_frames[m_currentFrameIndex.value()];
+	VulkanFrame& vk_frame = getVkFrame(m_currentFrameIndex);
+	VulkanImageSynchronisation& vk_imageSync = getVkImageSync(m_currentImageSyncIndex);
 
 	// Wait for the frame to complete before acquiring it.
 	vk_frame.wait(device->getVkDevice());
 
-	uint32_t imageIndex; // Will be initialized by following call
+	// Next image index might not be the next one in the list.
+	uint32_t nextImageIndex = InvalidImageIndex.value();
 	VkResult result = vkAcquireNextImageKHR(
 		device->getVkDevice(),
 		m_swapchain,
 		5 * geometry::pow(10, 9), // 1s timeout
-		vk_frame.acquireSemaphore,
+		vk_imageSync.acquireSemaphore,
 		VK_NULL_HANDLE,
-		&imageIndex
+		&nextImageIndex
 	);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -281,7 +287,7 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	{
 		AKA_ASSERT(false, "Failed to acquire swapchain image");
 	}
-	AKA_ASSERT(imageIndex < imageCount, "Invalid image index");
+	AKA_ASSERT(nextImageIndex < imageCount, "Invalid image index");
 	AKA_ASSERT(MaxFrameInFlight <= imageCount, "More frames in flight than image available. May induce bugs in application.");
 
 	// Only reset the fence if we are submitting work
@@ -293,7 +299,10 @@ VulkanFrame* VulkanSwapchain::acquireNextImage(VulkanGraphicDevice* device)
 	VK_CHECK_RESULT(vkResetFences(device->getVkDevice(), EnumCount<QueueType>(), fences));
 
 	// Set the index 
-	vk_frame.setImageIndex(ImageIndex(imageIndex));
+	VulkanImage& vk_image = getVkImage(ImageIndex(nextImageIndex));
+	vk_frame.setImageIndex(ImageIndex(nextImageIndex));
+	vk_image.setImageSyncIndex(m_currentImageSyncIndex);
+	m_currentImageSyncIndex = ImageSyncIndex((m_currentImageSyncIndex.value() + 1) % m_imageSync.size());
 
 	// TODO check image finished rendering ?
 	// If less image than frames in flight, might be necessary
@@ -306,10 +315,13 @@ SwapchainStatus VulkanSwapchain::present(VulkanGraphicDevice* device, VulkanFram
 	VkSwapchainKHR swapChains[] = { m_swapchain };
 	uint32_t indices[] = { vk_frame.getImageIndex().value()};
 
+	VulkanImage& vk_image = getVkImage(vk_frame.getImageIndex());
+	VulkanImageSynchronisation& vk_imageSync = getVkImageSync(vk_image.getImageSyncIndex());
+
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = EnumCount<QueueType>();
-	presentInfo.pWaitSemaphores = vk_frame.presentSemaphore;
+	presentInfo.pWaitSemaphores = vk_imageSync.presentSemaphore;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = indices;
@@ -345,7 +357,7 @@ BackbufferHandle VulkanSwapchain::createBackbuffer(VulkanGraphicDevice* device, 
 	for (uint32_t i = 0; i < imageCount; i++)
 	{
 		Vector<Attachment> attachments;
-		attachments.append(Attachment{ m_backbufferTextures[i].color, AttachmentFlag::None, 0, 0 });
+		attachments.append(Attachment{ m_images[i].getTexture(), AttachmentFlag::None, 0, 0});
 		if (_additionalAttachments != nullptr)
 			attachments.append(_additionalAttachments, _additionalAttachments + _count);
 		FramebufferHandle fb = device->createFramebuffer("Backbuffer", handle, attachments.data(), (uint32_t)attachments.size(), _depthAttachment);
@@ -452,7 +464,8 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 	// Get images & layout
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device->getVkDevice(), m_swapchain, &imageCount, nullptr));
 	Vector<VkImage> vk_images(imageCount);
-	m_backbufferTextures.resize(imageCount);
+	m_images.reserve(imageCount);
+	m_imageSync.reserve(imageCount);
 	VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device->getVkDevice(), m_swapchain, &imageCount, vk_images.data()));
 
 	for (size_t i = 0; i < imageCount; i++)
@@ -491,7 +504,10 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		}, QueueType::Graphic, false);
 		// No memory
 
-		m_backbufferTextures[i].color = colorTexture;
+		VulkanImage& image = m_images.emplace(ImageIndex(i), colorTexture);
+		VulkanImageSynchronisation& imageSyncData = m_imageSync.emplace();
+		image.create(_device);
+		imageSyncData.create(_device);
 	}
 }
 void VulkanSwapchain::createFrames(VulkanGraphicDevice* _device)
@@ -508,11 +524,16 @@ void VulkanSwapchain::destroySwapchain(VulkanGraphicDevice* _device)
 }
 void VulkanSwapchain::destroyImageViews(VulkanGraphicDevice* _device)
 {
-	for (BackBufferTextures backbuffer : m_backbufferTextures)
+	for (VulkanImage& image : m_images)
 	{
-		_device->destroy(backbuffer.color);
+		image.destroy(_device);
 	}
-	m_backbufferTextures.clear();
+	for (VulkanImageSynchronisation& imageSyncData : m_imageSync)
+	{
+		imageSyncData.destroy(_device);
+	}
+	m_images.clear();
+	m_imageSync.clear();
 }
 void VulkanSwapchain::destroyFrames(VulkanGraphicDevice* _device)
 {
@@ -556,7 +577,7 @@ void VulkanSwapchain::recreateFramebuffers(VulkanGraphicDevice* _device)
 					if (state.colors[iAtt].format == TextureFormat::Swapchain)
 					{
 						for (uint32_t iImage = 0; iImage < imageCount; iImage++)
-							attachments[iImage].append(Attachment{ m_backbufferTextures[iImage].color, AttachmentFlag::None, 0, 0 });
+							attachments[iImage].append(Attachment{ m_images[iImage].getTexture(), AttachmentFlag::None, 0, 0});
 						continue; // Dont resize swapchain here.
 					}
 					else
@@ -630,6 +651,14 @@ VulkanFrame& VulkanSwapchain::getVkFrame(FrameHandle handle)
 {
 	return *const_cast<VulkanFrame*>(reinterpret_cast<const VulkanFrame*>(handle.__data));
 }
+VulkanImage& VulkanSwapchain::getVkImage(ImageIndex index)
+{
+	return m_images[index.value()];
+}
+VulkanImageSynchronisation& VulkanSwapchain::getVkImageSync(ImageSyncIndex index)
+{
+	return m_imageSync[index.value()];
+}
 
 FrameIndex VulkanSwapchain::getVkFrameIndex(FrameHandle handle)
 {
@@ -649,22 +678,14 @@ VulkanFrame::VulkanFrame(const char* name, FrameIndex frame) :
 
 void VulkanFrame::create(VulkanGraphicDevice* device)
 {
-	VkSemaphoreCreateInfo semaphoreInfo = {};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
 	VkFenceCreateInfo fenceSignaledInfo = {};
 	fenceSignaledInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceSignaledInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	// Semaphores & Fences
-	VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, getVkAllocator(), &acquireSemaphore));
-	setDebugName(device->getVkDevice(), acquireSemaphore, "AcquireSemaphore");
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
 		VK_CHECK_RESULT(vkCreateFence(device->getVkDevice(), &fenceSignaledInfo, getVkAllocator(), &presentFence[i]));
 		setDebugName(device->getVkDevice(), presentFence[i], "presentFence");
-		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, getVkAllocator(), &presentSemaphore[i]));
-		setDebugName(device->getVkDevice(), presentSemaphore[i], "PresentSemaphore%u", i);
 	}
 	// Command buffers
 	for (QueueType queue : EnumRange<QueueType>())
@@ -694,8 +715,6 @@ void VulkanFrame::create(VulkanGraphicDevice* device)
 
 void VulkanFrame::destroy(VulkanGraphicDevice* device)
 {
-	vkDestroySemaphore(device->getVkDevice(), acquireSemaphore, getVkAllocator());
-	acquireSemaphore = VK_NULL_HANDLE;
 	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
 	{
 		mem::akaDelete<VulkanCommandEncoder>(mainCommandEncoders[i]);
@@ -703,8 +722,6 @@ void VulkanFrame::destroy(VulkanGraphicDevice* device)
 		commandPool[i] = VK_NULL_HANDLE;
 		vkDestroyFence(device->getVkDevice(), presentFence[i], getVkAllocator());
 		presentFence[i] = VK_NULL_HANDLE;
-		vkDestroySemaphore(device->getVkDevice(), presentSemaphore[i], getVkAllocator());
-		presentSemaphore[i] = VK_NULL_HANDLE;
 	}
 }
 
@@ -742,6 +759,45 @@ void VulkanFrame::releaseCommand(VulkanCommandEncoder* commandList)
 	VkCommandBuffer cmd = commandList->getVkCommandBuffer();
 	vkFreeCommandBuffers(commandList->getDevice()->getVkDevice(), commandPool[EnumToIndex(commandList->getQueueType())], 1, &cmd);
 	commandEncoders[EnumToIndex(commandList->getQueueType())].remove(&commandList);
+}
+
+VulkanImage::VulkanImage(ImageIndex image, TextureHandle color) :
+	m_image(image),
+	m_color(color),
+	m_syncImage(InvalidImageSyncIndex)
+{
+
+}
+void VulkanImage::create(VulkanGraphicDevice* device)
+{
+	// Nothing to do here
+}
+void VulkanImage::destroy(VulkanGraphicDevice* device)
+{
+	device->destroy(m_color);
+}
+void VulkanImageSynchronisation::create(VulkanGraphicDevice* device)
+{
+	VkSemaphoreCreateInfo semaphoreInfo = {};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, getVkAllocator(), &acquireSemaphore));
+	setDebugName(device->getVkDevice(), acquireSemaphore, "AcquireSemaphore");
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
+		VK_CHECK_RESULT(vkCreateSemaphore(device->getVkDevice(), &semaphoreInfo, getVkAllocator(), &presentSemaphore[i]));
+		setDebugName(device->getVkDevice(), presentSemaphore[i], "PresentSemaphore%u", i);
+	}
+}
+void VulkanImageSynchronisation::destroy(VulkanGraphicDevice* device)
+{
+	vkDestroySemaphore(device->getVkDevice(), acquireSemaphore, getVkAllocator());
+	acquireSemaphore = VK_NULL_HANDLE;
+	for (uint32_t i = 0; i < EnumCount<QueueType>(); i++)
+	{
+		vkDestroySemaphore(device->getVkDevice(), presentSemaphore[i], getVkAllocator());
+		presentSemaphore[i] = VK_NULL_HANDLE;
+	}
 }
 
 };
