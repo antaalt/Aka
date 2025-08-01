@@ -823,5 +823,9 @@ void* PlatformWindowGLFW3::getNativeHandle()
 {
 	return glfwGetWin32Window(m_window);
 }
+bool PlatformWindowGLFW3::isInitialized() const
+{
+	return m_window != nullptr;
+}
 
 };

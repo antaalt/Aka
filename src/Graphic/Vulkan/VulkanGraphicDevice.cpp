@@ -233,7 +233,7 @@ VkDevice VulkanGraphicDevice::createLogicalDevice(const char* const* deviceExten
 	{
 		createInfo.enabledLayerCount = 0;
 	}
-	VkDevice device;
+	VkDevice device = VK_NULL_HANDLE;
 	VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &createInfo, getVkAllocator(), &device));
 
 	// Retrieve queues from device

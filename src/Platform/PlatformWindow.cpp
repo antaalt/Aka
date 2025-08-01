@@ -35,7 +35,7 @@ void PlatformWindow::shutdown(gfx::Instance* _instance)
 	m_surface = gfx::SurfaceHandle::null;
 	shutdown();
 }
-void PlatformWindow::createResources(gfx::GraphicDevice* _device)
+void PlatformWindow::createSwapchain(gfx::GraphicDevice* _device)
 {
 	m_swapchain = _device->createSwapchain(
 		String::format("%sSwapchain", m_name.cstr()).cstr(),

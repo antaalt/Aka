@@ -20,6 +20,7 @@ public:
 	void fullscreen(bool enabled) override;
 	GLFWwindow* getGLFW3Handle();
 	void* getNativeHandle();
+	bool isInitialized() const override;
 protected:
 	void initialize() override;
 	void shutdown() override;

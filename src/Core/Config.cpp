@@ -3,6 +3,7 @@
 #include <Aka/OS/OS.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <cassert>
 
 bool handleAssert(const char* _filename, int _line, const char* _assertion, bool _allowRecover, const char* message, ...)
 {
@@ -11,16 +12,19 @@ bool handleAssert(const char* _filename, int _line, const char* _assertion, bool
 	va_start(arg1, message);
 	va_copy(arg2, arg1);
 	int length = snprintf(nullptr, 0, message, arg1);
+	assert(length >= 0);
 	va_end(arg1);
 
 	size_t size = length + 1;
 	String messageFormatted = String(size);
 
 	// Format the string
-	vsnprintf(messageFormatted.cstr(), size, message, arg2);
+	int ret = vsnprintf(messageFormatted.cstr(), size, message, arg2);
+	assert(ret >= 0);
 	va_end(arg2);
 	String titleFormatted = String::format("Assertion failed in file %s", _filename);
 	String messageFormattedFull = String::format("%s\n\nFailed Assertion at %s:%d:\n%s", messageFormatted.cstr(), _filename, _line, _assertion ? _assertion : "error");
+	Logger::error(messageFormattedFull);
 	AlertModalMessage result = AlertModal(_allowRecover ? AlertModalType::Error : AlertModalType::Critical, titleFormatted.cstr(), messageFormattedFull.cstr());
 	switch (result)
 	{

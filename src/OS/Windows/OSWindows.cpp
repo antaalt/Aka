@@ -389,7 +389,9 @@ AlertModalMessage AlertModal(AlertModalType modalType, const char* title, const 
 		break;
 	}
 	PlatformWindow* window = Application::app()->window();
-	HWND handle = (HWND)window->getNativeHandle();
+	// Windows support message box without window.
+	const bool hasWindow = window != nullptr && window->isInitialized();
+	HWND handle = hasWindow ? (HWND)window->getNativeHandle() : nullptr;
 
 	StringWide wstr = Utf8ToWchar(message);
 	StringWide wstrTitle = Utf8ToWchar(title);

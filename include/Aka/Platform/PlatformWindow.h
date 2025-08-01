@@ -54,7 +54,7 @@ public:
 	// Shutdown window & surface
 	void shutdown(gfx::Instance* _instance);
 	// Create window swapchain
-	void createResources(gfx::GraphicDevice* _device);
+	void createSwapchain(gfx::GraphicDevice* _device);
 	// Destroy window swapchain
 	void destroyResources(gfx::GraphicDevice* _device);
 
@@ -101,6 +101,8 @@ public:
 	virtual void fullscreen(bool enabled) = 0;
 	// Get native handle to the window
 	virtual void* getNativeHandle() = 0;
+	// Is the window initialized
+	virtual bool isInitialized() const = 0;
 	// Get the mouse
 	const Mouse& mouse() const;
 	// Get the keyboard

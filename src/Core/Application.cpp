@@ -18,33 +18,57 @@ namespace aka {
 Application* Application::s_app = nullptr;
 
 Application::Application(const Config& config) :
-	m_config((OS::setcwd(config.directory), config)), // Some comma operator magic !
-	m_platform(PlatformDevice::create()),
-	m_instance(gfx::Instance::create(config.graphic.api)),
-	m_window((m_platform->initialize(), m_platform->createWindow(config.platform))), // Some comma operator magic !
-	m_device((m_instance->initialize(), m_window->initialize(m_instance), m_instance->pick(config.graphic.features, m_window))), // Some comma operator magic !
-	m_audio(AudioDevice::create(config.audio)),
-	m_program(mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Object, AllocatorCategory::Graphic)),
-	m_assets(mem::akaNew<AssetLibrary>(AllocatorMemoryType::Object, AllocatorCategory::Assets)),
-	m_root(mem::akaNew<Layer>(AllocatorMemoryType::Object, AllocatorCategory::Global, m_window)),
+	m_config(config),
+	m_platform(nullptr),
+	m_instance(nullptr),
+	m_window(nullptr),
+	m_device(nullptr),
+	m_audio(nullptr),
+	m_program(nullptr),
+	m_assets(nullptr),
+	m_root(nullptr),
 	m_running(true),
-	m_renderer(mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_assets))
+	m_renderer(nullptr)
 {
 	AKA_ASSERT(s_app == nullptr, "Application instance already created");
-	AKA_ASSERT(OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()), "Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
-	AKA_ASSERT(m_platform != nullptr, "No platform");
-	AKA_ASSERT(m_window != nullptr, "No window");
-	AKA_ASSERT(m_instance != nullptr, "No instance");
-	AKA_ASSERT(m_device != nullptr, "No graphics");
-	AKA_ASSERT(m_audio != nullptr, "No audio");
-	AKA_ASSERT(m_program != nullptr, "No shaders");
-	AKA_ASSERT(m_assets != nullptr, "No assets");
-	AKA_ASSERT(m_root != nullptr, "No layers");
 	s_app = this;
+
+	// Set current working directory
+	OS::setcwd(config.directory);
+	AKA_ASSERT(OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()), "Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
+	
+	// Create platform
+	m_platform = PlatformDevice::create();
+	m_platform->initialize();
+	AKA_ASSERT(m_platform != nullptr, "No platform");
+
+	// Create window
+	m_window = m_platform->createWindow(config.platform);
+	AKA_ASSERT(m_window != nullptr, "No window");
+
+	// Create Gfx instance
+	m_instance = gfx::Instance::create(config.graphic.api);
+	AKA_ASSERT(m_instance != nullptr, "No instance");
+	m_instance->initialize();
+	m_window->initialize(m_instance);
+	m_device = m_instance->pick(config.graphic.features, m_window);
+	AKA_ASSERT(m_device != nullptr, "No device");
 	m_device->initialize();
-	m_window->createResources(m_device);
-	m_renderer->create(m_device);
+	m_window->createSwapchain(m_device);
+
+	// Init audio
+	m_audio = AudioDevice::create(config.audio);
+	AKA_ASSERT(m_audio != nullptr, "No audio");
 	m_audio->initialize(m_config.audio);
+
+	m_program = mem::akaNew<ShaderRegistry>(AllocatorMemoryType::Object, AllocatorCategory::Graphic);
+	AKA_ASSERT(m_program != nullptr, "No shaders");
+	m_assets = mem::akaNew<AssetLibrary>(AllocatorMemoryType::Object, AllocatorCategory::Assets);
+	AKA_ASSERT(m_assets != nullptr, "No assets");
+	m_root = mem::akaNew<Layer>(AllocatorMemoryType::Object, AllocatorCategory::Global, m_window);
+	AKA_ASSERT(m_root != nullptr, "No layers");
+	m_renderer = mem::akaNew<Renderer>(AllocatorMemoryType::Object, AllocatorCategory::Graphic, m_assets);
+	m_renderer->create(m_device);
 }
 Application::~Application()
 {
