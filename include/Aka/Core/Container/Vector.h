@@ -254,8 +254,9 @@ template<typename T, AllocatorCategory Category>
 template<typename ...Args>
 inline T& Vector<T, Category>::emplace(Args ...args)
 {
-	size_t off = m_size;
-	resize(m_size + 1, T(std::forward<Args>(args)...));
+	reserve(m_size + 1);
+	new (end()) T(std::forward<Args>(args)...);
+	m_size = m_size + 1;
 	return last();
 }
 template <typename T, AllocatorCategory Category>
