@@ -249,7 +249,7 @@ stbi_uc* loadDDS(const Blob& blob, int* x, int* y, int* stbi_format, int req_for
 	AKA_ASSERT(req_format == *stbi_format || req_format == STBI_default, "Need to convert format.");
 	ptr += sizeof(DDS_HEADER);
 	// Compute size.
-	DWORD pictureSize = getImageSize(width, height, imageComponentFromStbiFormat(*stbi_format), compressionFromStbiFormat(*stbi_format));
+	size_t pictureSize = getImageSize(width, height, imageComponentFromStbiFormat(*stbi_format), compressionFromStbiFormat(*stbi_format));
 	AKA_ASSERT(pictureSize != 0, "Invalid size");
 	AKA_ASSERT(pictureSize <= blob.size() - 4 - sizeof(DDS_HEADER), "Size too big");
 	stbi_uc* data = (stbi_uc*)STBI_MALLOC(pictureSize);
