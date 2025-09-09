@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.10)
+﻿cmake_minimum_required (VERSION 3.19)
 project(Aka)
 
 # Ajoutez une source à l'exécutable de ce projet.
@@ -237,3 +237,12 @@ if (MSVC)
 	target_compile_options(Aka PUBLIC "$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 	target_compile_options(Aka PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
+
+# Install the library and its headers
+install(TARGETS Aka
+        EXPORT aka_targets
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+		
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/Aka/" DESTINATION include)
