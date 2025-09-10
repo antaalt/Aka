@@ -1,0 +1,39 @@
+name: Build library
+
+on:
+    push:
+      branches: [ "vcpkg-library" ]
+    pull_request:
+      branches: [ "main" ]
+
+jobs:
+  
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.1
+        with:
+          vulkan-query-version: 1.4.304.1
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+      - name: Build dependencies
+        run: cd lib && install_all.bat && cd ..
+      #- name: Check formatting
+      #  run: clang-format
+      - name: Check cmake version
+        run: cmake --version
+      - name: Setup project
+        run: cmake -S . -B build -DCMAKE_INSTALL_PREFIX=install
+      - name: Build project
+        run: cmake --build build --config Release
+      - name: Install project
+        run: cmake --install build --config Release
+      - name: Upload install
+        uses: actions/upload-artifact@v4
+        with:
+          name: aka-install
+          path: ./install
