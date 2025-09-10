@@ -1,6 +1,8 @@
 ﻿cmake_minimum_required (VERSION 3.19)
 project(Aka)
 
+include(GNUInstallDirs)
+
 # Ajoutez une source à l'exécutable de ce projet.
 add_library (Aka
 	"src/Audio/AudioDevice.cpp"
@@ -81,7 +83,7 @@ add_library (Aka
 	"src/Resource/Shader/Shader.cpp"
 	"src/Resource/Shader/ShaderRegistry.cpp" 
 	"src/Resource/Shader/ShaderCompiler.cpp"
- 	"src/Resource/Asset.cpp"
+	"src/Resource/Asset.cpp"
 	"src/Resource/AssetLibrary.cpp"
 	"src/Resource/AssetPath.cpp"
 
@@ -141,7 +143,7 @@ add_library (Aka
 	"src/Platform/GLFW3/PlatformGLFW3.cpp"
 	"src/Platform/PlatformDevice.cpp"
 	"src/Platform/PlatformWindow.cpp"
- 	"src/Platform/PlatformView.cpp"
+	"src/Platform/PlatformView.cpp"
 )
 
 target_compile_features(Aka PUBLIC cxx_std_17)
@@ -149,6 +151,7 @@ target_compile_features(Aka PUBLIC cxx_std_17)
 target_include_directories(Aka
 	PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	PRIVATE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
@@ -161,6 +164,7 @@ set(GRAPHIC_D3D12 false CACHE BOOL "Set DirectX12 as graphic backend")
 # Audio Backend
 set(AUDIO_RTAUDIO true CACHE BOOL "Set RtAudio as audio backend")
 
+# TODO: Handle features to optionally toggle on off vulkan and others via installation.
 if (GRAPHIC_VULKAN)
 	# Setup Vulkan
 	target_compile_definitions(Aka PUBLIC AKA_USE_VULKAN)
@@ -174,57 +178,56 @@ endif()
 # Link RtAudio
 if (AUDIO_RTAUDIO)
 	target_compile_definitions(Aka PUBLIC AKA_USE_RTAUDIO)
-	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/rtaudio)
-	target_link_libraries(Aka PRIVATE AkaRtAudio)
+	find_package(rtaudio REQUIRED PATHS lib/install/rtaudio NO_DEFAULT_PATH)
+	target_link_libraries(Aka PRIVATE rtaudio::rtaudio)
 endif()
 
 # Link GLFW3
 if (PLATFORM_GLFW3)
 	target_compile_definitions(Aka PUBLIC AKA_USE_GLFW3)
-	set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-	set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-	set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/)
+	find_package(glfw3 REQUIRED PATHS lib/install/glfw NO_DEFAULT_PATH)
 	target_link_libraries(Aka PRIVATE glfw)
 endif()
 
-# Disable SPIRV opt
-set(ENABLE_OPT OFF CACHE BOOL "" FORCE)
-
-# Third party libs
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/freetype)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/glslang)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/SPIRV-Cross)
+# Freetype
+find_package(freetype REQUIRED PATHS lib/install/freetype NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE freetype)
+# Glslang
+find_package(glslang REQUIRED PATHS lib/install/glslang NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE glslang)
+# Imgui
+find_package(imgui REQUIRED PATHS lib/install/imgui NO_DEFAULT_PATH)
+target_link_libraries(Aka PUBLIC imgui) # Let user use it.
+# Miniz
+find_package(miniz REQUIRED PATHS lib/install/miniz NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE miniz::miniz)
+# Minimp3
+find_package(minimp3 REQUIRED PATHS lib/install/minimp3 NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE minimp3::minimp3)
+# Stb
+find_package(stb REQUIRED PATHS lib/install/stb NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE stb::AkaStb)
+# Nlohmann JSON
+find_package(nlohmann-json REQUIRED PATHS lib/install/json NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE nlohmann-json::AkaJson)
+# SPIRV Cross
+# Do we really need to load these three...
+find_package(spirv_cross_core REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
+find_package(spirv_cross_glsl REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
+find_package(spirv_cross_cpp REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE spirv_cross_core spirv_cross_glsl spirv_cross_cpp)
+# UTF8 CPP
+# Not found in vcpkg registry...
+find_package(utfpp REQUIRED PATHS lib/install/utf8 NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE utfpp::AkaUtfCpp)
+# Renderdoc
+# Not found in vcpkg registry...
+find_package(renderdoc REQUIRED PATHS lib/install/renderdoc NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE renderdoc::AkaRenderdoc)
+# Geometry
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/utf8)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/miniz)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/minimp3)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/stb)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/json)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/lua)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/renderdoc)
+target_link_libraries(Aka PUBLIC Geometry)
 
-target_link_libraries(Aka PUBLIC
-	Geometry
-	AkaImGui
-	AkaLua
-)
-target_link_libraries(Aka PRIVATE
-	AkaMiniz
-	AkaUtfCpp
-	AkaRenderdoc
-	AkaMiniMp3
-	AkaStb
-	AkaJson
-	freetype
-	glslang
-	SPIRV
-	spirv-cross-core
-	spirv-cross-cpp
-	spirv-cross-glsl
-	spirv-cross-hlsl
-)
 
 # Enable UNICODE in windows
 if(WIN32)
@@ -239,10 +242,41 @@ if (MSVC)
 endif()
 
 # Install the library and its headers
-install(TARGETS Aka
-        EXPORT aka_targets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-		
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/Aka/" DESTINATION include)
+install(TARGETS Aka Geometry
+	EXPORT AkaTargets
+	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
+# Generate and install *-targets.cmake 
+install(EXPORT AkaTargets
+	FILE aka-targets.cmake
+	NAMESPACE aka::
+	DESTINATION share/aka)
+
+# Generate the config file in the current binary dir (this ensures it's not placed directly in source)
+# TODO: Cant we generate this automatically ? Hardcoded pass for now.
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/aka-config.cmake"
+"include(CMakeFindDependencyMacro)\n"
+# TODO: need conditions aswell here ?
+"find_package(Vulkan REQUIRED)\n"
+"find_package(rtaudio REQUIRED PATHS lib/Aka/lib/install/rtaudio NO_DEFAULT_PATH)\n"
+"find_package(glfw3 REQUIRED PATHS lib/Aka/lib/install/glfw NO_DEFAULT_PATH)\n"
+"find_package(freetype REQUIRED PATHS lib/Aka/lib/install/freetype NO_DEFAULT_PATH)\n"
+"find_package(glslang REQUIRED PATHS lib/Aka/lib/install/glslang NO_DEFAULT_PATH)\n"
+"find_package(imgui REQUIRED PATHS lib/Aka/lib/install/imgui NO_DEFAULT_PATH)\n"
+"find_package(miniz REQUIRED PATHS lib/Aka/lib/install/miniz NO_DEFAULT_PATH)\n"
+"find_package(minimp3 REQUIRED PATHS lib/Aka/lib/install/minimp3 NO_DEFAULT_PATH)\n"
+"find_package(stb REQUIRED PATHS lib/Aka/lib/install/stb NO_DEFAULT_PATH)\n"
+"find_package(nlohmann-json REQUIRED PATHS lib/Aka/lib/install/json NO_DEFAULT_PATH)\n"
+"find_package(spirv_cross_core REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
+"find_package(spirv_cross_glsl REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
+"find_package(spirv_cross_cpp REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
+"find_package(utfpp REQUIRED PATHS lib/Aka/lib/install/utf8 NO_DEFAULT_PATH)\n"
+"find_package(renderdoc REQUIRED PATHS lib/Aka/lib/install/renderdoc NO_DEFAULT_PATH)\n"
+"include(\"\${CMAKE_CURRENT_LIST_DIR}/aka-targets.cmake\")\n"
+)
+
+# Install the generated config file
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/aka-config.cmake"
+	DESTINATION share/aka)

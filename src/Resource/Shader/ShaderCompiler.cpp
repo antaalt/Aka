@@ -6,15 +6,16 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
-#include <SPIRV/GlslangToSpv.h>
-#include <SPIRV/SpvTools.h>
-#include <SPIRV/disassemble.h>
-#include <SPIRV/spirv.hpp>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/SPIRV/SpvTools.h>
+#include <glslang/SPIRV/disassemble.h>
+#include <glslang/SPIRV/spirv.hpp>
 
-#include <spirv_cross.hpp>
-#include <spirv_glsl.hpp>
-#include <spirv_hlsl.hpp>
-#include <spirv_msl.hpp>
+#include <spirv_cross/spirv_cross.hpp>
+#include <spirv_cross/spirv_glsl.hpp>
+#include <spirv_cross/spirv_hlsl.hpp>
+#include <spirv_cross/spirv_msl.hpp>
 
 namespace aka {
 // Should be read from device capabilities...
