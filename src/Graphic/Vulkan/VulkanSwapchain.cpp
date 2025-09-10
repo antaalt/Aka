@@ -504,7 +504,7 @@ void VulkanSwapchain::createImageViews(VulkanGraphicDevice* _device)
 		}, QueueType::Graphic, false);
 		// No memory
 
-		VulkanImage& image = m_images.emplace(ImageIndex(i), colorTexture);
+		VulkanImage& image = m_images.emplace(ImageIndex((uint32_t)i), colorTexture);
 		VulkanImageSynchronisation& imageSyncData = m_imageSync.emplace();
 		image.create(_device);
 		imageSyncData.create(_device);
