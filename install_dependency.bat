@@ -22,9 +22,9 @@ REM TODO: move arguments elsewhere
 cmake -S "%SOURCE_DIR%" -B "%BUILD_DIR%" -DGLSLANG_ENABLE_INSTALL=ON -DENABLE_OPT=OFF -DCMAKE_INSTALL_PREFIX="%INSTALL_DIR%"
 
 REM Build
-cmake --build "%BUILD_DIR%" --config Release
+cmake --build "%BUILD_DIR%" --config Debug
 
 REM Install
-cmake --install "%BUILD_DIR%" --config Release
+cmake --install "%BUILD_DIR%" --config Debug
 
 echo Install complete for %SOURCE_DIR% at "%INSTALL_DIR%"

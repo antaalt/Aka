@@ -1,42 +1,7 @@
 cmake_minimum_required (VERSION 3.10)
 project(AkaImGui)
 
-set(SRC "")
-set(LIBS "")
-set(INCLUDE_DIRS "")
-set(COMPILES "")
-
-if(GRAPHIC_OPENGL)
-	set(SRC
-		"${SRC}"
-		"src/backends/imgui_impl_opengl3.cpp"
-	)
-	set(LIBS OpenGL::GL GLEW::GLEW)
-	set(INCLUDE_DIRS "${GLEW_INCLUDE_DIRS}")
-	set(COMPILES "IMGUI_IMPL_OPENGL_LOADER_GLEW")
-elseif(GRAPHIC_D3D11)
-	set(SRC
-		"${SRC}"
-		"src/backends/imgui_impl_dx11.cpp"
-	)
-elseif(GRAPHIC_VULKAN)
-	set(SRC
-		"${SRC}"
-		"src/backends/imgui_impl_vulkan.cpp"
-	)
-	set(LIBS Vulkan::Vulkan)
-	set(INCLUDE_DIRS "${Vulkan_INCLUDE_DIRS}")
-else()
-	message(WARNING "ImGui not set. Disable layer.")
-endif()
-
-if(PLATFORM_GLFW3)
-	set(SRC
-		"${SRC}"
-		"src/backends/imgui_impl_glfw.cpp"
-	)
-	set(LIBS glfw)
-endif()
+include(GNUInstallDirs)
 
 add_library(AkaImGui
 	"src/imgui.cpp"
@@ -45,15 +10,23 @@ add_library(AkaImGui
 	"src/imgui_tables.cpp"
 	"src/imgui_widgets.cpp"
 	"src/imguizmo.cpp"
-	"${SRC}"
+	"src/backends/imgui_impl_glfw.cpp"
+	"src/backends/imgui_impl_vulkan.cpp"
 )
-target_include_directories(AkaImGui PRIVATE ${INCLUDE_DIRS})
-target_compile_definitions(AkaImGui PUBLIC AKA_USE_IMGUI_LAYER ${COMPILES})
-target_link_libraries(AkaImGui PRIVATE ${LIBS})
+target_compile_definitions(AkaImGui PUBLIC AKA_USE_IMGUI_LAYER)
+
+# Link glfw
+find_package(glfw3 REQUIRED PATHS ../install/glfw NO_DEFAULT_PATH)
+target_link_libraries(AkaImGui PRIVATE glfw)
+# Link Vulkan
+find_package(Vulkan REQUIRED) # Use VULKAN_SDK env to find Vulkan
+target_include_directories(AkaImGui PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(AkaImGui PRIVATE Vulkan::Vulkan)
 
 target_include_directories(AkaImGui
 	PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	PRIVATE
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src;${CMAKE_CURRENT_SOURCE_DIR}/include/backends>"
 )

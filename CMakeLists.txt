@@ -194,10 +194,10 @@ find_package(freetype REQUIRED PATHS lib/install/freetype NO_DEFAULT_PATH)
 target_link_libraries(Aka PRIVATE freetype)
 # Glslang
 find_package(glslang REQUIRED PATHS lib/install/glslang NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE glslang)
+target_link_libraries(Aka PRIVATE glslang::SPIRV glslang::glslang)
 # Imgui
 find_package(imgui REQUIRED PATHS lib/install/imgui NO_DEFAULT_PATH)
-target_link_libraries(Aka PUBLIC imgui) # Let user use it.
+target_link_libraries(Aka PUBLIC imgui::AkaImGui) # Let user use it.
 # Miniz
 find_package(miniz REQUIRED PATHS lib/install/miniz NO_DEFAULT_PATH)
 target_link_libraries(Aka PRIVATE miniz::miniz)
@@ -215,7 +215,8 @@ target_link_libraries(Aka PRIVATE nlohmann-json::AkaJson)
 find_package(spirv_cross_core REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
 find_package(spirv_cross_glsl REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
 find_package(spirv_cross_cpp REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE spirv_cross_core spirv_cross_glsl spirv_cross_cpp)
+find_package(spirv_cross_util REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
+target_link_libraries(Aka PRIVATE spirv-cross-core spirv-cross-glsl spirv-cross-cpp spirv-cross-util)
 # UTF8 CPP
 # Not found in vcpkg registry...
 find_package(utfpp REQUIRED PATHS lib/install/utf8 NO_DEFAULT_PATH)
@@ -225,8 +226,8 @@ target_link_libraries(Aka PRIVATE utfpp::AkaUtfCpp)
 find_package(renderdoc REQUIRED PATHS lib/install/renderdoc NO_DEFAULT_PATH)
 target_link_libraries(Aka PRIVATE renderdoc::AkaRenderdoc)
 # Geometry
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
-target_link_libraries(Aka PUBLIC Geometry)
+find_package(geometry REQUIRED PATHS lib/install/geometry NO_DEFAULT_PATH)
+target_link_libraries(Aka PUBLIC geometry::Geometry) # Let user use it.
 
 
 # Enable UNICODE in windows
@@ -235,18 +236,20 @@ if(WIN32)
 endif()
 if (MSVC)
 	# Ensure __cplusplus correctly set
-	target_compile_options(Aka PUBLIC "/Zc:__cplusplus")
+	target_compile_options(Aka PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>")
 	# Ensure UTF8 at runtime
 	target_compile_options(Aka PUBLIC "$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 	target_compile_options(Aka PUBLIC "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
 
 # Install the library and its headers
-install(TARGETS Aka Geometry
+install(TARGETS Aka
 	EXPORT AkaTargets
 	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+	
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/" DESTINATION include)
 
 # Generate and install *-targets.cmake 
 install(EXPORT AkaTargets
@@ -272,8 +275,10 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/aka-config.cmake"
 "find_package(spirv_cross_core REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
 "find_package(spirv_cross_glsl REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
 "find_package(spirv_cross_cpp REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
+"find_package(spirv_cross_util REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
 "find_package(utfpp REQUIRED PATHS lib/Aka/lib/install/utf8 NO_DEFAULT_PATH)\n"
 "find_package(renderdoc REQUIRED PATHS lib/Aka/lib/install/renderdoc NO_DEFAULT_PATH)\n"
+"find_package(geometry REQUIRED PATHS lib/Aka/lib/install/geometry NO_DEFAULT_PATH)\n"
 "include(\"\${CMAKE_CURRENT_LIST_DIR}/aka-targets.cmake\")\n"
 )
 
