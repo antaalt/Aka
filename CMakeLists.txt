@@ -193,20 +193,17 @@ endif()
 find_package(Freetype REQUIRED)
 target_link_libraries(Aka PRIVATE freetype)
 # Glslang
-find_package(glslang REQUIRED)
-target_link_libraries(Aka PRIVATE glslang)
+find_package(glslang CONFIG REQUIRED)
+target_link_libraries(Aka PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV glslang::SPVRemapper)
 # Imgui
 find_package(imgui REQUIRED)
-target_link_libraries(Aka PUBLIC imgui) # Let user use it.
+target_link_libraries(Aka PUBLIC imgui::imgui) # Let user use it.
 # Miniz
 find_package(miniz REQUIRED)
 target_link_libraries(Aka PRIVATE miniz::miniz)
-# Minimp3 port does not seems to support find_package and instead directly copy header file...
-#find_package(minimp3 REQUIRED)
-#target_link_libraries(Aka PRIVATE minimp3::minimp3)
-# Stb
+# Minimp3 install itself simply with config. No need to import
+# Stb (header only installed during find.)
 find_package(Stb REQUIRED)
-target_link_libraries(Aka PRIVATE Stb)
 # Nlohmann JSON
 find_package(nlohmann_json REQUIRED)
 target_link_libraries(Aka PRIVATE nlohmann_json::nlohmann_json)
@@ -224,9 +221,8 @@ target_link_libraries(Aka PRIVATE utf8cpp::utf8cpp)
 # Not found in vcpkg registry...
 #find_package(renderdoc REQUIRED)
 #target_link_libraries(Aka PRIVATE renderdoc::AkaRenderdoc)
-# Geometry
+# Geometry (header only)
 find_package(geometry REQUIRED)
-target_link_libraries(Aka PUBLIC geometry) # Let user use it.
 
 
 # Enable UNICODE in windows
@@ -248,6 +244,8 @@ install(TARGETS Aka
 	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/" DESTINATION include)
+
 # Generate and install *-targets.cmake 
 install(EXPORT AkaTargets
 	FILE aka-targets.cmake
@@ -267,7 +265,7 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/aka-config.cmake"
 "find_package(imgui REQUIRED)\n"
 "find_package(miniz REQUIRED)\n"
 #"find_package(minimp3 REQUIRED)\n" # Include only.
-"find_package(Stb REQUIRED)\n"
+#"find_package(Stb REQUIRED)\n"
 "find_package(nlohmann_json REQUIRED)\n"
 "find_package(spirv_cross_core REQUIRED)\n"
 "find_package(spirv_cross_glsl REQUIRED)\n"

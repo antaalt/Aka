@@ -66,7 +66,7 @@ struct AssetIterator {
 private:
 	using Iterator = HashMap<AssetID, AssetInfo>::iterator;
 public:
-	explicit AssetIterator(Iterator& value) : m_value(value) {}
+	explicit AssetIterator(Iterator&& value) : m_value(value) {}
 	AssetIterator& operator++()
 	{
 		m_value++;

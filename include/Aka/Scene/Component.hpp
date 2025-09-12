@@ -152,6 +152,7 @@ private:
 template <typename T>
 static constexpr const char* getComponentName() {
 	static_assert(false); // This is being defined by AKA_DECL_COMPONENT
+	return "";
 }
 
 template <typename T, typename A>
