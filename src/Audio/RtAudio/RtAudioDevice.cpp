@@ -7,6 +7,25 @@
 #pragma comment(lib, "dsound.lib")
 #endif
 
+#define RT_AUDIO_CHECK_RESULT(result)		\
+{											\
+	RtAudioErrorType res = (result);		\
+	if (RTAUDIO_NO_ERROR != res) {			\
+		char buffer[256];					\
+		snprintf(							\
+			buffer,							\
+			256,							\
+			"Error %u (%s at %s:%d)",		\
+			res,							\
+			AKA_STRINGIFY(result),			\
+			__FILE__,						\
+			__LINE__						\
+		);									\
+		::aka::Logger::error(buffer);       \
+		AKA_DEBUG_BREAK;                    \
+	}										\
+}
+
 namespace aka {
 
 RtAudioDevice::RtAudioDevice(const AudioConfig& config) :
@@ -40,51 +59,44 @@ void RtAudioDevice::initialize(const AudioConfig& config)
 	// One frame is equivalent to samples for all the channels
 	// Sample = channel * frames
 	uint32_t frames = 2048;
-	try
-	{
-		m_audio->openStream(
-			&parameters,
-			nullptr,
-			RTAUDIO_SINT16,
-			m_frequency,
-			&frames,
-			[](
-				void* outputBuffer,
-				void* inputBuffer,
-				unsigned int nFrames,
-				double streamTime,
-				RtAudioStreamStatus status,
-				void* userData
-				)
-			{
-				AudioFrame* out = static_cast<AudioFrame*>(outputBuffer);
-				if (status) {
-					if (status & RTAUDIO_INPUT_OVERFLOW) {
-						Logger::warn("Audio stream overflow detected!");
-					}
-					if (status & RTAUDIO_OUTPUT_UNDERFLOW) {
-						Logger::warn("Audio stream underflow detected!");
-					}
+	RT_AUDIO_CHECK_RESULT(m_audio->openStream(
+		&parameters,
+		nullptr,
+		RTAUDIO_SINT16,
+		m_frequency,
+		&frames,
+		[](
+			void* outputBuffer,
+			void* inputBuffer,
+			unsigned int nFrames,
+			double streamTime,
+			RtAudioStreamStatus status,
+			void* userData
+			)
+		{
+			AudioFrame* out = static_cast<AudioFrame*>(outputBuffer);
+			if (status) {
+				if (status & RTAUDIO_INPUT_OVERFLOW) {
+					Logger::warn("Audio stream overflow detected!");
 				}
-				RtAudioDevice* audio = static_cast<RtAudioDevice*>(userData);
-				audio->process(out, nFrames);
-				return 0;
-			},
-			this
-		);
-		m_audio->startStream();
-	}
-	catch (RtAudioError& e)
-	{
-		Logger::error("[Rtaudio]", e.getMessage());
-		throw;
-	}
+				if (status & RTAUDIO_OUTPUT_UNDERFLOW) {
+					Logger::warn("Audio stream underflow detected!");
+				}
+			}
+			RtAudioDevice* audio = static_cast<RtAudioDevice*>(userData);
+			audio->process(out, nFrames);
+			return 0;
+		},
+		this
+	));
+	RT_AUDIO_CHECK_RESULT(m_audio->startStream());
 }
 
 void RtAudioDevice::shutdown()
 {
-	if (m_audio->isStreamRunning())
-		m_audio->stopStream();
+	if (m_audio->isStreamRunning()) {
+		RT_AUDIO_CHECK_RESULT(m_audio->stopStream());
+	}
 	if (m_audio->isStreamOpen())
 		m_audio->closeStream();
 }

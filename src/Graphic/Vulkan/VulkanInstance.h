@@ -12,7 +12,8 @@
 #include "VulkanProgram.h"
 #include "VulkanSwapchain.h"
 
-#define ENABLE_RENDERDOC_CAPTURE 1
+// Disabled for now as support for vcpkg bad
+//#define ENABLE_RENDERDOC_CAPTURE 1
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 struct RENDERDOC_API_1_6_0;

@@ -10,8 +10,8 @@
 //#define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
 
-#include <minimp3.h>
-#include <minimp3_ex.h>
+#include <minimp3/minimp3.h>
+#include <minimp3/minimp3_ex.h>
 
 #include <Aka/Core/Container/String.h>
 #include <Aka/Core/Encoding.h>

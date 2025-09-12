@@ -6,7 +6,9 @@
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#ifdef ENABLE_RENDERDOC_CAPTURE
 #include <renderdoc_app.h>
+#endif
 
 #if defined(AKA_USE_VULKAN)
 

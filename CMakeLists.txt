@@ -178,56 +178,55 @@ endif()
 # Link RtAudio
 if (AUDIO_RTAUDIO)
 	target_compile_definitions(Aka PUBLIC AKA_USE_RTAUDIO)
-	find_package(rtaudio REQUIRED PATHS lib/install/rtaudio NO_DEFAULT_PATH)
-	target_link_libraries(Aka PRIVATE rtaudio::rtaudio)
+	find_package(rtaudio REQUIRED)
+	target_link_libraries(Aka PRIVATE RtAudio::rtaudio)
 endif()
 
 # Link GLFW3
 if (PLATFORM_GLFW3)
 	target_compile_definitions(Aka PUBLIC AKA_USE_GLFW3)
-	find_package(glfw3 REQUIRED PATHS lib/install/glfw NO_DEFAULT_PATH)
+	find_package(glfw3 REQUIRED)
 	target_link_libraries(Aka PRIVATE glfw)
 endif()
 
 # Freetype
-find_package(freetype REQUIRED PATHS lib/install/freetype NO_DEFAULT_PATH)
+find_package(Freetype REQUIRED)
 target_link_libraries(Aka PRIVATE freetype)
 # Glslang
-find_package(glslang REQUIRED PATHS lib/install/glslang NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE glslang::SPIRV glslang::glslang)
+find_package(glslang REQUIRED)
+target_link_libraries(Aka PRIVATE glslang)
 # Imgui
-find_package(imgui REQUIRED PATHS lib/install/imgui NO_DEFAULT_PATH)
-target_link_libraries(Aka PUBLIC imgui::AkaImGui) # Let user use it.
+find_package(imgui REQUIRED)
+target_link_libraries(Aka PUBLIC imgui) # Let user use it.
 # Miniz
-find_package(miniz REQUIRED PATHS lib/install/miniz NO_DEFAULT_PATH)
+find_package(miniz REQUIRED)
 target_link_libraries(Aka PRIVATE miniz::miniz)
-# Minimp3
-find_package(minimp3 REQUIRED PATHS lib/install/minimp3 NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE minimp3::minimp3)
+# Minimp3 port does not seems to support find_package and instead directly copy header file...
+#find_package(minimp3 REQUIRED)
+#target_link_libraries(Aka PRIVATE minimp3::minimp3)
 # Stb
-find_package(stb REQUIRED PATHS lib/install/stb NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE stb::AkaStb)
+find_package(Stb REQUIRED)
+target_link_libraries(Aka PRIVATE Stb)
 # Nlohmann JSON
-find_package(nlohmann-json REQUIRED PATHS lib/install/json NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE nlohmann-json::AkaJson)
+find_package(nlohmann_json REQUIRED)
+target_link_libraries(Aka PRIVATE nlohmann_json::nlohmann_json)
 # SPIRV Cross
 # Do we really need to load these three...
-find_package(spirv_cross_core REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
-find_package(spirv_cross_glsl REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
-find_package(spirv_cross_cpp REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
-find_package(spirv_cross_util REQUIRED PATHS lib/install/SPIRV-Cross NO_DEFAULT_PATH)
+find_package(spirv_cross_core REQUIRED)
+find_package(spirv_cross_glsl REQUIRED)
+find_package(spirv_cross_cpp REQUIRED)
 target_link_libraries(Aka PRIVATE spirv-cross-core spirv-cross-glsl spirv-cross-cpp spirv-cross-util)
 # UTF8 CPP
 # Not found in vcpkg registry...
-find_package(utfpp REQUIRED PATHS lib/install/utf8 NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE utfpp::AkaUtfCpp)
+find_package(utf8cpp REQUIRED)
+target_link_libraries(Aka PRIVATE utf8cpp::utf8cpp)
 # Renderdoc
 # Not found in vcpkg registry...
-find_package(renderdoc REQUIRED PATHS lib/install/renderdoc NO_DEFAULT_PATH)
-target_link_libraries(Aka PRIVATE renderdoc::AkaRenderdoc)
+#find_package(renderdoc REQUIRED)
+#target_link_libraries(Aka PRIVATE renderdoc::AkaRenderdoc)
 # Geometry
-find_package(geometry REQUIRED PATHS lib/install/geometry NO_DEFAULT_PATH)
-target_link_libraries(Aka PUBLIC geometry::Geometry) # Let user use it.
+find_package(geometry REQUIRED)
+target_link_libraries(Aka PUBLIC geometry) # Let user use it.
 
 
 # Enable UNICODE in windows
@@ -248,8 +247,6 @@ install(TARGETS Aka
 	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-	
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/" DESTINATION include)
 
 # Generate and install *-targets.cmake 
 install(EXPORT AkaTargets
@@ -263,22 +260,21 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/aka-config.cmake"
 "include(CMakeFindDependencyMacro)\n"
 # TODO: need conditions aswell here ?
 "find_package(Vulkan REQUIRED)\n"
-"find_package(rtaudio REQUIRED PATHS lib/Aka/lib/install/rtaudio NO_DEFAULT_PATH)\n"
-"find_package(glfw3 REQUIRED PATHS lib/Aka/lib/install/glfw NO_DEFAULT_PATH)\n"
-"find_package(freetype REQUIRED PATHS lib/Aka/lib/install/freetype NO_DEFAULT_PATH)\n"
-"find_package(glslang REQUIRED PATHS lib/Aka/lib/install/glslang NO_DEFAULT_PATH)\n"
-"find_package(imgui REQUIRED PATHS lib/Aka/lib/install/imgui NO_DEFAULT_PATH)\n"
-"find_package(miniz REQUIRED PATHS lib/Aka/lib/install/miniz NO_DEFAULT_PATH)\n"
-"find_package(minimp3 REQUIRED PATHS lib/Aka/lib/install/minimp3 NO_DEFAULT_PATH)\n"
-"find_package(stb REQUIRED PATHS lib/Aka/lib/install/stb NO_DEFAULT_PATH)\n"
-"find_package(nlohmann-json REQUIRED PATHS lib/Aka/lib/install/json NO_DEFAULT_PATH)\n"
-"find_package(spirv_cross_core REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
-"find_package(spirv_cross_glsl REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
-"find_package(spirv_cross_cpp REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
-"find_package(spirv_cross_util REQUIRED PATHS lib/Aka/lib/install/SPIRV-Cross NO_DEFAULT_PATH)\n"
-"find_package(utfpp REQUIRED PATHS lib/Aka/lib/install/utf8 NO_DEFAULT_PATH)\n"
-"find_package(renderdoc REQUIRED PATHS lib/Aka/lib/install/renderdoc NO_DEFAULT_PATH)\n"
-"find_package(geometry REQUIRED PATHS lib/Aka/lib/install/geometry NO_DEFAULT_PATH)\n"
+"find_package(rtaudio REQUIRED)\n"
+"find_package(glfw3 REQUIRED)\n"
+"find_package(Freetype REQUIRED)\n"
+"find_package(glslang REQUIRED)\n"
+"find_package(imgui REQUIRED)\n"
+"find_package(miniz REQUIRED)\n"
+#"find_package(minimp3 REQUIRED)\n" # Include only.
+"find_package(Stb REQUIRED)\n"
+"find_package(nlohmann_json REQUIRED)\n"
+"find_package(spirv_cross_core REQUIRED)\n"
+"find_package(spirv_cross_glsl REQUIRED)\n"
+"find_package(spirv_cross_cpp REQUIRED)\n"
+"find_package(spirv_cross_util REQUIRED)\n"
+"find_package(utf8cpp REQUIRED PATHS)\n"
+#"find_package(renderdoc REQUIRED PATHS)\n"
 "include(\"\${CMAKE_CURRENT_LIST_DIR}/aka-targets.cmake\")\n"
 )
 

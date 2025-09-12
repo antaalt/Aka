@@ -8,7 +8,9 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#ifdef ENABLE_RENDERDOC_CAPTURE
 #include <renderdoc_app.h>
+#endif
 
 #include "VulkanCommon.hpp"
 #include "VulkanInstance.h"
