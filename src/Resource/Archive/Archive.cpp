@@ -124,6 +124,9 @@ ArchiveParseResult Archive::load(ArchiveLoadContext& _context)
 	AssetInfo info = _context.getAssetLibrary()->getAssetInfo(id());
 	return load(_context, info.path);
 }
+ArchiveParseResult Archive::load(ArchiveLoadContext&& _context) {
+	load(_context);
+}
 
 ArchiveParseResult Archive::save(ArchiveSaveContext& _context, Vector<byte_t>& _blob)
 {
@@ -160,8 +163,11 @@ ArchiveParseResult Archive::save(ArchiveSaveContext& _context, const AssetPath& 
 ArchiveParseResult Archive::save(ArchiveSaveContext& _context)
 {
 	AKA_ASSERT(id() != AssetID::Invalid, "Invalid AssetID");
-	AssetInfo& info = _context.getAssetLibrary()->getAssetInfo(id());
+	AssetInfo info = _context.getAssetLibrary()->getAssetInfo(id());
 	return save(_context, info.path);
+}
+ArchiveParseResult Archive::save(ArchiveSaveContext&& _context) {
+	save(_context);
 }
 
 bool Archive::validate(AssetLibrary* _library)

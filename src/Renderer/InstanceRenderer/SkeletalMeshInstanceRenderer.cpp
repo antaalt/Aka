@@ -232,7 +232,6 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 	const SkeletalMesh& mesh = meshHandle.get();
 
 	// Bones
-	mat4f default = mat4f::identity();
 	Vector<mat4f> bones(mesh.getBones().size(), mat4f::identity());
 	GeometryBufferHandle bonesHandle = getRenderer().allocateGeometryData(bones.data(), sizeof(mat4f) * bones.size());
 

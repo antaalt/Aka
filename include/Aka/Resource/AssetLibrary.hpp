@@ -188,7 +188,7 @@ ResourceHandle<T> AssetLibrary::get(AssetID _assetID)
 template<typename T>
 inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, Renderer* _renderer)
 {
-	ArchiveTrait<T>::Archive archive(_assetID);
+	typename ArchiveTrait<T>::Archive archive(_assetID);
 	ArchiveLoadContext ctx(archive, this);
 	ArchiveParseResult res = archive.load(ctx);
 	if (res != ArchiveParseResult::Success)
@@ -244,7 +244,7 @@ inline ArchiveParseResult AssetLibrary::save(AssetID _assetID, ArchiveSaveContex
 		return ArchiveParseResult::Failed;
 	if (!itResource->second.isLoaded())
 		return ArchiveParseResult::Failed;
-	ArchiveTrait<T>::Archive archive(_assetID);
+	typename ArchiveTrait<T>::Archive archive(_assetID);
 	itResource->second.get().toArchive(_context, _renderer);
 	ArchiveParseResult res = archive.save(_context);
 	return res;

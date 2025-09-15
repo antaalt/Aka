@@ -72,7 +72,7 @@ class ComponentAllocatorMap
 public:
 	ComponentAllocatorMap(Allocator& _allocator);
 	ComponentAllocatorMap(const ComponentAllocatorMap& _copy);
-	ComponentAllocatorMap(ComponentAllocatorMap&& _copy);
+	ComponentAllocatorMap(ComponentAllocatorMap&& _copy) = default;
 	ComponentAllocatorMap& operator=(const ComponentAllocatorMap& _copy);
 	ComponentAllocatorMap& operator=(ComponentAllocatorMap&& _copy);
 	~ComponentAllocatorMap();

@@ -343,7 +343,7 @@ Result<Image> ImageDecoder::fromDisk(const Path& _path)
 	// Try loading DDS
 	if (data == nullptr && (data = loadDDSFromFile(_path, &x, &y, &stbi_format, STBI_default)) == nullptr)
 	{
-		return Result<Image>::error(Error{ String::format("Failed to decode image ", _path, " from disk: ", stbi_failure_reason()) });
+		return Result<Image>::error(Error{ String::format("Failed to decode image %s from disk: %s", _path.cstr(), stbi_failure_reason()) });
 	}
 	else
 	{
@@ -372,7 +372,7 @@ Result<Image> ImageDecoder::fromMemory(const byte_t* _data, size_t _size)
 	stbi_uc* data = stbi_load_from_memory(_data, (int)_size, &x, &y, &stbi_format, STBI_default);
 	if (data == nullptr && (data = loadDDS(Blob(_data, _size), &x, &y, &stbi_format, STBI_default)) == nullptr)
 	{
-		return Result<Image>::error(Error{ String::format("Failed to decode image from memory: ", stbi_failure_reason()) });
+		return Result<Image>::error(Error{ String::format("Failed to decode image from memory: %s", stbi_failure_reason()) });
 	}
 	else
 	{
@@ -397,7 +397,7 @@ Result<ImageHdr> ImageDecoder::fromDiskHdr(const Path& _path)
 	float* data = stbi_loadf(_path.cstr(), &x, &y, &stbi_format, STBI_default);
 	if (data == nullptr)
 	{
-		return Result<ImageHdr>::error(Error{ String::format("Failed to decode hdr image ", _path, " from disk: ", stbi_failure_reason()) });
+		return Result<ImageHdr>::error(Error{ String::format("Failed to decode hdr image %s from disk: %s", _path.cstr(),  stbi_failure_reason()) });
 	}
 	else
 	{
@@ -426,7 +426,7 @@ Result<ImageHdr> ImageDecoder::fromMemoryHdr(const byte_t* _data, size_t _size)
 	float* data = stbi_loadf_from_memory(_data, (int)_size, &x, &y, &stbi_format, STBI_default);
 	if (data == nullptr)
 	{
-		return Result<ImageHdr>::error(Error{ String::format("Failed to decode hdr image from memory: ", stbi_failure_reason()) });
+		return Result<ImageHdr>::error(Error{ String::format("Failed to decode hdr image from memory: %s", stbi_failure_reason()) });
 	}
 	else
 	{

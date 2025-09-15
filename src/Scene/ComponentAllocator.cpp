@@ -13,11 +13,6 @@ ComponentAllocatorMap::ComponentAllocatorMap(const ComponentAllocatorMap& _copy)
 {
 	*this = _copy;
 }
-ComponentAllocatorMap::ComponentAllocatorMap(ComponentAllocatorMap&& _copy) :
-	m_allocator(std::move(_copy.m_allocator))
-{
-	*this = std::move(_copy);
-}
 ComponentAllocatorMap& ComponentAllocatorMap::operator=(const ComponentAllocatorMap& _copy)
 {
 	for (const auto& component : _copy.m_container)

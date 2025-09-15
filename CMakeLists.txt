@@ -212,6 +212,7 @@ target_link_libraries(Aka PRIVATE nlohmann_json::nlohmann_json)
 find_package(spirv_cross_core REQUIRED)
 find_package(spirv_cross_glsl REQUIRED)
 find_package(spirv_cross_cpp REQUIRED)
+find_package(spirv_cross_util REQUIRED)
 target_link_libraries(Aka PRIVATE spirv-cross-core spirv-cross-glsl spirv-cross-cpp spirv-cross-util)
 # UTF8 CPP
 # Not found in vcpkg registry...
@@ -222,7 +223,8 @@ target_link_libraries(Aka PRIVATE utf8cpp::utf8cpp)
 #find_package(renderdoc REQUIRED)
 #target_link_libraries(Aka PRIVATE renderdoc::AkaRenderdoc)
 # Geometry (header only)
-find_package(geometry REQUIRED)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/geometry)
+target_link_libraries(Aka PUBLIC Geometry)
 
 
 # Enable UNICODE in windows

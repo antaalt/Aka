@@ -95,9 +95,11 @@ struct Archive
 	ArchiveParseResult load(ArchiveLoadContext& _context, const Vector<byte_t>& _blob);
 	ArchiveParseResult load(ArchiveLoadContext& _context, const AssetPath& _path);
 	ArchiveParseResult load(ArchiveLoadContext& _context);
+	ArchiveParseResult load(ArchiveLoadContext&& _context);
 	ArchiveParseResult save(ArchiveSaveContext& _context, Vector<byte_t>& _blob);
 	ArchiveParseResult save(ArchiveSaveContext& _context, const AssetPath& _path);
 	ArchiveParseResult save(ArchiveSaveContext& _context);
+	ArchiveParseResult save(ArchiveSaveContext&& _context);
 
 	bool validate(AssetLibrary* _library);
 

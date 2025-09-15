@@ -188,9 +188,9 @@ void SkeletalMesh::fromArchive_internal(ArchiveLoadContext& _context, Renderer* 
 		animation.durationInTick = archiveAnimation.durationInTick;
 		animation.tickPerSecond = archiveAnimation.tickPerSeconds;
 		animation.name = archiveAnimation.name;
-		SkeletalMeshBoneAnimation default{};
-		default.localTransform = mat4f::identity();
-		animation.bones.resize(m_bones.size(), default);
+		SkeletalMeshBoneAnimation defaultAnimation{};
+		defaultAnimation.localTransform = mat4f::identity();
+		animation.bones.resize(m_bones.size(), defaultAnimation);
 		for (const ArchiveSkeletonBoneAnimation& archiveBone : archiveAnimation.bones)
 		{
 			SkeletalMeshBoneAnimation& bone = animation.bones[archiveBone.boneIndex];

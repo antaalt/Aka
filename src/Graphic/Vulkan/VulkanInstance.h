@@ -13,6 +13,7 @@
 #include "VulkanSwapchain.h"
 
 // Disabled for now as support for vcpkg bad
+// TODO:VCPKG: restore
 //#define ENABLE_RENDERDOC_CAPTURE 1
 
 #ifdef ENABLE_RENDERDOC_CAPTURE

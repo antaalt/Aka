@@ -139,9 +139,9 @@ public:
 	void destroyArchive(Archive* _archive);
 protected:
 	void fromArchiveBase(const ArchiveComponent& _archive) override;
-	void toArchiveBase(ArchiveComponent& _archive);
+	void toArchiveBase(ArchiveComponent& _archive) override;
 	ArchiveComponent* createArchiveBase(ArchiveComponentVersionType _version = 0) override;
-	void destroyArchiveBase(ArchiveComponent* _archive);
+	void destroyArchiveBase(ArchiveComponent* _archive) override;
 public:
 	static ComponentAllocator<T>* create();
 	static void destroy(ComponentAllocator<T>* _allocator);

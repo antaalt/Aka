@@ -22,7 +22,6 @@ struct Config
 	gfx::GraphicConfig graphic = {};
 	AudioConfig audio = {};
 	PlatformWindowConfig platform = {};
-	Path directory = "../../../"; // Default build path for CMake relative to project
 	int argc = 0;
 	char** argv = nullptr;
 };

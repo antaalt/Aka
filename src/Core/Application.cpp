@@ -34,8 +34,9 @@ Application::Application(const Config& config) :
 	s_app = this;
 
 	// Set current working directory
-	OS::setcwd(config.directory);
-	AKA_ASSERT(OS::File::exist(AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath()), "Set your cwd to the root of this project, with Config struct passed to Application constructor in main function.");
+	Path cwd = OS::cwd();
+	Path assetPath = AssetPath("shaders/renderer/asset.glsl", AssetPathType::Common).getAbsolutePath();
+	AKA_ASSERT(OS::File::exist(assetPath), "Failed to find assets. Make sure to set your cwd to the root of this project (current cwd %s, failed to find %s).", cwd.cstr(), assetPath.cstr());
 	
 	// Create platform
 	m_platform = PlatformDevice::create();
