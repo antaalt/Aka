@@ -444,8 +444,8 @@ OS::ProcessHandle OS::Library::getProcess(const char* _process)
 {
 	AKA_ASSERT(m_handle != nullptr, "GetProcess on null pointer");
 	FARPROC proc = GetProcAddress(static_cast<HMODULE>(m_handle), _process);
-
-	return static_cast<OS::ProcessHandle>(proc);
+	// TODO:VCPKG: should have some kind of templated params here for returning the correct definition.
+	return nullptr;//static_cast<OS::ProcessHandle>(proc);
 }
 
 };

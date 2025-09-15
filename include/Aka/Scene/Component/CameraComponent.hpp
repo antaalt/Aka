@@ -23,6 +23,7 @@ enum class CameraControllerType
 
 struct CameraProjection
 {
+	virtual ~CameraProjection() {}
 	// Get the projection matrix
 	virtual mat4f projection() const = 0;
 	// Get the projection type

@@ -24,7 +24,7 @@ DescriptorUpdate DescriptorUpdate::sampledTextureCube2D(uint32_t binding, uint32
 	update.index = index;
 	update.texture.texture = texture;
 	update.texture.sampler = sampler;
-	update.texture.layer;
+	//update.texture.layer;
 	update.texture.mipLevel = mipLevel;
 	return update;
 }

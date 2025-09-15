@@ -126,8 +126,8 @@ private:
 template<typename T>
 inline T& Node::attach()
 {
-	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
-	ComponentID id = Component<T, T::Archive>::getComponentID();
+	static_assert(std::is_base_of<Component<T, typename T::Archive>, T>::value, "Invalid type");
+	ComponentID id = Component<T, typename T::Archive>::getComponentID();
 	AKA_ASSERT(!has<T>(), "Trying to attach already attached component");
 	m_componentIDs.insert(id);
 	T* component = m_allocator->allocate<T>(this);
@@ -139,8 +139,8 @@ inline T& Node::attach()
 template<typename T>
 inline void Node::detach()
 {
-	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
-	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
+	static_assert(std::is_base_of<Component<T, typename T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, typename T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to detach non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	m_componentIDs.erase(componentID);
@@ -173,8 +173,8 @@ inline void Node::detach()
 template<typename T>
 inline T& Node::get()
 {
-	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
-	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
+	static_assert(std::is_base_of<Component<T, typename T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, typename T::Archive>::getComponentID();
 	AKA_ASSERT(has<T>(), "Trying to get non attached component");
 	auto itActive = m_componentsActive.find(componentID);
 	if (itActive != m_componentsActive.end())
@@ -220,8 +220,8 @@ inline const T& Node::get() const
 template<typename T>
 inline bool aka::Node::has() const
 {
-	static_assert(std::is_base_of<Component<T, T::Archive>, T>::value, "Invalid type");
-	const ComponentID componentID = Component<T, T::Archive>::getComponentID();
+	static_assert(std::is_base_of<Component<T, typename T::Archive>, T>::value, "Invalid type");
+	const ComponentID componentID = Component<T, typename T::Archive>::getComponentID();
 	auto it = m_componentIDs.find(componentID);
 	return it != m_componentIDs.end();
 }

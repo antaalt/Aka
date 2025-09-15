@@ -263,8 +263,8 @@ InstanceHandle SkeletalMeshInstanceRenderer::createInstance(AssetID assetID)
 			batchData.indexCount = batch.indexCount;
 			batchData.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(SkeletalVertex);
 			batchData.materialIndex = getRenderer().getMaterialIndex(batch.material.get().getMaterialHandle());
-			batchData.min; // TODO
-			batchData.max;
+			//batchData.min; // TODO
+			//batchData.max;
 			m_instanceBatchDatas.push_back(batchData);
 		}
 

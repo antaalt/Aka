@@ -112,7 +112,7 @@ private:
 
 template <typename T>
 ComponentAllocatorBase* ComponentAllocator<T>::clone() const {
-	return Component<T, T::Archive>::create();
+	return Component<T, typename T::Archive>::create();
 }
 
 };

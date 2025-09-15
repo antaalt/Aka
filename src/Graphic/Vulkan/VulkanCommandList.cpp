@@ -25,7 +25,7 @@ CommandEncoder* VulkanGraphicDevice::acquireCommandEncoder(QueueType queue)
 void VulkanGraphicDevice::execute(const char* _name, std::function<void(CommandList&)> callback, QueueType queue, bool async)
 {
 	CommandEncoder* cmd = acquireCommandEncoder(queue);
-	cmd->record([c = move(callback), _name](CommandList& cmd) {
+	cmd->record([c = callback, _name](CommandList& cmd) {
 		ScopedCmdMarker marker(cmd, _name, 1.f, 1.f, 1.f, 1.f);
 		c(cmd);
 	});
@@ -48,7 +48,7 @@ void VulkanGraphicDevice::execute(const char* _name, std::function<void(CommandL
 
 void VulkanGraphicDevice::executeVk(const char* _name, std::function<void(VulkanCommandList&)> callback, QueueType queue, bool async)
 {
-	execute(_name, [vk_callback = move(callback)](CommandList& command) {
+	execute(_name, [vk_callback = callback](CommandList& command) {
 		// We cant use reinterpret_cast because of virtual & multiple inheritance.
 		VulkanCommandList& vk_command = dynamic_cast<VulkanCommandList&>(command);
 		vk_callback(vk_command);

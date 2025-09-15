@@ -58,8 +58,7 @@ bool handleAssert(const char* _filename, int _line, const char* _assertion, bool
 	#define AKA_PRINT(...) AKA_UNUSED(0)
 #define AKA_CRASH(...) throw std::runtime_error(__VA_ARGS__);
 #endif
-
-#define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented for function : " __FUNCTION__)
+#define AKA_NOT_IMPLEMENTED AKA_ASSERT(false, "Feature not implemented for function at " __FILE__ " line " AKA_STRINGIFY(__LINE__) ) // __FUNCTION__ only supported by MSVC and __func__ not a macro...
 #define AKA_UNREACHABLE AKA_ASSERT(false, "Code unreachable reached.")
 
 namespace aka {

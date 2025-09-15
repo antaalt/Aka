@@ -25,7 +25,7 @@ void Material::fromArchive_internal(ArchiveLoadContext& _context, Renderer* _ren
 	const ArchiveMaterial& archive = _context.getArchive<ArchiveMaterial>(getID());
 	m_albedo = _context.getAssetLibrary()->load<Texture>(archive.albedo, _renderer);
 	m_normal = _context.getAssetLibrary()->load<Texture>(archive.normal, _renderer);
-	archive.flags; // TODO
+	//archive.flags; // TODO
 	m_materialHandle = _renderer->createMaterial();
 	color4f color;
 	Memory::copy(color.data, archive.color.data, sizeof(float) * 4);

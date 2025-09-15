@@ -60,7 +60,7 @@ template <typename T> constexpr T bitmask(uint32_t bitCount)
 
 template <typename T> constexpr T bitmask()
 {
-	return bitcount<T>(sizeof(T) * CHAR_BIT);
+	return bitmask<T>(countBitSet(sizeof(T) * CHAR_BIT));
 }
 
 template <typename T> constexpr uint32_t countBitSize()

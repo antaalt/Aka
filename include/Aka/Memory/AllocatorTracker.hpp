@@ -131,7 +131,7 @@ private:
 AllocatorTracker& getAllocatorTracker();
 
 template <typename T>
-static AllocationTrackingData AllocationTrackingData::create(size_t count, size_t alignment) {
+AllocationTrackingData AllocationTrackingData::create(size_t count, size_t alignment) {
 	AllocationTrackingData data;
 	data.info = &typeid(T);
 	data.elementSize = sizeof(T);

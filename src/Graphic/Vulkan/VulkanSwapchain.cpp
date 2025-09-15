@@ -547,7 +547,7 @@ void VulkanSwapchain::destroyFramebuffers(VulkanGraphicDevice* _device)
 {
 	for (auto& backbuffer : m_backbuffers)
 	{
-		backbuffer.first; // TODO: Clear renderpass ref count
+		//backbuffer.first; // TODO: Clear renderpass ref count
 		for (FramebufferHandle fb : backbuffer.second.handles)
 		{
 			_device->destroy(fb);

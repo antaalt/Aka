@@ -226,6 +226,6 @@ ComponentRegister<T> Component<T, A>::s_register = ComponentRegister<T>(Componen
 
 #define AKA_DECL_COMPONENT(ComponentType)								\
 template <>																\
-inline static constexpr const char* getComponentName<ComponentType>() { \
+inline constexpr const char* getComponentName<ComponentType>() { \
 	return AKA_STRINGIFY(ComponentType);								\
 }

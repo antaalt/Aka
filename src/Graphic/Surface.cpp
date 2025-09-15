@@ -1,5 +1,5 @@
 #include <Aka/Graphic/Surface.h>
-#include <Aka/PLatform/PlatformWindow.h>
+#include <Aka/Platform/PlatformWindow.h>
 
 namespace aka {
 namespace gfx {

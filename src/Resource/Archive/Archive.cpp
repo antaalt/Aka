@@ -125,7 +125,7 @@ ArchiveParseResult Archive::load(ArchiveLoadContext& _context)
 	return load(_context, info.path);
 }
 ArchiveParseResult Archive::load(ArchiveLoadContext&& _context) {
-	load(_context);
+	return load(_context);
 }
 
 ArchiveParseResult Archive::save(ArchiveSaveContext& _context, Vector<byte_t>& _blob)
@@ -167,7 +167,7 @@ ArchiveParseResult Archive::save(ArchiveSaveContext& _context)
 	return save(_context, info.path);
 }
 ArchiveParseResult Archive::save(ArchiveSaveContext&& _context) {
-	save(_context);
+	return save(_context);
 }
 
 bool Archive::validate(AssetLibrary* _library)

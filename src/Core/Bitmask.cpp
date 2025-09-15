@@ -199,7 +199,7 @@ std::ostream& operator<<(std::ostream& os, const bitset32& value)
 	for (uint32_t i = 32; i-- > 0;)
 	{
 		// TODO add shiftable operators.
-		os << ((static_cast<uint32_t>(value) >> i) & 0x1) ? "1" : "0";
+		os << (((static_cast<uint32_t>(value) >> i) & 0x1) ? "1" : "0");
 	}
 	return os;
 }
@@ -207,7 +207,7 @@ std::ostream& operator<<(std::ostream& os, const bitset64& value)
 {
 	for (uint32_t i = 64; i-- > 0;)
 	{
-		os << ((static_cast<uint64_t>(value) >> i) & 0x1) ? "1" : "0";
+		os << (((static_cast<uint64_t>(value) >> i) & 0x1) ? "1" : "0");
 	}
 	return os;
 }

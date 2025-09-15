@@ -279,8 +279,8 @@ InstanceHandle StaticMeshInstanceRenderer::createInstance(AssetID assetID)
 			batchData.indexCount = batch.indexCount;
 			batchData.vertexOffset = (batch.vertexOffset + vertexOffset) / sizeof(StaticVertex);
 			batchData.materialIndex = getRenderer().getMaterialIndex(batch.material.get().getMaterialHandle());
-			batchData.min; // TODO
-			batchData.max;
+			//batchData.min; // TODO
+			//batchData.max;
 			m_instanceBatchDatas.push_back(batchData);
 			AKA_ASSERT(m_instanceBatchDatas.size() <= MaxBatchCount, "Too many batches");
 		}

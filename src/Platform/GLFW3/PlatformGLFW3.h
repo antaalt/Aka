@@ -19,7 +19,7 @@ public:
 	void setLimits(uint32_t minWidth, uint32_t minHeight, uint32_t maxWidth, uint32_t maxHeight) override;
 	void fullscreen(bool enabled) override;
 	GLFWwindow* getGLFW3Handle();
-	void* getNativeHandle();
+	void* getNativeHandle() override;
 	bool isInitialized() const override;
 protected:
 	void initialize() override;

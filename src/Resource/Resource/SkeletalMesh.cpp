@@ -232,9 +232,9 @@ void SkeletalMesh::toArchive_internal(ArchiveSaveContext& _context, Renderer* _r
 		material.albedo = albedoAssetID;
 		material.normal = normalAssetID;
 		ArchiveGeometry geometry(geometryAssetID);
-		geometry.bounds;
-		geometry.skeletalVertices; // Load from buffer
-		geometry.indices; // Load from buffer
+		//geometry.bounds;
+		//geometry.skeletalVertices; // Load from buffer
+		//geometry.indices; // Load from buffer
 
 		_context.addArchive<ArchiveBatch>(batch.id(), batch);
 		_context.addArchive<ArchiveMaterial>(material.id(), material);

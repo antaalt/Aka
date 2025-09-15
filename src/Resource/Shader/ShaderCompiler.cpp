@@ -498,7 +498,7 @@ ShaderReflectionData ShaderCompiler::reflect(const ShaderCompilationResult& comp
 				data.sets[set].count = max(data.sets[set].count, binding + 1);
 			}
 
-			resources.acceleration_structures;
+			//resources.acceleration_structures;
 		}
 		{ // --- Reflect shader constants
 

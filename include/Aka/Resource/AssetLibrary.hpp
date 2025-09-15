@@ -204,7 +204,7 @@ template<typename T>
 inline ResourceHandle<T> AssetLibrary::load(AssetID _assetID, ArchiveLoadContext& _context, Renderer* _renderer)
 {
 	static_assert(std::is_base_of<Resource, T>::value, "Invalid resource type");
-	static_assert(std::is_base_of<Archive, ArchiveTrait<T>::Archive>::value, "Invalid archive type");
+	static_assert(std::is_base_of<Archive, typename ArchiveTrait<T>::Archive>::value, "Invalid archive type");
 	// Get assetInfo
 	auto itAssetInfo = m_assetInfo.find(_assetID);
 	AKA_ASSERT(itAssetInfo != m_assetInfo.end(), "Trying to load an asset that does not exist in library.");
