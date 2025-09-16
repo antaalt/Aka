@@ -7,10 +7,11 @@
 
 #if defined(AKA_USE_IMGUI_LAYER)
 
-#include <backends/imgui_impl_glfw.h>
+#include <imgui_impl_glfw.h>
 
 #include "Fonts/FontAwesomeRegular400.hpp"
 #include "Fonts/FontAwesomeSolid900.hpp"
+#include "Fonts/IconsFontAwesome6.h"
 #include "Fonts/RobotoRegular.hpp"
 
 // TODO rewrite imgui backend with aka
@@ -29,7 +30,7 @@
 #endif
 #if defined(AKA_USE_VULKAN)
 #include "Graphic/Vulkan/VulkanGraphicDevice.h"
-#include <backends/imgui_impl_vulkan.h>
+#include <imgui_impl_vulkan.h>
 #endif
 #include "Platform/GLFW3/PlatformGLFW3.h"
 
@@ -51,12 +52,22 @@ const ImVec4 ImGuiLayer::Color::blue = ImVec4(0.01f, 0.47f, 0.96f, 1.f);
 const ImVec4 ImGuiLayer::Color::dark = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
 const ImVec4 ImGuiLayer::Color::light = ImVec4(0.9f, 0.9f, 0.9f, 1.f);
 
+const char* ImGuiLayer::Icon::ArrowUp = ICON_FA_ARROW_UP;
+const char* ImGuiLayer::Icon::RotateRight = ICON_FA_ROTATE_RIGHT;
+const char* ImGuiLayer::Icon::Folder = ICON_FA_FOLDER;
+const char* ImGuiLayer::Icon::File = ICON_FA_FILE;
+const char* ImGuiLayer::Icon::Film = ICON_FA_FILM;
+const char* ImGuiLayer::Icon::City = ICON_FA_TREE_CITY;
+const char* ImGuiLayer::Icon::Images = ICON_FA_IMAGES;
+const char* ImGuiLayer::Icon::Image = ICON_FA_IMAGE;
+const char* ImGuiLayer::Icon::Headphones = ICON_FA_HEADPHONES;
+
 ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::DescriptorSetHandle _texture)
 {
 	switch (_device->getApi())
 	{
 	case gfx::GraphicAPI::Vulkan:
-		return ImTextureID{ reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet };
+		return (ImTextureID)(intptr_t)reinterpret_cast<const gfx::VulkanDescriptorSet*>(_device->get(_texture))->vk_descriptorSet;
 	default:
 	case gfx::GraphicAPI::DirectX12:
 		AKA_NOT_IMPLEMENTED;
@@ -65,7 +76,7 @@ ImTextureID ImGuiLayer::getTextureID(gfx::GraphicDevice* _device, gfx::Descripto
 }
 
 struct ImGuiAllocation { uint8_t data; };
-static_assert(sizeof(ImGuiAllocation) == 1);
+static_assert(sizeof(ImGuiAllocation) == 1, "Invalid size");
 
 void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 {
@@ -146,8 +157,9 @@ void ImGuiLayer::onLayerCreate(Renderer* _renderer)
 	info.CheckVkResultFn = [](VkResult err) {
 		VK_CHECK_RESULT(err);
 	};
+	info.RenderPass = device->getVk<gfx::VulkanRenderPass>(m_renderData->renderPass)->vk_renderpass;
 
-	ImGui_ImplVulkan_Init(&info, device->getVk<gfx::VulkanRenderPass>(m_renderData->renderPass)->vk_renderpass);
+	ImGui_ImplVulkan_Init(&info);
 
 #endif
 
@@ -301,10 +313,7 @@ void ImGuiLayer::onLayerPreRender()
 	if (!ImGui::GetIO().Fonts->TexID)
 	{
 		gfx::VulkanGraphicDevice* device = reinterpret_cast<gfx::VulkanGraphicDevice*>(Application::app()->graphic());
-		device->executeVk("Transition backbuffer after creation", [&](gfx::VulkanCommandList& cmd) {
-			ImGui_ImplVulkan_CreateFontsTexture(cmd.getVkCommandBuffer());
-		}, gfx::QueueType::Graphic, false);
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
+		ImGui_ImplVulkan_CreateFontsTexture();
 	}
 	ImGui_ImplVulkan_NewFrame(); // Nothing done
 #endif

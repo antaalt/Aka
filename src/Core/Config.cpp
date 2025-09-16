@@ -5,23 +5,30 @@
 #include <stdarg.h>
 #include <cassert>
 
-bool handleAssert(const char* _filename, int _line, const char* _assertion, bool _allowRecover, const char* message, ...)
+#if !defined(AKA_PLATFORM_WINDOWS)
+// This is a windows specific helper.
+int _vscprintf(const char* format, va_list pargs) {
+	int retval;
+	va_list argcopy;
+	va_copy(argcopy, pargs);
+	retval = vsnprintf(NULL, 0, format, argcopy);
+	va_end(argcopy);
+	return retval;
+}
+#endif
+
+bool handleAssertVariadicList(const char* _filename, int _line, const char* _assertion, bool _allowRecover, const char* message, va_list args)
 {
 	using namespace aka;
-	va_list arg1, arg2;
-	va_start(arg1, message);
-	va_copy(arg2, arg1);
-	int length = snprintf(nullptr, 0, message, arg1);
+	int length = _vscprintf(message, args);
 	assert(length >= 0);
-	va_end(arg1);
 
 	size_t size = length + 1;
 	String messageFormatted = String(size);
 
 	// Format the string
-	int ret = vsnprintf(messageFormatted.cstr(), size, message, arg2);
+	int ret = vsnprintf(messageFormatted.cstr(), size, message, args);
 	assert(ret >= 0);
-	va_end(arg2);
 	String titleFormatted = String::format("Assertion failed in file %s", _filename);
 	String messageFormattedFull = String::format("%s\n\nFailed Assertion at %s:%d:\n%s", messageFormatted.cstr(), _filename, _line, _assertion ? _assertion : "error");
 	Logger::error(messageFormattedFull);
@@ -39,6 +46,14 @@ bool handleAssert(const char* _filename, int _line, const char* _assertion, bool
 	case AlertModalMessage::Ignore:
 		return false; // Do not break
 	}
+}
+bool handleAssert(const char* _filename, int _line, const char* _assertion, bool _allowRecover, const char* message, ...)
+{
+	va_list args;
+	va_start(args, message);
+	bool result = handleAssertVariadicList(_filename, _line, _assertion, _allowRecover, message, args);
+	va_end(args);
+	return result;
 }
 
 

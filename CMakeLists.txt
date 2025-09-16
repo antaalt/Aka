@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.19)
+﻿cmake_minimum_required (VERSION 3.24) # minimum for findVulkan
 project(Aka)
 
 include(GNUInstallDirs)
@@ -168,9 +168,20 @@ set(AUDIO_RTAUDIO true CACHE BOOL "Set RtAudio as audio backend")
 if (GRAPHIC_VULKAN)
 	# Setup Vulkan
 	target_compile_definitions(Aka PUBLIC AKA_USE_VULKAN)
-	find_package(Vulkan REQUIRED) # Use VULKAN_SDK env to find Vulkan
-	target_include_directories(Aka PRIVATE ${Vulkan_INCLUDE_DIRS})
-	target_link_libraries(Aka PRIVATE Vulkan::Vulkan)
+	# FindVulkan is looking for Vulkan SDK, but it might conflict with vcpkg vulkan.
+	# Check here https://gitlab.kitware.com/cmake/cmake/-/issues/25617 and here  https://cmake.org/cmake/help/latest/module/FindVulkan.html
+	find_package(Vulkan REQUIRED COMPONENTS glslang SPIRV-Tools) # Use VULKAN_SDK env to find Vulkan + glslang
+	#target_include_directories(Aka PRIVATE ${Vulkan_INCLUDE_DIRS})
+	find_package(glslang REQUIRED)
+	# SPIRV Cross
+	find_package(spirv_cross_core REQUIRED)
+	find_package(spirv_cross_glsl REQUIRED)
+	#find_package(spirv_cross_cpp REQUIRED) # Required to be fetched AFTER glsl or it fails...
+	#find_package(spirv_cross_hlsl REQUIRED)
+	#find_package(spirv_cross_msl REQUIRED)
+	#find_package(spirv_cross_reflect REQUIRED)
+	find_package(spirv_cross_util REQUIRED)
+	target_link_libraries(Aka PRIVATE Vulkan::Vulkan glslang::glslang glslang::SPIRV spirv-cross-core spirv-cross-glsl spirv-cross-util)
 elseif (GRAPHIC_D3D12)
 	# Setup D3D12
 endif()
@@ -192,12 +203,14 @@ endif()
 # Freetype
 find_package(Freetype REQUIRED)
 target_link_libraries(Aka PRIVATE freetype)
-# Glslang
-find_package(glslang CONFIG REQUIRED)
-target_link_libraries(Aka PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV glslang::SPVRemapper)
+# Glslang 
+#find_package(glslang CONFIG REQUIRED)
+#target_link_libraries(Aka PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV glslang::SPVRemapper)
 # Imgui
 find_package(imgui REQUIRED)
-target_link_libraries(Aka PUBLIC imgui::imgui) # Let user use it.
+find_package(imguizmo REQUIRED)
+target_link_libraries(Aka PUBLIC imgui::imgui imguizmo::imguizmo) # Let user use it.
+target_compile_definitions(Aka PUBLIC AKA_USE_IMGUI_LAYER) # Enable it.
 # Miniz
 find_package(miniz REQUIRED)
 target_link_libraries(Aka PRIVATE miniz::miniz)
@@ -207,13 +220,6 @@ find_package(Stb REQUIRED)
 # Nlohmann JSON
 find_package(nlohmann_json REQUIRED)
 target_link_libraries(Aka PRIVATE nlohmann_json::nlohmann_json)
-# SPIRV Cross
-# Do we really need to load these three...
-find_package(spirv_cross_core REQUIRED)
-find_package(spirv_cross_glsl REQUIRED)
-find_package(spirv_cross_cpp REQUIRED)
-find_package(spirv_cross_util REQUIRED)
-target_link_libraries(Aka PRIVATE spirv-cross-core spirv-cross-glsl spirv-cross-cpp spirv-cross-util)
 # UTF8 CPP
 # Not found in vcpkg registry...
 find_package(utf8cpp REQUIRED)

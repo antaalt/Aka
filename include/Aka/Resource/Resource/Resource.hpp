@@ -54,6 +54,7 @@ public:
 
 	void fromArchive(ArchiveLoadContext& _context, Renderer* _renderer);
 	void toArchive(ArchiveSaveContext& _context, Renderer* _renderer);
+	void toArchive(ArchiveSaveContext&& _context, Renderer* _renderer);
 	void destroy(AssetLibrary* _library, Renderer* _renderer);
 protected:
 	virtual void fromArchive_internal(ArchiveLoadContext& _context, Renderer* _renderer) = 0;

@@ -6,16 +6,17 @@
 #include <Aka/OS/OS.h>
 #include <Aka/OS/Logger.h>
 
+// Be wary not to include Vulkan SDK deps.
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/SPIRV/SpvTools.h>
 #include <glslang/SPIRV/disassemble.h>
-#include <glslang/SPIRV/spirv.hpp>
 
-#include <spirv_cross/spirv_cross.hpp>
-#include <spirv_cross/spirv_glsl.hpp>
-#include <spirv_cross/spirv_hlsl.hpp>
-#include <spirv_cross/spirv_msl.hpp>
+// Be wary not to include Vulkan SDK deps.
+#include <spirv_cross.hpp>
+#include <spirv_glsl.hpp>
+#include <spirv_hlsl.hpp>
+#include <spirv_msl.hpp>
 
 namespace aka {
 // Should be read from device capabilities...
@@ -154,6 +155,22 @@ public:
 	}
 	IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
 	{
+		if (OS::File::exist(headerName))
+		{
+			Path header = headerName;
+			
+			registerDependency(header);
+			// Read file
+			String str;
+			if (OS::File::read(header, &str))
+			{
+				m_includedPaths.append(header.up());
+				// Destroyed in releaseInclude
+				char* data = mem::akaNewArray<char>(str.length() + 1, AllocatorMemoryType::String, AllocatorCategory::Graphic);
+				Memory::copy(data, str.cstr(), str.length() + 1);
+				return mem::akaNew<IncludeResult>(AllocatorMemoryType::String, AllocatorCategory::Graphic, header.cstr(), data, str.length(), nullptr);
+			}
+		}
 		// TODO: avoid copy here
 		Vector<Path> directories;
 		directories.append(m_systemDirectories);
@@ -263,8 +280,8 @@ ShaderCompilationResult ShaderCompiler::compile(const ShaderKey& key)
 	glslang::TProgram program;
 	glslang::TShader shader(stage);
 
-	char* shaderString = file.cstr();
-	char* shaderName = name.cstr();
+	const char* shaderString = file.cstr();
+	const char* shaderName = name.cstr();
 	int shaderLength = (int)file.length();
 	shader.setStringsWithLengthsAndNames(&shaderString, &shaderLength, &shaderName, 1);
 	// Glslang does not support multiple entry point, but SPIRV supports it.

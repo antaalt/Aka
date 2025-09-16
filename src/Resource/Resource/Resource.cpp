@@ -30,6 +30,11 @@ void Resource::toArchive(ArchiveSaveContext& _context, Renderer* _renderer)
 	toArchive_internal(_context, _renderer);
 }
 
+void Resource::toArchive(ArchiveSaveContext&& _context, Renderer* _renderer)
+{
+	toArchive(_context, _renderer);
+}
+
 void Resource::destroy(AssetLibrary* _library, Renderer* _renderer)
 {
 	AKA_ASSERT(m_state == ResourceState::Loaded, "Trying to destroy resource that is not loaded");

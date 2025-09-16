@@ -6,7 +6,6 @@
 #if defined(AKA_USE_IMGUI_LAYER)
 #include <imgui.h>
 #include <imguizmo.h>
-#include <IconsFontAwesome6.h>
 #endif
 
 namespace aka {
@@ -25,6 +24,17 @@ public:
 		static const ImVec4 blue;
 		static const ImVec4 dark;
 		static const ImVec4 light;
+	};
+	struct Icon {
+		static const char* ArrowUp;
+		static const char* RotateRight;
+		static const char* Folder;
+		static const char* File;
+		static const char* Film;
+		static const char* City;
+		static const char* Images;
+		static const char* Image;
+		static const char* Headphones;
 	};
 	static ImTextureID getTextureID(gfx::GraphicDevice* _device, gfx::DescriptorSetHandle _handle);
 private:
